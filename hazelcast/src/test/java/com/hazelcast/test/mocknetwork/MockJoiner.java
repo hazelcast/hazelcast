@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
 
 class MockJoiner extends AbstractJoiner {
 
@@ -82,12 +83,7 @@ class MockJoiner extends AbstractJoiner {
             if (!shouldRetry()) {
                 break;
             }
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                break;
-            }
+            clusterService.blockOnJoin(TimeUnit.MILLISECONDS.toNanos(500));
         }
     }
 

@@ -260,7 +260,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             }
 
             if (!clusterService.isJoined()) {
-                Thread.sleep(JOIN_RETRY_WAIT_TIME);
+                clusterService.blockOnJoin(TimeUnit.MILLISECONDS.toNanos(JOIN_RETRY_WAIT_TIME));
             }
         }
     }

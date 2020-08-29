@@ -87,6 +87,7 @@ import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.String.format;
+import java.util.concurrent.locks.LockSupport;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
@@ -120,6 +121,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private volatile UUID clusterId;
     private volatile Address masterAddress;
     private volatile MemberImpl localMember;
+    private volatile Thread blockedThread;
 
     public ClusterServiceImpl(Node node, MemberImpl localMember) {
         this.node = node;
@@ -637,6 +639,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             logger.fine("Setting master address to " + master);
         }
         masterAddress = master;
+        LockSupport.unpark(blockedThread);
     }
 
     @Override
@@ -667,6 +670,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     void setJoined(boolean val) {
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
         joined.set(val);
+        LockSupport.unpark(blockedThread);
     }
 
     @Override
@@ -1055,5 +1059,12 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     @Override
     public String toString() {
         return "ClusterService" + "{address=" + getThisAddress() + '}';
+    }
+
+    public void blockOnJoin(long nanos) {
+        assert blockedThread == null : "block() called recursively or in parallel";
+        blockedThread = Thread.currentThread();
+        LockSupport.parkNanos(nanos);
+        blockedThread = null;
     }
 }
