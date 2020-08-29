@@ -30,7 +30,7 @@ class HomeSplash extends React.Component {
     const ProjectTitle = props => (
       <h2 className="projectTitle">
         Use Your Data Instantly At Scale
-        <small>Hazelcast Jet is a distributed stream processing system that can do stateful computations over massive amounts of data with consistent low latency.
+        <small>Jet is a distributed batch and stream processing system that can do stateful computations over massive amounts of data with consistent low latency.
         </small>
       </h2>
     );
@@ -191,7 +191,7 @@ class Index extends React.Component {
 
     const Users = () => {
       return <div className="productShowcaseSection">
-        <h1>Who is Using Hazelcast Jet?</h1>
+        <h1>Who is Using Jet?</h1>
         <div className="logos">
           <a href="https://www.adobe.com"><img src={`${baseUrl}img/logos/adobe.svg`}></img></a>
           <a href="https://www.anz.com.au"><img src={`${baseUrl}img/logos/anz.svg`}></img></a>
@@ -213,7 +213,7 @@ class Index extends React.Component {
         <div className="mainContainer">
           <Features />
           <div style={{textAlign: 'center'}}>
-            <h1>Use Hazelcast Jet To</h1>
+            <h1>Use Jet To</h1>
           </div>
           <UseCases />
           <Users />
