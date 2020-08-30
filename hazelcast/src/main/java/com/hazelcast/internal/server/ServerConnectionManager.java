@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.Packet;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -222,5 +223,6 @@ public interface ServerConnectionManager
      * @param streamId
      */
     default void blockOnConnect(Address address, long nanos, int streamId) {
+        LockSupport.parkNanos(nanos);
     }
 }
