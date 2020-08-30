@@ -83,6 +83,7 @@ import static java.lang.Math.abs;
 import static java.util.Arrays.stream;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.unmodifiableSet;
+import java.util.concurrent.locks.LockSupport;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class TcpServerConnectionManager
@@ -185,7 +186,8 @@ public class TcpServerConnectionManager
         Plane plane = getPlane(streamId);
         TcpServerConnection connection = plane.connectionMap.get(address);
         if (connection == null && server.isLive()) {
-            if (plane.connectionsInProgress.add(address)) {
+            if (!plane.connectionsInProgress.containsKey(address)) {
+                plane.connectionsInProgress.putIfAbsent(address, null);
                 if (logger.isFineEnabled()) {
                     logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet progress");
                 }
@@ -239,7 +241,7 @@ public class TcpServerConnectionManager
             });
             return true;
         } finally {
-            plane.connectionsInProgress.remove(remoteAddress);
+            LockSupport.unpark(plane.connectionsInProgress.remove(remoteAddress));
         }
     }
 
@@ -334,7 +336,7 @@ public class TcpServerConnectionManager
     }
 
     void failedConnection(Address address, int planeIndex, Throwable t, boolean silent) {
-        planes[planeIndex].connectionsInProgress.remove(address);
+        LockSupport.unpark(planes[planeIndex].connectionsInProgress.remove(address));
         serverContext.onFailedConnection(address);
         if (!silent) {
             getErrorHandler(address, planeIndex, false).onError(t);
@@ -468,9 +470,21 @@ public class TcpServerConnectionManager
         }
     }
 
+    @Override
+    public void blockOnConnect(Address address, long nanos, int streamId) {
+        Plane plane = getPlane(streamId);
+        try {
+            assert plane.connectionsInProgress.putIfAbsent(address,
+                    Thread.currentThread()) == null : "block() called recursively or in parallel";
+            LockSupport.parkNanos(nanos);
+        } finally {
+            plane.connectionsInProgress.replace(address, null);
+        }
+    }
+
     static class Plane {
         final ConcurrentHashMap<Address, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
-        final Set<Address> connectionsInProgress = newSetFromMap(new ConcurrentHashMap<>());
+        final Map<Address, Thread> connectionsInProgress = new ConcurrentHashMap<>();
         final ConcurrentHashMap<Address, TcpServerConnectionErrorHandler> errorHandlers = new ConcurrentHashMap<>(100);
         final int index;
 
@@ -520,7 +534,7 @@ public class TcpServerConnectionManager
                 int planeIndex = connection.getPlaneIndex();
                 if (planeIndex > -1) {
                     Plane plane = planes[connection.getPlaneIndex()];
-                    plane.connectionsInProgress.remove(remoteAddress);
+                    LockSupport.unpark(plane.connectionsInProgress.remove(remoteAddress));
                     plane.connectionMap.remove(remoteAddress);
                     fireConnectionRemovedEvent(connection, remoteAddress);
                 } //todo: could it be that we have a memory leak by not removing something from the plane.

@@ -213,4 +213,14 @@ public interface ServerConnectionManager
      * @return the Server.
      */
     Server getServer();
+
+    /**
+     * blocks the caller thread until a connection is established (or failed)
+     * or the time runs out
+     * @param address
+     * @param nanos
+     * @param streamId
+     */
+    default void blockOnConnect(Address address, long nanos, int streamId) {
+    }
 }

@@ -46,6 +46,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SERVICE_NAME;
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import static com.hazelcast.internal.util.AddressUtil.AddressHolder;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
@@ -112,11 +113,12 @@ public class TcpIpJoiner extends AbstractJoiner {
             long joinStartTime = Clock.currentTimeMillis();
             Connection connection;
             while (shouldRetry() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
-
-                connection = node.getServer().getConnectionManager(MEMBER).getOrConnect(targetAddress);
+                ServerConnectionManager connectionManager = node.getServer().getConnectionManager(MEMBER);
+                connection = connectionManager.getOrConnect(targetAddress);
                 if (connection == null) {
                     //noinspection BusyWait
-                    Thread.sleep(JOIN_RETRY_WAIT_TIME);
+                    connectionManager.blockOnConnect(targetAddress,
+                            TimeUnit.MILLISECONDS.toNanos(JOIN_RETRY_WAIT_TIME), 0);
                     continue;
                 }
                 if (logger.isFineEnabled()) {
@@ -124,7 +126,9 @@ public class TcpIpJoiner extends AbstractJoiner {
                 }
                 clusterJoinManager.sendJoinRequest(targetAddress);
                 //noinspection BusyWait
-                Thread.sleep(JOIN_RETRY_WAIT_TIME);
+                if (!clusterService.isJoined()) {
+                    clusterService.blockOnJoin(TimeUnit.MILLISECONDS.toNanos(JOIN_RETRY_WAIT_TIME));
+                }
             }
         } catch (final Exception e) {
             logger.warning(e);
