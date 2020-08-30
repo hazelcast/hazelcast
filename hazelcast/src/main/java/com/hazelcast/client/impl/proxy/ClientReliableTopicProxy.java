@@ -266,49 +266,56 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
         checkNoNullInside(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
         InternalCompletableFuture<Void> returnFuture = new InternalCompletableFuture<>();
 
-        List<ReliableTopicMessage> messages = payload.stream()
-                .map(m -> new ReliableTopicMessage(toData(m), null))
-                .collect(Collectors.toList());
-        switch (overloadPolicy) {
-            case ERROR:
-                ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL)
-                        .whenCompleteAsync((id, t) -> {
-                            if (t != null) {
-                                returnFuture.completeExceptionally(t);
-                            }
-                            if (id == -1) {
-                                returnFuture.completeExceptionally(new TopicOverloadException(
-                                        "Failed to publish messages: " + payload + " on topic:" + getName()));
-                            }
-                            returnFuture.complete(null);
-                        });
+        try {
 
-                break;
-            case DISCARD_OLDEST:
-                ringbuffer.addAllAsync(messages, OverflowPolicy.OVERWRITE)
-                        .whenCompleteAsync((id, t) -> {
-                            if (t != null) {
-                                returnFuture.completeExceptionally(t);
-                            }
-                            returnFuture.complete(null);
-                        });
-                break;
-            case DISCARD_NEWEST:
-                ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL)
-                        .whenCompleteAsync((id, t) -> {
-                            if (t != null) {
-                                returnFuture.completeExceptionally(t);
-                            }
-                            returnFuture.complete(null);
-                        });
-                break;
-            case BLOCK:
-                addAsyncAndBlock(payload, returnFuture, messages, INITIAL_BACKOFF_MS);
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown overloadPolicy:" + overloadPolicy);
+            List<ReliableTopicMessage> messages = payload.stream()
+                    .map(m -> new ReliableTopicMessage(toData(m), null))
+                    .collect(Collectors.toList());
+            switch (overloadPolicy) {
+                case ERROR:
+                    ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL)
+                            .whenCompleteAsync((id, t) -> {
+                                if (t != null) {
+                                    returnFuture.completeExceptionally(t);
+                                }
+                                if (id == -1) {
+                                    returnFuture.completeExceptionally(new TopicOverloadException(
+                                            "Failed to publish messages: " + payload + " on topic:" + getName()));
+                                }
+                                returnFuture.complete(null);
+                            });
+
+                    break;
+                case DISCARD_OLDEST:
+                    ringbuffer.addAllAsync(messages, OverflowPolicy.OVERWRITE)
+                            .whenCompleteAsync((id, t) -> {
+                                if (t != null) {
+                                    returnFuture.completeExceptionally(t);
+                                }
+                                returnFuture.complete(null);
+                            });
+                    break;
+                case DISCARD_NEWEST:
+                    ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL)
+                            .whenCompleteAsync((id, t) -> {
+                                if (t != null) {
+                                    returnFuture.completeExceptionally(t);
+                                }
+                                returnFuture.complete(null);
+                            });
+                    break;
+                case BLOCK:
+                    addAsyncAndBlock(payload, returnFuture, messages, INITIAL_BACKOFF_MS);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown overloadPolicy:" + overloadPolicy);
+            }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw (RuntimeException) peel(e, null,
+                    "Failed to publish messages: " + payload + " to topic:" + getName());
         }
-
         return returnFuture;
     }
 

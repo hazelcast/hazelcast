@@ -32,27 +32,26 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.ReliableMessageListener;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
-import com.hazelcast.topic.impl.PublishAllOperation;
-import com.hazelcast.topic.impl.PublishOperation;
 import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
@@ -197,19 +196,10 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     }
 
     @Override
-    public CompletionStage<Void> publishAsync(@Nonnull E message) {
-        checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
-        Data data = toData(message);
-        InternalCompletableFuture<Void> returnFuture = new InternalCompletableFuture<>();
-        invokeOnPartition(new PublishOperation(name, data))
-                .whenCompleteAsync((o, t) -> {
-                    if (t != null) {
-                        returnFuture.completeExceptionally(t);
-                    } else {
-                        returnFuture.complete(null);
-                    }
-                });
-        return returnFuture;
+    public CompletionStage<Void> publishAsync(@Nonnull E payload) {
+        checkNotNull(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
+        Collection<E> messages = Collections.singleton(payload);
+        return publishAllAsync(messages);
     }
 
     private Long addOrOverwrite(ReliableTopicMessage message) throws Exception {
@@ -284,42 +274,135 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
         return localTopicStats;
     }
 
-
     @Override
-    public void publishAll(@Nonnull Collection<? extends E> messages) {
-        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
-        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+    public void publishAll(@Nonnull Collection<? extends E> payload) {
+        checkNotNull(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
 
-        // RU_COMPAT_4_0
-        checkClusterVersion(Versions.V4_1);
-
-        Operation op = new PublishAllOperation(name, toDataArray(messages));
         try {
-            invokeOnPartition(op).get();
+            List<ReliableTopicMessage> messages = payload.stream()
+                    .map(m -> new ReliableTopicMessage(nodeEngine.toData(m), thisAddress))
+                    .collect(Collectors.toList());
+            switch (overloadPolicy) {
+                case ERROR:
+                    long sequenceId = ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).toCompletableFuture().get();
+                    if (sequenceId == -1) {
+                        throw new TopicOverloadException(
+                                String.format("Failed to publish messages: %s on topic: %s", payload, getName()));
+                    }
+                    break;
+                case DISCARD_OLDEST:
+                    ringbuffer.addAllAsync(messages, OverflowPolicy.OVERWRITE).toCompletableFuture().get();
+                    break;
+                case DISCARD_NEWEST:
+                    ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).toCompletableFuture().get();
+                    break;
+                case BLOCK:
+                    long timeoutMs = INITIAL_BACKOFF_MS;
+                    for (; ; ) {
+                        long result = ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).toCompletableFuture().get();
+                        if (result != -1) {
+                            break;
+                        }
+
+                        MILLISECONDS.sleep(timeoutMs);
+                        timeoutMs *= 2;
+                        if (timeoutMs > MAX_BACKOFF) {
+                            timeoutMs = MAX_BACKOFF;
+                        }
+                    }
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown overloadPolicy:" + overloadPolicy);
+            }
+
+            localTopicStats.incrementPublishes();
         } catch (Exception e) {
-            throw rethrow(e);
+            throw (RuntimeException) peel(e, null,
+                    String.format("Failed to publish messages: %s on topic: %s", payload, getName()));
         }
     }
 
     @Override
-    public CompletionStage<Void> publishAllAsync(@Nonnull Collection<? extends E> messages) {
-        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
-        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+    public CompletionStage<Void> publishAllAsync(@Nonnull Collection<? extends E> payload) {
+        checkNotNull(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
 
         // RU_COMPAT_4_0
         checkClusterVersion(Versions.V4_1);
 
-        Data[] data = toDataArray(messages);
         InternalCompletableFuture<Void> returnFuture = new InternalCompletableFuture<>();
-        invokeOnPartition(new PublishAllOperation(name, data))
-                .whenCompleteAsync((o, t) -> {
-                    if (t != null) {
-                        returnFuture.completeExceptionally(t);
-                    } else {
-                        returnFuture.complete(null);
-                    }
-                });
+        try {
+            List<ReliableTopicMessage> messages = payload.stream()
+                    .map(m -> new ReliableTopicMessage(nodeEngine.toData(m), thisAddress))
+                    .collect(Collectors.toList());
+            switch (overloadPolicy) {
+                case ERROR:
+                    ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL)
+                            .whenCompleteAsync((id, t) -> {
+                                if (t != null) {
+                                    returnFuture.completeExceptionally(t);
+                                }
+                                if (id == -1) {
+                                    returnFuture.completeExceptionally(new TopicOverloadException(
+                                            "Failed to publish messages: " + payload + " on topic:" + getName()));
+                                }
+                                payload.forEach(p -> localTopicStats.incrementPublishes());
+                                returnFuture.complete(null);
+                            });
+
+                    break;
+                case DISCARD_OLDEST:
+                    ringbuffer.addAllAsync(messages, OverflowPolicy.OVERWRITE)
+                            .whenCompleteAsync((id, t) -> {
+                                if (t != null) {
+                                    returnFuture.completeExceptionally(t);
+                                }
+                                payload.forEach(p -> localTopicStats.incrementPublishes());
+                                returnFuture.complete(null);
+                            });
+                    break;
+                case DISCARD_NEWEST:
+                    ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL)
+                            .whenCompleteAsync((id, t) -> {
+                                if (t != null) {
+                                    returnFuture.completeExceptionally(t);
+                                }
+                                payload.forEach(p -> localTopicStats.incrementPublishes());
+                                returnFuture.complete(null);
+                            });
+                    break;
+                case BLOCK:
+                    addAsyncAndBlock(payload, returnFuture, messages, INITIAL_BACKOFF_MS);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown overloadPolicy:" + overloadPolicy);
+            }
+        } catch (Exception e) {
+            returnFuture.completeExceptionally(peel(e, null,
+                    String.format("Failed to publish messages: %s on topic: %s", payload, getName())));
+        }
+
         return returnFuture;
+    }
+
+    private void addAsyncAndBlock(@Nonnull Collection<? extends E> payload,
+                                  InternalCompletableFuture<Void> returnFuture,
+                                  List<ReliableTopicMessage> messages,
+                                  long pauseMillis) {
+        ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).whenCompleteAsync((id, t) -> {
+            if (t != null) {
+                returnFuture.completeExceptionally(t);
+            }
+            if (id == -1) {
+                nodeEngine.getExecutionService().schedule(
+                        () -> addAsyncAndBlock(payload, returnFuture, messages, Math.min(pauseMillis * 2, MAX_BACKOFF)),
+                        pauseMillis, MILLISECONDS);
+                returnFuture.completeExceptionally(new TopicOverloadException(
+                        String.format("Failed to publish messages: %s on topic: %s", payload, getName())));
+            }
+            returnFuture.complete(null);
+        });
     }
 
     private Data[] toDataArray(Collection<? extends E> collection) {
