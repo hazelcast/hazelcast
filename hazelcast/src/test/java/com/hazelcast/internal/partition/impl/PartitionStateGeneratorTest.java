@@ -16,24 +16,25 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
-import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.partition.ReadonlyInternalPartition;
 import com.hazelcast.internal.partition.membergroup.ConfigMemberGroupFactory;
 import com.hazelcast.internal.partition.membergroup.DefaultMemberGroup;
 import com.hazelcast.internal.partition.membergroup.HostAwareMemberGroupFactory;
-import com.hazelcast.spi.partitiongroup.MemberGroup;
 import com.hazelcast.internal.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.internal.partition.membergroup.SingleMemberGroupFactory;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.spi.partitiongroup.MemberGroup;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -252,7 +253,7 @@ public class PartitionStateGeneratorTest {
     static InternalPartition[] toPartitionArray(PartitionReplica[][] state) {
         InternalPartition[] result = new InternalPartition[state.length];
         for (int partitionId = 0; partitionId < state.length; partitionId++) {
-            result[partitionId] = new DummyInternalPartition(state[partitionId], partitionId);
+            result[partitionId] = new ReadonlyInternalPartition(state[partitionId], partitionId, 1);
         }
         return result;
     }
@@ -260,7 +261,7 @@ public class PartitionStateGeneratorTest {
     static InternalPartition[] emptyPartitionArray(int partitionCount) {
         InternalPartition[] result = new InternalPartition[partitionCount];
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            result[partitionId] = new DummyInternalPartition(new PartitionReplica[InternalPartition.MAX_REPLICA_COUNT], partitionId);
+            result[partitionId] = new ReadonlyInternalPartition(new PartitionReplica[InternalPartition.MAX_REPLICA_COUNT], partitionId, 0);
         }
         return result;
     }

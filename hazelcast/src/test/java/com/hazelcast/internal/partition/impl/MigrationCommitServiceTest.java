@@ -353,7 +353,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
             public void run() {
                 partitionService.checkClusterPartitionRuntimeStates();
                 for (HazelcastInstance instance : instances) {
-                    assertEquals(partitionService.getPartitionStateVersion(), getPartitionService(instance).getPartitionStateVersion());
+                    assertEquals(partitionService.getPartitionStateStamp(), getPartitionService(instance).getPartitionStateStamp());
                 }
             }
         });

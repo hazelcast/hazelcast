@@ -37,17 +37,18 @@ public class InternalPartitionImplConstructor extends AbstractStarterObjectConst
         Class<?> partitionInterceptorClass = classloader.loadClass("com.hazelcast.internal.partition.PartitionReplicaInterceptor");
         Class<?> replicaClass = classloader.loadClass("com.hazelcast.internal.partition.PartitionReplica");
         Class<?> replicaArrayClass = Array.newInstance(replicaClass, 0).getClass();
-        // obtain reference to constructor InternalPartitionImpl(int partitionId, PartitionReplicaInterceptor interceptor,
-        //                                                       PartitionReplica localReplica, PartitionReplica[] replicas)
-        Constructor<?> constructor = targetClass.getDeclaredConstructor(Integer.TYPE, partitionInterceptorClass, replicaClass,
-                replicaArrayClass);
+        // obtain reference to constructor InternalPartitionImpl(int partitionId, PartitionReplica localReplica,
+        //                      PartitionReplica[] replicas, int version, PartitionReplicaInterceptor interceptor)
+        Constructor<?> constructor = targetClass.getDeclaredConstructor(Integer.TYPE, replicaClass, replicaArrayClass,
+                Integer.TYPE, partitionInterceptorClass);
 
-        Integer partitionId = (Integer) getFieldValueReflectively(delegate, "partitionId");
-        Object partitionListener = getFieldValueReflectively(delegate, "interceptor");
+        Integer partitionId = getFieldValueReflectively(delegate, "partitionId");
+        Object interceptor = getFieldValueReflectively(delegate, "interceptor");
         Object localReplica = getFieldValueReflectively(delegate, "localReplica");
+        Integer version = getFieldValueReflectively(delegate, "version");
         Object replicas = getFieldValueReflectively(delegate, "replicas");
 
-        Object[] args = new Object[] {partitionId, partitionListener, localReplica, replicas};
+        Object[] args = new Object[] {partitionId, localReplica, replicas, version, interceptor};
         Object[] proxiedArgs = proxyArgumentsIfNeeded(args, classloader);
 
         return constructor.newInstance(proxiedArgs);
