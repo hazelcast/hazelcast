@@ -25,8 +25,10 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.TypeInfo;
 import org.w3c.dom.UserDataHandler;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -38,8 +40,9 @@ import java.util.stream.Collectors;
 class ConfigOverrideElementAdapter implements Element {
     private final ConfigNode configNode;
 
-    ConfigOverrideElementAdapter(ConfigNode yamlNode) {
-        this.configNode = yamlNode;
+    ConfigOverrideElementAdapter(@Nonnull ConfigNode node) {
+        Objects.requireNonNull(node);
+        this.configNode = node;
     }
 
     @Override
