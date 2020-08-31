@@ -16,14 +16,14 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ItemCounter;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.ItemCounter;
 
 import static com.hazelcast.internal.diagnostics.OperationDescriptors.toOperationDesc;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -38,7 +38,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * 5 samples for that given invocation. This is useful to track which
  * operations have been slow over a longer period of time.
  */
-public class InvocationPlugin extends DiagnosticsPlugin {
+public class InvocationSamplePlugin extends DiagnosticsPlugin {
 
     /**
      * The sample period in seconds.
@@ -67,10 +67,10 @@ public class InvocationPlugin extends DiagnosticsPlugin {
     private final ItemCounter<String> slowOccurrences = new ItemCounter<String>();
     private final ItemCounter<String> occurrences = new ItemCounter<String>();
 
-    public InvocationPlugin(NodeEngineImpl nodeEngine) {
+    public InvocationSamplePlugin(NodeEngineImpl nodeEngine) {
         super(nodeEngine.getLogger(PendingInvocationsPlugin.class));
         OperationServiceImpl operationService = nodeEngine.getOperationService();
-        this.invocationRegistry = ((OperationServiceImpl) operationService).getInvocationRegistry();
+        this.invocationRegistry = operationService.getInvocationRegistry();
         HazelcastProperties props = nodeEngine.getProperties();
         this.samplePeriodMillis = props.getMillis(SAMPLE_PERIOD_SECONDS);
         this.thresholdMillis = props.getMillis(SLOW_THRESHOLD_SECONDS);

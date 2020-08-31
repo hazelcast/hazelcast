@@ -38,6 +38,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.LatencyDistribution;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -58,6 +59,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
+import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
@@ -65,6 +67,7 @@ import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 
 import java.io.IOException;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_DISCRIMINATOR_GENERICID;
@@ -123,12 +126,18 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
 
     private final OutboundResponseHandler outboundResponseHandler;
 
+    private final ConcurrentMap<Class, LatencyDistribution> opLatencyDistributions;
+
     // When partitionId >= 0, it is a partition specific
     // when partitionId = -1, it is generic
     // when partitionId = -2, it is ad hoc
     // an ad-hoc OperationRunner can only process generic operations, but it can be shared between threads
     // and therefore the {@link OperationRunner#currentTask()} always returns null
-    OperationRunnerImpl(OperationServiceImpl operationService, int partitionId, int genericId, Counter failedBackupsCounter) {
+    OperationRunnerImpl(OperationServiceImpl operationService,
+                        int partitionId,
+                        int genericId,
+                        Counter failedBackupsCounter,
+                        ConcurrentMap<Class, LatencyDistribution> opLatencyDistributions) {
         super(partitionId);
         this.genericId = genericId;
         this.operationService = operationService;
@@ -140,6 +149,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         this.staleReadOnMigrationEnabled = !node.getProperties().getBoolean(DISABLE_STALE_READ_ON_PARTITION_MIGRATION);
         this.failedBackupsCounter = failedBackupsCounter;
         this.backupHandler = operationService.backupHandler;
+        this.opLatencyDistributions = opLatencyDistributions;
         // only a ad-hoc operation runner will be called concurrently
         this.executedOperationsCounter = partitionId == AD_HOC_PARTITION_ID ? newMwCounter() : newSwCounter();
     }
@@ -153,15 +163,15 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
     public void provideStaticMetrics(MetricsRegistry registry) {
         if (partitionId >= 0) {
             MetricDescriptor descriptor = registry.newMetricDescriptor()
-                                                  .withPrefix(OPERATION_PREFIX_PARTITION)
-                                                  .withDiscriminator(OPERATION_DISCRIMINATOR_PARTITIONID,
-                                                          String.valueOf(partitionId));
+                    .withPrefix(OPERATION_PREFIX_PARTITION)
+                    .withDiscriminator(OPERATION_DISCRIMINATOR_PARTITIONID,
+                            String.valueOf(partitionId));
             registry.registerStaticMetrics(descriptor, this);
         } else if (partitionId == -1) {
             MetricDescriptor descriptor = registry.newMetricDescriptor()
-                                                  .withPrefix(OPERATION_PREFIX_GENERIC)
-                                                  .withDiscriminator(OPERATION_DISCRIMINATOR_GENERICID,
-                                                          String.valueOf(genericId));
+                    .withPrefix(OPERATION_PREFIX_GENERIC)
+                    .withDiscriminator(OPERATION_DISCRIMINATOR_GENERICID,
+                            String.valueOf(genericId));
             registry.registerStaticMetrics(descriptor, this);
         } else {
             registry.registerStaticMetrics(this, OPERATION_PREFIX_ADHOC);
@@ -170,6 +180,8 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
 
     @Override
     public void run(Runnable task) {
+        long startNanos = System.nanoTime();
+
         boolean publishCurrentTask = publishCurrentTask();
 
         if (publishCurrentTask) {
@@ -182,6 +194,12 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
             if (publishCurrentTask) {
                 currentTask = null;
             }
+
+            if (opLatencyDistributions != null) {
+                Class c = task.getClass();
+                LatencyDistribution distribution = opLatencyDistributions.computeIfAbsent(c, k -> new LatencyDistribution());
+                distribution.done(startNanos);
+            }
         }
     }
 
@@ -192,10 +210,13 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
 
     @Override
     public void run(Operation op) {
+        run(op, System.nanoTime());
+    }
+
+    private void run(Operation op, long startNanos) {
         executedOperationsCounter.inc();
 
         boolean publishCurrentTask = publishCurrentTask();
-
         if (publishCurrentTask) {
             currentTask = op;
         }
@@ -219,6 +240,14 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         } finally {
             if (publishCurrentTask) {
                 currentTask = null;
+            }
+            if (opLatencyDistributions != null) {
+                Class c = op.getClass();
+                if (op instanceof PartitionIteratingOperation) {
+                    c = ((PartitionIteratingOperation) op).getOperationFactory().getClass();
+                }
+                LatencyDistribution distribution = opLatencyDistributions.computeIfAbsent(c, k -> new LatencyDistribution());
+                distribution.recordNanos(System.nanoTime() - startNanos);
             }
         }
     }
@@ -285,7 +314,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
      *
      * @param op the operation for which the minimum cluster size property must satisfy
      * @throws SplitBrainProtectionException if the operation requires a split brain protection and
-     * the the minimum cluster size property is not satisfied
+     *                                       the the minimum cluster size property is not satisfied
      */
     private void ensureNoSplitBrain(Operation op) {
         SplitBrainProtectionServiceImpl splitBrainProtectionService =
@@ -395,6 +424,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
 
     @Override
     public void run(Packet packet) throws Exception {
+        long startNanos = System.nanoTime();
         boolean publishCurrentTask = publishCurrentTask();
 
         if (publishCurrentTask) {
@@ -419,7 +449,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
             if (publishCurrentTask) {
                 currentTask = null;
             }
-            run(op);
+            run(op, startNanos);
         } catch (Throwable throwable) {
             // If exception happens we need to extract the callId from the bytes directly!
             long callId = extractOperationCallId(packet);

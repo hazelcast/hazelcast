@@ -121,6 +121,12 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     public final long firstInvocationTimeMillis = Clock.currentTimeMillis();
 
     /**
+     * The time in nanoseconds the first time the invocation got executed.
+     */
+    @SuppressWarnings("checkstyle:visibilitymodifier")
+    public final long firstInvocationTimeNanos = System.nanoTime();
+
+    /**
      * A flag to prevent multiple responses to be send to the invocation (only needed for local operations).
      */
     // TODO: this should not be needed; it is taken care of by the future anyway
@@ -667,17 +673,21 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     @Override
     protected void complete(Object value) {
         future.complete(value);
-        if (context.invocationRegistry.deregister(this) && taskDoneCallback != null) {
-            context.asyncExecutor.execute(taskDoneCallback);
-        }
+        complete0();
     }
+
 
     @Override
     protected void completeExceptionally(Throwable t) {
         future.completeExceptionallyInternal(t);
+        complete0();
+    }
+
+    private void complete0() {
         if (context.invocationRegistry.deregister(this) && taskDoneCallback != null) {
             context.asyncExecutor.execute(taskDoneCallback);
         }
+        context.invocationRegistry.retire(this);
     }
 
     private void handleRetry(Object cause) {
