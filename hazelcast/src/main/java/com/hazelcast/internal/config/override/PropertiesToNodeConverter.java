@@ -36,7 +36,7 @@ final class PropertiesToNodeConverter {
 
         ConfigNode root = new ConfigNode(rootNode);
         for (Map.Entry<String, String> e : properties.entrySet()) {
-            parseEntry(new AbstractMap.SimpleEntry<>(e.getKey().replaceFirst(rootNode + ".", ""), e.getValue()), root);
+            parseEntry(e.getKey().replaceFirst(rootNode + ".", ""), e.getValue(), root);
         }
         return root;
     }
@@ -56,9 +56,9 @@ final class PropertiesToNodeConverter {
           .orElseThrow(() -> new InvalidConfigurationException("No parsed entries found"));
     }
 
-    private static void parseEntry(Map.Entry<String, String> entry, ConfigNode root) {
+    private static void parseEntry(String key, String value, ConfigNode root) {
         ConfigNode last = root;
-        for (String s : entry.getKey().toLowerCase().split("\\.")) {
+        for (String s : key.toLowerCase().split("\\.")) {
             ConfigNode node = last.getChildren().get(s);
             if (node == null) {
                 node = new ConfigNode(s, last);
@@ -67,7 +67,7 @@ final class PropertiesToNodeConverter {
             last = node;
         }
 
-        last.setValue(entry.getValue());
+        last.setValue(value);
     }
 
     private static String firstNodeOf(String key) {
