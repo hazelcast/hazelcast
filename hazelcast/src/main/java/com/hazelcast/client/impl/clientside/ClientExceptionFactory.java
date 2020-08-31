@@ -329,7 +329,11 @@ public class ClientExceptionFactory {
         if (exceptionFactory == null) {
             throwable = new UndefinedErrorCodeException(errorHolder.getMessage(), errorHolder.getClassName());
         } else {
-            throwable = exceptionFactory.createException(errorHolder.getMessage(), createException(iterator));
+            Throwable cause = createException(iterator);
+            throwable = exceptionFactory.createException(errorHolder.getMessage(), cause);
+            if (throwable.getCause() == null && cause != null) {
+                throwable.initCause(cause);
+            }
         }
         throwable.setStackTrace(errorHolder.getStackTraceElements().toArray(new StackTraceElement[0]));
         return throwable;
