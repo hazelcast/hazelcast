@@ -47,7 +47,8 @@ final class PropertiesToNodeConverter {
           .collect(Collectors.toSet());
 
         if (rootNodeNames.size() > 1) {
-            throw new InvalidConfigurationException("parsed config entries have conflicting root node names");
+            throw new InvalidConfigurationException("could not determine a root config node name, multiple found: "
+              + rootNodeNames.stream().collect(Collectors.joining(", ", "[", "]" )));
         }
 
         return rootNodeNames.stream()

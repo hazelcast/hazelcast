@@ -61,4 +61,13 @@ class ConfigNode {
     Optional<ConfigNode> getParent() {
         return Optional.ofNullable(parent);
     }
+
+    @Override
+    public String toString() {
+        return "ConfigNode{" +
+          "name='" + name + '\'' +
+          ", children=" + children +
+          ", value='" + value + '\'' +
+          '}';
+    }
 }
