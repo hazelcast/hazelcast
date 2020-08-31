@@ -66,7 +66,7 @@ public class ClusterStateManagerTest {
     private static final MemberVersion CURRENT_NODE_VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
     private static final Version CURRENT_CLUSTER_VERSION = Version.of(BuildInfoProvider.getBuildInfo().getVersion());
     private static final int MEMBERLIST_VERSION = 1;
-    private static final int PARTITION_VERSION = 1;
+    private static final long PARTITION_STAMP = 0;
 
     private final Node node = mock(Node.class);
     private final InternalPartitionService partitionService = mock(InternalPartitionService.class);
@@ -94,7 +94,7 @@ public class ClusterStateManagerTest {
 
         when(clusterService.getMemberListVersion()).thenReturn(MEMBERLIST_VERSION);
         when(membershipManager.getMemberListVersion()).thenReturn(MEMBERLIST_VERSION);
-        when(partitionService.getPartitionStateVersion()).thenReturn(PARTITION_VERSION);
+        when(partitionService.getPartitionStateStamp()).thenReturn(PARTITION_STAMP);
 
         clusterStateManager = new ClusterStateManager(node, lock);
     }
@@ -137,30 +137,34 @@ public class ClusterStateManagerTest {
     @Test(expected = NullPointerException.class)
     public void test_lockClusterState_nullState() throws Exception {
         Address initiator = newAddress();
-        clusterStateManager.lockClusterState(null, initiator, TXN, 1000, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(null, initiator, TXN, 1000, MEMBERLIST_VERSION, PARTITION_STAMP);
     }
 
     @Test(expected = NullPointerException.class)
     public void test_lockClusterState_nullInitiator() {
-        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), null, TXN, 1000, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), null, TXN, 1000, MEMBERLIST_VERSION,
+                PARTITION_STAMP);
     }
 
     @Test(expected = NullPointerException.class)
     public void test_lockClusterState_nullTransactionId() throws Exception {
         Address initiator = newAddress();
-        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, null, 1000, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, null, 1000, MEMBERLIST_VERSION,
+                PARTITION_STAMP);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_lockClusterState_nonPositiveLeaseTime() throws Exception {
         Address initiator = newAddress();
-        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, -1000, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, -1000, MEMBERLIST_VERSION,
+                PARTITION_STAMP);
     }
 
     @Test
     public void test_lockClusterState_success() throws Exception {
         Address initiator = newAddress();
-        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, 1000, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, 1000, MEMBERLIST_VERSION,
+                PARTITION_STAMP);
 
         assertLockedBy(initiator);
     }
@@ -169,9 +173,9 @@ public class ClusterStateManagerTest {
     public void test_lockClusterState_fail() throws Exception {
         Address initiator = newAddress();
         ClusterStateChange newState = ClusterStateChange.from(FROZEN);
-        clusterStateManager.lockClusterState(newState, initiator, TXN, 1000, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(newState, initiator, TXN, 1000, MEMBERLIST_VERSION, PARTITION_STAMP);
 
-        clusterStateManager.lockClusterState(newState, initiator, ANOTHER_TXN, 1000, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(newState, initiator, ANOTHER_TXN, 1000, MEMBERLIST_VERSION, PARTITION_STAMP);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -179,7 +183,8 @@ public class ClusterStateManagerTest {
         when(partitionService.hasOnGoingMigrationLocal()).thenReturn(true);
 
         Address initiator = newAddress();
-        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, 1000, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, 1000, MEMBERLIST_VERSION,
+                PARTITION_STAMP);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -189,7 +194,7 @@ public class ClusterStateManagerTest {
 
         Address initiator = newAddress();
         ClusterStateChange newState = ClusterStateChange.from(ACTIVE);
-        clusterStateManager.lockClusterState(newState, initiator, TXN, 1000, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(newState, initiator, TXN, 1000, MEMBERLIST_VERSION, PARTITION_STAMP);
 
         assertLockedBy(initiator);
     }
@@ -201,7 +206,7 @@ public class ClusterStateManagerTest {
 
         Address initiator = newAddress();
         ClusterStateChange newState = ClusterStateChange.from(PASSIVE);
-        clusterStateManager.lockClusterState(newState, initiator, TXN, 1000, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(newState, initiator, TXN, 1000, MEMBERLIST_VERSION, PARTITION_STAMP);
 
         assertLockedBy(initiator);
     }
@@ -218,31 +223,36 @@ public class ClusterStateManagerTest {
 
     @Test
     public void test_unlockClusterState_fail_whenLockedByElse() throws Exception {
-        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), newAddress(), TXN, 1000, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), newAddress(), TXN, 1000, MEMBERLIST_VERSION,
+                PARTITION_STAMP);
         assertFalse(clusterStateManager.rollbackClusterState(ANOTHER_TXN));
     }
 
     @Test(expected = IllegalStateException.class)
-    public void test_lockClusterState_fail_withDifferentPartitionStateVersions() throws Exception {
-        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), newAddress(), TXN, 1000, MEMBERLIST_VERSION, PARTITION_VERSION + 1);
+    public void test_lockClusterState_fail_withDifferentPartitionStateStamps() throws Exception {
+        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), newAddress(), TXN, 1000, MEMBERLIST_VERSION, PARTITION_STAMP
+                + 1);
     }
 
     @Test(expected = IllegalStateException.class)
     public void test_lockClusterState_fail_withDifferentMemberListVersions() throws Exception {
         clusterStateManager.clusterVersion = Versions.CURRENT_CLUSTER_VERSION;
-        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), newAddress(), TXN, 1000, MEMBERLIST_VERSION - 1, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), newAddress(), TXN, 1000, MEMBERLIST_VERSION - 1,
+                PARTITION_STAMP);
     }
 
     @Test
     public void test_unlockClusterState_success() throws Exception {
-        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), newAddress(), TXN, 1000, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), newAddress(), TXN, 1000, MEMBERLIST_VERSION,
+                PARTITION_STAMP);
         assertTrue(clusterStateManager.rollbackClusterState(TXN));
     }
 
     @Test
     public void test_lockClusterState_getLockExpiryTime() throws Exception {
         Address initiator = newAddress();
-        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, TimeUnit.DAYS.toMillis(1), MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, TimeUnit.DAYS.toMillis(1), MEMBERLIST_VERSION,
+                PARTITION_STAMP);
 
         LockGuard stateLock = clusterStateManager.getStateLock();
         assertTrue(Clock.currentTimeMillis() + TimeUnit.HOURS.toMillis(12) < stateLock.getLockExpiryTime());
@@ -251,8 +261,10 @@ public class ClusterStateManagerTest {
     @Test
     public void test_lockClusterState_extendLease() throws Exception {
         Address initiator = newAddress();
-        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, 10000, MEMBERLIST_VERSION, PARTITION_VERSION);
-        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, TimeUnit.DAYS.toMillis(1), MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, 10000, MEMBERLIST_VERSION,
+                PARTITION_STAMP);
+        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, TimeUnit.DAYS.toMillis(1), MEMBERLIST_VERSION,
+                PARTITION_STAMP);
 
         LockGuard stateLock = clusterStateManager.getStateLock();
         assertTrue(Clock.currentTimeMillis() + TimeUnit.HOURS.toMillis(12) < stateLock.getLockExpiryTime());
@@ -268,7 +280,8 @@ public class ClusterStateManagerTest {
 
     @Test
     public void test_lockClusterState_expiry() throws Exception {
-        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), newAddress(), TXN, 1, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), newAddress(), TXN, 1, MEMBERLIST_VERSION,
+                PARTITION_STAMP);
         assertTrueEventually(() -> {
             LockGuard stateLock = clusterStateManager.getStateLock();
             assertFalse(stateLock.isLocked());
@@ -299,7 +312,8 @@ public class ClusterStateManagerTest {
     @Test(expected = TransactionException.class)
     public void test_changeLocalClusterState_fail_whenLockedByElse() throws Exception {
         Address initiator = newAddress();
-        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, 10000, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, 10000, MEMBERLIST_VERSION,
+                PARTITION_STAMP);
         clusterStateManager.commitClusterState(ClusterStateChange.from(FROZEN), initiator, ANOTHER_TXN);
     }
 
@@ -307,7 +321,7 @@ public class ClusterStateManagerTest {
     public void test_changeLocalClusterState_success() throws Exception {
         ClusterStateChange newState = ClusterStateChange.from(FROZEN);
         Address initiator = newAddress();
-        clusterStateManager.lockClusterState(newState, initiator, TXN, 10000, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(newState, initiator, TXN, 10000, MEMBERLIST_VERSION, PARTITION_STAMP);
         clusterStateManager.commitClusterState(newState, initiator, TXN);
 
         assertEquals(newState.getNewState(), clusterStateManager.getState());
@@ -319,7 +333,7 @@ public class ClusterStateManagerTest {
     public void changeLocalClusterState_shouldChangeNodeStateToShuttingDown_whenStateBecomes_PASSIVE() throws Exception {
         ClusterStateChange newState = ClusterStateChange.from(PASSIVE);
         Address initiator = newAddress();
-        clusterStateManager.lockClusterState(newState, initiator, TXN, 10000, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(newState, initiator, TXN, 10000, MEMBERLIST_VERSION, PARTITION_STAMP);
         clusterStateManager.commitClusterState(newState, initiator, TXN);
 
         assertEquals(newState.getNewState(), clusterStateManager.getState());
@@ -331,7 +345,7 @@ public class ClusterStateManagerTest {
         ClusterStateChange newState = ClusterStateChange.from(ACTIVE);
         Address initiator = newAddress();
         clusterStateManager.initialClusterState(FROZEN, CURRENT_CLUSTER_VERSION);
-        clusterStateManager.lockClusterState(newState, initiator, TXN, 10000, MEMBERLIST_VERSION, PARTITION_VERSION);
+        clusterStateManager.lockClusterState(newState, initiator, TXN, 10000, MEMBERLIST_VERSION, PARTITION_STAMP);
         clusterStateManager.commitClusterState(newState, initiator, TXN);
 
         assertEquals(newState.getNewState(), clusterStateManager.getState());

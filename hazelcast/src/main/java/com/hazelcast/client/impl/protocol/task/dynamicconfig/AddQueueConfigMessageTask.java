@@ -66,6 +66,9 @@ public class AddQueueConfigMessageTask
         }
         MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
         config.setMergePolicyConfig(mergePolicyConfig);
+        if (parameters.isPriorityComparatorClassNameExists) {
+            config.setPriorityComparatorClassName(parameters.priorityComparatorClassName);
+        }
         return config;
     }
 

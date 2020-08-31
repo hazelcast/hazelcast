@@ -17,6 +17,7 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
@@ -26,6 +27,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -55,7 +57,12 @@ public class PublishCompletedMigrationsOperation extends AbstractPartitionOperat
     @Override
     public void run() {
         InternalPartitionServiceImpl service = getService();
-        success = service.applyCompletedMigrations(completedMigrations, getCallerAddress());
+        Version version = getNodeEngine().getClusterService().getClusterVersion();
+        if (version.isGreaterOrEqual(Versions.V4_1)) {
+            success = service.applyCompletedMigrations(completedMigrations, getCallerAddress());
+        } else {
+            success = service.applyCompletedMigrationsLegacy(completedMigrations, getCallerAddress());
+        }
     }
 
     @Override

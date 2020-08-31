@@ -34,7 +34,7 @@ import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequest;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncResponse;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRetryResponse;
 import com.hazelcast.internal.partition.operation.PartitionStateOperation;
-import com.hazelcast.internal.partition.operation.PartitionStateVersionCheckOperation;
+import com.hazelcast.internal.partition.operation.PartitionStateCheckOperation;
 import com.hazelcast.internal.partition.operation.PromotionCommitOperation;
 import com.hazelcast.internal.partition.operation.PublishCompletedMigrationsOperation;
 import com.hazelcast.internal.partition.operation.SafeStateCheckOperation;
@@ -74,7 +74,7 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
     public static final int NON_FRAGMENTED_SERVICE_NAMESPACE = 18;
     public static final int PARTITION_REPLICA = 19;
     public static final int PUBLISH_COMPLETED_MIGRATIONS = 20;
-    public static final int PARTITION_STATE_VERSION_CHECK_OP = 21;
+    public static final int PARTITION_STATE_CHECK_OP = 21;
     public static final int REPLICA_MIGRATION_EVENT = 22;
     public static final int MIGRATION_EVENT = 23;
     public static final int PARTITION_LOST_EVENT = 24;
@@ -110,7 +110,7 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
         constructors[NON_FRAGMENTED_SERVICE_NAMESPACE] = arg -> NonFragmentedServiceNamespace.INSTANCE;
         constructors[PARTITION_REPLICA] = arg -> new PartitionReplica();
         constructors[PUBLISH_COMPLETED_MIGRATIONS] = arg -> new PublishCompletedMigrationsOperation();
-        constructors[PARTITION_STATE_VERSION_CHECK_OP] = arg -> new PartitionStateVersionCheckOperation();
+        constructors[PARTITION_STATE_CHECK_OP] = arg -> new PartitionStateCheckOperation();
         constructors[REPLICA_MIGRATION_EVENT] = arg -> new ReplicaMigrationEventImpl();
         constructors[MIGRATION_EVENT] = arg -> new MigrationStateImpl();
         constructors[PARTITION_LOST_EVENT] = arg -> new PartitionLostEventImpl();

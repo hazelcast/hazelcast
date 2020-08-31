@@ -16,55 +16,95 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.IQueue;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.collection.impl.queue.model.VersionedObject;
+import com.hazelcast.collection.impl.queue.model.VersionedObjectComparator;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.TestUtil;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueueMigrationTest extends HazelcastTestSupport {
 
-    private IQueue<Object> queue;
-    private HazelcastInstance remote1;
-    private HazelcastInstance remote2;
+    private TestHazelcastInstanceFactory factory;
+    private HazelcastInstance ownerMember;
+    private String queueName;
+
+    @Parameterized.Parameters(name = "comparatorClassName: {0}")
+    public static Collection<Object> parameters() {
+        return Arrays.asList(new Object[]{null, VersionedObjectComparator.class.getName()});
+    }
+
+    @Parameterized.Parameter
+    public String comparatorClassName;
 
     @Before
     public void setup() {
-        HazelcastInstance[] cluster = createHazelcastInstanceFactory(3).newInstances();
-        HazelcastInstance local = cluster[0];
-        remote1 = cluster[1];
-        remote2 = cluster[2];
-
-        String name = randomNameOwnedBy(remote1);
-        queue = local.getQueue(name);
+        Config config = smallInstanceConfig();
+        config.getQueueConfig("default")
+              .setPriorityComparatorClassName(comparatorClassName);
+        factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance[] cluster = factory.newInstances(config);
+        ownerMember = cluster[1];
+        queueName = randomNameOwnedBy(ownerMember);
     }
 
     @Test
-    public void test() {
-        List<Object> expectedItems = new LinkedList<Object>();
+    public void testMigration() {
+        testReplication(false);
+    }
+
+    @Test
+    public void testPromotion() {
+        testReplication(true);
+    }
+
+    private void testReplication(boolean terminateOwner) {
+        List<VersionedObject<Integer>> expectedItems = new LinkedList<>();
+        IQueue<Object> queue = getRandomInstance().getQueue(queueName);
         for (int i = 0; i < 100; i++) {
-            queue.add(i);
-            expectedItems.add(i);
+            queue.add(new VersionedObject<>(i, i));
+            expectedItems.add(new VersionedObject<>(i, i));
         }
 
-        remote1.shutdown();
-        remote2.shutdown();
+        if (terminateOwner) {
+            TestUtil.terminateInstance(ownerMember);
+        } else {
+            ownerMember.shutdown();
+        }
+        getRandomInstance().shutdown();
+        queue = getRandomInstance().getQueue(queueName);
 
         assertEquals(expectedItems.size(), queue.size());
-        List actualItems = Arrays.asList(queue.toArray());
+        @SuppressWarnings("unchecked")
+        VersionedObject<Integer>[] a = queue.toArray(new VersionedObject[0]);
+        List<VersionedObject<Integer>> actualItems = Arrays.asList(a);
         assertEquals(expectedItems, actualItems);
+    }
+
+    private HazelcastInstance getRandomInstance() {
+        HazelcastInstance[] instances = factory.getAllHazelcastInstances().toArray(new HazelcastInstance[0]);
+        Random rnd = new Random();
+        return instances[rnd.nextInt(instances.length)];
     }
 }

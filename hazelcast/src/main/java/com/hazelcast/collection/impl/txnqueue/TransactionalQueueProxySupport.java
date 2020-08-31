@@ -143,7 +143,7 @@ public abstract class TransactionalQueueProxySupport<E>
                     offeredQueue.poll();
                     removeFromRecord(reservedOffer.getItemId());
                     itemIdSet.remove(reservedOffer.getItemId());
-                    return reservedOffer.getData();
+                    return reservedOffer.getSerializedObject();
                 }
                 //
                 if (!itemIdSet.add(item.getItemId())) {
@@ -151,7 +151,7 @@ public abstract class TransactionalQueueProxySupport<E>
                 }
                 TxnPollOperation txnPollOperation = new TxnPollOperation(name, item.getItemId());
                 putToRecord(txnPollOperation);
-                return item.getData();
+                return item.getSerializedObject();
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -168,9 +168,9 @@ public abstract class TransactionalQueueProxySupport<E>
             QueueItem item = future.get();
             if (item != null) {
                 if (offer != null && item.getItemId() == offer.getItemId()) {
-                    return offer.getData();
+                    return offer.getSerializedObject();
                 }
-                return item.getData();
+                return item.getSerializedObject();
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);

@@ -16,21 +16,25 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
+import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionEventManager;
+import com.hazelcast.internal.partition.impl.PartitionStateManager;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -42,10 +46,10 @@ import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.internal.util.Preconditions;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -147,24 +151,35 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
                     + "This is only expected when promotion is retried to an unresponsive destination.");
         }
 
-        ILogger logger = getLogger();
-        int partitionStateVersion = partitionService.getPartitionStateVersion();
-        if (partitionState.getVersion() <= partitionStateVersion) {
-            logger.warning("Already applied promotions to the partition state. Promotion state version: "
-                    + partitionState.getVersion() + ", current version: " + partitionStateVersion);
-            partitionService.getMigrationManager().releasePromotionPermit();
-            success = true;
-            return CallStatus.RESPONSE;
+        long partitionStateStamp;
+        if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
+            partitionStateStamp = partitionService.getPartitionStateStamp();
+            if (partitionState.getStamp() == partitionStateStamp) {
+                return alreadyAppliedAllPromotions();
+            }
+        } else {
+            //RU_COMPAT_4_0
+            partitionStateStamp = partitionService.getPartitionStateVersion();
+            if (partitionState.getVersion() <= partitionStateStamp) {
+                return alreadyAppliedAllPromotions();
+            }
         }
 
+        filterAlreadyAppliedPromotions();
+        if (promotions.isEmpty()) {
+            return alreadyAppliedAllPromotions();
+        }
+
+        ILogger logger = getLogger();
         migrationState = new MigrationStateImpl(Clock.currentTimeMillis(), promotions.size(), 0, 0L);
         partitionService.getMigrationInterceptor().onPromotionStart(MigrationParticipant.DESTINATION, promotions);
         partitionService.getPartitionEventManager().sendMigrationProcessStartedEvent(migrationState);
 
         if (logger.isFineEnabled()) {
             logger.fine("Submitting BeforePromotionOperations for " + promotions.size() + " promotions. "
-                    + "Promotion partition state version: " + partitionState.getVersion()
-                    + ", current partition state version: " + partitionStateVersion);
+                    + "Promotion partition state stamp: " + partitionState.getStamp()
+                    + ", current partition state stamp: " + partitionStateStamp
+            );
         }
 
         PromotionOperationCallback beforePromotionsCallback = new BeforePromotionOperationCallback(this, promotions.size());
@@ -180,6 +195,35 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         return CallStatus.VOID;
     }
 
+    private CallStatus alreadyAppliedAllPromotions() {
+        getLogger().warning("Already applied all promotions to the partition state. Promotion state stamp: "
+                + partitionState.getStamp());
+        InternalPartitionServiceImpl partitionService = getService();
+        partitionService.getMigrationManager().releasePromotionPermit();
+        success = true;
+        return CallStatus.RESPONSE;
+    }
+
+    private void filterAlreadyAppliedPromotions() {
+        if (getNodeEngine().getClusterService().getClusterVersion().isUnknownOrLessOrEqual(Versions.V4_0)) {
+            return;
+        }
+
+        ILogger logger = getLogger();
+        InternalPartitionServiceImpl partitionService = getService();
+        PartitionStateManager stateManager = partitionService.getPartitionStateManager();
+        Iterator<MigrationInfo> iter = promotions.iterator();
+        while (iter.hasNext()) {
+            MigrationInfo promotion = iter.next();
+            InternalPartitionImpl partition = stateManager.getPartitionImpl(promotion.getPartitionId());
+
+            if (partition.version() >= promotion.getFinalPartitionVersion()) {
+                logger.fine("Already applied promotion commit. -> " + promotion);
+                iter.remove();
+            }
+        }
+    }
+
     /** Processes the sent partition state and sends {@link FinalizePromotionOperation} for all promotions. */
     private void finalizePromotion() {
         NodeEngine nodeEngine = getNodeEngine();
@@ -192,13 +236,15 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         ILogger logger = getLogger();
         if (!success) {
             logger.severe("Promotion of " + promotions.size() + " partitions failed. "
-                    + ". Promotion partition state version: " + partitionState.getVersion()
-                    + ", current partition state version: " + partitionService.getPartitionStateVersion());
+                    + ". Promotion partition state stamp: " + partitionState.getStamp()
+                    + ", current partition state stamp: " + partitionService.getPartitionStateStamp()
+            );
         }
         if (logger.isFineEnabled()) {
             logger.fine("Submitting FinalizePromotionOperations for " + promotions.size() + " promotions. Result: " + success
-                    + ". Promotion partition state version: " + partitionState.getVersion()
-                    + ", current partition state version: " + partitionService.getPartitionStateVersion());
+                    + ". Promotion partition state stamp: " + partitionState.getStamp()
+                    + ", current partition state stamp: " + partitionService.getPartitionStateStamp()
+            );
         }
 
         PromotionOperationCallback finalizePromotionsCallback = new FinalizePromotionOperationCallback(this, promotions.size());

@@ -27,7 +27,6 @@ import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.internal.partition.service.TestPutOperation;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -39,7 +38,6 @@ import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
@@ -83,7 +81,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
         InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(0);
-        PartitionReplica[] members = partition.getReplicas();
+        PartitionReplica[] members = partition.replicas();
 
         partition.setReplicas(new PartitionReplica[members.length]);
 
@@ -104,7 +102,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
         InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(0);
-        PartitionReplica[] members = partition.getReplicas();
+        PartitionReplica[] members = partition.replicas();
 
         PartitionReplica[] illegalMembers = Arrays.copyOf(members, members.length);
         Address address = members[0].address();
@@ -154,7 +152,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
         InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(0);
-        PartitionReplica[] members = partition.getReplicas();
+        PartitionReplica[] members = partition.replicas();
 
         PartitionReplica[] illegalMembers = Arrays.copyOf(members, members.length);
         Address address = members[0].address();
@@ -177,28 +175,20 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(1);
         MigrationManager migrationManager = partitionService.getMigrationManager();
-        migrationManager.schedule(new MigrationRunnable() {
-            @Override
-            public void run() {
-                try {
-                    latch.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        migrationManager.schedule(() -> {
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         });
 
-        final PartitionReplicaStateChecker replicaStateChecker = partitionService.getPartitionReplicaStateChecker();
+        PartitionReplicaStateChecker replicaStateChecker = partitionService.getPartitionReplicaStateChecker();
 
         assertEquals(PartitionServiceState.MIGRATION_LOCAL, replicaStateChecker.getPartitionServiceState());
 
         latch.countDown();
-        assertEqualsEventually(new Callable<PartitionServiceState>() {
-            @Override
-            public PartitionServiceState call() throws Exception {
-                return replicaStateChecker.getPartitionServiceState();
-            }
-        }, PartitionServiceState.SAFE);
+        assertEqualsEventually(replicaStateChecker::getPartitionServiceState, PartitionServiceState.SAFE);
     }
 
     @Test
@@ -237,12 +227,9 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
         addReplicaSyncPermits(partitionService1, maxPermits);
         addReplicaSyncPermits(partitionService2, maxPermits);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(PartitionServiceState.SAFE, replicaStateChecker1.getPartitionServiceState());
-                assertEquals(PartitionServiceState.SAFE, replicaStateChecker2.getPartitionServiceState());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(PartitionServiceState.SAFE, replicaStateChecker1.getPartitionServiceState());
+            assertEquals(PartitionServiceState.SAFE, replicaStateChecker2.getPartitionServiceState());
         });
     }
 
