@@ -43,6 +43,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         environmentVariables
           .set("HZ_CLUSTERNAME", "test")
           .set("HZ_NETWORK_JOIN_AUTODETECTION_ENABLED", "false")
+          .set("HZ_CACHE_DEFAULT_KEYTYPE_CLASSNAME", "java.lang.Object")
           .set("HZ_EXECUTORSERVICE_CUSTOM_POOLSIZE", "42");
 
         Config config = new Config();
@@ -50,6 +51,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
 
         assertEquals("test", config.getClusterName());
         assertEquals(42, config.getExecutorConfig("custom").getPoolSize());
+        assertEquals("java.lang.Object", config.getCacheConfig("default").getKeyType());
         assertFalse(config.getNetworkConfig().getJoin().isAutoDetectionEnabled());
     }
 

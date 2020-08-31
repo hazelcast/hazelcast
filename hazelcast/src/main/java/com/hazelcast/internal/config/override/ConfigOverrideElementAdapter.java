@@ -370,7 +370,9 @@ class ConfigOverrideElementAdapter implements Element {
 
         @Override
         public Node getNamedItem(String name) {
-            return new ConfigOverrideElementAdapter(configNode.getChildren().get(name));
+            return configNode.getChildren().get(name) == null
+              ? null
+              : new ConfigOverrideElementAdapter(configNode.getChildren().get(name));
         }
 
         @Override
