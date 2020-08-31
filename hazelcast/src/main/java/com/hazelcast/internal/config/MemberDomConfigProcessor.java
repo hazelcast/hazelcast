@@ -369,29 +369,23 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         boolean enabled = getBooleanValue(getTextContent(attrEnabled));
         dcConfig.setEnabled(enabled);
 
-        String classCacheModeName = "class-cache-mode";
-        String providerModeName = "provider-mode";
-        String blacklistPrefixesName = "blacklist-prefixes";
-        String whitelistPrefixesName = "whitelist-prefixes";
-        String providerFilterName = "provider-filter";
-
         for (Node n : childElements(dcRoot)) {
             String name = cleanNodeName(n);
-            if (matches(classCacheModeName, name)) {
+            if (matches("class-cache-mode", name)) {
                 String value = getTextContent(n);
                 UserCodeDeploymentConfig.ClassCacheMode classCacheMode = UserCodeDeploymentConfig.ClassCacheMode.valueOf(value);
                 dcConfig.setClassCacheMode(classCacheMode);
-            } else if (matches(providerModeName, name)) {
+            } else if (matches("provider-mode", name)) {
                 String value = getTextContent(n);
                 UserCodeDeploymentConfig.ProviderMode providerMode = UserCodeDeploymentConfig.ProviderMode.valueOf(value);
                 dcConfig.setProviderMode(providerMode);
-            } else if (matches(blacklistPrefixesName, name)) {
+            } else if (matches("blacklist-prefixes", name)) {
                 String value = getTextContent(n);
                 dcConfig.setBlacklistedPrefixes(value);
-            } else if (matches(whitelistPrefixesName, name)) {
+            } else if (matches("whitelist-prefixes", name)) {
                 String value = getTextContent(n);
                 dcConfig.setWhitelistedPrefixes(value);
-            } else if (matches(providerFilterName, name)) {
+            } else if (matches("provider-filter", name)) {
                 String value = getTextContent(n);
                 dcConfig.setProviderFilter(value);
             }
@@ -407,8 +401,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         String parallelismName = "parallelism";
         String validationTimeoutName = "validation-timeout-seconds";
         String dataLoadTimeoutName = "data-load-timeout-seconds";
-        String clusterDataRecoveryPolicyName = "cluster-data-recovery-policy";
-        String autoRemoveStaleDataName = "auto-remove-stale-data";
 
         for (Node n : childElements(hrRoot)) {
             String name = cleanNodeName(n);
@@ -426,9 +418,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     hrConfig.setValidationTimeoutSeconds(getIntegerValue(validationTimeoutName, value));
                 } else if (matches(dataLoadTimeoutName, name)) {
                     hrConfig.setDataLoadTimeoutSeconds(getIntegerValue(dataLoadTimeoutName, value));
-                } else if (matches(clusterDataRecoveryPolicyName, name)) {
+                } else if (matches("cluster-data-recovery-policy", name)) {
                     hrConfig.setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy.valueOf(upperCaseInternal(value)));
-                } else if (matches(autoRemoveStaleDataName, name)) {
+                } else if (matches("auto-remove-stale-data", name)) {
                     hrConfig.setAutoRemoveStaleData(getBooleanValue(value));
                 }
             }
