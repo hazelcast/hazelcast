@@ -247,12 +247,17 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
             FunctionEx<String, Long> timestampFn = line -> Long.valueOf(line.substring(LINE_PREFIX.length()));
 
             int lateness = 10;
+            long lastExpectedTs = itemCount - lateness;
             StreamSource<String> socketSource = SourceBuilder
                     .timestampedStream("socket-source-with-timestamps", ctx -> socketReader(localPort))
                     .<String>fillBufferFn((in, buf) -> {
                         String line = in.readLine();
                         if (line != null) {
-                            buf.add(line, timestampFn.apply(line));
+                            long ts = timestampFn.apply(line);
+                            buf.add(line, ts);
+                            if (ts >= lastExpectedTs) {
+                                System.out.println(line);
+                            }
                         }
                     })
                     .destroyFn(BufferedReader::close)
