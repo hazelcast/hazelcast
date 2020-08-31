@@ -33,7 +33,7 @@ import static java.lang.String.format;
 
 /**
  * A class used to process external configuration overrides coming from environment variables/system properties,
- * and applying them over existing {@link Config}/{@link ClientConfig} configuration
+ * and applying them over existing {@link Config}/{@link ClientConfig} configuration.
  */
 public class ExternalConfigurationOverride {
 

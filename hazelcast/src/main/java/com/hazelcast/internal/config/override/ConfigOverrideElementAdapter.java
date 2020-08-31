@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Class adapting {@link ConfigNode}s to {@link Element}.
+ * A class adapting {@link ConfigNode}s to {@link Element}.
  * <p>
  * Used for processing external configuration overrides.
  */

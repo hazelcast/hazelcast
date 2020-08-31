@@ -22,7 +22,7 @@ import java.util.Map;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * A utility class converting raw input properties into valid config entries
+ * A utility class converting raw input properties into valid config entries.
  */
 class EnvVariablesConfigParser {
     private static final List<String> EXCLUDED_ENTRIES = Arrays.asList(

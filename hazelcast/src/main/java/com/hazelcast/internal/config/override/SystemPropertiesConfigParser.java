@@ -22,7 +22,7 @@ import java.util.Properties;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * A utility class converting raw input properties into valid config entries
+ * A utility class converting raw input properties into valid config entries.
  */
 class SystemPropertiesConfigParser {
     private final String prefix;

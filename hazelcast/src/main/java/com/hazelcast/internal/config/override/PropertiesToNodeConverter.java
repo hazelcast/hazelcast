@@ -23,6 +23,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * A utility class converting a set of key-value pairs into a {@link ConfigNode} tree
+ */
 final class PropertiesToNodeConverter {
 
     private PropertiesToNodeConverter() {
@@ -40,7 +43,7 @@ final class PropertiesToNodeConverter {
 
     private static String findRootNode(Map<String, String> properties) {
         Set<String> rootNodeNames = properties.keySet().stream()
-          .map(key -> firstNodeOf(key))
+          .map(PropertiesToNodeConverter::firstNodeOf)
           .collect(Collectors.toSet());
 
         if (rootNodeNames.size() > 1) {

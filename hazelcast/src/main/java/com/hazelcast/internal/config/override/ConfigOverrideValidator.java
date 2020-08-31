@@ -24,7 +24,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Validation mechanism used to make sure that external configuration features is legal.
+ * Validation mechanism used to make sure
+ * that external configuration (coming from env/system properties) features is valid.
  */
 final class ConfigOverrideValidator {
 

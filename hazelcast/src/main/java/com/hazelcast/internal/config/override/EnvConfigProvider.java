@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- * A {@link ConfigProvider} extracting config entries from environment variables
+ * A {@link ConfigProvider} extracting config entries from environment variables.
  */
 class EnvConfigProvider implements ConfigProvider {
 

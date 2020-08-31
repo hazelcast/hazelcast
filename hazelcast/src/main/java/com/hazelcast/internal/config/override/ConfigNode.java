@@ -23,6 +23,8 @@ import java.util.Optional;
 
 /**
  * A representation of a single generic configuration node.
+ *
+ * Used while overriding configuration with environment variables/system properties.
  */
 class ConfigNode {
     private final ConfigNode parent;
