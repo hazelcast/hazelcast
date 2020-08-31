@@ -85,6 +85,11 @@ public class ClientConfig {
     private LoadBalancer loadBalancer;
 
     /**
+     * Load balancer class name. Used internally with declarative configuration.
+     */
+    private String loadBalancerClassName;
+
+    /**
      * List of listeners that Hazelcast will automatically add as a part of initialization process.
      * Currently only supports {@link com.hazelcast.core.LifecycleListener}.
      */
@@ -128,6 +133,7 @@ public class ClientConfig {
         securityConfig = new ClientSecurityConfig(config.securityConfig);
         networkConfig = new ClientNetworkConfig(config.networkConfig);
         loadBalancer = config.loadBalancer;
+        loadBalancerClassName = config.loadBalancerClassName;
         listenerConfigs = new LinkedList<>();
         for (ListenerConfig listenerConfig : config.listenerConfigs) {
             listenerConfigs.add(new ListenerConfig(listenerConfig));
@@ -611,6 +617,29 @@ public class ClientConfig {
     }
 
     /**
+     * Gets load balancer class name
+     *
+     * @return load balancer class name
+     * @see com.hazelcast.client.LoadBalancer
+     */
+    public String getLoadBalancerClassName() {
+        return loadBalancerClassName;
+    }
+
+    /**
+     * Sets load balancer class name
+     *
+     * @param loadBalancerClassName {@link LoadBalancer}
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     * @see com.hazelcast.client.LoadBalancer
+     */
+    public ClientConfig setLoadBalancerClassName(String loadBalancerClassName) {
+        this.loadBalancerClassName = loadBalancerClassName;
+        return this;
+    }
+
+
+    /**
      * Gets the classLoader
      *
      * @return configured classLoader, null if not yet configured
@@ -923,7 +952,7 @@ public class ClientConfig {
     @Override
     public int hashCode() {
         return Objects.hash(backupAckToClientEnabled, classLoader, clusterName, configPatternMatcher, connectionStrategyConfig,
-                flakeIdGeneratorConfigMap, instanceName, labels, listenerConfigs, loadBalancer,
+                flakeIdGeneratorConfigMap, instanceName, labels, listenerConfigs, loadBalancer, loadBalancerClassName,
                 managedContext, metricsConfig, nativeMemoryConfig, nearCacheConfigMap, networkConfig, properties,
                 proxyFactoryConfigs, queryCacheConfigs, reliableTopicConfigMap, securityConfig, serializationConfig,
                 userCodeDeploymentConfig, userContext);
@@ -949,6 +978,7 @@ public class ClientConfig {
                 && Objects.equals(flakeIdGeneratorConfigMap, other.flakeIdGeneratorConfigMap)
                 && Objects.equals(instanceName, other.instanceName) && Objects.equals(labels, other.labels)
                 && Objects.equals(listenerConfigs, other.listenerConfigs) && Objects.equals(loadBalancer, other.loadBalancer)
+                && Objects.equals(loadBalancerClassName, other.loadBalancerClassName)
                 && Objects.equals(managedContext, other.managedContext) && Objects.equals(metricsConfig, other.metricsConfig)
                 && Objects.equals(nativeMemoryConfig, other.nativeMemoryConfig)
                 && Objects.equals(nearCacheConfigMap, other.nearCacheConfigMap)
@@ -970,6 +1000,7 @@ public class ClientConfig {
                 + ", securityConfig=" + securityConfig
                 + ", networkConfig=" + networkConfig
                 + ", loadBalancer=" + loadBalancer
+                + ", loadBalancerClassName=" + loadBalancerClassName
                 + ", listenerConfigs=" + listenerConfigs
                 + ", instanceName='" + instanceName + '\''
                 + ", configPatternMatcher=" + configPatternMatcher

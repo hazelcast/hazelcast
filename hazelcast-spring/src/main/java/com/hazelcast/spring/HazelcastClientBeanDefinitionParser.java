@@ -354,7 +354,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 String className = classNameNode != null ? getTextContent(classNameNode) : null;
                 Node implNode = attributes.getNamedItem("implementation");
                 String implementation = implNode != null ? getTextContent(implNode) : null;
-                isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation'"
+                isTrue(className != null ^ implementation != null, "Exactly one of 'class-name' or 'implementation'"
                     + " attributes is required to create LoadBalancer!");
                 if (className != null) {
                     BeanDefinitionBuilder loadBalancerBeanDefinition = createBeanBuilder(className);
