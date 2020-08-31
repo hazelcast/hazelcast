@@ -628,23 +628,38 @@ hazelcast:
         enabled: false
         access-key: my-access-key
         secret-key: my-secret-key
-        iam-role: dummy
         region: us-west-1
         host-header: ec2.amazonaws.com
+        connection-timeout-seconds: 7
+        read-timeout-seconds: 7
+        connection-retries: 4
+        hz-port: 5701-5710
         security-group-name: hazelcast-sg
         tag-key: type
         tag-value: hz-nodes
+        iam-role: dummy
+        cluster: my-cluster
+        family: test-family
+        service-name: test-service
       gcp:
         enabled: false
-        zones: us-east1-b,us-east1-c
+        private-key-path: key-path
+        projects: project-1,project-2
+        region: us-central1
+        zones: us-central1-b,us-central1-c
+        label: key=value
+        hz-port: 5701-5710
       azure:
         enabled: false
+        instance-metadata-available: false
         client-id: CLIENT_ID
         client-secret: CLIENT_SECRET
         tenant-id: TENANT_ID
         subscription-id: SUB_ID
-        cluster-id: HZLCAST001
-        group-name: RESOURCE-GROUP-NAME
+        resource-group: RESOURCE-GROUP-NAME
+        scale-set: SCALE-SET-NAME
+        tag: TAG-NAME=HZLCAST001
+        hz-port: 5701-5705
       kubernetes:
         enabled: false
         namespace: MY-KUBERNETES-NAMESPACE
