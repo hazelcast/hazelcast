@@ -19,6 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -86,5 +87,8 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
         assertEquals(6, config.getMapConfig("map1").getBackupCount());
         assertFalse(config.getMapConfig("map1").isStatisticsEnabled());
         assertEquals(64, config.getNativeMemoryConfig().getSize().getValue());
+        QueueConfig testQueue = config.getQueueConfig("testQueue");
+        assertEquals("com.hazelcast.collection.impl.queue.model.PriorityElementComparator",
+                testQueue.getPriorityComparatorClassName());
     }
 }

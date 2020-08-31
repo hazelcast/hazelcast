@@ -608,6 +608,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void readQueueConfig() {
         String xml = HAZELCAST_START_TAG
                 + "      <queue name=\"custom\">"
+                + "        <priority-comparator-class-name>com.hazelcast.collection.impl.queue.model.PriorityElementComparator</priority-comparator-class-name>"
                 + "        <statistics-enabled>false</statistics-enabled>"
                 + "        <max-size>100</max-size>"
                 + "        <backup-count>2</backup-count>"
@@ -631,6 +632,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         Config config = buildConfig(xml);
         QueueConfig queueConfig = config.getQueueConfig("custom");
+        assertEquals("com.hazelcast.collection.impl.queue.model.PriorityElementComparator",
+                queueConfig.getPriorityComparatorClassName());
         assertFalse(queueConfig.isStatisticsEnabled());
         assertEquals(100, queueConfig.getMaxSize());
         assertEquals(2, queueConfig.getBackupCount());

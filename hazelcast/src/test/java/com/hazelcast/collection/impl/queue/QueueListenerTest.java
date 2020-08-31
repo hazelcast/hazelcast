@@ -19,13 +19,16 @@ package com.hazelcast.collection.impl.queue;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
+import com.hazelcast.collection.impl.queue.model.VersionedObject;
+import com.hazelcast.collection.impl.queue.model.VersionedObjectComparator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,7 +36,10 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -43,21 +49,22 @@ import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueueListenerTest extends HazelcastTestSupport {
 
-    private static final String QUEUE_NAME = "Q";
-    private static final int TOTAL_QUEUE_PUT = 2000;
+    @Parameterized.Parameters(name = "comparatorClassName: {0}")
+    public static Collection<Object> parameters() {
+        return Arrays.asList(new Object[]{null, VersionedObjectComparator.class.getName()});
+    }
 
-    private final CountdownItemListener countdownItemListener = new CountdownItemListener(TOTAL_QUEUE_PUT, 0);
-    private final ItemListenerConfig itemListenerConfig = new ItemListenerConfig();
-    private final QueueConfig queueConfig = new QueueConfig();
-    private final Config config = new Config();
+    @Parameterized.Parameter
+    public String comparatorClassName;
 
     @Test
     public void testListener_withEvictionViaTTL() throws Exception {
-        Config config = new Config();
+        Config config = getConfig();
         config.getQueueConfig("queueWithTTL").setEmptyQueueTtl(0);
         HazelcastInstance hz = createHazelcastInstance(config);
 
@@ -74,8 +81,8 @@ public class QueueListenerTest extends HazelcastTestSupport {
             }
         });
 
-        IQueue<Object> queue = hz.getQueue("queueWithTTL");
-        queue.offer("item");
+        IQueue<VersionedObject<String>> queue = hz.getQueue("queueWithTTL");
+        queue.offer(new VersionedObject<>("item"));
         queue.poll();
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
@@ -83,7 +90,7 @@ public class QueueListenerTest extends HazelcastTestSupport {
 
     @Test
     public void testConfigListenerRegistration() throws Exception {
-        Config config = new Config();
+        Config config = getConfig();
         String name = "queue";
         QueueConfig queueConfig = config.getQueueConfig(name);
         CountdownItemListener listener = new CountdownItemListener(1, 1);
@@ -91,8 +98,8 @@ public class QueueListenerTest extends HazelcastTestSupport {
         queueConfig.addItemListenerConfig(itemListenerConfig);
         HazelcastInstance instance = createHazelcastInstance(config);
 
-        IQueue<String> queue = instance.getQueue(name);
-        queue.offer("item");
+        IQueue<VersionedObject<String>> queue = instance.getQueue(name);
+        queue.offer(new VersionedObject<>("item"));
         queue.poll();
 
         assertTrue(listener.added.await(10, TimeUnit.SECONDS));
@@ -100,56 +107,62 @@ public class QueueListenerTest extends HazelcastTestSupport {
 
     @Test
     public void testItemListener_addedToQueueConfig_Issue366() throws Exception {
-        itemListenerConfig.setImplementation(countdownItemListener);
-        itemListenerConfig.setIncludeValue(true);
+        String queueName = "Q";
+        int totalQueuePut = 2000;
+        CountdownItemListener countdownItemListener = new CountdownItemListener(totalQueuePut, 0);
 
-        queueConfig.setName(QUEUE_NAME);
-        queueConfig.addItemListenerConfig(itemListenerConfig);
-        config.addQueueConfig(queueConfig);
+        Config config = getConfig();
+        ItemListenerConfig itemListenerConfig = new ItemListenerConfig()
+                .setImplementation(countdownItemListener)
+                .setIncludeValue(true);
+
+        config.getQueueConfig(queueName)
+              .addItemListenerConfig(itemListenerConfig);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = factory.newHazelcastInstance(config);
-        IQueue<Integer> queue = instance.getQueue(QUEUE_NAME);
-        for (int i = 0; i < TOTAL_QUEUE_PUT / 2; i++) {
-            queue.put(i);
+        IQueue<VersionedObject<Integer>> queue = instance.getQueue(queueName);
+        for (int i = 0; i < totalQueuePut / 2; i++) {
+            queue.put(new VersionedObject<>(i));
         }
         HazelcastInstance second = factory.newHazelcastInstance(config);
         assertTrueEventually(() -> {
-            assertEquals(2,
-                    getNodeEngineImpl(instance).getEventService().getRegistrations(QueueService.SERVICE_NAME, QUEUE_NAME).size());
-            assertEquals(2,
-                    getNodeEngineImpl(second).getEventService().getRegistrations(QueueService.SERVICE_NAME, QUEUE_NAME).size());
+            EventService eventService1 = getNodeEngineImpl(instance).getEventService();
+            EventService eventService2 = getNodeEngineImpl(second).getEventService();
+            assertEquals(2, eventService1.getRegistrations(QueueService.SERVICE_NAME, queueName).size());
+            assertEquals(2, eventService2.getRegistrations(QueueService.SERVICE_NAME, queueName).size());
         });
-        for (int i = 0; i < TOTAL_QUEUE_PUT / 4; i++) {
-            queue.put(i);
+        for (int i = 0; i < totalQueuePut / 4; i++) {
+            queue.put(new VersionedObject<>(i));
         }
         assertOpenEventually(countdownItemListener.added);
     }
 
     @Test
     public void testListeners() throws Exception {
+        int totalQueuePut = 2000;
         String queueName = randomString();
         HazelcastInstance instance = createHazelcastInstance();
-        IQueue<String> queue = instance.getQueue(queueName);
+        IQueue<VersionedObject<String>> queue = instance.getQueue(queueName);
 
-        TestItemListener listener = new TestItemListener(TOTAL_QUEUE_PUT);
+        TestItemListener listener = new TestItemListener(totalQueuePut);
         UUID listenerId = queue.addItemListener(listener, true);
 
-        for (int i = 0; i < TOTAL_QUEUE_PUT / 2; i++) {
-            queue.offer("item-" + i);
+        for (int i = 0; i < totalQueuePut / 2; i++) {
+            queue.offer(new VersionedObject<>("item-" + i, i));
         }
-        for (int i = 0; i < TOTAL_QUEUE_PUT / 2; i++) {
+        for (int i = 0; i < totalQueuePut / 2; i++) {
             queue.poll();
         }
         assertTrue(listener.latch.await(5, TimeUnit.SECONDS));
 
         queue.removeItemListener(listenerId);
-        queue.offer("item-a");
+        queue.offer(new VersionedObject<>("item-a"));
         queue.poll();
         assertTrue(listener.notCalled.get());
     }
 
-    private static class TestItemListener implements ItemListener<String> {
+    private static class TestItemListener implements ItemListener<VersionedObject<String>> {
 
         CountDownLatch latch;
         AtomicBoolean notCalled;
@@ -162,8 +175,9 @@ public class QueueListenerTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void itemAdded(ItemEvent item) {
-            if (item.getItem().equals("item-" + offer++)) {
+        public void itemAdded(ItemEvent<VersionedObject<String>> item) {
+            int id = offer++;
+            if (item.getItem().equals(new VersionedObject<>("item-" + id, id))) {
                 latch.countDown();
             } else {
                 notCalled.set(false);
@@ -171,8 +185,9 @@ public class QueueListenerTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void itemRemoved(ItemEvent item) {
-            if (item.getItem().equals("item-" + poll++)) {
+        public void itemRemoved(ItemEvent<VersionedObject<String>> item) {
+            int id = poll++;
+            if (item.getItem().equals(new VersionedObject<>("item-" + id, id))) {
                 latch.countDown();
             } else {
                 notCalled.set(false);
@@ -180,7 +195,7 @@ public class QueueListenerTest extends HazelcastTestSupport {
         }
     }
 
-    private static class CountdownItemListener implements ItemListener {
+    private static class CountdownItemListener implements ItemListener<VersionedObject<String>> {
 
         public CountDownLatch added;
         public CountDownLatch removed;
@@ -191,13 +206,21 @@ public class QueueListenerTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void itemAdded(ItemEvent itemEvent) {
+        public void itemAdded(ItemEvent<VersionedObject<String>> itemEvent) {
             added.countDown();
         }
 
         @Override
-        public void itemRemoved(ItemEvent itemEvent) {
+        public void itemRemoved(ItemEvent<VersionedObject<String>> itemEvent) {
             removed.countDown();
         }
+    }
+
+    @Override
+    protected Config getConfig() {
+        Config config = smallInstanceConfig();
+        config.getQueueConfig("default")
+              .setPriorityComparatorClassName(comparatorClassName);
+        return config;
     }
 }

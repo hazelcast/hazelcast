@@ -128,7 +128,7 @@ public final class CollectionTestUtil {
         Queue<E> backupQueue = new LinkedList<E>();
         SerializationService serializationService = nodeEngine.getSerializationService();
         for (QueueItem queueItem : map.values()) {
-            E value = serializationService.toObject(queueItem.getData());
+            E value = serializationService.toObject(queueItem.getSerializedObject());
             backupQueue.add(value);
         }
         return backupQueue;

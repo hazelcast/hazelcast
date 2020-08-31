@@ -6518,6 +6518,8 @@ public class MemberCompatibilityNullTest_2_1 {
         assertTrue(isEqual(null, parameters.queueStoreConfig));
         assertTrue(isEqual(aString, parameters.mergePolicy));
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
+        assertTrue(parameters.isPriorityComparatorClassNameExists);
+        assertTrue(isEqual(null, parameters.priorityComparatorClassName));
     }
 
     @Test
