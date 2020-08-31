@@ -257,13 +257,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
 
-        if (occurrenceSet.contains("network")
-          && (occurrenceSet.contains("advanced-network") || occurrenceSet.contains("advancednetwork"))
-                && config.getAdvancedNetworkConfig().isEnabled()) {
-            throw new InvalidConfigurationException("Ambiguous configuration: cannot include both <network> and "
-                    + "an enabled <advanced-network> element. Configure network using one of <network> or "
-                    + "<advanced-network enabled=\"true\">.");
-        }
+        validateNetworkConfig();
     }
 
     private boolean handleNode(Node node, String nodeName) throws Exception {
@@ -3114,4 +3108,14 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
+
+    private void validateNetworkConfig() {
+        if (occurrenceSet.contains("network")
+          && occurrenceSet.stream().anyMatch(c -> matches("advanced-network", c))
+          && config.getAdvancedNetworkConfig().isEnabled()) {
+            throw new InvalidConfigurationException("Ambiguous configuration: cannot include both <network> and "
+              + "an enabled <advanced-network> element. Configure network using one of <network> or "
+              + "<advanced-network enabled=\"true\">.");
+        }
+    }
 }
