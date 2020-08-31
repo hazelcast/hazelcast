@@ -38,6 +38,7 @@ import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUserDefinedTypeNameSpec;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.fun.SqlTrimFunction;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
@@ -103,6 +104,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.CEIL);
         SUPPORTED_KINDS.add(SqlKind.FLOOR);
         SUPPORTED_KINDS.add(SqlKind.LIKE);
+        SUPPORTED_KINDS.add(SqlKind.TRIM);
 
         // Supported operators
         SUPPORTED_OPERATORS = new HashSet<>();
@@ -137,6 +139,9 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.UPPER);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CONCAT);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SUBSTRING);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LTRIM);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.RTRIM);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.BTRIM);
     }
 
     private final SqlValidatorCatalogReader catalogReader;
@@ -185,8 +190,12 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public Void visit(SqlDataTypeSpec type) {
-        if (type.getTypeNameSpec() instanceof SqlUserDefinedTypeNameSpec && HazelcastTypeSystem.isObject(type.getTypeName())) {
-            return null;
+        if (type.getTypeNameSpec() instanceof SqlUserDefinedTypeNameSpec) {
+            SqlIdentifier typeName = type.getTypeName();
+
+            if (HazelcastTypeSystem.isObject(typeName) || HazelcastTypeSystem.isTimestampWithTimeZone(typeName)) {
+                return null;
+            }
         }
 
         if (!(type.getTypeNameSpec() instanceof SqlBasicTypeNameSpec)) {
@@ -204,6 +213,9 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case REAL:
             case DOUBLE:
             case VARCHAR:
+            case DATE:
+            case TIME:
+            case TIMESTAMP:
             case NULL:
                 return null;
 
@@ -243,6 +255,15 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case ANY:
             case NULL:
                 return null;
+
+            case SYMBOL:
+                Object symbolValue = literal.getValue();
+
+                if (symbolValue instanceof SqlTrimFunction.Flag) {
+                    return null;
+                }
+
+                throw error(literal, RESOURCE.custom(symbolValue + " literal is not supported"));
 
             default:
                 throw error(literal, RESOURCE.custom(typeName + " literals are not supported"));

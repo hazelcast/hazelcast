@@ -29,9 +29,9 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -43,6 +43,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -57,6 +59,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.BDDMockito.given;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -72,8 +75,13 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
     private TestHazelcastInstanceFactory factory;
     private HazelcastInstance instance;
 
+    @Mock
+    private JetMapMetadataResolver jetMapMetadataResolver;
+
     @Before
     public void before() {
+        MockitoAnnotations.initMocks(this);
+
         factory = createHazelcastInstanceFactory(2);
 
         Config config = new Config()
@@ -277,22 +285,41 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         try {
             table.getFieldCount();
 
-            fail("Exception is not thrown: " + table.getName());
+            fail("Exception is not thrown: " + table.getSqlName());
         } catch (QueryException e) {
             assertEquals(SqlErrorCode.GENERIC, e.getCode());
             assertTrue(e.getMessage().contains("Failed to resolve value metadata"));
         }
     }
 
+    @Test
+    public void testJetMetadata() {
+        String name = "map-with-jet-metadata";
+
+        instance.getMap(name).put(1, "1");
+
+        Object keyJetMetadata = new Object();
+        Object valueJetMetadata = new Object();
+
+        given(jetMapMetadataResolver.resolveClass(Integer.class, true)).willReturn(keyJetMetadata);
+        given(jetMapMetadataResolver.resolveClass(String.class, false)).willReturn(valueJetMetadata);
+
+        Collection<Table> tables = resolver().getTables();
+        Table existingTable = getExistingTable(tables, name);
+
+        assertEquals(keyJetMetadata, ((AbstractMapTable) existingTable).getKeyJetMetadata());
+        assertEquals(valueJetMetadata, ((AbstractMapTable) existingTable).getValueJetMetadata());
+    }
+
     private PartitionedMapTableResolver resolver() {
-        return new PartitionedMapTableResolver(nodeEngine(instance));
+        return new PartitionedMapTableResolver(nodeEngine(instance), jetMapMetadataResolver);
     }
 
     private static void checkEmpty(Table table) {
         try {
             table.getFieldCount();
 
-            fail("Exception is not thrown: " + table.getName());
+            fail("Exception is not thrown: " + table.getSqlName());
         } catch (QueryException e) {
             assertEquals(SqlErrorCode.GENERIC, e.getCode());
             assertTrue(e.getMessage().contains("Cannot resolve IMap schema because it doesn't have entries on the local member"));
@@ -311,7 +338,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
 
     private static Table getTable(Collection<Table> tables, String name) {
         for (Table table : tables) {
-            if (table.getName().equals(name)) {
+            if (table.getSqlName().equals(name)) {
                 PartitionedMapTable table0 = (PartitionedMapTable) table;
 
                 assertEquals(QueryUtils.SCHEMA_NAME_PARTITIONED, table.getSchemaName());

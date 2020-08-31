@@ -16,11 +16,8 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
-import com.hazelcast.map.IMap;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -28,6 +25,7 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
@@ -48,7 +46,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.TestStringUtils;
 import org.apache.calcite.avatica.util.TimeUnit;
 import org.apache.calcite.rel.RelNode;
@@ -100,6 +97,7 @@ import static com.hazelcast.sql.impl.calcite.SqlToQueryType.map;
 import static com.hazelcast.sql.impl.calcite.SqlToQueryType.mapRowType;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedence;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
@@ -1041,7 +1039,18 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
             fields.add(new TableField(entry.getKey(), entry.getValue(), false));
         }
 
-        PartitionedMapTable table = new PartitionedMapTable("", "t", "t", fields, new ConstantTableStatistics(100), null, null);
+        PartitionedMapTable table = new PartitionedMapTable(
+            QueryUtils.SCHEMA_NAME_PARTITIONED,
+            "t",
+            "t",
+            fields,
+            new ConstantTableStatistics(100),
+            null,
+            null,
+            null,
+            null,
+            emptyList(),
+            false);
 
         HazelcastTable hazelcastTable = new HazelcastTable(table, new HazelcastTableStatistic(100));
         return OptimizerContext.create(new HazelcastSchema(singletonMap("t", hazelcastTable)),
@@ -1142,20 +1151,6 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
             args[i] = operandTransform.apply(operands[i]);
         }
         return String.format(format, args);
-    }
-
-    protected SqlService createEndToEndRecords() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
-        IMap<Integer, Record> records = factory.newHazelcastInstance(smallInstanceConfig()).getMap("records");
-
-        for (int i = 0; i < 1000; ++i) {
-            records.put(i, new Record("str" + i, 1000 + i, 2000.1 + i, new BigDecimal((3000 + i) + ".5"), i >= 500));
-        }
-        records.put(5000, new Record(null, -100, -100500, new BigDecimal(9001), null));
-        records.put(6000, new Record(null, -200, -200500, null, null));
-
-        return instance.getSql();
     }
 
     protected SqlResult query(SqlService sql, String query, Object... args) {

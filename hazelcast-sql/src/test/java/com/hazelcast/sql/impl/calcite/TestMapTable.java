@@ -39,7 +39,9 @@ public class TestMapTable extends AbstractMapTable {
             fields,
             statistics,
             GenericQueryTargetDescriptor.DEFAULT,
-            GenericQueryTargetDescriptor.DEFAULT
+            GenericQueryTargetDescriptor.DEFAULT,
+            null,
+            null
         );
     }
 
@@ -49,7 +51,7 @@ public class TestMapTable extends AbstractMapTable {
             return null;
         }
 
-        return new ObjectKey(getSchemaName(), getName(), getFields());
+        return new ObjectKey(getSchemaName(), getSqlName(), getFields());
     }
 
     public static TestMapTable create(String schemaName, String name, TableField... fields) {

@@ -60,8 +60,8 @@ public enum SqlColumnType {
     /** TIME type, represented by {@link java.time.LocalTime} */
     TIME(10, LocalTime.class),
 
-    /** TIMESTAMP type,, represented by {@link java.time.LocalDateTime} */
-        TIMESTAMP(11, LocalDateTime.class),
+    /** TIMESTAMP type, represented by {@link java.time.LocalDateTime} */
+    TIMESTAMP(11, LocalDateTime.class),
 
     /** TIMESTAMP_WITH_TIME_ZONE type, represented by {@link java.time.OffsetDateTime} */
     TIMESTAMP_WITH_TIME_ZONE(12, OffsetDateTime.class),

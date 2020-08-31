@@ -67,7 +67,7 @@ class NamedPortableV2 extends NamedPortable implements VersionedPortable {
     public String toString() {
         final StringBuilder sb = new StringBuilder("NamedPortableV2{");
         sb.append("name='").append(name).append('\'');
-        sb.append(", k=").append(k);
+        sb.append(", k=").append(myint);
         sb.append(", v=").append(v);
         sb.append('}');
         return sb.toString();

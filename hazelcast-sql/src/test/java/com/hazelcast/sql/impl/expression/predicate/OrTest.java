@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -40,15 +39,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OrTest extends ExpressionTestBase {
-
-    @Test
-    public void testEndToEnd() {
-        SqlService sql = createEndToEndRecords();
-        assertRows(query(sql, "select __key from records where boolean1 or __key >= 600"), keyRange(500, 1000, 5000, 6000));
-        assertRows(query(sql, "select __key from records where boolean1 or __key < 600 or boolean1 is null"),
-                keyRange(0, 1000, 5000, 6000));
-        assertQueryThrows(sql, "select * from records where string1 or boolean1", "Cannot convert VARCHAR to BOOLEAN");
-    }
 
     @Test
     public void verify() {

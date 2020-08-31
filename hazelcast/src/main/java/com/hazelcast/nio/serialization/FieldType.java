@@ -89,12 +89,13 @@ public enum FieldType {
 
     /**
      * @return size of an element of the type represented by this object
-     * @throws IllegalArgumentException if type does not have a definite type. Invoke hasDefiniteSize() to check before.
+     * @throws IllegalArgumentException if the type does not have a definite size.
+     *      Invoke {@link #hasDefiniteSize()} to check first.
      */
     public int getTypeSize() throws IllegalArgumentException {
         if (elementSize == MAX_VALUE) {
             // unknown size case
-            throw new IllegalArgumentException("Unsupported type - the size is variable or unknown!");
+            throw new IllegalArgumentException("Unsupported type - the size is variable or unknown");
         }
         return elementSize;
     }

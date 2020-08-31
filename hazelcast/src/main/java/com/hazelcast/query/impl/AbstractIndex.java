@@ -32,16 +32,19 @@ import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.Iterator;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
+import static java.util.Collections.emptyIterator;
 import static java.util.Collections.emptySet;
 
 /**
  * Provides an abstract base for indexes.
  */
+@SuppressWarnings("rawtypes")
 public abstract class AbstractIndex implements InternalIndex {
 
     /**
@@ -171,6 +174,47 @@ public abstract class AbstractIndex implements InternalIndex {
     public Set<QueryableEntry> evaluate(Predicate predicate) {
         assert converter != null;
         return indexStore.evaluate(predicate, converter);
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator() {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIterator();
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIterator(convert(value));
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIterator(comparison, convert(value));
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(
+        Comparable from,
+        boolean fromInclusive,
+        Comparable to,
+        boolean toInclusive
+    ) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIterator(convert(from), fromInclusive, convert(to), toInclusive);
     }
 
     @Override

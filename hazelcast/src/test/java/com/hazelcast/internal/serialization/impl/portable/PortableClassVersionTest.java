@@ -95,11 +95,11 @@ public class PortableClassVersionTest {
 
         NamedPortable v1FromV2 = serializationService.toObject(dataV2);
         assertEquals(portableV2.name, v1FromV2.name);
-        assertEquals(portableV2.k, v1FromV2.k);
+        assertEquals(portableV2.myint, v1FromV2.myint);
 
         NamedPortableV2 v2FromV1 = serializationService2.toObject(dataV1);
         assertEquals(portableV1.name, v2FromV1.name);
-        assertEquals(portableV1.k, v2FromV1.k);
+        assertEquals(portableV1.myint, v2FromV1.myint);
         assertNull(v2FromV1.v);
     }
 
@@ -162,11 +162,11 @@ public class PortableClassVersionTest {
 
         NamedPortable v1FromV2 = serializationService.toObject(dataV2);
         assertEquals(portableV2.name, v1FromV2.name);
-        assertEquals(portableV2.k, v1FromV2.k);
+        assertEquals(portableV2.myint, v1FromV2.myint);
 
         NamedPortableV2 v2FromV1 = serializationService2.toObject(dataV1);
         assertEquals(portableV1.name, v2FromV1.name);
-        assertEquals(portableV1.k, v2FromV1.k);
+        assertEquals(portableV1.myint, v2FromV1.myint);
         assertNull(v2FromV1.v);
     }
 

@@ -16,17 +16,18 @@
 
 package com.hazelcast.sql.impl.plan.cache;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlTestInstanceFactory;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.exec.FaultyExec;
 import com.hazelcast.sql.impl.exec.scan.MapScanExec;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -44,7 +45,7 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PlanCacheIntegrationTest extends PlanCacheTestSupport {
 
-    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
+    private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
 
     @After
     public void after() {
@@ -67,6 +68,28 @@ public class PlanCacheIntegrationTest extends PlanCacheTestSupport {
         assertEquals(1, planCache.size());
         assertSame(plan, planCache.get(plan.getPlanKey()));
         assertSame(plan, plan2);
+    }
+
+    @Test
+    public void testPlanInvalidatedOnIndexAdd() {
+        HazelcastInstance member = factory.newHazelcastInstance();
+        IMap<Integer, Integer> map = member.getMap("map");
+        map.put(1, 1);
+
+        PlanCache planCache = getPlanCache(member);
+
+        Plan plan = getPlan(member, "SELECT * FROM map");
+        assertEquals(1, planCache.size());
+        assertSame(plan, planCache.get(plan.getPlanKey()));
+
+        map.addIndex(IndexType.SORTED, "this");
+
+        assertTrueEventually(() -> {
+            Plan plan2 = getPlan(member, "SELECT * FROM map");
+            assertEquals(1, planCache.size());
+            assertSame(plan2, planCache.get(plan2.getPlanKey()));
+            assertNotSame(plan, plan2);
+        });
     }
 
     @Test

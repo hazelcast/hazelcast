@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.ProjectPhysicalRel;
@@ -40,6 +41,7 @@ import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
 import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
+import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
@@ -216,20 +218,48 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onMapScan(MapScanPhysicalRel rel) {
-        HazelcastTable hazelcastTable = rel.getTableUnwrapped();
         AbstractMapTable table = rel.getMap();
+
+        HazelcastTable hazelcastTable = rel.getTableUnwrapped();
 
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
 
         MapScanPlanNode scanNode = new MapScanPlanNode(
             pollId(rel),
-            table.getName(),
+            table.getMapName(),
             table.getKeyDescriptor(),
             table.getValueDescriptor(),
             getScanFieldPaths(table),
             schemaBefore.getTypes(),
             hazelcastTable.getProjects(),
             convertFilter(schemaBefore, hazelcastTable.getFilter())
+        );
+
+        pushUpstream(scanNode);
+
+        objectIds.add(table.getObjectKey());
+    }
+
+    @Override
+    public void onMapIndexScan(MapIndexScanPhysicalRel rel) {
+        HazelcastTable hazelcastTable = rel.getTableUnwrapped();
+        AbstractMapTable table = rel.getMap();
+
+        PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
+
+        MapIndexScanPlanNode scanNode = new MapIndexScanPlanNode(
+            pollId(rel),
+            table.getMapName(),
+            table.getKeyDescriptor(),
+            table.getValueDescriptor(),
+            getScanFieldPaths(table),
+            schemaBefore.getTypes(),
+            hazelcastTable.getProjects(),
+            rel.getIndex().getName(),
+            rel.getIndex().getComponentsCount(),
+            rel.getIndexFilter(),
+            rel.getConverterTypes(),
+            convertFilter(schemaBefore, rel.getRemainderExp())
         );
 
         pushUpstream(scanNode);

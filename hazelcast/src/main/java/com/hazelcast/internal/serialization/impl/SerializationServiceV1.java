@@ -61,7 +61,6 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.partition.PartitioningStrategy;
 
 import java.io.Externalizable;
@@ -138,7 +137,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     SerializationServiceV1(AbstractBuilder<?> builder) {
         super(builder);
         PortableHookLoader loader = new PortableHookLoader(builder.portableFactories, builder.getClassLoader());
-        portableContext = new PortableContextImpl(this, builder.portableVersion);
+        portableContext = new PortableContextImpl(this, builder.portableVersion, builder.checkClassDefErrors);
         for (ClassDefinition cd : loader.getDefinitions()) {
             portableContext.registerClassDefinition(cd);
         }
@@ -179,12 +178,12 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         return (B) data;
     }
 
-    public PortableReader createPortableReader(Data data) throws IOException {
+    public InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException {
         if (!data.isPortable()) {
             throw new IllegalArgumentException("Given data is not Portable! -> " + data.getType());
         }
         BufferObjectDataInput in = createObjectDataInput(data);
-        return portableSerializer.createReader(in);
+        return portableSerializer.readAsInternalGenericRecord(in);
     }
 
     public PortableContext getPortableContext() {
@@ -258,7 +257,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         safeRegister(HazelcastJsonValue.class, new HazelcastJsonValueSerializer());
     }
 
-    public void registerClassDefinitions(Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors) {
+    public void registerClassDefinitions(Collection<ClassDefinition> classDefinitions) {
         Map<Integer, Map<Integer, ClassDefinition>> factoryMap = createHashMap(classDefinitions.size());
         for (ClassDefinition cd : classDefinitions) {
             int factoryId = cd.getFactoryId();
@@ -271,12 +270,11 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             classDefMap.put(classId, cd);
         }
         for (ClassDefinition classDefinition : classDefinitions) {
-            registerClassDefinition(classDefinition, factoryMap, checkClassDefErrors);
+            registerClassDefinition(classDefinition, factoryMap);
         }
     }
 
-    private void registerClassDefinition(ClassDefinition cd, Map<Integer, Map<Integer, ClassDefinition>> factoryMap,
-                                         boolean checkClassDefErrors) {
+    private void registerClassDefinition(ClassDefinition cd, Map<Integer, Map<Integer, ClassDefinition>> factoryMap) {
         Set<String> fieldNames = cd.getFieldNames();
         for (String fieldName : fieldNames) {
             FieldDefinition fd = cd.getField(fieldName);
@@ -287,12 +285,12 @@ public class SerializationServiceV1 extends AbstractSerializationService {
                 if (classDefinitionMap != null) {
                     ClassDefinition nestedCd = classDefinitionMap.get(classId);
                     if (nestedCd != null) {
-                        registerClassDefinition(nestedCd, factoryMap, checkClassDefErrors);
+                        registerClassDefinition(nestedCd, factoryMap);
                         portableContext.registerClassDefinition(nestedCd);
                         continue;
                     }
                 }
-                if (checkClassDefErrors) {
+                if (portableContext.shouldCheckClassDefinitionErrors()) {
                     throw new HazelcastSerializationException("Could not find registered ClassDefinition for factory-id : "
                             + factoryId + ", class-id " + classId);
                 }
@@ -347,6 +345,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         private boolean enableCompression;
         private boolean enableSharedObject;
         private ClassNameFilter classNameFilter;
+        private boolean checkClassDefErrors;
 
         protected AbstractBuilder() {
         }
@@ -383,6 +382,11 @@ public class SerializationServiceV1 extends AbstractSerializationService {
 
         public final T withClassNameFilter(ClassNameFilter classNameFilter) {
             this.classNameFilter = classNameFilter;
+            return self();
+        }
+
+        public final T withCheckClassDefErrors(boolean checkClassDefErrors) {
+            this.checkClassDefErrors = checkClassDefErrors;
             return self();
         }
     }

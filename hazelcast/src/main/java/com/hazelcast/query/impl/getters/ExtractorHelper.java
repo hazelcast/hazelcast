@@ -17,12 +17,13 @@
 package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.config.AttributeConfig;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.query.extractor.ValueExtractor;
-import com.hazelcast.internal.util.StringUtil;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
@@ -122,4 +123,94 @@ public final class ExtractorHelper {
         throw new IllegalArgumentException("Wrong argument input passed " + attributeNameWithArguments);
     }
 
+    /**
+     * @param add            Consumer that primitives will be passed to
+     * @param primitiveArray primitive array to read from
+     * @return false if primitive array is empty
+     */
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodlength", "checkstyle:returncount"})
+    public static boolean reducePrimitiveArrayInto(Consumer add, Object primitiveArray) {
+        // XXX: Standard Array.get has really bad performance, see
+        // https://bugs.openjdk.java.net/browse/JDK-8051447. For large arrays
+        // it may consume significant amount of time, so we are doing the
+        // reduction manually for each primitive type.
+
+        if (primitiveArray instanceof long[]) {
+            long[] array = (long[]) primitiveArray;
+            if (array.length == 0) {
+                return false;
+            } else {
+                for (long value : array) {
+                    add.accept(value);
+                }
+            }
+        } else if (primitiveArray instanceof int[]) {
+            int[] array = (int[]) primitiveArray;
+            if (array.length == 0) {
+                return false;
+            } else {
+                for (int value : array) {
+                    add.accept(value);
+                }
+            }
+        } else if (primitiveArray instanceof short[]) {
+            short[] array = (short[]) primitiveArray;
+            if (array.length == 0) {
+                return false;
+            } else {
+                for (short value : array) {
+                    add.accept(value);
+                }
+            }
+        } else if (primitiveArray instanceof byte[]) {
+            byte[] array = (byte[]) primitiveArray;
+            if (array.length == 0) {
+                return false;
+            } else {
+                for (byte value : array) {
+                    add.accept(value);
+                }
+            }
+        } else if (primitiveArray instanceof char[]) {
+            char[] array = (char[]) primitiveArray;
+            if (array.length == 0) {
+                return false;
+            } else {
+                for (char value : array) {
+                    add.accept(value);
+                }
+            }
+        } else if (primitiveArray instanceof boolean[]) {
+            boolean[] array = (boolean[]) primitiveArray;
+            if (array.length == 0) {
+                return false;
+            } else {
+                for (boolean value : array) {
+                    add.accept(value);
+                }
+            }
+        } else if (primitiveArray instanceof double[]) {
+            double[] array = (double[]) primitiveArray;
+            if (array.length == 0) {
+                return false;
+            } else {
+                for (double value : array) {
+                    add.accept(value);
+                }
+            }
+
+        } else if (primitiveArray instanceof float[]) {
+            float[] array = (float[]) primitiveArray;
+            if (array.length == 0) {
+                return false;
+            } else {
+                for (float value : array) {
+                    add.accept(value);
+                }
+            }
+        } else {
+            throw new IllegalArgumentException("unexpected primitive array: " + primitiveArray);
+        }
+        return true;
+    }
 }

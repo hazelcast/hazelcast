@@ -23,23 +23,23 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-class MainPortable implements Portable {
+public class MainPortable implements Portable {
 
-    byte b;
-    boolean bool;
-    char c;
-    short s;
-    int i;
-    long l;
-    float f;
-    double d;
-    String str;
-    InnerPortable p;
+    public byte b;
+    public boolean bool;
+    public char c;
+    public short s;
+    public int i;
+    public long l;
+    public float f;
+    public double d;
+    public String str;
+    public InnerPortable p;
 
     MainPortable() {
     }
 
-    MainPortable(byte b, boolean bool, char c, short s, int i, long l, float f, double d, String str, InnerPortable p) {
+    public MainPortable(byte b, boolean bool, char c, short s, int i, long l, float f, double d, String str, InnerPortable p) {
         this.b = b;
         this.bool = bool;
         this.c = c;

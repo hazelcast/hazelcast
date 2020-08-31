@@ -22,11 +22,13 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 
+import java.util.Iterator;
 import java.util.Set;
 
 /**
  * Represents an index built on top of the attribute of the map entries.
  */
+@SuppressWarnings("rawtypes")
 public interface Index {
 
     /**
@@ -108,6 +110,33 @@ public interface Index {
      * @return a set containing entries matching the given predicate.
      */
     Set<QueryableEntry> evaluate(Predicate predicate);
+
+    /**
+     * @return iterator over all index entries
+     */
+    Iterator<QueryableEntry> getSqlRecordIterator();
+
+    /**
+     * @param value value
+     * @return iterator over index entries that are equal to the given value
+     */
+    Iterator<QueryableEntry> getSqlRecordIterator(Comparable value);
+
+    /**
+     * @param comparison comparison type
+     * @param value value
+     * @return iterator over index entries that are matching the given comparions type and value
+     */
+    Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value);
+
+    /**
+     * @param from lower bound
+     * @param fromInclusive lower bound inclusive flag
+     * @param to upper bound
+     * @param toInclusive upper bound inclusive flag
+     * @return iterator over index entries matching the given range
+     */
+    Iterator<QueryableEntry> getSqlRecordIterator(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
 
     /**
      * Produces a result set containing entries whose attribute values are equal

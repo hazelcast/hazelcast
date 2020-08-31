@@ -1975,7 +1975,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <executor-service name=\"foobar\">\n"
                 + "        <pool-size>2</pool-size>\n"
                 + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
-                + "        <statistics-enabled>true</statistics-enabled>"
+                + "        <statistics-enabled>false</statistics-enabled>"
                 + "        <queue-capacity>0</queue-capacity>"
                 + "    </executor-service>"
                 + HAZELCAST_END_TAG;
@@ -1986,7 +1986,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(config.getExecutorConfigs().isEmpty());
         assertEquals(2, executorConfig.getPoolSize());
         assertEquals("customSplitBrainProtectionRule", executorConfig.getSplitBrainProtectionName());
-        assertTrue(executorConfig.isStatisticsEnabled());
+        assertFalse(executorConfig.isStatisticsEnabled());
         assertEquals(0, executorConfig.getQueueCapacity());
     }
 
@@ -1995,6 +1995,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testDurableExecutorConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <durable-executor-service name=\"foobar\">\n"
+                + "        <statistics-enabled>false</statistics-enabled>"
                 + "        <pool-size>2</pool-size>\n"
                 + "        <durability>3</durability>\n"
                 + "        <capacity>4</capacity>\n"
@@ -2010,6 +2011,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(3, durableExecutorConfig.getDurability());
         assertEquals(4, durableExecutorConfig.getCapacity());
         assertEquals("customSplitBrainProtectionRule", durableExecutorConfig.getSplitBrainProtectionName());
+        assertFalse(durableExecutorConfig.isStatisticsEnabled());
     }
 
     @Override
@@ -2017,6 +2019,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testScheduledExecutorConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <scheduled-executor-service name=\"foobar\">\n"
+                + "        <statistics-enabled>false</statistics-enabled>"
                 + "        <durability>4</durability>\n"
                 + "        <pool-size>5</pool-size>\n"
                 + "        <capacity>2</capacity>\n"
@@ -2035,6 +2038,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("customSplitBrainProtectionRule", scheduledExecutorConfig.getSplitBrainProtectionName());
         assertEquals(99, scheduledExecutorConfig.getMergePolicyConfig().getBatchSize());
         assertEquals("PutIfAbsent", scheduledExecutorConfig.getMergePolicyConfig().getPolicy());
+        assertFalse(scheduledExecutorConfig.isStatisticsEnabled());
     }
 
     @Override

@@ -169,91 +169,6 @@ public abstract class AbstractMultiValueGetter extends Getter {
         }
     }
 
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodlength"})
-    private void reducePrimitiveArrayInto(MultiResult<Object> collector, Object primitiveArray) {
-        // XXX: Standard Array.get has really bad performance, see
-        // https://bugs.openjdk.java.net/browse/JDK-8051447. For large arrays
-        // it may consume significant amount of time, so we are doing the
-        // reduction manually for each primitive type.
-
-        if (primitiveArray instanceof long[]) {
-            long[] array = (long[]) primitiveArray;
-            if (array.length == 0) {
-                collector.addNullOrEmptyTarget();
-            } else {
-                for (long value : array) {
-                    collector.add(value);
-                }
-            }
-        } else if (primitiveArray instanceof int[]) {
-            int[] array = (int[]) primitiveArray;
-            if (array.length == 0) {
-                collector.addNullOrEmptyTarget();
-            } else {
-                for (int value : array) {
-                    collector.add(value);
-                }
-            }
-        } else if (primitiveArray instanceof short[]) {
-            short[] array = (short[]) primitiveArray;
-            if (array.length == 0) {
-                collector.addNullOrEmptyTarget();
-            } else {
-                for (short value : array) {
-                    collector.add(value);
-                }
-            }
-        } else if (primitiveArray instanceof byte[]) {
-            byte[] array = (byte[]) primitiveArray;
-            if (array.length == 0) {
-                collector.addNullOrEmptyTarget();
-            } else {
-                for (byte value : array) {
-                    collector.add(value);
-                }
-            }
-        } else if (primitiveArray instanceof char[]) {
-            char[] array = (char[]) primitiveArray;
-            if (array.length == 0) {
-                collector.addNullOrEmptyTarget();
-            } else {
-                for (char value : array) {
-                    collector.add(value);
-                }
-            }
-        } else if (primitiveArray instanceof boolean[]) {
-            boolean[] array = (boolean[]) primitiveArray;
-            if (array.length == 0) {
-                collector.addNullOrEmptyTarget();
-            } else {
-                for (boolean value : array) {
-                    collector.add(value);
-                }
-            }
-        } else if (primitiveArray instanceof double[]) {
-            double[] array = (double[]) primitiveArray;
-            if (array.length == 0) {
-                collector.addNullOrEmptyTarget();
-            } else {
-                for (double value : array) {
-                    collector.add(value);
-                }
-            }
-
-        } else if (primitiveArray instanceof float[]) {
-            float[] array = (float[]) primitiveArray;
-            if (array.length == 0) {
-                collector.addNullOrEmptyTarget();
-            } else {
-                for (float value : array) {
-                    collector.add(value);
-                }
-            }
-        } else {
-            throw new IllegalArgumentException("unexpected primitive array: " + primitiveArray);
-        }
-    }
-
     protected void reduceCollectionInto(MultiResult<Object> collector, Collection collection) {
         if (collection.isEmpty()) {
             collector.addNullOrEmptyTarget();
@@ -278,7 +193,9 @@ public abstract class AbstractMultiValueGetter extends Getter {
         } else if (currentObject instanceof Object[]) {
             reduceArrayInto(collector, (Object[]) currentObject);
         } else if (currentObject.getClass().isArray()) {
-            reducePrimitiveArrayInto(collector, currentObject);
+            if (!ExtractorHelper.reducePrimitiveArrayInto(collector::add, currentObject)) {
+                collector.addNullOrEmptyTarget();
+            }
         } else {
             throw new IllegalArgumentException("Can't reduce result from a type " + currentObject.getClass()
                     + " Only Collections and Arrays are supported.");

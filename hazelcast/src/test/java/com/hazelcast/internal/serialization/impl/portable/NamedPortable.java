@@ -25,15 +25,15 @@ import java.io.IOException;
 
 public class NamedPortable implements Portable {
 
-    String name;
-    int k;
+    public String name;
+    public int myint;
 
     public NamedPortable() {
     }
 
-    public NamedPortable(String name, int k) {
+    public NamedPortable(String name, int myint) {
         this.name = name;
-        this.k = k;
+        this.myint = myint;
     }
 
     @Override
@@ -44,12 +44,12 @@ public class NamedPortable implements Portable {
     @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("name", name);
-        writer.writeInt("myint", k);
+        writer.writeInt("myint", myint);
     }
 
     @Override
     public void readPortable(PortableReader reader) throws IOException {
-        k = reader.readInt("myint");
+        myint = reader.readInt("myint");
         name = reader.readUTF("name");
     }
 
@@ -63,7 +63,7 @@ public class NamedPortable implements Portable {
         }
 
         NamedPortable that = (NamedPortable) o;
-        if (k != that.k) {
+        if (myint != that.myint) {
             return false;
         }
         if (name != null ? !name.equals(that.name) : that.name != null) {
@@ -75,7 +75,7 @@ public class NamedPortable implements Portable {
     @Override
     public int hashCode() {
         int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + k;
+        result = 31 * result + myint;
         return result;
     }
 
@@ -88,7 +88,7 @@ public class NamedPortable implements Portable {
     public String toString() {
         final StringBuilder sb = new StringBuilder("NamedPortable{");
         sb.append("name='").append(name).append('\'');
-        sb.append(", k=").append(k);
+        sb.append(", k=").append(myint);
         sb.append('}');
         return sb.toString();
     }

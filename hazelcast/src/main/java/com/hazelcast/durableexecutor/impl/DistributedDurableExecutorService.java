@@ -18,52 +18,60 @@ package com.hazelcast.durableexecutor.impl;
 
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.services.RemoteService;
-import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.map.impl.ExecutorStats;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.DURABLE_EXECUTOR_PREFIX;
+import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class DistributedDurableExecutorService implements ManagedService, RemoteService, MigrationAwareService,
-        SplitBrainProtectionAwareService {
+        SplitBrainProtectionAwareService, StatisticsAwareService<LocalExecutorStatsImpl>, DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:impl:durableExecutorService";
 
     private static final Object NULL_OBJECT = new Object();
 
     private final NodeEngineImpl nodeEngine;
+    private final ExecutorStats executorStats = new ExecutorStats();
     private final DurableExecutorPartitionContainer[] partitionContainers;
-
-    private final Set<String> shutdownExecutors
-            = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-
-    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<String, Object>();
+    private final Set<String> shutdownExecutors = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
             new ConstructorFunction<String, Object>() {
-        @Override
-        public Object createNew(String name) {
-            DurableExecutorConfig executorConfig = nodeEngine.getConfig().findDurableExecutorConfig(name);
-            String splitBrainProtectionName = executorConfig.getSplitBrainProtectionName();
-            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
-        }
-    };
+                @Override
+                public Object createNew(String name) {
+                    DurableExecutorConfig executorConfig = nodeEngine.getConfig().findDurableExecutorConfig(name);
+                    String splitBrainProtectionName = executorConfig.getSplitBrainProtectionName();
+                    return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
+                }
+            };
 
     public DistributedDurableExecutorService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -76,6 +84,10 @@ public class DistributedDurableExecutorService implements ManagedService, Remote
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
+        boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
+        if (dsMetricsEnabled) {
+            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+        }
     }
 
     public DurableExecutorPartitionContainer getPartitionContainer(int partitionId) {
@@ -88,6 +100,7 @@ public class DistributedDurableExecutorService implements ManagedService, Remote
 
     @Override
     public void reset() {
+        executorStats.clear();
         shutdownExecutors.clear();
         for (int partitionId = 0; partitionId < partitionContainers.length; partitionId++) {
             partitionContainers[partitionId] = new DurableExecutorPartitionContainer(nodeEngine, partitionId);
@@ -166,5 +179,19 @@ public class DistributedDurableExecutorService implements ManagedService, Remote
         for (int i = 0; i < partitionContainers.length; i++) {
             getPartitionContainer(i).removeContainer(name);
         }
+    }
+
+    public ExecutorStats getExecutorStats() {
+        return executorStats;
+    }
+
+    @Override
+    public Map<String, LocalExecutorStatsImpl> getStats() {
+        return executorStats.getStatsMap();
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        provide(descriptor, context, DURABLE_EXECUTOR_PREFIX, getStats());
     }
 }

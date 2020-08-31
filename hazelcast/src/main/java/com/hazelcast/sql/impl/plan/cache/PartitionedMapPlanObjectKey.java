@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.plan.cache;
 
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 
 import java.util.List;
 import java.util.Set;
@@ -29,6 +30,8 @@ public class PartitionedMapPlanObjectKey implements PlanObjectKey {
     private final List<TableField> fields;
     private final QueryTargetDescriptor keyDescriptor;
     private final QueryTargetDescriptor valueDescriptor;
+    private final List<MapTableIndex> indexes;
+    private final boolean hd;
     private final Set<String> conflictingSchemas;
 
     public PartitionedMapPlanObjectKey(
@@ -37,13 +40,17 @@ public class PartitionedMapPlanObjectKey implements PlanObjectKey {
         List<TableField> fields,
         Set<String> conflictingSchemas,
         QueryTargetDescriptor keyDescriptor,
-        QueryTargetDescriptor valueDescriptor
+        QueryTargetDescriptor valueDescriptor,
+        List<MapTableIndex> indexes,
+        boolean hd
     ) {
         this.schemaName = schemaName;
         this.name = name;
         this.fields = fields;
         this.keyDescriptor = keyDescriptor;
         this.valueDescriptor = valueDescriptor;
+        this.indexes = indexes;
+        this.hd = hd;
         this.conflictingSchemas = conflictingSchemas;
     }
 
@@ -59,11 +66,13 @@ public class PartitionedMapPlanObjectKey implements PlanObjectKey {
 
         PartitionedMapPlanObjectKey that = (PartitionedMapPlanObjectKey) o;
 
-        return schemaName.equals(that.schemaName)
+        return hd == that.hd
+            && schemaName.equals(that.schemaName)
             && name.equals(that.name)
             && fields.equals(that.fields)
             && keyDescriptor.equals(that.keyDescriptor)
             && valueDescriptor.equals(that.valueDescriptor)
+            && indexes.equals(that.indexes)
             && conflictingSchemas.equals(that.conflictingSchemas);
     }
 
@@ -74,6 +83,8 @@ public class PartitionedMapPlanObjectKey implements PlanObjectKey {
         result = 31 * result + fields.hashCode();
         result = 31 * result + keyDescriptor.hashCode();
         result = 31 * result + valueDescriptor.hashCode();
+        result = 31 * result + indexes.hashCode();
+        result = 31 * result + (hd ? 1 : 0);
         result = 31 * result + conflictingSchemas.hashCode();
         return result;
     }

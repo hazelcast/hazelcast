@@ -76,14 +76,12 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
     }
 
     private void writeObject(ObjectOutputStream out) throws IOException {
-        out.defaultWriteObject();
         writeUUID(out, uuid);
         out.writeUTF(address.getHost());
         out.writeInt(address.getPort());
     }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
         uuid = readUUID(in);
         endpoint = new RaftEndpointImpl(uuid);
         String host = in.readUTF();

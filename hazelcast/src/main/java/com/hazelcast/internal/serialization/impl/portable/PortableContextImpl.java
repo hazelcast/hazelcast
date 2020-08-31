@@ -23,7 +23,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.ConcurrencyUtil;
-import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.FieldDefinition;
@@ -45,21 +44,14 @@ public final class PortableContextImpl implements PortableContext {
     private static final Pattern NESTED_FIELD_PATTERN = Pattern.compile("\\.");
 
     private final int version;
-    private final ConcurrentHashMap<Integer, ClassDefinitionContext> classDefContextMap =
-            new ConcurrentHashMap<Integer, ClassDefinitionContext>();
-
+    private final ConcurrentHashMap<Integer, ClassDefinitionContext> classDefContextMap = new ConcurrentHashMap<>();
     private final InternalSerializationService serializationService;
+    private final boolean checkClassDefErrors;
 
-    private final ConstructorFunction<Integer, ClassDefinitionContext> constructorFunction =
-            new ConstructorFunction<Integer, ClassDefinitionContext>() {
-                public ClassDefinitionContext createNew(Integer arg) {
-                    return new ClassDefinitionContext(arg);
-                }
-            };
-
-    public PortableContextImpl(InternalSerializationService serializationService, int version) {
+    public PortableContextImpl(InternalSerializationService serializationService, int version, boolean checkClassDefErrors) {
         this.serializationService = serializationService;
         this.version = version;
+        this.checkClassDefErrors = checkClassDefErrors;
     }
 
     @Override
@@ -215,7 +207,7 @@ public final class PortableContextImpl implements PortableContext {
     }
 
     private ClassDefinitionContext getClassDefContext(int factoryId) {
-        return ConcurrencyUtil.getOrPutIfAbsent(classDefContextMap, factoryId, constructorFunction);
+        return ConcurrencyUtil.getOrPutIfAbsent(classDefContextMap, factoryId, ClassDefinitionContext::new);
     }
 
     @Override
@@ -231,6 +223,10 @@ public final class PortableContextImpl implements PortableContext {
     @Override
     public ByteOrder getByteOrder() {
         return serializationService.getByteOrder();
+    }
+
+    public boolean shouldCheckClassDefinitionErrors() {
+        return checkClassDefErrors;
     }
 
     private final class ClassDefinitionContext {

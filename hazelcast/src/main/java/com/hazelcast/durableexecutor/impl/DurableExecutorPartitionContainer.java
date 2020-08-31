@@ -21,6 +21,7 @@ import com.hazelcast.durableexecutor.impl.operations.ReplicationOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,7 +52,9 @@ public class DurableExecutorPartitionContainer {
     public void createExecutorContainer(String name, TaskRingBuffer ringBuffer) {
         DurableExecutorConfig durableExecutorConfig = nodeEngine.getConfig().findDurableExecutorConfig(name);
         int durability = durableExecutorConfig.getDurability();
-        executorContainerMap.put(name, new DurableExecutorContainer(nodeEngine, name, partitionId, durability, ringBuffer));
+        boolean statisticsEnabled = durableExecutorConfig.isStatisticsEnabled();
+        executorContainerMap.put(name, new DurableExecutorContainer(nodeEngine, name,
+                partitionId, durability, statisticsEnabled, ringBuffer));
     }
 
     public Operation prepareReplicationOperation(int replicaIndex) {
@@ -88,6 +91,14 @@ public class DurableExecutorPartitionContainer {
         executorContainerMap.remove(name);
     }
 
+    Collection<DurableExecutorContainer> getAllExecutorContainers() {
+        return executorContainerMap.values();
+    }
+
+    boolean hasNoExecutorContainer() {
+        return executorContainerMap.isEmpty();
+    }
+
     // for testing
     DurableExecutorContainer getExistingExecutorContainer(String name) {
         return executorContainerMap.get(name);
@@ -97,7 +108,8 @@ public class DurableExecutorPartitionContainer {
         DurableExecutorConfig durableExecutorConfig = nodeEngine.getConfig().findDurableExecutorConfig(name);
         int durability = durableExecutorConfig.getDurability();
         int ringBufferCapacity = durableExecutorConfig.getCapacity();
+        boolean statisticsEnabled = durableExecutorConfig.isStatisticsEnabled();
         TaskRingBuffer ringBuffer = new TaskRingBuffer(ringBufferCapacity);
-        return new DurableExecutorContainer(nodeEngine, name, partitionId, durability, ringBuffer);
+        return new DurableExecutorContainer(nodeEngine, name, partitionId, durability, statisticsEnabled, ringBuffer);
     }
 }

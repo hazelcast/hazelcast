@@ -62,6 +62,10 @@ public class InitcapFunctionIntegrationTest extends SqlExpressionIntegrationTest
         checkColumn(new BigDecimalVal().field1(new BigDecimal("100.5")), "100.5");
         checkColumn(new FloatVal().field1(100.5f), Float.toString(100.5f));
         checkColumn(new DoubleVal().field1(100.5d), Double.toString(100.5d));
+        checkColumn(new ExpressionValue.LocalDateVal().field1(LOCAL_DATE_VAL), LOCAL_DATE_VAL.toString());
+        checkColumn(new ExpressionValue.LocalTimeVal().field1(LOCAL_TIME_VAL), LOCAL_TIME_VAL.toString());
+        checkColumn(new ExpressionValue.LocalDateTimeVal().field1(LOCAL_DATE_TIME_VAL), LOCAL_DATE_TIME_VAL.toString().toLowerCase());
+        checkColumn(new ExpressionValue.OffsetDateTimeVal().field1(OFFSET_DATE_TIME_VAL), OFFSET_DATE_TIME_VAL.toString().toLowerCase());
     }
 
     private void checkColumn(ExpressionValue value, String expectedResult) {
@@ -107,6 +111,10 @@ public class InitcapFunctionIntegrationTest extends SqlExpressionIntegrationTest
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to VARCHAR", 100f);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to VARCHAR", 100d);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to VARCHAR", new ObjectVal());
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to VARCHAR", LOCAL_DATE_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to VARCHAR", LOCAL_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to VARCHAR", LOCAL_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to VARCHAR", OFFSET_DATE_TIME_VAL);
     }
 
     private void check(Object operand, String expectedResult, Object... params) {

@@ -17,14 +17,17 @@
 package com.hazelcast.config;
 
 import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.ScheduledExecutorConfig.CapacityPolicy.PER_NODE;
@@ -36,7 +39,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 /**
  * Configuration options for the {@link IScheduledExecutorService}.
  */
-public class ScheduledExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
+public class ScheduledExecutorConfig implements IdentifiedDataSerializable, NamedConfig, Versioned {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -72,6 +75,8 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
 
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
+    private boolean statisticsEnabled = true;
+
     public ScheduledExecutorConfig() {
     }
 
@@ -79,12 +84,17 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         this.name = name;
     }
 
-    public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize) {
-        this(name, durability, capacity, poolSize, null, new MergePolicyConfig(), DEFAULT_CAPACITY_POLICY);
+    public ScheduledExecutorConfig(String name, int durability, int capacity,
+                                   int poolSize, boolean statisticsEnabled) {
+        this(name, durability, capacity, poolSize, null,
+                new MergePolicyConfig(), DEFAULT_CAPACITY_POLICY, statisticsEnabled);
     }
 
-    public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize, String splitBrainProtectionName,
-                                   MergePolicyConfig mergePolicyConfig, CapacityPolicy capacityPolicy) {
+    public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize,
+                                   String splitBrainProtectionName,
+                                   MergePolicyConfig mergePolicyConfig,
+                                   CapacityPolicy capacityPolicy,
+                                   boolean statisticsEnabled) {
         this.name = name;
         this.durability = durability;
         this.poolSize = poolSize;
@@ -92,11 +102,14 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         this.capacityPolicy = capacityPolicy;
         this.splitBrainProtectionName = splitBrainProtectionName;
         this.mergePolicyConfig = mergePolicyConfig;
+        this.statisticsEnabled = statisticsEnabled;
     }
 
     public ScheduledExecutorConfig(ScheduledExecutorConfig config) {
-        this(config.getName(), config.getDurability(), config.getCapacity(), config.getPoolSize(),
-                config.getSplitBrainProtectionName(), config.getMergePolicyConfig(), config.getCapacityPolicy());
+        this(config.getName(), config.getDurability(), config.getCapacity(),
+                config.getPoolSize(), config.getSplitBrainProtectionName(),
+                config.getMergePolicyConfig(), config.getCapacityPolicy(),
+                config.isStatisticsEnabled());
     }
 
     /**
@@ -248,6 +261,26 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         return this;
     }
 
+    /**
+     * @return {@code true} if statistics gathering is enabled
+     * on the executor task (default), {@code false} otherwise
+     */
+    public boolean isStatisticsEnabled() {
+        return statisticsEnabled;
+    }
+
+    /**
+     * Enables or disables statistics gathering on the executor task.
+     *
+     * @param statisticsEnabled {@code true} if statistics
+     *                          gathering is enabled on the executor task, {@code
+     *                          false} otherwise @return this executor config instance
+     */
+    public ScheduledExecutorConfig setStatisticsEnabled(boolean statisticsEnabled) {
+        this.statisticsEnabled = statisticsEnabled;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "ScheduledExecutorConfig{"
@@ -256,6 +289,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
                 + ", poolSize=" + poolSize
                 + ", capacity=" + capacity
                 + ", capacityPolicy=" + capacityPolicy
+                + ", statisticsEnabled=" + statisticsEnabled
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", mergePolicyConfig=" + mergePolicyConfig
                 + '}';
@@ -280,6 +314,11 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
         out.writeByte(capacityPolicy.getId());
+
+        // RU_COMPAT_4_0
+        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            out.writeBoolean(statisticsEnabled);
+        }
     }
 
     @Override
@@ -291,6 +330,11 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
         capacityPolicy = getById(in.readByte());
+
+        // RU_COMPAT_4_0
+        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            statisticsEnabled = in.readBoolean();
+        }
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity"})
@@ -317,11 +361,13 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         if (poolSize != that.poolSize) {
             return false;
         }
-        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
-                : that.splitBrainProtectionName != null) {
+        if (!Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)) {
             return false;
         }
-        if (mergePolicyConfig != null ? !mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig != null) {
+        if (!Objects.equals(mergePolicyConfig, that.mergePolicyConfig)) {
+            return false;
+        }
+        if (statisticsEnabled != that.statisticsEnabled) {
             return false;
         }
         return name.equals(that.name);
@@ -335,6 +381,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         result = 31 * result + capacityPolicy.hashCode();
         result = 31 * result + poolSize;
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
+        result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }

@@ -71,7 +71,7 @@ public class JetSqlTest extends SqlTestSupport {
     private static final Table TEST_TABLE = new TestTable();
 
     @Mock
-    private JetSqlService jetSqlService;
+    private JetSqlCoreBackend jetSqlCoreBackend;
 
     @Mock
     private TableResolver tableResolver;
@@ -100,12 +100,12 @@ public class JetSqlTest extends SqlTestSupport {
         given(tableResolver.getDefaultSearchPaths()).willReturn(singletonList(asList(CATALOG, JET_NAMESPACE)));
         given(tableResolver.getTables()).willReturn(singletonList(TEST_TABLE));
 
-        given(jetSqlService.tableResolvers()).willReturn(singletonList(tableResolver));
-        given(jetSqlService.sqlBackend()).willReturn(sqlBackend);
-        given(jetSqlService.execute(any(SqlPlan.class), anyList(), anyLong(), anyInt())).willReturn(sqlResult);
+        given(jetSqlCoreBackend.tableResolvers()).willReturn(singletonList(tableResolver));
+        given(jetSqlCoreBackend.sqlBackend()).willReturn(sqlBackend);
+        given(jetSqlCoreBackend.execute(any(SqlPlan.class), anyList(), anyLong(), anyInt())).willReturn(sqlResult);
 
         System.setProperty(SqlServiceImpl.OPTIMIZER_CLASS_PROPERTY_NAME, TestSqlOptimizer.class.getName());
-        HazelcastInstance member = newHazelcastInstance(new Config(), randomName(), nodeContext(jetSqlService));
+        HazelcastInstance member = newHazelcastInstance(new Config(), randomName(), nodeContext(jetSqlCoreBackend));
 
         // when
         SqlResult result = member.getSql().execute("SELECT * FROM t");
@@ -114,14 +114,14 @@ public class JetSqlTest extends SqlTestSupport {
         assertEquals(sqlResult, result);
     }
 
-    private static NodeContext nodeContext(JetSqlService jetSqlService) {
+    private static NodeContext nodeContext(JetSqlCoreBackend jetSqlCoreBackend) {
         return new MockNodeContext(FACTORY.getRegistry(), FACTORY.nextAddress()) {
             @Override
             public NodeExtension createNodeExtension(Node node) {
                 return new DefaultNodeExtension(node) {
                     @Override
                     public Map<String, Object> createExtensionServices() {
-                        return ImmutableMap.of(JetSqlService.SERVICE_NAME, jetSqlService);
+                        return ImmutableMap.of(JetSqlCoreBackend.SERVICE_NAME, jetSqlCoreBackend);
                     }
                 };
             }
@@ -133,9 +133,9 @@ public class JetSqlTest extends SqlTestSupport {
         @SuppressWarnings("checkstyle:RedundantModifier")
         public TestSqlOptimizer(
                 @SuppressWarnings("unused") NodeEngine nodeEngine,
-                JetSqlService jetSqlService
+                JetSqlCoreBackend jetSqlCoreBackend
         ) {
-            assertNotNull(jetSqlService);
+            assertNotNull(jetSqlCoreBackend);
         }
 
         @Override

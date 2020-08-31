@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestBase;
@@ -38,17 +37,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IsNotFalseTest extends ExpressionTestBase {
-
-    @Test
-    public void testEndToEnd() {
-        SqlService sql = createEndToEndRecords();
-        assertRows(query(sql, "select __key from records where boolean1 is not false"), keyRange(500, 1000, 5000, 6000));
-        assertRows(query(sql, "select __key from records where boolean1 is not false and __key >= 900"),
-                keyRange(900, 1000, 5000, 6000));
-        assertRows(query(sql, "select __key, boolean1 is not false from records"), keyRange(0, 1000, 5000, 6000),
-                k -> k == 5000 || k == 6000 || k >= 500 && k < 1000);
-        assertQueryThrows(sql, "select __key, int1 is not false from records", "cannot apply");
-    }
 
     @Test
     public void verify() {

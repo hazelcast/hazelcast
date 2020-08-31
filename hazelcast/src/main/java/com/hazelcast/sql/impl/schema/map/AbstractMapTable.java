@@ -37,26 +37,32 @@ public abstract class AbstractMapTable extends Table {
     private final String mapName;
     private final QueryTargetDescriptor keyDescriptor;
     private final QueryTargetDescriptor valueDescriptor;
+    private final Object keyJetMetadata;
+    private final Object valueJetMetadata;
     private final QueryException exception;
 
     /**
-     * @param tableName Name of the table as it appears in the SQL
+     * @param sqlName Name of the table as it appears in the SQL
      * @param mapName Name of the underlying map
      */
     protected AbstractMapTable(
         String schemaName,
-        String tableName,
+        String sqlName,
         String mapName,
         List<TableField> fields,
         TableStatistics statistics,
         QueryTargetDescriptor keyDescriptor,
-        QueryTargetDescriptor valueDescriptor
+        QueryTargetDescriptor valueDescriptor,
+        Object keyJetMetadata,
+        Object valueJetMetadata
     ) {
-        super(schemaName, tableName, fields, statistics);
+        super(schemaName, sqlName, fields, statistics);
 
         this.mapName = requireNonNull(mapName);
         this.keyDescriptor = keyDescriptor;
         this.valueDescriptor = valueDescriptor;
+        this.keyJetMetadata = keyJetMetadata;
+        this.valueJetMetadata = valueJetMetadata;
 
         exception = null;
     }
@@ -67,6 +73,8 @@ public abstract class AbstractMapTable extends Table {
         this.mapName = name;
         this.keyDescriptor = null;
         this.valueDescriptor = null;
+        this.keyJetMetadata = null;
+        this.valueJetMetadata = null;
 
         this.exception = exception;
     }
@@ -103,6 +111,14 @@ public abstract class AbstractMapTable extends Table {
 
     public QueryTargetDescriptor getValueDescriptor() {
         return valueDescriptor;
+    }
+
+    public Object getKeyJetMetadata() {
+        return keyJetMetadata;
+    }
+
+    public Object getValueJetMetadata() {
+        return valueJetMetadata;
     }
 
     public QueryException getException() {

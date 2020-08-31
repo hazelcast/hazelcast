@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestBase;
@@ -40,19 +39,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ComparisonPredicateTest extends ExpressionTestBase {
-
-    @Test
-    public void testEndToEnd() {
-        SqlService sql = createEndToEndRecords();
-        assertRows(query(sql, "select __key from records where __key = 100"), keys(100));
-        assertRows(query(sql, "select __key from records where __key <> 6000"), keyRange(0, 1000, 5000));
-        assertRows(query(sql, "select __key from records where __key != 6000"), keyRange(0, 1000, 5000));
-        assertRows(query(sql, "select __key from records where __key >= 500"), keyRange(500, 1000, 5000, 6000));
-        assertRows(query(sql, "select __key from records where __key > 500"), keyRange(501, 1000, 5000, 6000));
-        assertRows(query(sql, "select __key from records where __key <= 500"), keyRange(0, 501));
-        assertRows(query(sql, "select __key from records where __key < 500"), keyRange(0, 500));
-        assertQueryThrows(sql, "select * from records where string1 < 10", "cannot convert varchar to bigint");
-    }
 
     @SuppressWarnings("ConstantConditions")
     @Test

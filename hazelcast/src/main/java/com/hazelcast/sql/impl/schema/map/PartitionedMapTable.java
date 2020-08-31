@@ -23,11 +23,17 @@ import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 
+import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 
 public class PartitionedMapTable extends AbstractMapTable {
+
+    private final List<MapTableIndex> indexes;
+    private final boolean hd;
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public PartitionedMapTable(
             String schemaName,
             String tableName,
@@ -35,7 +41,11 @@ public class PartitionedMapTable extends AbstractMapTable {
             List<TableField> fields,
             TableStatistics statistics,
             QueryTargetDescriptor keyDescriptor,
-            QueryTargetDescriptor valueDescriptor
+            QueryTargetDescriptor valueDescriptor,
+            Object keyJetMetadata,
+            Object valueJetMetadata,
+            List<MapTableIndex> indexes,
+            boolean hd
     ) {
         super(
             schemaName,
@@ -44,12 +54,20 @@ public class PartitionedMapTable extends AbstractMapTable {
             fields,
             statistics,
             keyDescriptor,
-            valueDescriptor
+            valueDescriptor,
+            keyJetMetadata,
+            valueJetMetadata
         );
+
+        this.indexes = indexes;
+        this.hd = hd;
     }
 
     public PartitionedMapTable(String name, QueryException exception) {
         super(SCHEMA_NAME_PARTITIONED, name, exception);
+
+        this.indexes = null;
+        this.hd = false;
     }
 
     @Override
@@ -60,11 +78,23 @@ public class PartitionedMapTable extends AbstractMapTable {
 
         return new PartitionedMapPlanObjectKey(
             getSchemaName(),
-            getName(),
+            getMapName(),
             getFields(),
             getConflictingSchemas(),
             getKeyDescriptor(),
-            getValueDescriptor()
+            getValueDescriptor(),
+            getIndexes(),
+            isHd()
         );
+    }
+
+    public List<MapTableIndex> getIndexes() {
+        checkException();
+
+        return indexes != null ? indexes : Collections.emptyList();
+    }
+
+    public boolean isHd() {
+        return hd;
     }
 }

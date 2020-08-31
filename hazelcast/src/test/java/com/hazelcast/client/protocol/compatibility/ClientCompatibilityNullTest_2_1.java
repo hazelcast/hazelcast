@@ -5738,7 +5738,7 @@ public class ClientCompatibilityNullTest_2_1 {
     @Test
     public void test_DynamicConfigAddDurableExecutorConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 725;
-        ClientMessage encoded = DynamicConfigAddDurableExecutorConfigCodec.encodeRequest(aString, anInt, anInt, anInt, null);
+        ClientMessage encoded = DynamicConfigAddDurableExecutorConfigCodec.encodeRequest(aString, anInt, anInt, anInt, null, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5751,7 +5751,7 @@ public class ClientCompatibilityNullTest_2_1 {
     @Test
     public void test_DynamicConfigAddScheduledExecutorConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 727;
-        ClientMessage encoded = DynamicConfigAddScheduledExecutorConfigCodec.encodeRequest(aString, anInt, anInt, anInt, null, aString, anInt);
+        ClientMessage encoded = DynamicConfigAddScheduledExecutorConfigCodec.encodeRequest(aString, anInt, anInt, anInt, null, aString, anInt, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6516,6 +6516,99 @@ public class ClientCompatibilityNullTest_2_1 {
     @Test
     public void test_SqlCloseCodec_decodeResponse() {
         int fileClientMessageIndex = 830;
+    }
+
+    @Test
+    public void test_CPSubsystemAddMembershipListenerCodec_encodeRequest() {
+        int fileClientMessageIndex = 831;
+        ClientMessage encoded = CPSubsystemAddMembershipListenerCodec.encodeRequest(aBoolean);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_CPSubsystemAddMembershipListenerCodec_decodeResponse() {
+        int fileClientMessageIndex = 832;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aUUID, CPSubsystemAddMembershipListenerCodec.decodeResponse(fromFile)));
+    }
+
+    private static class CPSubsystemAddMembershipListenerCodecHandler extends CPSubsystemAddMembershipListenerCodec.AbstractEventHandler {
+        @Override
+        public void handleMembershipEventEvent(com.hazelcast.cp.CPMember member, byte type) {
+            assertTrue(isEqual(aCpMember, member));
+            assertTrue(isEqual(aByte, type));
+        }
+    }
+
+    @Test
+    public void test_CPSubsystemAddMembershipListenerCodec_handleMembershipEventEvent() {
+        int fileClientMessageIndex = 833;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        CPSubsystemAddMembershipListenerCodecHandler handler = new CPSubsystemAddMembershipListenerCodecHandler();
+        handler.handle(fromFile);
+    }
+
+    @Test
+    public void test_CPSubsystemRemoveMembershipListenerCodec_encodeRequest() {
+        int fileClientMessageIndex = 834;
+        ClientMessage encoded = CPSubsystemRemoveMembershipListenerCodec.encodeRequest(aUUID);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_CPSubsystemRemoveMembershipListenerCodec_decodeResponse() {
+        int fileClientMessageIndex = 835;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aBoolean, CPSubsystemRemoveMembershipListenerCodec.decodeResponse(fromFile)));
+    }
+
+    @Test
+    public void test_CPSubsystemAddGroupAvailabilityListenerCodec_encodeRequest() {
+        int fileClientMessageIndex = 836;
+        ClientMessage encoded = CPSubsystemAddGroupAvailabilityListenerCodec.encodeRequest(aBoolean);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_CPSubsystemAddGroupAvailabilityListenerCodec_decodeResponse() {
+        int fileClientMessageIndex = 837;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aUUID, CPSubsystemAddGroupAvailabilityListenerCodec.decodeResponse(fromFile)));
+    }
+
+    private static class CPSubsystemAddGroupAvailabilityListenerCodecHandler extends CPSubsystemAddGroupAvailabilityListenerCodec.AbstractEventHandler {
+        @Override
+        public void handleGroupAvailabilityEventEvent(com.hazelcast.cp.internal.RaftGroupId groupId, java.util.Collection<com.hazelcast.cp.CPMember> members, java.util.Collection<com.hazelcast.cp.CPMember> unavailableMembers) {
+            assertTrue(isEqual(aRaftGroupId, groupId));
+            assertTrue(isEqual(aListOfCpMembers, members));
+            assertTrue(isEqual(aListOfCpMembers, unavailableMembers));
+        }
+    }
+
+    @Test
+    public void test_CPSubsystemAddGroupAvailabilityListenerCodec_handleGroupAvailabilityEventEvent() {
+        int fileClientMessageIndex = 838;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        CPSubsystemAddGroupAvailabilityListenerCodecHandler handler = new CPSubsystemAddGroupAvailabilityListenerCodecHandler();
+        handler.handle(fromFile);
+    }
+
+    @Test
+    public void test_CPSubsystemRemoveGroupAvailabilityListenerCodec_encodeRequest() {
+        int fileClientMessageIndex = 839;
+        ClientMessage encoded = CPSubsystemRemoveGroupAvailabilityListenerCodec.encodeRequest(aUUID);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_CPSubsystemRemoveGroupAvailabilityListenerCodec_decodeResponse() {
+        int fileClientMessageIndex = 840;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aBoolean, CPSubsystemRemoveGroupAvailabilityListenerCodec.decodeResponse(fromFile)));
     }
 
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {

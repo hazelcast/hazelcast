@@ -19,11 +19,11 @@ package com.hazelcast.internal.util;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.util.BitSet;
 
 import static org.junit.Assert.assertEquals;
@@ -160,7 +160,7 @@ public class ThreadAffinityTest {
         assertEquals(threadAffinity.allowedCpusList.get(7), newBitset(20, 21, 32));
     }
 
-    @NotNull
+    @Nonnull
     public BitSet newBitset(int... cpus) {
         BitSet bitSet = new BitSet();
         for (int c : cpus) {

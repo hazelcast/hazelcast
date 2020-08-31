@@ -27,6 +27,7 @@ import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLocal;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ConstantSerializers;
+import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.internal.usercodedeployment.impl.ClassLocator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -517,6 +518,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
             return dataSerializerAdapter;
         }
         if (Portable.class.isAssignableFrom(type)) {
+            return portableSerializerAdapter;
+        }
+        if (PortableGenericRecord.class.isAssignableFrom(type)) {
             return portableSerializerAdapter;
         }
         return constantTypesMap.get(type);

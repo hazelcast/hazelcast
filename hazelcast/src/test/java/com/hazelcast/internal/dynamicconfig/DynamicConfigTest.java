@@ -196,7 +196,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testDurableExecutorConfig() {
-        DurableExecutorConfig config = new DurableExecutorConfig(name, 7, 3, 10);
+        DurableExecutorConfig config = new DurableExecutorConfig(name, 7, 3, 10, false);
 
         driver.getConfig().addDurableExecutorConfig(config);
 
@@ -207,7 +207,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testScheduledExecutorConfig() {
         ScheduledExecutorConfig config = new ScheduledExecutorConfig(name, 2, 3, 10, null,
                 new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE),
-                ScheduledExecutorConfig.CapacityPolicy.PER_NODE);
+                ScheduledExecutorConfig.CapacityPolicy.PER_NODE, false);
 
         driver.getConfig().addScheduledExecutorConfig(config);
 
@@ -804,8 +804,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setWriteThrough(true)
                 .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true))
                 .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
-                                                               .setCapacity(42)
-                                                               .setTimeToLiveSeconds(52));
+                        .setCapacity(42)
+                        .setTimeToLiveSeconds(52));
 
         config.setWanReplicationRef(new WanReplicationRef(randomName(), "com.hazelcast.MergePolicy",
                 Collections.singletonList("filter"), true));
@@ -849,8 +849,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
                 .setMerkleTreeConfig(new MerkleTreeConfig().setEnabled(true).setDepth(15))
                 .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
-                                                               .setCapacity(42)
-                                                               .setTimeToLiveSeconds(52))
+                        .setCapacity(42)
+                        .setTimeToLiveSeconds(52))
                 .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true))
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE))

@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastObjectType;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
@@ -40,16 +39,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IsNotNullTest extends ExpressionTestBase {
-
-    @Test
-    public void testEndToEnd() {
-        SqlService sql = createEndToEndRecords();
-        assertRows(query(sql, "select __key from records where string1 is not null"), keyRange(0, 1000));
-        assertRows(query(sql, "select __key from records where (decimal1 + 1) is not null"), keyRange(0, 1000, 5000));
-        assertRows(query(sql, "select __key, string1 is not null from records"), keyRange(0, 1000, 5000, 6000),
-                k -> k != 5000 && k != 6000);
-        assertQueryThrows(sql, "select __key, cast(string1 is not null as double) from records", "cast function cannot convert");
-    }
 
     @Test
     public void verify() {

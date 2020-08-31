@@ -120,7 +120,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
     @Test
     public void testClientConnectedToLiteMember() {
         factory.newHazelcastInstance(getConfig().setLiteMember(true));
-        client = factory.newHazelcastClient();
+        client = factory.newHazelcastClient(null);
 
         HazelcastSqlException error = assertSqlException(client, query());
         assertEquals(SqlErrorCode.CONNECTION_PROBLEM, error.getCode());

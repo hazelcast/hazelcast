@@ -1038,6 +1038,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 scheduledExecutorConfig.setPoolSize(parseInt(getTextContent(child)));
             } else if (matches("split-brain-protection-ref", nodeName)) {
                 scheduledExecutorConfig.setSplitBrainProtectionName(getTextContent(child));
+            } else if ("statistics-enabled".equals(nodeName)) {
+                scheduledExecutorConfig.setStatisticsEnabled(getBooleanValue(getTextContent(child)));
             }
         }
 

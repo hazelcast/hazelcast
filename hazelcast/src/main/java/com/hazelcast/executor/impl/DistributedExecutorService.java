@@ -16,7 +16,6 @@
 
 package com.hazelcast.executor.impl;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
@@ -28,11 +27,10 @@ import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
-import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.ExecutorStats;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -58,8 +56,8 @@ import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class DistributedExecutorService implements ManagedService, RemoteService,
-                                                   StatisticsAwareService<LocalExecutorStats>, SplitBrainProtectionAwareService,
-                                                   DynamicMetricsProvider {
+        StatisticsAwareService<LocalExecutorStatsImpl>, SplitBrainProtectionAwareService,
+        DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 
@@ -78,21 +76,18 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     private final ConcurrentMap<UUID, Processor> submittedTasks = new ConcurrentHashMap<>();
     private final Set<String> shutdownExecutors
             = Collections.newSetFromMap(new ConcurrentHashMap<>());
-    private final ConcurrentHashMap<String, LocalExecutorStatsImpl> statsMap = new ConcurrentHashMap<>();
-    private final ConstructorFunction<String, LocalExecutorStatsImpl> localExecutorStatsConstructorFunction
-            = key -> new LocalExecutorStatsImpl();
-
+    private final ExecutorStats executorStats = new ExecutorStats();
     private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<String, Object>();
     private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
             new ConstructorFunction<String, Object>() {
-        @Override
-        public Object createNew(String name) {
-            ExecutorConfig executorConfig = nodeEngine.getConfig().findExecutorConfig(name);
-            String splitBrainProtectionName = executorConfig.getSplitBrainProtectionName();
-            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
-        }
-    };
+                @Override
+                public Object createNew(String name) {
+                    ExecutorConfig executorConfig = nodeEngine.getConfig().findExecutorConfig(name);
+                    String splitBrainProtectionName = executorConfig.getSplitBrainProtectionName();
+                    return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
+                }
+            };
 
     private ILogger logger;
 
@@ -109,7 +104,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     public void reset() {
         shutdownExecutors.clear();
         submittedTasks.clear();
-        statsMap.clear();
+        executorStats.clear();
         executorConfigCache.clear();
     }
 
@@ -122,7 +117,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
                             @Nonnull T task, Operation op) {
         ExecutorConfig cfg = getOrFindExecutorConfig(name);
         if (cfg.isStatisticsEnabled()) {
-            startPending(name);
+            executorStats.startPending(name);
         }
         Processor processor;
         if (task instanceof Runnable) {
@@ -138,7 +133,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             executionService.execute(name, processor);
         } catch (RejectedExecutionException e) {
             if (cfg.isStatisticsEnabled()) {
-                rejectExecution(name);
+                executorStats.rejectExecution(name);
             }
             logger.warning("While executing " + task + " on Executor[" + name + "]", e);
             if (uuid != null) {
@@ -153,7 +148,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         if (processor != null && processor.cancel(interrupt)) {
             if (processor.sendResponse(new CancellationException())) {
                 if (processor.isStatisticsEnabled()) {
-                    getLocalExecutorStats(processor.name).cancelExecution();
+                    executorStats.cancelExecution(processor.name);
                 }
                 return true;
             }
@@ -188,50 +183,20 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     public void destroyDistributedObject(String name, boolean local) {
         shutdownExecutors.remove(name);
         executionService.shutdownExecutor(name);
-        statsMap.remove(name);
+        executorStats.removeStats(name);
         executorConfigCache.remove(name);
         splitBrainProtectionConfigCache.remove(name);
     }
 
-    LocalExecutorStatsImpl getLocalExecutorStats(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localExecutorStatsConstructorFunction);
-    }
-
-    private void startExecution(String name, long elapsed) {
-        getLocalExecutorStats(name).startExecution(elapsed);
-    }
-
-    private void finishExecution(String name, long elapsed) {
-        getLocalExecutorStats(name).finishExecution(elapsed);
-    }
-
-    private void startPending(String name) {
-        getLocalExecutorStats(name).startPending();
-    }
-
-    private void rejectExecution(String name) {
-        getLocalExecutorStats(name).rejectExecution();
-    }
-
     @Override
-    public Map<String, LocalExecutorStats> getStats() {
-        Map<String, LocalExecutorStats> executorStats = MapUtil.createHashMap(statsMap.size());
-        Config config = nodeEngine.getConfig();
-        for (Map.Entry<String, LocalExecutorStatsImpl> executorStat : statsMap.entrySet()) {
-            String name = executorStat.getKey();
-            if (config.getExecutorConfig(name).isStatisticsEnabled()) {
-                executorStats.put(name, executorStat.getValue());
-            }
-        }
-        return executorStats;
+    public Map<String, LocalExecutorStatsImpl> getStats() {
+        return executorStats.getStatsMap();
     }
 
     /**
-     * Locate the {@code ExecutorConfig} in local {@link #executorConfigCache} or find it from {@link NodeEngine#getConfig()} and
-     * cache it locally.
-     *
-     * @param name
-     * @return
+     * Locate the {@code ExecutorConfig} in local {@link
+     * #executorConfigCache} or find it from {@link
+     * NodeEngine#getConfig()} and cache it locally.
      */
     private ExecutorConfig getOrFindExecutorConfig(String name) {
         ExecutorConfig cfg = executorConfigCache.get(name);
@@ -258,6 +223,10 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         provide(descriptor, context, EXECUTOR_PREFIX, getStats());
+    }
+
+    public LocalExecutorStats getLocalExecutorStats(String name) {
+        return executorStats.getLocalExecutorStats(name, false);
     }
 
     private final class Processor extends FutureTask implements Runnable {
@@ -300,7 +269,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         public void run() {
             long start = Clock.currentTimeMillis();
             if (statisticsEnabled) {
-                startExecution(name, start - creationTime);
+                executorStats.startExecution(name, start - creationTime);
             }
             Object result = null;
             try {
@@ -318,7 +287,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
                 if (!isCancelled()) {
                     sendResponse(result);
                     if (statisticsEnabled) {
-                        finishExecution(name, Clock.currentTimeMillis() - start);
+                        executorStats.finishExecution(name, Clock.currentTimeMillis() - start);
                     }
                 }
             }

@@ -1615,6 +1615,13 @@
 
     <xs:complexType name="durable-executor-service">
         <xs:all>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True (default) if statistics gathering is enabled on the executor task, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="pool-size" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="16">
                 <xs:annotation>
                     <xs:documentation>
@@ -1656,6 +1663,13 @@
 
     <xs:complexType name="scheduled-executor-service">
         <xs:all>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True (default) if statistics gathering is enabled on the executor task, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="pool-size" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="16">
                 <xs:annotation>
                     <xs:documentation>

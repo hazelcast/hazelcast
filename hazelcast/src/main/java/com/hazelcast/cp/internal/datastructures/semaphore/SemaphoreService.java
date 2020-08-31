@@ -24,6 +24,10 @@ import com.hazelcast.cp.internal.datastructures.exception.WaitKeyCancelledExcept
 import com.hazelcast.cp.internal.datastructures.semaphore.proxy.SessionAwareSemaphoreProxy;
 import com.hazelcast.cp.internal.datastructures.semaphore.proxy.SessionlessSemaphoreProxy;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Collection;
@@ -34,12 +38,14 @@ import static com.hazelcast.cp.internal.RaftService.withoutDefaultGroupName;
 import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus.FAILED;
 import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus.SUCCESSFUL;
 import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus.WAIT_KEY_ADDED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_TAG_NAME;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Contains Raft-based semaphore instances
  */
-public class SemaphoreService extends AbstractBlockingService<AcquireInvocationKey, Semaphore, SemaphoreRegistry> {
+public class SemaphoreService extends AbstractBlockingService<AcquireInvocationKey, Semaphore, SemaphoreRegistry>
+        implements DynamicMetricsProvider {
 
     /**
      * Name of the service
@@ -48,6 +54,12 @@ public class SemaphoreService extends AbstractBlockingService<AcquireInvocationK
 
     public SemaphoreService(NodeEngine nodeEngine) {
         super(nodeEngine);
+    }
+
+    @Override
+    protected void initImpl() {
+        super.initImpl();
+        nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
     }
 
     public boolean initSemaphore(CPGroupId groupId, String name, int permits) {
@@ -187,6 +199,24 @@ public class SemaphoreService extends AbstractBlockingService<AcquireInvocationK
                     : new SessionAwareSemaphoreProxy(nodeEngine, groupId, proxyName, objectName);
         } catch (Exception e) {
             throw rethrow(e);
+        }
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        MetricDescriptor root = descriptor.withPrefix("cp.semaphore");
+
+        for (CPGroupId groupId : getGroupIdSet()) {
+            SemaphoreRegistry registry = getRegistryOrNull(groupId);
+            for (Semaphore sema : registry.getAllSemaphores()) {
+                MetricDescriptor desc = root.copy()
+                        .withDiscriminator("id", sema.getName() + "@" + groupId.getName())
+                        .withTag(CP_TAG_NAME, sema.getName())
+                        .withTag("group", groupId.getName());
+
+                context.collect(desc.copy().withMetric("initialized"), sema.isInitialized() ? 1 : 0);
+                context.collect(desc.copy().withUnit(ProbeUnit.COUNT).withMetric("available"), sema.getAvailable());
+            }
         }
     }
 }

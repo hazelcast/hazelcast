@@ -34,6 +34,14 @@ public final class ExpressionPredicates {
         return new ComparePredicate(Comparison.EQ, operand, false);
     }
 
+    public static Predicate<ExpressionValue> neq(Object operand) {
+        return new ComparePredicate(Comparison.NEQ, operand, true);
+    }
+
+    public static Predicate<ExpressionValue> neq_2(Object operand) {
+        return new ComparePredicate(Comparison.NEQ, operand, false);
+    }
+
     public static Predicate<ExpressionValue> gt(Object operand) {
         return new ComparePredicate(Comparison.GT, operand, true);
     }
@@ -74,6 +82,14 @@ public final class ExpressionPredicates {
         return new NullPredicate(false);
     }
 
+    public static Predicate<ExpressionValue> isNotNull() {
+        return new NotNullPredicate(true);
+    }
+
+    public static Predicate<ExpressionValue> isNotNull_2() {
+        return new NotNullPredicate(false);
+    }
+
     public static Predicate<ExpressionValue> or(Predicate<ExpressionValue>... predicates) {
         return new OrPredicate(predicates);
     }
@@ -83,7 +99,7 @@ public final class ExpressionPredicates {
     }
 
     private enum Comparison {
-        EQ, GT, GTE, LT, LTE
+        EQ, NEQ, GT, GTE, LT, LTE
     }
 
     public static class ComparePredicate implements Predicate<ExpressionValue> {
@@ -123,6 +139,9 @@ public final class ExpressionPredicates {
                 case LTE:
                     return res <= 0;
 
+                case NEQ:
+                    return res != 0;
+
                 default:
                     return res == 0;
             }
@@ -142,6 +161,22 @@ public final class ExpressionPredicates {
             Object field = firstField ? value.field1() : ((ExpressionBiValue) value).field2();
 
             return field == null;
+        }
+    }
+
+    public static class NotNullPredicate implements Predicate<ExpressionValue> {
+
+        private final boolean firstField;
+
+        public NotNullPredicate(boolean firstField) {
+            this.firstField = firstField;
+        }
+
+        @Override
+        public boolean test(ExpressionValue value) {
+            Object field = firstField ? value.field1() : ((ExpressionBiValue) value).field2();
+
+            return field != null;
         }
     }
 

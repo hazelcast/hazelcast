@@ -50,6 +50,7 @@ import static com.hazelcast.query.impl.QueryableEntry.extractAttributeValue;
  * structures used to establish the correspondence between long bitmap keys and
  * actual user-provided keys.
  */
+@SuppressWarnings("rawtypes")
 public final class BitmapIndexStore extends BaseIndexStore {
 
     private static final long NO_KEY = -1;
@@ -306,6 +307,31 @@ public final class BitmapIndexStore extends BaseIndexStore {
         } finally {
             releaseReadLock();
         }
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator() {
+        throw makeUnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
+        throw makeUnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value) {
+        throw makeUnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(
+        Comparable from,
+        boolean fromInclusive,
+        Comparable to,
+        boolean toInclusive
+    ) {
+        throw makeUnsupportedOperationException();
     }
 
     @Override

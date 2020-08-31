@@ -19,7 +19,7 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * This is an exception thrown when an exception occurs while serializing/deserializing objects.
+ * An exception thrown when a problem occurs while serializing/deserializing objects.
  */
 public class HazelcastSerializationException extends HazelcastException {
 

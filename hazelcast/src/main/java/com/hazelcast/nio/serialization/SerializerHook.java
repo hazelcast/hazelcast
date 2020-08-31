@@ -25,7 +25,7 @@ package com.hazelcast.nio.serialization;
  * It needs to be registered using a file called "com.hazelcast.SerializerHook"
  * in META-INF/services.
  * Those services files are not registered using the standard Java6+ java.util.ServiceLoader
- * but with a Hazelcast version that is capable of working with multiple classloaders
+ * but with a Hazelcast version that is capable of working with multiple class loaders
  * to support JEE and OSGi environments.
  *
  * @param <T> the type of the serialized object

@@ -17,33 +17,43 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitorHook;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
 import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
+import com.hazelcast.sql.impl.plan.node.PlanNode;
+import com.hazelcast.sql.impl.plan.node.TestPlanNodeVisitorAdapter;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.state.QueryStateCallback;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.IntFunction;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -177,7 +187,7 @@ public class SqlTestSupport extends HazelcastTestSupport {
     }
 
     public static NodeEngineImpl nodeEngine(HazelcastInstance instance) {
-        return ((HazelcastInstanceProxy) instance).getOriginal().node.nodeEngine;
+        return Accessors.getNodeEngineImpl(instance);
     }
 
     public static Row row(Object... values) {
@@ -218,5 +228,120 @@ public class SqlTestSupport extends HazelcastTestSupport {
 
     public static void clearPlanCache(HazelcastInstance member) {
         ((SqlServiceImpl) member.getSql()).getPlanCache().clear();
+    }
+
+    public static int getLocalPartition(HazelcastInstance member) {
+        PartitionIdSet partitions = getLocalPartitions(member);
+
+        if (partitions.isEmpty()) {
+            throw new RuntimeException("Member does nave local partitions");
+        }
+
+        return partitions.iterator().next();
+    }
+
+    public static PartitionIdSet getLocalPartitions(HazelcastInstance member) {
+        PartitionService partitionService = member.getPartitionService();
+
+        PartitionIdSet res = new PartitionIdSet(partitionService.getPartitions().size());
+
+        for (Partition partition : partitionService.getPartitions()) {
+            if (partition.getOwner().localMember()) {
+                res.add(partition.getPartitionId());
+            }
+        }
+
+        return res;
+    }
+
+    public static <K> K getLocalKey(
+        HazelcastInstance member,
+        IntFunction<K> keyProducer
+    ) {
+        return getLocalKeys(member, 1, keyProducer).get(0);
+    }
+
+    public static <K> List<K> getLocalKeys(
+        HazelcastInstance member,
+        int count,
+        IntFunction<K> keyProducer
+    ) {
+        return new ArrayList<>(getLocalEntries(member, count, keyProducer, keyProducer).keySet());
+    }
+
+    public static <K, V> Map.Entry<K, V> getLocalEntry(
+        HazelcastInstance member,
+        IntFunction<K> keyProducer,
+        IntFunction<V> valueProducer
+    ) {
+        return getLocalEntries(member, 1, keyProducer, valueProducer).entrySet().iterator().next();
+    }
+
+    public static <K, V> Map<K, V> getLocalEntries(
+        HazelcastInstance member,
+        int count,
+        IntFunction<K> keyProducer,
+        IntFunction<V> valueProducer
+    ) {
+        if (count == 0) {
+            return Collections.emptyMap();
+        }
+
+        PartitionService partitionService = member.getPartitionService();
+
+        Map<K, V> res = new LinkedHashMap<>();
+
+        for (int i = 0; i < Integer.MAX_VALUE; i++) {
+            K key = keyProducer.apply(i);
+
+            if (key == null) {
+                continue;
+            }
+
+            Partition partition = partitionService.getPartition(key);
+
+            if (!partition.getOwner().localMember()) {
+                continue;
+            }
+
+            V value = valueProducer.apply(i);
+
+            if (value == null) {
+                continue;
+            }
+
+            res.put(key, value);
+
+            if (res.size() == count) {
+                break;
+            }
+        }
+
+        if (res.size() < count) {
+            throw new RuntimeException("Failed to get the necesasry number of key: " + res.size());
+        }
+
+        return res;
+    }
+
+    protected static MapIndexScanPlanNode findFirstIndexNode(SqlResult result) {
+        SqlResultImpl result0 = (SqlResultImpl) result;
+
+        AtomicReference<MapIndexScanPlanNode> nodeRef = new AtomicReference<>();
+
+        for (int i = 0; i < result0.getPlan().getFragmentCount(); i++) {
+            PlanNode fragment = result0.getPlan().getFragment(i);
+
+            fragment.visit(new TestPlanNodeVisitorAdapter() {
+                @Override
+                public void onMapIndexScanNode(MapIndexScanPlanNode node) {
+                    nodeRef.compareAndSet(null, node);
+
+                    super.onMapIndexScanNode(node);
+                }
+            });
+        }
+
+        return nodeRef.get();
     }
 }

@@ -54,8 +54,8 @@ import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
  */
 public class Semaphore extends BlockingResource<AcquireInvocationKey> implements IdentifiedDataSerializable {
 
-    private boolean initialized;
-    private int available;
+    private volatile boolean initialized;
+    private volatile int available;
     private final Long2ObjectHashMap<SessionSemaphoreState> sessionStates = new Long2ObjectHashMap<>();
 
     Semaphore() {
@@ -87,6 +87,10 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
     boolean isAvailable(int permits) {
         checkPositive(permits, "Permits should be positive!");
         return available >= permits;
+    }
+
+    boolean isInitialized() {
+        return initialized;
     }
 
     /**
@@ -136,6 +140,7 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
         return new AcquireResult(SUCCESSFUL, key.permits(), cancelled);
     }
 
+    @SuppressWarnings("NonAtomicOperationOnVolatileField")
     private void assignPermitsToInvocation(SemaphoreEndpoint endpoint, UUID invocationUid, int permits) {
         long sessionId = endpoint.sessionId();
         if (sessionId == NO_SESSION_ID) {
@@ -168,6 +173,7 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
      * successful release if there are any. Returns cancelled wait keys after
      * failed release if there are any.
      */
+    @SuppressWarnings("NonAtomicOperationOnVolatileField")
     ReleaseResult release(SemaphoreEndpoint endpoint, UUID invocationUid, int permits) {
         checkPositive(permits, "Permits should be positive!");
 

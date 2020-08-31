@@ -28,6 +28,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 
 /**
  * Test for different error conditions.
@@ -97,7 +98,10 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
 
         // Start query
         HazelcastSqlException error = assertSqlException(instance1, query());
-        assertEquals(SqlErrorCode.CONNECTION_PROBLEM, error.getCode());
+        assertTrue(
+            "Error code: " + error.getCode(),
+            error.getCode() == SqlErrorCode.CONNECTION_PROBLEM || error.getCode() == SqlErrorCode.PARTITION_DISTRIBUTION_CHANGED
+        );
         assertEquals(instance1.getLocalEndpoint().getUuid(), error.getOriginatingMemberId());
     }
 
