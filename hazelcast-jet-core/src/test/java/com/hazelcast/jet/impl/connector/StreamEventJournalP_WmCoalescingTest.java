@@ -90,7 +90,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
         map.put(partitionKeys[0], 10);
         map.put(partitionKeys[1], 10);
 
-        TestSupport.verifyProcessor(createSupplier(asList(0, 1), 2000))
+        TestSupport.verifyProcessor(createSupplier(asList(0, 1), 5000))
                    .disableProgressAssertion()
                    .runUntilOutputMatches(60_000, 100)
                    .disableSnapshots()
@@ -116,7 +116,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
         });
         productionStartedLatch.await();
 
-        TestSupport.verifyProcessor(createSupplier(asList(0, 1), 4000))
+        TestSupport.verifyProcessor(createSupplier(asList(0, 1), 5000))
                    .disableProgressAssertion()
                    .runUntilOutputMatches(60_000, 100)
                    .disableSnapshots()
@@ -174,7 +174,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
         /* aim of this test is to check that the mapping from partitionIndex to partitionId works */
         map.put(partitionKeys[1], 13);
 
-        TestSupport.verifyProcessor(createSupplier(singletonList(1), 2000))
+        TestSupport.verifyProcessor(createSupplier(singletonList(1), 5000))
                    .disableProgressAssertion()
                    .runUntilOutputMatches(60_000, 100)
                    .disableSnapshots()
