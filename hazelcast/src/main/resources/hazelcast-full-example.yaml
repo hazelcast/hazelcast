@@ -636,16 +636,11 @@ hazelcast:
         read-timeout-seconds: 7
         connection-retries: 4
         hz-port: 5701-5710
-
-        # Following properties are for EC2 instances, but all are optional.
         security-group-name: hazelcast-sg
         tag-key: type
         tag-value: hz-nodes
         iam-role: dummy
-
-        # Following properties are for ECS instances, but all are optional.
         cluster: my-cluster
-        # family and service-name properties are mutually exclusive.
         family: test-family
         service-name: test-service
       gcp:

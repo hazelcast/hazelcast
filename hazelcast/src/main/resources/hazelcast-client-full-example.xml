@@ -316,16 +316,11 @@
             <connection-retries>4</connection-retries>
             <hz-port>5701-5710</hz-port>
             <use-public-ip>true</use-public-ip>
-
-            <!-- Following properties are for EC2 instances, but all are optional. -->
             <tag-key>type</tag-key>
             <tag-value>hz-nodes</tag-value>
             <security-group-name>hazelcast-sg</security-group-name>
             <iam-role>dummy</iam-role>
-
-            <!-- Following properties are for ECS instances, but all are optional. -->
             <cluster>my-cluster</cluster>
-            <!-- family and service-name properties are mutually exclusive. -->
             <family>test-family</family>
             <service-name>test-service</service-name>
         </aws>
