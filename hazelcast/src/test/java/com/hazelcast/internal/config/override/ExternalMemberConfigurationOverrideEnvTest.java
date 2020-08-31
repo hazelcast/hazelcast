@@ -17,6 +17,7 @@
 package com.hazelcast.internal.config.override;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -52,7 +53,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         assertFalse(config.getNetworkConfig().getJoin().isAutoDetectionEnabled());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void shouldDisallowConflictingEntries() {
         runWithSystemProperty("hz.cluster-name", "test2", () -> {
             Config config = new Config();
