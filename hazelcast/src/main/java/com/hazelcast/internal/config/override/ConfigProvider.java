@@ -23,9 +23,12 @@ import java.util.Map;
 interface ConfigProvider {
 
     /**
-     * Returns an immutable set of key-value configuration entries.
+     * @return Returns an immutable set of key-value configuration entries.
      */
     Map<String, String> properties();
 
+    /**
+     * @return Returns a human readable identifier of the configuration source.
+     */
     String name();
 }
