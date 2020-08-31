@@ -108,8 +108,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
         if (partitionStateVersion <= current.partitionSateVersion) {
             if (logger.isFinestEnabled()) {
-                logFailure(connection, partitionStateVersion, current,
-                        "response state version is old");
+                logFailure(connection, partitionStateVersion, current, "response partition state version is old");
             }
             return false;
         }

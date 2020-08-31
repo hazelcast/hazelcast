@@ -39,11 +39,11 @@ public final class PeekOperation extends QueueOperation implements IdentifiedDat
     public void run() {
         QueueContainer queueContainer = getContainer();
         QueueItem item = queueContainer.peek();
-        response = item != null ? item.getData() : null;
+        response = item != null ? item.getSerializedObject() : null;
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public void afterRun() {
         LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
         stats.incrementOtherOperations();
     }

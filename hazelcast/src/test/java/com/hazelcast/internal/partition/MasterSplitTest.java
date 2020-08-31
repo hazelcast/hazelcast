@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.internal.partition.operation.MigrationOperation;
 import com.hazelcast.internal.partition.operation.MigrationRequestOperation;
-import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -43,7 +42,6 @@ import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getOperationService;
-import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -67,9 +65,7 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
         MigrationInfo migration = createMigrationInfo(member1, member2);
 
-        int partitionStateVersion = getPartitionService(member1).getPartitionStateVersion();
-
-        Operation op = new MigrationRequestOperation(migration, Collections.<MigrationInfo>emptyList(), partitionStateVersion, true);
+        Operation op = new MigrationRequestOperation(migration, Collections.emptyList(), 0, true);
 
         InvocationBuilder invocationBuilder = getOperationService(member1)
                                                        .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
@@ -102,11 +98,9 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
         MigrationInfo migration = createMigrationInfo(member1, member2);
 
-        int partitionStateVersion = getPartitionService(member1).getPartitionStateVersion();
-
         ReplicaFragmentMigrationState migrationState
-                = new ReplicaFragmentMigrationState(Collections.<ServiceNamespace, long[]>emptyMap(), Collections.<Operation>emptySet());
-        Operation op = new MigrationOperation(migration, Collections.<MigrationInfo>emptyList(), partitionStateVersion, migrationState, true, true);
+                = new ReplicaFragmentMigrationState(Collections.emptyMap(), Collections.emptySet());
+        Operation op = new MigrationOperation(migration, Collections.emptyList(), 0, migrationState, true, true);
 
         InvocationBuilder invocationBuilder = getOperationService(member1)
                                                        .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))

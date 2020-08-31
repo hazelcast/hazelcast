@@ -75,7 +75,7 @@ public final class MergingValueFactory {
     public static <V> QueueMergeTypes<V> createMergingValue(SerializationService serializationService, Queue<QueueItem> items) {
         Collection<Object> values = new ArrayList<>(items.size());
         for (QueueItem item : items) {
-            values.add(item.getData());
+            values.add(item.getSerializedObject());
         }
         return new QueueMergingValueImpl<V>(serializationService)
                 .setValue(values);

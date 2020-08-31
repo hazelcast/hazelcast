@@ -82,7 +82,7 @@ public class ClusterDataSerializationTest {
         assertEquals(txnLogRecord.leaseTime, deserialized.leaseTime);
         assertEquals(txnLogRecord.isTransient, deserialized.isTransient);
         assertEquals(txnLogRecord.memberListVersion, deserialized.memberListVersion);
-        assertEquals(txnLogRecord.partitionStateVersion, deserialized.partitionStateVersion);
+        assertEquals(txnLogRecord.partitionStateStamp, deserialized.partitionStateStamp);
     }
 
     @Test
@@ -101,7 +101,7 @@ public class ClusterDataSerializationTest {
         assertEquals(txnLogRecord.leaseTime, deserialized.leaseTime);
         assertEquals(txnLogRecord.isTransient, deserialized.isTransient);
         assertEquals(txnLogRecord.memberListVersion, deserialized.memberListVersion);
-        assertEquals(txnLogRecord.partitionStateVersion, deserialized.partitionStateVersion);
+        assertEquals(txnLogRecord.partitionStateStamp, deserialized.partitionStateStamp);
     }
 
     @Test

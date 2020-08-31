@@ -17,13 +17,15 @@
 package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.util.Clock;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Queue Item.
@@ -31,7 +33,8 @@ import java.io.IOException;
 public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueItem> {
 
     protected long itemId;
-    protected Data data;
+    protected Data serializedObject;
+    protected Object deserializedObject;
     protected final long creationTime;
     protected QueueContainer container;
 
@@ -39,22 +42,34 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
         this.creationTime = Clock.currentTimeMillis();
     }
 
-    public QueueItem(QueueContainer container, long itemId, Data data) {
+    public QueueItem(QueueContainer container, long itemId, @Nullable Data data) {
         this();
         this.container = container;
         this.itemId = itemId;
-        this.data = data;
+        this.serializedObject = data;
     }
 
-    public Data getData() {
-        if (data == null && container != null) {
-            data = container.getDataFromMap(itemId);
+    public Data getSerializedObject() {
+        if (serializedObject == null && container != null) {
+            serializedObject = container.getDataFromMap(itemId);
         }
-        return data;
+        return serializedObject;
     }
 
-    public void setData(Data data) {
-        this.data = data;
+    public void setSerializedObject(Data serializedObject) {
+        this.serializedObject = serializedObject;
+    }
+
+    public void setContainer(QueueContainer container) {
+        this.container = container;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getDeserializedObject() {
+        if (deserializedObject == null) {
+            deserializedObject = container.getSerializationService().toObject(serializedObject);
+        }
+        return (T) deserializedObject;
     }
 
     public long getItemId() {
@@ -86,13 +101,13 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(itemId);
-        IOUtil.writeData(out, data);
+        IOUtil.writeData(out, serializedObject);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         itemId = in.readLong();
-        data = IOUtil.readData(in);
+        serializedObject = IOUtil.readData(in);
     }
 
     @Override
@@ -110,27 +125,15 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
         if (this == o) {
             return true;
         }
-        if (!(o instanceof QueueItem)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
-        QueueItem item = (QueueItem) o;
-
-        if (itemId != item.itemId) {
-            return false;
-        }
-        if (data != null ? !data.equals(item.data) : item.data != null) {
-            return false;
-        }
-
-        return true;
+        QueueItem queueItem = (QueueItem) o;
+        return itemId == queueItem.itemId && Objects.equals(serializedObject, queueItem.serializedObject);
     }
 
     @Override
     public int hashCode() {
-        int result = (int) (itemId ^ (itemId >>> 32));
-        result = 31 * result + (data != null ? data.hashCode() : 0);
-        return result;
+        return Objects.hash(itemId, serializedObject);
     }
-
 }

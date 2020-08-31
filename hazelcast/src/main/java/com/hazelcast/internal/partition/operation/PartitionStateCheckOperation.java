@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -23,39 +24,57 @@ import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
 /**
- * Sent from the master to check the partition table state version on target member.
+ * Sent from the master to check the partition table state stamp on target member.
  *
  * @since 3.12
  */
-public final class PartitionStateVersionCheckOperation extends AbstractPartitionOperation
-        implements MigrationCycleOperation {
+public final class PartitionStateCheckOperation extends AbstractPartitionOperation
+        implements MigrationCycleOperation, Versioned {
 
+    private long stamp;
+
+    //RU_COMPAT_4_0
+    @Deprecated
     private int version;
+
     private transient boolean stale;
 
-    public PartitionStateVersionCheckOperation() {
+    public PartitionStateCheckOperation() {
     }
 
-    public PartitionStateVersionCheckOperation(int version) {
+    public PartitionStateCheckOperation(long stamp, @Deprecated int version) {
+        this.stamp = stamp;
         this.version = version;
     }
 
     @Override
     public void run() {
+        ILogger logger = getLogger();
         InternalPartitionServiceImpl partitionService = getService();
-        int currentVersion = partitionService.getPartitionStateVersion();
 
-        if (currentVersion < version) {
-            stale = true;
-
-            ILogger logger = getLogger();
-            if (logger.isFineEnabled()) {
-                logger.fine("Partition table is stale! Current version: " + currentVersion
-                        + ", master version: " + version);
+        if (getNodeEngine().getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
+            long currentStamp = partitionService.getPartitionStateStamp();
+            if (currentStamp != stamp) {
+                stale = true;
+                if (logger.isFineEnabled()) {
+                    logger.fine("Partition table is stale! Current stamp: " + currentStamp
+                            + ", master stamp: " + stamp);
+                }
+            }
+        } else {
+            //RU_COMPAT_4_0
+            int currentVersion = partitionService.getPartitionStateVersion();
+            if (currentVersion < version) {
+                stale = true;
+                if (logger.isFineEnabled()) {
+                    logger.fine("Partition table is stale! Current version: " + currentVersion
+                            + ", master version: " + version);
+                }
             }
         }
     }
@@ -73,17 +92,25 @@ public final class PartitionStateVersionCheckOperation extends AbstractPartition
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        version = in.readInt();
+        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            stamp = in.readLong();
+        } else {
+            version = in.readInt();
+        }
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(version);
+        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            out.writeLong(stamp);
+        } else {
+            out.writeInt(version);
+        }
     }
 
     @Override
     public int getClassId() {
-        return PartitionDataSerializerHook.PARTITION_STATE_VERSION_CHECK_OP;
+        return PartitionDataSerializerHook.PARTITION_STATE_CHECK_OP;
     }
 }

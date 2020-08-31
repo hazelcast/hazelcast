@@ -57,6 +57,21 @@ public interface InternalPartition extends IPartition {
     PartitionReplica getReplica(int replicaIndex);
 
     /**
+     * Returns the copy of replicas assigned to this partition.
+     *
+     * @return copy of partition replicas
+     */
+    PartitionReplica[] getReplicasCopy();
+
+    /**
+     * Checks if given replica is owner of primary or backup of this partition.
+     *
+     * @param replica owner replica
+     * @return {@code true} if replica is owner or backup, {@code false} otherwise
+     */
+    boolean isOwnerOrBackup(PartitionReplica replica);
+
+    /**
      * Returns the integer replica indices of {@code InternalPartition} as a stream.
      */
     static IntStream replicaIndices() {

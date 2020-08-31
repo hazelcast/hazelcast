@@ -26,8 +26,11 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
+import com.hazelcast.internal.partition.ReadonlyInternalPartition;
+import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -49,6 +52,7 @@ import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -107,7 +111,7 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
         partitionService.firstArrangement();
 
         assertFalse(partitionService.getPartitionStateManager().isInitialized());
-        assertEquals(0, partitionService.getPartitionStateVersion());
+        assertEquals(0, partitionService.getPartitionStateStamp());
         assertNull(partitionService.getPartitionOwner(0));
     }
 
@@ -118,7 +122,7 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
         partitionService.firstArrangement();
 
         assertFalse(partitionService.getPartitionStateManager().isInitialized());
-        assertEquals(0, partitionService.getPartitionStateVersion());
+        assertEquals(0, partitionService.getPartitionStateStamp());
         assertNull(partitionService.getPartitionOwner(0));
     }
 
@@ -132,27 +136,31 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void test_setInitialState() {
-        PartitionReplica[][] replicas = new PartitionReplica[partitionCount][MAX_REPLICA_COUNT];
+        InternalPartition[] partitions = new InternalPartition[partitionCount];
         for (int i = 0; i < partitionCount; i++) {
-            replicas[i][0] = PartitionReplica.from(localMember);
+            PartitionReplica[] replicas = new PartitionReplica[MAX_REPLICA_COUNT];
+            replicas[0] = PartitionReplica.from(localMember);
+            partitions[i] = new ReadonlyInternalPartition(replicas, i, RandomPicker.getInt(1, 10));
         }
 
-        partitionService.setInitialState(new PartitionTableView(replicas, partitionCount));
+        partitionService.setInitialState(new PartitionTableView(partitions));
         for (int i = 0; i < partitionCount; i++) {
             assertTrue(partitionService.isPartitionOwner(i));
         }
-        assertEquals(partitionCount, partitionService.getPartitionStateVersion());
+        assertNotEquals(0, partitionService.getPartitionStateStamp());
     }
 
     @Test(expected = IllegalStateException.class)
     public void test_setInitialState_multipleTimes() {
-        PartitionReplica[][] addresses = new PartitionReplica[partitionCount][MAX_REPLICA_COUNT];
+        InternalPartition[] partitions = new InternalPartition[partitionCount];
         for (int i = 0; i < partitionCount; i++) {
-            addresses[i][0] = PartitionReplica.from(localMember);
+            PartitionReplica[] replicas = new PartitionReplica[MAX_REPLICA_COUNT];
+            replicas[0] = PartitionReplica.from(localMember);
+            partitions[i] = new ReadonlyInternalPartition(replicas, i, RandomPicker.getInt(1, 10));
         }
 
-        partitionService.setInitialState(new PartitionTableView(addresses, 0));
-        partitionService.setInitialState(new PartitionTableView(addresses, 0));
+        partitionService.setInitialState(new PartitionTableView(partitions));
+        partitionService.setInitialState(new PartitionTableView(partitions));
     }
 
     @Test

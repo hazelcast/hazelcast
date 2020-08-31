@@ -16,32 +16,40 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.internal.util.LatencyDistribution;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
+
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
 import static com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl.AD_HOC_PARTITION_ID;
 
 class OperationRunnerFactoryImpl implements OperationRunnerFactory {
-    private OperationServiceImpl operationService;
+    private final ConcurrentMap<Class, LatencyDistribution> opLatencyDistributions;
+    private final OperationServiceImpl operationService;
     private int genericId;
 
     OperationRunnerFactoryImpl(OperationServiceImpl operationService) {
         this.operationService = operationService;
+        this.opLatencyDistributions = operationService.opLatencyDistributions;
     }
 
     @Override
     public OperationRunner createAdHocRunner() {
-        return new OperationRunnerImpl(operationService, AD_HOC_PARTITION_ID, 0, null);
+        return new OperationRunnerImpl(operationService, AD_HOC_PARTITION_ID,
+                0, null, opLatencyDistributions);
     }
 
     @Override
     public OperationRunner createPartitionRunner(int partitionId) {
-        return new OperationRunnerImpl(operationService, partitionId, 0, operationService.failedBackupsCount);
+        return new OperationRunnerImpl(operationService, partitionId, 0,
+                operationService.failedBackupsCount, opLatencyDistributions);
     }
 
     @Override
     public OperationRunner createGenericRunner() {
-        return new OperationRunnerImpl(operationService, GENERIC_PARTITION_ID, genericId++, null);
+        return new OperationRunnerImpl(operationService, GENERIC_PARTITION_ID,
+                genericId++, null, opLatencyDistributions);
     }
 }

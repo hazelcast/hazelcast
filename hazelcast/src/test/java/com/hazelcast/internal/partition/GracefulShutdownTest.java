@@ -517,7 +517,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
             }
         });
 
-        final int partitionStateVersion = partitionService.getPartitionStateVersion();
+        final long partitionStateStamp = partitionService.getPartitionStateStamp();
 
         instances[0].getLifecycleService().terminate();
 
@@ -544,7 +544,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
                 assertNotEquals(getAddress(instances[1]), getNode(instances[3]).getMasterAddress());
 
                 // no partition state version change
-                assertEquals(partitionStateVersion, partitionService.getPartitionStateVersion());
+                assertEquals(partitionStateStamp, partitionService.getPartitionStateStamp());
 
                 // no migrations has been submitted yet
                 assertNull(startedMigration.get());
@@ -579,7 +579,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
     private static InternalPartition[] getPartitionTable(HazelcastInstance instance) {
         InternalPartitionServiceImpl partitionService = getNode(instance).partitionService;
-        return partitionService.getPartitionStateManager().getPartitionsCopy();
+        return partitionService.getPartitionStateManager().getPartitionsCopy(true);
     }
 
     private static Config newConfig() {

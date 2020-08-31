@@ -63,7 +63,6 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 
 /**
- * Migration request operation used by Hazelcast version 3.9
  * Sent from the master node to the partition owner. It will perform the migration by preparing the migration operations and
  * sending them to the destination. A response with a value equal to {@link Boolean#TRUE} indicates a successful migration.
  * It runs on the migration source and transfers the partition with multiple shots.
@@ -86,13 +85,6 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     @Override
     public CallStatus call() throws Exception {
         setActiveMigration();
-
-        if (!migrationInfo.startProcessing()) {
-            getLogger().warning("Migration is cancelled -> " + migrationInfo);
-            completeMigration(false);
-            return CallStatus.VOID;
-        }
-
         return new OffloadImpl();
     }
 
@@ -111,8 +103,6 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
             } catch (Throwable e) {
                 logThrowable(e);
                 completeMigration(false);
-            } finally {
-                migrationInfo.doneProcessing();
             }
         }
     }
@@ -165,7 +155,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
 
             InternalPartitionServiceImpl partitionService = getService();
             MigrationManager migrationManager = partitionService.getMigrationManager();
-            MigrationInfo currentActiveMigration = migrationManager.setActiveMigration(migrationInfo);
+            MigrationInfo currentActiveMigration = migrationManager.addActiveMigration(migrationInfo);
             if (!migrationInfo.equals(currentActiveMigration)) {
                 throw new IllegalStateException("Current active migration " + currentActiveMigration
                         + " is different than expected: " + migrationInfo);
@@ -267,7 +257,6 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
 
     private void completeMigration(boolean result) {
         success = result;
-        migrationInfo.doneProcessing();
         onMigrationComplete();
         sendResponse(result);
     }
@@ -278,7 +267,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
             throwableToLog = throwableToLog.getCause() != null ? throwableToLog.getCause() : throwableToLog;
         }
         Level level = getLogLevel(throwableToLog);
-        getLogger().log(level, throwableToLog.getMessage(), throwableToLog);
+        getLogger().log(level, "Failure while executing " + migrationInfo, throwableToLog);
     }
 
     private Level getLogLevel(Throwable e) {
@@ -314,7 +303,10 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
 
         @Override
         public void accept(Object result, Throwable throwable) {
-            if (Boolean.TRUE.equals(result)) {
+            if (throwable != null) {
+                logThrowable(throwable);
+                completeMigration(false);
+            } else if (Boolean.TRUE.equals(result)) {
                 OperationService operationService = getNodeEngine().getOperationService();
                 operationService.execute(new SendNewMigrationFragmentRunnable());
             } else {
