@@ -34,6 +34,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -124,7 +125,6 @@ public final class ConfigValidator {
                                       NativeMemoryConfig nativeMemoryConfig,
                                       SplitBrainMergePolicyProvider mergePolicyProvider,
                                       HazelcastProperties properties) {
-
         checkNotNativeWhenOpenSource(mapConfig.getInMemoryFormat());
 
         if (getBuildInfo().isEnterprise()) {
@@ -134,7 +134,13 @@ public final class ConfigValidator {
 
         checkMapEvictionConfig(mapConfig.getEvictionConfig());
         checkMapMaxSizePolicyPerInMemoryFormat(mapConfig);
-        checkMapMergePolicy(mapConfig, mergePolicyProvider);
+        if (mergePolicyProvider != null) {
+            checkMapMergePolicy(mapConfig, mergePolicyProvider);
+        }
+
+        for (QueryCacheConfig queryCacheConfig : mapConfig.getQueryCacheConfigs()) {
+            checkCacheEvictionConfig(queryCacheConfig.getEvictionConfig());
+        }
     }
 
     static void checkMapMaxSizePolicyPerInMemoryFormat(MapConfig mapConfig) {
@@ -160,7 +166,7 @@ public final class ConfigValidator {
         throw new InvalidConfigurationException(String.format(msg, maxSizePolicy, inMemoryFormat, policies));
     }
 
-    public static void checkMapEvictionConfig(EvictionConfig evictionConfig) {
+    static void checkMapEvictionConfig(EvictionConfig evictionConfig) {
         EvictionPolicyComparator comparator = evictionConfig.getComparator();
         String comparatorClassName = evictionConfig.getComparatorClassName();
         EvictionPolicy evictionPolicy = evictionConfig.getEvictionPolicy();

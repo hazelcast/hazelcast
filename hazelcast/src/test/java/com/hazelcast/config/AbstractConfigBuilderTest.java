@@ -25,9 +25,15 @@ import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.Properties;
 
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MaxSizePolicy.FREE_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
 import static com.hazelcast.instance.ProtocolType.CLIENT;
@@ -178,7 +184,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testNearCacheInMemoryFormat();
 
     @Test
-    public abstract void testNearCacheInMemoryFormatNative_withKeysByReference();
+    public abstract void testNearCacheInMemoryFormatObject_withKeysByReference();
 
     @Test
     public abstract void testNearCacheEvictionPolicy();
@@ -339,7 +345,19 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testDuplicateLiteMemberConfig();
 
     @Test
-    public abstract void testMapNativeMaxSizePolicy();
+    public abstract void testMapObjectInMemoryFormatMaxSizePolicy();
+
+    protected EnumSet<MaxSizePolicy> notSupportedByObjectInMemoryFormat() {
+        return EnumSet.of(
+            USED_NATIVE_MEMORY_SIZE,
+            USED_NATIVE_MEMORY_PERCENTAGE,
+            FREE_NATIVE_MEMORY_SIZE,
+            FREE_NATIVE_MEMORY_PERCENTAGE);
+    }
+
+    protected EnumSet<MaxSizePolicy> notSupportedByIMap() {
+        return EnumSet.of(ENTRY_COUNT);
+    }
 
     @Test
     public abstract void testInstanceName();

@@ -51,6 +51,7 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -1093,12 +1094,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testNearCacheInMemoryFormatNative_withKeysByReference() {
+    public void testNearCacheInMemoryFormatObject_withKeysByReference() {
         String mapName = "testMapNearCacheInMemoryFormatNative";
         String xml = HAZELCAST_START_TAG
                 + "  <map name=\"" + mapName + "\">\n"
                 + "    <near-cache>\n"
-                + "      <in-memory-format>NATIVE</in-memory-format>\n"
+                + "      <in-memory-format>OBJECT</in-memory-format>\n"
                 + "      <serialize-keys>false</serialize-keys>\n"
                 + "    </near-cache>\n"
                 + "  </map>\n"
@@ -1108,8 +1109,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         MapConfig mapConfig = config.getMapConfig(mapName);
         NearCacheConfig ncConfig = mapConfig.getNearCacheConfig();
 
-        assertEquals(InMemoryFormat.NATIVE, ncConfig.getInMemoryFormat());
-        assertTrue(ncConfig.isSerializeKeys());
+        assertEquals(InMemoryFormat.OBJECT, ncConfig.getInMemoryFormat());
+        assertFalse(ncConfig.isSerializeKeys());
     }
 
     @Override
@@ -2639,19 +2640,21 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testMapNativeMaxSizePolicy() {
+    public void testMapObjectInMemoryFormatMaxSizePolicy() {
         String xmlFormat = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
-                + "<in-memory-format>NATIVE</in-memory-format>"
+                + "<in-memory-format>OBJECT</in-memory-format>"
                 + "<eviction max-size-policy=\"{0}\" size=\"9991\"/>"
                 + "</map>"
                 + HAZELCAST_END_TAG;
         MessageFormat messageFormat = new MessageFormat(xmlFormat);
 
         MaxSizePolicy[] maxSizePolicies = MaxSizePolicy.values();
+        EnumSet<MaxSizePolicy> notSupported = EnumSet.noneOf(MaxSizePolicy.class);
+        notSupported.addAll(notSupportedByIMap());
+        notSupported.addAll(notSupportedByObjectInMemoryFormat());
         for (MaxSizePolicy maxSizePolicy : maxSizePolicies) {
-            if (maxSizePolicy == ENTRY_COUNT) {
-                // imap does not support ENTRY_COUNT
+            if (notSupported.contains(maxSizePolicy)) {
                 continue;
             }
             Object[] objects = {maxSizePolicy.toString()};

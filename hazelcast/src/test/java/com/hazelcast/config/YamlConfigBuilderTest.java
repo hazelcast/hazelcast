@@ -50,6 +50,7 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -1094,22 +1095,22 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testNearCacheInMemoryFormatNative_withKeysByReference() {
+    public void testNearCacheInMemoryFormatObject_withKeysByReference() {
         String mapName = "testMapNearCacheInMemoryFormatNative";
         String yaml = ""
                 + "hazelcast:\n"
                 + "  map:\n"
                 + "    " + mapName + ":\n"
                 + "      near-cache:\n"
-                + "        in-memory-format: NATIVE\n"
+                + "        in-memory-format: OBJECT\n"
                 + "        serialize-keys: false\n";
 
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig(mapName);
         NearCacheConfig ncConfig = mapConfig.getNearCacheConfig();
 
-        assertEquals(InMemoryFormat.NATIVE, ncConfig.getInMemoryFormat());
-        assertTrue(ncConfig.isSerializeKeys());
+        assertEquals(InMemoryFormat.OBJECT, ncConfig.getInMemoryFormat());
+        assertFalse(ncConfig.isSerializeKeys());
     }
 
     @Override
@@ -2637,12 +2638,12 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testMapNativeMaxSizePolicy() {
+    public void testMapObjectInMemoryFormatMaxSizePolicy() {
         String yamlFormat = ""
                 + "hazelcast:\n"
                 + "  map:\n"
                 + "    mymap:\n"
-                + "      in-memory-format: NATIVE\n"
+                + "      in-memory-format: OBJECT\n"
                 + "      eviction:\n"
                 + "        max-size-policy: \"{0}\"\n"
                 + "        size: 9991\n";
@@ -2650,9 +2651,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         MessageFormat messageFormat = new MessageFormat(yamlFormat);
 
         MaxSizePolicy[] maxSizePolicies = MaxSizePolicy.values();
+        EnumSet<MaxSizePolicy> notSupported = EnumSet.noneOf(MaxSizePolicy.class);
+        notSupported.addAll(notSupportedByIMap());
+        notSupported.addAll(notSupportedByObjectInMemoryFormat());
         for (MaxSizePolicy maxSizePolicy : maxSizePolicies) {
-            if (maxSizePolicy == ENTRY_COUNT) {
-                // imap does not support ENTRY_COUNT
+            if (notSupported.contains(maxSizePolicy)) {
                 continue;
             }
             Object[] objects = {maxSizePolicy.toString()};
