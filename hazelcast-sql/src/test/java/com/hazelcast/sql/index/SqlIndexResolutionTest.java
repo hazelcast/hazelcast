@@ -33,12 +33,11 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionType;
-import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,9 +48,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -61,15 +58,15 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlIndexResolutionTest extends SqlIndexTestSupport {
 
     private static final AtomicInteger MAP_NAME_GEN = new AtomicInteger();
     private static final String INDEX_NAME = "index";
-    private static final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory(2);
 
-    private static HazelcastInstance member;
+    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
+    private HazelcastInstance member;
 
     @Parameterized.Parameter
     public IndexType indexType;
@@ -77,27 +74,13 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
     @Parameterized.Parameter(1)
     public boolean composite;
 
-    @Parameterized.Parameter(2)
-    public ExpressionType<?> f1;
-
-    @Parameterized.Parameter(3)
-    public ExpressionType<?> f2;
-
-    private final Set<String> createdMapNames = new HashSet<>();
-
-    private Class<? extends ExpressionBiValue> valueClass;
-
-    @Parameterized.Parameters(name = "indexType:{0}, composite:{1}, field1:{2}, field2:{3}")
+    @Parameterized.Parameters(name = "indexType:{0}, composite:{1}")
     public static Collection<Object[]> parameters() {
         List<Object[]> res = new ArrayList<>();
 
         for (IndexType indexType : Arrays.asList(IndexType.SORTED, IndexType.HASH)) {
             for (boolean composite : Arrays.asList(true, false)) {
-                for (ExpressionType<?> firstType : allTypes()) {
-                    for (ExpressionType<?> secondType : allTypes()) {
-                        res.add(new Object[] { indexType, composite, firstType, secondType });
-                    }
-                }
+                res.add(new Object[] { indexType, composite });
             }
         }
 
@@ -106,60 +89,59 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
 
     @Before
     public void before() {
-        if (member == null) {
-            member = FACTORY.newHazelcastInstance();
-        }
-
-        valueClass = ExpressionBiValue.createBiClass(f1, f2);
+        member = factory.newHazelcastInstance();
     }
 
     @After
     public void after() {
-        if (member != null) {
-            for (String mapName : createdMapNames) {
-                member.getMap(mapName).destroy();
-            }
-        }
-    }
-
-    @AfterClass
-    public static void afterClass() {
-        FACTORY.shutdownAll();
+        factory.shutdownAll();
     }
 
     @Test
     public void testIndexResolution() {
+        for (ExpressionType<?> f1 : allTypes()) {
+            for (ExpressionType<?> f2 : allTypes()) {
+                checkIndexResolution(f1, f2);
+            }
+        }
+    }
+
+    public void checkIndexResolution(ExpressionType<?> f1, ExpressionType<?> f2) {
+        Class<? extends ExpressionBiValue> valueClass = ExpressionBiValue.createBiClass(f1, f2);
+
         // Check empty map
         IMap<Integer, ExpressionBiValue> map = nextMap();
         map.put(1, ExpressionBiValue.createBiValue(valueClass, 1, null, null));
         checkIndex(map);
-        checkIndexUsage(map, false, false);
+        checkIndexUsage(map, f1, f2, false, false);
+        map.destroy();
 
         // Check first component with known type
         map = nextMap();
         map.put(1, ExpressionBiValue.createBiValue(valueClass, 1, f1.valueFrom(), null));
         checkIndex(map, f1.getFieldConverterType());
-        checkIndexUsage(map, true, false);
+        checkIndexUsage(map, f1, f2, true, false);
+        map.destroy();
 
         if (composite) {
             // Check second component with known type
             map = nextMap();
             map.put(1, ExpressionBiValue.createBiValue(valueClass, 1, null, f2.valueFrom()));
             checkIndex(map);
-            checkIndexUsage(map, false, true);
+            checkIndexUsage(map, f1, f2, false, true);
+            map.destroy();
 
             // Check both components known
             map = nextMap();
             map.put(1, ExpressionBiValue.createBiValue(valueClass, 1, f1.valueFrom(), f2.valueFrom()));
             checkIndex(map, f1.getFieldConverterType(), f2.getFieldConverterType());
-            checkIndexUsage(map, true, true);
+            checkIndexUsage(map, f1, f2, true, true);
+            map.destroy();
         }
     }
 
     private IMap<Integer, ExpressionBiValue> nextMap() {
         String mapName = "map" + MAP_NAME_GEN.incrementAndGet();
-
-        createdMapNames.add(mapName);
 
         MapConfig mapConfig = new MapConfig(mapName);
         mapConfig.addIndexConfig(getIndexConfig());
@@ -245,7 +227,13 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
         return -1;
     }
 
-    private void checkIndexUsage(IMap<?, ?> map, boolean firstResolved, boolean secondResolved) {
+    private void checkIndexUsage(
+        IMap<?, ?> map,
+        ExpressionType<?> f1,
+        ExpressionType<?> f2,
+        boolean firstResolved,
+        boolean secondResolved
+    ) {
         String field1Literal = toLiteral(f1, f1.valueFrom());
         String field2Literal = toLiteral(f2, f2.valueFrom());
 
