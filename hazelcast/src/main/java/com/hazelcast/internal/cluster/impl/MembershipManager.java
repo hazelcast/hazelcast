@@ -714,7 +714,6 @@ public class MembershipManager {
             }
 
             logger.info("Removing " + member);
-            clusterService.getClusterJoinManager().removeJoin(address);
             clusterService.getClusterHeartbeatManager().removeMember(member);
             partialDisconnectionHandler.removeMember(member);
 

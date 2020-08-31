@@ -24,6 +24,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.Arrays;
 import org.junit.After;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
@@ -40,9 +41,9 @@ import org.junit.runner.RunWith;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClusterJoinDelayTest extends HazelcastTestSupport {
-    private HazelcastInstance hz1;
-    private HazelcastInstance hz2;
+    private HazelcastInstance[] hzInst;
     private TestHazelcastInstanceFactory fact;
+    private final int numInstances = 3;
 
     @BeforeClass
     public static void init() {
@@ -51,13 +52,13 @@ public class ClusterJoinDelayTest extends HazelcastTestSupport {
 
     @Before
     public void beforeRun() {
-        fact = createHazelcastInstanceFactory(2);
+        fact = createHazelcastInstanceFactory(numInstances);
+        hzInst = new HazelcastInstance[numInstances];
     }
 
     @After
     public void afterRun() {
-        hz1.shutdown();
-        hz2.shutdown();
+        Arrays.stream(hzInst).forEach(HazelcastInstance::shutdown);
     }
 
     @Override
@@ -66,6 +67,7 @@ public class ClusterJoinDelayTest extends HazelcastTestSupport {
         // make sure the wait is longer than the tesed-for delay.
         // here we make sure that the newHazelcastInstance() call returns w/o blocking
         config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "5");
+        config.setProperty(ClusterProperty.MAX_WAIT_SECONDS_BEFORE_JOIN.getName(), "20");
         TcpIpConfig tcpIpConfig = new TcpIpConfig();
         tcpIpConfig.setEnabled(true).addMember("localhost");
         config.getNetworkConfig().setPublicAddress("localhost").getJoin().setTcpIpConfig(tcpIpConfig);
@@ -74,9 +76,10 @@ public class ClusterJoinDelayTest extends HazelcastTestSupport {
 
     @Test(timeout = 4 * 1000)
     public void testJoinDelayLessThanFourSeconds() {
-        hz1 = fact.newHazelcastInstance(getConfig());
-        hz2 = fact.newHazelcastInstance(getConfig());
-        assertTrue("hz1 should always be two members here", hz1.getCluster().getMembers().size() == 2);
-        assertTrue("hz2 should always be two members here", hz2.getCluster().getMembers().size() == 2);
+        hzInst[0] = fact.newHazelcastInstance(getConfig());
+        hzInst[1] = fact.newHazelcastInstance(getConfig());
+        hzInst[2] = fact.newHazelcastInstance(getConfig());
+        assertTrue("hz1 should always be numInstances members here", hzInst[0].getCluster().getMembers().size() == numInstances);
+        assertTrue("hz2 should always be numInstances members here", hzInst[1].getCluster().getMembers().size() == numInstances);
     }
 }
