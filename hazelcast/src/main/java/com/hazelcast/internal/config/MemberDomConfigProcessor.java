@@ -3108,7 +3108,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-
     private void validateNetworkConfig() {
         if (occurrenceSet.contains("network")
           && occurrenceSet.stream().anyMatch(c -> matches("advanced-network", c))
