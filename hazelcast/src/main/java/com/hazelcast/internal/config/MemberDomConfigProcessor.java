@@ -2083,8 +2083,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 listenerConfig.setCacheEntryEventFilterFactory(getAttribute(listenerChildNode, "class-name"));
             }
         }
-        listenerConfig.setOldValueRequired(getBooleanValue(getTextContent(DomConfigHelper.getNamedItemNode(listenerNode, "old-value-required"))));
-        listenerConfig.setSynchronous(getBooleanValue(getTextContent(DomConfigHelper.getNamedItemNode(listenerNode, "synchronous"))));
+        listenerConfig.setOldValueRequired(getBooleanValue(getTextContent(
+          DomConfigHelper.getNamedItemNode(listenerNode, "old-value-required"))));
+        listenerConfig.setSynchronous(getBooleanValue(getTextContent(
+          DomConfigHelper.getNamedItemNode(listenerNode, "synchronous"))));
         cacheSimpleConfig.addEntryListenerConfig(listenerConfig);
     }
 

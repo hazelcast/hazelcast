@@ -23,7 +23,7 @@ import java.util.Optional;
 
 /**
  * A representation of a single generic configuration node.
- *
+ * <p>
  * Used while overriding configuration with environment variables/system properties.
  */
 class ConfigNode {
@@ -64,10 +64,6 @@ class ConfigNode {
 
     @Override
     public String toString() {
-        return "ConfigNode{" +
-          "name='" + name + '\'' +
-          ", children=" + children +
-          ", value='" + value + '\'' +
-          '}';
+        return String.format("ConfigNode{name='%s', children=%s, value='%s'}", name, children, value);
     }
 }

@@ -48,7 +48,7 @@ final class PropertiesToNodeConverter {
 
         if (rootNodeNames.size() > 1) {
             throw new InvalidConfigurationException("could not determine a root config node name, multiple found: "
-              + rootNodeNames.stream().collect(Collectors.joining(", ", "[", "]" )));
+              + rootNodeNames.stream().collect(Collectors.joining(", ", "[", "]")));
         }
 
         return rootNodeNames.stream()
