@@ -1311,7 +1311,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             return;
         }
 
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         for (Node child : childElements(node)) {
             String name = cleanNodeName(child);
             if (matches("properties", name)) {
@@ -1420,7 +1420,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 tcpIpConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value));
             }
         }
-        Set<String> memberTags = new HashSet<String>(Arrays.asList("interface", "member", "members"));
+        Set<String> memberTags = new HashSet<>(Arrays.asList("interface", "member", "members"));
         for (Node n : childElements(node)) {
             String value = getTextContent(n).trim();
             if (matches(cleanNodeName(n), "member-list")) {
@@ -1677,7 +1677,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     protected void handleEntryListeners(Node n, Function<EntryListenerConfig, Void> configAddFunction) {
         for (Node listenerNode : childElements(n)) {
             if (matches("entry-listener", cleanNodeName(listenerNode))) {
-                NamedNodeMap attrs = listenerNode.getAttributes();
                 boolean incValue = getBooleanValue(getTextContent(
                   DomConfigHelper.getNamedItemNode(listenerNode, "include-value")));
                 boolean local = getBooleanValue(getTextContent(
@@ -2568,7 +2567,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleSecurity(Node node) {
-        NamedNodeMap attributes = node.getAttributes();
         Node enabledNode = DomConfigHelper.getNamedItemNode(node, "enabled");
         boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
         config.getSecurityConfig().setEnabled(enabled);
@@ -2610,7 +2608,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     protected void handleSecurityInterceptorsChild(SecurityConfig cfg, Node child) {
         String nodeName = cleanNodeName(child);
         if (matches("interceptor", nodeName)) {
-            NamedNodeMap attrs = child.getAttributes();
             Node classNameNode = DomConfigHelper.getNamedItemNode(child, "class-name");
             String className = getTextContent(classNameNode);
             cfg.addSecurityInterceptorConfig(new SecurityInterceptorConfig(className));
@@ -2634,7 +2631,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handlePermissionPolicy(Node node) {
-        NamedNodeMap attrs = node.getAttributes();
         Node classNameNode = DomConfigHelper.getNamedItemNode(node, "class-name");
         String className = getTextContent(classNameNode);
         SecurityConfig cfg = config.getSecurityConfig();
@@ -2668,7 +2664,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     void handleSecurityPermission(Node node, PermissionConfig.PermissionType type) {
         SecurityConfig cfg = config.getSecurityConfig();
-        NamedNodeMap attrs = node.getAttributes();
         Node nameNode = DomConfigHelper.getNamedItemNode(node, "name");
         String name = nameNode != null ? getTextContent(nameNode) : "*";
         Node principalNode = DomConfigHelper.getNamedItemNode(node, "principal");
