@@ -16,11 +16,15 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -34,27 +38,47 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNu
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableCollection;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 
-public final class PartitionRuntimeState implements IdentifiedDataSerializable {
+public final class PartitionRuntimeState implements IdentifiedDataSerializable, Versioned {
 
-    private PartitionReplica[] replicas;
-    private int[][] minimizedPartitionTable;
+    private PartitionReplica[] allReplicas;
+    // Partition table encoded as an int matrix.
+    // - 1st dimension index denotes the partitionId [0-partitionCount]
+    // - 2nd dimension index denotes the replicaIndex [0-6]
+    // - value at a point denotes the index of the partition replica in "allReplicas" array,
+    // or -1 if the partition replica is not assigned.
+    private int[][] encodedPartitionTable;
+    private int[] versions;
+    private long stamp;
+    //RU_COMPAT_4_0: Used as global version when cluster version == 4.0
     private int version;
     private Collection<MigrationInfo> completedMigrations;
     // used to know ongoing migrations when master changed
-    private MigrationInfo activeMigration;
+    private Collection<MigrationInfo> activeMigrations;
 
     /** The sender of the operation which changes the partition table, should be the master node */
-    private Address master;
+    private transient Address master;
 
     public PartitionRuntimeState() {
     }
 
+    public PartitionRuntimeState(InternalPartition[] partitions, Collection<MigrationInfo> completedMigrations, long stamp) {
+        this(partitions, completedMigrations, stamp, 0);
+    }
+
+    //RU_COMPAT_4_0
+    @Deprecated
     public PartitionRuntimeState(InternalPartition[] partitions, Collection<MigrationInfo> completedMigrations, int version) {
+        this(partitions, completedMigrations, 0L, version);
+    }
+
+    private PartitionRuntimeState(InternalPartition[] partitions, Collection<MigrationInfo> completedMigrations,
+            long stamp, int version) {
+        this.stamp = stamp;
         this.version = version;
         this.completedMigrations = completedMigrations != null ? completedMigrations : Collections.emptyList();
         Map<PartitionReplica, Integer> replicaToIndexes = createPartitionReplicaToIndexMap(partitions);
-        replicas = toPartitionReplicaArray(replicaToIndexes);
-        minimizedPartitionTable = createMinimizedPartitionTable(partitions, replicaToIndexes);
+        allReplicas = toPartitionReplicaArray(replicaToIndexes);
+        encodePartitionTable(partitions, replicaToIndexes);
     }
 
     private PartitionReplica[] toPartitionReplicaArray(Map<PartitionReplica, Integer> addressToIndexes) {
@@ -65,11 +89,13 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
         return replicas;
     }
 
-    private int[][] createMinimizedPartitionTable(InternalPartition[] partitions,
-            Map<PartitionReplica, Integer> replicaToIndexes) {
-        int[][] partitionTable = new int[partitions.length][MAX_REPLICA_COUNT];
+    private void encodePartitionTable(InternalPartition[] partitions, Map<PartitionReplica, Integer> replicaToIndexes) {
+        versions = new int[partitions.length];
+        encodedPartitionTable = new int[partitions.length][MAX_REPLICA_COUNT];
+
         for (InternalPartition partition : partitions) {
-            int[] indexes = partitionTable[partition.getPartitionId()];
+            int[] indexes = encodedPartitionTable[partition.getPartitionId()];
+            versions[partition.getPartitionId()] = partition.version();
 
             for (int replicaIndex = 0; replicaIndex < MAX_REPLICA_COUNT; replicaIndex++) {
                 PartitionReplica replica = partition.getReplica(replicaIndex);
@@ -81,10 +107,9 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
                 }
             }
         }
-        return partitionTable;
     }
 
-    private Map<PartitionReplica, Integer> createPartitionReplicaToIndexMap(InternalPartition[] partitions) {
+    private static Map<PartitionReplica, Integer> createPartitionReplicaToIndexMap(InternalPartition[] partitions) {
         Map<PartitionReplica, Integer> map = new HashMap<>();
         int addressIndex = 0;
         for (InternalPartition partition : partitions) {
@@ -102,15 +127,36 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
         return map;
     }
 
-    public PartitionReplica[][] getPartitionTable() {
-        int length = minimizedPartitionTable.length;
-        PartitionReplica[][] result = new PartitionReplica[length][MAX_REPLICA_COUNT];
+    public InternalPartition[] getPartitions() {
+        int length = encodedPartitionTable.length;
+        InternalPartition[] result = new InternalPartition[length];
         for (int partitionId = 0; partitionId < length; partitionId++) {
-            int[] addressIndexes = minimizedPartitionTable[partitionId];
+            int[] addressIndexes = encodedPartitionTable[partitionId];
+            PartitionReplica[] replicas = new PartitionReplica[MAX_REPLICA_COUNT];
             for (int replicaIndex = 0; replicaIndex < addressIndexes.length; replicaIndex++) {
                 int index = addressIndexes[replicaIndex];
                 if (index != -1) {
-                    PartitionReplica replica = replicas[index];
+                    PartitionReplica replica = allReplicas[index];
+                    assert replica != null;
+                    replicas[replicaIndex] = replica;
+                }
+            }
+            result[partitionId] = new InternalPartitionImpl(partitionId, null, replicas, versions[partitionId], null);
+        }
+        return result;
+    }
+
+    //RU_COMPAT_4_0
+    @Deprecated
+    public PartitionReplica[][] getPartitionTable() {
+        int length = encodedPartitionTable.length;
+        PartitionReplica[][] result = new PartitionReplica[length][MAX_REPLICA_COUNT];
+        for (int partitionId = 0; partitionId < length; partitionId++) {
+            int[] addressIndexes = encodedPartitionTable[partitionId];
+            for (int replicaIndex = 0; replicaIndex < addressIndexes.length; replicaIndex++) {
+                int index = addressIndexes[replicaIndex];
+                if (index != -1) {
+                    PartitionReplica replica = allReplicas[index];
                     assert replica != null;
                     result[partitionId][replicaIndex] = replica;
                 }
@@ -123,7 +169,7 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
         return master;
     }
 
-    public void setMaster(final Address master) {
+    public void setMaster(Address master) {
         this.master = master;
     }
 
@@ -131,65 +177,106 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
         return completedMigrations != null ? completedMigrations : Collections.emptyList();
     }
 
-    public MigrationInfo getActiveMigration() {
-        return activeMigration;
+    public Collection<MigrationInfo> getActiveMigrations() {
+        return activeMigrations;
     }
 
-    public void setActiveMigration(MigrationInfo activeMigration) {
-        this.activeMigration = activeMigration;
+    public void setActiveMigrations(Collection<MigrationInfo> activeMigrations) {
+        this.activeMigrations = activeMigrations;
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        version = in.readInt();
+        Version clusterVersion = in.getVersion();
+        if (clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
+            stamp = in.readLong();
+        } else {
+            version = in.readInt();
+        }
+
         int memberCount = in.readInt();
-        replicas = new PartitionReplica[memberCount];
+        allReplicas = new PartitionReplica[memberCount];
         for (int i = 0; i < memberCount; i++) {
             PartitionReplica replica = in.readObject();
             int index = in.readInt();
-            assert replicas[index] == null : "Duplicate replica! Member: " + replica + ", index: " + index
-                    + ", addresses: " + Arrays.toString(replicas);
-            replicas[index] = replica;
+            assert allReplicas[index] == null : "Duplicate replica! Member: " + replica + ", index: " + index
+                    + ", addresses: " + Arrays.toString(allReplicas);
+            allReplicas[index] = replica;
         }
 
         int partitionCount = in.readInt();
-        minimizedPartitionTable = new int[partitionCount][MAX_REPLICA_COUNT];
+        encodedPartitionTable = new int[partitionCount][MAX_REPLICA_COUNT];
+        versions = new int[partitionCount];
         for (int i = 0; i < partitionCount; i++) {
-            int[] indexes = minimizedPartitionTable[i];
+            int[] indexes = encodedPartitionTable[i];
             for (int ix = 0; ix < MAX_REPLICA_COUNT; ix++) {
                 indexes[ix] = in.readInt();
             }
         }
 
-        activeMigration = in.readObject();
+        if (clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
+            for (int i = 0; i < partitionCount; i++) {
+                versions[i] = in.readInt();
+            }
+            activeMigrations = readNullableCollection(in);
+        } else {
+            //RU_COMPAT_4_0
+            MigrationInfo activeMigration = in.readObject();
+            if (activeMigration != null) {
+                activeMigrations = Collections.singleton(activeMigration);
+            }
+        }
+
         completedMigrations = readNullableCollection(in);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(version);
-        out.writeInt(replicas.length);
-        for (int index = 0; index < replicas.length; index++) {
-            PartitionReplica replica = replicas[index];
+        Version clusterVersion = out.getVersion();
+        if (clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
+            out.writeLong(stamp);
+        } else {
+            out.writeInt(version);
+        }
+
+        out.writeInt(allReplicas.length);
+        for (int index = 0; index < allReplicas.length; index++) {
+            PartitionReplica replica = allReplicas[index];
             out.writeObject(replica);
             out.writeInt(index);
         }
 
-        out.writeInt(minimizedPartitionTable.length);
-        for (int[] indexes : minimizedPartitionTable) {
+        out.writeInt(encodedPartitionTable.length);
+        for (int[] indexes : encodedPartitionTable) {
             for (int ix = 0; ix < MAX_REPLICA_COUNT; ix++) {
                 out.writeInt(indexes[ix]);
             }
         }
 
-        out.writeObject(activeMigration);
+        if (clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
+            for (int v : versions) {
+                out.writeInt(v);
+            }
+            writeNullableCollection(activeMigrations, out);
+        } else {
+            //RU_COMPAT_4_0
+            MigrationInfo activeMigration;
+            if (activeMigrations == null || activeMigrations.isEmpty()) {
+                activeMigration = null;
+            } else {
+                assert activeMigrations.size() == 1 : "Active migrations should be singleton: " + activeMigrations;
+                activeMigration = activeMigrations.iterator().next();
+            }
+            out.writeObject(activeMigration);
+        }
+
         writeNullableCollection(completedMigrations, out);
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("PartitionRuntimeState [" + version + "]{" + LINE_SEPARATOR);
-        for (PartitionReplica replica : replicas) {
+        StringBuilder sb = new StringBuilder("PartitionRuntimeState [" + stamp + "]{" + LINE_SEPARATOR);
+        for (PartitionReplica replica : allReplicas) {
             sb.append(replica).append(LINE_SEPARATOR);
         }
         sb.append(", completedMigrations=").append(completedMigrations);
@@ -197,6 +284,12 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
         return sb.toString();
     }
 
+    public long getStamp() {
+        return stamp;
+    }
+
+    //RU_COMPAT_4_0
+    @Deprecated
     public int getVersion() {
         return version;
     }

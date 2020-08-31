@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
 import static org.junit.Assert.assertEquals;
@@ -58,27 +59,28 @@ public class InternalPartitionImplTest {
 
     @Before
     public void setup() {
-        partition = new InternalPartitionImpl(1, partitionListener, localReplica);
+        partition = new InternalPartitionImpl(1, localReplica, partitionListener);
     }
 
     @Test
     public void testIsLocal_whenOwnedByThis() {
         replicaOwners[0] = localReplica;
-        partition.setInitialReplicas(replicaOwners);
+        partition.setReplicas(replicaOwners);
         assertTrue(partition.isLocal());
     }
 
     @Test
     public void testIsLocal_whenNOTOwnedByThis() {
         replicaOwners[0] = new PartitionReplica(newAddress(6000), UuidUtil.newUnsecureUUID());
-        partition.setInitialReplicas(replicaOwners);
+        partition.setReplicas(replicaOwners);
         assertFalse(partition.isLocal());
+        assertEquals(1, partition.version());
     }
 
     @Test
     public void testGetOwnerOrNull_whenOwnerExists() {
         replicaOwners[0] = localReplica;
-        partition.setInitialReplicas(replicaOwners);
+        partition.setReplicas(replicaOwners);
         assertEquals(localReplica, partition.getOwnerReplicaOrNull());
         assertEquals(localReplica.address(), partition.getOwnerOrNull());
     }
@@ -89,9 +91,43 @@ public class InternalPartitionImplTest {
     }
 
     @Test
+    public void testVersion_setReplicas() {
+        replicaOwners[0] = localReplica;
+        partition.setReplicas(replicaOwners);
+        assertEquals(1, partition.version());
+
+        PartitionReplica[] newReplicas = Arrays.copyOf(replicaOwners, replicaOwners.length);
+        newReplicas[0] = new PartitionReplica(newAddress(6000), UuidUtil.newUnsecureUUID());
+        newReplicas[1] = localReplica;
+        partition.setReplicas(newReplicas);
+        assertEquals(3, partition.version());
+    }
+
+    @Test
+    public void testVersion_setReplica() {
+        partition.setReplica(1, new PartitionReplica(newAddress(6000), UuidUtil.newUnsecureUUID()));
+        assertEquals(1, partition.version());
+
+        partition.setReplica(0, new PartitionReplica(newAddress(7000), UuidUtil.newUnsecureUUID()));
+        assertEquals(2, partition.version());
+
+        partition.setReplica(0, partition.getReplica(0));
+        assertEquals(2, partition.version());
+    }
+
+    @Test
+    public void testVersion_swapReplica() {
+        partition.setReplica(1, new PartitionReplica(newAddress(6000), UuidUtil.newUnsecureUUID()));
+        partition.setReplica(0, new PartitionReplica(newAddress(7000), UuidUtil.newUnsecureUUID()));
+
+        partition.swapReplicas(1, 0);
+        assertEquals(4, partition.version());
+    }
+
+    @Test
     public void testGetReplicaAddress() {
         replicaOwners[0] = localReplica;
-        partition.setInitialReplicas(replicaOwners);
+        partition.setReplicas(replicaOwners);
 
         assertEquals(localReplica, partition.getReplica(0));
         assertEquals(localReplica.address(), partition.getReplicaAddress(0));
@@ -106,25 +142,11 @@ public class InternalPartitionImplTest {
         for (int i = 0; i < replicaOwners.length; i++) {
             replicaOwners[i] = new PartitionReplica(newAddress(5000 + i), UuidUtil.newUnsecureUUID());
         }
-        partition.setInitialReplicas(replicaOwners);
+        partition.setReplicas(replicaOwners);
 
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             assertEquals(replicaOwners[i], partition.getReplica(i));
         }
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void testSetInitialReplicaAddresses_multipleTimes() {
-        replicaOwners[0] = localReplica;
-        partition.setInitialReplicas(replicaOwners);
-        partition.setInitialReplicas(replicaOwners);
-    }
-
-    @Test
-    public void testSetInitialReplicaAddresses_ListenerShouldNOTBeCalled() {
-        replicaOwners[0] = localReplica;
-        partition.setInitialReplicas(replicaOwners);
-        assertEquals(0, partitionListener.eventCount);
     }
 
     @Test
@@ -142,7 +164,7 @@ public class InternalPartitionImplTest {
     @Test
     public void testSetReplicaAddresses_afterInitialSet() {
         replicaOwners[0] = localReplica;
-        partition.setInitialReplicas(replicaOwners);
+        partition.setReplicas(replicaOwners);
         partition.setReplicas(replicaOwners);
     }
 
@@ -209,6 +231,7 @@ public class InternalPartitionImplTest {
             assertNull(partition.getReplicaAddress(i));
         }
         assertFalse(partition.isMigrating());
+        assertEquals(0, partition.version());
     }
 
     private static Address newAddress(int port) {

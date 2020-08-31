@@ -1548,6 +1548,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 qConfig.setMergePolicyConfig(mergePolicyConfig);
+            } else if ("priority-comparator-class-name".equals(nodeName)) {
+                qConfig.setPriorityComparatorClassName(value);
             }
         }
         config.addQueueConfig(qConfig);

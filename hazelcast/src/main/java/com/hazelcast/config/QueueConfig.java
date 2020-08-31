@@ -17,11 +17,16 @@
 package com.hazelcast.config;
 
 import com.hazelcast.collection.IQueue;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +42,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Contains the configuration for an {@link IQueue}.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
+public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Versioned {
 
     /**
      * Default value for the maximum size of the Queue.
@@ -69,6 +74,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
     private boolean statisticsEnabled = true;
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
+    private String priorityComparatorClassName;
 
     public QueueConfig() {
     }
@@ -88,7 +94,8 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
         this.splitBrainProtectionName = config.splitBrainProtectionName;
         this.mergePolicyConfig = config.mergePolicyConfig;
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
-        this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
+        this.listenerConfigs = new ArrayList<>(config.getItemListenerConfigs());
+        this.priorityComparatorClassName = config.priorityComparatorClassName;
     }
 
     /**
@@ -125,6 +132,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
      *
      * @param maxSize set the maximum size of the Queue to this value
      * @return the Queue configuration
+     * @throws IllegalArgumentException if the provided max size is negative
      */
     public QueueConfig setMaxSize(int maxSize) {
         if (maxSize < 0) {
@@ -159,7 +167,8 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
      * @return the current QueueConfig
      * @throws IllegalArgumentException if backupCount is smaller than 0,
      *                                  or larger than the maximum number of backups,
-     *                                  or the sum of the backups and async backups is larger than the maximum number of backups
+     *                                  or the sum of the backups and async backups is larger than the maximum
+     *                                  number of backups
      * @see #setAsyncBackupCount(int)
      */
     public QueueConfig setBackupCount(int backupCount) {
@@ -183,7 +192,8 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
      * @return the updated QueueConfig
      * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
      *                                  or larger than the maximum number of backup
-     *                                  or the sum of the backups and async backups is larger than the maximum number of backups
+     *                                  or the sum of the backups and async backups is larger than the maximum
+     *                                  number of backups
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
      */
@@ -197,7 +207,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
      *
      * @return the QueueStore configuration
      */
-    public QueueStoreConfig getQueueStoreConfig() {
+    public @Nullable QueueStoreConfig getQueueStoreConfig() {
         return queueStoreConfig;
     }
 
@@ -207,7 +217,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
      * @param queueStoreConfig set the QueueStore configuration to this configuration
      * @return the QueueStore configuration
      */
-    public QueueConfig setQueueStoreConfig(QueueStoreConfig queueStoreConfig) {
+    public QueueConfig setQueueStoreConfig(@Nullable QueueStoreConfig queueStoreConfig) {
         this.queueStoreConfig = queueStoreConfig;
         return this;
     }
@@ -266,9 +276,9 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
      *
      * @return the list of item listener configurations for this queue
      */
-    public List<ItemListenerConfig> getItemListenerConfigs() {
+    public @Nonnull List<ItemListenerConfig> getItemListenerConfigs() {
         if (listenerConfigs == null) {
-            listenerConfigs = new ArrayList<ItemListenerConfig>();
+            listenerConfigs = new ArrayList<>();
         }
         return listenerConfigs;
     }
@@ -279,7 +289,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
      * @param listenerConfigs the list of item listener configurations to set for this queue
      * @return the updated queue configuration
      */
-    public QueueConfig setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
+    public QueueConfig setItemListenerConfigs(@Nullable List<ItemListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
         return this;
     }
@@ -289,7 +299,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
      *
      * @return the split brain protection name
      */
-    public String getSplitBrainProtectionName() {
+    public @Nullable String getSplitBrainProtectionName() {
         return splitBrainProtectionName;
     }
 
@@ -299,7 +309,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
      * @param splitBrainProtectionName the split brain protection name
      * @return the updated queue configuration
      */
-    public QueueConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+    public QueueConfig setSplitBrainProtectionName(@Nullable String splitBrainProtectionName) {
         this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
     }
@@ -309,7 +319,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
      *
      * @return the {@link MergePolicyConfig} for this queue
      */
-    public MergePolicyConfig getMergePolicyConfig() {
+    public @Nonnull MergePolicyConfig getMergePolicyConfig() {
         return mergePolicyConfig;
     }
 
@@ -318,8 +328,47 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
      *
      * @return the updated queue configuration
      */
-    public QueueConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+    public QueueConfig setMergePolicyConfig(@Nonnull MergePolicyConfig mergePolicyConfig) {
         this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
+        return this;
+    }
+
+    /**
+     * Check if underlying implementation is a {@code PriorityQueue}. Otherwise
+     * it is a FIFO queue.
+     *
+     * @return {@code true} if priority queue has been configured, {@code false}
+     * otherwise
+     */
+    public boolean isPriorityQueue() {
+        return !StringUtil.isNullOrEmptyAfterTrim(priorityComparatorClassName);
+    }
+
+    /**
+     * Returns the class name that will be used to compare queue items.
+     * If the returned class name is non-empty, the queue will behave as a priority
+     * queue, otherwise it behaves as a FIFO queue.
+     * <p>
+     * If this value is non-null, then Hazelcast will ignore the queue store
+     * {@link QueueStoreConfig#STORE_MEMORY_LIMIT} configuration value.
+     */
+    public @Nullable String getPriorityComparatorClassName() {
+        return priorityComparatorClassName;
+    }
+
+    /**
+     * Sets the class name that will be used to compare queue items.
+     * If the provided class name is non-empty, the queue will behave as a priority
+     * queue, otherwise it behaves as a FIFO queue.
+     *
+     * Setting the comparator to a non-null value also makes the queue store ignore
+     * the {@link QueueStoreConfig#STORE_MEMORY_LIMIT} configuration value.
+     *
+     * @param priorityComparatorClassName the class name that will be used to compare queue items
+     * @return this QueueConfig instance
+     */
+    public QueueConfig setPriorityComparatorClassName(@Nullable String priorityComparatorClassName) {
+        this.priorityComparatorClassName = priorityComparatorClassName;
         return this;
     }
 
@@ -335,6 +384,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
                 + ", queueStoreConfig=" + queueStoreConfig
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", mergePolicyConfig=" + mergePolicyConfig
+                + ", priorityComparatorClassName=" + priorityComparatorClassName
                 + '}';
     }
 
@@ -360,6 +410,11 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
         out.writeBoolean(statisticsEnabled);
         out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
+
+        // RU_COMPAT_4_0
+        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            out.writeUTF(priorityComparatorClassName);
+        }
     }
 
     @Override
@@ -374,9 +429,15 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
         statisticsEnabled = in.readBoolean();
         splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
+
+        // RU_COMPAT_4_0
+        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            priorityComparatorClassName = in.readUTF();
+        }
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -384,23 +445,24 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
         if (!(o instanceof QueueConfig)) {
             return false;
         }
-
         QueueConfig that = (QueueConfig) o;
         return backupCount == that.backupCount
-            && asyncBackupCount == that.asyncBackupCount
-            && getMaxSize() == that.getMaxSize()
-            && emptyQueueTtl == that.emptyQueueTtl
-            && statisticsEnabled == that.statisticsEnabled
-            && Objects.equals(name, that.name)
-            && getItemListenerConfigs().equals(that.getItemListenerConfigs())
-            && Objects.equals(queueStoreConfig, that.queueStoreConfig)
-            && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
-            && Objects.equals(mergePolicyConfig, that.mergePolicyConfig);
+                && asyncBackupCount == that.asyncBackupCount
+                && getMaxSize() == that.getMaxSize()
+                && emptyQueueTtl == that.emptyQueueTtl
+                && statisticsEnabled == that.statisticsEnabled
+                && Objects.equals(name, that.name)
+                && getItemListenerConfigs().equals(that.getItemListenerConfigs())
+                && Objects.equals(queueStoreConfig, that.queueStoreConfig)
+                && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
+                && Objects.equals(mergePolicyConfig, that.mergePolicyConfig)
+                && Objects.equals(priorityComparatorClassName, that.priorityComparatorClassName);
     }
 
     @Override
     public final int hashCode() {
         return Objects.hash(name, getItemListenerConfigs(), backupCount, asyncBackupCount, getMaxSize(), emptyQueueTtl,
-            queueStoreConfig, statisticsEnabled, splitBrainProtectionName, mergePolicyConfig);
+                queueStoreConfig, statisticsEnabled, splitBrainProtectionName, mergePolicyConfig,
+                priorityComparatorClassName);
     }
 }

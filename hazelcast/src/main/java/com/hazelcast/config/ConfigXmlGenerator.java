@@ -664,6 +664,7 @@ public class ConfigXmlGenerator {
         Collection<QueueConfig> qCfgs = config.getQueueConfigs().values();
         for (QueueConfig q : qCfgs) {
             gen.open("queue", "name", q.getName())
+                    .node("priority-comparator-class-name", q.getPriorityComparatorClassName())
                     .node("statistics-enabled", q.isStatisticsEnabled())
                     .node("max-size", q.getMaxSize())
                     .node("backup-count", q.getBackupCount())

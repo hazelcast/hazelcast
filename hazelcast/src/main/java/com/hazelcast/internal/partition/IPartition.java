@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.partition.Partition;
 
 /**
@@ -37,7 +37,7 @@ public interface IPartition {
 
     /**
      * Checks if the partition is local.
-     *
+     * <p>
      * A partition is local if and only if the {@link #getOwnerOrNull()} returns the same address as 'this' address of the
      * {@link ClusterService#getThisAddress()}. If the address is {@code null} or a different address, {@code false}
      * is returned.
@@ -98,4 +98,13 @@ public interface IPartition {
      * @return {@code true} if address is owner or backup, {@code false} otherwise
      */
     boolean isOwnerOrBackup(Address address);
+
+    /**
+     * Returns the version of the partition.
+     * Partition version is incremented by one, on each replica
+     * assignment change on the partition.
+     *
+     * @return version of the partition
+     */
+    int version();
 }

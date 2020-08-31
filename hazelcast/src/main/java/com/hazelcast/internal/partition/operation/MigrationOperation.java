@@ -103,31 +103,27 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
 
     /** Notifies services that migration started, invokes all sent migration tasks and updates the replica versions. */
     private void doRun() {
-        if (migrationInfo.startProcessing()) {
-            try {
-                if (firstFragment) {
-                    executeBeforeMigrations();
-                }
-
-                for (Operation migrationOperation : fragmentMigrationState.getMigrationOperations()) {
-                    runMigrationOperation(migrationOperation);
-                }
-
-                success = true;
-            } catch (Throwable e) {
-                failureReason = e;
-                getLogger().severe("Error while executing replication operations " + migrationInfo, e);
-            } finally {
-                afterMigrate();
+        try {
+            if (firstFragment) {
+                executeBeforeMigrations();
             }
-        } else {
-            logMigrationCancelled();
+
+            for (Operation migrationOperation : fragmentMigrationState.getMigrationOperations()) {
+                runMigrationOperation(migrationOperation);
+            }
+
+            success = true;
+        } catch (Throwable e) {
+            failureReason = e;
+            getLogger().severe("Error while executing replication operations " + migrationInfo, e);
+        } finally {
+            afterMigrate();
         }
     }
 
     private void checkActiveMigration() {
         InternalPartitionServiceImpl partitionService = getService();
-        MigrationInfo activeMigration = partitionService.getMigrationManager().getActiveMigration();
+        MigrationInfo activeMigration = partitionService.getMigrationManager().getActiveMigration(migrationInfo.getPartitionId());
         if (!migrationInfo.equals(activeMigration)) {
             throw new IllegalStateException("Unexpected active migration " + activeMigration
                     + "! First migration fragment should have set active migration to: " + migrationInfo);
@@ -172,12 +168,6 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
             logger.finest("ReplicaVersions are not set since migration failed. partitionId="
                     + migrationInfo.getPartitionId());
         }
-
-        migrationInfo.doneProcessing();
-    }
-
-    private void logMigrationCancelled() {
-        getLogger().warning("Migration is cancelled -> " + migrationInfo);
     }
 
     private void logMigrationFailure(Throwable e) {

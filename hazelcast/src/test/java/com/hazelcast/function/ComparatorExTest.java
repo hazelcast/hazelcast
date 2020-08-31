@@ -16,6 +16,7 @@
 
 package com.hazelcast.function;
 
+import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -112,7 +113,7 @@ public class ComparatorExTest {
     public void testSerializable_thenComparing_otherComparator() {
         checkSerializable(
                 ComparatorEx.naturalOrder()
-                            .thenComparing(Comparable::compareTo),
+                            .thenComparing(Comparables::compare),
                 null);
     }
 

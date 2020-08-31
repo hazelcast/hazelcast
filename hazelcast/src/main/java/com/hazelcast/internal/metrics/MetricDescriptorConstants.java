@@ -435,6 +435,7 @@ public final class MetricDescriptorConstants {
     public static final String PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_LOCAL_PARTITION_COUNT = "localPartitionCount";
     public static final String PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_ACTIVE_PARTITION_COUNT = "activePartitionCount";
     public static final String PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_VERSION = "stateVersion";
+    public static final String PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_STAMP = "stateStamp";
     public static final String PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_MEMBER_GROUP_SIZE = "memberGroupsSize";
     // ===[/PARTITIONS]=================================================
 

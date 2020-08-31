@@ -198,6 +198,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
+      priority-comparator-class-name: com.hazelcast.collection.impl.queue.model.PriorityElementComparator
 
   map:
     default:

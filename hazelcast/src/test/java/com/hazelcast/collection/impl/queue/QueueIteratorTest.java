@@ -16,16 +16,22 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.IQueue;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.collection.impl.queue.model.VersionedObject;
+import com.hazelcast.collection.impl.queue.model.VersionedObjectComparator;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -34,28 +40,38 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueueIteratorTest extends HazelcastTestSupport {
 
+    @Parameterized.Parameters(name = "comparatorClassName: {0}")
+    public static Collection<Object> parameters() {
+        return Arrays.asList(new Object[]{null, VersionedObjectComparator.class.getName()});
+    }
+
+    @Parameterized.Parameter
+    public String comparatorClassName;
+
     @Test
     public void testIterator() {
-        IQueue<String> queue = newQueue();
+        IQueue<VersionedObject<String>> queue = newQueue();
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
-        Iterator<String> iterator = queue.iterator();
+        Iterator<VersionedObject<String>> iterator = queue.iterator();
         int i = 0;
         while (iterator.hasNext()) {
-            Object o = iterator.next();
-            assertEquals(o, "item" + i++);
+            VersionedObject<String> o = iterator.next();
+            int itemId = i++;
+            assertEquals(o, new VersionedObject<>("item" + itemId, itemId));
         }
     }
 
     @Test
     public void testIterator_whenQueueEmpty() {
-        IQueue<String> queue = newQueue();
-        Iterator<String> iterator = queue.iterator();
+        IQueue<VersionedObject<String>> queue = newQueue();
+        Iterator<VersionedObject<String>> iterator = queue.iterator();
 
         assertFalse(iterator.hasNext());
         try {
@@ -68,12 +84,12 @@ public class QueueIteratorTest extends HazelcastTestSupport {
 
     @Test
     public void testIteratorRemove() {
-        IQueue<String> queue = newQueue();
+        IQueue<VersionedObject<String>> queue = newQueue();
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
-        Iterator<String> iterator = queue.iterator();
+        Iterator<VersionedObject<String>> iterator = queue.iterator();
         iterator.next();
         try {
             iterator.remove();
@@ -85,8 +101,11 @@ public class QueueIteratorTest extends HazelcastTestSupport {
         assertEquals(10, queue.size());
     }
 
-    private IQueue<String> newQueue() {
-        HazelcastInstance instance = createHazelcastInstance();
+    private IQueue<VersionedObject<String>> newQueue() {
+        Config config = smallInstanceConfig();
+        config.getQueueConfig("default")
+              .setPriorityComparatorClassName(comparatorClassName);
+        HazelcastInstance instance = createHazelcastInstance(config);
         return instance.getQueue(randomString());
     }
 }

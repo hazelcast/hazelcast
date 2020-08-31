@@ -58,7 +58,7 @@ public class ExternalConfigurationOverride {
                   new YamlClientDomConfigProcessor(true, c)
                     .buildConfig(new ConfigOverrideElementAdapter(propsToNode(provider.properties())));
               } catch (Exception e) {
-                  throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider.name());
+                  throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider.name(), e);
               }
           },
           new EnvConfigProvider(EnvVariablesConfigParser.client()),

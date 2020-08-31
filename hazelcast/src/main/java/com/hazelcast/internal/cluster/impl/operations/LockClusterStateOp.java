@@ -16,48 +16,50 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterStateChange;
 import com.hazelcast.internal.cluster.impl.ClusterStateManager;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
-import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 import java.util.UUID;
 
 public class LockClusterStateOp  extends Operation implements AllowedDuringPassiveState, UrgentSystemOperation,
-        IdentifiedDataSerializable {
+        IdentifiedDataSerializable, Versioned {
 
     private ClusterStateChange stateChange;
     private Address initiator;
     private UUID txnId;
     private long leaseTime;
     private int memberListVersion;
-    private int partitionStateVersion;
+    private long partitionStateStamp;
 
     public LockClusterStateOp() {
     }
 
     public LockClusterStateOp(ClusterStateChange stateChange, Address initiator, UUID txnId, long leaseTime,
-                              int memberListVersion, int partitionStateVersion) {
+            int memberListVersion, long partitionStateStamp) {
         this.stateChange = stateChange;
         this.initiator = initiator;
         this.txnId = txnId;
         this.leaseTime = leaseTime;
         this.memberListVersion = memberListVersion;
-        this.partitionStateVersion = partitionStateVersion;
+        this.partitionStateStamp = partitionStateStamp;
     }
 
     @Override
@@ -80,7 +82,7 @@ public class LockClusterStateOp  extends Operation implements AllowedDuringPassi
             getLogger().info("Locking cluster state. Initiator: " + initiator
                     + ", lease-time: " + leaseTime);
         }
-        clusterStateManager.lockClusterState(stateChange, initiator, txnId, leaseTime, memberListVersion, partitionStateVersion);
+        clusterStateManager.lockClusterState(stateChange, initiator, txnId, leaseTime, memberListVersion, partitionStateStamp);
     }
 
     @Override
@@ -112,7 +114,11 @@ public class LockClusterStateOp  extends Operation implements AllowedDuringPassi
         out.writeObject(initiator);
         UUIDSerializationUtil.writeUUID(out, txnId);
         out.writeLong(leaseTime);
-        out.writeInt(partitionStateVersion);
+        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            out.writeLong(partitionStateStamp);
+        } else {
+            out.writeInt((int) partitionStateStamp);
+        }
         out.writeInt(memberListVersion);
     }
 
@@ -123,7 +129,11 @@ public class LockClusterStateOp  extends Operation implements AllowedDuringPassi
         initiator = in.readObject();
         txnId = UUIDSerializationUtil.readUUID(in);
         leaseTime = in.readLong();
-        partitionStateVersion = in.readInt();
+        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            partitionStateStamp = in.readLong();
+        } else {
+            partitionStateStamp = in.readInt();
+        }
         memberListVersion = in.readInt();
     }
 

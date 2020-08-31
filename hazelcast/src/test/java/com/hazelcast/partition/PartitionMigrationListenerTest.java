@@ -49,6 +49,7 @@ import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -94,6 +95,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         Config config = new Config();
         int partitionCount = 100;
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
+        config.setProperty(ClusterProperty.PARTITION_MAX_PARALLEL_MIGRATIONS.getName(), String.valueOf(1));
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         warmUpPartitions(hz1);
@@ -104,7 +106,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
             @Override
             public void onMigrationComplete(MigrationParticipant participant, MigrationInfo migration, boolean success) {
                 MigrationStats stats = partitionService.getMigrationManager().getStats();
-                if (stats.getPlannedMigrations() - stats.getCompletedMigrations() < 20) {
+                if (stats.getRemainingMigrations() < 50) {
                     // start a new member to restart migrations
                     partitionService.resetMigrationInterceptor();
                     HazelcastInstance hz = factory.newHazelcastInstance(config);
@@ -229,25 +231,26 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
         assertEquals(migrationResult.getCompletedMigrations(), migrationsCompleted.size());
 
-        MigrationState lastProgress = null;
+        MigrationState completed = null;
         for (ReplicaMigrationEvent event : migrationsCompleted) {
             assertTrue(event.toString(), event.isSuccess());
             MigrationState progress = event.getMigrationState();
             assertEquals(migrationResult.getStartTime(), progress.getStartTime());
             assertEquals(migrationResult.getPlannedMigrations(), progress.getPlannedMigrations());
 
-            if (lastProgress != null) {
-                assertEquals(lastProgress.getCompletedMigrations(), progress.getCompletedMigrations() - 1);
-                assertEquals(lastProgress.getRemainingMigrations(), progress.getRemainingMigrations() + 1);
-                assertThat(progress.getTotalElapsedTime(),
-                        greaterThanOrEqualTo(lastProgress.getTotalElapsedTime() + event.getElapsedTime()));
+            assertThat(progress.getCompletedMigrations(), greaterThan(0));
+            assertThat(progress.getCompletedMigrations(), lessThanOrEqualTo(migrationResult.getPlannedMigrations()));
+            assertThat(progress.getCompletedMigrations(), lessThanOrEqualTo(migrationResult.getCompletedMigrations()));
+            assertThat(progress.getRemainingMigrations(), lessThan(migrationResult.getPlannedMigrations()));
+            assertThat(progress.getRemainingMigrations(), greaterThanOrEqualTo(migrationResult.getRemainingMigrations()));
+
+            if (progress.getCompletedMigrations() == migrationResult.getCompletedMigrations()) {
+                completed = progress;
             }
-            lastProgress = progress;
         }
 
-        assertNotNull(lastProgress);
-        assertEquals(migrationResult.getCompletedMigrations(), lastProgress.getCompletedMigrations());
-        assertThat(migrationResult.getTotalElapsedTime(), greaterThanOrEqualTo(lastProgress.getTotalElapsedTime()));
+        assertNotNull(completed);
+        assertThat(migrationResult.getTotalElapsedTime(), greaterThanOrEqualTo(completed.getTotalElapsedTime()));
     }
 
     @Test

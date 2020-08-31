@@ -78,6 +78,11 @@ public class MigrationCommitOperation extends AbstractPartitionOperation impleme
     }
 
     @Override
+    public final boolean validatesTarget() {
+        return false;
+    }
+
+    @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
         if (throwable instanceof MemberLeftException
                 || throwable instanceof TargetNotMemberException) {

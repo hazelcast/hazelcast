@@ -51,7 +51,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionReplicaVersionsView;
+import static com.hazelcast.test.Accessors.getClusterService;
 import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -181,14 +183,28 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
         final int replicaCount = Math.min(instances.size(), InternalPartition.MAX_REPLICA_COUNT);
 
+        HazelcastInstance master = null;
+        for (HazelcastInstance hz : instances) {
+            if (getClusterService(hz).isMaster()) {
+                master = hz;
+                break;
+            }
+        }
+        assertNotNull(master);
+
+        InternalPartitionService masterPartitionService = getPartitionService(master);
+        InternalPartition[] masterPartitions = masterPartitionService.getInternalPartitions();
+
         for (HazelcastInstance hz : instances) {
             Node node = getNode(hz);
-            InternalPartitionService partitionService = node.getPartitionService();
-            InternalPartition[] partitions = partitionService.getInternalPartitions();
+            InternalPartition[] partitions = node.getPartitionService().getInternalPartitions();
             ClusterService clusterService = node.getClusterService();
             Member localMember = node.getLocalMember();
 
             for (InternalPartition partition : partitions) {
+                assertEquals("On " + localMember + ", Partition " + partition.getPartitionId() + " versions don't match: " + partition,
+                        masterPartitions[partition.getPartitionId()].version(), partition.version());
+
                 for (int i = 0; i < replicaCount; i++) {
                     PartitionReplica replica = partition.getReplica(i);
                     assertNotNull("On " + localMember + ", Replica " + i + " is not found in " + partition, replica);
@@ -196,6 +212,8 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                             clusterService.getMember(replica.address(), replica.uuid()));
                 }
             }
+
+            assertEquals(masterPartitionService.getPartitionStateStamp(), node.getPartitionService().getPartitionStateStamp());
         }
     }
 
@@ -247,10 +265,10 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                 assertNoMissingData(fragmentedService, partitions, localReplica, name);
             }
 
-            // check values
-            assertPartitionVersionsAndBackupValues(actualBackupCount, service, node, partitions, null, allowDirty);
+            // check replica versions and values
+            assertReplicaVersionsAndBackupValues(actualBackupCount, service, node, partitions, null, allowDirty);
             for (String name : NAMESPACES) {
-                assertPartitionVersionsAndBackupValues(actualBackupCount, fragmentedService, node, partitions, name, allowDirty);
+                assertReplicaVersionsAndBackupValues(actualBackupCount, fragmentedService, node, partitions, name, allowDirty);
             }
 
             Address thisAddress = node.getThisAddress();
@@ -285,7 +303,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         }
     }
 
-    private <N> void assertPartitionVersionsAndBackupValues(int actualBackupCount, TestAbstractMigrationAwareService<N> service,
+    private <N> void assertReplicaVersionsAndBackupValues(int actualBackupCount, TestAbstractMigrationAwareService<N> service,
                                                             Node node, InternalPartition[] partitions, N name, boolean allowDirty) {
         Address thisAddress = node.getThisAddress();
         ServiceNamespace namespace = service.getNamespace(name);
