@@ -195,7 +195,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             for (Node publisherNode : childElements(nodeTarget)) {
                 WanBatchPublisherConfig publisherConfig = new WanBatchPublisherConfig();
                 String clusterNameOrPublisherId = publisherNode.getNodeName();
-                Node clusterNameAttr = publisherNode.getAttributes().getNamedItem("cluster-name");
+                Node clusterNameAttr = DomConfigHelper.getNamedItemNode(publisherNode, "cluster-name");
 
                 // the publisher's key may mean either the publisher-id or the
                 // cluster-name depending on whether the cluster-name is explicitly defined
@@ -420,7 +420,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     protected void attributesHandle(Node n, MapConfig mapConfig) {
         for (Node extractorNode : childElements(n)) {
             NamedNodeMap attrs = extractorNode.getAttributes();
-            String extractor = getTextContent(attrs.getNamedItem("extractor-class-name"));
+            String extractor = getTextContent(DomConfigHelper.getNamedItemNode(extractorNode, "extractor-class-name"));
             String name = extractorNode.getNodeName();
             mapConfig.addAttributeConfig(new AttributeConfig(name, extractor));
         }
@@ -437,9 +437,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
     @Override
     protected void queryCachePredicateHandler(Node childNode, QueryCacheConfig queryCacheConfig) {
-        NamedNodeMap predicateAttributes = childNode.getAttributes();
-        Node classNameNode = predicateAttributes.getNamedItem("class-name");
-        Node sqlNode = predicateAttributes.getNamedItem("sql");
+        Node classNameNode = DomConfigHelper.getNamedItemNode(childNode, "class-name");
+        Node sqlNode = DomConfigHelper.getNamedItemNode(childNode, "sql");
 
         if (classNameNode != null && sqlNode != null) {
             throw new InvalidConfigurationException("Both class-name and sql is defined for the predicate of map "
@@ -483,7 +482,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected MergePolicyConfig createMergePolicyConfig(Node node) {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-        String policyString = getTextContent(node.getAttributes().getNamedItem("class-name"));
+        String policyString = getTextContent(DomConfigHelper.getNamedItemNode(node, "class-name"));
         mergePolicyConfig.setPolicy(policyString);
         final String att = getAttribute(node, "batch-size");
         if (att != null) {
@@ -519,8 +518,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     protected void handleItemListeners(Node n, Function<ItemListenerConfig, Void> configAddFunction) {
         for (Node listenerNode : childElements(n)) {
             NamedNodeMap attrs = listenerNode.getAttributes();
-            boolean incValue = getBooleanValue(getTextContent(attrs.getNamedItem("include-value")));
-            String listenerClass = getTextContent(attrs.getNamedItem("class-name"));
+            boolean incValue = getBooleanValue(getTextContent(
+              DomConfigHelper.getNamedItemNode(listenerNode, "include-value")));
+            String listenerClass = getTextContent(
+              DomConfigHelper.getNamedItemNode(listenerNode, "class-name"));
             configAddFunction.apply(new ItemListenerConfig(listenerClass, incValue));
         }
     }
@@ -528,10 +529,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleEntryListeners(Node n, Function<EntryListenerConfig, Void> configAddFunction) {
         for (Node listenerNode : childElements(n)) {
-            NamedNodeMap attrs = listenerNode.getAttributes();
-            boolean incValue = getBooleanValue(getTextContent(attrs.getNamedItem("include-value")));
-            boolean local = getBooleanValue(getTextContent(attrs.getNamedItem("local")));
-            String listenerClass = getTextContent(attrs.getNamedItem("class-name"));
+            boolean incValue = getBooleanValue(getTextContent(
+              DomConfigHelper.getNamedItemNode(listenerNode, "include-value")));
+            boolean local = getBooleanValue(getTextContent(
+              DomConfigHelper.getNamedItemNode(listenerNode, "local")));
+            String listenerClass = getTextContent(
+              DomConfigHelper.getNamedItemNode(listenerNode, "class-name"));
             configAddFunction.apply(new EntryListenerConfig(listenerClass, local, incValue));
         }
     }
@@ -657,9 +660,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void fillDataSerializableFactories(Node node, SerializationConfig serializationConfig) {
         for (Node child : childElements(node)) {
-            NamedNodeMap attributes = child.getAttributes();
-            final Node factoryIdNode = attributes.getNamedItem("factory-id");
-            final Node classNameNode = attributes.getNamedItem("class-name");
+            final Node factoryIdNode = DomConfigHelper.getNamedItemNode(child, "factory-id");
+            final Node classNameNode = DomConfigHelper.getNamedItemNode(child, "class-name");
             if (factoryIdNode == null) {
                 throw new IllegalArgumentException(
                         "'factory-id' attribute of 'data-serializable-factory' is required!");
@@ -677,9 +679,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void fillPortableFactories(Node node, SerializationConfig serializationConfig) {
         for (Node child : childElements(node)) {
-            NamedNodeMap attributes = child.getAttributes();
-            final Node factoryIdNode = attributes.getNamedItem("factory-id");
-            final Node classNameNode = attributes.getNamedItem("class-name");
+            final Node factoryIdNode = DomConfigHelper.getNamedItemNode(child, "factory-id");
+            final Node classNameNode = DomConfigHelper.getNamedItemNode(child, "class-name");
             if (factoryIdNode == null) {
                 throw new IllegalArgumentException("'factory-id' attribute of 'portable-factory' is required!");
             }
@@ -717,7 +718,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleMemberAttributes(Node node) {
         for (Node n : childElements(node)) {
-            String attributeValue = getTextContent(n.getAttributes().getNamedItem("value"));
+            String attributeValue = getTextContent(DomConfigHelper.getNamedItemNode(n, "value"));
             String attributeName = n.getNodeName();
             handleMemberAttributesNode(n, attributeName, attributeValue);
         }
@@ -790,7 +791,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
     @Override
     protected void handlePort(Node node, ServerSocketEndpointConfig endpointConfig) {
-        Node portNode = node.getAttributes().getNamedItem("port");
+        Node portNode = DomConfigHelper.getNamedItemNode(node, "port");
         if (portNode != null) {
             String portStr = portNode.getNodeValue().trim();
             if (portStr.length() > 0) {
@@ -883,8 +884,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             String nodeName = cleanNodeName(dirsNode);
             if (ConfigUtils.matches("directories", nodeName)) {
                 for (Node dirNode : childElements(dirsNode)) {
-                    String directory = getTextContent(dirNode.getAttributes().getNamedItem("directory"));
-                    String numaNodeIdStr = getTextContent(dirNode.getAttributes().getNamedItem("numa-node"));
+                    String directory = getTextContent(DomConfigHelper.getNamedItemNode(dirNode, "directory"));
+                    String numaNodeIdStr = getTextContent(DomConfigHelper.getNamedItemNode(dirNode, "numa-node"));
                     if (!StringUtil.isNullOrEmptyAfterTrim(numaNodeIdStr)) {
                         int numaNodeId = getIntegerValue("numa-node", numaNodeIdStr);
                         persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory, numaNodeId));
