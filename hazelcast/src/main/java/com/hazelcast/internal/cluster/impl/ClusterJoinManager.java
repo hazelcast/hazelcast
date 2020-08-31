@@ -677,7 +677,8 @@ public class ClusterJoinManager {
 
                 MemberMap memberMap = clusterService.getMembershipManager().getMemberMap();
 
-                MembersView newMembersView = MembersView.cloneAdding(memberMap.toMembersView(), Stream.of(memberInfo).collect(Collectors.toList()));
+                MembersView newMembersView = MembersView.cloneAdding(memberMap.toMembersView(),
+                    Stream.of(memberInfo).collect(Collectors.toList()));
 
                 long time = clusterClock.getClusterTime();
 
@@ -911,7 +912,9 @@ public class ClusterJoinManager {
         if (timedOut) {
             minDelayFuture.cancel(false);
             maxDelayFuture.cancel(false);
-            minDelayFuture = maxDelayFuture = null; // only for posterity's sake
+            // only for posterity's sake
+            minDelayFuture = null;
+            maxDelayFuture = null;
         }
         return timedOut;
     }
@@ -919,13 +922,13 @@ public class ClusterJoinManager {
     private void scheduleMigrationDelay() {
         clusterServiceLock.lock();
         try {
-            boolean firstJoinAttempt = !migrationDelayActive.getAndSet(true);
-            if (!firstJoinAttempt) {
-                assert true == minDelayFuture.cancel(false) : "Something went wrong canceling min delay future";
+            boolean subsequentJoinAttempt = migrationDelayActive.getAndSet(true);
+            if (subsequentJoinAttempt) {
+                assert minDelayFuture.cancel(false) : "Something went wrong canceling min delay future";
             }
             minDelayFuture = nodeEngine.getExecutionService().schedule(this::reset,
                     waitMillisBeforeJoin, TimeUnit.MILLISECONDS);
-            if (firstJoinAttempt) {
+            if (!subsequentJoinAttempt) {
                 // pause migrations until no more members are trying to join in the same period
                 node.getPartitionService().pauseMigration();
                 maxDelayFuture = nodeEngine.getExecutionService().schedule(this::reset,
