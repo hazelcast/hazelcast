@@ -107,6 +107,7 @@ public class ClusterJoinManager {
     private final AtomicBoolean migrationDelayActive = new AtomicBoolean();
 
     private volatile boolean joinInProgress;
+    private volatile boolean mastershipClaimInProgress;
     private ScheduledFuture<?> minDelayFuture;
     private ScheduledFuture<?> maxDelayFuture;
 
@@ -126,24 +127,11 @@ public class ClusterJoinManager {
     }
 
     boolean isJoinInProgress() {
-        if (joinInProgress) {
-            return true;
-        }
-        clusterServiceLock.lock();
-        try {
-            return joinInProgress;
-        } finally {
-            clusterServiceLock.unlock();
-        }
+        return joinInProgress;
     }
 
     boolean isMastershipClaimInProgress() {
-        clusterServiceLock.lock();
-        try {
-            return joinInProgress;
-        } finally {
-            clusterServiceLock.unlock();
-        }
+        return mastershipClaimInProgress;
     }
 
     /**
@@ -662,7 +650,7 @@ public class ClusterJoinManager {
     }
 
     void setMastershipClaimInProgress() {
-        joinInProgress = true;
+        mastershipClaimInProgress = true;
     }
 
     private void startJoin(MemberInfo memberInfo) {
@@ -711,6 +699,7 @@ public class ClusterJoinManager {
                 }
             } finally {
                 joinInProgress = false;
+                mastershipClaimInProgress = false;
             }
         } finally {
             clusterServiceLock.unlock();
@@ -897,6 +886,7 @@ public class ClusterJoinManager {
             if (cancelMigrationTimeout()) {
                 node.getPartitionService().resumeMigration();
             }
+            mastershipClaimInProgress = false;
         } finally {
             clusterServiceLock.unlock();
         }
