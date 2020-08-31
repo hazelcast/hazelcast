@@ -56,6 +56,8 @@ public interface InternalIndex extends Index {
      */
     boolean allPartitionsIndexed(int ownedPartitionCount);
 
+    void beginPartitionUpdate();
+
     /**
      * Marks the given partition as indexed by this index.
      *

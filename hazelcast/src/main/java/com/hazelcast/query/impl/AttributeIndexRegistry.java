@@ -356,6 +356,11 @@ public class AttributeIndexRegistry {
         }
 
         @Override
+        public void beginPartitionUpdate() {
+            throw newUnsupportedException();
+        }
+
+        @Override
         public void markPartitionAsIndexed(int partitionId) {
             throw newUnsupportedException();
         }

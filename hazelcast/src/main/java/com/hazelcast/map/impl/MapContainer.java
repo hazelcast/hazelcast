@@ -149,12 +149,15 @@ public class MapContainer {
      * @return a new Indexes object
      */
     public Indexes createIndexes(boolean global) {
+        int partitionCount = mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount();
+
         return Indexes.newBuilder(serializationService, mapServiceContext.getIndexCopyBehavior(), mapConfig.getInMemoryFormat())
                 .global(global)
                 .extractors(extractors)
                 .statsEnabled(mapConfig.isStatisticsEnabled())
                 .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
                 .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
+                .partitionCount(partitionCount)
                 .build();
     }
 

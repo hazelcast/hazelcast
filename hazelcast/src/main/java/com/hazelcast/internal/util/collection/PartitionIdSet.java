@@ -43,8 +43,11 @@ import java.util.PrimitiveIterator;
  */
 public class PartitionIdSet extends AbstractSet<Integer> {
 
+    private static final int SIZE_UNKNOWN = -1;
+
     private final int partitionCount;
     private final BitSet bitSet;
+    private int size = SIZE_UNKNOWN;
 
     public PartitionIdSet(int partitionCount) {
         this(partitionCount, new BitSet(partitionCount));
@@ -77,7 +80,15 @@ public class PartitionIdSet extends AbstractSet<Integer> {
 
     @Override
     public int size() {
-        return bitSet.cardinality();
+        if (size == SIZE_UNKNOWN) {
+            size = bitSet.cardinality();
+        }
+
+        return size;
+    }
+
+    private void resetSize() {
+        size = SIZE_UNKNOWN;
     }
 
     @Override
@@ -114,6 +125,7 @@ public class PartitionIdSet extends AbstractSet<Integer> {
     public boolean add(int partitionId) {
         if (!bitSet.get(partitionId)) {
             bitSet.set(partitionId);
+            resetSize();
             return true;
         } else {
             return false;
@@ -122,6 +134,7 @@ public class PartitionIdSet extends AbstractSet<Integer> {
 
     public void addAll(PartitionIdSet other) {
         bitSet.or(other.bitSet);
+        resetSize();
     }
 
     @Override
@@ -135,6 +148,7 @@ public class PartitionIdSet extends AbstractSet<Integer> {
     public boolean remove(int partitionId) {
         if (bitSet.get(partitionId)) {
             bitSet.clear(partitionId);
+            resetSize();
             return true;
         } else {
             return false;
@@ -143,11 +157,13 @@ public class PartitionIdSet extends AbstractSet<Integer> {
 
     public void removeAll(PartitionIdSet other) {
         other.bitSet.stream().forEach(bitSet::clear);
+        resetSize();
     }
 
     @Override
     public void clear() {
         bitSet.clear();
+        resetSize();
     }
 
     public int getPartitionCount() {
@@ -170,6 +186,7 @@ public class PartitionIdSet extends AbstractSet<Integer> {
      */
     public void union(PartitionIdSet other) {
         this.bitSet.or(other.bitSet);
+        resetSize();
     }
 
     /**
@@ -177,6 +194,7 @@ public class PartitionIdSet extends AbstractSet<Integer> {
      */
     public void complement() {
         bitSet.flip(0, partitionCount);
+        resetSize();
     }
 
     /**
@@ -185,6 +203,37 @@ public class PartitionIdSet extends AbstractSet<Integer> {
      */
     public boolean isMissingPartitions() {
         return bitSet.nextClearBit(0) < partitionCount;
+    }
+
+    public PartitionIdSet copy() {
+        return new PartitionIdSet(partitionCount, (BitSet) bitSet.clone());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        PartitionIdSet other = (PartitionIdSet) o;
+
+        return partitionCount == other.partitionCount && bitSet.equals(other.bitSet);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + partitionCount;
+        result = 31 * result + bitSet.hashCode();
+        return result;
     }
 
     private final class PartitionIdSetIterator

@@ -158,6 +158,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                     indexes.addOrGetIndex(indexDefinition.getValue(), indexes.isGlobal() ? null : storeAdapter);
                 }
 
+                // TODO: Begin
+
                 final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
                 final boolean populateIndexes = indexesMustBePopulated(indexes, operation);
                 if (populateIndexes) {
@@ -167,6 +169,9 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
 
                 long nowInMillis = Clock.currentTimeMillis();
                 final InternalIndex[] indexesSnapshot = indexes.getIndexes();
+
+                Indexes.beginPartitionUpdate(indexesSnapshot);
+
                 for (int i = 0; i < keyRecord.size(); i += 2) {
                     Data dataKey = (Data) keyRecord.get(i);
                     Record record = (Record) keyRecord.get(i + 1);

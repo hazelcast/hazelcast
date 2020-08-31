@@ -72,12 +72,14 @@ public class Indexes {
     private final ConverterCache converterCache = new ConverterCache(this);
     private final Map<String, IndexConfig> definitions = new ConcurrentHashMap<>();
 
+    private final int partitionCount;
+
     private volatile InternalIndex[] indexes = EMPTY_INDEXES;
     private volatile InternalIndex[] compositeIndexes = EMPTY_INDEXES;
 
     private Indexes(InternalSerializationService serializationService, IndexCopyBehavior indexCopyBehavior, Extractors extractors,
                     IndexProvider indexProvider, boolean usesCachedQueryableEntries, boolean statisticsEnabled, boolean global,
-                    InMemoryFormat inMemoryFormat) {
+                    InMemoryFormat inMemoryFormat, int partitionCount) {
         this.global = global;
         this.indexCopyBehavior = indexCopyBehavior;
         this.serializationService = serializationService;
@@ -86,6 +88,13 @@ public class Indexes {
         this.extractors = extractors == null ? Extractors.newBuilder(serializationService).build() : extractors;
         this.indexProvider = indexProvider == null ? new DefaultIndexProvider() : indexProvider;
         this.queryContextProvider = createQueryContextProvider(this, global, statisticsEnabled);
+        this.partitionCount = partitionCount;
+    }
+
+    public static void beginPartitionUpdate(InternalIndex[] indexes) {
+        for (InternalIndex index : indexes) {
+            index.beginPartitionUpdate();
+        }
     }
 
     /**
@@ -140,7 +149,8 @@ public class Indexes {
                 serializationService,
                 indexCopyBehavior,
                 stats.createPerIndexStats(indexConfig.getType() == IndexType.SORTED, usesCachedQueryableEntries),
-                partitionStoreAdapter
+                partitionStoreAdapter,
+                partitionCount
         );
 
         indexesByName.put(name, index);
@@ -480,6 +490,7 @@ public class Indexes {
         private Extractors extractors;
         private IndexProvider indexProvider;
         private InMemoryFormat inMemoryFormat;
+        private int partitionCount;
 
         Builder(SerializationService ss, IndexCopyBehavior indexCopyBehavior, InMemoryFormat inMemoryFormat) {
             this.serializationService = checkNotNull((InternalSerializationService) ss, "serializationService cannot be null");
@@ -536,12 +547,17 @@ public class Indexes {
             return this;
         }
 
+        public Builder partitionCount(int partitionCount) {
+            this.partitionCount = partitionCount;
+            return this;
+        }
+
         /**
          * @return a new instance of Indexes
          */
         public Indexes build() {
             return new Indexes(serializationService, indexCopyBehavior, extractors, indexProvider, usesCachedQueryableEntries,
-                    statsEnabled, global, inMemoryFormat);
+                    statsEnabled, global, inMemoryFormat, partitionCount);
         }
 
     }

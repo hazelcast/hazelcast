@@ -232,6 +232,11 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
+        public void beginPartitionUpdate() {
+            delegate.beginPartitionUpdate();
+        }
+
+        @Override
         public void markPartitionAsIndexed(int partitionId) {
             delegate.markPartitionAsIndexed(partitionId);
         }
