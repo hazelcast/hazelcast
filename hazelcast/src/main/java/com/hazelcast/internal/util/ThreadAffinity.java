@@ -16,14 +16,13 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.logging.Logger;
-import net.openhft.affinity.Affinity;
-
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.internal.util.ThreadAffinityHelper.isAffinityAvailable;
 
 /**
  * Contains the thread affinity logic for certain threads.
@@ -72,36 +71,6 @@ public class ThreadAffinity {
         }
     }
 
-    public int getThreadCount() {
-        return allowedCpusList.size();
-    }
-
-    public BitSet nextAllowedCpus() {
-        if (allowedCpusList.isEmpty()) {
-            return null;
-        }
-
-        int index = threadIndex.getAndIncrement() % allowedCpusList.size();
-        return allowedCpusList.get(index);
-    }
-
-    public boolean isEnabled() {
-        return !allowedCpusList.isEmpty();
-    }
-
-    private static boolean isAffinityAvailable() {
-        try {
-            boolean jnaAvailable = Affinity.isJNAAvailable();
-            if (!jnaAvailable) {
-                Logger.getLogger(ThreadAffinity.class).warning("jna is not available");
-            }
-            return jnaAvailable;
-        } catch (NoClassDefFoundError e) {
-            Logger.getLogger(ThreadAffinity.class).warning("Affinity jar isn't available: " + e.getMessage());
-            return false;
-        }
-    }
-
     static List<BitSet> parse(String affinity) {
         List<BitSet> cpus = new ArrayList<>();
         if (affinity == null) {
@@ -126,6 +95,23 @@ public class ThreadAffinity {
         }
 
         return cpus;
+    }
+
+    public int getThreadCount() {
+        return allowedCpusList.size();
+    }
+
+    public BitSet nextAllowedCpus() {
+        if (allowedCpusList.isEmpty()) {
+            return null;
+        }
+
+        int index = threadIndex.getAndIncrement() % allowedCpusList.size();
+        return allowedCpusList.get(index);
+    }
+
+    public boolean isEnabled() {
+        return !allowedCpusList.isEmpty();
     }
 
     static class AffinityParser {
