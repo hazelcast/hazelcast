@@ -310,7 +310,7 @@ hazelcast-client:
       resource-group: RESOURCE-GROUP-NAME
       scale-set: SCALE-SET-NAME
       tag: TAG-NAME=HZLCAST001
-      hz-port: 5701-5705
+      hz-port: 5701-5707
       use-public-ip: true
     kubernetes:
       enabled: false
