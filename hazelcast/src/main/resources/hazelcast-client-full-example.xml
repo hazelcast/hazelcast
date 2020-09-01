@@ -320,86 +320,88 @@
             <tag-value>hz-nodes</tag-value>
             <security-group-name>hazelcast-sg</security-group-name>
             <iam-role>dummy</iam-role>
-            <cluster>my-cluster</cluster>
-            <family>test-family</family>
-            <service-name>test-service</service-name>
-        </aws>
-        <gcp enabled="false">
-            <private-key-path>key-path</private-key-path>
-            <projects>project-1,project-2</projects>
-            <region>us-central1</region>
-            <zones>us-central1-b,us-central1-c</zones>
-            <label>key=value</label>
-            <hz-port>5701-5710</hz-port>
-            <use-public-ip>true</use-public-ip>
-        </gcp>
-        <azure enabled="false">
-            <instance-metadata-available>false</instance-metadata-available>
-            <client-id>CLIENT_ID</client-id>
-            <client-secret>CLIENT_SECRET</client-secret>
-            <tenant-id>TENANT_ID</tenant-id>
-            <subscription-id>SUB_ID</subscription-id>
-            <resource-group>RESOURCE-GROUP-NAME</resource-group>
-            <scale-set>SCALE-SET-NAME</scale-set>
-            <tag>TAG-NAME=HZLCAST001</tag>
-            <hz-port>5701-5707</hz-port>
-            <use-public-ip>true</use-public-ip>
-        </azure>
-        <kubernetes enabled="false">
-            <namespace>MY-KUBERNETES-NAMESPACE</namespace>
-            <service-name>MY-SERVICE-NAME</service-name>
-            <service-label-name>MY-SERVICE-LABEL-NAME</service-label-name>
-            <service-label-value>MY-SERVICE-LABEL-VALUE</service-label-value>
-        </kubernetes>
-        <eureka enabled="false">
-            <self-registration>true</self-registration>
-            <namespace>hazelcast</namespace>
-        </eureka>
-        <icmp-ping enabled="false">
-            <timeout-milliseconds>2000</timeout-milliseconds>
-            <interval-milliseconds>3000</interval-milliseconds>
-            <ttl>100</ttl>
-            <max-attempts>5</max-attempts>
-            <echo-fail-fast-on-startup>false</echo-fail-fast-on-startup>
-        </icmp-ping>
-        <hazelcast-cloud enabled="false">
-            <discovery-token>EXAMPLE_TOKEN</discovery-token>
-        </hazelcast-cloud>
-        <discovery-strategies>
-            <node-filter class="DummyFilterClass"/>
-            <discovery-strategy class="DummyDiscoveryStrategy1" enabled="true">
-                <properties>
-                    <property name="key-string">foo</property>
-                    <property name="key-int">123</property>
-                    <property name="key-boolean">true</property>
-                </properties>
-            </discovery-strategy>
-        </discovery-strategies>
-    </network>
+            <!--
+           <cluster>my-cluster</cluster>
+           <family>test-family</family>
+           <service-name>test-service</service-name>
+           -->
+</aws>
+<gcp enabled="false">
+   <private-key-path>key-path</private-key-path>
+   <projects>project-1,project-2</projects>
+   <region>us-central1</region>
+   <zones>us-central1-b,us-central1-c</zones>
+   <label>key=value</label>
+   <hz-port>5701-5710</hz-port>
+   <use-public-ip>true</use-public-ip>
+</gcp>
+<azure enabled="false">
+   <instance-metadata-available>false</instance-metadata-available>
+   <client-id>CLIENT_ID</client-id>
+   <client-secret>CLIENT_SECRET</client-secret>
+   <tenant-id>TENANT_ID</tenant-id>
+   <subscription-id>SUB_ID</subscription-id>
+   <resource-group>RESOURCE-GROUP-NAME</resource-group>
+   <scale-set>SCALE-SET-NAME</scale-set>
+   <tag>TAG-NAME=HZLCAST001</tag>
+   <hz-port>5701-5707</hz-port>
+   <use-public-ip>true</use-public-ip>
+</azure>
+<kubernetes enabled="false">
+   <namespace>MY-KUBERNETES-NAMESPACE</namespace>
+   <service-name>MY-SERVICE-NAME</service-name>
+   <service-label-name>MY-SERVICE-LABEL-NAME</service-label-name>
+   <service-label-value>MY-SERVICE-LABEL-VALUE</service-label-value>
+</kubernetes>
+<eureka enabled="false">
+   <self-registration>true</self-registration>
+   <namespace>hazelcast</namespace>
+</eureka>
+<icmp-ping enabled="false">
+   <timeout-milliseconds>2000</timeout-milliseconds>
+   <interval-milliseconds>3000</interval-milliseconds>
+   <ttl>100</ttl>
+   <max-attempts>5</max-attempts>
+   <echo-fail-fast-on-startup>false</echo-fail-fast-on-startup>
+</icmp-ping>
+<hazelcast-cloud enabled="false">
+   <discovery-token>EXAMPLE_TOKEN</discovery-token>
+</hazelcast-cloud>
+<discovery-strategies>
+   <node-filter class="DummyFilterClass"/>
+   <discovery-strategy class="DummyDiscoveryStrategy1" enabled="true">
+       <properties>
+           <property name="key-string">foo</property>
+           <property name="key-int">123</property>
+           <property name="key-boolean">true</property>
+       </properties>
+   </discovery-strategy>
+</discovery-strategies>
+</network>
 
-    <!--
-        ===== HAZELCAST SECURITY CONFIGURATION =====
+<!--
+===== HAZELCAST SECURITY CONFIGURATION =====
 
-        This feature is available only in Hazelcast Enterprise. Configuration element's name is <security>.
-        It has one of the following sub-elements:
-        * <credentials-factory>:
-            Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials
-            interface.
-            This element has a mandatory "class-name" attribute where you should define the factory class implementing
-            ICredentialsFactory used to create Credentials objects.
-            With the <properties> sub-element, you can define properties for the factory class. The properties can be
-            defined with the <property> sub-element nested in the <properties>. The <property> element has the attribute
-            "name" used to define the name of the attribute. The value of the property is defined in the body.
-        * <username-password>
-            Defines a static UsernamePasswordCredentials instance as the client's identity. It has mandatory
-             "username" and "password" attributes.
-        * <token>
-            Defines a static TokenCredentials instance as the client's identity. It can have attribute "encoding".
-            Content of the element is token value in given encoding (or in plain text).
-        * <kerberos>
-            Uses Kerberos service ticket (wrapped as GSS-API init token) as the identity.
-            It may reference a security realm  in the <realms> section. The realm is used for the Kerberos authentication.
-    -->
+This feature is available only in Hazelcast Enterprise. Configuration element's name is <security>.
+It has one of the following sub-elements:
+* <credentials-factory>:
+   Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials
+   interface.
+   This element has a mandatory "class-name" attribute where you should define the factory class implementing
+   ICredentialsFactory used to create Credentials objects.
+   With the <properties> sub-element, you can define properties for the factory class. The properties can be
+   defined with the <property> sub-element nested in the <properties>. The <property> element has the attribute
+   "name" used to define the name of the attribute. The value of the property is defined in the body.
+* <username-password>
+   Defines a static UsernamePasswordCredentials instance as the client's identity. It has mandatory
+    "username" and "password" attributes.
+* <token>
+   Defines a static TokenCredentials instance as the client's identity. It can have attribute "encoding".
+   Content of the element is token value in given encoding (or in plain text).
+* <kerberos>
+   Uses Kerberos service ticket (wrapped as GSS-API init token) as the identity.
+   It may reference a security realm  in the <realms> section. The realm is used for the Kerberos authentication.
+-->
     <security>
         <credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
             <properties>
