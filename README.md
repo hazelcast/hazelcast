@@ -145,7 +145,7 @@ hazelcast:
         hz-port: 5701-5703
 ```
 
-- `tag` - *(Optional)* The key-value pair of the tag on the Azure VM resources. The format should be as `key=value`. If this setting is configured, the plugin will search for instances over only the resources that have this tag entry. If not configured, the plugin will search for instances over all available resources.
+- `tag` - *(Optional)* The key-value pair of the tag on the Azure network interfaces (NIC). The format should be as `key=value`. If this setting is configured, the plugin will search for instances over only the resources that have this tag entry in their network interfaces. If not configured, the plugin will search for instances over all available resources.
 - `hz-port` - *(Optional)* The port range where Hazelcast is expected to be running. The format should be as `5701` or `5701-5703`. The default value is `5701-5703`.
 
 ## Configuration for Hazelcast Clients Connecting from outside Azure
