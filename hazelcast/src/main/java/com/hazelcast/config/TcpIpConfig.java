@@ -34,7 +34,11 @@ public class TcpIpConfig {
 
     private static final int CONNECTION_TIMEOUT_SEC = 5;
 
+    private static final int PORT_MAX = 0xFFFF;
+
     private int connectionTimeoutSeconds = CONNECTION_TIMEOUT_SEC;
+
+    private int scanStartPort = -1;
 
     private boolean enabled;
 
@@ -68,6 +72,34 @@ public class TcpIpConfig {
             throw new IllegalArgumentException("connection timeout can't be smaller than 0");
         }
         this.connectionTimeoutSeconds = connectionTimeoutSeconds;
+        return this;
+    }
+
+    /**
+     * Returns the port where to start port scan for another member.
+     *
+     * @return the scanStartPort
+     * @see #setScanStartPort(int)
+     */
+    public int getScanStartPort() {
+        return scanStartPort;
+    }
+
+    /**
+     * Sets the port where to start port scan for another member. Together with
+     * @{@link com.hazelcast.spi.properties.ClusterProperty#TCP_JOIN_PORT_TRY_COUNT} allows to set the range
+     * of port to be scanned.
+     *
+     * @param scanStartPort the scan start port
+     * @return the updated TcpIpConfig
+     * @see #getScanStartPort()
+     */
+    public TcpIpConfig setScanStartPort(final int scanStartPort) {
+        if (scanStartPort <= 0 || scanStartPort > PORT_MAX) {
+            throw new IllegalArgumentException("Scan start port out of range: " + scanStartPort
+                    + ". Allowed range [1,65535]");
+        }
+        this.scanStartPort = scanStartPort;
         return this;
     }
 
@@ -207,6 +239,9 @@ public class TcpIpConfig {
         if (connectionTimeoutSeconds != that.connectionTimeoutSeconds) {
             return false;
         }
+        if (scanStartPort != that.scanStartPort) {
+            return false;
+        }
         if (enabled != that.enabled) {
             return false;
         }
@@ -219,6 +254,7 @@ public class TcpIpConfig {
     @Override
     public final int hashCode() {
         int result = connectionTimeoutSeconds;
+        result = 31 * result + scanStartPort;
         result = 31 * result + (enabled ? 1 : 0);
         result = 31 * result + (members != null ? members.hashCode() : 0);
         result = 31 * result + (requiredMember != null ? requiredMember.hashCode() : 0);
@@ -231,6 +267,7 @@ public class TcpIpConfig {
                 + ", connectionTimeoutSeconds=" + connectionTimeoutSeconds
                 + ", members=" + members
                 + ", requiredMember=" + requiredMember
+                + ", scanStartPort=" + scanStartPort
                 + "]";
     }
 }

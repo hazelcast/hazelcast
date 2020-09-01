@@ -3237,6 +3237,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        enabled: false\n"
                 + "      tcp-ip:\n"
                 + "        enabled: true\n"
+                + "        scan-start-port: 5801\n"
                 + "        required-member: 10.10.1.10\n"
                 + "        member-list:\n"
                 + "          - 10.10.1.11\n"

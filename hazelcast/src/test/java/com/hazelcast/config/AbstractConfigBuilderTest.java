@@ -438,6 +438,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("10.10.1.10", joinConfig.getTcpIpConfig().getRequiredMember());
         assertContains(joinConfig.getTcpIpConfig().getMembers(), "10.10.1.11");
         assertContains(joinConfig.getTcpIpConfig().getMembers(), "10.10.1.12");
+        assertEquals(joinConfig.getTcpIpConfig().getScanStartPort(), 5801);
         // failure detector config
         assertTrue(fdConfig.isEnabled());
         assertTrue(fdConfig.isParallelMode());

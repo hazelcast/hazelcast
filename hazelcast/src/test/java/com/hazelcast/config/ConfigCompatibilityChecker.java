@@ -1218,6 +1218,7 @@ public class ConfigCompatibilityChecker {
             boolean c2Disabled = c2 == null || !c2.isEnabled();
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
                     && nullSafeEqual(c1.getConnectionTimeoutSeconds(), c2.getConnectionTimeoutSeconds())
+                    && nullSafeEqual(c1.getScanStartPort(), c2.getScanStartPort())
                     && nullSafeEqual(c1.getMembers(), c2.getMembers()))
                     && nullSafeEqual(c1.getRequiredMember(), c2.getRequiredMember());
         }

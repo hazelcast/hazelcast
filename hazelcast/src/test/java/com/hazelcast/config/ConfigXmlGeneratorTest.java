@@ -2201,6 +2201,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     private static TcpIpConfig tcpIpConfig() {
         return new TcpIpConfig()
                 .setEnabled(true)
+                .setScanStartPort(5801)
                 .setConnectionTimeoutSeconds(10)
                 .addMember("10.11.12.1,10.11.12.2")
                 .setRequiredMember("10.11.11.2");

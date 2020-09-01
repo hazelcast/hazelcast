@@ -461,6 +461,8 @@ hazelcast:
   #         slow down because of longer timeouts (e.g. when a well known member is not up). Increasing
   #         this value is recommended if you have many IPs listed and the members cannot properly
   #         build up the cluster. Its default value is 5.
+  #     - "scan-start-port":
+  #         The initial port where to start port scan for another member.
   #     - "required-member":
   #         IP address of the required member. Cluster will only be formed if the member with this
   #         IP address is found.
@@ -2959,6 +2961,7 @@ hazelcast:
       tcp-ip:
         enabled: false
         connection-timeout-seconds: 123
+        scan-start-port: 5801
         required-member: dummy
         member: dummy1,dummy2
         interface: 127.0.0.10

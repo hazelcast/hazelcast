@@ -62,7 +62,7 @@
                     <interface>10.10.2.*</interface>
                 </trusted-interfaces>
             </multicast>
-            <tcp-ip enabled="false" connection-timeout-seconds="123">
+            <tcp-ip enabled="false" connection-timeout-seconds="123" scan-start-port="5801">
                 <required-member>dummy</required-member>
                 <member>dummy1</member>
                 <member>dummy2</member>

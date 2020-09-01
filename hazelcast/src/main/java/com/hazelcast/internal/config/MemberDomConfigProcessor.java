@@ -1422,6 +1422,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 tcpIpConfig.setEnabled(getBooleanValue(value));
             } else if (matches(att.getNodeName(), "connection-timeout-seconds")) {
                 tcpIpConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value));
+            } else if (att.getNodeName().equals("scan-start-port")) {
+                tcpIpConfig.setScanStartPort(getIntegerValue("scan-start-port", value));
             }
         }
         Set<String> memberTags = new HashSet<>(Arrays.asList("interface", "member", "members"));
