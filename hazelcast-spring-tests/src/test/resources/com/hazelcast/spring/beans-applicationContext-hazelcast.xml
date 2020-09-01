@@ -55,6 +55,9 @@
                               page-size="20">
                 <hz:size unit="MEGABYTES" value="${native.memory.size}"/>
             </hz:native-memory>
+            <hz:queue name="testQueue" priority-comparator-class-name="com.hazelcast.collection.impl.queue.model.PriorityElementComparator">
+            </hz:queue>
+
         </hz:config>
     </hz:hazelcast>
 

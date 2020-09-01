@@ -269,7 +269,8 @@
                       backup-count="1"
                       async-backup-count="1"
                       statistics-enabled="false"
-                      empty-queue-ttl="100">
+                      empty-queue-ttl="100"
+                      priority-comparator-class-name="com.hazelcast.collection.impl.queue.model.PriorityElementComparator">
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
                 <hz:merge-policy batch-size="2342">DiscardMergePolicy</hz:merge-policy>
             </hz:queue>

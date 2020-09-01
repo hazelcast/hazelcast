@@ -16,6 +16,13 @@
 
 package com.hazelcast.config;
 
+import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
+import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
+import static java.text.MessageFormat.format;
+import static java.util.Collections.singletonMap;
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static org.junit.Assert.assertEquals;
+
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
@@ -36,8 +43,6 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.util.CollectionUtil;
-import org.apache.commons.lang3.ArrayUtils;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -48,13 +53,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-
-import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
-import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
-import static java.text.MessageFormat.format;
-import static java.util.Collections.singletonMap;
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
-import static org.junit.Assert.assertEquals;
+import org.apache.commons.lang3.ArrayUtils;
 
 public class ConfigCompatibilityChecker {
 
@@ -416,7 +415,8 @@ public class ConfigCompatibilityChecker {
                     && isCompatible(c1.getQueueStoreConfig(), c2.getQueueStoreConfig())
                     && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
                     && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled())
-                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName());
+                    && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
+                    && nullSafeEqual(c1.getPriorityComparatorClassName(), c2.getPriorityComparatorClassName());
         }
 
         private static boolean isCompatible(QueueStoreConfig c1, QueueStoreConfig c2) {

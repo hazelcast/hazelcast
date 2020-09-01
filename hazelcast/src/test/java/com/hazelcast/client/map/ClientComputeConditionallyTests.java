@@ -238,4 +238,30 @@ public class ClientComputeConditionallyTests extends ClientTestSupport {
         assertEquals(null, map.get("absent_key"));
     }
 
+    @Test
+    public void testMergeShouldReplaceValueWhenBothOldAndNewValuesArePresent() {
+        final IMap<String, String> map = client.getMap("testMerge");
+        map.put("present_key", "present_value");
+        Object newValue = map.merge("present_key", "new_value", (ov, nv) -> ov + "_" + nv);
+        assertEquals("present_value_new_value", newValue);
+        assertEquals("present_value_new_value", map.get("present_key"));
+    }
+
+    @Test
+    public void testMergeShouldRemoveValueWhenOldValuePresentButNewValuesIsNotPresent() {
+        final IMap<String, String> map = client.getMap("testMerge");
+        map.put("present_key", "present_value");
+        String newValue = map.merge("present_key", "some_value", (ov, nv) -> null);
+        assertEquals(null, newValue);
+        assertEquals(null, map.get("present_key"));
+    }
+
+    @Test
+    public void testMergeShouldPutValueWhenOldValueNotPresentButNewValuesIsPresent() {
+        final IMap<String, String> map = client.getMap("testCompute");
+        String newValue = map.merge("absent_key", "new_value", (ov, nv) -> null);
+        assertEquals("new_value", newValue);
+        assertEquals("new_value", map.get("absent_key"));
+    }
+
 }

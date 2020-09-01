@@ -208,11 +208,10 @@ public class MigrationStats {
             s.append(", elapsedMigrationOperationTime=").append(getElapsedMigrationOperationTime()).append("ms")
                     .append(", totalElapsedMigrationOperationTime=").append(getTotalElapsedMigrationOperationTime()).append("ms")
                     .append(", elapsedDestinationCommitTime=").append(getElapsedDestinationCommitTime()).append("ms")
-                    .append(", totalElapsedDestinationCommitTime=").append(getTotalElapsedDestinationCommitTime()).append("ms");
+                    .append(", totalElapsedDestinationCommitTime=").append(getTotalElapsedDestinationCommitTime()).append("ms")
+                    .append(", elapsedMigrationTime=").append(getElapsedMigrationTime()).append("ms")
+                    .append(", totalElapsedMigrationTime=").append(getTotalElapsedMigrationTime()).append("ms");
         }
-
-        s.append(", elapsedMigrationTime=").append(getElapsedMigrationTime()).append("ms")
-                .append(", totalElapsedMigrationTime=").append(getTotalElapsedMigrationTime()).append("ms");
         return s.toString();
     }
 

@@ -22,6 +22,8 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -35,6 +37,7 @@ public class QueueConfigReadOnly extends QueueConfig {
         super(config);
     }
 
+    @Nonnull
     @Override
     public List<ItemListenerConfig> getItemListenerConfigs() {
         final List<ItemListenerConfig> itemListenerConfigs = super.getItemListenerConfigs();
@@ -47,7 +50,7 @@ public class QueueConfigReadOnly extends QueueConfig {
     }
 
     @Override
-    public QueueStoreConfig getQueueStoreConfig() {
+    public @Nullable QueueStoreConfig getQueueStoreConfig() {
         final QueueStoreConfig queueStoreConfig = super.getQueueStoreConfig();
         if (queueStoreConfig == null) {
             return null;
@@ -81,7 +84,7 @@ public class QueueConfigReadOnly extends QueueConfig {
     }
 
     @Override
-    public QueueConfig setQueueStoreConfig(QueueStoreConfig queueStoreConfig) {
+    public QueueConfig setQueueStoreConfig(@Nullable QueueStoreConfig queueStoreConfig) {
         throw new UnsupportedOperationException("This config is read-only queue: " + getName());
     }
 
@@ -96,17 +99,22 @@ public class QueueConfigReadOnly extends QueueConfig {
     }
 
     @Override
-    public QueueConfig setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
+    public QueueConfig setItemListenerConfigs(@Nullable List<ItemListenerConfig> listenerConfigs) {
         throw new UnsupportedOperationException("This config is read-only queue: " + getName());
     }
 
     @Override
-    public QueueConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+    public QueueConfig setSplitBrainProtectionName(@Nullable String splitBrainProtectionName) {
         throw new UnsupportedOperationException("This config is read-only queue: " + getName());
     }
 
     @Override
-    public QueueConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+    public QueueConfig setMergePolicyConfig(@Nonnull MergePolicyConfig mergePolicyConfig) {
         throw new UnsupportedOperationException("This config is read-only queue: " + getName());
+    }
+
+    @Override
+    public QueueConfig setPriorityComparatorClassName(@Nullable String priorityComparatorClassName) {
+        return super.setPriorityComparatorClassName(priorityComparatorClassName);
     }
 }

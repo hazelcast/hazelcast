@@ -164,6 +164,16 @@ public interface IPartitionService extends CoreService {
      */
     int getMaxAllowedBackupCount();
 
+    /**
+     * Returns stamp of the current partition state.
+     */
+    long getPartitionStateStamp();
+
+    /**
+     * Returns version of the current partition state.
+     */
+    //RU_COMPAT_4_0
+    @Deprecated
     int getPartitionStateVersion();
 
     /**

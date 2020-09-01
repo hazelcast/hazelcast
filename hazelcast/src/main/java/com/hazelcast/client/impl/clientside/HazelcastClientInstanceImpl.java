@@ -69,6 +69,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
+import com.hazelcast.cp.event.CPGroupAvailabilityListener;
+import com.hazelcast.cp.event.CPMembershipListener;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
@@ -872,6 +874,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         configuredListeners.stream().filter(listener -> listener instanceof PartitionLostListener)
                 .forEach(listener -> getPartitionService().addPartitionLostListener((PartitionLostListener) listener));
+
+        configuredListeners.stream().filter(listener -> listener instanceof CPMembershipListener)
+                .forEach(listener -> getCPSubsystem().addMembershipListener((CPMembershipListener) listener));
+
+        configuredListeners.stream().filter(listener -> listener instanceof CPGroupAvailabilityListener)
+                .forEach(listener -> getCPSubsystem().addGroupAvailabilityListener((CPGroupAvailabilityListener) listener));
     }
 
 }

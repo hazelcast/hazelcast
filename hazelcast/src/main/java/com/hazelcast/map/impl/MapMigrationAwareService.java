@@ -164,7 +164,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             // if loading has been already started this call will do nothing
             recordStore.startLoading();
         }
-        mapServiceContext.reloadOwnedPartitions();
+        mapServiceContext.nullifyOwnedPartitions();
 
         removeOrRegenerateNearCacheUuid(event);
     }
@@ -192,7 +192,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
         }
 
-        mapServiceContext.reloadOwnedPartitions();
+        mapServiceContext.nullifyOwnedPartitions();
     }
 
     private void clearNonGlobalIndexes(PartitionMigrationEvent event) {

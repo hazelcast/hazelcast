@@ -22,6 +22,7 @@ import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterClock;
+import com.hazelcast.internal.diagnostics.OperationProfilerPlugin;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -29,6 +30,7 @@ import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.LatencyDistribution;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -46,7 +48,7 @@ import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
-import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -56,6 +58,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_ASYNC_OPERATIONS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_CALL_TIMEOUT_COUNT;
@@ -75,6 +78,8 @@ import static com.hazelcast.spi.impl.operationservice.InvocationBuilder.DEFAULT_
 import static com.hazelcast.spi.impl.operationservice.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationservice.Operations.isWanReplicationOperation;
 import static com.hazelcast.spi.properties.ClusterProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE;
+import static com.hazelcast.spi.properties.ClusterProperty.INVOCATION_MAX_RETRY_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.INVOCATION_RETRY_PAUSE;
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -107,6 +112,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
     // operations are added/removed using the {@link Offload} functionality.
     @Probe(name = OPERATION_METRIC_OPERATION_SERVICE_ASYNC_OPERATIONS)
     final Set<Operation> asyncOperations = newSetFromMap(new ConcurrentHashMap<>());
+    final ConcurrentMap<Class, LatencyDistribution> opLatencyDistributions;
 
     final InvocationRegistry invocationRegistry;
     final OperationExecutor operationExecutor;
@@ -140,29 +146,34 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
     private final long invocationRetryPauseMillis;
     private final boolean failOnIndeterminateOperationState;
 
+    @SuppressWarnings("checkstyle:executablestatementcount")
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         Address thisAddress = node.getThisAddress();
         this.logger = node.getLogger(OperationService.class);
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
-
-        this.invocationMaxRetryCount = node.getProperties().getInteger(ClusterProperty.INVOCATION_MAX_RETRY_COUNT);
-        this.invocationRetryPauseMillis = node.getProperties().getMillis(ClusterProperty.INVOCATION_RETRY_PAUSE);
+        this.opLatencyDistributions = nodeEngine.getProperties().getInteger(OperationProfilerPlugin.PERIOD_SECONDS) > 0
+                ? new ConcurrentHashMap<>()
+                : null;
+        HazelcastProperties properties = node.getProperties();
+        this.invocationMaxRetryCount = properties.getInteger(INVOCATION_MAX_RETRY_COUNT);
+        this.invocationRetryPauseMillis = properties.getMillis(INVOCATION_RETRY_PAUSE);
         this.failOnIndeterminateOperationState = nodeEngine.getProperties().getBoolean(FAIL_ON_INDETERMINATE_OPERATION_STATE);
 
         this.backpressureRegulator = new BackpressureRegulator(
-                node.getProperties(), node.getLogger(BackpressureRegulator.class));
+                properties, node.getLogger(BackpressureRegulator.class));
 
         this.outboundResponseHandler = new OutboundResponseHandler(thisAddress, serializationService,
                 node.getLogger(OutboundResponseHandler.class));
 
         this.invocationRegistry = new InvocationRegistry(
                 node.getLogger(OperationServiceImpl.class),
-                backpressureRegulator.newCallIdSequence(nodeEngine.getConcurrencyDetection()));
+                backpressureRegulator.newCallIdSequence(nodeEngine.getConcurrencyDetection()),
+                properties);
 
         this.invocationMonitor = new InvocationMonitor(
-                nodeEngine, thisAddress, node.getProperties(), invocationRegistry,
+                nodeEngine, thisAddress, properties, invocationRegistry,
                 node.getLogger(InvocationMonitor.class), serializationService, nodeEngine.getServiceManager());
 
         this.outboundOperationHandler = new OutboundOperationHandler(node, thisAddress, serializationService);
@@ -175,12 +186,16 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
                 configClassLoader, invocationRegistry, hzName, nodeEngine);
 
         this.operationExecutor = new OperationExecutorImpl(
-                node.getProperties(), node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
+                properties, node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
                 node.getNodeExtension(), hzName, configClassLoader);
 
         this.slowOperationDetector = new SlowOperationDetector(node.loggingService,
                 operationExecutor.getGenericOperationRunners(), operationExecutor.getPartitionOperationRunners(),
-                node.getProperties(), hzName);
+                properties, hzName);
+    }
+
+    public ConcurrentMap<Class, LatencyDistribution> getOpLatencyDistributions() {
+        return opLatencyDistributions;
     }
 
     public OutboundResponseHandler getOutboundResponseHandler() {

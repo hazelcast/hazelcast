@@ -476,8 +476,10 @@ class MapServiceContextImpl implements MapServiceContext {
     public PartitionIdSet getOwnedPartitions() {
         PartitionIdSet partitions = ownedPartitions.get();
         if (partitions == null) {
-            reloadOwnedPartitions();
-            partitions = ownedPartitions.get();
+            do {
+                reloadOwnedPartitions();
+                partitions = ownedPartitions.get();
+            } while (partitions == null);
         }
         return partitions;
     }
@@ -490,15 +492,20 @@ class MapServiceContextImpl implements MapServiceContext {
      */
     @Override
     public void reloadOwnedPartitions() {
-        final IPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         for (; ; ) {
-            final PartitionIdSet expected = ownedPartitions.get();
-            final Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
-            final PartitionIdSet newSet = immutablePartitionIdSet(partitionService.getPartitionCount(), partitions);
+            PartitionIdSet expected = ownedPartitions.get();
+            Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
+            PartitionIdSet newSet = immutablePartitionIdSet(partitionService.getPartitionCount(), partitions);
             if (ownedPartitions.compareAndSet(expected, newSet)) {
                 return;
             }
         }
+    }
+
+    @Override
+    public void nullifyOwnedPartitions() {
+        ownedPartitions.set(null);
     }
 
     @Override

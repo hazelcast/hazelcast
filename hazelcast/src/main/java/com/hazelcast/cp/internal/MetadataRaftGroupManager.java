@@ -21,6 +21,9 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.CPGroup.CPGroupStatus;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.event.CPMembershipEvent;
+import com.hazelcast.cp.event.CPMembershipEvent.EventType;
+import com.hazelcast.cp.event.impl.CPMembershipEventImpl;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.exception.CannotCreateRaftGroupException;
 import com.hazelcast.cp.internal.exception.CannotRemoveCPMemberException;
@@ -33,12 +36,14 @@ import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raftop.metadata.InitMetadataRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.PublishActiveCPMembersOp;
 import com.hazelcast.cp.internal.raftop.metadata.TerminateRaftNodesOp;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -70,6 +75,8 @@ import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.cp.internal.MembershipChangeSchedule.CPGroupMembershipChange;
 import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
 import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_MANAGEMENT_EXECUTOR;
+import static com.hazelcast.cp.internal.RaftService.EVENT_TOPIC_MEMBERSHIP;
+import static com.hazelcast.cp.internal.RaftService.SERVICE_NAME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_METRIC_METADATA_RAFT_GROUP_MANAGER_ACTIVE_MEMBERS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_METRIC_METADATA_RAFT_GROUP_MANAGER_ACTIVE_MEMBERS_COMMIT_INDEX;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_METRIC_METADATA_RAFT_GROUP_MANAGER_GROUPS;
@@ -667,7 +674,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             } else {
                 Operation op = new TerminateRaftNodesOp(Collections.singleton(group.id()));
                 CPMemberInfo cpMember = activeMembersMap.get(endpoint.getUuid());
-                operationService.invokeOnTarget(RaftService.SERVICE_NAME, op, cpMember.getAddress());
+                operationService.invokeOnTarget(SERVICE_NAME, op, cpMember.getAddress());
             }
         }
     }
@@ -738,15 +745,10 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             }
 
             CPMemberInfo substitute = findSubstitute(group);
-            if (substitute != null) {
-                leavingGroupIds.add(groupId);
-                changes.add(new CPGroupMembershipChange(groupId, group.getMembersCommitIndex(), group.memberImpls(),
-                        substitute.toRaftEndpoint(), leavingMember.toRaftEndpoint()));
-            } else {
-                leavingGroupIds.add(groupId);
-                changes.add(new CPGroupMembershipChange(groupId, group.getMembersCommitIndex(), group.memberImpls(), null,
-                        leavingMember.toRaftEndpoint()));
-            }
+            RaftEndpoint substituteEndpoint = substitute != null ? substitute.toRaftEndpoint() : null;
+            leavingGroupIds.add(groupId);
+            changes.add(new CPGroupMembershipChange(groupId, group.getMembersCommitIndex(), group.memberImpls(),
+                    substituteEndpoint, leavingMember.toRaftEndpoint()));
         }
 
         if (changes.isEmpty()) {
@@ -1053,6 +1055,8 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         // because readers will use commit index for comparison, etc.
         // When a caller reads commit index first, it knows that the active members
         // it has read is at least up to date as the commit index
+
+        Collection<CPMemberInfo> currentMembers = activeMembers;
         activeMembers = unmodifiableCollection(members);
         activeMembersCommitIndex = commitIndex;
         try {
@@ -1065,6 +1069,35 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         raftService.updateInvocationManagerMembers(getMetadataGroupId().getSeed(), commitIndex, activeMembers);
         raftService.updateMissingMembers();
         broadcastActiveCPMembers();
+        sendMembershipEvents(currentMembers, members);
+    }
+
+    private void sendMembershipEvents(Collection<CPMemberInfo> currentMembers, Collection<CPMemberInfo> newMembers) {
+        // RU_COMPAT_4_0
+        if (nodeEngine.getClusterService().getClusterVersion().isUnknownOrLessThan(Versions.V4_1)) {
+            return;
+        }
+        if (!isMetadataGroupLeader()) {
+             return;
+        }
+
+        EventService eventService = nodeEngine.getEventService();
+
+        Collection<CPMemberInfo> addedMembers = new LinkedHashSet<>(newMembers);
+        addedMembers.removeAll(currentMembers);
+
+        for (CPMemberInfo member : addedMembers) {
+            CPMembershipEvent event = new CPMembershipEventImpl(member, EventType.ADDED);
+            eventService.publishEvent(SERVICE_NAME, EVENT_TOPIC_MEMBERSHIP, event, EVENT_TOPIC_MEMBERSHIP.hashCode());
+        }
+
+        Collection<CPMemberInfo> removedMembers = new LinkedHashSet<>(currentMembers);
+        removedMembers.removeAll(newMembers);
+
+        for (CPMemberInfo member : removedMembers) {
+            CPMembershipEvent event = new CPMembershipEventImpl(member, EventType.REMOVED);
+            eventService.publishEvent(SERVICE_NAME, EVENT_TOPIC_MEMBERSHIP, event, EVENT_TOPIC_MEMBERSHIP.hashCode());
+        }
     }
 
     public void checkMetadataGroupInitSuccessful() {

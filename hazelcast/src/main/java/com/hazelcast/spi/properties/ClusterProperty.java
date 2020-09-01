@@ -652,8 +652,24 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.partition.table.send.interval", 15, SECONDS);
     public static final HazelcastProperty PARTITION_BACKUP_SYNC_INTERVAL
             = new HazelcastProperty("hazelcast.partition.backup.sync.interval", 30, SECONDS);
+    /**
+     * Maximum number of partition migrations to be executed concurrently on a member.
+     * Member can be either source or target of the migration.
+     * <ul>
+     * <li>
+     *  Having too much parallelization can increase the heap memory usage and overload the network during partition rebalance.
+     * </li>
+     * <li>Having less parallelization can increase the total migration completion time.</li>
+     * </ul>
+     */
+    public static final HazelcastProperty PARTITION_MAX_PARALLEL_MIGRATIONS
+            = new HazelcastProperty("hazelcast.partition.max.parallel.migrations", 10);
+    /**
+     * Maximum number of anti-entropy partition replications to be executed on a member.
+     * By default equals to {@link #PARTITION_MAX_PARALLEL_MIGRATIONS}.
+     */
     public static final HazelcastProperty PARTITION_MAX_PARALLEL_REPLICATIONS
-            = new HazelcastProperty("hazelcast.partition.max.parallel.replications", 5);
+            = new HazelcastProperty("hazelcast.partition.max.parallel.replications", PARTITION_MAX_PARALLEL_MIGRATIONS);
     public static final HazelcastProperty PARTITIONING_STRATEGY_CLASS
             = new HazelcastProperty("hazelcast.partitioning.strategy.class", "");
 

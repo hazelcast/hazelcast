@@ -6518,6 +6518,8 @@ public class MemberCompatibilityNullTest_2_1 {
         assertTrue(isEqual(null, parameters.queueStoreConfig));
         assertTrue(isEqual(aString, parameters.mergePolicy));
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
+        assertTrue(parameters.isPriorityComparatorClassNameExists);
+        assertTrue(isEqual(null, parameters.priorityComparatorClassName));
     }
 
     @Test
@@ -7379,6 +7381,82 @@ public class MemberCompatibilityNullTest_2_1 {
     public void test_SqlCloseCodec_encodeResponse() {
         int fileClientMessageIndex = 830;
         ClientMessage encoded = SqlCloseCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_CPSubsystemAddMembershipListenerCodec_decodeRequest() {
+        int fileClientMessageIndex = 831;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aBoolean, CPSubsystemAddMembershipListenerCodec.decodeRequest(fromFile)));
+    }
+
+    @Test
+    public void test_CPSubsystemAddMembershipListenerCodec_encodeResponse() {
+        int fileClientMessageIndex = 832;
+        ClientMessage encoded = CPSubsystemAddMembershipListenerCodec.encodeResponse(aUUID);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_CPSubsystemAddMembershipListenerCodec_encodeMembershipEventEvent() {
+        int fileClientMessageIndex = 833;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        ClientMessage encoded = CPSubsystemAddMembershipListenerCodec.encodeMembershipEventEvent(aCpMember, aByte);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_CPSubsystemRemoveMembershipListenerCodec_decodeRequest() {
+        int fileClientMessageIndex = 834;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aUUID, CPSubsystemRemoveMembershipListenerCodec.decodeRequest(fromFile)));
+    }
+
+    @Test
+    public void test_CPSubsystemRemoveMembershipListenerCodec_encodeResponse() {
+        int fileClientMessageIndex = 835;
+        ClientMessage encoded = CPSubsystemRemoveMembershipListenerCodec.encodeResponse(aBoolean);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_CPSubsystemAddGroupAvailabilityListenerCodec_decodeRequest() {
+        int fileClientMessageIndex = 836;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aBoolean, CPSubsystemAddGroupAvailabilityListenerCodec.decodeRequest(fromFile)));
+    }
+
+    @Test
+    public void test_CPSubsystemAddGroupAvailabilityListenerCodec_encodeResponse() {
+        int fileClientMessageIndex = 837;
+        ClientMessage encoded = CPSubsystemAddGroupAvailabilityListenerCodec.encodeResponse(aUUID);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_CPSubsystemAddGroupAvailabilityListenerCodec_encodeGroupAvailabilityEventEvent() {
+        int fileClientMessageIndex = 838;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        ClientMessage encoded = CPSubsystemAddGroupAvailabilityListenerCodec.encodeGroupAvailabilityEventEvent(aRaftGroupId, aListOfCpMembers, aListOfCpMembers);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_CPSubsystemRemoveGroupAvailabilityListenerCodec_decodeRequest() {
+        int fileClientMessageIndex = 839;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aUUID, CPSubsystemRemoveGroupAvailabilityListenerCodec.decodeRequest(fromFile)));
+    }
+
+    @Test
+    public void test_CPSubsystemRemoveGroupAvailabilityListenerCodec_encodeResponse() {
+        int fileClientMessageIndex = 840;
+        ClientMessage encoded = CPSubsystemRemoveGroupAvailabilityListenerCodec.encodeResponse(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

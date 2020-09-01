@@ -37,6 +37,7 @@ import com.hazelcast.map.impl.ComputeIfAbsentEntryProcessor;
 import com.hazelcast.map.impl.ComputeIfPresentEntryProcessor;
 import com.hazelcast.map.impl.KeyValueConsumingEntryProcessor;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MergeEntryProcessor;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
 import com.hazelcast.map.impl.iterator.MapQueryPartitionIterator;
@@ -1168,4 +1169,45 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             }
         }
     }
+
+    public V merge(@Nonnull K key, @Nonnull V value,
+                   @Nonnull BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        checkNotNull(remappingFunction, NULL_BIFUNCTION_IS_NOT_ALLOWED);
+
+        if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)
+                && isClusterVersionGreaterOrEqual(Versions.V4_1)) {
+            MergeEntryProcessor<K, V> ep = new MergeEntryProcessor<>(remappingFunction, value);
+            return executeOnKey(key, ep);
+        } else {
+            return mergeLocally(key, value, remappingFunction);
+        }
+    }
+
+    private V mergeLocally(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        Data keyAsData = toDataWithStrategy(key);
+
+        while (true) {
+            Data oldValueAsData = toData(getInternal(keyAsData));
+            if (oldValueAsData != null) {
+                V oldValueClone = toObject(oldValueAsData);
+                V newValue = remappingFunction.apply(oldValueClone, value);
+                if (newValue != null) {
+                    if (replaceInternal(keyAsData, oldValueAsData, toData(newValue))) {
+                        return newValue;
+                    }
+                } else if (removeInternal(keyAsData, oldValueAsData)) {
+                    return null;
+                }
+            } else {
+                Data result =  putIfAbsentInternal(keyAsData, toData(value), UNSET, TimeUnit.MILLISECONDS, UNSET,
+                        TimeUnit.MILLISECONDS);
+                if (result == null) {
+                    return value;
+                }
+            }
+        }
+    }
+
 }

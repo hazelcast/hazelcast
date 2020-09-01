@@ -507,6 +507,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertFalse(qConfig.isStatisticsEnabled());
         assertEquals(100, qConfig.getEmptyQueueTtl());
         assertEquals("my-split-brain-protection", qConfig.getSplitBrainProtectionName());
+        assertEquals("com.hazelcast.collection.impl.queue.model.PriorityElementComparator",
+                qConfig.getPriorityComparatorClassName());
         MergePolicyConfig mergePolicyConfig = qConfig.getMergePolicyConfig();
         assertEquals("DiscardMergePolicy", mergePolicyConfig.getPolicy());
         assertEquals(2342, mergePolicyConfig.getBatchSize());
