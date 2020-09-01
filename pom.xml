@@ -35,6 +35,7 @@
         <module>hazelcast-build-utils</module>
         <module>hazelcast-sql</module>
         <module>hazelcast-all</module>
+        <module>distribution</module>
     </modules>
 
     <properties>
@@ -214,19 +215,6 @@
                     <source>${jdk.version}</source>
                     <target>${jdk.version}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>${maven.assembly.plugin.version}</version>
-                <configuration>
-                    <finalName>hazelcast-${project.version}</finalName>
-                    <descriptors>
-                        <descriptor>./src/main/assembly/assembly.xml</descriptor>
-                    </descriptors>
-                    <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
             </plugin>
 
