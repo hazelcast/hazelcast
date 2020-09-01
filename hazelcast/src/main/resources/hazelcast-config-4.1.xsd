@@ -556,6 +556,17 @@
 
     <xs:complexType name="queue">
         <xs:all>
+        	<xs:element name="priority-comparator-class-name" type="non-space-string" minOccurs="0" maxOccurs="1" >
+	            <xs:annotation>
+	                <xs:documentation>
+	                    Fully-qualified comparator's class name to be used for the priority queue.
+	                    If nothing is provided, then queue behaves as a FIFO queue.
+
+                        If this value is non-null, then Hazelcast will ignore the queue store
+                        "memory-limit" configuration value.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
             <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
                 <xs:annotation>
                     <xs:documentation>

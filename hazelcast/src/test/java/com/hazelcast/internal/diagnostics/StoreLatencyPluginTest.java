@@ -68,7 +68,7 @@ public class StoreLatencyPluginTest extends AbstractDiagnosticsPluginTest {
         probe.recordValue(MICROSECONDS.toNanos(1000));
         probe.recordValue(MICROSECONDS.toNanos(4));
 
-        assertEquals(1000, probe.stats.maxMicros);
+        assertEquals(1000, probe.distribution.maxMicros());
     }
 
     @Test
@@ -78,7 +78,7 @@ public class StoreLatencyPluginTest extends AbstractDiagnosticsPluginTest {
         probe.recordValue(MICROSECONDS.toNanos(10));
         probe.recordValue(MICROSECONDS.toNanos(10));
 
-        assertEquals(3, probe.stats.count);
+        assertEquals(3, probe.distribution.count());
     }
 
     @Test
@@ -88,7 +88,7 @@ public class StoreLatencyPluginTest extends AbstractDiagnosticsPluginTest {
         probe.recordValue(MICROSECONDS.toNanos(20));
         probe.recordValue(MICROSECONDS.toNanos(30));
 
-        assertEquals(60, probe.stats.totalMicros);
+        assertEquals(60, probe.distribution.totalMicros());
     }
 
     @Test
@@ -107,7 +107,7 @@ public class StoreLatencyPluginTest extends AbstractDiagnosticsPluginTest {
         assertContains("totalTime(us)=600");
         assertContains("avg(us)=200");
         assertContains("max(us)=300");
-        assertContains("100..199us=1");
-        assertContains("200..399us=2");
+        assertContains("64..127us=1");
+        assertContains("128..255us=2");
     }
 }

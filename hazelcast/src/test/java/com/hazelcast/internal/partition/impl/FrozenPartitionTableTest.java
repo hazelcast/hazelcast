@@ -142,7 +142,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
             public void run() {
                 for (HazelcastInstance instance : instanceList) {
                     PartitionTableView newPartitionTable = getPartitionTable(instance);
-                    for (int i = 0; i < newPartitionTable.getLength(); i++) {
+                    for (int i = 0; i < newPartitionTable.length(); i++) {
                         for (int j = 0; j < InternalPartition.MAX_REPLICA_COUNT; j++) {
                             PartitionReplica replica = partitionTable.getReplica(i, j);
                             PartitionReplica newReplica = newPartitionTable.getReplica(i, j);
@@ -193,7 +193,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
 
         for (HazelcastInstance instance : instancesList) {
             PartitionTableView partitionTable = getPartitionTable(instance);
-            for (int i = 0; i < partitionTable.getLength(); i++) {
+            for (int i = 0; i < partitionTable.length(); i++) {
                 for (PartitionReplica replica : partitionTable.getReplicas(i)) {
                     if (replica == null) {
                         continue;

@@ -920,8 +920,10 @@
     <!--
         ===== HAZELCAST QUEUE CONFIGURATION =====
 
-        Configuration element's name is <queue>. It has the optional attribute "name" with which you
-        can specify the name of your queue. Its default value is "default".
+        Configuration element's name is "queue".
+        It has following optional attributes:
+        * "name"
+        with which you can specify the name of your queue. Its default value is "default".
         It has the following elements:
         * <statistics-enabled>:
         When you enable it, you can retrieve queue statistics. Its default value is true.
@@ -963,6 +965,12 @@
         * <split-brain-protection-ref>:
             Adds the Split Brain Protection for this data-structure which you configure using the <split-brain-protection>
             element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
+        * <priority-comparator-class-name>:
+            Fully-qualified comparator's class name to be used for the priority queue.
+            If nothing is provided, then queue behaves as a FIFO queue.
+
+            If this value is non-null, then Hazelcast will ignore the queue store
+            "memory-limit" configuration value.
     -->
     <queue name="default">
         <statistics-enabled>true</statistics-enabled>
@@ -983,6 +991,7 @@
         </queue-store>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <priority-comparator-class-name>com.hazelcast.collection.impl.queue.model.PriorityElementComparator</priority-comparator-class-name>
     </queue>
 
     <!--

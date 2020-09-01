@@ -19,12 +19,17 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.diagnostics.InvocationProfilerPlugin;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
+import com.hazelcast.internal.util.LatencyDistribution;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -73,10 +78,11 @@ public class InvocationRegistry implements Iterable<Invocation>, StaticMetricsPr
     private final ConcurrentMap<Long, Invocation> invocations;
     private final ILogger logger;
     private final CallIdSequence callIdSequence;
-
+    private final boolean profilerEnabled;
+    private final ConcurrentMap<Class, LatencyDistribution> latencyDistributions = new ConcurrentHashMap<>();
     private volatile boolean alive = true;
 
-    public InvocationRegistry(ILogger logger, CallIdSequence callIdSequence) {
+    public InvocationRegistry(ILogger logger, CallIdSequence callIdSequence, HazelcastProperties properties) {
         this.logger = logger;
         this.callIdSequence = callIdSequence;
 
@@ -85,6 +91,7 @@ public class InvocationRegistry implements Iterable<Invocation>, StaticMetricsPr
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
 
         this.invocations = new ConcurrentHashMap<>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
+        this.profilerEnabled = properties.getInteger(InvocationProfilerPlugin.PERIOD_SECONDS) > 0;
     }
 
     @Override
@@ -151,6 +158,25 @@ public class InvocationRegistry implements Iterable<Invocation>, StaticMetricsPr
         callIdSequence.complete();
         return true;
     }
+
+    public void retire(Invocation invocation) {
+        if (!profilerEnabled) {
+            return;
+        }
+
+        Operation op = invocation.op;
+        Class c = op.getClass();
+        if (op instanceof PartitionIteratingOperation) {
+            c = ((PartitionIteratingOperation) op).getOperationFactory().getClass();
+        }
+        LatencyDistribution distribution = latencyDistributions.computeIfAbsent(c, k -> new LatencyDistribution());
+        distribution.done(invocation.firstInvocationTimeNanos);
+    }
+
+    public final ConcurrentMap<Class, LatencyDistribution> latencyDistributions() {
+        return latencyDistributions;
+    }
+
 
     /**
      * Returns the number of pending invocations.

@@ -48,16 +48,16 @@ public final class PollOperation extends QueueBackupAwareOperation
         QueueContainer queueContainer = getContainer();
         item = queueContainer.poll();
         if (item != null) {
-            response = item.getData();
+            response = item.getSerializedObject();
         }
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public void afterRun() {
         LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
         if (response != null) {
             stats.incrementPolls();
-            publishEvent(ItemEventType.REMOVED, item.getData());
+            publishEvent(ItemEventType.REMOVED, item.getSerializedObject());
         } else {
             stats.incrementEmptyPolls();
         }

@@ -46,6 +46,7 @@ import static com.hazelcast.internal.partition.impl.PartitionServiceState.REPLIC
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.REPLICA_NOT_SYNC;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.SAFE;
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
+import static com.hazelcast.internal.partition.impl.PartitionStateManager.INITIAL_STAMP;
 import static java.lang.Thread.currentThread;
 
 /**
@@ -80,6 +81,10 @@ public class PartitionReplicaStateChecker {
     public PartitionServiceState getPartitionServiceState() {
         if (partitionService.isFetchMostRecentPartitionTableTaskRequired()) {
             return FETCHING_PARTITION_TABLE;
+        }
+
+        if (partitionStateManager.getStamp() != INITIAL_STAMP && !partitionStateManager.isInitialized()) {
+            return MIGRATION_LOCAL;
         }
 
         if (hasMissingReplicaOwners()) {
@@ -329,10 +334,10 @@ public class PartitionReplicaStateChecker {
                 if (Boolean.FALSE.equals(response)) {
                     result.set(false);
                 }
-                semaphore.release();
             } else {
                 result.set(false);
             }
+            semaphore.release();
         }
     }
 }

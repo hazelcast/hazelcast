@@ -28,20 +28,24 @@ import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationInterceptorImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationProgressNotification;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -63,6 +67,9 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MigrationCommitTest extends HazelcastTestSupport {
+
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug.xml");
 
     private static final int PARTITION_COUNT = 2;
 
@@ -178,13 +185,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         migrationStartLatch.countDown();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertTrue(listener3.rollback);
-            }
-        });
+        assertTrueEventually(() -> assertTrue(listener3.rollback));
 
         waitAllForSafeState(hz2, hz3);
 
@@ -193,15 +194,15 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
     @Test
     public void shouldRollbackMigrationWhenDestinationCrashesBeforeCommit() {
-        Config config1 = createConfig();
-        config1.setLiteMember(true);
+        Config liteConfig = createConfig();
+        liteConfig.setLiteMember(true);
         // hold the migrations until all nodes join so that there will be no retries / failed migrations etc.
         CountDownLatch migrationStartLatch = new CountDownLatch(1);
         TerminateOtherMemberOnMigrationComplete masterListener = new TerminateOtherMemberOnMigrationComplete(
                 migrationStartLatch);
-        config1.addListenerConfig(new ListenerConfig(masterListener));
+        liteConfig.addListenerConfig(new ListenerConfig(masterListener));
 
-        HazelcastInstance hz1 = factory.newHazelcastInstance(config1);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(liteConfig);
 
         HazelcastInstance hz2 = factory.newHazelcastInstance(createConfig());
 
@@ -240,7 +241,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance(config1);
 
         Config config2 = createConfig();
-        final CollectMigrationTaskOnCommit sourceListener = new CollectMigrationTaskOnCommit(migrationStartLatch);
+        CollectMigrationTaskOnCommit sourceListener = new CollectMigrationTaskOnCommit(migrationStartLatch);
         config2.addListenerConfig(new ListenerConfig(sourceListener));
         HazelcastInstance hz2 = factory.newHazelcastInstance(config2);
 
@@ -261,13 +262,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         waitAllForSafeState(hz2, hz3);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertTrue(sourceListener.commit);
-            }
-        });
+        assertTrueEventually(() -> assertTrue(sourceListener.commit));
 
         InternalPartition hz2Partition = getOwnedPartition(hz2);
         InternalPartition hz3Partition = getOwnedPartition(hz3);
@@ -370,7 +365,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         config1.setLiteMember(true);
         // hold the migrations until all nodes join so that there will be no retries / failed migrations etc.
         CountDownLatch migrationStartLatch = new CountDownLatch(1);
-        final IncrementPartitionTableOnMigrationStart masterListener
+        IncrementPartitionTableOnMigrationStart masterListener
                 = new IncrementPartitionTableOnMigrationStart(migrationStartLatch);
         config1.addListenerConfig(new ListenerConfig(masterListener));
 
@@ -391,13 +386,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         migrationStartLatch.countDown();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertTrue(masterListener.failed);
-            }
-        });
+        assertTrueEventually(() -> assertTrue(masterListener.failed));
 
         waitAllForSafeState(hz1, hz2, hz3);
     }
@@ -430,12 +419,9 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         waitAllForSafeState(hz1, hz2, hz3);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(masterListener.commit);
-                assertTrue(migrationManager.getCompletedMigrationsCopy().isEmpty());
-            }
+        assertTrueEventually(() -> {
+            assertTrue(masterListener.commit);
+            assertTrue(migrationManager.getCompletedMigrationsCopy().isEmpty());
         });
     }
 
@@ -464,28 +450,21 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         migrationStartLatch.countDown();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(hz1);
-                boolean found = false;
-                for (MigrationInfo migrationInfo : partitionService.getMigrationManager().getCompletedMigrationsCopy()) {
-                    if (migrationInfo.getStatus() == SUCCESS && migrationInfo.getDestinationAddress().equals(getAddress(hz3))) {
-                        found = true;
-                    }
+        assertTrueEventually(() -> {
+            InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(hz1);
+            boolean found = false;
+            for (MigrationInfo migrationInfo : partitionService.getMigrationManager().getCompletedMigrationsCopy()) {
+                if (migrationInfo.getStatus() == SUCCESS && migrationInfo.getDestinationAddress().equals(getAddress(hz3))) {
+                    found = true;
                 }
-
-                assertTrue(found);
             }
+
+            assertTrue(found);
         });
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(hz1);
-                assertFalse(partitionService.getMigrationManager().getCompletedMigrationsCopy().isEmpty());
-            }
+        assertTrueAllTheTime(() -> {
+            InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(hz1);
+            assertFalse(partitionService.getMigrationManager().getCompletedMigrationsCopy().isEmpty());
         }, 10);
 
         migrationCommitLatch.countDown();
@@ -553,7 +532,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
     private static class IncrementPartitionTableOnMigrationStart
             implements MigrationInterceptor, HazelcastInstanceAware {
 
-        private final AtomicReference<MigrationInfo> migrationInfoRef = new AtomicReference<MigrationInfo>();
+        private final AtomicReference<MigrationInfo> migrationInfoRef = new AtomicReference<>();
 
         private final CountDownLatch migrationStartLatch;
 
@@ -576,12 +555,11 @@ public class MigrationCommitTest extends HazelcastTestSupport {
             assertOpenEventually(migrationStartLatch);
 
             if (migrationInfoRef.compareAndSet(null, migrationInfo)) {
-                InternalPartitionServiceImpl partitionService
-                        = (InternalPartitionServiceImpl) getPartitionService(instance);
+                InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(instance);
                 PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
-                partitionStateManager.incrementVersion();
-            } else {
-                System.err.println("COLLECT COMMIT START FAILED! curr: " + migrationInfoRef.get() + " new: " + migrationInfo);
+                int partitionId = migrationInfo.getPartitionId();
+                partitionStateManager.incrementPartitionVersion(partitionId, 1);
+                migrationInfo.setInitialPartitionVersion(partitionStateManager.getPartitionVersion(partitionId));
             }
         }
 
@@ -686,6 +664,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
     private static class TerminateOtherMemberOnMigrationComplete implements MigrationInterceptor, HazelcastInstanceAware {
 
         private final CountDownLatch migrationStartLatch;
+        private final AtomicReference<MigrationInfo> migrationRef = new AtomicReference<>();
 
         private volatile boolean rollback;
         private volatile HazelcastInstance instance;
@@ -703,16 +682,19 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         @Override
         public void onMigrationComplete(MigrationParticipant participant, MigrationInfo migrationInfo, boolean success) {
             if (!success) {
-                System.err.println("ERR: migration is not successful");
+                System.err.println("ERR: migration is not successful: " + migrationInfo);
+            }
+
+            if (migrationInfo.getSourceCurrentReplicaIndex() != 0) {
+                return;
+            }
+
+            if (!migrationRef.compareAndSet(null, migrationInfo)) {
+                return;
             }
 
             int memberCount = instance.getCluster().getMembers().size();
-            spawn(new Runnable() {
-                @Override
-                public void run() {
-                    other.getLifecycleService().terminate();
-                }
-            });
+            spawn(() -> other.getLifecycleService().terminate());
             assertClusterSizeEventually(memberCount - 1, instance);
         }
 
@@ -723,9 +705,10 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         @Override
         public void onMigrationRollback(MigrationParticipant participant, MigrationInfo migrationInfo) {
-            rollback = true;
-
-            resetInternalMigrationListener(instance);
+            if (migrationInfo.equals(migrationRef.get())) {
+                rollback = true;
+                resetInternalMigrationListener(instance);
+            }
         }
 
         @Override
@@ -737,18 +720,17 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
     private static class TerminateOtherMemberOnMigrationCommit implements MigrationInterceptor, HazelcastInstanceAware {
 
+        private final AtomicBoolean terminated = new AtomicBoolean();
         private volatile HazelcastInstance instance;
         private volatile HazelcastInstance other;
 
         @Override
         public void onMigrationCommit(MigrationParticipant participant, MigrationInfo migrationInfo) {
+            if (!terminated.compareAndSet(false, true)) {
+                return;
+            }
             int memberCount = instance.getCluster().getMembers().size();
-            spawn(new Runnable() {
-                @Override
-                public void run() {
-                    other.getLifecycleService().terminate();
-                }
-            });
+            spawn(() -> other.getLifecycleService().terminate());
             assertClusterSizeEventually(memberCount - 1, instance);
             resetInternalMigrationListener(instance);
         }
@@ -763,6 +745,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
     private static class TerminateOnMigrationCommit implements MigrationInterceptor, HazelcastInstanceAware {
 
         private final CountDownLatch latch;
+        private final AtomicBoolean terminated = new AtomicBoolean();
 
         private volatile HazelcastInstance instance;
 
@@ -772,12 +755,11 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         @Override
         public void onMigrationCommit(MigrationParticipant participant, MigrationInfo migrationInfo) {
-            spawn(new Runnable() {
-                @Override
-                public void run() {
-                    instance.getLifecycleService().terminate();
-                }
-            });
+            if (!terminated.compareAndSet(false, true)) {
+                return;
+            }
+
+            spawn(() -> instance.getLifecycleService().terminate());
 
             assertOpenEventually(latch);
         }
@@ -792,7 +774,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
     private static class CollectMigrationTaskOnCommit implements MigrationInterceptor, HazelcastInstanceAware {
 
         private final CountDownLatch migrationStartLatch;
-        private final AtomicReference<MigrationInfo> migrationInfoRef = new AtomicReference<MigrationInfo>();
+        private final Set<MigrationInfo> migrations = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
         private volatile boolean commit;
         private volatile HazelcastInstance instance;
@@ -810,9 +792,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
                 return;
             }
 
-            if (!migrationInfoRef.compareAndSet(null, migrationInfo)) {
-                System.err.println("COLLECT COMMIT START FAILED! curr: " + migrationInfoRef.get() + " new: " + migrationInfo);
-            }
+            migrations.add(migrationInfo);
         }
 
         @Override
@@ -823,13 +803,12 @@ public class MigrationCommitTest extends HazelcastTestSupport {
                 return;
             }
 
-            MigrationInfo collected = migrationInfoRef.get();
-            commit = migrationInfo.equals(collected);
+            commit = migrations.contains(migrationInfo);
             if (commit) {
                 resetInternalMigrationListener(instance);
             } else {
                 System.err.println(
-                        "collect commit failed! collected migration: " + collected + " rollback migration: " + migrationInfo
+                        "Collect commit failed! collected migrations: " + migrations + ", committed migration: " + migrationInfo
                                 + " participant: " + participant);
             }
         }

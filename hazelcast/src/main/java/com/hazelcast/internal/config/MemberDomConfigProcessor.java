@@ -1545,12 +1545,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("async-backup-count".equals(nodeName)) {
                 qConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
             } else if ("item-listeners".equals(nodeName)) {
-                handleItemListeners(n, new Function<ItemListenerConfig, Void>() {
-                    @Override
-                    public Void apply(ItemListenerConfig itemListenerConfig) {
-                        qConfig.addItemListenerConfig(itemListenerConfig);
-                        return null;
-                    }
+                handleItemListeners(n, itemListenerConfig -> {
+                    qConfig.addItemListenerConfig(itemListenerConfig);
+                    return null;
                 });
             } else if ("statistics-enabled".equals(nodeName)) {
                 qConfig.setStatisticsEnabled(getBooleanValue(value));
@@ -1564,6 +1561,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 qConfig.setMergePolicyConfig(mergePolicyConfig);
+            } else if ("priority-comparator-class-name".equals(nodeName)) {
+                qConfig.setPriorityComparatorClassName(value);
             }
         }
         config.addQueueConfig(qConfig);

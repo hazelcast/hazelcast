@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a queue configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("477193aced8d73bfc7f8123861abc0b6")
+@Generated("faed08d78771f41333205db25009f47e")
 public final class DynamicConfigAddQueueConfigCodec {
     //hex: 0x1B0B00
     public static final int REQUEST_MESSAGE_TYPE = 1772288;
@@ -115,9 +115,20 @@ public final class DynamicConfigAddQueueConfigCodec {
          * Number of entries to be sent in a merge operation.
          */
         public int mergeBatchSize;
+
+        /**
+         * Class name of the configured {@link java.util.Comparator} implementation.
+         */
+        public @Nullable java.lang.String priorityComparatorClassName;
+
+        /**
+         * True if the priorityComparatorClassName is received from the client, false otherwise.
+         * If this is false, priorityComparatorClassName has the default value for its type.
+        */
+        public boolean isPriorityComparatorClassNameExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, int emptyQueueTtl, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig, java.lang.String mergePolicy, int mergeBatchSize) {
+    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, int emptyQueueTtl, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig, java.lang.String mergePolicy, int mergeBatchSize, @Nullable java.lang.String priorityComparatorClassName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddQueueConfig");
@@ -136,6 +147,7 @@ public final class DynamicConfigAddQueueConfigCodec {
         CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, queueStoreConfig, QueueStoreConfigHolderCodec::encode);
         StringCodec.encode(clientMessage, mergePolicy);
+        CodecUtil.encodeNullable(clientMessage, priorityComparatorClassName, StringCodec::encode);
         return clientMessage;
     }
 
@@ -154,6 +166,12 @@ public final class DynamicConfigAddQueueConfigCodec {
         request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.queueStoreConfig = CodecUtil.decodeNullable(iterator, QueueStoreConfigHolderCodec::decode);
         request.mergePolicy = StringCodec.decode(iterator);
+        if (iterator.hasNext()) {
+            request.priorityComparatorClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            request.isPriorityComparatorClassNameExists = true;
+        } else {
+            request.isPriorityComparatorClassNameExists = false;
+        }
         return request;
     }
 

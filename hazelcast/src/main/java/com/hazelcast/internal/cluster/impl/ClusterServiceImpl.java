@@ -32,6 +32,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.LifecycleServiceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.cluster.impl.operations.PromoteLiteMemberOp;
@@ -793,9 +794,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     private void changeClusterState(ClusterState newState, boolean isTransient) {
-        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
+        long partitionStateStamp = getPartitionStateStamp();
         clusterStateManager.changeClusterState(ClusterStateChange.from(newState), membershipManager.getMemberMap(),
-                partitionStateVersion, isTransient);
+                partitionStateStamp, isTransient);
     }
 
     @Override
@@ -808,9 +809,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private void changeClusterState(@Nonnull ClusterState newState,
                                     @Nonnull TransactionOptions options,
                                     boolean isTransient) {
-        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
+        long partitionStateStamp = getPartitionStateStamp();
         clusterStateManager.changeClusterState(ClusterStateChange.from(newState), membershipManager.getMemberMap(),
-                options, partitionStateVersion, isTransient);
+                options, partitionStateStamp, isTransient);
     }
 
     @Override
@@ -831,8 +832,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     public void changeClusterVersion(@Nonnull Version version, @Nonnull MemberMap memberMap) {
-        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
-        clusterStateManager.changeClusterState(ClusterStateChange.from(version), memberMap, partitionStateVersion, false);
+        long partitionStateStamp = getPartitionStateStamp();
+        clusterStateManager.changeClusterState(ClusterStateChange.from(version), memberMap, partitionStateStamp, false);
     }
 
     @Override
@@ -840,9 +841,16 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                                      @Nonnull TransactionOptions options) {
         checkNotNull(version, VERSION_MUST_NOT_BE_NULL);
         checkNotNull(options, TRANSACTION_OPTIONS_MUST_NOT_BE_NULL);
-        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
+        long partitionStateStamp = getPartitionStateStamp();
         clusterStateManager.changeClusterState(ClusterStateChange.from(version), membershipManager.getMemberMap(),
-                options, partitionStateVersion, false);
+                options, partitionStateStamp, false);
+    }
+
+    private long getPartitionStateStamp() {
+        if (getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
+            return node.getPartitionService().getPartitionStateStamp();
+        }
+        return node.getPartitionService().getPartitionStateVersion();
     }
 
     @Override

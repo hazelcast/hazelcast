@@ -16,6 +16,21 @@
 
 package com.hazelcast.config;
 
+import static com.google.common.collect.Sets.newHashSet;
+import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType.ACCESSED;
+import static com.hazelcast.config.ConfigCompatibilityChecker.checkEndpointConfigCompatible;
+import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
+import static com.hazelcast.instance.ProtocolType.MEMBER;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.hazelcast.collection.QueueStore;
 import com.hazelcast.collection.QueueStoreFactory;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
@@ -65,10 +80,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -84,21 +95,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
-import static com.google.common.collect.Sets.newHashSet;
-import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType.ACCESSED;
-import static com.hazelcast.config.ConfigCompatibilityChecker.checkEndpointConfigCompatible;
-import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
-import static com.hazelcast.instance.ProtocolType.MEMBER;
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -1280,6 +1279,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         QueueConfig expectedConfig = new QueueConfig()
                 .setName("testQueue")
+                .setPriorityComparatorClassName("com.hazelcast.collection.impl.queue.model.PriorityElementComparator")
                 .setMaxSize(10)
                 .setStatisticsEnabled(true)
                 .setBackupCount(2)
@@ -1302,6 +1302,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(1234, xmlMergePolicyConfig.getBatchSize());
         ConfigCompatibilityChecker.checkQueueConfig(expectedConfig, actualConfig);
     }
+
+
 
     @Test
     public void testNativeMemory() {
