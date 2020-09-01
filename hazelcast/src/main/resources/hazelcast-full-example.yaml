@@ -638,9 +638,9 @@ hazelcast:
         tag-key: type
         tag-value: hz-nodes
         iam-role: dummy
-        cluster: my-cluster
-        family: test-family
-        service-name: test-service
+        # cluster: my-cluster
+        # family: test-family
+        # service-name: test-service
       gcp:
         enabled: false
         private-key-path: key-path

@@ -665,9 +665,11 @@
                 <tag-value>hz-nodes</tag-value>
                 <security-group-name>hazelcast-sg</security-group-name>
                 <iam-role>dummy</iam-role>
+                <!--
                 <cluster>my-cluster</cluster>
                 <family>test-family</family>
                 <service-name>test-service</service-name>
+                -->
             </aws>
             <gcp enabled="false">
                 <private-key-path>key-path</private-key-path>
