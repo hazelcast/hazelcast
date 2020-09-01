@@ -30,6 +30,7 @@ import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.config.override.PropertiesToNodeConverter.propsToNode;
 import static java.lang.String.format;
+import static java.util.stream.Collectors.joining;
 
 /**
  * A class used to process external configuration overrides coming from environment variables/system properties,
@@ -70,13 +71,13 @@ public class ExternalConfigurationOverride {
 
         for (ConfigProvider configProvider : providers) {
             Map<String, String> properties = configProvider.properties();
-            properties.forEach((k, v) -> {
-                LOGGER.info(format("Detected external configuration overrides in %s: [%s]",
-                  configProvider.name(),
-                  k + "=" + v));
-            });
 
             if (!properties.isEmpty()) {
+                LOGGER.info(format("Detected external configuration overrides in %s: [%s]",
+                  configProvider.name(),
+                  properties.entrySet().stream()
+                    .map(e -> e.getKey() + "=" + e.getValue())
+                    .collect(joining(","))));
                 configProcessor.accept(configProvider, config);
             }
         }
