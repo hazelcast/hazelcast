@@ -23,6 +23,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation.Context;
 import com.hazelcast.spi.impl.sequence.CallIdSequenceWithBackpressure;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,6 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
+import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -51,8 +53,9 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     public void setup() {
         logger = Mockito.mock(ILogger.class);
         int capacity = 2;
-        invocationRegistry = new InvocationRegistry(logger,
-                new CallIdSequenceWithBackpressure(capacity, 1000,  ConcurrencyDetection.createDisabled()));
+        CallIdSequenceWithBackpressure callIdSequence = new CallIdSequenceWithBackpressure(capacity, 1000, ConcurrencyDetection.createDisabled());
+        HazelcastProperties properties = new HazelcastProperties(new Properties());
+        invocationRegistry = new InvocationRegistry(logger, callIdSequence, properties);
     }
 
     private Invocation newInvocation() {
