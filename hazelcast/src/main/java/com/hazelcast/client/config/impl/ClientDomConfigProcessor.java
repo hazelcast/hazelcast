@@ -54,6 +54,7 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.internal.config.AbstractDomConfigProcessor;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.internal.config.DomConfigHelper;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -234,8 +235,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleUserCodeDeployment(Node node) {
-        NamedNodeMap atts = node.getAttributes();
-        Node enabledNode = atts.getNamedItem("enabled");
+        Node enabledNode = DomConfigHelper.getNamedItemNode(node, "enabled");
         boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         ClientUserCodeDeploymentConfig userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
         userCodeDeploymentConfig.setEnabled(enabled);
@@ -343,10 +343,10 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private EvictionConfig getEvictionConfig(Node node) {
         EvictionConfig evictionConfig = new EvictionConfig();
-        Node size = node.getAttributes().getNamedItem("size");
-        Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
-        Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
-        Node comparatorClassName = node.getAttributes().getNamedItem("comparator-class-name");
+        Node size = DomConfigHelper.getNamedItemNode(node, "size");
+        Node maxSizePolicy = DomConfigHelper.getNamedItemNode(node, "max-size-policy");
+        Node evictionPolicy = DomConfigHelper.getNamedItemNode(node, "eviction-policy");
+        Node comparatorClassName = DomConfigHelper.getNamedItemNode(node, "comparator-class-name");
         if (size != null) {
             evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
         }
@@ -434,8 +434,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     private void handleHazelcastCloud(Node node, ClientNetworkConfig clientNetworkConfig) {
         ClientCloudConfig cloudConfig = clientNetworkConfig.getCloudConfig();
 
-        NamedNodeMap atts = node.getAttributes();
-        Node enabledNode = atts.getNamedItem("enabled");
+        Node enabledNode = DomConfigHelper.getNamedItemNode(node, "enabled");
         boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         cloudConfig.setEnabled(enabled);
 
@@ -450,8 +449,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     private void handleIcmpPing(Node node, ClientNetworkConfig clientNetworkConfig) {
         ClientIcmpPingConfig icmpPingConfig = clientNetworkConfig.getClientIcmpPingConfig();
 
-        NamedNodeMap atts = node.getAttributes();
-        Node enabledNode = atts.getNamedItem("enabled");
+        Node enabledNode = DomConfigHelper.getNamedItemNode(node, "enabled");
         boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         icmpPingConfig.setEnabled(enabled);
 
@@ -497,8 +495,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleDiscoveryNodeFilter(Node node, DiscoveryConfig discoveryConfig) {
-        NamedNodeMap atts = node.getAttributes();
-        Node att = atts.getNamedItem("class");
+        Node att = DomConfigHelper.getNamedItemNode(node, "class");
         if (att != null) {
             discoveryConfig.setNodeFilterClass(getTextContent(att).trim());
         }
@@ -556,8 +553,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleSSLConfig(Node node, ClientNetworkConfig clientNetworkConfig) {
         SSLConfig sslConfig = new SSLConfig();
-        NamedNodeMap atts = node.getAttributes();
-        Node enabledNode = atts.getNamedItem("enabled");
+        Node enabledNode = DomConfigHelper.getNamedItemNode(node, "enabled");
         boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         sslConfig.setEnabled(enabled);
 
@@ -714,8 +710,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleCredentialsFactory(Node node, ClientSecurityConfig clientSecurityConfig) {
-        NamedNodeMap attrs = node.getAttributes();
-        Node classNameNode = attrs.getNamedItem("class-name");
+        Node classNameNode = DomConfigHelper.getNamedItemNode(node, "class-name");
         String className = getTextContent(classNameNode);
         CredentialsFactoryConfig credentialsFactoryConfig = new CredentialsFactoryConfig(className);
         clientSecurityConfig.setCredentialsFactoryConfig(credentialsFactoryConfig);

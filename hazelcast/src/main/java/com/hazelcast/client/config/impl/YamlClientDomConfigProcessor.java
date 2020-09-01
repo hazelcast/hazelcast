@@ -32,6 +32,7 @@ import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.internal.config.DomConfigHelper;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
@@ -141,9 +142,8 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
     @Override
     protected void fillDataSerializableFactories(Node node, SerializationConfig serializationConfig) {
         for (Node child : childElements(node)) {
-            NamedNodeMap attributes = child.getAttributes();
-            final Node factoryIdNode = attributes.getNamedItem("factory-id");
-            final Node classNameNode = attributes.getNamedItem("class-name");
+            final Node factoryIdNode = DomConfigHelper.getNamedItemNode(child, "factory-id");
+            final Node classNameNode = DomConfigHelper.getNamedItemNode(child, "class-name");
             if (factoryIdNode == null) {
                 throw new IllegalArgumentException(
                         "'factory-id' attribute of 'data-serializable-factory' is required!");
@@ -161,9 +161,8 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
     @Override
     protected void fillPortableFactories(Node node, SerializationConfig serializationConfig) {
         for (Node child : childElements(node)) {
-            NamedNodeMap attributes = child.getAttributes();
-            final Node factoryIdNode = attributes.getNamedItem("factory-id");
-            final Node classNameNode = attributes.getNamedItem("class-name");
+            final Node factoryIdNode = DomConfigHelper.getNamedItemNode(child,"factory-id");
+            final Node classNameNode = DomConfigHelper.getNamedItemNode(child,"class-name");
             if (factoryIdNode == null) {
                 throw new IllegalArgumentException("'factory-id' attribute of 'portable-factory' is required!");
             }
@@ -320,8 +319,8 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
             String nodeName = cleanNodeName(dirsNode);
             if (ConfigUtils.matches("directories", nodeName)) {
                 for (Node dirNode : childElements(dirsNode)) {
-                    String directory = getTextContent(dirNode.getAttributes().getNamedItem("directory"));
-                    String numaNodeIdStr = getTextContent(dirNode.getAttributes().getNamedItem("numa-node"));
+                    String directory = getTextContent(DomConfigHelper.getNamedItemNode(dirNode, "directory"));
+                    String numaNodeIdStr = getTextContent(DomConfigHelper.getNamedItemNode(dirNode, "numa-node"));
                     if (!StringUtil.isNullOrEmptyAfterTrim(numaNodeIdStr)) {
                         int numaNodeId = getIntegerValue("numa-node", numaNodeIdStr);
                         persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory, numaNodeId));

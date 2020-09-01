@@ -266,7 +266,6 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         for (Node n : childElements(node)) {
             final String nodeName = cleanNodeName(n);
             if (ConfigUtils.matches("size", nodeName)) {
-                final NamedNodeMap attrs = n.getAttributes();
                 final String value = getTextContent(DomConfigHelper.getNamedItemNode(n, "value"));
                 final MemoryUnit unit = MemoryUnit.valueOf(getTextContent(DomConfigHelper.getNamedItemNode(n, "unit")));
                 MemorySize memorySize = new MemorySize(Long.parseLong(value), unit);
