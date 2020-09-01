@@ -89,7 +89,13 @@ public class MapIndexScanExec extends MapScanExec {
         // Find the index
         Indexes indexes = map.getIndexes();
 
-        assert indexes.isGlobal();
+        if (indexes == null) {
+            throw QueryException.error(
+                SqlErrorCode.INDEX_INVALID,
+                "Cannot use the index \"" + indexName + "\" of the map \"" + map.getName() + "\" because it is not global "
+                    + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED + "\" is set to \"true\")"
+            ).withInvalidate();
+        }
 
         index = indexes.getIndex(indexName);
 
@@ -97,15 +103,6 @@ public class MapIndexScanExec extends MapScanExec {
             throw QueryException.error(
                 SqlErrorCode.INDEX_INVALID,
                 "Cannot use the index \"" + indexName + "\" of the map \"" + map.getName() + "\" because it doesn't exist"
-            ).withInvalidate();
-        }
-
-        // Make sure that the index is global. It may happen that we reach non-concurrent index due to bad configuration.
-        if (!index.isGlobal()) {
-            throw QueryException.error(
-                SqlErrorCode.INDEX_INVALID,
-                "Cannot use the index \"" + indexName + "\" of the map \"" + map.getName() + "\" because it is not global "
-                    + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED + "\" is set to \"true\")"
             ).withInvalidate();
         }
 

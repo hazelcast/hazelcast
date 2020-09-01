@@ -91,11 +91,6 @@ public class IndexImpl extends AbstractIndex {
     }
 
     @Override
-    public boolean isGlobal() {
-        return true;
-    }
-
-    @Override
     public Long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
         return partitionTracker.getPartitionStamp(expectedPartitionIds);
     }

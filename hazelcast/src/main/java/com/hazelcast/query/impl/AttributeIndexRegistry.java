@@ -377,11 +377,6 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public boolean isGlobal() {
-            return delegate.isGlobal();
-        }
-
-        @Override
         public Long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
             throw newUnsupportedException();
         }

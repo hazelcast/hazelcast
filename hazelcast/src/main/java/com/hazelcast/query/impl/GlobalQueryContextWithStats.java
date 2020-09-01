@@ -253,11 +253,6 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public boolean isGlobal() {
-            return delegate.isGlobal();
-        }
-
-        @Override
         public Long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
             return delegate.getPartitionStamp(expectedPartitionIds);
         }

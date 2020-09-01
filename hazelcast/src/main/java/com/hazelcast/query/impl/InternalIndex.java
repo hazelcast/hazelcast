@@ -92,11 +92,6 @@ public interface InternalIndex extends Index {
     PerIndexStats getPerIndexStats();
 
     /**
-     * @return {@code true} if the index is global, {@code false} is the index is partitioned
-     */
-    boolean isGlobal();
-
-    /**
      * Get monotonically increasing stamp that confirms that the index contains contains
      * only expected partitions, and that there are no concurrent partition updates, and
      * there are no active partition updates (see {@link #beginPartitionUpdate()}).
