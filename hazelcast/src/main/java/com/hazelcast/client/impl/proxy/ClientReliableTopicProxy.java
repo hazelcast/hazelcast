@@ -36,6 +36,7 @@ import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.topic.impl.reliable.MessageRunner;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -115,7 +116,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                     ringbuffer.addAsync(message, OverflowPolicy.FAIL).toCompletableFuture().get();
                     break;
                 case BLOCK:
-                    addWithBackoff(message);
+                    addWithBackoff(Collections.singleton(message));
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown overloadPolicy:" + overloadPolicy);
@@ -144,10 +145,10 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
         }
     }
 
-    private void addWithBackoff(ReliableTopicMessage message) throws Exception {
+    private void addWithBackoff(Collection<ReliableTopicMessage> messages) throws Exception {
         long timeoutMs = INITIAL_BACKOFF_MS;
         for (; ; ) {
-            long result = ringbuffer.addAsync(message, OverflowPolicy.FAIL).toCompletableFuture().get();
+            long result = ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).toCompletableFuture().get();
             if (result != -1) {
                 break;
             }
@@ -235,19 +236,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                     ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).toCompletableFuture().get();
                     break;
                 case BLOCK:
-                    long timeoutMs = INITIAL_BACKOFF_MS;
-                    for (; ; ) {
-                        long result = ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).toCompletableFuture().get();
-                        if (result != -1) {
-                            break;
-                        }
-
-                        MILLISECONDS.sleep(timeoutMs);
-                        timeoutMs *= 2;
-                        if (timeoutMs > MAX_BACKOFF) {
-                            timeoutMs = MAX_BACKOFF;
-                        }
-                    }
+                    addWithBackoff(messages);
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown overloadPolicy:" + overloadPolicy);
@@ -273,36 +262,13 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                     .collect(Collectors.toList());
             switch (overloadPolicy) {
                 case ERROR:
-                    ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL)
-                            .whenCompleteAsync((id, t) -> {
-                                if (t != null) {
-                                    returnFuture.completeExceptionally(t);
-                                }
-                                if (id == -1) {
-                                    returnFuture.completeExceptionally(new TopicOverloadException(
-                                            "Failed to publish messages: " + payload + " on topic:" + getName()));
-                                }
-                                returnFuture.complete(null);
-                            });
-
+                    addAsyncOrFail(payload, returnFuture, messages);
                     break;
                 case DISCARD_OLDEST:
-                    ringbuffer.addAllAsync(messages, OverflowPolicy.OVERWRITE)
-                            .whenCompleteAsync((id, t) -> {
-                                if (t != null) {
-                                    returnFuture.completeExceptionally(t);
-                                }
-                                returnFuture.complete(null);
-                            });
+                    addAsync(messages, OverflowPolicy.OVERWRITE);
                     break;
                 case DISCARD_NEWEST:
-                    ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL)
-                            .whenCompleteAsync((id, t) -> {
-                                if (t != null) {
-                                    returnFuture.completeExceptionally(t);
-                                }
-                                returnFuture.complete(null);
-                            });
+                    addAsync(messages, OverflowPolicy.FAIL);
                     break;
                 case BLOCK:
                     addAsyncAndBlock(payload, returnFuture, messages, INITIAL_BACKOFF_MS);
@@ -319,10 +285,8 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
         return returnFuture;
     }
 
-    private void addAsyncAndBlock(@Nonnull Collection<? extends E> payload,
-                                  InternalCompletableFuture<Void> returnFuture,
-                                  List<ReliableTopicMessage> messages,
-                                  long pauseMillis) {
+    private void addAsyncAndBlock(@Nonnull Collection<? extends E> payload, InternalCompletableFuture<Void> returnFuture,
+                                  List<ReliableTopicMessage> messages, long pauseMillis) {
         ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).whenCompleteAsync((id, t) -> {
             if (t != null) {
                 returnFuture.completeExceptionally(t);
@@ -336,6 +300,31 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
             }
             returnFuture.complete(null);
         });
+    }
+
+    private void addAsyncOrFail(@NotNull Collection<? extends E> payload, InternalCompletableFuture<Void> returnFuture,
+                                List<ReliableTopicMessage> messages) {
+        ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).whenCompleteAsync((id, t) -> {
+            if (t != null) {
+                returnFuture.completeExceptionally(t);
+            }
+            if (id == -1) {
+                returnFuture.completeExceptionally(new TopicOverloadException(
+                        "Failed to publish messages: " + payload + " on topic:" + getName()));
+            }
+            returnFuture.complete(null);
+        });
+    }
+
+    private InternalCompletableFuture<Void> addAsync(List<ReliableTopicMessage> messages, OverflowPolicy overflowPolicy) {
+        InternalCompletableFuture<Void> returnFuture = new InternalCompletableFuture<>();
+        ringbuffer.addAllAsync(messages, overflowPolicy).whenCompleteAsync((id, t) -> {
+            if (t != null) {
+                returnFuture.completeExceptionally(t);
+            }
+            returnFuture.complete(null);
+        });
+        return returnFuture;
     }
 
     public Ringbuffer getRingbuffer() {

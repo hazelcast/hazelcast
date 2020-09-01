@@ -39,6 +39,7 @@ import com.hazelcast.topic.ReliableMessageListener;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.version.Version;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -57,8 +58,6 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
-
 
 
 /**
@@ -182,7 +181,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
                     ringbuffer.addAsync(message, OverflowPolicy.FAIL).toCompletableFuture().get();
                     break;
                 case BLOCK:
-                    addWithBackoff(message);
+                    addWithBackoff(Collections.singleton(message));
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown overloadPolicy:" + overloadPolicy);
@@ -198,6 +197,10 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     @Override
     public CompletionStage<Void> publishAsync(@Nonnull E payload) {
         checkNotNull(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
+
+        // RU_COMPAT_4_0
+        checkClusterVersion(Versions.V4_1);
+
         Collection<E> messages = Collections.singleton(payload);
         return publishAllAsync(messages);
     }
@@ -213,10 +216,10 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
         }
     }
 
-    private void addWithBackoff(ReliableTopicMessage message) throws Exception {
+    private void addWithBackoff(Collection<ReliableTopicMessage> messages) throws Exception {
         long timeoutMs = INITIAL_BACKOFF_MS;
         for (; ; ) {
-            long result = ringbuffer.addAsync(message, OverflowPolicy.FAIL).toCompletableFuture().get();
+            long result = ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).toCompletableFuture().get();
             if (result != -1) {
                 break;
             }
@@ -279,6 +282,9 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
         checkNotNull(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
 
+        // RU_COMPAT_4_0
+        checkClusterVersion(Versions.V4_1);
+
         try {
             List<ReliableTopicMessage> messages = payload.stream()
                     .map(m -> new ReliableTopicMessage(nodeEngine.toData(m), thisAddress))
@@ -298,19 +304,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
                     ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).toCompletableFuture().get();
                     break;
                 case BLOCK:
-                    long timeoutMs = INITIAL_BACKOFF_MS;
-                    for (; ; ) {
-                        long result = ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).toCompletableFuture().get();
-                        if (result != -1) {
-                            break;
-                        }
-
-                        MILLISECONDS.sleep(timeoutMs);
-                        timeoutMs *= 2;
-                        if (timeoutMs > MAX_BACKOFF) {
-                            timeoutMs = MAX_BACKOFF;
-                        }
-                    }
+                    addWithBackoff(messages);
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown overloadPolicy:" + overloadPolicy);
@@ -338,39 +332,13 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
                     .collect(Collectors.toList());
             switch (overloadPolicy) {
                 case ERROR:
-                    ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL)
-                            .whenCompleteAsync((id, t) -> {
-                                if (t != null) {
-                                    returnFuture.completeExceptionally(t);
-                                }
-                                if (id == -1) {
-                                    returnFuture.completeExceptionally(new TopicOverloadException(
-                                            "Failed to publish messages: " + payload + " on topic:" + getName()));
-                                }
-                                payload.forEach(p -> localTopicStats.incrementPublishes());
-                                returnFuture.complete(null);
-                            });
-
+                    addAsyncOrFail(payload, returnFuture, messages);
                     break;
                 case DISCARD_OLDEST:
-                    ringbuffer.addAllAsync(messages, OverflowPolicy.OVERWRITE)
-                            .whenCompleteAsync((id, t) -> {
-                                if (t != null) {
-                                    returnFuture.completeExceptionally(t);
-                                }
-                                payload.forEach(p -> localTopicStats.incrementPublishes());
-                                returnFuture.complete(null);
-                            });
+                    addAsync(messages, OverflowPolicy.OVERWRITE);
                     break;
                 case DISCARD_NEWEST:
-                    ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL)
-                            .whenCompleteAsync((id, t) -> {
-                                if (t != null) {
-                                    returnFuture.completeExceptionally(t);
-                                }
-                                payload.forEach(p -> localTopicStats.incrementPublishes());
-                                returnFuture.complete(null);
-                            });
+                    addAsync(messages, OverflowPolicy.FAIL);
                     break;
                 case BLOCK:
                     addAsyncAndBlock(payload, returnFuture, messages, INITIAL_BACKOFF_MS);
@@ -383,6 +351,33 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
                     String.format("Failed to publish messages: %s on topic: %s", payload, getName())));
         }
 
+        return returnFuture;
+    }
+
+    private void addAsyncOrFail(@NotNull Collection<? extends E> payload, InternalCompletableFuture<Void> returnFuture,
+                                List<ReliableTopicMessage> messages) {
+        ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).whenCompleteAsync((id, t) -> {
+            if (t != null) {
+                returnFuture.completeExceptionally(t);
+            }
+            if (id == -1) {
+                returnFuture.completeExceptionally(new TopicOverloadException(
+                        "Failed to publish messages: " + payload + " on topic:" + getName()));
+            }
+            messages.forEach(p -> localTopicStats.incrementPublishes());
+            returnFuture.complete(null);
+        });
+    }
+
+    private InternalCompletableFuture<Void> addAsync(List<ReliableTopicMessage> messages, OverflowPolicy overflowPolicy) {
+        InternalCompletableFuture<Void> returnFuture = new InternalCompletableFuture<>();
+        ringbuffer.addAllAsync(messages, overflowPolicy).whenCompleteAsync((id, t) -> {
+            if (t != null) {
+                returnFuture.completeExceptionally(t);
+            }
+            messages.forEach(p -> localTopicStats.incrementPublishes());
+            returnFuture.complete(null);
+        });
         return returnFuture;
     }
 
@@ -405,25 +400,14 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
         });
     }
 
-    private Data[] toDataArray(Collection<? extends E> collection) {
-        Data[] items = new Data[collection.size()];
-        int k = 0;
-        for (E item : collection) {
-            checkNotNull(item, "collection mustn't contains null items");
-            items[k] = toData(item);
-            k++;
-        }
-        return items;
-    }
-
     private void checkClusterVersion(Version version) {
         // RU_COMPAT_4_0
         Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
         if (!clusterVersion.isGreaterOrEqual(version)) {
             throw new UnsupportedOperationException(
-                String.format(
-                        "Publish all is not available on cluster version %s. Please upgrade the cluster version to %s.",
-                        clusterVersion, version));
+                    String.format(
+                            "Publish all is not available on cluster version %s. Please upgrade the cluster version to %s.",
+                            clusterVersion, version));
         }
     }
 }
