@@ -22,8 +22,8 @@ import com.hazelcast.internal.yaml.YamlException;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import org.snakeyaml.engine.v1.api.ConstructNode;
-import org.snakeyaml.engine.v1.api.LoadSettingsBuilder;
+import org.snakeyaml.engine.v2.api.ConstructNode;
+import org.snakeyaml.engine.v2.api.LoadSettingsBuilder;
 
 import java.util.Optional;
 
