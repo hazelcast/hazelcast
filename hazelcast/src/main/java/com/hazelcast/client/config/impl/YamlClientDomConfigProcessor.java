@@ -161,8 +161,8 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
     @Override
     protected void fillPortableFactories(Node node, SerializationConfig serializationConfig) {
         for (Node child : childElements(node)) {
-            final Node factoryIdNode = DomConfigHelper.getNamedItemNode(child,"factory-id");
-            final Node classNameNode = DomConfigHelper.getNamedItemNode(child,"class-name");
+            final Node factoryIdNode = DomConfigHelper.getNamedItemNode(child, "factory-id");
+            final Node classNameNode = DomConfigHelper.getNamedItemNode(child, "class-name");
             if (factoryIdNode == null) {
                 throw new IllegalArgumentException("'factory-id' attribute of 'portable-factory' is required!");
             }
