@@ -24,7 +24,6 @@ import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.collection.CollectionService;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueContainer;
-import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.HazelcastInstance;
@@ -120,17 +119,20 @@ public final class CollectionTestUtil {
      * @return a {@link Queue} with the backup items
      */
     public static <E> Queue<E> getBackupQueue(HazelcastInstance backupInstance, String queueName) {
+        Queue<E> backupQueue = new LinkedList<>();
+
         NodeEngineImpl nodeEngine = getNodeEngineImpl(backupInstance);
         QueueService service = nodeEngine.getService(QueueService.SERVICE_NAME);
-        QueueContainer container = service.getOrCreateContainer(queueName, true);
-        Map<Long, QueueItem> map = container.getBackupMap();
-
-        Queue<E> backupQueue = new LinkedList<E>();
-        SerializationService serializationService = nodeEngine.getSerializationService();
-        for (QueueItem queueItem : map.values()) {
-            E value = serializationService.toObject(queueItem.getSerializedObject());
-            backupQueue.add(value);
+        QueueContainer container = service.getExistingContainerOrNull(queueName);
+        if (container == null) {
+            return backupQueue;
         }
+
+        container.scanBackupItems(queueItem -> {
+            E value = nodeEngine.getSerializationService().toObject(queueItem.getSerializedObject());
+            backupQueue.add(value);
+        });
+
         return backupQueue;
     }
 
