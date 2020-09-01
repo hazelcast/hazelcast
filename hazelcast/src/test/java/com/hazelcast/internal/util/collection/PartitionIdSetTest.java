@@ -276,7 +276,6 @@ public class PartitionIdSetTest {
         PartitionIdSet set = createWithPartitionCount(10, 1, 2);
 
         assertEquals(set, set);
-
         assertEquals(createWithPartitionCount(10, 1, 2), set);
         assertNotEquals(createWithPartitionCount(10, 1, 3), set);
         assertNotEquals(createWithPartitionCount(11, 1, 2), set);
