@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.exec.scan.KeyValueIterator;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.schema.map.MapTableUtils;
@@ -42,6 +43,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
     private Object nextValue;
 
     public MapIndexScanExecIterator(
+        String mapName,
         InternalIndex index,
         int expectedComponentCount,
         IndexFilter indexFilter,
@@ -49,6 +51,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
         ExpressionEvalContext evalContext
     ) {
         iterator = getIndexEntries(
+            mapName,
             index,
             indexFilter,
             evalContext,
@@ -101,6 +104,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
     }
 
     private Iterator<QueryableEntry> getIndexEntries(
+        String mapName,
         InternalIndex index,
         IndexFilter indexFilter,
         ExpressionEvalContext evalContext,
@@ -115,14 +119,15 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
         int actualComponentCount = index.getComponents().length;
 
         if (actualComponentCount != expectedComponentCount) {
-            throw QueryException.error("Index \"" + index.getName() + "\" has " + actualComponentCount + " component(s), but "
+            throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot use the index \"" + index.getName()
+                + "\" of the IMap \"" + mapName + "\" because it has " + actualComponentCount + " component(s), but "
                 + expectedComponentCount + " expected").withInvalidate();
         }
 
         // Validate component types
         List<QueryDataType> currentConverterTypes = MapTableUtils.indexConverterToSqlTypes(index.getConverter());
 
-        validateConverterTypes(index, expectedConverterTypes, currentConverterTypes);
+        validateConverterTypes(index, mapName, expectedConverterTypes, currentConverterTypes);
 
         // Query the index
         return indexFilter.getEntries(index, evalContext);
@@ -130,6 +135,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
 
     private void validateConverterTypes(
         InternalIndex index,
+        String mapName,
         List<QueryDataType> expectedConverterTypes,
         List<QueryDataType> actualConverterTypes
     ) {
@@ -140,9 +146,9 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
             if (!expected.equals(actual)) {
                 String component = index.getComponents()[i];
 
-                throw QueryException.dataException("Index \"" + index.getName() + "\" has component \"" + component
-                    + "\" of type " + actual.getTypeFamily() + ", but " + expected.getTypeFamily()
-                    + " was expected").withInvalidate();
+                throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot use the index \"" + index.getName()
+                    + "\" of the IMap \"" + mapName + "\" because it has component \"" + component + "\" of type "
+                    + actual.getTypeFamily() + ", but " + expected.getTypeFamily() + " was expected").withInvalidate();
             }
         }
 
@@ -150,8 +156,9 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
             QueryDataType expected = expectedConverterTypes.get(actualConverterTypes.size());
             String component = index.getComponents()[actualConverterTypes.size()];
 
-            throw QueryException.dataException("Index \"" + index.getName() + "\" do not have suitable SQL converter "
-                + "for component \"" + component + "\" (expected " + expected.getTypeFamily() + ")").withInvalidate();
+            throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot use the index \"" + index.getName()
+                + "\" of the IMap \"" + mapName + "\" because it does not have suitable converter for component \""
+                + component + "\" (expected " + expected.getTypeFamily() + ")").withInvalidate();
         }
     }
 }

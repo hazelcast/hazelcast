@@ -92,7 +92,7 @@ public class MapIndexScanExec extends MapScanExec {
         if (indexes == null) {
             throw QueryException.error(
                 SqlErrorCode.INDEX_INVALID,
-                "Cannot use the index \"" + indexName + "\" of the map \"" + map.getName() + "\" because it is not global "
+                "Cannot use the index \"" + indexName + "\" of the IMap \"" + map.getName() + "\" because it is not global "
                     + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED + "\" is set to \"true\")"
             ).withInvalidate();
         }
@@ -102,7 +102,7 @@ public class MapIndexScanExec extends MapScanExec {
         if (index == null) {
             throw QueryException.error(
                 SqlErrorCode.INDEX_INVALID,
-                "Cannot use the index \"" + indexName + "\" of the map \"" + map.getName() + "\" because it doesn't exist"
+                "Cannot use the index \"" + indexName + "\" of the IMap \"" + map.getName() + "\" because it doesn't exist"
             ).withInvalidate();
         }
 
@@ -113,7 +113,7 @@ public class MapIndexScanExec extends MapScanExec {
             throw invalidIndexStamp();
         }
 
-        return new MapIndexScanExecIterator(index, componentCount, indexFilter, converterTypes, ctx);
+        return new MapIndexScanExecIterator(mapName, index, componentCount, indexFilter, converterTypes, ctx);
     }
 
     @Override
@@ -126,7 +126,7 @@ public class MapIndexScanExec extends MapScanExec {
     private QueryException invalidIndexStamp() {
         throw QueryException.error(
             SqlErrorCode.INDEX_INVALID,
-            "Cannot use the index \"" + indexName + "\" of the map \"" + mapName + "\" due to concurrent migration, "
+            "Cannot use the index \"" + indexName + "\" of the IMap \"" + mapName + "\" due to concurrent migration, "
                 + "or because index creation is still in progress"
         ).withInvalidate();
     }
