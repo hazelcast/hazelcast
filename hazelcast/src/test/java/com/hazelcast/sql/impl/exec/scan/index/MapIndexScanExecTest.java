@@ -280,8 +280,8 @@ public class MapIndexScanExecTest extends SqlTestSupport {
 
             fail("Must fail");
         } catch (QueryException e) {
-            assertEquals(SqlErrorCode.PARTITION_DISTRIBUTION_CHANGED, e.getCode());
-            assertEquals("Partitions are not owned by member: " + instance2Partitions, e.getMessage());
+            assertEquals(SqlErrorCode.INDEX_INVALID, e.getCode());
+            assertEquals("Cannot use the index \"index\" of the map \"map\" due to concurrent migration, or because index creation is still in progress", e.getMessage());
             assertTrue(e.isInvalidatePlan());
         }
     }
@@ -303,8 +303,8 @@ public class MapIndexScanExecTest extends SqlTestSupport {
 
             fail("Must fail");
         } catch (QueryException e) {
-            assertEquals(SqlErrorCode.MAP_INDEX_NOT_EXISTS, e.getCode());
-            assertEquals("Index \"bad_index\" of the map \"map\" doesn't exist", e.getMessage());
+            assertEquals(SqlErrorCode.INDEX_INVALID, e.getCode());
+            assertEquals("Cannot use the index \"bad_index\" of the map \"map\" because it doesn't exist", e.getMessage());
             assertTrue(e.isInvalidatePlan());
         }
     }

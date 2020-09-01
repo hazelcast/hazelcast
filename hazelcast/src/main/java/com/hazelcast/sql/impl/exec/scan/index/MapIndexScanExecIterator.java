@@ -17,19 +17,14 @@
 package com.hazelcast.sql.impl.exec.scan.index;
 
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.scan.KeyValueIterator;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.schema.map.MapTableUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -47,22 +42,18 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
     private Object nextValue;
 
     public MapIndexScanExecIterator(
-        MapContainer map,
-        String indexName,
+        InternalIndex index,
         int expectedComponentCount,
         IndexFilter indexFilter,
         List<QueryDataType> expectedConverterTypes,
-        PartitionIdSet expectedPartitions,
         ExpressionEvalContext evalContext
     ) {
         iterator = getIndexEntries(
-            map,
-            indexName,
+            index,
             indexFilter,
             evalContext,
             expectedComponentCount,
-            expectedConverterTypes,
-            expectedPartitions
+            expectedConverterTypes
         );
 
         advance0();
@@ -110,31 +101,12 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
     }
 
     private Iterator<QueryableEntry> getIndexEntries(
-        MapContainer map,
-        String indexName,
+        InternalIndex index,
         IndexFilter indexFilter,
         ExpressionEvalContext evalContext,
         int expectedComponentCount,
-        List<QueryDataType> expectedConverterTypes,
-        PartitionIdSet expectedPartitions
+        List<QueryDataType> expectedConverterTypes
     ) {
-        // Find the index
-        Indexes indexes = map.getIndexes();
-
-        assert indexes.isGlobal();
-
-        InternalIndex index = indexes.getIndex(indexName);
-
-        if (index == null) {
-            throw QueryException.error(
-                SqlErrorCode.MAP_INDEX_NOT_EXISTS,
-                "Index \"" + indexName + "\" of the map \"" + map.getName() + "\" doesn't exist"
-            ).withInvalidate();
-        }
-
-        // Make sure that required partitions are indexed
-        validatePartitions(index, expectedPartitions);
-
         if (indexFilter == null) {
             // No filter => this is a full scan (e.g. for HD)
             return index.getSqlRecordIterator();
@@ -143,7 +115,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
         int actualComponentCount = index.getComponents().length;
 
         if (actualComponentCount != expectedComponentCount) {
-            throw QueryException.error("Index \"" + indexName + "\" has " + actualComponentCount + " component(s), but "
+            throw QueryException.error("Index \"" + index.getName() + "\" has " + actualComponentCount + " component(s), but "
                 + expectedComponentCount + " expected").withInvalidate();
         }
 
@@ -154,29 +126,6 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
 
         // Query the index
         return indexFilter.getEntries(index, evalContext);
-    }
-
-    private void validatePartitions(InternalIndex index, PartitionIdSet expectedPartitions) {
-        List<Integer> missingPartitions = null;
-
-        for (int partition : expectedPartitions) {
-            if (!index.hasPartitionIndexed(partition)) {
-                if (missingPartitions == null) {
-                    missingPartitions = new ArrayList<>();
-                }
-
-                missingPartitions.add(partition);
-            }
-        }
-
-        if (missingPartitions != null) {
-            assert !missingPartitions.isEmpty();
-
-            throw QueryException.error(
-                SqlErrorCode.PARTITION_DISTRIBUTION_CHANGED,
-                "Partitions are not owned by member: " + missingPartitions
-            ).withInvalidate();
-        }
     }
 
     private void validateConverterTypes(

@@ -20,6 +20,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.Predicate;
 
 import java.util.HashMap;
@@ -72,7 +73,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
         return trackingIndex;
     }
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "checkstyle:MethodCount"})
     private static class QueryTrackingIndex implements InternalIndex {
 
         private InternalIndex delegate;
@@ -251,6 +252,20 @@ public class GlobalQueryContextWithStats extends QueryContext {
             return delegate.getPerIndexStats();
         }
 
+        @Override
+        public boolean isGlobal() {
+            return delegate.isGlobal();
+        }
+
+        @Override
+        public Long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
+            return delegate.getPartitionStamp(expectedPartitionIds);
+        }
+
+        @Override
+        public boolean validatePartitionStamp(long stamp) {
+            return delegate.validatePartitionStamp(stamp);
+        }
     }
 
 }

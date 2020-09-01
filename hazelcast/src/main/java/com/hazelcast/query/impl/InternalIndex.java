@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 /**
  * Provides the private index API.
@@ -77,4 +78,12 @@ public interface InternalIndex extends Index {
      */
     PerIndexStats getPerIndexStats();
 
+    /**
+     * @return {@code true} if the index is global, {@code false} is the index is partitioned
+     */
+    boolean isGlobal();
+
+    Long getPartitionStamp(PartitionIdSet expectedPartitionIds);
+
+    boolean validatePartitionStamp(long stamp);
 }

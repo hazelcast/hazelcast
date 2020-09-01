@@ -43,7 +43,7 @@ public class GlobalIndexPartitionTracker {
         state = new AtomicReference<>(new State(VERSION_INITIAL, new PartitionIdSet(partitionCount), 0));
     }
 
-    public Long getStamp(PartitionIdSet expectedPartitionIds) {
+    public Long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
         State state0 = state.get();
 
         if (state0.pending > 0 || !state0.indexedPartitions.equals(expectedPartitionIds)) {
@@ -53,7 +53,7 @@ public class GlobalIndexPartitionTracker {
         return state0.version;
     }
 
-    public boolean validateStamp(long version) {
+    public boolean validatePartitionStamp(long version) {
         return state.get().version == version;
     }
 
