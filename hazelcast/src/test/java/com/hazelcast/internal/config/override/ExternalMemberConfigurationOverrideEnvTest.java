@@ -57,6 +57,9 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
 
     @Test(expected = InvalidConfigurationException.class)
     public void shouldDisallowConflictingEntries() {
+        environmentVariables
+          .set("HZ_CLUSTERNAME", "test");
+
         runWithSystemProperty("hz.cluster-name", "test2", () -> {
             Config config = new Config();
             new ExternalConfigurationOverride().overwriteMemberConfig(config);
