@@ -385,22 +385,22 @@
         This feature is available only in Hazelcast Enterprise. Configuration element's name is <security>.
         It has one of the following sub-elements:
         * <credentials-factory>:
-           Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials
-           interface.
-           This element has a mandatory "class-name" attribute where you should define the factory class implementing
-           ICredentialsFactory used to create Credentials objects.
-           With the <properties> sub-element, you can define properties for the factory class. The properties can be
-           defined with the <property> sub-element nested in the <properties>. The <property> element has the attribute
-           "name" used to define the name of the attribute. The value of the property is defined in the body.
+            Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials
+            interface.
+            This element has a mandatory "class-name" attribute where you should define the factory class implementing
+            ICredentialsFactory used to create Credentials objects.
+            With the <properties> sub-element, you can define properties for the factory class. The properties can be
+            defined with the <property> sub-element nested in the <properties>. The <property> element has the attribute
+            "name" used to define the name of the attribute. The value of the property is defined in the body.
         * <username-password>
-           Defines a static UsernamePasswordCredentials instance as the client's identity. It has mandatory
+            Defines a static UsernamePasswordCredentials instance as the client's identity. It has mandatory
             "username" and "password" attributes.
         * <token>
-           Defines a static TokenCredentials instance as the client's identity. It can have attribute "encoding".
-           Content of the element is token value in given encoding (or in plain text).
+            Defines a static TokenCredentials instance as the client's identity. It can have attribute "encoding".
+            Content of the element is token value in given encoding (or in plain text).
         * <kerberos>
-           Uses Kerberos service ticket (wrapped as GSS-API init token) as the identity.
-           It may reference a security realm  in the <realms> section. The realm is used for the Kerberos authentication.
+            Uses Kerberos service ticket (wrapped as GSS-API init token) as the identity.
+            It may reference a security realm  in the <realms> section. The realm is used for the Kerberos authentication.
     -->
     <security>
         <credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
