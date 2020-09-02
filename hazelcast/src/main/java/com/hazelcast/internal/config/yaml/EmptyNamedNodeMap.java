@@ -23,7 +23,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 /**
- * Empty {@link NamedNodeMap} implementation. Used by {@link ElementAdapter#getAttributes()}
+ * Empty {@link NamedNodeMap} implementation. Used by {@link YamlElementAdapter#getAttributes()}
  * when wrapping {@link YamlNode}s other than {@link YamlMapping}.
  */
 final class EmptyNamedNodeMap implements NamedNodeMap {

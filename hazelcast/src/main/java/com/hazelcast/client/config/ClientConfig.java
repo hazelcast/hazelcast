@@ -33,6 +33,7 @@ import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.internal.config.override.ExternalConfigurationOverride;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.Credentials;
@@ -178,7 +179,9 @@ public class ClientConfig {
     /**
      * Populates Hazelcast {@link ClientConfig} object from an external configuration file.
      * <p>
-     * It tries to load Hazelcast Client configuration from a list of well-known locations.
+     * It tries to load Hazelcast Client configuration from a list of well-known locations,
+     * and then applies overrides found in environment variables/system properties
+     *
      * When no location contains Hazelcast Client configuration then it returns default.
      * <p>
      * Note that the same mechanism is used when calling
@@ -187,6 +190,10 @@ public class ClientConfig {
      * @return ClientConfig created from a file when exists, otherwise default.
      */
     public static ClientConfig load() {
+        return new ExternalConfigurationOverride().overwriteClientConfig(loadFromFile());
+    }
+
+    private static ClientConfig loadFromFile() {
         validateSuffixInSystemProperty(SYSPROP_CLIENT_CONFIG);
 
         XmlClientConfigLocator xmlConfigLocator = new XmlClientConfigLocator();

@@ -13,15 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.hazelcast.internal.config.override;
 
-package com.hazelcast.internal.config.yaml;
-
-import com.hazelcast.internal.yaml.MutableYamlScalar;
-import com.hazelcast.internal.yaml.YamlCollection;
-import com.hazelcast.internal.yaml.YamlMapping;
-import com.hazelcast.internal.yaml.YamlNode;
-import com.hazelcast.internal.yaml.YamlScalar;
-import com.hazelcast.internal.yaml.YamlSequence;
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -32,47 +25,34 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.TypeInfo;
 import org.w3c.dom.UserDataHandler;
 
-import static com.hazelcast.internal.config.yaml.EmptyNamedNodeMap.emptyNamedNodeMap;
-import static com.hazelcast.internal.config.yaml.EmptyNodeList.emptyNodeList;
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
- * Class adapting {@link YamlNode}s to {@link Element}.
+ * A class adapting {@link ConfigNode}s to {@link Element}.
  * <p>
- * Used for processing YAML configuration.
+ * Used for processing external configuration overrides.
  */
 @SuppressWarnings({"checkstyle:methodcount"})
-public class ElementAdapter implements Element {
-    private final YamlNode yamlNode;
+class ConfigOverrideElementAdapter implements Element {
+    private final ConfigNode configNode;
 
-    ElementAdapter(YamlNode yamlNode) {
-        this.yamlNode = yamlNode;
-    }
-
-    public YamlNode getYamlNode() {
-        return yamlNode;
+    ConfigOverrideElementAdapter(@Nonnull ConfigNode node) {
+        Objects.requireNonNull(node);
+        this.configNode = node;
     }
 
     @Override
     public String getNodeName() {
-        return yamlNode.nodeName();
+        return configNode.getName();
     }
 
     @Override
     public String getNodeValue() throws DOMException {
-        if (yamlNode instanceof YamlScalar) {
-            Object nodeValue = ((YamlScalar) yamlNode).nodeValue();
-            return nodeValue != null ? nodeValue.toString() : null;
-        }
-        return null;
-    }
-
-    @Override
-    public void setNodeValue(String nodeValue) throws DOMException {
-        if (yamlNode instanceof MutableYamlScalar) {
-            ((MutableYamlScalar) yamlNode).setValue(nodeValue);
-        } else {
-            throw new UnsupportedOperationException();
-        }
+        return configNode.getValue().orElse(null);
     }
 
     @Override
@@ -82,22 +62,31 @@ public class ElementAdapter implements Element {
 
     @Override
     public Node getParentNode() {
-        return W3cDomUtil.asW3cNode(yamlNode.parent());
+        return configNode.getParent().map(ConfigOverrideElementAdapter::new).orElse(null);
     }
 
     @Override
     public NodeList getChildNodes() {
-        if (!hasChildNodes()) {
-            return emptyNodeList();
-        }
+        return new NodeList() {
+            private final List<Node> children = configNode.getChildren().values().stream()
+              .map(ConfigOverrideElementAdapter::new)
+              .collect(Collectors.toList());
 
-        if (yamlNode instanceof YamlMapping) {
-            return new NodeListMappingAdapter((YamlMapping) yamlNode);
-        } else if (yamlNode instanceof YamlSequence) {
-            return new NodeListSequenceAdapter((YamlSequence) yamlNode);
-        }
+            @Override
+            public Node item(int index) {
+                return children.get(index);
+            }
 
-        return new NodeListScalarAdapter((YamlScalar) yamlNode);
+            @Override
+            public int getLength() {
+                return children.size();
+            }
+        };
+    }
+
+    @Override
+    public void setNodeValue(String nodeValue) throws DOMException {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -122,10 +111,7 @@ public class ElementAdapter implements Element {
 
     @Override
     public NamedNodeMap getAttributes() {
-        if (yamlNode instanceof YamlMapping) {
-            return new NamedNodeMapAdapter((YamlMapping) yamlNode);
-        }
-        return emptyNamedNodeMap();
+        return new NamedNodeAdapter();
     }
 
     @Override
@@ -155,8 +141,7 @@ public class ElementAdapter implements Element {
 
     @Override
     public boolean hasChildNodes() {
-        return yamlNode instanceof YamlCollection && ((YamlCollection) yamlNode).childCount() > 0
-                || yamlNode instanceof YamlScalar;
+        return !configNode.getChildren().isEmpty();
     }
 
     @Override
@@ -266,13 +251,10 @@ public class ElementAdapter implements Element {
 
     @Override
     public String getAttribute(String name) {
-        if (yamlNode instanceof YamlMapping) {
-            YamlScalar yamlScalar = ((YamlMapping) yamlNode).childAsScalar(name);
-            if (yamlScalar != null) {
-                return yamlScalar.nodeValue().toString();
-            }
-        }
-        return "";
+        ConfigNode configNode = this.configNode.getChildren().get(name);
+        return configNode != null && configNode.getValue().isPresent()
+          ? configNode.getValue().get()
+          : "";
     }
 
     @Override
@@ -302,11 +284,7 @@ public class ElementAdapter implements Element {
 
     @Override
     public NodeList getElementsByTagName(String name) {
-        // since this class adapts YAML documents that don't allow
-        // duplicates, there could be only one element with the given name
-        Node element = getAttributes().getNamedItem(name);
-
-        return W3cDomUtil.asNodeList(element);
+        return new SingletonNodeList(getAttributes().getNamedItem(name));
     }
 
     @Override
@@ -367,5 +345,69 @@ public class ElementAdapter implements Element {
     @Override
     public void setIdAttributeNode(Attr idAttr, boolean isId) throws DOMException {
         throw new UnsupportedOperationException();
+    }
+
+    static class SingletonNodeList implements NodeList {
+
+        private final Node element;
+
+        SingletonNodeList(Node element) {
+            this.element = element;
+        }
+
+        @Override
+        public Node item(int index) {
+            return index != 0 ? null : element;
+        }
+
+        @Override
+        public int getLength() {
+            return 0;
+        }
+    }
+
+    private class NamedNodeAdapter implements NamedNodeMap {
+
+        @Override
+        public Node getNamedItem(String name) {
+            return configNode.getChildren().get(name) == null
+              ? null
+              : new ConfigOverrideElementAdapter(configNode.getChildren().get(name));
+        }
+
+        @Override
+        public Node setNamedItem(Node arg) throws DOMException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Node removeNamedItem(String name) throws DOMException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Node item(int index) {
+            return new ConfigOverrideElementAdapter(new ArrayList<>(configNode.getChildren().values()).get(index));
+        }
+
+        @Override
+        public int getLength() {
+            return configNode.getChildren().size();
+        }
+
+        @Override
+        public Node getNamedItemNS(String namespaceURI, String localName) throws DOMException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Node setNamedItemNS(Node arg) throws DOMException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Node removeNamedItemNS(String namespaceURI, String localName) throws DOMException {
+            throw new UnsupportedOperationException();
+        }
     }
 }

@@ -40,7 +40,7 @@ final class QueryCacheXmlConfigBuilderHelper extends AbstractQueryCacheConfigBui
     @Override
     public void handleQueryCache(ClientConfig clientConfig, Node node) {
         for (Node queryCacheNode : childElements(node)) {
-            if ("query-cache".equals(cleanNodeName(queryCacheNode))) {
+            if (matches("query-cache", cleanNodeName(queryCacheNode))) {
                 handleQueryCacheNode(clientConfig, queryCacheNode);
             }
         }
@@ -48,31 +48,29 @@ final class QueryCacheXmlConfigBuilderHelper extends AbstractQueryCacheConfigBui
 
     @Override
     protected String getCacheName(Node queryCacheNode) {
-        NamedNodeMap attrs = queryCacheNode.getAttributes();
-        return getTextContent(attrs.getNamedItem("name"));
+        return getTextContent(getNamedItemNode(queryCacheNode, "name"));
     }
 
     @Override
     protected String getCacheMapName(NamedNodeMap attrs) {
-        return getTextContent(attrs.getNamedItem("mapName"));
+        return getTextContent(getNamedItemNode(attrs, "mapName"));
     }
 
     protected void handleEntryListeners(QueryCacheConfig queryCacheConfig, Node childNode) {
         for (Node listenerNode : childElements(childNode)) {
-            if ("entry-listener".equals(cleanNodeName(listenerNode))) {
+            if (matches("entry-listener", cleanNodeName(listenerNode))) {
                 handleEntryListenerNode(queryCacheConfig, listenerNode);
             }
         }
     }
 
     protected void queryCachePredicateHandler(Node childNode, QueryCacheConfig queryCacheConfig) {
-        NamedNodeMap predicateAttributes = childNode.getAttributes();
-        String predicateType = getTextContent(predicateAttributes.getNamedItem("type"));
+        String predicateType = getTextContent(getNamedItemNode(childNode, "type"));
         String textContent = getTextContent(childNode);
         PredicateConfig predicateConfig = new PredicateConfig();
-        if ("class-name".equals(predicateType)) {
+        if (matches("class-name", predicateType)) {
             predicateConfig.setClassName(textContent);
-        } else if ("sql".equals(predicateType)) {
+        } else if (matches("sql", predicateType)) {
             predicateConfig.setSql(textContent);
         }
         queryCacheConfig.setPredicateConfig(predicateConfig);
@@ -80,8 +78,8 @@ final class QueryCacheXmlConfigBuilderHelper extends AbstractQueryCacheConfigBui
 
     protected void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
         for (Node indexNode : childElements(n)) {
-            if ("index".equals(cleanNodeName(indexNode))) {
-                IndexConfig indexConfig = IndexUtils.getIndexConfigFromXml(indexNode, domLevel3);
+            if (matches("index", cleanNodeName(indexNode))) {
+                IndexConfig indexConfig = IndexUtils.getIndexConfigFromXml(indexNode, domLevel3, strict);
 
                 queryCacheConfig.addIndexConfig(indexConfig);
             }

@@ -22,7 +22,7 @@ import com.hazelcast.internal.config.ConfigLoader;
 import com.hazelcast.internal.config.ConfigReplacerHelper;
 import com.hazelcast.internal.config.ConfigSections;
 import com.hazelcast.internal.config.YamlDomVariableReplacer;
-import com.hazelcast.internal.config.yaml.ElementAdapter;
+import com.hazelcast.internal.config.yaml.YamlElementAdapter;
 import com.hazelcast.internal.yaml.MutableYamlMapping;
 import com.hazelcast.internal.yaml.MutableYamlSequence;
 import com.hazelcast.internal.yaml.YamlLoader;
@@ -242,7 +242,7 @@ public abstract class AbstractYamlConfigBuilder {
     }
 
     private void fillReplacerProperties(Node node, Properties properties) {
-        YamlMapping propertiesMapping = asMapping(((ElementAdapter) node).getYamlNode());
+        YamlMapping propertiesMapping = asMapping(((YamlElementAdapter) node).getYamlNode());
         for (YamlNameNodePair childNodePair : propertiesMapping.childrenPairs()) {
             String childName = childNodePair.nodeName();
             YamlNode child = childNodePair.childNode();
