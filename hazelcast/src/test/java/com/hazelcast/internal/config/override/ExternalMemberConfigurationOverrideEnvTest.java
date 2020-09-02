@@ -42,16 +42,26 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     public void shouldExtractConfigFromEnv() {
         environmentVariables
           .set("HZ_CLUSTERNAME", "test")
+          .set("HZ_METRICS_ENABLED", "false")
           .set("HZ_NETWORK_JOIN_AUTODETECTION_ENABLED", "false")
           .set("HZ_CACHE_DEFAULT_KEYTYPE_CLASSNAME", "java.lang.Object")
-          .set("HZ_EXECUTORSERVICE_CUSTOM_POOLSIZE", "42");
+          .set("HZ_EXECUTORSERVICE_CUSTOM_POOLSIZE", "42")
+          .set("HZ_EXECUTORSERVICE_DEFAULT_STATISTICSENABLED", "false")
+          .set("HZ_DURABLEEXECUTORSERVICE_DEFAULT_CAPACITY", "42")
+          .set("HZ_SCHEDULEDEXECUTORSERVICE_DEFAULT_CAPACITY", "40")
+          .set("HZ_QUEUE_DEFAULT_MAXSIZE", "2");
 
         Config config = new Config();
         new ExternalConfigurationOverride().overwriteMemberConfig(config);
 
         assertEquals("test", config.getClusterName());
+        assertFalse(config.getMetricsConfig().isEnabled());
         assertEquals(42, config.getExecutorConfig("custom").getPoolSize());
         assertEquals("java.lang.Object", config.getCacheConfig("default").getKeyType());
+        assertFalse(config.getExecutorConfig("default").isStatisticsEnabled());
+        assertEquals(42, config.getDurableExecutorConfig("default").getCapacity());
+        assertEquals(40, config.getScheduledExecutorConfig("default").getCapacity());
+        assertEquals(2, config.getQueueConfig("default").getMaxSize());
         assertFalse(config.getNetworkConfig().getJoin().isAutoDetectionEnabled());
     }
 
