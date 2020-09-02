@@ -53,6 +53,7 @@ import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 
@@ -605,7 +606,9 @@ public class ClientConfig {
     }
 
     /**
-     * Sets the {@link LoadBalancer}
+     * Sets the {@link LoadBalancer}.
+     * <p>
+     * If a load balancer class name was set, it will be removed.
      *
      * @param loadBalancer {@link LoadBalancer}
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
@@ -613,6 +616,7 @@ public class ClientConfig {
      */
     public ClientConfig setLoadBalancer(LoadBalancer loadBalancer) {
         this.loadBalancer = loadBalancer;
+        this.loadBalancerClassName = null;
         return this;
     }
 
@@ -627,14 +631,17 @@ public class ClientConfig {
     }
 
     /**
-     * Sets load balancer class name
+     * Sets load balancer class name.
+     * <p>
+     * If a load balancer implementation was set, it will be removed.
      *
      * @param loadBalancerClassName {@link LoadBalancer}
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      * @see com.hazelcast.client.LoadBalancer
      */
-    public ClientConfig setLoadBalancerClassName(String loadBalancerClassName) {
-        this.loadBalancerClassName = loadBalancerClassName;
+    public ClientConfig setLoadBalancerClassName(@Nonnull String loadBalancerClassName) {
+        this.loadBalancerClassName = checkHasText(loadBalancerClassName, "Load balancer class name must contain text");
+        this.loadBalancer = null;
         return this;
     }
 
