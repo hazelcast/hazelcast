@@ -44,7 +44,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
           .set("HZ_CLUSTERNAME", "test")
           .set("HZ_METRICS_ENABLED", "false")
           .set("HZ_NETWORK_JOIN_AUTODETECTION_ENABLED", "false")
-          .set("HZ_CACHE_DEFAULT_KEYTYPE_CLASSNAME", "java.lang.Object")
+          .set("HZ_CACHE_DEFAULT_KEYTYPE_CLASSNAME", "java.lang.Object2")
           .set("HZ_EXECUTORSERVICE_CUSTOM_POOLSIZE", "42")
           .set("HZ_EXECUTORSERVICE_DEFAULT_STATISTICSENABLED", "false")
           .set("HZ_DURABLEEXECUTORSERVICE_DEFAULT_CAPACITY", "42")
@@ -57,7 +57,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         assertEquals("test", config.getClusterName());
         assertFalse(config.getMetricsConfig().isEnabled());
         assertEquals(42, config.getExecutorConfig("custom").getPoolSize());
-        assertEquals("java.lang.Object", config.getCacheConfig("default").getKeyType());
+        assertEquals("java.lang.Object2", config.getCacheConfig("default").getKeyType());
         assertFalse(config.getExecutorConfig("default").isStatisticsEnabled());
         assertEquals(42, config.getDurableExecutorConfig("default").getCapacity());
         assertEquals(40, config.getScheduledExecutorConfig("default").getCapacity());
