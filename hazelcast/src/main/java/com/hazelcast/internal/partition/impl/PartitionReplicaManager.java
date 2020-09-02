@@ -542,27 +542,28 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         @Override
         public void run() {
             long initialStartTimeInNanos = firstRunNanos == UNSET ? System.nanoTime() : firstRunNanos;
+            try {
+                if (!node.isRunning() || !node.getNodeExtension().isStartCompleted()
+                        || !partitionService.areMigrationTasksAllowed()) {
+                    return;
+                }
 
-            if (!node.isRunning() || !node.getNodeExtension().isStartCompleted()
-                    || !partitionService.areMigrationTasksAllowed()) {
-                return;
+                initLocalPartitionsIfNull();
+
+                BitSet partitionsBitSet = convertLocalPartitionsToBitSet();
+
+                runAntiEntropyTask(partitionsBitSet);
+
+                waitAntiEntropyTaskEnd(partitionsBitSet.cardinality());
+            } finally {
+                scheduleNextRun(initialStartTimeInNanos);
             }
-
-            initLocalPartitionsIfNull();
-
-            BitSet partitionsBitSet = convertLocalPartitionsToBitSet();
-
-            runAntiEntropyTask(partitionsBitSet);
-
-            waitAntiEntropyTaskEnd(partitionsBitSet.cardinality());
-
-            scheduleNextRun(initialStartTimeInNanos);
         }
 
         private void scheduleNextRun(long initialStartTimeInNanos) {
             ExecutionService executionService = nodeEngine.getExecutionService();
 
-            if (!localPartitionIds.isEmpty()) {
+            if (localPartitionIds != null && !localPartitionIds.isEmpty()) {
                 // we still have local partitions to check
                 executionService.schedule(new AntiEntropyTask(backupSyncCheckIntervalSeconds,
                         localPartitionIds, initialStartTimeInNanos, numInOneGo), 1, TimeUnit.SECONDS);
