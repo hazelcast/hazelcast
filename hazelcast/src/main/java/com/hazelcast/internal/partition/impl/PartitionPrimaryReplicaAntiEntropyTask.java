@@ -36,23 +36,24 @@ final class PartitionPrimaryReplicaAntiEntropyTask extends AbstractPartitionPrim
 
     @Override
     public void run() {
-        InternalPartition partition = partitionService.getPartition(partitionId, false);
-        if (!partition.isLocal() || partition.isMigrating()) {
-            return;
-        }
+        try {
+            InternalPartition partition = partitionService.getPartition(partitionId, false);
+            if (!partition.isLocal() || partition.isMigrating()) {
+                return;
+            }
 
-        Collection<ServiceNamespace> namespaces = retainAndGetNamespaces();
+            Collection<ServiceNamespace> namespaces = retainAndGetNamespaces();
 
-        for (int index = 1; index < MAX_REPLICA_COUNT; index++) {
-            PartitionReplica replica = partition.getReplica(index);
-            if (replica != null) {
-                invokePartitionBackupReplicaAntiEntropyOp(index, replica, namespaces, null);
+            for (int index = 1; index < MAX_REPLICA_COUNT; index++) {
+                PartitionReplica replica = partition.getReplica(index);
+                if (replica != null) {
+                    invokePartitionBackupReplicaAntiEntropyOp(index, replica, namespaces, null);
+                }
+            }
+        } finally {
+            if (afterRun != null) {
+                afterRun.run();
             }
         }
-
-        if (afterRun != null) {
-            afterRun.run();
-        }
     }
-
 }
