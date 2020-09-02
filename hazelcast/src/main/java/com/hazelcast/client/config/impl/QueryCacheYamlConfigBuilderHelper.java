@@ -38,6 +38,10 @@ final class QueryCacheYamlConfigBuilderHelper extends AbstractQueryCacheConfigBu
         super(true);
     }
 
+    QueryCacheYamlConfigBuilderHelper(boolean strict) {
+        super(true, strict);
+    }
+
     @Override
     public void handleQueryCache(ClientConfig clientConfig, Node node) {
         for (Node queryCacheNode : childElements(node)) {
@@ -94,7 +98,7 @@ final class QueryCacheYamlConfigBuilderHelper extends AbstractQueryCacheConfigBu
     @Override
     protected void queryCacheIndexesHandle(Node childNode, QueryCacheConfig queryCacheConfig) {
         for (Node indexNode : childElements(childNode)) {
-            IndexConfig indexConfig = IndexUtils.getIndexConfigFromYaml(indexNode, domLevel3);
+            IndexConfig indexConfig = IndexUtils.getIndexConfigFromYaml(indexNode, domLevel3, strict);
 
             queryCacheConfig.addIndexConfig(indexConfig);
         }

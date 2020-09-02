@@ -43,7 +43,7 @@ public class ExternalConfigurationOverride {
     public Config overwriteMemberConfig(Config config) {
         return overwrite(config, (provider, c) -> {
               try {
-                  new YamlMemberDomConfigProcessor(true, c)
+                  new YamlMemberDomConfigProcessor(true, c, false)
                     .buildConfig(new ConfigOverrideElementAdapter(propsToNode(provider.properties())));
               } catch (Exception e) {
                   throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider.name(), e);
@@ -56,7 +56,7 @@ public class ExternalConfigurationOverride {
     public ClientConfig overwriteClientConfig(ClientConfig config) {
         return overwrite(config, (provider, c) -> {
               try {
-                  new YamlClientDomConfigProcessor(true, c)
+                  new YamlClientDomConfigProcessor(true, c, false)
                     .buildConfig(new ConfigOverrideElementAdapter(propsToNode(provider.properties())));
               } catch (Exception e) {
                   throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider.name(), e);

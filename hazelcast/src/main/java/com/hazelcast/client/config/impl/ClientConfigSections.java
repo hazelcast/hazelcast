@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.config.impl;
 
-import com.hazelcast.internal.config.ConfigUtils;
-
 /**
  * Configuration sections for the clients shared by XML and YAML based
  * configurations
@@ -61,10 +59,6 @@ public enum ClientConfigSections {
             }
         }
         return true;
-    }
-
-    public boolean isEqual(String name) {
-        return ConfigUtils.matches(this.name, name);
     }
 
     public String getName() {

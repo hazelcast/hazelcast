@@ -204,7 +204,6 @@ import static com.hazelcast.internal.config.ConfigSections.TOPIC;
 import static com.hazelcast.internal.config.ConfigSections.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
 import static com.hazelcast.internal.config.ConfigSections.canOccurMultipleTimes;
-import static com.hazelcast.internal.config.ConfigUtils.matches;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheEvictionConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkMapEvictionConfig;
@@ -236,6 +235,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected final Config config;
 
+    public MemberDomConfigProcessor(boolean domLevel3, Config config, boolean strict) {
+        super(domLevel3, strict);
+        this.config = config;
+    }
+
     public MemberDomConfigProcessor(boolean domLevel3, Config config) {
         super(domLevel3);
         this.config = config;
@@ -261,87 +265,87 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private boolean handleNode(Node node, String nodeName) throws Exception {
-        if (INSTANCE_NAME.isEqual(nodeName)) {
+        if (matches(INSTANCE_NAME.getName(), nodeName)) {
             config.setInstanceName(getNonEmptyText(node, "Instance name"));
-        } else if (NETWORK.isEqual(nodeName)) {
+        } else if (matches(NETWORK.getName(), nodeName)) {
             handleNetwork(node);
-        } else if (IMPORT.isEqual(nodeName)) {
+        } else if (matches(IMPORT.getName(), nodeName)) {
             throw new HazelcastException("Non-expanded <import> element found");
-        } else if (CLUSTER_NAME.isEqual(nodeName)) {
+        } else if (matches(CLUSTER_NAME.getName(), nodeName)) {
             config.setClusterName(getNonEmptyText(node, "Clustername"));
-        } else if (PROPERTIES.isEqual(nodeName)) {
+        } else if (matches(PROPERTIES.getName(), nodeName)) {
             fillProperties(node, config.getProperties());
-        } else if (WAN_REPLICATION.isEqual(nodeName)) {
+        } else if (matches(WAN_REPLICATION.getName(), nodeName)) {
             handleWanReplication(node);
-        } else if (EXECUTOR_SERVICE.isEqual(nodeName)) {
+        } else if (matches(EXECUTOR_SERVICE.getName(), nodeName)) {
             handleExecutor(node);
-        } else if (DURABLE_EXECUTOR_SERVICE.isEqual(nodeName)) {
+        } else if (matches(DURABLE_EXECUTOR_SERVICE.getName(), nodeName)) {
             handleDurableExecutor(node);
-        } else if (SCHEDULED_EXECUTOR_SERVICE.isEqual(nodeName)) {
+        } else if (matches(SCHEDULED_EXECUTOR_SERVICE.getName(), nodeName)) {
             handleScheduledExecutor(node);
-        } else if (QUEUE.isEqual(nodeName)) {
+        } else if (matches(QUEUE.getName(), nodeName)) {
             handleQueue(node);
-        } else if (MAP.isEqual(nodeName)) {
+        } else if (matches(MAP.getName(), nodeName)) {
             handleMap(node);
-        } else if (MULTIMAP.isEqual(nodeName)) {
+        } else if (matches(MULTIMAP.getName(), nodeName)) {
             handleMultiMap(node);
-        } else if (REPLICATED_MAP.isEqual(nodeName)) {
+        } else if (matches(REPLICATED_MAP.getName(), nodeName)) {
             handleReplicatedMap(node);
-        } else if (LIST.isEqual(nodeName)) {
+        } else if (matches(LIST.getName(), nodeName)) {
             handleList(node);
-        } else if (SET.isEqual(nodeName)) {
+        } else if (matches(SET.getName(), nodeName)) {
             handleSet(node);
-        } else if (TOPIC.isEqual(nodeName)) {
+        } else if (matches(TOPIC.getName(), nodeName)) {
             handleTopic(node);
-        } else if (RELIABLE_TOPIC.isEqual(nodeName)) {
+        } else if (matches(RELIABLE_TOPIC.getName(), nodeName)) {
             handleReliableTopic(node);
-        } else if (CACHE.isEqual(nodeName)) {
+        } else if (matches(CACHE.getName(), nodeName)) {
             handleCache(node);
-        } else if (NATIVE_MEMORY.isEqual(nodeName)) {
+        } else if (matches(NATIVE_MEMORY.getName(), nodeName)) {
             fillNativeMemoryConfig(node, config.getNativeMemoryConfig());
-        } else if (RINGBUFFER.isEqual(nodeName)) {
+        } else if (matches(RINGBUFFER.getName(), nodeName)) {
             handleRingbuffer(node);
-        } else if (LISTENERS.isEqual(nodeName)) {
+        } else if (matches(LISTENERS.getName(), nodeName)) {
             handleListeners(node);
-        } else if (PARTITION_GROUP.isEqual(nodeName)) {
+        } else if (matches(PARTITION_GROUP.getName(), nodeName)) {
             handlePartitionGroup(node);
-        } else if (SERIALIZATION.isEqual(nodeName)) {
+        } else if (matches(SERIALIZATION.getName(), nodeName)) {
             handleSerialization(node);
-        } else if (SECURITY.isEqual(nodeName)) {
+        } else if (matches(SECURITY.getName(), nodeName)) {
             handleSecurity(node);
-        } else if (MEMBER_ATTRIBUTES.isEqual(nodeName)) {
+        } else if (matches(MEMBER_ATTRIBUTES.getName(), nodeName)) {
             handleMemberAttributes(node);
-        } else if (LICENSE_KEY.isEqual(nodeName)) {
+        } else if (matches(LICENSE_KEY.getName(), nodeName)) {
             config.setLicenseKey(getTextContent(node));
-        } else if (MANAGEMENT_CENTER.isEqual(nodeName)) {
+        } else if (matches(MANAGEMENT_CENTER.getName(), nodeName)) {
             handleManagementCenterConfig(node);
-        } else if (SPLIT_BRAIN_PROTECTION.isEqual(nodeName)) {
+        } else if (matches(SPLIT_BRAIN_PROTECTION.getName(), nodeName)) {
             handleSplitBrainProtection(node);
-        } else if (LITE_MEMBER.isEqual(nodeName)) {
+        } else if (matches(LITE_MEMBER.getName(), nodeName)) {
             handleLiteMember(node);
-        } else if (HOT_RESTART_PERSISTENCE.isEqual(nodeName)) {
+        } else if (matches(HOT_RESTART_PERSISTENCE.getName(), nodeName)) {
             handleHotRestartPersistence(node);
-        } else if (USER_CODE_DEPLOYMENT.isEqual(nodeName)) {
+        } else if (matches(USER_CODE_DEPLOYMENT.getName(), nodeName)) {
             handleUserCodeDeployment(node);
-        } else if (CARDINALITY_ESTIMATOR.isEqual(nodeName)) {
+        } else if (matches(CARDINALITY_ESTIMATOR.getName(), nodeName)) {
             handleCardinalityEstimator(node);
-        } else if (FLAKE_ID_GENERATOR.isEqual(nodeName)) {
+        } else if (matches(FLAKE_ID_GENERATOR.getName(), nodeName)) {
             handleFlakeIdGenerator(node);
-        } else if (CRDT_REPLICATION.isEqual(nodeName)) {
+        } else if (matches(CRDT_REPLICATION.getName(), nodeName)) {
             handleCRDTReplication(node);
-        } else if (PN_COUNTER.isEqual(nodeName)) {
+        } else if (matches(PN_COUNTER.getName(), nodeName)) {
             handlePNCounter(node);
-        } else if (ADVANCED_NETWORK.isEqual(nodeName)) {
+        } else if (matches(ADVANCED_NETWORK.getName(), nodeName)) {
             handleAdvancedNetwork(node);
-        } else if (CP_SUBSYSTEM.isEqual(nodeName)) {
+        } else if (matches(CP_SUBSYSTEM.getName(), nodeName)) {
             handleCPSubsystem(node);
-        } else if (AUDITLOG.isEqual(nodeName)) {
+        } else if (matches(AUDITLOG.getName(), nodeName)) {
             config.setAuditlogConfig(fillFactoryWithPropertiesConfig(node, new AuditlogConfig()));
-        } else if (METRICS.isEqual(nodeName)) {
+        } else if (matches(METRICS.getName(), nodeName)) {
             handleMetrics(node);
-        } else if (INSTANCE_TRACKING.isEqual(nodeName)) {
+        } else if (matches(INSTANCE_TRACKING.getName(), nodeName)) {
             handleInstanceTracking(node, config.getInstanceTrackingConfig());
-        } else if (SQL.isEqual(nodeName)) {
+        } else if (matches(SQL.getName(), nodeName)) {
             handleSql(node);
         } else {
             return true;
@@ -359,7 +363,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleUserCodeDeployment(Node dcRoot) {
         UserCodeDeploymentConfig dcConfig = new UserCodeDeploymentConfig();
-        Node attrEnabled = DomConfigHelper.getNamedItemNode(dcRoot, "enabled");
+        Node attrEnabled = getNamedItemNode(dcRoot, "enabled");
         boolean enabled = getBooleanValue(getTextContent(attrEnabled));
         dcConfig.setEnabled(enabled);
 
@@ -426,7 +430,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             throws Exception {
         EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
         handleViaReflection(encryptionAtRestRoot, hrConfig, encryptionAtRestConfig, "secure-store");
-        for (Node secureStore : childElementsWithName(encryptionAtRestRoot, "secure-store")) {
+        for (Node secureStore : childElementsWithName(encryptionAtRestRoot, "secure-store", strict)) {
             handleSecureStore(secureStore, encryptionAtRestConfig);
         }
         hrConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
@@ -526,7 +530,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleLiteMember(Node node) {
-        Node attrEnabled = DomConfigHelper.getNamedItemNode(node, "enabled");
+        Node attrEnabled = getNamedItemNode(node, "enabled");
         boolean liteMember = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
         config.setLiteMember(liteMember);
     }
@@ -539,7 +543,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleSplitBrainProtectionNode(Node node, SplitBrainProtectionConfig splitBrainProtectionConfig, String name) {
-        Node attrEnabled = DomConfigHelper.getNamedItemNode(node, "enabled");
+        Node attrEnabled = getNamedItemNode(node, "enabled");
         boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
         // probabilistic-split-brain-protection and recently-active-split-brain-protection
         // configs are constructed via SplitBrainProtectionConfigBuilder
@@ -632,7 +636,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleWanReplication(Node node) {
-        Node attName = DomConfigHelper.getNamedItemNode(node, "name");
+        Node attName = getNamedItemNode(node, "name");
         String name = getTextContent(attName);
 
         WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
@@ -1004,7 +1008,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleScheduledExecutor(Node node) {
         ScheduledExecutorConfig scheduledExecutorConfig = new ScheduledExecutorConfig();
-        scheduledExecutorConfig.setName(getTextContent(DomConfigHelper.getNamedItemNode(node, "name")));
+        scheduledExecutorConfig.setName(getTextContent(getNamedItemNode(node, "name")));
 
         handleScheduledExecutorNode(node, scheduledExecutorConfig);
     }
@@ -1034,7 +1038,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleCardinalityEstimator(Node node) {
         CardinalityEstimatorConfig cardinalityEstimatorConfig = new CardinalityEstimatorConfig();
-        cardinalityEstimatorConfig.setName(getTextContent(DomConfigHelper.getNamedItemNode(node, "name")));
+        cardinalityEstimatorConfig.setName(getTextContent(getNamedItemNode(node, "name")));
 
         handleCardinalityEstimatorNode(node, cardinalityEstimatorConfig);
     }
@@ -1146,7 +1150,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         attachChildConfig(parent, child);
     }
 
-    private static boolean excludeNode(Node n, String... nodeExclusions) {
+    private boolean excludeNode(Node n, String... nodeExclusions) {
         if (nodeExclusions.length > 0) {
             String name = cleanNodeName(n);
             for (String exclusion : nodeExclusions) {
@@ -1158,7 +1162,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         return false;
     }
 
-    private static void invokeSetter(Object target, Node node, String argument) {
+    private void invokeSetter(Object target, Node node, String argument) {
         Method method = getMethod(target, "set" + toPropertyName(cleanNodeName(node)), true);
         if (method == null) {
             throw new InvalidConfigurationException("Invalid element/attribute name in the configuration: "
@@ -1215,7 +1219,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         return null;
     }
 
-    private static String toPropertyName(String element) {
+    private String toPropertyName(String element) {
         // handle reflection incompatible reference properties
         String refPropertyName = handleRefProperty(element);
         if (refPropertyName != null) {
@@ -1238,7 +1242,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         return sb.toString();
     }
 
-    private static String handleRefProperty(String element) {
+    private String handleRefProperty(String element) {
         if (matches(element, "split-brain-protection-ref")) {
             return "SplitBrainProtectionName";
         }
@@ -1286,7 +1290,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     void handleDiscoveryNodeFilter(Node node, DiscoveryConfig discoveryConfig) {
-        Node att = DomConfigHelper.getNamedItemNode(node, "class");
+        Node att = getNamedItemNode(node, "class");
         if (att != null) {
             discoveryConfig.setNodeFilterClass(getTextContent(att).trim());
         }
@@ -1514,7 +1518,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleQueue(Node node) {
-        Node attName = DomConfigHelper.getNamedItemNode(node, "name");
+        Node attName = getNamedItemNode(node, "name");
         String name = getTextContent(attName);
         QueueConfig qConfig = new QueueConfig();
         qConfig.setName(name);
@@ -1559,7 +1563,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node listenerNode : childElements(n)) {
             if (matches("item-listener", cleanNodeName(listenerNode))) {
                 boolean incValue = getBooleanValue(getTextContent(
-                  DomConfigHelper.getNamedItemNode(listenerNode, "include-value")));
+                  getNamedItemNode(listenerNode, "include-value")));
                 String listenerClass = getTextContent(listenerNode);
                 configAddFunction.apply(new ItemListenerConfig(listenerClass, incValue));
             }
@@ -1567,7 +1571,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleList(Node node) {
-        Node attName = DomConfigHelper.getNamedItemNode(node, "name");
+        Node attName = getNamedItemNode(node, "name");
         String name = getTextContent(attName);
         ListConfig lConfig = new ListConfig();
         lConfig.setName(name);
@@ -1603,7 +1607,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleSet(Node node) {
-        Node attName = DomConfigHelper.getNamedItemNode(node, "name");
+        Node attName = getNamedItemNode(node, "name");
         String name = getTextContent(attName);
         SetConfig sConfig = new SetConfig();
         sConfig.setName(name);
@@ -1638,7 +1642,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleMultiMap(Node node) {
-        Node attName = DomConfigHelper.getNamedItemNode(node, "name");
+        Node attName = getNamedItemNode(node, "name");
         String name = getTextContent(attName);
         MultiMapConfig multiMapConfig = new MultiMapConfig();
         multiMapConfig.setName(name);
@@ -1680,9 +1684,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node listenerNode : childElements(n)) {
             if (matches("entry-listener", cleanNodeName(listenerNode))) {
                 boolean incValue = getBooleanValue(getTextContent(
-                  DomConfigHelper.getNamedItemNode(listenerNode, "include-value")));
+                  getNamedItemNode(listenerNode, "include-value")));
                 boolean local = getBooleanValue(getTextContent(
-                  DomConfigHelper.getNamedItemNode(listenerNode, "local")));
+                  getNamedItemNode(listenerNode, "local")));
                 String listenerClass = getTextContent(listenerNode);
                 configAddFunction.apply(new EntryListenerConfig(listenerClass, local, incValue));
             }
@@ -1690,7 +1694,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleReplicatedMap(Node node) {
-        Node attName = DomConfigHelper.getNamedItemNode(node, "name");
+        Node attName = getNamedItemNode(node, "name");
         String name = getTextContent(attName);
         final ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig();
         replicatedMapConfig.setName(name);
@@ -1831,7 +1835,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     private HotRestartConfig createHotRestartConfig(Node node) {
         HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
-        Node attrEnabled = DomConfigHelper.getNamedItemNode(node, "enabled");
+        Node attrEnabled = getNamedItemNode(node, "enabled");
         boolean enabled = getBooleanValue(getTextContent(attrEnabled));
         hotRestartConfig.setEnabled(enabled);
 
@@ -1982,10 +1986,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     .setSize(MapConfig.DEFAULT_MAX_SIZE);
         }
 
-        Node size = DomConfigHelper.getNamedItemNode(node, "size");
-        Node maxSizePolicy = DomConfigHelper.getNamedItemNode(node, "max-size-policy");
-        Node evictionPolicy = DomConfigHelper.getNamedItemNode(node, "eviction-policy");
-        Node comparatorClassName = DomConfigHelper.getNamedItemNode(node, "comparator-class-name");
+        Node size = getNamedItemNode(node, "size");
+        Node maxSizePolicy = getNamedItemNode(node, "max-size-policy");
+        Node evictionPolicy = getNamedItemNode(node, "eviction-policy");
+        Node comparatorClassName = getNamedItemNode(node, "comparator-class-name");
 
         if (size != null) {
             evictionConfig.setSize(parseInt(getTextContent(size)));
@@ -2086,9 +2090,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         listenerConfig.setOldValueRequired(getBooleanValue(getTextContent(
-          DomConfigHelper.getNamedItemNode(listenerNode, "old-value-required"))));
+          getNamedItemNode(listenerNode, "old-value-required"))));
         listenerConfig.setSynchronous(getBooleanValue(getTextContent(
-          DomConfigHelper.getNamedItemNode(listenerNode, "synchronous"))));
+          getNamedItemNode(listenerNode, "synchronous"))));
         cacheSimpleConfig.addEntryListenerConfig(listenerConfig);
     }
 
@@ -2117,7 +2121,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     protected void mapIndexesHandle(Node n, MapConfig mapConfig) {
         for (Node indexNode : childElements(n)) {
             if (matches("index", cleanNodeName(indexNode))) {
-                IndexConfig indexConfig = IndexUtils.getIndexConfigFromXml(indexNode, domLevel3);
+                IndexConfig indexConfig = IndexUtils.getIndexConfigFromXml(indexNode, domLevel3, strict);
 
                 mapConfig.addIndexConfig(indexConfig);
             }
@@ -2127,7 +2131,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     protected void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
         for (Node indexNode : childElements(n)) {
             if (matches("index", cleanNodeName(indexNode))) {
-                IndexConfig indexConfig = IndexUtils.getIndexConfigFromXml(indexNode, domLevel3);
+                IndexConfig indexConfig = IndexUtils.getIndexConfigFromXml(indexNode, domLevel3, strict);
 
                 queryCacheConfig.addIndexConfig(indexConfig);
             }
@@ -2138,7 +2142,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node extractorNode : childElements(n)) {
             if (matches("attribute", cleanNodeName(extractorNode))) {
                 String extractor = getTextContent(
-                  DomConfigHelper.getNamedItemNode(extractorNode, "extractor-class-name"));
+                  getNamedItemNode(extractorNode, "extractor-class-name"));
                 String name = getTextContent(extractorNode);
                 mapConfig.addAttributeConfig(new AttributeConfig(name, extractor));
             }
@@ -2158,7 +2162,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node queryCacheNode : childElements(n)) {
             if (matches("query-cache", cleanNodeName(queryCacheNode))) {
                 String cacheName = getTextContent(
-                  DomConfigHelper.getNamedItemNode(queryCacheNode, "name"));
+                  getNamedItemNode(queryCacheNode, "name"));
                 QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
                 handleMapQueryCacheNode(mapConfig, queryCacheNode, queryCacheConfig);
             }
@@ -2209,7 +2213,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void queryCachePredicateHandler(Node childNode, QueryCacheConfig queryCacheConfig) {
-        String predicateType = getTextContent(DomConfigHelper.getNamedItemNode(childNode, "type"));
+        String predicateType = getTextContent(getNamedItemNode(childNode, "type"));
         String textContent = getTextContent(childNode);
         PredicateConfig predicateConfig = new PredicateConfig();
         if (matches("class-name", predicateType)) {
@@ -2331,7 +2335,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     private void handleMemberAddressProvider(Node node, boolean advancedNetworkConfig) {
         MemberAddressProviderConfig memberAddressProviderConfig = memberAddressProviderConfig(advancedNetworkConfig);
 
-        Node enabledNode = DomConfigHelper.getNamedItemNode(node, "enabled");
+        Node enabledNode = getNamedItemNode(node, "enabled");
         boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
         memberAddressProviderConfig.setEnabled(enabled);
 
@@ -2364,7 +2368,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 throw new IllegalStateException("Unsupported child under failure-detector");
             }
 
-            Node enabledNode = DomConfigHelper.getNamedItemNode(child, "enabled");
+            Node enabledNode = getNamedItemNode(child, "enabled");
             boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
             IcmpFailureDetectorConfig icmpFailureDetectorConfig = new IcmpFailureDetectorConfig();
 
@@ -2411,7 +2415,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleTopic(Node node) {
-        Node attName = DomConfigHelper.getNamedItemNode(node, "name");
+        Node attName = getNamedItemNode(node, "name");
         String name = getTextContent(attName);
         TopicConfig tConfig = new TopicConfig();
         tConfig.setName(name);
@@ -2438,7 +2442,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleReliableTopic(Node node) {
-        Node attName = DomConfigHelper.getNamedItemNode(node, "name");
+        Node attName = getNamedItemNode(node, "name");
         String name = getTextContent(attName);
         ReliableTopicConfig topicConfig = new ReliableTopicConfig(name);
         handleReliableTopicNode(node, topicConfig);
@@ -2474,7 +2478,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleRingbuffer(Node node) {
-        Node attName = DomConfigHelper.getNamedItemNode(node, "name");
+        Node attName = getNamedItemNode(node, "name");
         String name = getTextContent(attName);
         RingbufferConfig rbConfig = new RingbufferConfig(name);
         handleRingBufferNode(node, rbConfig);
@@ -2522,10 +2526,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handlePartitionGroup(Node node) {
-        Node enabledNode = DomConfigHelper.getNamedItemNode(node, "enabled");
+        Node enabledNode = getNamedItemNode(node, "enabled");
         boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
         config.getPartitionGroupConfig().setEnabled(enabled);
-        Node groupTypeNode = DomConfigHelper.getNamedItemNode(node, "group-type");
+        Node groupTypeNode = getNamedItemNode(node, "group-type");
         MemberGroupType groupType = groupTypeNode != null
                 ? PartitionGroupConfig.MemberGroupType.valueOf(upperCaseInternal(getTextContent(groupTypeNode)))
                 : PartitionGroupConfig.MemberGroupType.PER_MEMBER;
@@ -2556,7 +2560,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     private void handleManagementCenterConfig(Node node) {
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
 
-        Node scriptingEnabledNode = DomConfigHelper.getNamedItemNode(node, "scripting-enabled");
+        Node scriptingEnabledNode = getNamedItemNode(node, "scripting-enabled");
         if (scriptingEnabledNode != null) {
             managementCenterConfig.setScriptingEnabled(getBooleanValue(getTextContent(scriptingEnabledNode)));
         }
@@ -2567,11 +2571,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleTrustedInterfaces(managementCenterConfig, n);
             }
         }
-
     }
 
     private void handleSecurity(Node node) {
-        Node enabledNode = DomConfigHelper.getNamedItemNode(node, "enabled");
+        Node enabledNode = getNamedItemNode(node, "enabled");
         boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
         config.getSecurityConfig().setEnabled(enabled);
         for (Node child : childElements(node)) {
@@ -2612,7 +2615,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     protected void handleSecurityInterceptorsChild(SecurityConfig cfg, Node child) {
         String nodeName = cleanNodeName(child);
         if (matches("interceptor", nodeName)) {
-            Node classNameNode = DomConfigHelper.getNamedItemNode(child, "class-name");
+            Node classNameNode = getNamedItemNode(child, "class-name");
             String className = getTextContent(classNameNode);
             cfg.addSecurityInterceptorConfig(new SecurityInterceptorConfig(className));
         }
@@ -2625,7 +2628,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 continue;
             }
             String value = getTextContent(n);
-            String attributeName = getTextContent(DomConfigHelper.getNamedItemNode(n, "name"));
+            String attributeName = getTextContent(getNamedItemNode(n, "name"));
             handleMemberAttributesNode(n, attributeName, value);
         }
     }
@@ -2635,7 +2638,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handlePermissionPolicy(Node node) {
-        Node classNameNode = DomConfigHelper.getNamedItemNode(node, "class-name");
+        Node classNameNode = getNamedItemNode(node, "class-name");
         String className = getTextContent(classNameNode);
         SecurityConfig cfg = config.getSecurityConfig();
         PermissionPolicyConfig policyConfig = new PermissionPolicyConfig(className);
@@ -2668,9 +2671,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     void handleSecurityPermission(Node node, PermissionConfig.PermissionType type) {
         SecurityConfig cfg = config.getSecurityConfig();
-        Node nameNode = DomConfigHelper.getNamedItemNode(node, "name");
+        Node nameNode = getNamedItemNode(node, "name");
         String name = nameNode != null ? getTextContent(nameNode) : "*";
-        Node principalNode = DomConfigHelper.getNamedItemNode(node, "principal");
+        Node principalNode = getNamedItemNode(node, "principal");
         String principal = principalNode != null ? getTextContent(principalNode) : "*";
         PermissionConfig permConfig = new PermissionConfig(type, name, principal);
         cfg.addClientPermissionConfig(permConfig);

@@ -109,8 +109,14 @@ import static java.lang.Integer.parseInt;
                    "checkstyle:classfanoutcomplexity",
                    "checkstyle:classdataabstractioncoupling"})
 public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
+
+
     public YamlMemberDomConfigProcessor(boolean domLevel3, Config config) {
         super(domLevel3, config);
+    }
+
+    public YamlMemberDomConfigProcessor(boolean domLevel3, Config config, boolean strict) {
+        super(domLevel3, config, strict);
     }
 
     @Override
@@ -130,10 +136,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         Iterable<Node> nodes = childElements(node);
         for (Node child : nodes) {
             String nodeName = cleanNodeName(child);
-            if (ConfigUtils.matches("on-join-operation", nodeName)) {
+            if (matches("on-join-operation", nodeName)) {
                 continue;
             }
-            nodeName = ConfigUtils.matches("all", nodeName) ? nodeName + "-permissions" : nodeName + "-permission";
+            nodeName = matches("all", nodeName) ? nodeName + "-permissions" : nodeName + "-permission";
             PermissionType type = PermissionConfig.PermissionType.getType(nodeName);
             if (type == null) {
                 throw new InvalidConfigurationException("Security permission type is not valid " + nodeName);
@@ -191,11 +197,11 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
     @Override
     protected void handleWanReplicationChild(WanReplicationConfig wanReplicationConfig, Node nodeTarget, String nodeName) {
-        if (ConfigUtils.matches("batch-publisher", nodeName)) {
+        if (matches("batch-publisher", nodeName)) {
             for (Node publisherNode : childElements(nodeTarget)) {
                 WanBatchPublisherConfig publisherConfig = new WanBatchPublisherConfig();
                 String clusterNameOrPublisherId = publisherNode.getNodeName();
-                Node clusterNameAttr = DomConfigHelper.getNamedItemNode(publisherNode, "cluster-name");
+                Node clusterNameAttr = getNamedItemNode(publisherNode, "cluster-name");
 
                 // the publisher's key may mean either the publisher-id or the
                 // cluster-name depending on whether the cluster-name is explicitly defined
@@ -206,13 +212,13 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
                 handleBatchWanPublisherNode(wanReplicationConfig, publisherNode, publisherConfig);
             }
-        } else if (ConfigUtils.matches("custom-publisher", nodeName)) {
+        } else if (matches("custom-publisher", nodeName)) {
             for (Node publisherNode : childElements(nodeTarget)) {
                 WanCustomPublisherConfig publisherConfig = new WanCustomPublisherConfig();
                 publisherConfig.setPublisherId(publisherNode.getNodeName());
                 handleCustomWanPublisherNode(wanReplicationConfig, publisherNode, publisherConfig);
             }
-        } else if (ConfigUtils.matches("consumer", nodeName)) {
+        } else if (matches("consumer", nodeName)) {
             handleWanConsumerNode(wanReplicationConfig, nodeTarget);
         }
     }
@@ -225,12 +231,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             Node att = attributes.item(a);
             String value = getTextContent(att).trim();
 
-            if (ConfigUtils.matches("port", att.getNodeName())) {
+            if (matches("port", att.getNodeName())) {
                 int portCount = parseInt(value);
                 networkConfig.setPort(portCount);
-            } else if (ConfigUtils.matches("auto-increment", att.getNodeName())) {
+            } else if (matches("auto-increment", att.getNodeName())) {
                 networkConfig.setPortAutoIncrement(getBooleanValue(value));
-            } else if (ConfigUtils.matches("port-count", att.getNodeName())) {
+            } else if (matches("port-count", att.getNodeName())) {
                 int portCount = parseInt(value);
                 networkConfig.setPortCount(portCount);
             }
@@ -410,7 +416,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void mapIndexesHandle(Node n, MapConfig mapConfig) {
         for (Node indexNode : childElements(n)) {
-            IndexConfig indexConfig = IndexUtils.getIndexConfigFromYaml(indexNode, domLevel3);
+            IndexConfig indexConfig = IndexUtils.getIndexConfigFromYaml(indexNode, domLevel3, strict);
 
             mapConfig.addIndexConfig(indexConfig);
         }
@@ -419,8 +425,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void attributesHandle(Node n, MapConfig mapConfig) {
         for (Node extractorNode : childElements(n)) {
-            NamedNodeMap attrs = extractorNode.getAttributes();
-            String extractor = getTextContent(DomConfigHelper.getNamedItemNode(extractorNode, "extractor-class-name"));
+            String extractor = getTextContent(getNamedItemNode(extractorNode, "extractor-class-name"));
             String name = extractorNode.getNodeName();
             mapConfig.addAttributeConfig(new AttributeConfig(name, extractor));
         }
@@ -437,8 +442,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
     @Override
     protected void queryCachePredicateHandler(Node childNode, QueryCacheConfig queryCacheConfig) {
-        Node classNameNode = DomConfigHelper.getNamedItemNode(childNode, "class-name");
-        Node sqlNode = DomConfigHelper.getNamedItemNode(childNode, "sql");
+        Node classNameNode = getNamedItemNode(childNode, "class-name");
+        Node sqlNode = getNamedItemNode(childNode, "sql");
 
         if (classNameNode != null && sqlNode != null) {
             throw new InvalidConfigurationException("Both class-name and sql is defined for the predicate of map "
@@ -462,7 +467,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
         for (Node indexNode : childElements(n)) {
-            IndexConfig indexConfig = IndexUtils.getIndexConfigFromYaml(indexNode, domLevel3);
+            IndexConfig indexConfig = IndexUtils.getIndexConfigFromYaml(indexNode, domLevel3, strict);
 
             queryCacheConfig.addIndexConfig(indexConfig);
         }
@@ -482,7 +487,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected MergePolicyConfig createMergePolicyConfig(Node node) {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-        String policyString = getTextContent(DomConfigHelper.getNamedItemNode(node, "class-name"));
+        String policyString = getTextContent(getNamedItemNode(node, "class-name"));
         mergePolicyConfig.setPolicy(policyString);
         final String att = getAttribute(node, "batch-size");
         if (att != null) {
@@ -517,11 +522,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleItemListeners(Node n, Function<ItemListenerConfig, Void> configAddFunction) {
         for (Node listenerNode : childElements(n)) {
-            NamedNodeMap attrs = listenerNode.getAttributes();
             boolean incValue = getBooleanValue(getTextContent(
-              DomConfigHelper.getNamedItemNode(listenerNode, "include-value")));
+              getNamedItemNode(listenerNode, "include-value")));
             String listenerClass = getTextContent(
-              DomConfigHelper.getNamedItemNode(listenerNode, "class-name"));
+              getNamedItemNode(listenerNode, "class-name"));
             configAddFunction.apply(new ItemListenerConfig(listenerClass, incValue));
         }
     }
@@ -530,11 +534,11 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     protected void handleEntryListeners(Node n, Function<EntryListenerConfig, Void> configAddFunction) {
         for (Node listenerNode : childElements(n)) {
             boolean incValue = getBooleanValue(getTextContent(
-              DomConfigHelper.getNamedItemNode(listenerNode, "include-value")));
+              getNamedItemNode(listenerNode, "include-value")));
             boolean local = getBooleanValue(getTextContent(
-              DomConfigHelper.getNamedItemNode(listenerNode, "local")));
+              getNamedItemNode(listenerNode, "local")));
             String listenerClass = getTextContent(
-              DomConfigHelper.getNamedItemNode(listenerNode, "class-name"));
+              getNamedItemNode(listenerNode, "class-name"));
             configAddFunction.apply(new EntryListenerConfig(listenerClass, local, incValue));
         }
     }
@@ -580,13 +584,13 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleDiscoveryStrategiesChild(DiscoveryConfig discoveryConfig, Node child) {
         String name = cleanNodeName(child);
-        if (ConfigUtils.matches("discovery-strategies", name)) {
+        if (matches("discovery-strategies", name)) {
             NodeList strategies = child.getChildNodes();
             for (int i = 0; i < strategies.getLength(); i++) {
                 Node strategy = strategies.item(i);
                 handleDiscoveryStrategy(strategy, discoveryConfig);
             }
-        } else if (ConfigUtils.matches("node-filter", name)) {
+        } else if (matches("node-filter", name)) {
             handleDiscoveryNodeFilter(child, discoveryConfig);
         }
     }
@@ -596,15 +600,15 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         SerializationConfig serializationConfig = new SerializationConfig();
         for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
-            if (ConfigUtils.matches("portable-version", name)) {
+            if (matches("portable-version", name)) {
                 String value = getTextContent(child);
                 serializationConfig.setPortableVersion(getIntegerValue(name, value));
-            } else if (ConfigUtils.matches("check-class-def-errors", name)) {
+            } else if (matches("check-class-def-errors", name)) {
                 String value = getTextContent(child);
                 serializationConfig.setCheckClassDefErrors(getBooleanValue(value));
-            } else if (ConfigUtils.matches("use-native-byte-order", name)) {
+            } else if (matches("use-native-byte-order", name)) {
                 serializationConfig.setUseNativeByteOrder(getBooleanValue(getTextContent(child)));
-            } else if (ConfigUtils.matches("byte-order", name)) {
+            } else if (matches("byte-order", name)) {
                 String value = getTextContent(child);
                 ByteOrder byteOrder = null;
                 if (ByteOrder.BIG_ENDIAN.toString().equals(value)) {
@@ -613,21 +617,21 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                     byteOrder = ByteOrder.LITTLE_ENDIAN;
                 }
                 serializationConfig.setByteOrder(byteOrder != null ? byteOrder : ByteOrder.BIG_ENDIAN);
-            } else if (ConfigUtils.matches("enable-compression", name)) {
+            } else if (matches("enable-compression", name)) {
                 serializationConfig.setEnableCompression(getBooleanValue(getTextContent(child)));
-            } else if (ConfigUtils.matches("enable-shared-object", name)) {
+            } else if (matches("enable-shared-object", name)) {
                 serializationConfig.setEnableSharedObject(getBooleanValue(getTextContent(child)));
-            } else if (ConfigUtils.matches("allow-unsafe", name)) {
+            } else if (matches("allow-unsafe", name)) {
                 serializationConfig.setAllowUnsafe(getBooleanValue(getTextContent(child)));
-            } else if (ConfigUtils.matches("data-serializable-factories", name)) {
+            } else if (matches("data-serializable-factories", name)) {
                 fillDataSerializableFactories(child, serializationConfig);
-            } else if (ConfigUtils.matches("portable-factories", name)) {
+            } else if (matches("portable-factories", name)) {
                 fillPortableFactories(child, serializationConfig);
-            } else if (ConfigUtils.matches("serializers", name)) {
+            } else if (matches("serializers", name)) {
                 fillSerializers(child, serializationConfig);
-            } else if (ConfigUtils.matches("global-serializer", name)) {
+            } else if (matches("global-serializer", name)) {
                 fillGlobalSerializer(child, serializationConfig);
-            } else if (ConfigUtils.matches("java-serialization-filter", name)) {
+            } else if (matches("java-serialization-filter", name)) {
                 fillJavaSerializationFilter(child, serializationConfig);
             }
         }
@@ -660,8 +664,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void fillDataSerializableFactories(Node node, SerializationConfig serializationConfig) {
         for (Node child : childElements(node)) {
-            final Node factoryIdNode = DomConfigHelper.getNamedItemNode(child, "factory-id");
-            final Node classNameNode = DomConfigHelper.getNamedItemNode(child, "class-name");
+            final Node factoryIdNode = getNamedItemNode(child, "factory-id");
+            final Node classNameNode = getNamedItemNode(child, "class-name");
             if (factoryIdNode == null) {
                 throw new IllegalArgumentException(
                         "'factory-id' attribute of 'data-serializable-factory' is required!");
@@ -679,8 +683,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void fillPortableFactories(Node node, SerializationConfig serializationConfig) {
         for (Node child : childElements(node)) {
-            final Node factoryIdNode = DomConfigHelper.getNamedItemNode(child, "factory-id");
-            final Node classNameNode = DomConfigHelper.getNamedItemNode(child, "class-name");
+            final Node factoryIdNode = getNamedItemNode(child, "factory-id");
+            final Node classNameNode = getNamedItemNode(child, "class-name");
             if (factoryIdNode == null) {
                 throw new IllegalArgumentException("'factory-id' attribute of 'portable-factory' is required!");
             }
@@ -698,15 +702,15 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         ClassFilter list = new ClassFilter();
         for (Node typeNode : childElements(node)) {
             final String name = cleanNodeName(typeNode);
-            if (ConfigUtils.matches("class", name)) {
+            if (matches("class", name)) {
                 for (Node classNode : childElements(typeNode)) {
                     list.addClasses(getTextContent(classNode));
                 }
-            } else if (ConfigUtils.matches("package", name)) {
+            } else if (matches("package", name)) {
                 for (Node packageNode : childElements(typeNode)) {
                     list.addPackages(getTextContent(packageNode));
                 }
-            } else if (ConfigUtils.matches("prefix", name)) {
+            } else if (matches("prefix", name)) {
                 for (Node prefixNode : childElements(typeNode)) {
                     list.addPrefixes(getTextContent(prefixNode));
                 }
@@ -718,7 +722,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleMemberAttributes(Node node) {
         for (Node n : childElements(node)) {
-            String attributeValue = getTextContent(DomConfigHelper.getNamedItemNode(n, "value"));
+            String attributeValue = getTextContent(getNamedItemNode(n, "value"));
             String attributeName = n.getNodeName();
             handleMemberAttributesNode(n, attributeName, attributeValue);
         }
@@ -744,7 +748,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleInterfacesList(Node node, InterfacesConfig interfaces) {
         for (Node interfacesNode : childElements(node)) {
-            if (ConfigUtils.matches("interfaces", lowerCaseInternal(cleanNodeName(interfacesNode)))) {
+            if (matches("interfaces", lowerCaseInternal(cleanNodeName(interfacesNode)))) {
                 for (Node interfaceNode : childElements(interfacesNode)) {
                     String value = getTextContent(interfaceNode).trim();
                     interfaces.addInterface(value);
@@ -775,7 +779,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     protected void handleRestApiEndpointGroups(Node node) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if (ConfigUtils.matches("endpoint-groups", nodeName)) {
+            if (matches("endpoint-groups", nodeName)) {
                 for (Node groupNode : childElements(child)) {
                     String groupName = groupNode.getNodeName();
                     handleEndpointGroup(groupNode, groupName);
@@ -791,7 +795,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
     @Override
     protected void handlePort(Node node, ServerSocketEndpointConfig endpointConfig) {
-        Node portNode = DomConfigHelper.getNamedItemNode(node, "port");
+        Node portNode = getNamedItemNode(node, "port");
         if (portNode != null) {
             String portStr = portNode.getNodeValue().trim();
             if (portStr.length() > 0) {
@@ -829,9 +833,9 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             for (Node subChild : childElements(child)) {
                 String nodeName = cleanNodeName(subChild);
                 String value = getTextContent(subChild).trim();
-                if (ConfigUtils.matches("jdk-compatible", nodeName)) {
+                if (matches("jdk-compatible", nodeName)) {
                     semaphoreConfig.setJDKCompatible(Boolean.parseBoolean(value));
-                } else if (ConfigUtils.matches("initial-permits", nodeName)) {
+                } else if (matches("initial-permits", nodeName)) {
                     semaphoreConfig.setInitialPermits(Integer.parseInt(value));
                 }
             }
@@ -847,7 +851,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             for (Node subChild : childElements(child)) {
                 String nodeName = cleanNodeName(subChild);
                 String value = getTextContent(subChild).trim();
-                if (ConfigUtils.matches("lock-acquire-limit", nodeName)) {
+                if (matches("lock-acquire-limit", nodeName)) {
                     lockConfig.setLockAcquireLimit(Integer.parseInt(value));
                 }
             }
@@ -882,10 +886,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     protected void handlePersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig, Node n) {
         for (Node dirsNode : childElements(n)) {
             String nodeName = cleanNodeName(dirsNode);
-            if (ConfigUtils.matches("directories", nodeName)) {
+            if (matches("directories", nodeName)) {
                 for (Node dirNode : childElements(dirsNode)) {
-                    String directory = getTextContent(DomConfigHelper.getNamedItemNode(dirNode, "directory"));
-                    String numaNodeIdStr = getTextContent(DomConfigHelper.getNamedItemNode(dirNode, "numa-node"));
+                    String directory = getTextContent(getNamedItemNode(dirNode, "directory"));
+                    String numaNodeIdStr = getTextContent(getNamedItemNode(dirNode, "numa-node"));
                     if (!StringUtil.isNullOrEmptyAfterTrim(numaNodeIdStr)) {
                         int numaNodeId = getIntegerValue("numa-node", numaNodeIdStr);
                         persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory, numaNodeId));

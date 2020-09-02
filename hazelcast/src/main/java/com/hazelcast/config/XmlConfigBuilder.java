@@ -174,7 +174,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements Config
 
     private void checkRootElement(Element root) {
         String rootNodeName = root.getNodeName();
-        if (!ConfigSections.HAZELCAST.isEqual(rootNodeName)) {
+        if (!ConfigSections.HAZELCAST.getName().equals(rootNodeName)) {
             throw new InvalidConfigurationException("Invalid root element in xml configuration!"
                     + " Expected: <" + ConfigSections.HAZELCAST.getName() + ">, Actual: <" + rootNodeName + ">.");
         }

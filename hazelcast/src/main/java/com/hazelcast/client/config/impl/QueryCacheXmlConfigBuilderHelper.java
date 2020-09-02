@@ -81,7 +81,7 @@ final class QueryCacheXmlConfigBuilderHelper extends AbstractQueryCacheConfigBui
     protected void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
         for (Node indexNode : childElements(n)) {
             if ("index".equals(cleanNodeName(indexNode))) {
-                IndexConfig indexConfig = IndexUtils.getIndexConfigFromXml(indexNode, domLevel3);
+                IndexConfig indexConfig = IndexUtils.getIndexConfigFromXml(indexNode, domLevel3, strict);
 
                 queryCacheConfig.addIndexConfig(indexConfig);
             }
