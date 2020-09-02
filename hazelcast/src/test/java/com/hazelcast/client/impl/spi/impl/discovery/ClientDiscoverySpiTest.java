@@ -66,7 +66,6 @@ import javax.xml.validation.Validator;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -235,12 +234,14 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
     public void testClientCanConnect_afterDiscoveryStrategyThrowsException() {
         Config config = new Config();
         config.getNetworkConfig().setPort(50001);
-        Hazelcast.newHazelcastInstance(config);
+
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        Address address = instance.getCluster().getLocalMember().getAddress();
         ClientConfig clientConfig = new ClientConfig();
 
         clientConfig.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
         DiscoveryConfig discoveryConfig = clientConfig.getNetworkConfig().getDiscoveryConfig();
-        DiscoveryStrategyFactory factory = new ExceptionThrowingDiscoveryStrategyFactory();
+        DiscoveryStrategyFactory factory = new ExceptionThrowingDiscoveryStrategyFactory(address);
         DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.emptyMap());
         discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
 
@@ -453,6 +454,11 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
     private static class FirstCallExceptionThrowingDiscoveryStrategy implements DiscoveryStrategy {
 
         AtomicBoolean firstCall = new AtomicBoolean(true);
+        private final Address address;
+
+        private FirstCallExceptionThrowingDiscoveryStrategy(Address address) {
+            this.address = address;
+        }
 
         @Override
         public void start() {
@@ -463,14 +469,9 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
             if (firstCall.compareAndSet(true, false)) {
                 throw new RuntimeException();
             }
-            try {
-                List<DiscoveryNode> discoveryNodes = new ArrayList<DiscoveryNode>(1);
-                Address privateAddress = new Address("127.0.0.1", 50001);
-                discoveryNodes.add(new SimpleDiscoveryNode(privateAddress));
-                return discoveryNodes;
-            } catch (UnknownHostException e) {
-                throw new RuntimeException(e);
-            }
+            List<DiscoveryNode> discoveryNodes = new ArrayList<DiscoveryNode>(1);
+            discoveryNodes.add(new SimpleDiscoveryNode(address));
+            return discoveryNodes;
         }
 
         @Override
@@ -490,7 +491,11 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
 
     public static class ExceptionThrowingDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
 
-        public ExceptionThrowingDiscoveryStrategyFactory() {
+        private final Address address;
+
+        public ExceptionThrowingDiscoveryStrategyFactory(Address address) {
+
+            this.address = address;
         }
 
         @Override
@@ -501,7 +506,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         @Override
         public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
                                                       Map<String, Comparable> properties) {
-            return new FirstCallExceptionThrowingDiscoveryStrategy();
+            return new FirstCallExceptionThrowingDiscoveryStrategy(address);
         }
 
         @Override
