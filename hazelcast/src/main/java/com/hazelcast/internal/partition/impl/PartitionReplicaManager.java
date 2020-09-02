@@ -26,6 +26,7 @@ import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequest;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.services.ServiceNamespaceAware;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
@@ -545,6 +546,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
             if (!node.isRunning() || !node.getNodeExtension().isStartCompleted()
                     || !partitionService.areMigrationTasksAllowed()) {
+                scheduleNextRun(initialStartTimeInNanos, null, UNSET);
                 return;
             }
 
@@ -575,7 +577,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
             ExecutionService executionService = nodeEngine.getExecutionService();
 
-            if (localPartitionIds.isEmpty()) {
+            if (CollectionUtil.isEmpty(localPartitionIds)) {
                 // we have finished checking of all local partitions, time to decide when to commence next run.
                 long elapsedSeconds = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - initialStartTimeInNanos);
                 long delayBeforeNextRunSeconds = Math.max(1, backupSyncCheckIntervalSeconds - elapsedSeconds);
