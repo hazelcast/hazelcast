@@ -203,5 +203,5 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     ExecutorStats getOffloadedEntryProcessorExecutorStats();
 
-    Semaphore getLoadedKeyLimiter();
+    Semaphore getNodeWideLoadedKeyLimiter();
 }

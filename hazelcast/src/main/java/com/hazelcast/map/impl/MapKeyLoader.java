@@ -75,10 +75,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class MapKeyLoader {
 
-    public static final String PROP_LOADED_KEY_LIMITER = "hazelcast.map.max.loaded.key";
-    public static final int DEFAULT_LOADED_KEY_LIMIT = 50000;
-    public static final HazelcastProperty LOADED_KEY_LIMITER
-            = new HazelcastProperty(PROP_LOADED_KEY_LIMITER, DEFAULT_LOADED_KEY_LIMIT);
+    /**
+     * Puts node-wide loaded key limit for all {@link
+     * MapLoader#loadAllKeys()} calls being done at the same time.
+     */
+    public static final int DEFAULT_LOADED_KEY_LIMIT_PER_NODE = 50000;
+    public static final String PROP_LOADED_KEY_LIMITER_PER_NODE = "hazelcast.map.loaded.key.limit.per.node";
+    public static final HazelcastProperty LOADED_KEY_LIMITER_PER_NODE
+            = new HazelcastProperty(PROP_LOADED_KEY_LIMITER_PER_NODE, DEFAULT_LOADED_KEY_LIMIT_PER_NODE);
 
     private static final long LOADING_TRIGGER_DELAY = SECONDS.toMillis(5);
 
@@ -90,14 +94,14 @@ public class MapKeyLoader {
     private ExecutionService execService;
     private CoalescingDelayedTrigger delayedTrigger;
     /**
-     * The configured maximum entry count per node or {@code -1} if the
-     * default is used or the max size policy is not
-     * {@link MaxSizePolicy#PER_NODE}
+     * The configured maximum entry count per node or
+     * {@code -1} if the default is used or the max size
+     * policy is not {@link MaxSizePolicy#PER_NODE}
      */
     private int maxSizePerNode;
     /**
-     * The maximum size of a batch of loaded keys sent to a
-     * single partition for value loading
+     * The maximum size of a batch of loaded keys
+     * sent to a single partition for value loading
      *
      * @see ClusterProperty#MAP_LOAD_CHUNK_SIZE
      */
@@ -106,20 +110,19 @@ public class MapKeyLoader {
     private int partitionId;
     private boolean hasBackup;
     /**
-     * The future representing pending completion of the key loading task
-     * on the {@link Role#SENDER} partition. The result of this future
-     * represents the result of process of key loading and dispatching to
-     * the partition owners for value loading but not the result of
-     * the value loading itself or the overall result of populating the
-     * record stores with map loader data.
-     * This future may also denote that this is the map key loader with
-     * the {@link Role#RECEIVER} role and that it has triggered key
-     * loading on the {@link Role#SENDER} partition.
+     * The future representing pending completion of the key loading
+     * task on the {@link Role#SENDER} partition. The result of this
+     * future represents the result of process of key loading and
+     * dispatching to the partition owners for value loading but
+     * not the result of the value loading itself or the overall
+     * result of populating the record stores with map loader
+     * data. This future may also denote that this is the map key
+     * loader with the {@link Role#RECEIVER} role and that it has
+     * triggered key loading on the {@link Role#SENDER} partition.
      *
-     * @see #sendKeys(MapStoreContext, boolean)
-     * @see #triggerLoading()
-     * @see #trackLoading(boolean, Throwable)
-     * @see MapLoader#loadAllKeys()
+     * @see #sendKeys(MapStoreContext, boolean) @see
+     * #triggerLoading() @see #trackLoading(boolean,
+     * Throwable) @see MapLoader#loadAllKeys()
      */
     private LoadFinishedFuture keyLoadFinished = new LoadFinishedFuture(true);
     private MapOperationProvider operationProvider;
@@ -130,24 +133,23 @@ public class MapKeyLoader {
     enum Role {
         NONE,
         /**
-         * Loads keys from the map loader and dispatches them to the partition owners.
-         * The sender map key loader is equal to the partition owner for the
-         * partition containing the map name.
+         * Loads keys from the map loader and dispatches them to the
+         * partition owners. The sender map key loader is equal to the
+         * partition owner for the partition containing the map name.
          *
-         * @see MapLoader#loadAllKeys()
-         * @see com.hazelcast.map.impl.operation.LoadMapOperation
+         * @see MapLoader#loadAllKeys() @see
+         * com.hazelcast.map.impl.operation.LoadMapOperation
          */
         SENDER,
         /**
-         * Receives keys from sender.
-         * The receiver map key loader is the partition owner for keys received
-         * by the sender.
+         * Receives keys from sender. The receiver map key loader
+         * is the partition owner for keys received by the sender.
          */
         RECEIVER,
         /**
-         * Restarts sending if SENDER fails.
-         * The sender backup map key loader is equal to the first replica of the
-         * partition containing the map name.
+         * Restarts sending if SENDER fails. The sender
+         * backup map key loader is equal to the first
+         * replica of the partition containing the map name.
          */
         SENDER_BACKUP
     }
@@ -167,12 +169,17 @@ public class MapKeyLoader {
             .withTransition(State.LOADING, State.LOADED, State.NOT_LOADED)
             .withTransition(State.LOADED, State.LOADING);
 
-    private final Semaphore loadedKeyLimiter;
+    /**
+     * Controls the loaded number of keys during
+     * {@link MapLoader#loadAllKeys()} call to
+     * use heap effectively and to prevent OOME.
+     */
+    private final Semaphore nodeWideLoadedKeyLimiter;
     private final ClusterService clusterService;
 
     public MapKeyLoader(String mapName, OperationService opService, IPartitionService ps,
                         ClusterService clusterService, ExecutionService execService,
-                        Function<Object, Data> serialize, Semaphore loadedKeyLimiter) {
+                        Function<Object, Data> serialize, Semaphore nodeWideLoadedKeyLimiter) {
         this.mapName = mapName;
         this.opService = opService;
         this.partitionService = ps;
@@ -180,7 +187,7 @@ public class MapKeyLoader {
         this.toData = serialize;
         this.execService = execService;
         this.logger = getLogger(MapKeyLoader.class);
-        this.loadedKeyLimiter = loadedKeyLimiter;
+        this.nodeWideLoadedKeyLimiter = nodeWideLoadedKeyLimiter;
     }
 
     /**
@@ -436,12 +443,12 @@ public class MapKeyLoader {
             }
 
             Iterator<Entry<Integer, Data>> partitionsAndKeys = map(dataKeys, toPartition(partitionService));
-            Iterator<Map<Integer, List<Data>>> batches = toBatches(partitionsAndKeys, maxBatch, loadedKeyLimiter);
+            Iterator<Map<Integer, List<Data>>> batches = toBatches(partitionsAndKeys, maxBatch, nodeWideLoadedKeyLimiter);
 
             List<Future> futures = new ArrayList<>();
             while (batches.hasNext()) {
                 Map<Integer, List<Data>> batch = batches.next();
-                futures.addAll(sendBatch(batch, replaceExistingValues, loadedKeyLimiter));
+                futures.addAll(sendBatch(batch, replaceExistingValues, nodeWideLoadedKeyLimiter));
             }
 
             // This acts as a barrier to prevent re-ordering of key distribution operations (LoadAllOperation)
@@ -463,20 +470,25 @@ public class MapKeyLoader {
     }
 
     /**
-     * Sends the key batches to the partition owners for value loading.
-     * The returned futures represent pending offloading of the value loading on the
-     * partition owner. This means that once the partition owner receives the keys,
-     * it will offload the value loading task and return immediately, thus completing
-     * the future. The future does not mean the value loading tasks have been completed
-     * or that the entries have been loaded and put into the record store.
+     * Sends the key batches to the partition owners for value
+     * loading. The returned futures represent pending offloading
+     * of the value loading on the partition owner. This means
+     * that once the partition owner receives the keys, it will
+     * offload the value loading task and return immediately,
+     * thus completing the future. The future does not mean
+     * the value loading tasks have been completed or that the
+     * entries have been loaded and put into the record store.
      *
-     * @param batch                 a map from partition ID to a batch of keys for that partition
-     * @param replaceExistingValues if the existing entries for the loaded keys should be replaced
-     * @param limit                 limiter
-     * @return a list of futures representing pending completion of the value offloading task
+     * @param batch                 a map from partition ID
+     *                              to a batch of keys for that partition
+     * @param replaceExistingValues if the existing
+     *                              entries for the loaded keys should be replaced
+     * @param nodeWideLoadedKeyLimiter      controls number of loaded keys
+     * @return a list of futures representing pending
+     * completion of the value offloading task
      */
     private List<Future> sendBatch(Map<Integer, List<Data>> batch, boolean replaceExistingValues,
-                                   Semaphore limit) {
+                                   Semaphore nodeWideLoadedKeyLimiter) {
         Set<Entry<Integer, List<Data>>> entries = batch.entrySet();
 
         List<Future> futures = new ArrayList<>(entries.size());
@@ -486,12 +498,15 @@ public class MapKeyLoader {
             Entry<Integer, List<Data>> e = iterator.next();
             int partitionId = e.getKey();
             List<Data> keys = e.getValue();
+            int numberOfLoadedKeys = keys.size();
 
-            MapOperation op = operationProvider.createLoadAllOperation(mapName, keys, replaceExistingValues);
-            limit.release(keys.size());
-
-            InternalCompletableFuture<Object> future = opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
-            futures.add(future);
+            try {
+                MapOperation op = operationProvider.createLoadAllOperation(mapName, keys, replaceExistingValues);
+                InternalCompletableFuture<Object> future = opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
+                futures.add(future);
+            } finally {
+                nodeWideLoadedKeyLimiter.release(numberOfLoadedKeys);
+            }
 
             iterator.remove();
         }

@@ -76,20 +76,21 @@ public final class MapKeyLoaderUtil {
     }
 
     /**
-     * Transforms an iterator of entries to an iterator of entry batches
-     * where each batch is represented as a map from entry key to
-     * list of entry values.
-     * The maximum size of the entry value list in any batch is
-     * determined by the {@code maxBatch} parameter. Only one
-     * entry value list may have the {@code maxBatch} size, other
-     * lists will be smaller.
+     * Transforms an iterator of entries to an iterator of entry
+     * batches where each batch is represented as a map from
+     * entry key to list of entry values. The maximum size of the
+     * entry value list in any batch is determined by the {@code
+     * maxBatch} parameter. Only one entry value list may have
+     * the {@code maxBatch} size, other lists will be smaller.
      *
-     * @param entries  the entries to be batched
-     * @param maxBatch the maximum size of an entry group in a single batch
+     * @param entries                  the entries to be batched
+     * @param maxBatch                 the maximum size of an entry group in a single
+     *                                 batch
+     * @param nodeWideLoadedKeyLimiter controls the loaded number of keys
      * @return an iterator with entry batches
      */
     static Iterator<Map<Integer, List<Data>>> toBatches(final Iterator<Entry<Integer, Data>> entries,
-                                                        final int maxBatch, Semaphore limit) {
+                                                        final int maxBatch, Semaphore nodeWideLoadedKeyLimiter) {
         return new UnmodifiableIterator<Map<Integer, List<Data>>>() {
             @Override
             public boolean hasNext() {
@@ -101,7 +102,7 @@ public final class MapKeyLoaderUtil {
                 if (!entries.hasNext()) {
                     throw new NoSuchElementException();
                 }
-                return nextBatch(entries, maxBatch, limit);
+                return nextBatch(entries, maxBatch, nodeWideLoadedKeyLimiter);
             }
         };
     }
@@ -111,15 +112,16 @@ public final class MapKeyLoaderUtil {
      * until at least one group has up to {@code maxBatch}
      * entries or until the {@code entries} have been exhausted.
      *
-     * @param entries  the entries to be grouped by key
-     * @param maxBatch the maximum size of a group
+     * @param entries                  the entries to be grouped by key
+     * @param maxBatch                 the maximum size of a group
+     * @param nodeWideLoadedKeyLimiter controls the loaded number of keys per node
      * @return the grouped entries by entry key
      */
     private static Map<Integer, List<Data>> nextBatch(Iterator<Entry<Integer, Data>> entries,
-                                                      int maxBatch, Semaphore limit) {
+                                                      int maxBatch, Semaphore nodeWideLoadedKeyLimiter) {
         Map<Integer, List<Data>> batch = createHashMap(maxBatch);
         while (entries.hasNext()) {
-            if (!limit.tryAcquire()) {
+            if (!nodeWideLoadedKeyLimiter.tryAcquire()) {
                 break;
             }
 
