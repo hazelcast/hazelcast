@@ -92,6 +92,6 @@ public class ScheduledExecutorSubmitToTargetMessageTask
                 parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
                 TimeUnit.MILLISECONDS);
         Member member = nodeEngine.getClusterService().getMember(parameters.memberUuid);
-        return new Object[]{parameters.schedulerName, member.getAddress(), def};
+        return new Object[]{parameters.schedulerName, member == null ? null : member.getAddress(), def};
     }
 }
