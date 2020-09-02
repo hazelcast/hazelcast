@@ -578,6 +578,8 @@
         It has the attribute "type". The valid values for the type of the load balancer are"
         * "random": The member the operations to be sent to is chosen randomly.
         * "round-robin": The member the operations to be sent to is chosen in a round-robin fashion.
+        * "custom": The member the operations to be sent to is chosen by provided load balancer implementation.
+                    The implementation class name is specified as text content.
     -->
     <load-balancer type="random"/>
 
