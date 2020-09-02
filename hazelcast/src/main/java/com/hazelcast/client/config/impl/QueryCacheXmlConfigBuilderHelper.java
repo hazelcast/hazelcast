@@ -48,13 +48,12 @@ final class QueryCacheXmlConfigBuilderHelper extends AbstractQueryCacheConfigBui
 
     @Override
     protected String getCacheName(Node queryCacheNode) {
-        NamedNodeMap attrs = queryCacheNode.getAttributes();
-        return getTextContent(attrs.getNamedItem("name"));
+        return getTextContent(getNamedItemNode(queryCacheNode, "name"));
     }
 
     @Override
     protected String getCacheMapName(NamedNodeMap attrs) {
-        return getTextContent(attrs.getNamedItem("mapName"));
+        return getTextContent(getNamedItemNode(attrs, "mapName"));
     }
 
     protected void handleEntryListeners(QueryCacheConfig queryCacheConfig, Node childNode) {
@@ -66,8 +65,7 @@ final class QueryCacheXmlConfigBuilderHelper extends AbstractQueryCacheConfigBui
     }
 
     protected void queryCachePredicateHandler(Node childNode, QueryCacheConfig queryCacheConfig) {
-        NamedNodeMap predicateAttributes = childNode.getAttributes();
-        String predicateType = getTextContent(predicateAttributes.getNamedItem("type"));
+        String predicateType = getTextContent(getNamedItemNode(childNode, "type"));
         String textContent = getTextContent(childNode);
         PredicateConfig predicateConfig = new PredicateConfig();
         if (matches("class-name", predicateType)) {

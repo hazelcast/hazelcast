@@ -56,25 +56,23 @@ final class QueryCacheYamlConfigBuilderHelper extends AbstractQueryCacheConfigBu
 
     @Override
     protected String getCacheMapName(NamedNodeMap attrs) {
-        return getTextContent(attrs.getNamedItem("map-name"));
+        return getTextContent(getNamedItemNode(attrs, "map-name"));
     }
 
     @Override
     protected void handleEntryListeners(QueryCacheConfig queryCacheConfig, Node childNode) {
         for (Node listenerNode : childElements(childNode)) {
-            NamedNodeMap attrs = listenerNode.getAttributes();
-            boolean incValue = getBooleanValue(getTextContent(attrs.getNamedItem("include-value")));
-            boolean local = getBooleanValue(getTextContent(attrs.getNamedItem("local")));
-            String listenerClass = getTextContent(attrs.getNamedItem("class-name"));
+            boolean incValue = getBooleanValue(getTextContent(getNamedItemNode(listenerNode, "include-value")));
+            boolean local = getBooleanValue(getTextContent(getNamedItemNode(listenerNode, "local")));
+            String listenerClass = getTextContent(getNamedItemNode(listenerNode, "class-name"));
             queryCacheConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
         }
     }
 
     @Override
     protected void queryCachePredicateHandler(Node childNode, QueryCacheConfig queryCacheConfig) {
-        NamedNodeMap predicateAttributes = childNode.getAttributes();
-        Node classNameNode = predicateAttributes.getNamedItem("class-name");
-        Node sqlNode = predicateAttributes.getNamedItem("sql");
+        Node classNameNode = getNamedItemNode(childNode, "class-name");
+        Node sqlNode = getNamedItemNode(childNode, "sql");
 
         if (classNameNode != null && sqlNode != null) {
             throw new InvalidConfigurationException("Both class-name and sql is defined for the predicate of map "

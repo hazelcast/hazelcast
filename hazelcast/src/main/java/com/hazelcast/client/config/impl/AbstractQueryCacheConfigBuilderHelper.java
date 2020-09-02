@@ -164,13 +164,17 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
     }
 
     protected Node getNamedItemNode(final Node node, String attrName) {
+        return getNamedItemNode(node.getAttributes(), attrName);
+    }
+
+    protected Node getNamedItemNode(final NamedNodeMap attrs, String attrName) {
         if (strict) {
-            return node.getAttributes().getNamedItem(attrName);
+            return attrs.getNamedItem(attrName);
         } else {
-            Node attrNode = node.getAttributes().getNamedItem(attrName);
+            Node attrNode = attrs.getNamedItem(attrName);
             return attrNode != null
               ? attrNode
-              : node.getAttributes().getNamedItem(attrName.replace("-", ""));
+              : attrs.getNamedItem(attrName.replace("-", ""));
         }
     }
 }
