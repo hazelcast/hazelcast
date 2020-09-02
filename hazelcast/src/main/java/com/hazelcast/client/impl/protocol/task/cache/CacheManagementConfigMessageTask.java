@@ -20,15 +20,13 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheManagementConfigOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheManagementConfigCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
-import com.hazelcast.cluster.Member;
+import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.security.Permission;
+import java.util.UUID;
 
 /**
  * This client request  specifically calls {@link CacheManagementConfigOperation} on the server side.
@@ -36,7 +34,7 @@ import java.security.Permission;
  * @see CacheManagementConfigOperation
  */
 public class CacheManagementConfigMessageTask
-        extends AbstractInvocationMessageTask<CacheManagementConfigCodec.RequestParameters> {
+        extends AbstractTargetMessageTask<CacheManagementConfigCodec.RequestParameters> {
 
     public CacheManagementConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -58,10 +56,8 @@ public class CacheManagementConfigMessageTask
     }
 
     @Override
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        OperationServiceImpl operationService = nodeEngine.getOperationService();
-        Member member = nodeEngine.getClusterService().getMember(parameters.uuid);
-        return operationService.createInvocationBuilder(getServiceName(), op, member.getAddress());
+    protected UUID getTargetUuid() {
+        return parameters.uuid;
     }
 
     @Override

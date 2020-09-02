@@ -18,40 +18,30 @@ package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToMemberCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
-import com.hazelcast.cluster.Member;
+import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import javax.security.auth.Subject;
 import java.security.Permission;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
-import static java.lang.String.format;
-
 public class ExecutorServiceSubmitToAddressMessageTask
-        extends AbstractInvocationMessageTask<ExecutorServiceSubmitToMemberCodec.RequestParameters> {
+        extends AbstractTargetMessageTask<ExecutorServiceSubmitToMemberCodec.RequestParameters> {
 
     public ExecutorServiceSubmitToAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        final OperationServiceImpl operationService = nodeEngine.getOperationService();
-        Member member = nodeEngine.getClusterService().getMember(parameters.memberUUID);
-        if (member == null) {
-            throw new TargetNotMemberException(format("Member with uuid(%s) is not in member list ", parameters.memberUUID));
-        }
-        return operationService.createInvocationBuilder(getServiceName(), op, member.getAddress());
+    protected UUID getTargetUuid() {
+        return parameters.memberUUID;
     }
 
     @Override

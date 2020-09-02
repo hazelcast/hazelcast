@@ -92,7 +92,7 @@ public class ScheduledExecutorSubmitToTargetMessageTask
                 parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
                 TimeUnit.MILLISECONDS, isAutoDisposable());
         Member member = nodeEngine.getClusterService().getMember(parameters.memberUuid);
-        return new Object[]{parameters.schedulerName, member.getAddress(), def};
+        return new Object[]{parameters.schedulerName, member == null ? null : member.getAddress(), def};
     }
 
     private boolean isAutoDisposable() {
