@@ -510,6 +510,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(ClusterProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "0");
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
+        config.setProperty(ClusterProperty.PARTITION_MAX_PARALLEL_MIGRATIONS.getName(), "1");
         return config;
     }
 
