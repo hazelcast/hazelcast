@@ -74,23 +74,6 @@ public class ClientConfigLoadBalancerTest {
     }
 
     @Test
-    public void shouldUseConfigClassLoaderInstanceWhenClassNameSpecified() {
-        hazelcastFactory.newHazelcastInstance();
-
-        LoadBalancer loadBalancer = new RandomLB();
-
-        ClientConfig config = new ClientConfig();
-        config.setLoadBalancer(loadBalancer);
-        config.setLoadBalancerClassName("com.hazelcast.client.test.CustomLoadBalancer");
-
-        HazelcastInstance instance = hazelcastFactory.newHazelcastClient(config);
-        HazelcastClientInstanceImpl client = ClientTestUtil.getHazelcastClientInstanceImpl(instance);
-
-        LoadBalancer actual = client.getLoadBalancer();
-        assertSame(loadBalancer, actual);
-    }
-
-    @Test
     public void shouldCreateCustomLoadBalancerWhenConfigInstanceNotProvidedAndClassNameSpecified() {
         hazelcastFactory.newHazelcastInstance();
 
