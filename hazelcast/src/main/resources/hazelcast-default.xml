@@ -102,7 +102,7 @@
         <pool-size>16</pool-size>
         <statistics-enabled>true</statistics-enabled>
     </executor-service>
-    <durable-executor-service>
+    <durable-executor-service name="default">
         <capacity>100</capacity>
         <durability>1</durability>
         <pool-size>16</pool-size>
