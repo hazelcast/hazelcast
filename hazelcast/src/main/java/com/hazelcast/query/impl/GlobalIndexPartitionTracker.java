@@ -140,10 +140,17 @@ public class GlobalIndexPartitionTracker {
         }
     }
 
+    /**
+     * State of the indexed partitions.
+     */
     private static final class State {
-
+        /** Monotonically increasing version, that is incremented on every partition info update. */
         private final long version;
+
+        /** Partitions that are currently indexed. */
         private final PartitionIdSet indexedPartitions;
+
+        /** The number of partitions that are baing updated at the moment (indexing or deindexing).  */
         private final int pending;
 
         private State(long version, PartitionIdSet indexedPartitions, int pending) {

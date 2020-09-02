@@ -92,7 +92,7 @@ public interface InternalIndex extends Index {
     PerIndexStats getPerIndexStats();
 
     /**
-     * Get monotonically increasing stamp that confirms that the index contains contains
+     * Get monotonically increasing stamp that confirms that the index contains
      * only expected partitions, and that there are no concurrent partition updates, and
      * there are no active partition updates (see {@link #beginPartitionUpdate()}).
      * <p>
@@ -110,7 +110,7 @@ public interface InternalIndex extends Index {
      * that produced this stamp.
      *
      * @param stamp stamp
-     * @return {@code true} if the stamp is still valid
+     * @return {@code true} if the stamp is still valid, {@code false} otherwise
      */
     boolean validatePartitionStamp(long stamp);
 }
