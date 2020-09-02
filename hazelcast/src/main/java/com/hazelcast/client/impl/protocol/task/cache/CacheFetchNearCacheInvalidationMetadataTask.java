@@ -20,28 +20,24 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheGetInvalidationMetaDataOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheFetchNearCacheInvalidationMetadataCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
-import com.hazelcast.cluster.Member;
+import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class CacheFetchNearCacheInvalidationMetadataTask
-        extends AbstractInvocationMessageTask<CacheFetchNearCacheInvalidationMetadataCodec.RequestParameters> {
+        extends AbstractTargetMessageTask<CacheFetchNearCacheInvalidationMetadataCodec.RequestParameters> {
 
     public CacheFetchNearCacheInvalidationMetadataTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        OperationServiceImpl operationService = nodeEngine.getOperationService();
-        Member member = nodeEngine.getClusterService().getMember(parameters.uuid);
-        return operationService.createInvocationBuilder(getServiceName(), op, member.getAddress());
+    protected UUID getTargetUuid() {
+        return parameters.uuid;
     }
 
     @Override

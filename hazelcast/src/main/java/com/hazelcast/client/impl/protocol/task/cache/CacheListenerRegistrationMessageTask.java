@@ -20,16 +20,14 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheListenerRegistrationCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
-import com.hazelcast.cluster.Member;
+import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.security.Permission;
+import java.util.UUID;
 
 /**
  * This client request  specifically calls {@link CacheListenerRegistrationOperation} on the server side.
@@ -37,10 +35,15 @@ import java.security.Permission;
  * @see CacheListenerRegistrationOperation
  */
 public class CacheListenerRegistrationMessageTask
-        extends AbstractInvocationMessageTask<CacheListenerRegistrationCodec.RequestParameters> {
+        extends AbstractTargetMessageTask<CacheListenerRegistrationCodec.RequestParameters> {
 
     public CacheListenerRegistrationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    @Override
+    protected UUID getTargetUuid() {
+        return parameters.uuid;
     }
 
     @Override
@@ -57,13 +60,6 @@ public class CacheListenerRegistrationMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return CacheListenerRegistrationCodec.encodeResponse();
-    }
-
-    @Override
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        final OperationServiceImpl operationService = nodeEngine.getOperationService();
-        Member member = nodeEngine.getClusterService().getMember(parameters.uuid);
-        return operationService.createInvocationBuilder(getServiceName(), op, member.getAddress());
     }
 
     @Override
