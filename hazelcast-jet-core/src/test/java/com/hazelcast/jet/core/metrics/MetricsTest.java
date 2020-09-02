@@ -18,23 +18,27 @@ package com.hazelcast.jet.core.metrics;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.TestProcessors;
+import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -43,27 +47,37 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
+import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-public class MetricsTest extends JetTestSupport {
+public class MetricsTest extends SimpleTestInClusterSupport {
 
     private static final JobConfig JOB_CONFIG_WITH_METRICS = new JobConfig().setStoreMetricsAfterJobCompletion(true);
 
-    private JetInstance instance;
-    private Pipeline pipeline;
+    private final Pipeline pipeline = Pipeline.create();
+
+    @BeforeClass
+    public static void beforeClass() {
+        JetConfig config = new JetConfig();
+        config.setProperty("hazelcast.jmx", "true");
+        config.getHazelcastConfig().getMetricsConfig().setCollectionFrequencySeconds(1);
+        initialize(1, config);
+    }
 
     @Before
     public void before() {
-        instance = createJetMember(new JetConfig().setProperty("hazelcast.jmx", "true"));
-        pipeline = Pipeline.create();
+        TestProcessors.reset(1);
     }
 
     @Test
@@ -165,7 +179,7 @@ public class MetricsTest extends JetTestSupport {
         checker.assertSummedMetricValue("mapped", 3L);
         assertEquals(
                 new HashSet<>(Arrays.asList(10L, 20L, 30L)),
-                new HashSet<>(instance.getList("results"))
+                new HashSet<>(instance().getList("results"))
         );
     }
 
@@ -180,7 +194,7 @@ public class MetricsTest extends JetTestSupport {
                 })
                 .writeTo(Sinks.noop());
 
-        Job job = instance.newJob(pipeline, new JobConfig().setMetricsEnabled(false));
+        Job job = instance().newJob(pipeline, new JobConfig().setMetricsEnabled(false));
         job.join();
 
         JobMetrics metrics = job.getMetrics();
@@ -216,7 +230,7 @@ public class MetricsTest extends JetTestSupport {
                 )
                 .writeTo(Sinks.noop());
 
-        Job job = instance.newJob(pipeline, JOB_CONFIG_WITH_METRICS);
+        Job job = instance().newJob(pipeline, JOB_CONFIG_WITH_METRICS);
         assertTrueEventually(() -> assertEquals(inputSize,
                 job.getMetrics().get("total").stream().mapToLong(Measurement::value).sum()));
         assertTrueEventually(() -> assertEquals(inputSize / 2,
@@ -237,7 +251,7 @@ public class MetricsTest extends JetTestSupport {
                 })
                 .writeTo(Sinks.noop());
 
-        Job job = instance.newJob(pipeline, JOB_CONFIG_WITH_METRICS);
+        Job job = instance().newJob(pipeline, JOB_CONFIG_WITH_METRICS);
         JobMetricsChecker checker = new JobMetricsChecker(job);
         assertTrueEventually(() -> checker.assertSummedMetricValue("total", generatedItems));
     }
@@ -255,8 +269,8 @@ public class MetricsTest extends JetTestSupport {
                 })
                 .writeTo(Sinks.list("sink"));
 
-        Job job = instance.newJob(pipeline, new JobConfig().setMetricsEnabled(false));
-        List<Object> list = instance.getList("sink");
+        Job job = instance().newJob(pipeline, new JobConfig().setMetricsEnabled(false));
+        List<Object> list = instance().getList("sink");
         assertTrueEventually(() -> assertFalse(list.isEmpty()));
         assertTrue(job.getMetrics().get("total").isEmpty());
     }
@@ -372,8 +386,8 @@ public class MetricsTest extends JetTestSupport {
                 })
                 .writeTo(Sinks.noop());
 
-        Job job = instance.newJob(pipeline, JOB_CONFIG_WITH_METRICS);
-        Job job2 = instance.newJob(pipeline2, JOB_CONFIG_WITH_METRICS);
+        Job job = instance().newJob(pipeline, JOB_CONFIG_WITH_METRICS);
+        Job job2 = instance().newJob(pipeline2, JOB_CONFIG_WITH_METRICS);
         JobMetricsChecker checker1 = new JobMetricsChecker(job);
         assertTrueEventually(() -> checker1.assertSummedMetricValue("total", 1000));
         JobMetricsChecker checker2 = new JobMetricsChecker(job2);
@@ -393,11 +407,11 @@ public class MetricsTest extends JetTestSupport {
                 })
                 .writeTo(Sinks.noop());
 
-        Job job = instance.newJob(pipeline, JOB_CONFIG_WITH_METRICS);
+        Job job = instance().newJob(pipeline, JOB_CONFIG_WITH_METRICS);
         JobMetricsChecker jobMetricsChecker = new JobMetricsChecker(job);
         assertTrueEventually(() -> jobMetricsChecker.assertSummedMetricValue("total", generatedItems));
 
-        String instanceName = instance.getHazelcastInstance().getName();
+        String instanceName = instance().getHazelcastInstance().getName();
         long sum = 0;
         int availableProcessors = Runtime.getRuntime().availableProcessors();
         for (int i = 0; i < availableProcessors; i++) {
@@ -409,8 +423,56 @@ public class MetricsTest extends JetTestSupport {
         assertEquals(generatedItems, sum);
     }
 
+    @Test
+    public void test_sourceSinkTag() {
+        DAG dag = new DAG();
+
+        Vertex src = dag.newVertex("src", () -> new NoOutputSourceP());
+        Vertex mid = dag.newVertex("mid", Processors.mapP(identity()));
+        Vertex sink = dag.newVertex("sink", Processors.noopP());
+
+        dag.edge(Edge.between(src, mid));
+        dag.edge(Edge.between(mid, sink));
+
+        Job job = instance().newJob(dag,
+                new JobConfig()
+                        .setProcessingGuarantee(EXACTLY_ONCE)
+                        .setSnapshotIntervalMillis(100));
+        assertJobStatusEventually(job, RUNNING);
+        JobMetrics[] metrics = {null};
+        assertTrueEventually(() -> assertNotEquals(0, (metrics[0] = job.getMetrics()).metrics().size()));
+
+        assertSourceSinkTags(metrics[0], "src", true, true, false);
+        assertSourceSinkTags(metrics[0], "mid", true, false, false);
+        assertSourceSinkTags(metrics[0], "sink", true, false, true);
+
+        // restart after a snapshot so that the job will restart from a snapshot. Check the source/sink tags afterwards.
+        waitForFirstSnapshot(new JobRepository(instance()), job.getId(), 10, true);
+        job.restart();
+
+        assertJobStatusEventually(job, RUNNING);
+        assertTrueEventually(() -> assertNotEquals(0, (metrics[0] = job.getMetrics()).metrics().size()));
+
+        assertSourceSinkTags(metrics[0], "src", false, true, false);
+        assertSourceSinkTags(metrics[0], "mid", false, false, false);
+        assertSourceSinkTags(metrics[0], "sink", false, false, true);
+    }
+
+    private void assertSourceSinkTags(JobMetrics metrics, String vertexName, boolean beforeRestart,
+                                      boolean expectedSource, boolean expectedSink) {
+        // get an arbitrary measurement for the vertex, we'll assert the tag only
+        Measurement measurement = metrics.filter(MetricTags.VERTEX, vertexName)
+                                         .get(MetricNames.EMITTED_COUNT)
+                                         .get(0);
+
+        assertEquals("vertex=" + vertexName + ", metric=" + MetricTags.SOURCE + ", beforeRestart=" + beforeRestart,
+                expectedSource ? "true" : null, measurement.tag(MetricTags.SOURCE));
+        assertEquals("vertex=" + vertexName + ", metric=" + MetricTags.SINK + ", beforeRestart=" + beforeRestart,
+                expectedSink ? "true" : null, measurement.tag(MetricTags.SINK));
+    }
+
     private Job runPipeline(DAG dag) {
-        Job job = instance.newJob(dag, JOB_CONFIG_WITH_METRICS);
+        Job job = instance().newJob(dag, JOB_CONFIG_WITH_METRICS);
         job.join();
         return job;
     }

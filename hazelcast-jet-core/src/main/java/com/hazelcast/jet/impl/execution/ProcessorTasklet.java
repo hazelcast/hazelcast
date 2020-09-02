@@ -33,7 +33,6 @@ import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
-import com.hazelcast.jet.impl.execution.init.VertexDef;
 import com.hazelcast.jet.impl.metrics.MetricsContext;
 import com.hazelcast.jet.impl.processor.ProcessorWrapper;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
@@ -111,6 +110,7 @@ public class ProcessorTasklet implements Tasklet {
     private final SerializationService serializationService;
     private final List<? extends InboundEdgeStream> instreams;
     private final ExecutorService executionService;
+    private final boolean isSource;
 
     private Processor processor;
     private int numActiveOrdinals; // counter for remaining active ordinals
@@ -154,7 +154,8 @@ public class ProcessorTasklet implements Tasklet {
             @Nonnull List<? extends InboundEdgeStream> instreams,
             @Nonnull List<? extends OutboundEdgeStream> outstreams,
             @Nonnull SnapshotContext ssContext,
-            @Nonnull OutboundCollector ssCollector
+            @Nonnull OutboundCollector ssCollector,
+            boolean isSource
     ) {
         Preconditions.checkNotNull(processor, "processor");
         this.context = context;
@@ -172,6 +173,7 @@ public class ProcessorTasklet implements Tasklet {
                                     .toArray(OutboundEdgeStream[]::new);
         this.ssContext = ssContext;
         this.logger = getLogger(context);
+        this.isSource = isSource;
 
         instreamCursor = popInstreamGroup();
         receivedCounts = new AtomicLongArray(instreams.size());
@@ -614,7 +616,7 @@ public class ProcessorTasklet implements Tasklet {
                        .withTag(MetricTags.PROCESSOR_TYPE, this.processor.getClass().getSimpleName())
                        .withTag(MetricTags.PROCESSOR, Integer.toString(this.context.globalProcessorIndex()));
 
-        if (instreams.size() == 0 && !VertexDef.isSnapshotVertex(this.context.vertexName())) {
+        if (isSource) {
             descriptor = descriptor.withTag(MetricTags.SOURCE, "true");
         }
         if (outstreams.length == 0) {

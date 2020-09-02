@@ -270,7 +270,7 @@ public class ProcessorTaskletTest_Watermarks {
         snapshotContext.initTaskletCount(1, 1, 0);
         final ProcessorTasklet t = new ProcessorTasklet(context, DIRECT_EXECUTOR,
                 new DefaultSerializationServiceBuilder().build(), processor, instreams, outstreams, snapshotContext,
-                snapshotCollector);
+                snapshotCollector, false);
         t.init();
         return t;
     }

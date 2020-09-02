@@ -208,10 +208,15 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
                 OutboundCollector snapshotCollector = new ConveyorCollector(ssConveyor, localProcessorIdx, null);
 
+                // vertices which are only used for snapshot restore will not be marked as "source=true" in metrics
+                // also do not consider snapshot restore edges for determining source tag
+                boolean isSource = vertex.inboundEdges().stream().allMatch(EdgeDef::isSnapshotRestoreEdge)
+                        && !vertex.isSnapshotVertex();
+
                 ProcessorTasklet processorTasklet = new ProcessorTasklet(context,
                         nodeEngine.getExecutionService().getExecutor(TASKLET_INIT_CLOSE_EXECUTOR_NAME),
                         jobSerializationService, processor, inboundStreams, outboundStreams, snapshotContext,
-                        snapshotCollector);
+                        snapshotCollector, isSource);
                 tasklets.add(processorTasklet);
                 this.processors.add(processor);
                 localProcessorIdx++;

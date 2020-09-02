@@ -399,7 +399,7 @@ public class ProcessorTaskletTest_Snapshots {
         snapshotContext = new SnapshotContext(mock(ILogger.class), "test job", -1, guarantee);
         snapshotContext.initTaskletCount(1, 1, 0);
         final ProcessorTasklet t = new ProcessorTasklet(context, DIRECT_EXECUTOR, serializationService,
-                processor, instreams, outstreams, snapshotContext, snapshotCollector);
+                processor, instreams, outstreams, snapshotContext, snapshotCollector, false);
         t.init();
         return t;
     }

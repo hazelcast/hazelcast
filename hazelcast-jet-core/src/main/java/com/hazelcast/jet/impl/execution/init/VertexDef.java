@@ -121,8 +121,8 @@ public class VertexDef implements IdentifiedDataSerializable {
         return res;
     }
 
-    public static boolean isSnapshotVertex(String vertexName) {
-        return vertexName.startsWith(MasterJobContext.SNAPSHOT_VERTEX_PREFIX);
+    boolean isSnapshotVertex() {
+        return name.startsWith(MasterJobContext.SNAPSHOT_VERTEX_PREFIX);
     }
 
     @Override
