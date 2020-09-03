@@ -463,7 +463,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                 int version = partitionStateManager.getVersion();
                 state = new PartitionRuntimeState(partitions, completedMigrations, version);
             }
-            state.setActiveMigrations(migrationManager.getActiveMigrations());
+            // Create copy of active migrations set.
+            // Because original set can be updated concurrently behind the scenes.
+            Collection<MigrationInfo> activeMigrations = new ArrayList<>(migrationManager.getActiveMigrations());
+            state.setActiveMigrations(activeMigrations);
             return state;
         } finally {
             lock.unlock();
