@@ -249,14 +249,19 @@
     </xs:complexType>
 
     <xs:complexType name="load-balancer">
-        <xs:attribute name="type" use="required">
-            <xs:simpleType>
-                <xs:restriction base="non-space-string">
-                    <xs:enumeration value="random"/>
-                    <xs:enumeration value="round-robin"/>
-                </xs:restriction>
-            </xs:simpleType>
-        </xs:attribute>
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="type" use="required">
+                    <xs:simpleType>
+                        <xs:restriction base="non-space-string">
+                            <xs:enumeration value="random"/>
+                            <xs:enumeration value="round-robin"/>
+                            <xs:enumeration value="custom"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
     </xs:complexType>
     <xs:complexType name="near-cache-client">
         <xs:complexContent>
