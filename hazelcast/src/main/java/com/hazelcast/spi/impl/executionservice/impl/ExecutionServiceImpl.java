@@ -57,8 +57,6 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_PREFIX_SCHEDULED_INTERNAL;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
-import static java.lang.String.format;
-import static java.lang.Thread.currentThread;
 
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public final class ExecutionServiceImpl implements ExecutionService {
@@ -331,25 +329,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
     private void shutdownAndAwaitTermination(ExecutorService... executors) {
         for (ExecutorService es : executors) {
-            es.shutdown();
-        }
-
-        long awaitNanos = TimeUnit.SECONDS.toNanos(AWAIT_TERMINATION_SECONDS) / 2;
-        for (ExecutorService es : executors) {
-            try {
-                if (!es.awaitTermination(awaitNanos, TimeUnit.NANOSECONDS)) {
-                    logger.finest(format("%s: Not all tasks completed promptly!", es));
-                    es.shutdownNow();
-                    if (!es.awaitTermination(awaitNanos, TimeUnit.NANOSECONDS)) {
-                        logger.finest(format("%s did not terminate!", es));
-                    }
-                }
-            } catch (InterruptedException ie) {
-                es.shutdownNow();
-                currentThread().interrupt();
-
-                logger.finest(ie);
-            }
+            es.shutdownNow();
         }
     }
 
