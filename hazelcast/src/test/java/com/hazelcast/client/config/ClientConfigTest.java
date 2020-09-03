@@ -16,9 +16,11 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.test.Employee;
 import com.hazelcast.client.test.PortableFactory;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -38,6 +40,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -134,5 +138,29 @@ public class ClientConfigTest {
         ClientReliableTopicConfig newConfig = clientConfig.getReliableTopicConfig("newConfig");
 
         assertEquals(100, newConfig.getReadBatchSize());
+    }
+
+    @Test
+    public void testSettingLoaderBalancerShouldClearLoadBalancerClassName() {
+        LoadBalancer loadBalancer = new RandomLB();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setLoadBalancerClassName("com.hazelcast.client.test.CustomLoadBalancer");
+        clientConfig.setLoadBalancer(loadBalancer);
+
+        assertNull(clientConfig.getLoadBalancerClassName());
+        assertSame(loadBalancer, clientConfig.getLoadBalancer());
+    }
+
+    @Test
+    public void testSettingLoadBalancerClassNameShouldClearLoadBalancer() {
+        LoadBalancer loadBalancer = new RandomLB();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setLoadBalancer(loadBalancer);
+        clientConfig.setLoadBalancerClassName("com.hazelcast.client.test.CustomLoadBalancer");
+
+        assertEquals("com.hazelcast.client.test.CustomLoadBalancer", clientConfig.getLoadBalancerClassName());
+        assertNull(clientConfig.getLoadBalancer());
     }
 }

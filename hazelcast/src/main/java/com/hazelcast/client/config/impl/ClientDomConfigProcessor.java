@@ -130,7 +130,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     @Override
-    public void buildConfig(Node rootNode) throws Exception {
+    public void buildConfig(Node rootNode) {
         for (Node node : childElements(rootNode)) {
             String nodeName = cleanNodeName(node);
             if (occurrenceSet.contains(nodeName)) {
@@ -402,7 +402,14 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             clientConfig.setLoadBalancer(new RandomLB());
         } else if (matches("round-robin", type)) {
             clientConfig.setLoadBalancer(new RoundRobinLB());
+        } else if ("custom".equals(type)) {
+            String loadBalancerClassName = parseCustomLoadBalancerClassName(node);
+            clientConfig.setLoadBalancerClassName(loadBalancerClassName);
         }
+    }
+
+    protected String parseCustomLoadBalancerClassName(Node node) {
+        return getTextContent(node);
     }
 
     private void handleNetwork(Node node) {
