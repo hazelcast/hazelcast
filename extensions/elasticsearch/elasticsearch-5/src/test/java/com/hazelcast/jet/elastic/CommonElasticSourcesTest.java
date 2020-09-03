@@ -101,6 +101,7 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
 
         BatchSource<String> source = ElasticSources.elastic(
                 elasticClientSupplier(),
+                () -> new SearchRequest("my-index"),
                 hit -> (String) hit.getSourceAsMap().get("name")
         );
 
