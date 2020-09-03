@@ -273,6 +273,7 @@
                     <excludes>
                         <exclude>**/jsr/**.java</exclude>
                         <exclude>**/**IT.java</exclude>
+                        <exclude>**/SqlIntegrationTestSuite.java</exclude>
                     </excludes>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>
