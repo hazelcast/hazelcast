@@ -146,7 +146,7 @@ public abstract class AbstractConfigLocator {
 
     protected boolean loadConfigurationFromClasspath(String configFileName) {
         try {
-            URL url = Config.class.getClassLoader().getResource(configFileName);
+            URL url = Thread.currentThread().getContextClassLoader().getResource(configFileName);
             if (url == null) {
                 LOGGER.finest(String.format("Could not find '%s' in the classpath.", configFileName));
                 return false;
@@ -155,7 +155,7 @@ public abstract class AbstractConfigLocator {
             LOGGER.info(String.format("Loading '%s' from the classpath.", configFileName));
 
             configurationUrl = url;
-            in = Config.class.getClassLoader().getResourceAsStream(configFileName);
+            in = Thread.currentThread().getContextClassLoader().getResourceAsStream(configFileName);
             if (in == null) {
                 throw new HazelcastException(String.format("Could not load '%s' from the classpath", configFileName));
             }
@@ -295,10 +295,10 @@ public abstract class AbstractConfigLocator {
             throw new HazelcastException("classpath resource can't be empty");
         }
 
-        in = Config.class.getClassLoader().getResourceAsStream(resource);
+        in = Thread.currentThread().getContextClassLoader().getResourceAsStream(resource);
         if (in == null) {
             throw new HazelcastException(String.format("Could not load classpath resource: %s", resource));
         }
-        configurationUrl = Config.class.getClassLoader().getResource(resource);
+        configurationUrl = Thread.currentThread().getContextClassLoader().getResource(resource);
     }
 }
