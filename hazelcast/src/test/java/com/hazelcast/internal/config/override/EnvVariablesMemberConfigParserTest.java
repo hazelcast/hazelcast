@@ -54,6 +54,7 @@ public class EnvVariablesMemberConfigParserTest extends HazelcastTestSupport {
         Map<String, String> entries = new HashMap<>();
         entries.put("HZ_HOME", "/home");
         entries.put("HZ_LICENSE_KEY", "idkfa");
+        entries.put("HZ_PHONE_HOME_ENABLED", "false");
 
         Map<String, String> result = envVariablesConfigParser.parse(entries);
 
