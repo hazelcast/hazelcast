@@ -26,7 +26,7 @@ import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequest;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.services.ServiceNamespaceAware;
-import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
@@ -54,6 +54,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_MANAGER_REPLICA_SYNC_SEMAPHORE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_MANAGER_SYNC_REQUEST_COUNTER;
@@ -522,9 +523,9 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
         private final long firstRunNanos;
         private final long backupSyncCheckIntervalSeconds;
-        private final Semaphore semaphore = new Semaphore(0);
+        private final AtomicInteger taskCounter = new AtomicInteger();
 
-        private int numInOneGo;
+        private int taskCountPerSecond;
         private Queue<Integer> localPartitionIds;
 
         AntiEntropyTask(long backupSyncCheckIntervalSeconds) {
@@ -532,11 +533,11 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         }
 
         AntiEntropyTask(long backupSyncCheckIntervalSeconds, Queue<Integer> localPartitionIds,
-                        long firstRunNanos, int numInOneGo) {
+                        long firstRunNanos, int taskCountPerSecond) {
             this.backupSyncCheckIntervalSeconds = backupSyncCheckIntervalSeconds;
             this.localPartitionIds = localPartitionIds;
             this.firstRunNanos = firstRunNanos;
-            this.numInOneGo = numInOneGo;
+            this.taskCountPerSecond = taskCountPerSecond;
         }
 
         @Override
@@ -545,6 +546,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
             if (!node.isRunning() || !node.getNodeExtension().isStartCompleted()
                     || !partitionService.areMigrationTasksAllowed()) {
+                scheduleNextRun(initialStartTimeInNanos, null, UNSET);
                 return;
             }
 
@@ -552,42 +554,39 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
             BitSet partitionsBitSet = convertLocalPartitionsToBitSet();
 
-            runAntiEntropyTask(partitionsBitSet);
+            if (partitionsBitSet.cardinality() != 0) {
+                runAntiEntropyTask(partitionsBitSet, () -> {
+                    if (taskCounter.incrementAndGet() == partitionsBitSet.cardinality()) {
+                        scheduleNextRun(initialStartTimeInNanos, localPartitionIds, taskCountPerSecond);
+                    }
+                });
+            } else {
+                scheduleNextRun(initialStartTimeInNanos, localPartitionIds, taskCountPerSecond);
+            }
 
-            waitAntiEntropyTaskEnd(partitionsBitSet.cardinality());
-
-            scheduleNextRun(initialStartTimeInNanos);
         }
 
-        private void scheduleNextRun(long initialStartTimeInNanos) {
+        private void runAntiEntropyTask(BitSet partitionsBitSet, Runnable afterRun) {
+            nodeEngine.getOperationService().executeOnPartitions(partitionId
+                            -> new PartitionPrimaryReplicaAntiEntropyTask(nodeEngine, partitionId, afterRun),
+                    partitionsBitSet);
+        }
+
+        private void scheduleNextRun(long initialStartTimeInNanos,
+                                     Queue<Integer> localPartitionIds, int numInOneGo) {
+
             ExecutionService executionService = nodeEngine.getExecutionService();
 
-            if (!localPartitionIds.isEmpty()) {
-                // we still have local partitions to check
-                executionService.schedule(new AntiEntropyTask(backupSyncCheckIntervalSeconds,
-                        localPartitionIds, initialStartTimeInNanos, numInOneGo), 1, TimeUnit.SECONDS);
-            } else {
+            if (CollectionUtil.isEmpty(localPartitionIds)) {
                 // we have finished checking of all local partitions, time to decide when to commence next run.
                 long elapsedSeconds = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - initialStartTimeInNanos);
                 long delayBeforeNextRunSeconds = Math.max(1, backupSyncCheckIntervalSeconds - elapsedSeconds);
                 executionService.schedule(new AntiEntropyTask(backupSyncCheckIntervalSeconds),
                         delayBeforeNextRunSeconds, TimeUnit.SECONDS);
-            }
-        }
-
-        private void runAntiEntropyTask(BitSet partitionsBitSet) {
-            nodeEngine.getOperationService().executeOnPartitions(partitionId -> {
-                semaphore.release();
-                return new PartitionPrimaryReplicaAntiEntropyTask(nodeEngine, partitionId);
-            }, partitionsBitSet);
-        }
-
-        private void waitAntiEntropyTaskEnd(int partitionCount) {
-            try {
-                semaphore.acquire(partitionCount);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw ExceptionUtil.rethrow(e);
+            } else {
+                // we still have local partitions to check
+                executionService.schedule(new AntiEntropyTask(backupSyncCheckIntervalSeconds,
+                        localPartitionIds, initialStartTimeInNanos, numInOneGo), 1, TimeUnit.SECONDS);
             }
         }
 
@@ -597,7 +596,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
             }
 
             localPartitionIds = getLocalPartitionIds();
-            numInOneGo = Math.max(1, (int) Math.ceil(1D * localPartitionIds.size() / backupSyncCheckIntervalSeconds));
+            taskCountPerSecond = Math.max(1, (int) Math.ceil(1D * localPartitionIds.size() / backupSyncCheckIntervalSeconds));
         }
 
         @Nonnull
@@ -612,7 +611,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
                 bitSet.set(partitionId);
 
-            } while (bitSet.cardinality() < numInOneGo);
+            } while (bitSet.cardinality() < taskCountPerSecond);
 
             return bitSet;
         }
