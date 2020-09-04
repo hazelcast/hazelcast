@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.exec.scan.index;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.query.impl.GlobalIndexPartitionTracker;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -109,7 +110,7 @@ public class MapIndexScanExec extends MapScanExec {
         // Make sure that required partitions are indexed
         partitionStamp = index.getPartitionStamp(partitions);
 
-        if (partitionStamp == null) {
+        if (partitionStamp == GlobalIndexPartitionTracker.STAMP_INVALID) {
             throw invalidIndexStamp();
         }
 

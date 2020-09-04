@@ -377,7 +377,7 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public Long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
+        public long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
             throw newUnsupportedException();
         }
 

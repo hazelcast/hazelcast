@@ -100,9 +100,9 @@ public interface InternalIndex extends Index {
      * set of partitions through a call to {@link #validatePartitionStamp(long)}.
      *
      * @param expectedPartitionIds expected indexed partitions
-     * @return stamp or {@code null}
+     * @return stamp
      */
-    Long getPartitionStamp(PartitionIdSet expectedPartitionIds);
+    long getPartitionStamp(PartitionIdSet expectedPartitionIds);
 
     /**
      * Verifies that the given partition stamp is still valid. It is valid iff there were

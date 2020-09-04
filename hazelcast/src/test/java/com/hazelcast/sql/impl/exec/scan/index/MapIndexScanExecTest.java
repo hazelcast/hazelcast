@@ -22,6 +22,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
+import com.hazelcast.query.impl.GlobalIndexPartitionTracker;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.sql.impl.QueryException;
@@ -59,7 +60,6 @@ import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -297,8 +297,8 @@ public class MapIndexScanExecTest extends SqlTestSupport {
             @Override
             public Iterator<QueryableEntry> getEntries(InternalIndex index, ExpressionEvalContext evalContext) {
                 // Preserve the original stamp
-                Long stamp = index.getPartitionStamp(expectedPartitions);
-                assertNotNull(stamp);
+                long stamp = index.getPartitionStamp(expectedPartitions);
+                assertNotEquals(GlobalIndexPartitionTracker.STAMP_INVALID, stamp);
 
                 // Kill the other member to trigger migrations
                 instance2.shutdown();

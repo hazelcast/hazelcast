@@ -253,7 +253,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public Long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
+        public long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
             return delegate.getPartitionStamp(expectedPartitionIds);
         }
 

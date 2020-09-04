@@ -91,7 +91,7 @@ public class IndexImpl extends AbstractIndex {
     }
 
     @Override
-    public Long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
+    public long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
         return partitionTracker.getPartitionStamp(expectedPartitionIds);
     }
 

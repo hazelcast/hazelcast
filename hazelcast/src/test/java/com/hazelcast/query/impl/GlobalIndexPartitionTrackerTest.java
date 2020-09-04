@@ -24,10 +24,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.query.impl.GlobalIndexPartitionTracker.STAMP_INVALID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -84,28 +84,28 @@ public class GlobalIndexPartitionTrackerTest {
 
         GlobalIndexPartitionTracker tracker = new GlobalIndexPartitionTracker(count);
 
-        assertNull(tracker.getPartitionStamp(partitions(count, 1)));
+        assertEquals(STAMP_INVALID, tracker.getPartitionStamp(partitions(count, 1)));
 
-        Long stamp1 = tracker.getPartitionStamp(partitions(count));
-        assertNotNull(stamp1);
+        long stamp1 = tracker.getPartitionStamp(partitions(count));
+        assertNotEquals(STAMP_INVALID, stamp1);
         assertTrue(tracker.validatePartitionStamp(stamp1));
 
         tracker.beginPartitionUpdate();
-        assertNull(tracker.getPartitionStamp(partitions(count)));
+        assertEquals(STAMP_INVALID, tracker.getPartitionStamp(partitions(count)));
         assertFalse(tracker.validatePartitionStamp(stamp1));
 
         tracker.partitionIndexed(1);
-        assertNull(tracker.getPartitionStamp(partitions(count)));
-        Long stamp2 = tracker.getPartitionStamp(partitions(count, 1));
-        assertNotNull(stamp2);
+        assertEquals(STAMP_INVALID, tracker.getPartitionStamp(partitions(count)));
+        long stamp2 = tracker.getPartitionStamp(partitions(count, 1));
+        assertNotEquals(STAMP_INVALID, stamp2);
         assertTrue(stamp2 > stamp1);
         assertFalse(tracker.validatePartitionStamp(stamp1));
         assertTrue(tracker.validatePartitionStamp(stamp2));
 
         tracker.clear();
-        assertNull(tracker.getPartitionStamp(partitions(count, 1)));
-        Long stamp3 = tracker.getPartitionStamp(partitions(count));
-        assertNotNull(stamp3);
+        assertEquals(STAMP_INVALID, tracker.getPartitionStamp(partitions(count, 1)));
+        long stamp3 = tracker.getPartitionStamp(partitions(count));
+        assertNotEquals(STAMP_INVALID, stamp3);
         assertTrue(stamp3 > stamp2);
         assertFalse(tracker.validatePartitionStamp(stamp1));
         assertFalse(tracker.validatePartitionStamp(stamp1));

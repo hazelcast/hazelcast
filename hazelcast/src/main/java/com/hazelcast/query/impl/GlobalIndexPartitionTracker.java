@@ -29,7 +29,8 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class GlobalIndexPartitionTracker {
 
-    private static final long VERSION_INITIAL = 0;
+    public static final long STAMP_INVALID = -1;
+    private static final long STAMP_INITIAL = 0;
 
     /** Lock to serialize updates to the state. */
     private final ReentrantLock lock = new ReentrantLock();
@@ -43,21 +44,43 @@ public class GlobalIndexPartitionTracker {
     public GlobalIndexPartitionTracker(int partitionCount) {
         this.partitionCount = partitionCount;
 
-        state = new AtomicReference<>(new State(VERSION_INITIAL, new PartitionIdSet(partitionCount), 0));
+        state = new AtomicReference<>(new State(STAMP_INITIAL, new PartitionIdSet(partitionCount), 0));
     }
 
-    public Long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
+    /**
+     * Gets the stamp associated with the given expected partition IDs.
+     * <p>
+     * The obtained stamp could be checked for validity using {@link #validatePartitionStamp(long)}.
+     *
+     * @param expectedPartitionIds expected partition IDs
+     * @return stamp or {@code -1} if indexed partitions do not match expected partitions, or there is
+     *     an active partition update from {@link #beginPartitionUpdate()}
+     */
+    public long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
         State state0 = state.get();
 
         if (state0.pending > 0 || !state0.indexedPartitions.equals(expectedPartitionIds)) {
-            return null;
+            return STAMP_INVALID;
         }
 
-        return state0.version;
+        return state0.stamp;
     }
 
-    public boolean validatePartitionStamp(long version) {
-        return state.get().version == version;
+    /**
+     * Validates the stamp obtained from the previous call to {@link #getPartitionStamp(PartitionIdSet)}.
+     * <p>
+     * The stamp is valid iff:
+     * <ul>
+     *     <li>The index still has the same set of indexed partitions, as was expected by the previous call
+     *     to the {@link #getPartitionStamp(PartitionIdSet)} that returned this stamp
+     *     <li>There are no active partition updates
+     * </ul>
+     *
+     * @param stamp stamp
+     * @return {@code true} if the stamp is valid, {@code false} otherwise
+     */
+    public boolean validatePartitionStamp(long stamp) {
+        return state.get().stamp == stamp;
     }
 
     public boolean isIndexed(int partitionId) {
@@ -75,7 +98,7 @@ public class GlobalIndexPartitionTracker {
             State oldState = state.get();
 
             State newState = new State(
-                oldState.version + 1,
+                oldState.stamp + 1,
                 oldState.indexedPartitions,
                 oldState.pending + 1
             );
@@ -111,7 +134,7 @@ public class GlobalIndexPartitionTracker {
             }
 
             State newState = new State(
-                oldState.version + 1,
+                oldState.stamp + 1,
                 newIndexedPartitions,
                 oldState.pending - 1
             );
@@ -129,7 +152,7 @@ public class GlobalIndexPartitionTracker {
             State oldState = state.get();
 
             State newState = new State(
-                oldState.version + 1,
+                oldState.stamp + 1,
                 new PartitionIdSet(partitionCount),
                 0
             );
@@ -144,8 +167,8 @@ public class GlobalIndexPartitionTracker {
      * State of the indexed partitions.
      */
     private static final class State {
-        /** Monotonically increasing version, that is incremented on every partition info update. */
-        private final long version;
+        /** Monotonically increasing stamp, that is incremented on every partition info update. */
+        private final long stamp;
 
         /** Partitions that are currently indexed. */
         private final PartitionIdSet indexedPartitions;
@@ -153,8 +176,8 @@ public class GlobalIndexPartitionTracker {
         /** The number of partitions that are being updated at the moment (indexing or deindexing).  */
         private final int pending;
 
-        private State(long version, PartitionIdSet indexedPartitions, int pending) {
-            this.version = version;
+        private State(long stamp, PartitionIdSet indexedPartitions, int pending) {
+            this.stamp = stamp;
             this.indexedPartitions = indexedPartitions;
             this.pending = pending;
         }
