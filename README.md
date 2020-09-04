@@ -169,7 +169,7 @@ clientConfig.getNetworkConfig().getAwsConfig()
 
 The plugin works both for **Hazelcast Member Discovery** (forming Hazelcast cluster) and **Hazelcast Client Discovery**.
 
-Note: for the step-by-step guide, check out the following blot post: [How to set up Hazelcast on AWS ECS](https://hazelcast.com/blog/how-to-set-up-hazelcast-imdg-on-aws-ecs/).
+Note: for the detailed description, check out [Hazelcast Guides: Getting Started with Embedded Hazelcast on ECS](https://guides.hazelcast.org/ecs-embedded/).
 
 ### ECS Hazelcast Member Discovery
 
