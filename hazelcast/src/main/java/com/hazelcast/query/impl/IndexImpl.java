@@ -64,7 +64,7 @@ public class IndexImpl extends AbstractIndex {
 
     @Override
     public boolean hasPartitionIndexed(int partitionId) {
-        return partitionTracker.isMarked(partitionId);
+        return partitionTracker.isIndexed(partitionId);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class IndexImpl extends AbstractIndex {
         // This check guarantees that all partitions are indexed
         // only if there is no concurrent migrations. Check migration stamp
         // to detect concurrent migrations if needed.
-        return ownedPartitionCount < 0 || partitionTracker.markedCount() == ownedPartitionCount;
+        return ownedPartitionCount < 0 || partitionTracker.indexedCount() == ownedPartitionCount;
     }
 
     @Override
@@ -82,12 +82,12 @@ public class IndexImpl extends AbstractIndex {
 
     @Override
     public void markPartitionAsIndexed(int partitionId) {
-        partitionTracker.mark(partitionId);
+        partitionTracker.partitionIndexed(partitionId);
     }
 
     @Override
     public void markPartitionAsUnindexed(int partitionId) {
-        partitionTracker.unmark(partitionId);
+        partitionTracker.partitionUnindexed(partitionId);
     }
 
     @Override

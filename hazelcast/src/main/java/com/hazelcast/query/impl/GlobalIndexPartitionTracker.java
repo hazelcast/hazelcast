@@ -60,11 +60,11 @@ public class GlobalIndexPartitionTracker {
         return state.get().version == version;
     }
 
-    public boolean isMarked(int partitionId) {
+    public boolean isIndexed(int partitionId) {
         return state.get().indexedPartitions.contains(partitionId);
     }
 
-    public int markedCount() {
+    public int indexedCount() {
         return state.get().indexedPartitions.size();
     }
 
@@ -86,15 +86,15 @@ public class GlobalIndexPartitionTracker {
         }
     }
 
-    public void mark(int partition) {
+    public void partitionIndexed(int partition) {
         complete(partition, true);
     }
 
-    public void unmark(int partition) {
+    public void partitionUnindexed(int partition) {
         complete(partition, false);
     }
 
-    private void complete(int partition, boolean mark) {
+    private void complete(int partition, boolean indexed) {
         lock.lock();
 
         try {
@@ -104,7 +104,7 @@ public class GlobalIndexPartitionTracker {
 
             PartitionIdSet newIndexedPartitions = oldState.indexedPartitions.copy();
 
-            if (mark) {
+            if (indexed) {
                 newIndexedPartitions.add(partition);
             } else {
                 newIndexedPartitions.remove(partition);

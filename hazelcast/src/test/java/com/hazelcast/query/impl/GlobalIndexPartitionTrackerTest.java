@@ -38,28 +38,28 @@ public class GlobalIndexPartitionTrackerTest {
         GlobalIndexPartitionTracker tracker = new GlobalIndexPartitionTracker(100);
 
         for (int i = 0; i < 100; i++) {
-            assertFalse(tracker.isMarked(i));
+            assertFalse(tracker.isIndexed(i));
         }
 
         tracker.beginPartitionUpdate();
-        tracker.mark(10);
-        assertTrue(tracker.isMarked(10));
-        assertEquals(1, tracker.markedCount());
+        tracker.partitionIndexed(10);
+        assertTrue(tracker.isIndexed(10));
+        assertEquals(1, tracker.indexedCount());
 
         tracker.beginPartitionUpdate();
-        tracker.mark(11);
-        assertTrue(tracker.isMarked(11));
-        assertEquals(2, tracker.markedCount());
+        tracker.partitionIndexed(11);
+        assertTrue(tracker.isIndexed(11));
+        assertEquals(2, tracker.indexedCount());
 
         tracker.beginPartitionUpdate();
-        tracker.unmark(10);
-        assertFalse(tracker.isMarked(10));
-        assertEquals(1, tracker.markedCount());
+        tracker.partitionUnindexed(10);
+        assertFalse(tracker.isIndexed(10));
+        assertEquals(1, tracker.indexedCount());
 
         tracker.beginPartitionUpdate();
-        tracker.unmark(11);
-        assertFalse(tracker.isMarked(11));
-        assertEquals(0, tracker.markedCount());
+        tracker.partitionUnindexed(11);
+        assertFalse(tracker.isIndexed(11));
+        assertEquals(0, tracker.indexedCount());
     }
 
     @Test
@@ -68,14 +68,14 @@ public class GlobalIndexPartitionTrackerTest {
 
         for (int i = 0; i < 100; i++) {
             tracker.beginPartitionUpdate();
-            tracker.mark(i);
+            tracker.partitionIndexed(i);
         }
 
-        assertEquals(100, tracker.markedCount());
+        assertEquals(100, tracker.indexedCount());
 
         tracker.clear();
 
-        assertEquals(0, tracker.markedCount());
+        assertEquals(0, tracker.indexedCount());
     }
 
     @Test
@@ -94,7 +94,7 @@ public class GlobalIndexPartitionTrackerTest {
         assertNull(tracker.getPartitionStamp(partitions(count)));
         assertFalse(tracker.validatePartitionStamp(stamp1));
 
-        tracker.mark(1);
+        tracker.partitionIndexed(1);
         assertNull(tracker.getPartitionStamp(partitions(count)));
         Long stamp2 = tracker.getPartitionStamp(partitions(count, 1));
         assertNotNull(stamp2);
