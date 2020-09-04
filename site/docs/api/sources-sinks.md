@@ -1520,6 +1520,11 @@ p.readFrom(Sources.itemStream(10))
 Any disconnections for both source and sink will cause the job to fail,
 so this source is mostly aimed for simple IPC or testing.
 
+### HTTP Listener
+
+>This connector is currently under incubation. For more
+>information and examples, please visit the [GitHub repository](https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/http).
+
 ### Twitter
 
 >This connector is currently under incubation. For more
