@@ -92,7 +92,7 @@
         <jackson.version>2.9.7</jackson.version>
         <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
-        <mockito.version>2.19.0</mockito.version>
+        <mockito.version>3.5.10</mockito.version>
         <powermock.version>2.0.7</powermock.version>
         <bytebuddy.version>1.10.9</bytebuddy.version>
         <reflections.version>0.9.10</reflections.version>
