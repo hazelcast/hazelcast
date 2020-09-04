@@ -16,25 +16,6 @@
 
 package com.hazelcast.jet.config;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.jet.config.ResourceType.CLASS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.JetException;
@@ -52,6 +33,24 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.spi.annotation.PrivateApi;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.jet.config.ResourceType.CLASS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  * Contains the configuration specific to one Hazelcast Jet job.
  *
@@ -65,6 +64,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     private ProcessingGuarantee processingGuarantee = ProcessingGuarantee.NONE;
     private long snapshotIntervalMillis = SNAPSHOT_INTERVAL_MILLIS_DEFAULT;
     private boolean autoScaling = true;
+    private boolean suspendOnFailure;
     private boolean splitBrainProtectionEnabled;
     private boolean enableMetrics = true;
     private boolean storeMetricsAfterJobCompletion;
@@ -171,6 +171,33 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     public boolean isAutoScaling() {
         return autoScaling;
+    }
+
+    /**
+     * Sets what happens if the job execution fails:
+     * <ul>
+     *     <li>If enabled, the job will be suspended. It can later be {@linkplain
+     *     Job#resume() resumed} or upgraded and the computation state will be
+     *     preserved.
+     *     <li>If disabled, the job will be terminated. The state snapshots will be
+     *     deleted.
+     * </ul>
+     * <p>
+     * By default it's disabled.
+     *
+     * @return {@code this} instance for fluent API
+     */
+    public JobConfig setSuspendOnFailure(boolean suspendOnFailure) {
+        this.suspendOnFailure = suspendOnFailure;
+        return this;
+    }
+
+    /**
+     * Returns whether the job will be suspended on failure, see
+     * {@link #setSuspendOnFailure(boolean)}.
+     */
+    public boolean isSuspendOnFailure() {
+        return suspendOnFailure;
     }
 
     /**
@@ -1097,6 +1124,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         out.writeObject(processingGuarantee);
         out.writeLong(snapshotIntervalMillis);
         out.writeBoolean(autoScaling);
+        out.writeBoolean(suspendOnFailure);
         out.writeBoolean(splitBrainProtectionEnabled);
         out.writeObject(resourceConfigs);
         out.writeObject(serializerConfigs);
@@ -1112,6 +1140,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         processingGuarantee = in.readObject();
         snapshotIntervalMillis = in.readLong();
         autoScaling = in.readBoolean();
+        suspendOnFailure = in.readBoolean();
         splitBrainProtectionEnabled = in.readBoolean();
         resourceConfigs = in.readObject();
         serializerConfigs = in.readObject();
@@ -1131,6 +1160,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         }
         JobConfig jobConfig = (JobConfig) o;
         return snapshotIntervalMillis == jobConfig.snapshotIntervalMillis && autoScaling == jobConfig.autoScaling
+                && suspendOnFailure == jobConfig.suspendOnFailure
                 && splitBrainProtectionEnabled == jobConfig.splitBrainProtectionEnabled
                 && enableMetrics == jobConfig.enableMetrics
                 && storeMetricsAfterJobCompletion == jobConfig.storeMetricsAfterJobCompletion
@@ -1143,19 +1173,19 @@ public class JobConfig implements IdentifiedDataSerializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, processingGuarantee, snapshotIntervalMillis, autoScaling, splitBrainProtectionEnabled,
-                enableMetrics, storeMetricsAfterJobCompletion, resourceConfigs, serializerConfigs, classLoaderFactory,
-                initialSnapshotName);
+        return Objects.hash(name, processingGuarantee, snapshotIntervalMillis, autoScaling, suspendOnFailure,
+                splitBrainProtectionEnabled, enableMetrics, storeMetricsAfterJobCompletion, resourceConfigs,
+                serializerConfigs, classLoaderFactory, initialSnapshotName);
     }
 
     @Override
     public String toString() {
         return "JobConfig {name=" + name + ", processingGuarantee=" + processingGuarantee + ", snapshotIntervalMillis="
-                + snapshotIntervalMillis + ", autoScaling=" + autoScaling + ", splitBrainProtectionEnabled="
-                + splitBrainProtectionEnabled + ", enableMetrics=" + enableMetrics + ", storeMetricsAfterJobCompletion="
-                + storeMetricsAfterJobCompletion + ", resourceConfigs=" + resourceConfigs + ", serializerConfigs="
-                + serializerConfigs + ", classLoaderFactory=" + classLoaderFactory + ", initialSnapshotName="
-                + initialSnapshotName + "}";
+                + snapshotIntervalMillis + ", autoScaling=" + autoScaling + ", suspendOnFailure=" + suspendOnFailure +
+                ", splitBrainProtectionEnabled=" + splitBrainProtectionEnabled + ", enableMetrics=" + enableMetrics +
+                ", storeMetricsAfterJobCompletion=" + storeMetricsAfterJobCompletion +
+                ", resourceConfigs=" + resourceConfigs + ", serializerConfigs=" + serializerConfigs +
+                ", classLoaderFactory=" + classLoaderFactory + ", initialSnapshotName=" + initialSnapshotName + "}";
     }
 
 }

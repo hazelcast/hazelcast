@@ -29,7 +29,10 @@ import org.junit.runner.RunWith;
 import java.util.Map;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -130,6 +133,27 @@ public class JobConfigTest extends JetTestSupport {
         assertThat(serializerConfigs.entrySet(), hasSize(1));
         assertThat(serializerConfigs.keySet(), contains(Object.class.getName()));
         assertThat(serializerConfigs.values(), contains(ObjectSerializer.class.getName()));
+    }
+
+    @Test
+    public void when_default_then_suspendOnFailureDisabled() {
+        // Given
+        JobConfig config = new JobConfig();
+
+        // Then
+        assertThat(config.isSuspendOnFailure(), equalTo(FALSE));
+    }
+
+    @Test
+    public void when_suspendOnFailureSet_then_suspendOnFailureIsReturned() {
+        // Given
+        JobConfig config = new JobConfig();
+
+        // When
+        config.setSuspendOnFailure(true);
+
+        // Then
+        assertThat(config.isSuspendOnFailure(), equalTo(TRUE));
     }
 
     private static class ObjectSerializer implements StreamSerializer<Object> {

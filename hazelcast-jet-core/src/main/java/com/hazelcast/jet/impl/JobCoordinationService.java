@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricDescriptor;
@@ -203,7 +204,7 @@ public class JobCoordinationService {
                 DAG dag = deserializeDag(jobId, config, serializedDag);
                 Set<String> ownedObservables = ownedObservables(dag);
                 JobRecord jobRecord = new JobRecord(jobId, serializedDag, dagToJson(dag), config, ownedObservables);
-                JobExecutionRecord jobExecutionRecord = new JobExecutionRecord(jobId, quorumSize, false);
+                JobExecutionRecord jobExecutionRecord = new JobExecutionRecord(jobId, quorumSize);
                 masterContext = createMasterContext(jobRecord, jobExecutionRecord);
 
                 boolean hasDuplicateJobName;
@@ -418,6 +419,38 @@ public class JobCoordinationService {
                 JobResult::getJobStatus,
                 jobRecord -> NOT_RUNNING,
                 jobExecutionRecord -> jobExecutionRecord.isSuspended() ? SUSPENDED : NOT_RUNNING
+        );
+    }
+
+    /**
+     * Returns the reason why this job has been suspended in a human-readable
+     * form.
+     * <p>
+     * Fails with {@link JobNotFoundException} if the requested job is not found.
+     * <p>
+     * Fails with {@link IllegalStateException} if the requested job is not
+     * currently in a suspended state.
+     */
+    public CompletableFuture<String> getJobSuspensionCause(long jobId) {
+        FunctionEx<JobExecutionRecord, String> jobExecutionRecordHandler = jobExecutionRecord -> {
+            String cause = jobExecutionRecord.getSuspensionCause();
+            if (cause == null) {
+                throw new IllegalStateException("Job not suspended");
+            }
+            return cause;
+        };
+        return callWithJob(jobId,
+                mc -> {
+                    JobExecutionRecord jobExecutionRecord = mc.jobExecutionRecord();
+                    return jobExecutionRecordHandler.apply(jobExecutionRecord);
+                },
+                jobResult -> {
+                    throw new IllegalStateException("Job not suspended");
+                },
+                jobRecord -> {
+                    throw new IllegalStateException("Job not suspended");
+                },
+                jobExecutionRecordHandler
         );
     }
 
@@ -956,7 +989,7 @@ public class JobCoordinationService {
     }
 
     private JobExecutionRecord ensureExecutionRecord(long jobId, JobExecutionRecord record) {
-        return record != null ? record : new JobExecutionRecord(jobId, getQuorumSize(), false);
+        return record != null ? record : new JobExecutionRecord(jobId, getQuorumSize());
     }
 
     @SuppressWarnings("WeakerAccess") // used by jet-enterprise

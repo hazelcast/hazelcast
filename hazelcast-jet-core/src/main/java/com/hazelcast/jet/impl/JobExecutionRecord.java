@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Objects;
@@ -42,17 +43,15 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 public class JobExecutionRecord implements IdentifiedDataSerializable {
 
     public static final int NO_SNAPSHOT = -1;
-
-    private long jobId;
-
     /**
      * Timestamp to order async updates to the JobRecord. {@link
      * JobRepository#writeJobExecutionRecord}.
      */
     private final AtomicLong timestamp = new AtomicLong();
     private final AtomicInteger quorumSize = new AtomicInteger();
+    private long jobId;
     private volatile boolean executed;
-    private volatile boolean suspended;
+    private volatile String suspensionCause;
     private volatile long snapshotId = NO_SNAPSHOT;
     private volatile int dataMapIndex = -1;
     private volatile long ongoingSnapshotId = NO_SNAPSHOT;
@@ -66,10 +65,9 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
     public JobExecutionRecord() {
     }
 
-    public JobExecutionRecord(long jobId, int quorumSize, boolean suspended) {
+    public JobExecutionRecord(long jobId, int quorumSize) {
         this.jobId = jobId;
         this.quorumSize.set(quorumSize);
-        this.suspended = suspended;
     }
 
     public long getJobId() {
@@ -91,11 +89,25 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
      * Indicates whether job is in suspended state.
      */
     public boolean isSuspended() {
-        return suspended;
+        return suspensionCause != null;
     }
 
-    public void setSuspended(boolean suspended) {
-        this.suspended = suspended;
+    /**
+     * Returns the suspension cause, if the job is suspended or {@code null} if
+     * it's not suspended. The cause is always non-null if the job is
+     * suspended.
+     */
+    @Nullable
+    public String getSuspensionCause() {
+        return suspensionCause;
+    }
+
+    public void clearSuspended() {
+        suspensionCause = null;
+    }
+
+    public void setSuspended(@Nonnull String suspensionCause) {
+        this.suspensionCause = Objects.requireNonNull(suspensionCause);
     }
 
     public boolean executed() {
@@ -251,7 +263,7 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
         out.writeObject(lastSnapshotFailure);
         out.writeObject(snapshotStats);
         out.writeObject(exportedSnapshotMapName);
-        out.writeBoolean(suspended);
+        out.writeObject(suspensionCause);
         out.writeBoolean(executed);
         out.writeLong(timestamp.get());
     }
@@ -267,7 +279,7 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
         lastSnapshotFailure = in.readObject();
         snapshotStats = in.readObject();
         exportedSnapshotMapName = in.readObject();
-        suspended = in.readBoolean();
+        suspensionCause = in.readObject();
         executed = in.readBoolean();
         timestamp.set(in.readLong());
     }
@@ -278,7 +290,7 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
                 "jobId=" + jobId +
                 ", timestamp=" + toLocalTime(timestamp.get()) +
                 ", quorumSize=" + quorumSize +
-                ", suspended=" + suspended +
+                ", suspended=" + (suspensionCause == null ? "false" : "true (" + suspensionCause + ")") +
                 ", executed=" + executed +
                 ", dataMapIndex=" + dataMapIndex +
                 ", snapshotId=" + snapshotId +

@@ -85,6 +85,22 @@ public interface Job {
     JobStatus getStatus();
 
     /**
+     * Return a human-readable description of the cause that led to the
+     * suspension of this job. For example whether the suspension has been
+     * explicitly requested by the user or an error has occurred and the job is
+     * configured to be suspended in such a case (see {@link
+     * JobConfig#setSuspendOnFailure(boolean)}) - in this case the details of
+     * the error are also provided.
+     *
+     * @return cause that led to the job suspension
+     * @throws IllegalStateException if the job is not suspended
+     *
+     * @since 4.3
+     */
+    @Nonnull
+    String getSuspensionCause();
+
+    /**
      * Returns a snapshot of the current values of all job-specific metrics.
      * <p>
      * While the job is running the metric values are updated periodically

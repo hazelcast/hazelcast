@@ -87,6 +87,7 @@
     ],
     "Design Documents": [
       "design-docs/index",
+      "design-docs/012-improved-job-resilience",
       "design-docs/011-json-convenience",
       "design-docs/010-operator-framework",
       "design-docs/009-pulsar-connector",
