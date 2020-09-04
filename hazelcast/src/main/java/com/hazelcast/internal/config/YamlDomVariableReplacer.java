@@ -17,7 +17,7 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
-import com.hazelcast.internal.config.yaml.ElementAdapter;
+import com.hazelcast.internal.config.yaml.YamlElementAdapter;
 import com.hazelcast.internal.yaml.MutableYamlNode;
 import org.w3c.dom.Node;
 
@@ -32,7 +32,7 @@ public class YamlDomVariableReplacer extends AbstractDomVariableReplacer {
     }
 
     private void replaceVariableInNodeName(Node node, ConfigReplacer replacer, boolean failFast) {
-        if (node instanceof ElementAdapter) {
+        if (node instanceof YamlElementAdapter) {
             MutableYamlNode yamlNode = getWrappedMutableYamlNode(node);
             String nodeName = yamlNode.nodeName();
             if (nodeName != null) {

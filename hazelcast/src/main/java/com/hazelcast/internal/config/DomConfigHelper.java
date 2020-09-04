@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.config;
 
+import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.internal.util.StringUtil;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -26,6 +26,7 @@ import org.w3c.dom.NodeList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Properties;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
@@ -70,25 +71,25 @@ public final class DomConfigHelper {
     }
 
     public static Iterable<Node> childElements(Node node) {
-        return new IterableNodeList(node, Node.ELEMENT_NODE, null);
+        return new IterableNodeList(node, Node.ELEMENT_NODE);
     }
 
-    public static Iterable<Node> childElementsWithName(Node node, String nodeName) {
-        return new IterableNodeList(node, Node.ELEMENT_NODE, nodeName);
+    public static Iterable<Node> childElementsWithName(Node node, String nodeName, boolean strict) {
+        return new IterableNodeList(node, Node.ELEMENT_NODE, nodeName, strict);
     }
 
-    public static Node childElementWithName(Node node, String nodeName) {
-        Iterator<Node> it = childElementsWithName(node, nodeName).iterator();
+    public static Node childElementWithName(Node node, String nodeName, boolean strict) {
+        Iterator<Node> it = childElementsWithName(node, nodeName, strict).iterator();
         return it.hasNext() ? it.next() : null;
     }
 
     public static Node firstChildElement(Node node) {
-        Iterator<Node> it = new IterableNodeList(node, Node.ELEMENT_NODE, null).iterator();
+        Iterator<Node> it = new IterableNodeList(node, Node.ELEMENT_NODE).iterator();
         return it.hasNext() ? it.next() : null;
     }
 
     public static Iterable<Node> asElementIterable(NodeList list) {
-        return new IterableNodeList(list, Node.ELEMENT_NODE, null);
+        return new IterableNodeList(list, Node.ELEMENT_NODE);
     }
 
     public static String cleanNodeName(final Node node) {
@@ -190,18 +191,14 @@ public final class DomConfigHelper {
     }
 
     public static double getDoubleValue(final String parameterName, final String value, double defaultValue) {
-        if (isNullOrEmpty(value)) {
-            return defaultValue;
-        }
-        return getDoubleValue(parameterName, value);
+        return isNullOrEmpty(value) ? defaultValue : getDoubleValue(parameterName, value);
     }
 
     public static String getAttribute(Node node, String attName, boolean domLevel3) {
         final Node attNode = node.getAttributes().getNamedItem(attName);
-        if (attNode == null) {
-            return null;
-        }
-        return getTextContent(attNode, domLevel3);
+        return attNode == null
+          ? null
+          : getTextContent(attNode, domLevel3);
     }
 
     private static class IterableNodeList implements Iterable<Node> {
@@ -210,51 +207,71 @@ public final class DomConfigHelper {
         private final int maximum;
         private final short nodeType;
         private final String nodeName;
+        private final boolean strict;
 
-        IterableNodeList(Node parent, short nodeType, String nodeName) {
-            this(parent.getChildNodes(), nodeType, nodeName);
+        IterableNodeList(Node parent, short nodeType) {
+            this(parent.getChildNodes(), nodeType);
         }
 
-        IterableNodeList(NodeList wrapped, short nodeType, String nodeName) {
+        IterableNodeList(Node parent, short nodeType, String nodeName, boolean strict) {
+            this(parent.getChildNodes(), nodeType, nodeName, strict);
+        }
+
+        IterableNodeList(NodeList wrapped, short nodeType) {
+            this.wrapped = wrapped;
+            this.nodeType = nodeType;
+            this.maximum = wrapped.getLength();
+            this.nodeName = null;
+            this.strict = true;
+        }
+
+        IterableNodeList(NodeList wrapped, short nodeType, String nodeName, boolean strict) {
             this.wrapped = wrapped;
             this.nodeType = nodeType;
             this.maximum = wrapped.getLength();
             this.nodeName = nodeName;
+            this.strict = strict;
         }
 
         @Override
         public Iterator<Node> iterator() {
-            return new Iterator<Node>() {
-                private int index;
-                private Node next;
+            return new IterableNodeListIterator();
+        }
 
-                public boolean hasNext() {
-                    next = null;
-                    for (; index < maximum; index++) {
-                        final Node item = wrapped.item(index);
-                        if ((nodeType == 0 || item.getNodeType() == nodeType)
-                                && (nodeName == null || nodeName.equals(cleanNodeName(item)))) {
-                            next = item;
-                            return true;
-                        }
+        private class IterableNodeListIterator implements Iterator<Node> {
+            private int index;
+            private Node next;
+
+            public boolean hasNext() {
+                next = null;
+                for (; index < maximum; index++) {
+                    final Node item = wrapped.item(index);
+                    if ((nodeType == 0 || item.getNodeType() == nodeType) && (nodeName == null || nameMatches(item))) {
+                        next = item;
+                        return true;
                     }
-                    return false;
                 }
+                return false;
+            }
 
-                public Node next() {
-                    if (hasNext()) {
-                        index++;
-                        return next;
-                    }
-                    throw new NoSuchElementException();
-                }
+            public boolean nameMatches(Node item) {
+                return strict
+                  ? Objects.equals(nodeName, cleanNodeName(item))
+                  : ConfigUtils.matches(nodeName, cleanNodeName(item));
+            }
 
-                @Override
-                public void remove() {
-                    throw new UnsupportedOperationException();
+            public Node next() {
+                if (hasNext()) {
+                    index++;
+                    return next;
                 }
-            };
+                throw new NoSuchElementException();
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
         }
     }
-
 }

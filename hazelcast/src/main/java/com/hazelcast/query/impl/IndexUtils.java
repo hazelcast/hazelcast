@@ -19,7 +19,6 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import com.hazelcast.config.ConfigXmlGenerator;
-import com.hazelcast.internal.config.DomConfigHelper;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.util.UuidUtil;
@@ -30,8 +29,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.internal.config.DomConfigHelper.childElementWithName;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.internal.config.DomConfigHelper.getTextContent;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
@@ -288,16 +289,16 @@ public final class IndexUtils {
         gen.close();
     }
 
-    public static IndexConfig getIndexConfigFromXml(Node indexNode, boolean domLevel3) {
+    public static IndexConfig getIndexConfigFromXml(Node indexNode, boolean domLevel3, boolean strict) {
         NamedNodeMap attrs = indexNode.getAttributes();
 
-        String name = DomConfigHelper.getTextContent(attrs.getNamedItem("name"), domLevel3);
+        String name = getTextContent(attrs.getNamedItem("name"), domLevel3);
 
         if (name.isEmpty()) {
             name = null;
         }
 
-        String typeStr = DomConfigHelper.getTextContent(attrs.getNamedItem("type"), domLevel3);
+        String typeStr = getTextContent(attrs.getNamedItem("type"), domLevel3);
         IndexType type = getIndexTypeFromXmlName(typeStr);
 
         IndexConfig res = new IndexConfig().setName(name).setType(type);
@@ -306,7 +307,7 @@ public final class IndexUtils {
             if ("attributes".equals(cleanNodeName(attributesNode))) {
                 for (Node attributeNode : childElements(attributesNode)) {
                     if ("attribute".equals(cleanNodeName(attributeNode))) {
-                        String attribute = DomConfigHelper.getTextContent(attributeNode, domLevel3);
+                        String attribute = getTextContent(attributeNode, domLevel3);
 
                         res.addAttribute(attribute);
                     }
@@ -315,14 +316,15 @@ public final class IndexUtils {
         }
 
         if (type == IndexType.BITMAP) {
-            Node optionsNode = DomConfigHelper.childElementWithName(indexNode, "bitmap-index-options");
+            Node optionsNode = childElementWithName(indexNode, "bitmap-index-options", strict);
             if (optionsNode != null) {
-                Node uniqueKeyNode = DomConfigHelper.childElementWithName(optionsNode, "unique-key");
-                String uniqueKeyText = DomConfigHelper.getTextContent(uniqueKeyNode, domLevel3);
+                Node uniqueKeyNode = childElementWithName(optionsNode, "unique-key", strict);
+                String uniqueKeyText = getTextContent(uniqueKeyNode, domLevel3);
                 String uniqueKey = isNullOrEmpty(uniqueKeyText) ? BitmapIndexOptions.DEFAULT_UNIQUE_KEY : uniqueKeyText;
 
-                Node uniqueKeyTransformationNode = DomConfigHelper.childElementWithName(optionsNode, "unique-key-transformation");
-                String uniqueKeyTransformationText = DomConfigHelper.getTextContent(uniqueKeyTransformationNode, domLevel3);
+                Node uniqueKeyTransformationNode = childElementWithName(
+                  optionsNode, "unique-key-transformation", strict);
+                String uniqueKeyTransformationText = getTextContent(uniqueKeyTransformationNode, domLevel3);
                 UniqueKeyTransformation uniqueKeyTransformation = isNullOrEmpty(uniqueKeyTransformationText)
                         ? BitmapIndexOptions.DEFAULT_UNIQUE_KEY_TRANSFORMATION
                         : UniqueKeyTransformation.fromName(uniqueKeyTransformationText);
@@ -353,16 +355,16 @@ public final class IndexUtils {
         }
     }
 
-    public static IndexConfig getIndexConfigFromYaml(Node indexNode, boolean domLevel3) {
+    public static IndexConfig getIndexConfigFromYaml(Node indexNode, boolean domLevel3, boolean strict) {
         NamedNodeMap attrs = indexNode.getAttributes();
 
-        String name = DomConfigHelper.getTextContent(attrs.getNamedItem("name"), domLevel3);
+        String name = getTextContent(attrs.getNamedItem("name"), domLevel3);
 
         if (name.isEmpty()) {
             name = null;
         }
 
-        String typeStr = DomConfigHelper.getTextContent(attrs.getNamedItem("type"), domLevel3);
+        String typeStr = getTextContent(attrs.getNamedItem("type"), domLevel3);
 
         if (typeStr.isEmpty()) {
             typeStr = IndexConfig.DEFAULT_TYPE.name();
@@ -392,14 +394,15 @@ public final class IndexUtils {
         }
 
         if (type == IndexType.BITMAP) {
-            Node optionsNode = DomConfigHelper.childElementWithName(indexNode, "bitmap-index-options");
+            Node optionsNode = childElementWithName(indexNode, "bitmap-index-options", strict);
             if (optionsNode != null) {
-                Node uniqueKeyNode = DomConfigHelper.childElementWithName(optionsNode, "unique-key");
-                String uniqueKeyText = DomConfigHelper.getTextContent(uniqueKeyNode, domLevel3);
+                Node uniqueKeyNode = childElementWithName(optionsNode, "unique-key", strict);
+                String uniqueKeyText = getTextContent(uniqueKeyNode, domLevel3);
                 String uniqueKey = isNullOrEmpty(uniqueKeyText) ? BitmapIndexOptions.DEFAULT_UNIQUE_KEY : uniqueKeyText;
 
-                Node uniqueKeyTransformationNode = DomConfigHelper.childElementWithName(optionsNode, "unique-key-transformation");
-                String uniqueKeyTransformationText = DomConfigHelper.getTextContent(uniqueKeyTransformationNode, domLevel3);
+                Node uniqueKeyTransformationNode = childElementWithName(
+                  optionsNode, "unique-key-transformation", strict);
+                String uniqueKeyTransformationText = getTextContent(uniqueKeyTransformationNode, domLevel3);
                 UniqueKeyTransformation uniqueKeyTransformation = isNullOrEmpty(uniqueKeyTransformationText)
                         ? BitmapIndexOptions.DEFAULT_UNIQUE_KEY_TRANSFORMATION
                         : UniqueKeyTransformation.fromName(uniqueKeyTransformationText);

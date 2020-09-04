@@ -17,6 +17,7 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.test.CustomLoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.ConfigCompatibilityChecker;
@@ -85,6 +86,7 @@ import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -490,8 +492,21 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     @Test
     public void loadBalancer() {
         clientConfig.setLoadBalancer(new RandomLB());
-        LoadBalancer actual = newConfigViaGenerator().getLoadBalancer();
+        ClientConfig newClientConfig = newConfigViaGenerator();
+        LoadBalancer actual = newClientConfig.getLoadBalancer();
         assertTrue(actual instanceof RandomLB);
+        String actualClassName = newClientConfig.getLoadBalancerClassName();
+        assertNull(actualClassName);
+    }
+
+    @Test
+    public void loadBalancerCustom() {
+        clientConfig.setLoadBalancer(new CustomLoadBalancer());
+        ClientConfig newClientConfig = newConfigViaGenerator();
+        LoadBalancer actual = newClientConfig.getLoadBalancer();
+        assertNull(actual);
+        String actualClassName = newClientConfig.getLoadBalancerClassName();
+        assertEquals("com.hazelcast.client.test.CustomLoadBalancer", actualClassName);
     }
 
     private NearCacheConfig createNearCacheConfig(String name) {

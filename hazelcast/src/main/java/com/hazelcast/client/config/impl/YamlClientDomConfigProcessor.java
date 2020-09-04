@@ -35,7 +35,6 @@ import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlScalar;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import java.nio.ByteOrder;
@@ -53,6 +52,10 @@ import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
     public YamlClientDomConfigProcessor(boolean domLevel3, ClientConfig clientConfig) {
         super(domLevel3, clientConfig, new QueryCacheYamlConfigBuilderHelper());
+    }
+
+    public YamlClientDomConfigProcessor(boolean domLevel3, ClientConfig clientConfig, boolean strict) {
+        super(domLevel3, clientConfig, new QueryCacheYamlConfigBuilderHelper(strict), strict);
     }
 
     @Override
@@ -76,15 +79,15 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
         SerializationConfig serializationConfig = new SerializationConfig();
         for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
-            if ("portable-version".equals(name)) {
+            if (matches("portable-version", name)) {
                 String value = getTextContent(child);
                 serializationConfig.setPortableVersion(getIntegerValue(name, value));
-            } else if ("check-class-def-errors".equals(name)) {
+            } else if (matches("check-class-def-errors", name)) {
                 String value = getTextContent(child);
                 serializationConfig.setCheckClassDefErrors(getBooleanValue(value));
-            } else if ("use-native-byte-order".equals(name)) {
+            } else if (matches("use-native-byte-order", name)) {
                 serializationConfig.setUseNativeByteOrder(getBooleanValue(getTextContent(child)));
-            } else if ("byte-order".equals(name)) {
+            } else if (matches("byte-order", name)) {
                 String value = getTextContent(child);
                 ByteOrder byteOrder = null;
                 if (ByteOrder.BIG_ENDIAN.toString().equals(value)) {
@@ -93,25 +96,30 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
                     byteOrder = ByteOrder.LITTLE_ENDIAN;
                 }
                 serializationConfig.setByteOrder(byteOrder != null ? byteOrder : ByteOrder.BIG_ENDIAN);
-            } else if ("enable-compression".equals(name)) {
+            } else if (matches("enable-compression", name)) {
                 serializationConfig.setEnableCompression(getBooleanValue(getTextContent(child)));
-            } else if ("enable-shared-object".equals(name)) {
+            } else if (matches("enable-shared-object", name)) {
                 serializationConfig.setEnableSharedObject(getBooleanValue(getTextContent(child)));
-            } else if ("allow-unsafe".equals(name)) {
+            } else if (matches("allow-unsafe", name)) {
                 serializationConfig.setAllowUnsafe(getBooleanValue(getTextContent(child)));
-            } else if ("data-serializable-factories".equals(name)) {
+            } else if (matches("data-serializable-factories", name)) {
                 fillDataSerializableFactories(child, serializationConfig);
-            } else if ("portable-factories".equals(name)) {
+            } else if (matches("portable-factories", name)) {
                 fillPortableFactories(child, serializationConfig);
-            } else if ("serializers".equals(name)) {
+            } else if (matches("serializers", name)) {
                 fillSerializers(child, serializationConfig);
-            } else if ("global-serializer".equals(name)) {
+            } else if (matches("global-serializer", name)) {
                 fillGlobalSerializer(child, serializationConfig);
-            } else if ("java-serialization-filter".equals(name)) {
+            } else if (matches("java-serialization-filter", name)) {
                 fillJavaSerializationFilter(child, serializationConfig);
             }
         }
         return serializationConfig;
+    }
+
+    @Override
+    protected String parseCustomLoadBalancerClassName(Node node) {
+        return getAttribute(node, "class-name");
     }
 
     private void fillGlobalSerializer(Node child, SerializationConfig serializationConfig) {
@@ -140,9 +148,8 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
     @Override
     protected void fillDataSerializableFactories(Node node, SerializationConfig serializationConfig) {
         for (Node child : childElements(node)) {
-            NamedNodeMap attributes = child.getAttributes();
-            final Node factoryIdNode = attributes.getNamedItem("factory-id");
-            final Node classNameNode = attributes.getNamedItem("class-name");
+            final Node factoryIdNode = getNamedItemNode(child, "factory-id");
+            final Node classNameNode = getNamedItemNode(child, "class-name");
             if (factoryIdNode == null) {
                 throw new IllegalArgumentException(
                         "'factory-id' attribute of 'data-serializable-factory' is required!");
@@ -160,9 +167,8 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
     @Override
     protected void fillPortableFactories(Node node, SerializationConfig serializationConfig) {
         for (Node child : childElements(node)) {
-            NamedNodeMap attributes = child.getAttributes();
-            final Node factoryIdNode = attributes.getNamedItem("factory-id");
-            final Node classNameNode = attributes.getNamedItem("class-name");
+            final Node factoryIdNode = getNamedItemNode(child, "factory-id");
+            final Node classNameNode = getNamedItemNode(child, "class-name");
             if (factoryIdNode == null) {
                 throw new IllegalArgumentException("'factory-id' attribute of 'portable-factory' is required!");
             }
@@ -180,15 +186,15 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
         ClassFilter list = new ClassFilter();
         for (Node typeNode : childElements(node)) {
             final String name = cleanNodeName(typeNode);
-            if ("class".equals(name)) {
+            if (matches("class", name)) {
                 for (Node classNode : childElements(typeNode)) {
                     list.addClasses(getTextContent(classNode));
                 }
-            } else if ("package".equals(name)) {
+            } else if (matches("package", name)) {
                 for (Node packageNode : childElements(typeNode)) {
                     list.addPackages(getTextContent(packageNode));
                 }
-            } else if ("prefix".equals(name)) {
+            } else if (matches("prefix", name)) {
                 for (Node prefixNode : childElements(typeNode)) {
                     list.addPrefixes(getTextContent(prefixNode));
                 }
@@ -200,11 +206,11 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
     @Override
     protected void handleUserCodeDeploymentNode(ClientUserCodeDeploymentConfig userCodeDeploymentConfig, Node child) {
         String childNodeName = cleanNodeName(child);
-        if ("classnames".equals(childNodeName)) {
+        if (matches("classnames", childNodeName)) {
             for (Node classNameNode : childElements(child)) {
                 userCodeDeploymentConfig.addClass(getTextContent(classNameNode));
             }
-        } else if ("jarpaths".equals(childNodeName)) {
+        } else if (matches("jarpaths", childNodeName)) {
             for (Node jarPathNode : childElements(child)) {
                 userCodeDeploymentConfig.addJar(getTextContent(jarPathNode));
             }
@@ -277,9 +283,9 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
         DiscoveryConfig discoveryConfig = clientNetworkConfig.getDiscoveryConfig();
         for (Node child : childElements(node)) {
             String name = cleanNodeName(child);
-            if ("discovery-strategies".equals(name)) {
+            if (matches("discovery-strategies", name)) {
                 handleDiscoveryStrategiesNode(child, discoveryConfig);
-            } else if ("node-filter".equals(name)) {
+            } else if (matches("node-filter", name)) {
                 handleDiscoveryNodeFilter(child, discoveryConfig);
             }
         }
@@ -317,10 +323,10 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
     protected void handlePersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig, Node n) {
         for (Node dirsNode : childElements(n)) {
             String nodeName = cleanNodeName(dirsNode);
-            if ("directories".equals(nodeName)) {
+            if (matches("directories", nodeName)) {
                 for (Node dirNode : childElements(dirsNode)) {
-                    String directory = getTextContent(dirNode.getAttributes().getNamedItem("directory"));
-                    String numaNodeIdStr = getTextContent(dirNode.getAttributes().getNamedItem("numa-node"));
+                    String directory = getTextContent(getNamedItemNode(dirNode, "directory"));
+                    String numaNodeIdStr = getTextContent(getNamedItemNode(dirNode, "numa-node"));
                     if (!StringUtil.isNullOrEmptyAfterTrim(numaNodeIdStr)) {
                         int numaNodeId = getIntegerValue("numa-node", numaNodeIdStr);
                         persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory, numaNodeId));

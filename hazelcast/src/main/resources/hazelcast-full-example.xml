@@ -656,15 +656,31 @@
             <aws enabled="false">
                 <access-key>my-access-key</access-key>
                 <secret-key>my-secret-key</secret-key>
-                <iam-role>dummy</iam-role>
                 <region>us-west-1</region>
                 <host-header>ec2.amazonaws.com</host-header>
-                <security-group-name>hazelcast-sg</security-group-name>
+                <connection-timeout-seconds>7</connection-timeout-seconds>
+                <read-timeout-seconds>7</read-timeout-seconds>
+                <connection-retries>4</connection-retries>
+                <hz-port>5701-5710</hz-port>
                 <tag-key>type</tag-key>
                 <tag-value>hz-nodes</tag-value>
+                <security-group-name>hazelcast-sg</security-group-name>
+                <iam-role>dummy</iam-role>
+                <use-public-ip>true</use-public-ip>
+                <!--
+                <cluster>my-cluster</cluster>
+                <family>test-family</family>
+                <service-name>test-service</service-name>
+                -->
             </aws>
             <gcp enabled="false">
-                <zones>us-east1-b,us-east1-c</zones>
+                <private-key-path>key-path</private-key-path>
+                <projects>project-1,project-2</projects>
+                <region>us-central1</region>
+                <zones>us-central1-b,us-central1-c</zones>
+                <label>key=value</label>
+                <hz-port>5701-5710</hz-port>
+                <use-public-ip>true</use-public-ip>
             </gcp>
             <azure enabled="false">
                 <instance-metadata-available>false</instance-metadata-available>
@@ -675,6 +691,8 @@
                 <resource-group>RESOURCE-GROUP-NAME</resource-group>
                 <scale-set>SCALE-SET-NAME</scale-set>
                 <tag>TAG-NAME=HZLCAST001</tag>
+                <hz-port>5701-5707</hz-port>
+                <use-public-ip>true</use-public-ip>
             </azure>
             <kubernetes enabled="false">
                 <namespace>MY-KUBERNETES-NAMESPACE</namespace>
@@ -3052,19 +3070,31 @@
             <aws enabled="false">
                 <access-key>my-access-key</access-key>
                 <secret-key>my-secret-key</secret-key>
-                <iam-role>dummy</iam-role>
-                <!--optional, default is us-east-1 -->
                 <region>us-west-1</region>
-                <!--optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property -->
                 <host-header>ec2.amazonaws.com</host-header>
-                <!-- optional, only instances belonging to this group will be discovered, default will try all running instances -->
-                <security-group-name>hazelcast-sg</security-group-name>
+                <connection-timeout-seconds>7</connection-timeout-seconds>
+                <read-timeout-seconds>7</read-timeout-seconds>
+                <connection-retries>4</connection-retries>
+                <hz-port>5701-5710</hz-port>
                 <tag-key>type</tag-key>
                 <tag-value>hz-nodes</tag-value>
+                <security-group-name>hazelcast-sg</security-group-name>
+                <iam-role>dummy</iam-role>
                 <use-public-ip>true</use-public-ip>
+                <!--
+                <cluster>my-cluster</cluster>
+                <family>test-family</family>
+                <service-name>test-service</service-name>
+                -->
             </aws>
             <gcp enabled="false">
-                <zones>us-east1-b,us-east1-c</zones>
+                <private-key-path>key-path</private-key-path>
+                <projects>project-1,project-2</projects>
+                <region>us-central1</region>
+                <zones>us-central1-b,us-central1-c</zones>
+                <label>key=value</label>
+                <hz-port>5701-5710</hz-port>
+                <use-public-ip>true</use-public-ip>
             </gcp>
             <azure enabled="false">
                 <instance-metadata-available>false</instance-metadata-available>
@@ -3075,6 +3105,8 @@
                 <resource-group>RESOURCE-GROUP-NAME</resource-group>
                 <scale-set>SCALE-SET-NAME</scale-set>
                 <tag>TAG-NAME=HZLCAST001</tag>
+                <hz-port>5701-5707</hz-port>
+                <use-public-ip>true</use-public-ip>
             </azure>
             <kubernetes enabled="false">
                 <namespace>MY-KUBERNETES-NAMESPACE</namespace>

@@ -33,7 +33,6 @@ import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import java.nio.ByteOrder;
@@ -60,12 +59,24 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     protected final Set<String> occurrenceSet = new HashSet<>();
 
     /**
+     * Enables strict parsing mode in which config entries are parsed as-is
+     * When disabled, dashes are ignored
+     */
+    protected final boolean strict;
+
+    /**
      * Tells whether the traversed DOM is a level 3 one
      */
     final boolean domLevel3;
 
     protected AbstractDomConfigProcessor(boolean domLevel3) {
         this.domLevel3 = domLevel3;
+        this.strict = true;
+    }
+
+    protected AbstractDomConfigProcessor(boolean domLevel3, boolean strict) {
+        this.domLevel3 = domLevel3;
+        this.strict = strict;
     }
 
     protected String getTextContent(Node node) {
@@ -73,7 +84,31 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     }
 
     protected String getAttribute(Node node, String attName) {
-        return DomConfigHelper.getAttribute(node, attName, domLevel3);
+        if (strict) {
+            return DomConfigHelper.getAttribute(node, attName, domLevel3);
+        } else {
+            String value = DomConfigHelper.getAttribute(node, attName, domLevel3);
+            return value != null
+              ? value
+              : DomConfigHelper.getAttribute(node, attName.replace("-", ""), domLevel3);
+        }
+    }
+
+    protected Node getNamedItemNode(final Node node, String attrName) {
+        if (strict) {
+            return node.getAttributes().getNamedItem(attrName);
+        } else {
+            Node attrNode = node.getAttributes().getNamedItem(attrName);
+            return attrNode != null
+              ? attrNode
+              : node.getAttributes().getNamedItem(attrName.replace("-", ""));
+        }
+    }
+
+    protected boolean matches(String config1, String config2) {
+        return strict
+          ? config1 != null && config1.equals(config2)
+          : ConfigUtils.matches(config1, config2);
     }
 
     protected void fillProperties(Node node, Map<String, Comparable> properties) {
@@ -86,16 +121,15 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
 
     protected SocketInterceptorConfig parseSocketInterceptorConfig(final Node node) {
         SocketInterceptorConfig socketInterceptorConfig = new SocketInterceptorConfig();
-        final NamedNodeMap atts = node.getAttributes();
-        final Node enabledNode = atts.getNamedItem("enabled");
+        final Node enabledNode = getNamedItemNode(node, "enabled");
         final boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         socketInterceptorConfig.setEnabled(enabled);
 
         for (Node n : childElements(node)) {
             final String nodeName = cleanNodeName(n);
-            if ("class-name".equals(nodeName)) {
+            if (matches("class-name", nodeName)) {
                 socketInterceptorConfig.setClassName(getTextContent(n).trim());
-            } else if ("properties".equals(nodeName)) {
+            } else if (matches("properties", nodeName)) {
                 fillProperties(n, socketInterceptorConfig.getProperties());
             }
         }
@@ -107,15 +141,15 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         SerializationConfig serializationConfig = new SerializationConfig();
         for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
-            if ("portable-version".equals(name)) {
+            if (matches("portable-version", name)) {
                 String value = getTextContent(child);
                 serializationConfig.setPortableVersion(getIntegerValue(name, value));
-            } else if ("check-class-def-errors".equals(name)) {
+            } else if (matches("check-class-def-errors", name)) {
                 String value = getTextContent(child);
                 serializationConfig.setCheckClassDefErrors(getBooleanValue(value));
-            } else if ("use-native-byte-order".equals(name)) {
+            } else if (matches("use-native-byte-order", name)) {
                 serializationConfig.setUseNativeByteOrder(getBooleanValue(getTextContent(child)));
-            } else if ("byte-order".equals(name)) {
+            } else if (matches("byte-order", name)) {
                 String value = getTextContent(child);
                 ByteOrder byteOrder = null;
                 if (ByteOrder.BIG_ENDIAN.toString().equals(value)) {
@@ -124,19 +158,19 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
                     byteOrder = ByteOrder.LITTLE_ENDIAN;
                 }
                 serializationConfig.setByteOrder(byteOrder != null ? byteOrder : ByteOrder.BIG_ENDIAN);
-            } else if ("enable-compression".equals(name)) {
+            } else if (matches("enable-compression", name)) {
                 serializationConfig.setEnableCompression(getBooleanValue(getTextContent(child)));
-            } else if ("enable-shared-object".equals(name)) {
+            } else if (matches("enable-shared-object", name)) {
                 serializationConfig.setEnableSharedObject(getBooleanValue(getTextContent(child)));
-            } else if ("allow-unsafe".equals(name)) {
+            } else if (matches("allow-unsafe", name)) {
                 serializationConfig.setAllowUnsafe(getBooleanValue(getTextContent(child)));
-            } else if ("data-serializable-factories".equals(name)) {
+            } else if (matches("data-serializable-factories", name)) {
                 fillDataSerializableFactories(child, serializationConfig);
-            } else if ("portable-factories".equals(name)) {
+            } else if (matches("portable-factories", name)) {
                 fillPortableFactories(child, serializationConfig);
-            } else if ("serializers".equals(name)) {
+            } else if (matches("serializers", name)) {
                 fillSerializers(child, serializationConfig);
-            } else if ("java-serialization-filter".equals(name)) {
+            } else if (matches("java-serialization-filter", name)) {
                 fillJavaSerializationFilter(child, serializationConfig);
             }
         }
@@ -146,9 +180,9 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     protected void fillDataSerializableFactories(Node node, SerializationConfig serializationConfig) {
         for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
-            if ("data-serializable-factory".equals(name)) {
+            if (matches("data-serializable-factory", name)) {
                 final String value = getTextContent(child);
-                final Node factoryIdNode = child.getAttributes().getNamedItem("factory-id");
+                final Node factoryIdNode = getNamedItemNode(child, "factory-id");
                 if (factoryIdNode == null) {
                     throw new IllegalArgumentException(
                             "'factory-id' attribute of 'data-serializable-factory' is required!");
@@ -162,9 +196,9 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     protected void fillPortableFactories(Node node, SerializationConfig serializationConfig) {
         for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
-            if ("portable-factory".equals(name)) {
+            if (matches("portable-factory", name)) {
                 final String value = getTextContent(child);
-                final Node factoryIdNode = child.getAttributes().getNamedItem("factory-id");
+                final Node factoryIdNode = getNamedItemNode(child, "factory-id");
                 if (factoryIdNode == null) {
                     throw new IllegalArgumentException("'factory-id' attribute of 'portable-factory' is required!");
                 }
@@ -178,14 +212,14 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
             final String value = getTextContent(child);
-            if ("serializer".equals(name)) {
+            if (matches("serializer", name)) {
                 SerializerConfig serializerConfig = new SerializerConfig();
                 final String typeClassName = getAttribute(child, "type-class");
                 final String className = getAttribute(child, "class-name");
                 serializerConfig.setTypeClassName(typeClassName);
                 serializerConfig.setClassName(className);
                 serializationConfig.addSerializerConfig(serializerConfig);
-            } else if ("global-serializer".equals(name)) {
+            } else if (matches("global-serializer", name)) {
                 GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
                 globalSerializerConfig.setClassName(value);
                 String attrValue = getAttribute(child, "override-java-serialization");
@@ -199,15 +233,15 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     protected void fillJavaSerializationFilter(final Node node, SerializationConfig serializationConfig) {
         JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
         serializationConfig.setJavaSerializationFilterConfig(filterConfig);
-        Node defaultsDisabledNode = node.getAttributes().getNamedItem("defaults-disabled");
+        Node defaultsDisabledNode = getNamedItemNode(node, "defaults-disabled");
         boolean defaultsDisabled = defaultsDisabledNode != null && getBooleanValue(getTextContent(defaultsDisabledNode));
         filterConfig.setDefaultsDisabled(defaultsDisabled);
         for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
-            if ("blacklist".equals(name)) {
+            if (matches("blacklist", name)) {
                 ClassFilter list = parseClassFilterList(child);
                 filterConfig.setBlacklist(list);
-            } else if ("whitelist".equals(name)) {
+            } else if (matches("whitelist", name)) {
                 ClassFilter list = parseClassFilterList(child);
                 filterConfig.setWhitelist(list);
             }
@@ -218,11 +252,11 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         ClassFilter list = new ClassFilter();
         for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
-            if ("class".equals(name)) {
+            if (matches("class", name)) {
                 list.addClasses(getTextContent(child));
-            } else if ("package".equals(name)) {
+            } else if (matches("package", name)) {
                 list.addPackages(getTextContent(child));
-            } else if ("prefix".equals(name)) {
+            } else if (matches("prefix", name)) {
                 list.addPrefixes(getTextContent(child));
             }
         }
@@ -234,16 +268,15 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     }
 
     protected <T extends AbstractFactoryWithPropertiesConfig<?>> T fillFactoryWithPropertiesConfig(Node node, T factoryConfig) {
-        NamedNodeMap atts = node.getAttributes();
-        Node enabledNode = atts.getNamedItem("enabled");
+        Node enabledNode = getNamedItemNode(node, "enabled");
         boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
         factoryConfig.setEnabled(enabled);
 
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
-            if ("factory-class-name".equals(nodeName)) {
+            if (matches("factory-class-name", nodeName)) {
                 factoryConfig.setFactoryClassName(getTextContent(n));
-            } else if ("properties".equals(nodeName)) {
+            } else if (matches("properties", nodeName)) {
                 fillProperties(n, factoryConfig.getProperties());
             }
         }
@@ -251,12 +284,11 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     }
 
     protected void fillNativeMemoryConfig(Node node, NativeMemoryConfig nativeMemoryConfig) {
-        final NamedNodeMap atts = node.getAttributes();
-        final Node enabledNode = atts.getNamedItem("enabled");
+        final Node enabledNode = getNamedItemNode(node, "enabled");
         final boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         nativeMemoryConfig.setEnabled(enabled);
 
-        final Node allocTypeNode = atts.getNamedItem("allocator-type");
+        final Node allocTypeNode = getNamedItemNode(node, "allocator-type");
         final String allocType = getTextContent(allocTypeNode);
         if (allocType != null && !"".equals(allocType)) {
             nativeMemoryConfig.setAllocatorType(
@@ -265,25 +297,24 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
 
         for (Node n : childElements(node)) {
             final String nodeName = cleanNodeName(n);
-            if ("size".equals(nodeName)) {
-                final NamedNodeMap attrs = n.getAttributes();
-                final String value = getTextContent(attrs.getNamedItem("value"));
-                final MemoryUnit unit = MemoryUnit.valueOf(getTextContent(attrs.getNamedItem("unit")));
+            if (matches("size", nodeName)) {
+                final String value = getTextContent(getNamedItemNode(n, "value"));
+                final MemoryUnit unit = MemoryUnit.valueOf(getTextContent(getNamedItemNode(n, "unit")));
                 MemorySize memorySize = new MemorySize(Long.parseLong(value), unit);
                 nativeMemoryConfig.setSize(memorySize);
-            } else if ("min-block-size".equals(nodeName)) {
+            } else if (matches("min-block-size", nodeName)) {
                 String value = getTextContent(n);
                 nativeMemoryConfig.setMinBlockSize(Integer.parseInt(value));
-            } else if ("page-size".equals(nodeName)) {
+            } else if (matches("page-size", nodeName)) {
                 String value = getTextContent(n);
                 nativeMemoryConfig.setPageSize(Integer.parseInt(value));
-            } else if ("metadata-space-percentage".equals(nodeName)) {
+            } else if (matches("metadata-space-percentage", nodeName)) {
                 String value = getTextContent(n);
                 nativeMemoryConfig.setMetadataSpacePercentage(Float.parseFloat(value));
-            } else if ("persistent-memory-directory".equals(nodeName)) {
+            } else if (matches("persistent-memory-directory", nodeName)) {
                 nativeMemoryConfig.getPersistentMemoryConfig()
                                   .addDirectoryConfig(new PersistentMemoryDirectoryConfig(getTextContent(n).trim()));
-            } else if ("persistent-memory".equals(nodeName)) {
+            } else if (matches("persistent-memory", nodeName)) {
                 handlePersistentMemoryConfig(nativeMemoryConfig.getPersistentMemoryConfig(), n);
             }
         }
@@ -292,11 +323,11 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     protected void handlePersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig, Node node) {
         for (Node parent : childElements(node)) {
             final String nodeName = cleanNodeName(parent);
-            if ("directories".equals(nodeName)) {
+            if (matches("directories", nodeName)) {
                 for (Node dirNode : childElements(parent)) {
                     final String childNodeName = cleanNodeName(dirNode);
-                    if ("directory".equals(childNodeName)) {
-                        Node numaNodeIdNode = dirNode.getAttributes().getNamedItem("numa-node");
+                    if (matches("directory", childNodeName)) {
+                        Node numaNodeIdNode = getNamedItemNode(dirNode, "numa-node");
                         int numaNodeId = numaNodeIdNode != null
                                 ? getIntegerValue("numa-node", getTextContent(numaNodeIdNode))
                                 : -1;
@@ -312,7 +343,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         JaasAuthenticationConfig jaasAuthenticationConfig = new JaasAuthenticationConfig();
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if ("login-module".equals(nodeName)) {
+            if (matches("login-module", nodeName)) {
                 jaasAuthenticationConfig.addLoginModuleConfig(handleLoginModule(child));
             }
         }
@@ -320,17 +351,16 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     }
 
     protected LoginModuleConfig handleLoginModule(Node node) {
-        NamedNodeMap attrs = node.getAttributes();
-        Node classNameNode = attrs.getNamedItem("class-name");
+        Node classNameNode = getNamedItemNode(node, "class-name");
         String className = getTextContent(classNameNode);
-        Node usageNode = attrs.getNamedItem("usage");
+        Node usageNode = getNamedItemNode(node, "usage");
         LoginModuleConfig.LoginModuleUsage usage =
                 usageNode != null ? LoginModuleConfig.LoginModuleUsage.get(getTextContent(usageNode))
                         : LoginModuleConfig.LoginModuleUsage.REQUIRED;
         LoginModuleConfig moduleConfig = new LoginModuleConfig(className, usage);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if ("properties".equals(nodeName)) {
+            if (matches("properties", nodeName)) {
                 fillProperties(child, moduleConfig.getProperties());
                 break;
             }
@@ -339,15 +369,15 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     }
 
     protected void handleInstanceTracking(Node node, InstanceTrackingConfig trackingConfig) {
-        Node attrEnabled = node.getAttributes().getNamedItem("enabled");
+        Node attrEnabled = getNamedItemNode(node, "enabled");
         boolean enabled = getBooleanValue(getTextContent(attrEnabled));
         trackingConfig.setEnabled(enabled);
 
         for (Node n : childElements(node)) {
             final String name = cleanNodeName(n);
-            if ("file-name".equals(name)) {
+            if (matches("file-name", name)) {
                 trackingConfig.setFileName(getTextContent(n));
-            } else if ("format-pattern".equals(name)) {
+            } else if (matches("format-pattern", name)) {
                 trackingConfig.setFormatPattern(getTextContent(n));
             }
         }

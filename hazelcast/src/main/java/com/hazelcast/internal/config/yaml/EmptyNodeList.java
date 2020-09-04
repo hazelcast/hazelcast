@@ -21,7 +21,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
- * Empty {@link NodeList} implementation. Used by {@link ElementAdapter#getChildNodes()}
+ * Empty {@link NodeList} implementation. Used by {@link YamlElementAdapter#getChildNodes()}
  * when wrapping {@link YamlNode}s with no children.
  */
 final class EmptyNodeList implements NodeList {

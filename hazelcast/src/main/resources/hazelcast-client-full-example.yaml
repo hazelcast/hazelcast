@@ -274,19 +274,32 @@ hazelcast-client:
     auto-detection:
       enabled: false
     aws:
-      enabled: true
-      connection-timeout-seconds: 11
-      inside-aws: true
-      access-key: TEST_ACCESS_KEY
-      secret-key: TEST_SECRET_KEY
-      region: us-east-1
+      enabled: false
+      access-key: my-access-key
+      secret-key: my-secret-key
+      region: us-west-1
       host-header: ec2.amazonaws.com
+      connection-timeout-seconds: 7
+      read-timeout-seconds: 7
+      connection-retries: 4
+      hz-port: 5701-5710
+      use-public-ip: true
       security-group-name: hazelcast-sg
       tag-key: type
       tag-value: hz-nodes
+      iam-role: dummy
+      # cluster: my-cluster
+      # family: test-family
+      # service-name: test-service
     gcp:
       enabled: false
-      zones: us-east1-b,us-east1-c
+      private-key-path: key-path
+      projects: project-1,project-2
+      region: us-central1
+      zones: us-central1-b,us-central1-c
+      label: key=value
+      hz-port: 5701-5710
+      use-public-ip: true
     azure:
       enabled: false
       instance-metadata-available: false
@@ -297,6 +310,8 @@ hazelcast-client:
       resource-group: RESOURCE-GROUP-NAME
       scale-set: SCALE-SET-NAME
       tag: TAG-NAME=HZLCAST001
+      hz-port: 5701-5707
+      use-public-ip: true
     kubernetes:
       enabled: false
       namespace: MY-KUBERNETES-NAMESPACE
@@ -525,6 +540,8 @@ hazelcast-client:
   # It has a scalar sub-node called "type". The valid values for the type of the load balancer are:
   # * "random": The member the operations to be sent to is chosen randomly.
   # * "round-robin": The member the operations to be sent to is chosen in a round-robin fashion.
+  # * "custom": The member the operations to be sent to is chosen by provided load balancer implementation.
+  #             The implementation class name is specified in additional "class-name" key.
   #
   load-balancer:
     type: random

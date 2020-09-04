@@ -630,25 +630,41 @@ hazelcast:
         enabled: false
         access-key: my-access-key
         secret-key: my-secret-key
-        iam-role: dummy
         region: us-west-1
         host-header: ec2.amazonaws.com
+        connection-timeout-seconds: 7
+        read-timeout-seconds: 7
+        connection-retries: 4
+        hz-port: 5701-5710
         security-group-name: hazelcast-sg
         tag-key: type
         tag-value: hz-nodes
+        iam-role: dummy
+        use-public-ip: true
+        # cluster: my-clusters
+        # family: test-family
+        # service-name: test-service
       gcp:
         enabled: false
-        zones: us-east1-b,us-east1-c
+        private-key-path: key-path
+        projects: project-1,project-2
+        region: us-central1
+        zones: us-central1-b,us-central1-c
+        label: key=value
+        hz-port: 5701-5710
+        use-public-ip: true
       azure:
         enabled: false
         instance-metadata-available: false
         client-id: CLIENT_ID
-        tenant-id: TENANT_ID
         client-secret: CLIENT_SECRET
+        tenant-id: TENANT_ID
         subscription-id: SUB_ID
         resource-group: RESOURCE-GROUP-NAME
         scale-set: SCALE-SET-NAME
         tag: TAG-NAME=HZLCAST001
+        hz-port: 5701-5707
+        use-public-ip: true
       kubernetes:
         enabled: false
         namespace: MY-KUBERNETES-NAMESPACE
@@ -2932,7 +2948,7 @@ hazelcast:
     join:
       multicast:
         enabled: true
-        loopbackModeEnabled: true
+        loopback-mode-enabled: true
         multicast-group: 1.2.3.4
         multicast-port: 12345
         multicast-timeout-seconds: 5
@@ -2954,29 +2970,41 @@ hazelcast:
         enabled: false
         access-key: my-access-key
         secret-key: my-secret-key
-        iam-role: dummy
-        # optional, default is us-east-1
         region: us-west-1
-        # optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property
         host-header: ec2.amazonaws.com
-        # optional, only instances belonging to this group will be discovered, default will try all running instances
+        connection-timeout-seconds: 7
+        read-timeout-seconds: 7
+        connection-retries: 4
+        hz-port: 5701-5710
         security-group-name: hazelcast-sg
         tag-key: type
         tag-value: hz-nodes
+        iam-role: dummy
         use-public-ip: true
+        # cluster: my-clusters
+        # family: test-family
+        # service-name: test-service
       gcp:
         enabled: false
-        zones: us-east1-b,us-east1-c
+        private-key-path: key-path
+        projects: project-1,project-2
+        region: us-central1
+        zones: us-central1-b,us-central1-c
+        label: key=value
+        hz-port: 5701-5710
+        use-public-ip: true
       azure:
         enabled: false
         instance-metadata-available: false
         client-id: CLIENT_ID
-        tenant-id: TENANT_ID
         client-secret: CLIENT_SECRET
+        tenant-id: TENANT_ID
         subscription-id: SUB_ID
         resource-group: RESOURCE-GROUP-NAME
         scale-set: SCALE-SET-NAME
         tag: TAG-NAME=HZLCAST001
+        hz-port: 5701-5707
+        use-public-ip: true
       kubernetes:
         enabled: false
         namespace: MY-KUBERNETES-NAMESPACE

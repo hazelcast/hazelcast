@@ -96,8 +96,8 @@ import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValu
  */
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public class QueueService implements ManagedService, MigrationAwareService, TransactionalService, RemoteService,
-                                     EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService<LocalQueueStats>,
-                                     SplitBrainProtectionAwareService, SplitBrainHandlerService, DynamicMetricsProvider {
+        EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService<LocalQueueStats>,
+        SplitBrainProtectionAwareService, SplitBrainHandlerService, DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
 
@@ -106,19 +106,19 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap;
     private final ConstructorFunction<String, LocalQueueStatsImpl> localQueueStatsConstructorFunction =
-        key -> new LocalQueueStatsImpl();
+            key -> new LocalQueueStatsImpl();
 
     private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
             new ConstructorFunction<String, Object>() {
-        @Override
-        public Object createNew(String name) {
-            QueueConfig queueConfig = nodeEngine.getConfig().findQueueConfig(name);
-            String splitBrainProtectionName = queueConfig.getSplitBrainProtectionName();
-            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
-        }
-    };
+                @Override
+                public Object createNew(String name) {
+                    QueueConfig queueConfig = nodeEngine.getConfig().findQueueConfig(name);
+                    String splitBrainProtectionName = queueConfig.getSplitBrainProtectionName();
+                    return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
+                }
+            };
 
     private final NodeEngine nodeEngine;
     private final SerializationService serializationService;
@@ -179,6 +179,11 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
             container.getStore().instrument(nodeEngine);
         }
         return container;
+    }
+
+    public QueueContainer getExistingContainerOrNull(String name) {
+        QueueContainer container = containerMap.get(name);
+        return container != null ? container : null;
     }
 
     public void addContainer(String name, QueueContainer container) {
@@ -299,7 +304,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         EventService eventService = nodeEngine.getEventService();
         QueueEventFilter filter = new QueueEventFilter(includeValue);
         return eventService.registerListenerAsync(QueueService.SERVICE_NAME, name, filter, listener)
-                           .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
+                .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
 
     public boolean removeItemListener(String name, UUID registrationId) {

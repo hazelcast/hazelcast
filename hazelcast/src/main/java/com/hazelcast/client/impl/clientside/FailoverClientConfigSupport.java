@@ -131,6 +131,9 @@ public final class FailoverClientConfigSupport {
         if (notEqual(mainConfig.getLoadBalancer(), alternativeConfig.getLoadBalancer())) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "loadBalancer");
         }
+        if (notEqual(mainConfig.getLoadBalancerClassName(), alternativeConfig.getLoadBalancerClassName())) {
+            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "loadBalancerClassName");
+        }
         if (notEqual(mainConfig.getListenerConfigs(), alternativeConfig.getListenerConfigs())) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "listeners");
         }

@@ -26,6 +26,7 @@ import com.hazelcast.client.test.executor.tasks.SelectAllMembers;
 import com.hazelcast.client.test.executor.tasks.SelectNoMembers;
 import com.hazelcast.client.test.executor.tasks.SerializedCounterCallable;
 import com.hazelcast.client.test.executor.tasks.TaskWithUnserializableResponse;
+import com.hazelcast.client.test.ifunction.Multiplication;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -81,6 +82,9 @@ public class IdentifiedFactory implements DataSerializableFactory {
         }
         if (typeId == CustomCredentials.CLASS_ID) {
             return new CustomCredentials();
+        }
+        if (typeId == Multiplication.CLASS_ID) {
+            return new Multiplication();
         }
         return null;
     }

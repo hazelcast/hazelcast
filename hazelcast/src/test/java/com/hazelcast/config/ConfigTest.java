@@ -33,7 +33,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ConfigTest extends HazelcastTestSupport {
@@ -55,26 +54,26 @@ public class ConfigTest extends HazelcastTestSupport {
     @Test
     public void testInheritanceFromDefaultConfig() {
         assertNotEquals("Expected that the default in-memory format is not OBJECT",
-                MapConfig.DEFAULT_IN_MEMORY_FORMAT, InMemoryFormat.OBJECT);
+          MapConfig.DEFAULT_IN_MEMORY_FORMAT, InMemoryFormat.OBJECT);
 
         config.getMapConfig("myBinaryMap")
-                .setBackupCount(3);
+          .setBackupCount(3);
         config.getMapConfig("default")
-                .setInMemoryFormat(InMemoryFormat.OBJECT);
+          .setInMemoryFormat(InMemoryFormat.OBJECT);
         config.getMapConfig("myObjectMap")
-                .setBackupCount(5);
+          .setBackupCount(5);
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
         MapConfig binaryMapConfig = hz.getConfig().findMapConfig("myBinaryMap");
         assertEqualsStringFormat("Expected %d sync backups, but found %d", 3, binaryMapConfig.getBackupCount());
         assertEqualsStringFormat("Expected %s in-memory format, but found %s",
-                MapConfig.DEFAULT_IN_MEMORY_FORMAT, binaryMapConfig.getInMemoryFormat());
+          MapConfig.DEFAULT_IN_MEMORY_FORMAT, binaryMapConfig.getInMemoryFormat());
 
         MapConfig objectMapConfig = hz.getConfig().findMapConfig("myObjectMap");
         assertEqualsStringFormat("Expected %d sync backups, but found %d", 5, objectMapConfig.getBackupCount());
         assertEqualsStringFormat("Expected %s in-memory format, but found %s",
-                InMemoryFormat.OBJECT, objectMapConfig.getInMemoryFormat());
+          InMemoryFormat.OBJECT, objectMapConfig.getInMemoryFormat());
     }
 
     @Test
@@ -117,7 +116,7 @@ public class ConfigTest extends HazelcastTestSupport {
         config.getAdvancedNetworkConfig().addWanEndpointConfig(endpointConfig);
 
         assertEquals(endpointConfig,
-                config.getAdvancedNetworkConfig().getEndpointConfigs().get(qualifier));
+          config.getAdvancedNetworkConfig().getEndpointConfigs().get(qualifier));
     }
 
     @Test

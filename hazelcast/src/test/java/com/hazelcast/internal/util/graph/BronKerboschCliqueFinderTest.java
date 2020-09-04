@@ -255,7 +255,7 @@ public class BronKerboschCliqueFinderTest {
         }
 
 
-        Collection<Set<String>> maxCliques = new BronKerboschCliqueFinder<>(graph, 30, TimeUnit.SECONDS).computeMaxCliques();
+        Collection<Set<String>> maxCliques = new BronKerboschCliqueFinder<>(graph, 60, TimeUnit.SECONDS).computeMaxCliques();
 
 
         assumeFalse(maxCliques.isEmpty());
@@ -309,7 +309,7 @@ public class BronKerboschCliqueFinderTest {
             }
         }
 
-        Collection<Set<String>> maxCliques = new BronKerboschCliqueFinder<>(graph, 30, TimeUnit.SECONDS).computeMaxCliques();
+        Collection<Set<String>> maxCliques = new BronKerboschCliqueFinder<>(graph, 60, TimeUnit.SECONDS).computeMaxCliques();
 
 
         assumeFalse(maxCliques.isEmpty());

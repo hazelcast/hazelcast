@@ -90,6 +90,7 @@ import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 
 @SuppressWarnings({
@@ -110,6 +111,10 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         this(domLevel3, clientConfig, new QueryCacheXmlConfigBuilderHelper(domLevel3));
     }
 
+    public ClientDomConfigProcessor(boolean domLevel3, ClientConfig clientConfig, boolean strict) {
+        this(domLevel3, clientConfig, new QueryCacheXmlConfigBuilderHelper(domLevel3), strict);
+    }
+
     ClientDomConfigProcessor(boolean domLevel3, ClientConfig clientConfig, QueryCacheConfigBuilderHelper
             queryCacheConfigBuilderHelper) {
         super(domLevel3);
@@ -117,8 +122,15 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         this.queryCacheConfigBuilderHelper = queryCacheConfigBuilderHelper;
     }
 
+    ClientDomConfigProcessor(boolean domLevel3, ClientConfig clientConfig, QueryCacheConfigBuilderHelper
+      queryCacheConfigBuilderHelper, boolean strict) {
+        super(domLevel3, strict);
+        this.clientConfig = clientConfig;
+        this.queryCacheConfigBuilderHelper = queryCacheConfigBuilderHelper;
+    }
+
     @Override
-    public void buildConfig(Node rootNode) throws Exception {
+    public void buildConfig(Node rootNode) {
         for (Node node : childElements(rootNode)) {
             String nodeName = cleanNodeName(node);
             if (occurrenceSet.contains(nodeName)) {
@@ -132,45 +144,45 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleNode(Node node, String nodeName) {
-        if (SECURITY.isEqual(nodeName)) {
+        if (matches(SECURITY.getName(), nodeName)) {
             handleSecurity(node);
-        } else if (PROXY_FACTORIES.isEqual(nodeName)) {
+        } else if (matches(PROXY_FACTORIES.getName(), nodeName)) {
             handleProxyFactories(node);
-        } else if (PROPERTIES.isEqual(nodeName)) {
+        } else if (matches(PROPERTIES.getName(), nodeName)) {
             fillProperties(node, clientConfig.getProperties());
-        } else if (SERIALIZATION.isEqual(nodeName)) {
+        } else if (matches(SERIALIZATION.getName(), nodeName)) {
             handleSerialization(node);
-        } else if (NATIVE_MEMORY.isEqual(nodeName)) {
+        } else if (matches(NATIVE_MEMORY.getName(), nodeName)) {
             fillNativeMemoryConfig(node, clientConfig.getNativeMemoryConfig());
-        } else if (LISTENERS.isEqual(nodeName)) {
+        } else if (matches(LISTENERS.getName(), nodeName)) {
             handleListeners(node);
-        } else if (NETWORK.isEqual(nodeName)) {
+        } else if (matches(NETWORK.getName(), nodeName)) {
             handleNetwork(node);
-        } else if (LOAD_BALANCER.isEqual(nodeName)) {
+        } else if (matches(LOAD_BALANCER.getName(), nodeName)) {
             handleLoadBalancer(node);
-        } else if (NEAR_CACHE.isEqual(nodeName)) {
+        } else if (matches(NEAR_CACHE.getName(), nodeName)) {
             handleNearCache(node);
-        } else if (QUERY_CACHES.isEqual(nodeName)) {
+        } else if (matches(QUERY_CACHES.getName(), nodeName)) {
             queryCacheConfigBuilderHelper.handleQueryCache(clientConfig, node);
-        } else if (INSTANCE_NAME.isEqual(nodeName)) {
+        } else if (matches(INSTANCE_NAME.getName(), nodeName)) {
             clientConfig.setInstanceName(getTextContent(node));
-        } else if (CONNECTION_STRATEGY.isEqual(nodeName)) {
+        } else if (matches(CONNECTION_STRATEGY.getName(), nodeName)) {
             handleConnectionStrategy(node);
-        } else if (USER_CODE_DEPLOYMENT.isEqual(nodeName)) {
+        } else if (matches(USER_CODE_DEPLOYMENT.getName(), nodeName)) {
             handleUserCodeDeployment(node);
-        } else if (FLAKE_ID_GENERATOR.isEqual(nodeName)) {
+        } else if (matches(FLAKE_ID_GENERATOR.getName(), nodeName)) {
             handleFlakeIdGenerator(node);
-        } else if (RELIABLE_TOPIC.isEqual(nodeName)) {
+        } else if (matches(RELIABLE_TOPIC.getName(), nodeName)) {
             handleReliableTopic(node);
-        } else if (LABELS.isEqual(nodeName)) {
+        } else if (matches(LABELS.getName(), nodeName)) {
             handleLabels(node);
-        } else if (BACKUP_ACK_TO_CLIENT.isEqual(nodeName)) {
+        } else if (matches(BACKUP_ACK_TO_CLIENT.getName(), nodeName)) {
             handleBackupAckToClient(node);
-        } else if (CLUSTER_NAME.isEqual(nodeName)) {
+        } else if (matches(CLUSTER_NAME.getName(), nodeName)) {
             clientConfig.setClusterName(getTextContent(node));
-        } else if (METRICS.isEqual(nodeName)) {
+        } else if (matches(METRICS.getName(), nodeName)) {
             handleMetrics(node);
-        } else if (INSTANCE_TRACKING.isEqual(nodeName)) {
+        } else if (matches(INSTANCE_TRACKING.getName(), nodeName)) {
             handleInstanceTracking(node, clientConfig.getInstanceTrackingConfig());
         }
     }
@@ -198,7 +210,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         }
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if ("connection-retry".equals(nodeName)) {
+            if (matches("connection-retry", nodeName)) {
                 handleConnectionRetry(child, strategyConfig);
             }
         }
@@ -216,15 +228,15 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
-            if (initialBackoffMillis.equals(nodeName)) {
+            if (matches(initialBackoffMillis, nodeName)) {
                 connectionRetryConfig.setInitialBackoffMillis(getIntegerValue(initialBackoffMillis, value));
-            } else if (maxBackoffMillis.equals(nodeName)) {
+            } else if (matches(maxBackoffMillis, nodeName)) {
                 connectionRetryConfig.setMaxBackoffMillis(getIntegerValue(maxBackoffMillis, value));
-            } else if (multiplier.equals(nodeName)) {
+            } else if (matches(multiplier, nodeName)) {
                 connectionRetryConfig.setMultiplier(getDoubleValue(multiplier, value));
-            } else if (timeoutMillis.equals(nodeName)) {
+            } else if (matches(timeoutMillis, nodeName)) {
                 connectionRetryConfig.setClusterConnectTimeoutMillis(getLongValue(timeoutMillis, value));
-            } else if (jitter.equals(nodeName)) {
+            } else if (matches(jitter, nodeName)) {
                 connectionRetryConfig.setJitter(getDoubleValue(jitter, value));
             }
         }
@@ -232,8 +244,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleUserCodeDeployment(Node node) {
-        NamedNodeMap atts = node.getAttributes();
-        Node enabledNode = atts.getNamedItem("enabled");
+        Node enabledNode = getNamedItemNode(node, "enabled");
         boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         ClientUserCodeDeploymentConfig userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
         userCodeDeploymentConfig.setEnabled(enabled);
@@ -246,11 +257,11 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleUserCodeDeploymentNode(ClientUserCodeDeploymentConfig userCodeDeploymentConfig, Node child) {
         String childNodeName = cleanNodeName(child);
-        if ("classnames".equals(childNodeName)) {
+        if (matches("classnames", childNodeName)) {
             for (Node classNameNode : childElements(child)) {
                 userCodeDeploymentConfig.addClass(getTextContent(classNameNode));
             }
-        } else if ("jarpaths".equals(childNodeName)) {
+        } else if (matches("jarpaths", childNodeName)) {
             for (Node jarPathNode : childElements(child)) {
                 userCodeDeploymentConfig.addJar(getTextContent(jarPathNode));
             }
@@ -271,22 +282,22 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
-            if ("time-to-live-seconds".equals(nodeName)) {
+            if (matches("time-to-live-seconds", nodeName)) {
                 nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(value));
-            } else if ("max-idle-seconds".equals(nodeName)) {
+            } else if (matches("max-idle-seconds", nodeName)) {
                 nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(value));
-            } else if ("in-memory-format".equals(nodeName)) {
+            } else if (matches("in-memory-format", nodeName)) {
                 nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
-            } else if ("serialize-keys".equals(nodeName)) {
+            } else if (matches("serialize-keys", nodeName)) {
                 serializeKeys = Boolean.parseBoolean(value);
                 nearCacheConfig.setSerializeKeys(serializeKeys);
-            } else if ("invalidate-on-change".equals(nodeName)) {
+            } else if (matches("invalidate-on-change", nodeName)) {
                 nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(value));
-            } else if ("local-update-policy".equals(nodeName)) {
+            } else if (matches("local-update-policy", nodeName)) {
                 nearCacheConfig.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.valueOf(value));
-            } else if ("eviction".equals(nodeName)) {
+            } else if (matches("eviction", nodeName)) {
                 nearCacheConfig.setEvictionConfig(getEvictionConfig(child));
-            } else if ("preloader".equals(nodeName)) {
+            } else if (matches("preloader", nodeName)) {
                 nearCacheConfig.setPreloaderConfig(getNearCachePreloaderConfig(child));
             }
         }
@@ -311,9 +322,9 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
-            if ("prefetch-count".equals(nodeName)) {
+            if (matches("prefetch-count", nodeName)) {
                 config.setPrefetchCount(Integer.parseInt(value));
-            } else if ("prefetch-validity-millis".equalsIgnoreCase(nodeName)) {
+            } else if (matches("prefetch-validity-millis", lowerCaseInternal(nodeName))) {
                 config.setPrefetchValidityMillis(Long.parseLong(value));
             }
         }
@@ -330,9 +341,9 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
-            if ("topic-overload-policy".equals(nodeName)) {
+            if (matches("topic-overload-policy", nodeName)) {
                 config.setTopicOverloadPolicy(TopicOverloadPolicy.valueOf(value));
-            } else if ("read-batch-size".equalsIgnoreCase(nodeName)) {
+            } else if (matches("read-batch-size", lowerCaseInternal(nodeName))) {
                 config.setReadBatchSize(Integer.parseInt(value));
             }
         }
@@ -341,10 +352,10 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private EvictionConfig getEvictionConfig(Node node) {
         EvictionConfig evictionConfig = new EvictionConfig();
-        Node size = node.getAttributes().getNamedItem("size");
-        Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
-        Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
-        Node comparatorClassName = node.getAttributes().getNamedItem("comparator-class-name");
+        Node size = getNamedItemNode(node, "size");
+        Node maxSizePolicy = getNamedItemNode(node, "max-size-policy");
+        Node evictionPolicy = getNamedItemNode(node, "eviction-policy");
+        Node comparatorClassName = getNamedItemNode(node, "comparator-class-name");
         if (size != null) {
             evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
         }
@@ -387,42 +398,49 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleLoadBalancer(Node node) {
         String type = getAttribute(node, "type");
-        if ("random".equals(type)) {
+        if (matches("random", type)) {
             clientConfig.setLoadBalancer(new RandomLB());
-        } else if ("round-robin".equals(type)) {
+        } else if (matches("round-robin", type)) {
             clientConfig.setLoadBalancer(new RoundRobinLB());
+        } else if ("custom".equals(type)) {
+            String loadBalancerClassName = parseCustomLoadBalancerClassName(node);
+            clientConfig.setLoadBalancerClassName(loadBalancerClassName);
         }
+    }
+
+    protected String parseCustomLoadBalancerClassName(Node node) {
+        return getTextContent(node);
     }
 
     private void handleNetwork(Node node) {
         ClientNetworkConfig clientNetworkConfig = new ClientNetworkConfig();
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if ("cluster-members".equals(nodeName)) {
+            if (matches("cluster-members", nodeName)) {
                 handleClusterMembers(child, clientNetworkConfig);
-            } else if ("smart-routing".equals(nodeName)) {
+            } else if (matches("smart-routing", nodeName)) {
                 clientNetworkConfig.setSmartRouting(Boolean.parseBoolean(getTextContent(child)));
-            } else if ("redo-operation".equals(nodeName)) {
+            } else if (matches("redo-operation", nodeName)) {
                 clientNetworkConfig.setRedoOperation(Boolean.parseBoolean(getTextContent(child)));
-            } else if ("connection-timeout".equals(nodeName)) {
+            } else if (matches("connection-timeout", nodeName)) {
                 clientNetworkConfig.setConnectionTimeout(Integer.parseInt(getTextContent(child)));
-            } else if ("socket-options".equals(nodeName)) {
+            } else if (matches("socket-options", nodeName)) {
                 handleSocketOptions(child, clientNetworkConfig);
-            } else if ("socket-interceptor".equals(nodeName)) {
+            } else if (matches("socket-interceptor", nodeName)) {
                 handleSocketInterceptorConfig(child, clientNetworkConfig);
-            } else if ("ssl".equals(nodeName)) {
+            } else if (matches("ssl", nodeName)) {
                 handleSSLConfig(child, clientNetworkConfig);
             } else if (AliasedDiscoveryConfigUtils.supports(nodeName)) {
                 handleAliasedDiscoveryStrategy(child, clientNetworkConfig, nodeName);
-            } else if ("discovery-strategies".equals(nodeName)) {
+            } else if (matches("discovery-strategies", nodeName)) {
                 handleDiscoveryStrategies(child, clientNetworkConfig);
-            } else if ("auto-detection".equals(nodeName)) {
+            } else if (matches("auto-detection", nodeName)) {
                 handleAutoDetection(child, clientNetworkConfig);
-            } else if ("outbound-ports".equals(nodeName)) {
+            } else if (matches("outbound-ports", nodeName)) {
                 handleOutboundPorts(child, clientNetworkConfig);
-            } else if ("icmp-ping".equals(nodeName)) {
+            } else if (matches("icmp-ping", nodeName)) {
                 handleIcmpPing(child, clientNetworkConfig);
-            } else if ("hazelcast-cloud".equals(nodeName)) {
+            } else if (matches("hazelcast-cloud", nodeName)) {
                 handleHazelcastCloud(child, clientNetworkConfig);
             }
         }
@@ -432,14 +450,13 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     private void handleHazelcastCloud(Node node, ClientNetworkConfig clientNetworkConfig) {
         ClientCloudConfig cloudConfig = clientNetworkConfig.getCloudConfig();
 
-        NamedNodeMap atts = node.getAttributes();
-        Node enabledNode = atts.getNamedItem("enabled");
+        Node enabledNode = getNamedItemNode(node, "enabled");
         boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         cloudConfig.setEnabled(enabled);
 
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if ("discovery-token".equals(nodeName)) {
+            if (matches("discovery-token", nodeName)) {
                 cloudConfig.setDiscoveryToken(getTextContent(child));
             }
         }
@@ -448,22 +465,21 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     private void handleIcmpPing(Node node, ClientNetworkConfig clientNetworkConfig) {
         ClientIcmpPingConfig icmpPingConfig = clientNetworkConfig.getClientIcmpPingConfig();
 
-        NamedNodeMap atts = node.getAttributes();
-        Node enabledNode = atts.getNamedItem("enabled");
+        Node enabledNode = getNamedItemNode(node, "enabled");
         boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         icmpPingConfig.setEnabled(enabled);
 
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if ("timeout-milliseconds".equals(nodeName)) {
+            if (matches("timeout-milliseconds", nodeName)) {
                 icmpPingConfig.setTimeoutMilliseconds(Integer.parseInt(getTextContent(child)));
-            } else if ("interval-milliseconds".equals(nodeName)) {
+            } else if (matches("interval-milliseconds", nodeName)) {
                 icmpPingConfig.setIntervalMilliseconds(Integer.parseInt(getTextContent(child)));
-            } else if ("ttl".equals(nodeName)) {
+            } else if (matches("ttl", nodeName)) {
                 icmpPingConfig.setTtl(Integer.parseInt(getTextContent(child)));
-            } else if ("max-attempts".equals(nodeName)) {
+            } else if (matches("max-attempts", nodeName)) {
                 icmpPingConfig.setMaxAttempts(Integer.parseInt(getTextContent(child)));
-            } else if ("echo-fail-fast-on-startup".equals(nodeName)) {
+            } else if (matches("echo-fail-fast-on-startup", nodeName)) {
                 icmpPingConfig.setEchoFailFastOnStartup(Boolean.parseBoolean(getTextContent(child)));
             }
         }
@@ -474,9 +490,9 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         DiscoveryConfig discoveryConfig = clientNetworkConfig.getDiscoveryConfig();
         for (Node child : childElements(node)) {
             String name = cleanNodeName(child);
-            if ("discovery-strategy".equals(name)) {
+            if (matches("discovery-strategy", name)) {
                 handleDiscoveryStrategy(child, discoveryConfig);
-            } else if ("node-filter".equals(name)) {
+            } else if (matches("node-filter", name)) {
                 handleDiscoveryNodeFilter(child, discoveryConfig);
             }
         }
@@ -488,15 +504,14 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         for (int i = 0; i < atts.getLength(); i++) {
             Node att = atts.item(i);
             String value = getTextContent(att).trim();
-            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+            if (matches("enabled", lowerCaseInternal(att.getNodeName()))) {
                 discoveryConfig.setEnabled(getBooleanValue(value));
             }
         }
     }
 
     protected void handleDiscoveryNodeFilter(Node node, DiscoveryConfig discoveryConfig) {
-        NamedNodeMap atts = node.getAttributes();
-        Node att = atts.getNamedItem("class");
+        Node att = getNamedItemNode(node, "class");
         if (att != null) {
             discoveryConfig.setNodeFilterClass(getTextContent(att).trim());
         }
@@ -511,9 +526,9 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         for (int a = 0; a < atts.getLength(); a++) {
             Node att = atts.item(a);
             String value = getTextContent(att).trim();
-            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+            if (matches("enabled", lowerCaseInternal(att.getNodeName()))) {
                 enabled = getBooleanValue(value);
-            } else if ("class".equals(att.getNodeName())) {
+            } else if (matches("class", att.getNodeName())) {
                 clazz = value;
             }
         }
@@ -522,10 +537,10 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             return;
         }
 
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         for (Node child : childElements(node)) {
             String name = cleanNodeName(child);
-            if ("properties".equals(name)) {
+            if (matches("properties", name)) {
                 fillProperties(child, properties);
             }
         }
@@ -539,9 +554,9 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         for (int i = 0; i < atts.getLength(); i++) {
             Node att = atts.item(i);
             String value = getTextContent(att).trim();
-            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+            if (matches("enabled", lowerCaseInternal(att.getNodeName()))) {
                 config.setEnabled(getBooleanValue(value));
-            } else if (att.getNodeName().equals("connection-timeout-seconds")) {
+            } else if (matches(att.getNodeName(), "connection-timeout-seconds")) {
                 config.setProperty("connection-timeout-seconds", value);
             }
         }
@@ -554,16 +569,15 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleSSLConfig(Node node, ClientNetworkConfig clientNetworkConfig) {
         SSLConfig sslConfig = new SSLConfig();
-        NamedNodeMap atts = node.getAttributes();
-        Node enabledNode = atts.getNamedItem("enabled");
+        Node enabledNode = getNamedItemNode(node, "enabled");
         boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         sslConfig.setEnabled(enabled);
 
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
-            if ("factory-class-name".equals(nodeName)) {
+            if (matches("factory-class-name", nodeName)) {
                 sslConfig.setFactoryClassName(getTextContent(n).trim());
-            } else if ("properties".equals(nodeName)) {
+            } else if (matches("properties", nodeName)) {
                 fillProperties(n, sslConfig.getProperties());
             }
         }
@@ -574,15 +588,15 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         SocketOptions socketOptions = clientConfig.getNetworkConfig().getSocketOptions();
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if ("tcp-no-delay".equals(nodeName)) {
+            if (matches("tcp-no-delay", nodeName)) {
                 socketOptions.setTcpNoDelay(Boolean.parseBoolean(getTextContent(child)));
-            } else if ("keep-alive".equals(nodeName)) {
+            } else if (matches("keep-alive", nodeName)) {
                 socketOptions.setKeepAlive(Boolean.parseBoolean(getTextContent(child)));
-            } else if ("reuse-address".equals(nodeName)) {
+            } else if (matches("reuse-address", nodeName)) {
                 socketOptions.setReuseAddress(Boolean.parseBoolean(getTextContent(child)));
-            } else if ("linger-seconds".equals(nodeName)) {
+            } else if (matches("linger-seconds", nodeName)) {
                 socketOptions.setLingerSeconds(Integer.parseInt(getTextContent(child)));
-            } else if ("buffer-size".equals(nodeName)) {
+            } else if (matches("buffer-size", nodeName)) {
                 socketOptions.setBufferSize(Integer.parseInt(getTextContent(child)));
             }
         }
@@ -591,7 +605,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleClusterMembers(Node node, ClientNetworkConfig clientNetworkConfig) {
         for (Node child : childElements(node)) {
-            if ("address".equals(cleanNodeName(child))) {
+            if (matches("address", cleanNodeName(child))) {
                 clientNetworkConfig.addAddress(getTextContent(child));
             }
         }
@@ -599,7 +613,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleListeners(Node node) {
         for (Node child : childElements(node)) {
-            if ("listener".equals(cleanNodeName(child))) {
+            if (matches("listener", cleanNodeName(child))) {
                 String className = getTextContent(child);
                 clientConfig.addListenerConfig(new ListenerConfig(className));
             }
@@ -619,7 +633,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleProxyFactoryNode(Node child) {
         String nodeName = cleanNodeName(child);
-        if ("proxy-factory".equals(nodeName)) {
+        if (matches("proxy-factory", nodeName)) {
             handleProxyFactory(child);
         }
     }
@@ -641,17 +655,17 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         ClientSecurityConfig clientSecurityConfig = new ClientSecurityConfig();
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if ("username-password".equals(nodeName)) {
+            if (matches("username-password", nodeName)) {
                 clientSecurityConfig.setUsernamePasswordIdentityConfig(
                         getAttribute(child, "username"),
                         getAttribute(child, "password"));
-            } else if ("token".equals(nodeName)) {
+            } else if (matches("token", nodeName)) {
                 handleTokenIdentity(clientSecurityConfig, child);
-            } else if ("credentials-factory".equals(nodeName)) {
+            } else if (matches("credentials-factory", nodeName)) {
                 handleCredentialsFactory(child, clientSecurityConfig);
-            } else if ("kerberos".equals(nodeName)) {
+            } else if (matches("kerberos", nodeName)) {
                 handleKerberosIdentity(child, clientSecurityConfig);
-            } else if ("realms".equals(nodeName)) {
+            } else if (matches("realms", nodeName)) {
                 handleRealms(child, clientSecurityConfig);
             }
         }
@@ -667,15 +681,15 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         KerberosIdentityConfig kerbIdentity = new KerberosIdentityConfig();
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if ("realm".equals(nodeName)) {
+            if (matches("realm", nodeName)) {
                 kerbIdentity.setRealm(getTextContent(child));
-            } else if ("security-realm".equals(nodeName)) {
+            } else if (matches("security-realm", nodeName)) {
                 kerbIdentity.setSecurityRealm(getTextContent(child));
-            } else if ("service-name-prefix".equals(nodeName)) {
+            } else if (matches("service-name-prefix", nodeName)) {
                 kerbIdentity.setServiceNamePrefix(getTextContent(child));
-            } else if ("spn".equals(nodeName)) {
+            } else if (matches("spn", nodeName)) {
                 kerbIdentity.setSpn(getTextContent(child));
-            } else if ("use-canonical-hostname".equals(nodeName)) {
+            } else if (matches("use-canonical-hostname", nodeName)) {
                 kerbIdentity.setUseCanonicalHostname(getBooleanValue(getTextContent(child)));
             }
         }
@@ -684,7 +698,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleRealms(Node node, ClientSecurityConfig clientSecurityConfig) {
         for (Node child : childElements(node)) {
-            if ("realm".equals(cleanNodeName(child))) {
+            if (matches("realm", cleanNodeName(child))) {
                 handleRealm(child, clientSecurityConfig);
             }
         }
@@ -696,7 +710,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         clientSecurityConfig.addRealmConfig(realmName, realmConfig);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if ("authentication".equals(nodeName)) {
+            if (matches("authentication", nodeName)) {
                 handleAuthentication(realmConfig, child);
             }
         }
@@ -705,21 +719,20 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     private void handleAuthentication(RealmConfig realmConfig, Node node) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if ("jaas".equals(nodeName)) {
+            if (matches("jaas", nodeName)) {
                 handleJaasAuthentication(realmConfig, child);
             }
         }
     }
 
     private void handleCredentialsFactory(Node node, ClientSecurityConfig clientSecurityConfig) {
-        NamedNodeMap attrs = node.getAttributes();
-        Node classNameNode = attrs.getNamedItem("class-name");
+        Node classNameNode = getNamedItemNode(node, "class-name");
         String className = getTextContent(classNameNode);
         CredentialsFactoryConfig credentialsFactoryConfig = new CredentialsFactoryConfig(className);
         clientSecurityConfig.setCredentialsFactoryConfig(credentialsFactoryConfig);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if ("properties".equals(nodeName)) {
+            if (matches("properties", nodeName)) {
                 fillProperties(child, credentialsFactoryConfig.getProperties());
                 break;
             }
@@ -729,7 +742,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     protected void handleOutboundPorts(Node child, ClientNetworkConfig clientNetworkConfig) {
         for (Node n : childElements(child)) {
             String nodeName = cleanNodeName(n);
-            if ("ports".equals(nodeName)) {
+            if (matches("ports", nodeName)) {
                 String value = getTextContent(n);
                 clientNetworkConfig.addOutboundPortDefinition(value);
             }
@@ -742,7 +755,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
-            if ("enabled".equals(att.getNodeName())) {
+            if (matches("enabled", att.getNodeName())) {
                 boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
                 metricsConfig.setEnabled(enabled);
             }
@@ -751,9 +764,9 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
-            if ("jmx".equals(nodeName)) {
+            if (matches("jmx", nodeName)) {
                 handleMetricsJmx(child);
-            } else if ("collection-frequency-seconds".equals(nodeName)) {
+            } else if (matches("collection-frequency-seconds", nodeName)) {
                 metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(value));
             }
         }
@@ -765,7 +778,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
-            if ("enabled".equals(att.getNodeName())) {
+            if (matches("enabled", att.getNodeName())) {
                 boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
                 jmxConfig.setEnabled(enabled);
             }

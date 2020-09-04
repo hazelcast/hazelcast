@@ -57,6 +57,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -311,6 +312,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         ClientConfig config = buildConfig(yaml);
 
         assertInstanceOf(RandomLB.class, config.getLoadBalancer());
+        assertNull(config.getLoadBalancerClassName());
     }
 
     @Override
@@ -324,6 +326,22 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         ClientConfig config = buildConfig(yaml);
 
         assertInstanceOf(RoundRobinLB.class, config.getLoadBalancer());
+        assertNull(config.getLoadBalancerClassName());
+    }
+
+    @Override
+    @Test
+    public void testLoadBalancerCustom() {
+        String yaml = ""
+                      + "hazelcast-client:\n"
+                      + "  load-balancer:\n"
+                      + "    type: custom\n"
+                      + "    class-name: com.hazelcast.client.test.CustomLoadBalancer\n";
+
+        ClientConfig config = buildConfig(yaml);
+
+        assertNull(config.getLoadBalancer());
+        assertEquals("com.hazelcast.client.test.CustomLoadBalancer", config.getLoadBalancerClassName());
     }
 
     @Test

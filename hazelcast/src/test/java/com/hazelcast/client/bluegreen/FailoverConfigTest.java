@@ -30,6 +30,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -54,18 +55,20 @@ public class FailoverConfigTest {
                 "setNearCacheConfigMap", "getFlakeIdGeneratorConfigMap", "findFlakeIdGeneratorConfig",
                 "getFlakeIdGeneratorConfig", "addFlakeIdGeneratorConfig", "setFlakeIdGeneratorConfigMap",
                 "setReliableTopicConfigMap", "getReliableTopicConfigMap", "getCredentials", "setCredentials", "setClusterName",
-                "getListenerConfigs", "setListenerConfigs", "getLoadBalancer", "setLoadBalancer", "setClassLoader",
-                "getManagedContext", "setManagedContext", "getExecutorPoolSize", "setExecutorPoolSize", "getProxyFactoryConfigs",
-                "setProxyFactoryConfigs", "getSerializationConfig", "setSerializationConfig", "getNativeMemoryConfig",
-                "setNativeMemoryConfig", "getLicenseKey", "setLicenseKey", "addQueryCacheConfig", "getQueryCacheConfigs",
-                "setQueryCacheConfigs", "getInstanceName", "setInstanceName", "getConnectionStrategyConfig",
-                "setConnectionStrategyConfig", "getUserCodeDeploymentConfig", "setUserCodeDeploymentConfig",
-                "getOrCreateQueryCacheConfig", "getOrNullQueryCacheConfig", "addLabel", "setLabels",
-                "setUserContext", "getUserContext", "setMetricsConfig", "load",
-                "setBackupAckToClientEnabled", "isBackupAckToClientEnabled", "getMetricsConfig", "equals", "hashCode", "toString",
-                "setInstanceTrackingConfig", "getInstanceTrackingConfig");
+                "getListenerConfigs", "setListenerConfigs", "getLoadBalancer", "setLoadBalancer", "getLoadBalancerClassName",
+                "setLoadBalancerClassName", "setClassLoader", "getManagedContext", "setManagedContext", "getExecutorPoolSize",
+                "setExecutorPoolSize", "getProxyFactoryConfigs", "setProxyFactoryConfigs", "getSerializationConfig",
+                "setSerializationConfig", "getNativeMemoryConfig", "setNativeMemoryConfig", "getLicenseKey", "setLicenseKey",
+                "addQueryCacheConfig", "getQueryCacheConfigs", "setQueryCacheConfigs", "getInstanceName", "setInstanceName",
+                "getConnectionStrategyConfig", "setConnectionStrategyConfig", "getUserCodeDeploymentConfig", "setUserCodeDeploymentConfig",
+                "getOrCreateQueryCacheConfig", "getOrNullQueryCacheConfig", "addLabel", "setLabels", "setUserContext",
+                "getUserContext", "setMetricsConfig", "load", "setBackupAckToClientEnabled", "isBackupAckToClientEnabled",
+                "getMetricsConfig", "equals", "hashCode", "toString", "setInstanceTrackingConfig", "getInstanceTrackingConfig");
         Method[] declaredMethods = ClientConfig.class.getDeclaredMethods();
         for (Method method : declaredMethods) {
+            if (Modifier.isPrivate(method.getModifiers())) {
+                continue;
+            }
             String methodName = method.getName();
             if (!methodName.startsWith("$") && !allClientConfigMethods.contains(methodName)) {
                 throw new IllegalStateException("There is a new method on client config. " + methodName
