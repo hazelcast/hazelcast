@@ -150,7 +150,7 @@ public class GlobalIndexPartitionTracker {
         /** Partitions that are currently indexed. */
         private final PartitionIdSet indexedPartitions;
 
-        /** The number of partitions that are baing updated at the moment (indexing or deindexing).  */
+        /** The number of partitions that are being updated at the moment (indexing or deindexing).  */
         private final int pending;
 
         private State(long version, PartitionIdSet indexedPartitions, int pending) {
