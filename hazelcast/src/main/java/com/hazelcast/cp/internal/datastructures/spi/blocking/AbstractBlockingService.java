@@ -16,6 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.spi.blocking;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftNodeLifecycleAwareService;
 import com.hazelcast.cp.internal.RaftService;
@@ -29,17 +30,16 @@ import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.cp.internal.session.SessionAccessor;
 import com.hazelcast.cp.internal.session.SessionAwareService;
 import com.hazelcast.cp.internal.session.SessionExpiredException;
+import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
-import com.hazelcast.internal.partition.MigrationAwareService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,21 +57,22 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Base class for services that maintain blocking resources.
  * Contains common behaviour that will be needed by service implementations.
  *
- * @param <W> concrete type of the WaitKey
- * @param <R> concrete type of the resource
+ * @param <W>  concrete type of the WaitKey
+ * @param <R>  concrete type of the resource
  * @param <RR> concrete ty;e lf the resource registry
  */
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class AbstractBlockingService<W extends WaitKey, R extends BlockingResource<W>, RR extends ResourceRegistry<W, R>>
         extends AbstractCPMigrationAwareService
         implements RaftManagedService, RaftNodeLifecycleAwareService, RaftRemoteService, SessionAwareService,
-                   SnapshotAwareService<RR>, LiveOperationsTracker, MigrationAwareService {
+        SnapshotAwareService<RR>, LiveOperationsTracker, MigrationAwareService {
 
     public static final long WAIT_TIMEOUT_TASK_UPPER_BOUND_MILLIS = 1500;
     private static final long WAIT_TIMEOUT_TASK_PERIOD_MILLIS = 500;
@@ -201,7 +202,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         registry.closeSession(sessionId, expiredWaitKeys, completedWaitKeys);
 
         if (logger.isFineEnabled() && (expiredWaitKeys.size() > 0 || completedWaitKeys.size() > 0)) {
-            logger.fine("Closed Session[" + sessionId + "] in " + groupId  + " expired wait key commit indices: "
+            logger.fine("Closed Session[" + sessionId + "] in " + groupId + " expired wait key commit indices: "
                     + expiredWaitKeys + " completed wait keys: " + completedWaitKeys);
         }
 
@@ -366,6 +367,9 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         @Override
         public void run() {
             for (Entry<CPGroupId, Collection<BiTuple<String, UUID>>> e : getWaitKeysToExpire().entrySet()) {
+                if (currentThread().isInterrupted()) {
+                    break;
+                }
                 tryReplicateExpiredWaitKeys(e.getKey(), e.getValue());
             }
         }

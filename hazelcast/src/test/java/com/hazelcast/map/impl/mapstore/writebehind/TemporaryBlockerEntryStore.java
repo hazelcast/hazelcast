@@ -31,7 +31,7 @@ public class TemporaryBlockerEntryStore<K, V> extends TestEntryStore<K, V> {
         try {
             storePermit.acquire();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
         super.store(key, value);
     }
@@ -41,7 +41,7 @@ public class TemporaryBlockerEntryStore<K, V> extends TestEntryStore<K, V> {
         try {
             storeAllPermit.acquire();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
         super.storeAll(map);
     }
