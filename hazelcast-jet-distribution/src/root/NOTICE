@@ -21,15 +21,15 @@ This product includes the following libraries with the following licenses:
 
 Apache License, Version 2.0
   HPPC Collections:0.7.1
-  Jackson-annotations:2.11.0
-  Jackson-core:2.11.0
+  Jackson-annotations:2.11.2
+  Jackson-core:2.11.2
   jackson-databind:2.10.0
   Jackson dataformat: CBOR:2.8.11
   Jackson dataformat: Smile:2.8.11
   Jackson-dataformat-YAML:2.8.11
   Jackson datatype: JSR310:2.10.0
-  jackson-jr-annotation-support:2.11.0
-  jackson-jr-objects:2.11.0
+  jackson-jr-annotation-support:2.11.2
+  jackson-jr-objects:2.11.2
   mysql-binlog-connector-java:0.20.1
   compiler:0.9.3
   Google Android Annotations Library:4.1.1.4
