@@ -199,7 +199,9 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
                         invocationUid);
                 HazelcastClientInstanceImpl client = getClient();
                 ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-                return SemaphoreDrainCodec.decodeResponse(response);
+                int count = SemaphoreDrainCodec.decodeResponse(response);
+                sessionManager.releaseSession(groupId, DRAIN_SESSION_ACQ_COUNT - count);
+                return count;
             } catch (SessionExpiredException e) {
                 sessionManager.invalidateSession(this.groupId, sessionId);
             }
