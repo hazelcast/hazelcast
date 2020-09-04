@@ -30,7 +30,7 @@ class HomeSplash extends React.Component {
     const ProjectTitle = props => (
       <h2 className="projectTitle">
         Use Your Data Instantly At Scale
-        <small>Jet is a distributed batch and stream processing system that can do stateful computations over massive amounts of data with consistent low latency.
+        <small>Hazelcast Jet is a distributed batch and stream processing system that can do stateful computations over massive amounts of data with consistent low latency.
         </small>
       </h2>
     );
