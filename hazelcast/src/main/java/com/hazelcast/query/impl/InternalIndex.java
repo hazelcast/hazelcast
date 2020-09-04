@@ -101,6 +101,7 @@ public interface InternalIndex extends Index {
      *
      * @param expectedPartitionIds expected indexed partitions
      * @return stamp
+     * @see GlobalIndexPartitionTracker#getPartitionStamp(PartitionIdSet)
      */
     long getPartitionStamp(PartitionIdSet expectedPartitionIds);
 
