@@ -356,7 +356,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <skip>true</skip>
-                    <runOrder>failedfirst</runOrder>
+                    <runOrder>random</runOrder>
                     <trimStackTrace>false</trimStackTrace>
                     <argLine>
                         ${argLine}
