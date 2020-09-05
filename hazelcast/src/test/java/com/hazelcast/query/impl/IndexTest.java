@@ -19,6 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -469,7 +470,14 @@ public class IndexTest {
 
         IndexConfig config = IndexUtils.createTestIndexConfig(type, QueryConstants.THIS_ATTRIBUTE_NAME.value());
 
-        IndexImpl index = new IndexImpl(config, ss, newExtractor(), copyBehavior, PerIndexStats.EMPTY);
+        IndexImpl index = new IndexImpl(
+            config,
+            ss,
+            newExtractor(),
+            copyBehavior,
+            PerIndexStats.EMPTY,
+            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
+        );
 
         assertEquals(0, index.getRecords(0L).size());
         assertEquals(0, index.getRecords(0L, true, 1000L, true).size());

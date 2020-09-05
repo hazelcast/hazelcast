@@ -22,14 +22,18 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.query.impl.GlobalIndexPartitionTracker;
+import com.hazelcast.query.impl.InternalIndex;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.exec.scan.AbstractMapScanExec;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
@@ -49,11 +53,13 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -191,8 +197,8 @@ public class MapIndexScanExecTest extends SqlTestSupport {
 
             fail("Must fail");
         } catch (QueryException e) {
-            assertEquals(SqlErrorCode.GENERIC, e.getCode());
-            assertEquals("Index \"index\" has 1 component(s), but 2 expected", e.getMessage());
+            assertEquals(SqlErrorCode.INDEX_INVALID, e.getCode());
+            assertEquals("Cannot use the index \"index\" of the IMap \"map\" because it has 1 component(s), but 2 expected", e.getMessage());
             assertTrue(e.isInvalidatePlan());
         }
     }
@@ -234,10 +240,8 @@ public class MapIndexScanExecTest extends SqlTestSupport {
 
             fail("Must fail");
         } catch (QueryException e) {
-            assertEquals(SqlErrorCode.DATA_EXCEPTION, e.getCode());
-            assertEquals(
-                "Index \"index\" do not have suitable SQL converter for component \"this\" (expected INTEGER)", e.getMessage()
-            );
+            assertEquals(SqlErrorCode.INDEX_INVALID, e.getCode());
+            assertEquals("Cannot use the index \"index\" of the IMap \"map\" because it does not have suitable converter for component \"this\" (expected INTEGER)", e.getMessage());
             assertTrue(e.isInvalidatePlan());
         }
 
@@ -256,32 +260,79 @@ public class MapIndexScanExecTest extends SqlTestSupport {
 
             fail("Must fail");
         } catch (QueryException e) {
-            assertEquals(SqlErrorCode.DATA_EXCEPTION, e.getCode());
-            assertEquals("Index \"index\" has component \"this\" of type INTEGER, but VARCHAR was expected", e.getMessage());
+            assertEquals(SqlErrorCode.INDEX_INVALID, e.getCode());
+            assertEquals("Cannot use the index \"index\" of the IMap \"map\" because it has component \"this\" of type INTEGER, but VARCHAR was expected", e.getMessage());
             assertTrue(e.isInvalidatePlan());
         }
     }
 
     @Test
-    public void testPartitionMismatch() {
-        PartitionIdSet instance2Partitions = getLocalPartitions(instance2);
-
+    public void testPartition_setup() {
         try {
             checkScan(
                 instance1,
                 1,
-                instance2Partitions,
+                getLocalPartitions(instance2),
                 null,
                 null,
-                Collections.singletonList(QueryDataType.VARCHAR),
+                Collections.singletonList(QueryDataType.INT),
                 1,
                 new int[0]
             );
 
             fail("Must fail");
         } catch (QueryException e) {
-            assertEquals(SqlErrorCode.PARTITION_DISTRIBUTION_CHANGED, e.getCode());
-            assertEquals("Partitions are not owned by member: " + instance2Partitions, e.getMessage());
+            assertEquals(SqlErrorCode.INDEX_INVALID, e.getCode());
+            assertEquals("Cannot use the index \"index\" of the IMap \"map\" due to concurrent migration, or because index creation is still in progress", e.getMessage());
+            assertTrue(e.isInvalidatePlan());
+        }
+    }
+
+    @Test
+    public void testPartition_exec() {
+        PartitionIdSet expectedPartitions = getLocalPartitions(instance1);
+
+        IndexFilter indexFilter = new IndexFilter() {
+            @SuppressWarnings("rawtypes")
+            @Override
+            public Iterator<QueryableEntry> getEntries(InternalIndex index, ExpressionEvalContext evalContext) {
+                // Preserve the original stamp
+                long stamp = index.getPartitionStamp(expectedPartitions);
+                assertNotEquals(GlobalIndexPartitionTracker.STAMP_INVALID, stamp);
+
+                // Kill the other member to trigger migrations
+                instance2.shutdown();
+
+                // Wait for stamp to change
+                assertTrueEventually(() -> assertNotEquals(stamp, index.getPartitionStamp(expectedPartitions)));
+
+                // Proceed
+                return index.getSqlRecordIterator();
+            }
+
+            @SuppressWarnings("rawtypes")
+            @Override
+            public Comparable getComparable(ExpressionEvalContext evalContext) {
+                return null;
+            }
+        };
+
+        try {
+            checkScan(
+                instance1,
+                1,
+                expectedPartitions,
+                indexFilter,
+                null,
+                Collections.singletonList(QueryDataType.INT),
+                1,
+                new int[0]
+            );
+
+            fail("Must fail");
+        } catch (QueryException e) {
+            assertEquals(SqlErrorCode.INDEX_INVALID, e.getCode());
+            assertEquals("Cannot use the index \"index\" of the IMap \"map\" due to concurrent migration, or because index creation is still in progress", e.getMessage());
             assertTrue(e.isInvalidatePlan());
         }
     }
@@ -303,8 +354,8 @@ public class MapIndexScanExecTest extends SqlTestSupport {
 
             fail("Must fail");
         } catch (QueryException e) {
-            assertEquals(SqlErrorCode.MAP_INDEX_NOT_EXISTS, e.getCode());
-            assertEquals("Index \"bad_index\" of the map \"map\" doesn't exist", e.getMessage());
+            assertEquals(SqlErrorCode.INDEX_INVALID, e.getCode());
+            assertEquals("Cannot use the index \"bad_index\" of the IMap \"map\" because it doesn't exist", e.getMessage());
             assertTrue(e.isInvalidatePlan());
         }
     }

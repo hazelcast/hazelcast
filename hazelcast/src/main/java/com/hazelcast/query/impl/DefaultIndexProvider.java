@@ -33,8 +33,9 @@ public class DefaultIndexProvider implements IndexProvider {
         InternalSerializationService ss,
         IndexCopyBehavior copyBehavior,
         PerIndexStats stats,
-        StoreAdapter partitionStoreAdapter
+        StoreAdapter partitionStoreAdapter,
+        int partitionCount
     ) {
-        return new IndexImpl(config, ss, extractors, copyBehavior, stats);
+        return new IndexImpl(config, ss, extractors, copyBehavior, stats, partitionCount);
     }
 }

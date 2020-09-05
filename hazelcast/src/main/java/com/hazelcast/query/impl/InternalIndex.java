@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 /**
  * Provides the private index API.
@@ -57,6 +58,21 @@ public interface InternalIndex extends Index {
     boolean allPartitionsIndexed(int ownedPartitionCount);
 
     /**
+     * Notifies the index that a partition update is about to begin. Could be caused be either
+     * partition add (e.g. migration from another member, dynamic index creation), or partition
+     * remove (e.g. migration to another member).
+     * <p>
+     * While in this state, the index cannot be queried by the SQL engine safely, because it
+     * will produce inconsistent results.
+     * <p>
+     * Internally this call increments the counter of active partition updates. The counter
+     * is decremented by subsequent calls to {@link #markPartitionAsIndexed(int)} or
+     * {@link #markPartitionAsUnindexed(int)}. When the counter reaches zero, an index
+     * could be queried again.
+     */
+    void beginPartitionUpdate();
+
+    /**
      * Marks the given partition as indexed by this index.
      *
      * @param partitionId the ID of the partition to mark as indexed.
@@ -75,4 +91,27 @@ public interface InternalIndex extends Index {
      */
     PerIndexStats getPerIndexStats();
 
+    /**
+     * Get monotonically increasing stamp that confirms that the index contains
+     * only expected partitions, and that there are no concurrent partition updates, and
+     * there are no active partition updates (see {@link #beginPartitionUpdate()}).
+     * <p>
+     * Received stamp is used to verify that the index is still valid for the given
+     * set of partitions through a call to {@link #validatePartitionStamp(long)}.
+     *
+     * @param expectedPartitionIds expected indexed partitions
+     * @return stamp
+     * @see GlobalIndexPartitionTracker#getPartitionStamp(PartitionIdSet)
+     */
+    long getPartitionStamp(PartitionIdSet expectedPartitionIds);
+
+    /**
+     * Verifies that the given partition stamp is still valid. It is valid iff there were
+     * no partition updates since the call to the {@link #getPartitionStamp(PartitionIdSet)}
+     * that produced this stamp.
+     *
+     * @param stamp stamp
+     * @return {@code true} if the stamp is still valid, {@code false} otherwise
+     */
+    boolean validatePartitionStamp(long stamp);
 }

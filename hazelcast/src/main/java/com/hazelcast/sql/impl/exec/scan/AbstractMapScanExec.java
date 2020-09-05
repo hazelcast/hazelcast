@@ -97,12 +97,6 @@ public abstract class AbstractMapScanExec extends AbstractExec {
 
         migrationStamp = getMigrationStamp();
         recordIterator = createIterator();
-
-        setup1(ctx);
-    }
-
-    protected void setup1(QueryFragmentContext ctx) {
-        // No-op.
     }
 
     @Override
@@ -127,6 +121,9 @@ public abstract class AbstractMapScanExec extends AbstractExec {
 
         boolean done = recordIterator.done();
 
+        // Validate that the results are consistent (operator-dependent)
+        validateConsistency();
+
         // Check for concurrent migration
         if (!validateMigrationStamp(migrationStamp)) {
             throw QueryException.error(
@@ -144,6 +141,10 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         }
 
         return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
+    }
+
+    protected void validateConsistency() {
+        // No-op.
     }
 
     @Override

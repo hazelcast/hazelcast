@@ -91,6 +91,8 @@ public class AddIndexOperation extends MapOperation
 
         SerializationService serializationService = getNodeEngine().getSerializationService();
 
+        index.beginPartitionUpdate();
+
         recordStore.forEach((dataKey, record) -> {
             Object value = Records.getValueOrCachedValue(record, serializationService);
             QueryableEntry queryEntry = mapContainer.newQueryEntry(dataKey, value);

@@ -146,6 +146,8 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
     private void fullScanLocalDataToClear(Indexes indexes) {
         InternalIndex[] indexesSnapshot = indexes.getIndexes();
 
+        Indexes.beginPartitionUpdate(indexesSnapshot);
+
         recordStore.forEach((BiConsumer<Data, Record>) (dataKey, record) -> {
             Object value = getValueOrCachedValue(record, ss);
             indexes.removeEntry(dataKey, value, Index.OperationSource.SYSTEM);

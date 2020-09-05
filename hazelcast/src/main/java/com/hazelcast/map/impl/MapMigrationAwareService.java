@@ -277,6 +277,8 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
             InternalIndex[] indexesSnapshot = indexes.getIndexes();
 
+            Indexes.beginPartitionUpdate(indexesSnapshot);
+
             recordStore.forEach((key, record) -> {
                 Object value = Records.getValueOrCachedValue(record, serializationService);
                 if (value != null) {
@@ -311,6 +313,8 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             }
 
             InternalIndex[] indexesSnapshot = indexes.getIndexes();
+
+            Indexes.beginPartitionUpdate(indexesSnapshot);
 
             recordStore.forEach((key, record) -> {
                 Object value = Records.getValueOrCachedValue(record, serializationService);

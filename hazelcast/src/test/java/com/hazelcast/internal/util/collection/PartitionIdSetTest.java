@@ -32,9 +32,11 @@ import java.util.PrimitiveIterator;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("ConstantConditions")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionIdSetTest {
@@ -79,6 +81,30 @@ public class PartitionIdSetTest {
         assertEquals(2, partitionIdSet.size());
         partitionIdSet.add(3);
         assertEquals(2, partitionIdSet.size());
+
+        partitionIdSet.remove(7);
+        assertEquals(1, partitionIdSet.size());
+        partitionIdSet.remove(7);
+        assertEquals(1, partitionIdSet.size());
+        partitionIdSet.remove(3);
+        assertEquals(0, partitionIdSet.size());
+
+        partitionIdSet.addAll(create(1, 2, 3, 4));
+        assertEquals(4, partitionIdSet.size());
+
+        partitionIdSet.removeAll(create(3, 4));
+        assertEquals(2, partitionIdSet.size());
+
+        partitionIdSet.clear();
+        assertEquals(0, partitionIdSet.size());
+
+        partitionIdSet.union(create(1, 2));
+        assertEquals(2, partitionIdSet.size());
+        partitionIdSet.union(create(2, 3));
+        assertEquals(3, partitionIdSet.size());
+
+        partitionIdSet.complement();
+        assertEquals(268, partitionIdSet.size());
     }
 
     @Test
@@ -245,6 +271,16 @@ public class PartitionIdSetTest {
         assertTrue(partitionIdSet.intersects(other));
     }
 
+    @Test
+    public void test_equals() {
+        PartitionIdSet set = createWithPartitionCount(10, 1, 2);
+
+        assertEquals(set, set);
+        assertEquals(createWithPartitionCount(10, 1, 2), set);
+        assertNotEquals(createWithPartitionCount(10, 1, 3), set);
+        assertNotEquals(createWithPartitionCount(11, 1, 2), set);
+    }
+
     private void assertContents(PartitionIdSet set) {
         for (int i = 0; i < 5; i++) {
             assertTrue("Should contain " + i, set.contains(i));
@@ -260,5 +296,21 @@ public class PartitionIdSetTest {
             list.add(i);
         }
         return list;
+    }
+
+    private static PartitionIdSet create(int... partitions) {
+        return createWithPartitionCount(271, partitions);
+    }
+
+    private static PartitionIdSet createWithPartitionCount(int partitionCount, int... partitions) {
+        PartitionIdSet res = new PartitionIdSet(partitionCount);
+
+        if (partitions != null) {
+            for (int partition : partitions) {
+                res.add(partition);
+            }
+        }
+
+        return res;
     }
 }
