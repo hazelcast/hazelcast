@@ -49,6 +49,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static com.hazelcast.collection.impl.collection.CollectionContainer.ID_PROMOTION_OFFSET;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -992,6 +993,16 @@ public class QueueContainer implements IdentifiedDataSerializable {
             }
         }
         return backupMap;
+    }
+
+    // Only used for testing.
+    // This method is like `getBackupMap` method but read-only.
+    public void scanBackupItems(Consumer<QueueItem> consumer) {
+        if (backupMap != null) {
+            backupMap.values().forEach(consumer);
+        } else {
+            itemQueue.forEach(consumer);
+        }
     }
 
     public Data getDataFromMap(long itemId) {

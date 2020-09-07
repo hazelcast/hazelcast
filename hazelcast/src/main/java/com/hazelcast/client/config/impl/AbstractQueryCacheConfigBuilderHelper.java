@@ -17,6 +17,7 @@
 package com.hazelcast.client.config.impl;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.internal.config.DomConfigHelper;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
@@ -42,9 +43,16 @@ import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
  */
 abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfigBuilderHelper {
     protected final boolean domLevel3;
+    protected final boolean strict;
+
+    protected AbstractQueryCacheConfigBuilderHelper(boolean domLevel3, boolean strict) {
+        this.domLevel3 = domLevel3;
+        this.strict = strict;
+    }
 
     protected AbstractQueryCacheConfigBuilderHelper(boolean domLevel3) {
         this.domLevel3 = domLevel3;
+        this.strict = true;
     }
 
     protected String getTextContent(Node node) {
@@ -53,47 +61,47 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
 
     protected void populateQueryCacheConfig(QueryCacheConfig queryCacheConfig,
                                             Node childNode, String textContent, String nodeName) {
-        if ("entry-listeners".equals(nodeName)) {
+        if (matches("entry-listeners", nodeName)) {
             handleEntryListeners(queryCacheConfig, childNode);
-        } else if ("include-value".equals(nodeName)) {
+        } else if (matches("include-value", nodeName)) {
             boolean includeValue = getBooleanValue(textContent);
             queryCacheConfig.setIncludeValue(includeValue);
-        } else if ("batch-size".equals(nodeName)) {
+        } else if (matches("batch-size", nodeName)) {
             int batchSize = getIntegerValue("batch-size", textContent.trim()
             );
             queryCacheConfig.setBatchSize(batchSize);
-        } else if ("buffer-size".equals(nodeName)) {
+        } else if (matches("buffer-size", nodeName)) {
             int bufferSize = getIntegerValue("buffer-size", textContent.trim()
             );
             queryCacheConfig.setBufferSize(bufferSize);
-        } else if ("delay-seconds".equals(nodeName)) {
+        } else if (matches("delay-seconds", nodeName)) {
             int delaySeconds = getIntegerValue("delay-seconds", textContent.trim()
             );
             queryCacheConfig.setDelaySeconds(delaySeconds);
-        } else if ("in-memory-format".equals(nodeName)) {
+        } else if (matches("in-memory-format", nodeName)) {
             String value = textContent.trim();
             queryCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
-        } else if ("coalesce".equals(nodeName)) {
+        } else if (matches("coalesce", nodeName)) {
             boolean coalesce = getBooleanValue(textContent);
             queryCacheConfig.setCoalesce(coalesce);
-        } else if ("populate".equals(nodeName)) {
+        } else if (matches("populate", nodeName)) {
             boolean populate = getBooleanValue(textContent);
             queryCacheConfig.setPopulate(populate);
-        } else if ("indexes".equals(nodeName)) {
+        } else if (matches("indexes", nodeName)) {
             queryCacheIndexesHandle(childNode, queryCacheConfig);
-        } else if ("predicate".equals(nodeName)) {
+        } else if (matches("predicate", nodeName)) {
             queryCachePredicateHandler(childNode, queryCacheConfig);
-        } else if ("eviction".equals(nodeName)) {
+        } else if (matches("eviction", nodeName)) {
             queryCacheConfig.setEvictionConfig(getEvictionConfig(childNode));
         }
     }
 
     private EvictionConfig getEvictionConfig(final Node node) {
         final EvictionConfig evictionConfig = new EvictionConfig();
-        final Node size = node.getAttributes().getNamedItem("size");
-        final Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
-        final Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
-        Node comparatorClassName = node.getAttributes().getNamedItem("comparator-class-name");
+        final Node size = getNamedItemNode(node, "size");
+        final Node maxSizePolicy = getNamedItemNode(node, "max-size-policy");
+        final Node evictionPolicy = getNamedItemNode(node, "eviction-policy");
+        Node comparatorClassName = getNamedItemNode(node, "comparator-class-name");
         if (size != null) {
             evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
         }
@@ -135,11 +143,10 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
     protected abstract void handleEntryListeners(QueryCacheConfig queryCacheConfig, Node childNode);
 
     protected void handleEntryListenerNode(QueryCacheConfig queryCacheConfig, Node listenerNode) {
-        NamedNodeMap listenerNodeAttributes = listenerNode.getAttributes();
         boolean incValue
-                = getBooleanValue(getTextContent(listenerNodeAttributes.getNamedItem("include-value")));
+                = getBooleanValue(getTextContent(getNamedItemNode(listenerNode, "include-value")));
         boolean local
-                = getBooleanValue(getTextContent(listenerNodeAttributes.getNamedItem("local")));
+                = getBooleanValue(getTextContent(getNamedItemNode(listenerNode, "local")));
         String listenerClass = getTextContent(listenerNode);
         queryCacheConfig.addEntryListenerConfig(
                 new EntryListenerConfig(listenerClass, local, incValue));
@@ -148,4 +155,26 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
     protected abstract void queryCachePredicateHandler(Node childNode, QueryCacheConfig queryCacheConfig);
 
     protected abstract void queryCacheIndexesHandle(Node childNode, QueryCacheConfig queryCacheConfig);
+
+
+    protected boolean matches(String config1, String config2) {
+        return strict
+          ? config1 != null && config1.equals(config2)
+          : ConfigUtils.matches(config1, config2);
+    }
+
+    protected Node getNamedItemNode(final Node node, String attrName) {
+        return getNamedItemNode(node.getAttributes(), attrName);
+    }
+
+    protected Node getNamedItemNode(final NamedNodeMap attrs, String attrName) {
+        if (strict) {
+            return attrs.getNamedItem(attrName);
+        } else {
+            Node attrNode = attrs.getNamedItem(attrName);
+            return attrNode != null
+              ? attrNode
+              : attrs.getNamedItem(attrName.replace("-", ""));
+        }
+    }
 }

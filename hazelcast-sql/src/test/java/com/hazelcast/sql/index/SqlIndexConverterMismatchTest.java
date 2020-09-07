@@ -116,8 +116,8 @@ public class SqlIndexConverterMismatchTest extends SqlTestSupport {
 
             fail("Must fail!");
         } catch (HazelcastSqlException e) {
-            assertEquals(SqlErrorCode.DATA_EXCEPTION, e.getCode());
-            assertEquals("Index \"index\" has component \"field1\" of type VARCHAR, but INTEGER was expected", e.getMessage());
+            assertEquals(SqlErrorCode.INDEX_INVALID, e.getCode());
+            assertEquals("Cannot use the index \"index\" of the IMap \"map\" because it has component \"field1\" of type VARCHAR, but INTEGER was expected", e.getMessage());
         }
     }
 

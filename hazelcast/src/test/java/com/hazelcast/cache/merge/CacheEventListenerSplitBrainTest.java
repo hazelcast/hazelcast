@@ -97,7 +97,6 @@ public class CacheEventListenerSplitBrainTest extends SplitBrainTestSupport {
         if (inMemoryFormat == NATIVE) {
             cacheConfig.getEvictionConfig().setMaxSizePolicy(USED_NATIVE_MEMORY_SIZE);
         }
-        cacheConfig.setStatisticsEnabled(true);
         cacheConfig.getMergePolicyConfig().setPolicy(mergePolicyClass.getName());
 
         if (updatedListener != null) {
@@ -170,12 +169,7 @@ public class CacheEventListenerSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void assert_update_event_generated_on_merge_of_not_equal_entries() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, cacheBUpdatedListener.updated.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, cacheBUpdatedListener.updated.get()));
     }
 
     static class TestCacheEntryUpdatedListener<K, V> implements CacheEntryUpdatedListener<K, V>, Serializable {

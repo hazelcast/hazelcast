@@ -20,6 +20,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.Predicate;
 
 import java.util.HashSet;
@@ -165,7 +166,7 @@ public class AttributeIndexRegistry {
      * <p>
      * Exposed as a package-private class only for testing purposes.
      */
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "checkstyle:MethodCount"})
     static final class FirstComponentDecorator implements InternalIndex {
 
         // See CompositeValue docs for more details on what is going on in the
@@ -356,6 +357,11 @@ public class AttributeIndexRegistry {
         }
 
         @Override
+        public void beginPartitionUpdate() {
+            throw newUnsupportedException();
+        }
+
+        @Override
         public void markPartitionAsIndexed(int partitionId) {
             throw newUnsupportedException();
         }
@@ -368,6 +374,16 @@ public class AttributeIndexRegistry {
         @Override
         public PerIndexStats getPerIndexStats() {
             return delegate.getPerIndexStats();
+        }
+
+        @Override
+        public long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
+            throw newUnsupportedException();
+        }
+
+        @Override
+        public boolean validatePartitionStamp(long stamp) {
+            throw newUnsupportedException();
         }
 
         private RuntimeException newUnsupportedException() {

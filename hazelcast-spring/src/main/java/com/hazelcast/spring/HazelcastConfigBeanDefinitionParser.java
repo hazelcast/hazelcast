@@ -371,7 +371,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             BeanDefinitionBuilder encryptionAtRestConfigBuilder = createBeanBuilder(EncryptionAtRestConfig.class);
             fillAttributeValues(node, encryptionAtRestConfigBuilder);
             fillValues(node, encryptionAtRestConfigBuilder, "secureStore");
-            Node secureStoreNode = childElementWithName(node, "secure-store");
+            Node secureStoreNode = childElementWithName(node, "secure-store", true);
             for (Node child : childElements(secureStoreNode)) {
                 String nodeName = cleanNodeName(child);
                 AbstractBeanDefinition secureStoreBeanDefinition = null;
@@ -389,7 +389,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private AbstractBeanDefinition handleKeyStoreSecureStoreConfig(Node node) {
             BeanDefinitionBuilder keyStoreConfigBuilder = createBeanBuilder(JavaKeyStoreSecureStoreConfig.class);
-            Node pathNode = childElementWithName(node, "path");
+            Node pathNode = childElementWithName(node, "path", true);
             keyStoreConfigBuilder.addConstructorArgValue(new File(getTextContent(pathNode).trim()).getAbsoluteFile());
             fillValues(node, keyStoreConfigBuilder);
             return keyStoreConfigBuilder.getBeanDefinition();
@@ -397,14 +397,14 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private AbstractBeanDefinition handleVaultSecureStoreConfig(Node node) {
             BeanDefinitionBuilder vaultConfigBuilder = createBeanBuilder(VaultSecureStoreConfig.class);
-            Node addressNode = childElementWithName(node, "address");
-            Node secretPathNode = childElementWithName(node, "secrets-path");
-            Node tokenNode = childElementWithName(node, "token");
+            Node addressNode = childElementWithName(node, "address", true);
+            Node secretPathNode = childElementWithName(node, "secrets-path", true);
+            Node tokenNode = childElementWithName(node, "token", true);
             vaultConfigBuilder.addConstructorArgValue(getTextContent(addressNode).trim());
             vaultConfigBuilder.addConstructorArgValue(getTextContent(secretPathNode).trim());
             vaultConfigBuilder.addConstructorArgValue(getTextContent(tokenNode).trim());
             fillValues(node, vaultConfigBuilder, "ssl");
-            Node ssl = childElementWithName(node, "ssl");
+            Node ssl = childElementWithName(node, "ssl", true);
             if (ssl != null) {
                 handleSSLConfig(ssl, vaultConfigBuilder);
             }
@@ -438,7 +438,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     cpSubsystemConfigBuilder.addPropertyValue("raftAlgorithmConfig",
                             raftAlgorithmConfigBuilder.getBeanDefinition());
                 } else if ("semaphores".equals(nodeName)) {
-                    ManagedMap<String, AbstractBeanDefinition> semaphores = new ManagedMap<String, AbstractBeanDefinition>();
+                    ManagedMap<String, AbstractBeanDefinition> semaphores = new ManagedMap<>();
                     handleSemaphores(semaphores, child);
                     cpSubsystemConfigBuilder.addPropertyValue("SemaphoreConfigs", semaphores);
                 } else if ("locks".equals(nodeName)) {

@@ -27,9 +27,11 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -49,6 +51,9 @@ import static org.junit.Assert.assertEquals;
 public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport {
 
     private static final float BACKUP_BLOCK_RATIO = 0.65f;
+
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug.xml");
 
     @Parameters(name = "backups:{0},nodes:{1}")
     public static Collection<Object[]> parameters() {

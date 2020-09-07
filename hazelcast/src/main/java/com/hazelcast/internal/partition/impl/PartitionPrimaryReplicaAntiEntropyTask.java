@@ -27,25 +27,33 @@ import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COU
 
 final class PartitionPrimaryReplicaAntiEntropyTask extends AbstractPartitionPrimaryReplicaAntiEntropyTask {
 
-    PartitionPrimaryReplicaAntiEntropyTask(NodeEngineImpl nodeEngine, int partitionId) {
+    private final Runnable afterRun;
+
+    PartitionPrimaryReplicaAntiEntropyTask(NodeEngineImpl nodeEngine, int partitionId, Runnable afterRun) {
         super(nodeEngine, partitionId);
+        this.afterRun = afterRun;
     }
 
     @Override
     public void run() {
-        InternalPartition partition = partitionService.getPartition(partitionId, false);
-        if (!partition.isLocal() || partition.isMigrating()) {
-            return;
-        }
+        try {
+            InternalPartition partition = partitionService.getPartition(partitionId, false);
+            if (!partition.isLocal() || partition.isMigrating()) {
+                return;
+            }
 
-        Collection<ServiceNamespace> namespaces = retainAndGetNamespaces();
+            Collection<ServiceNamespace> namespaces = retainAndGetNamespaces();
 
-        for (int index = 1; index < MAX_REPLICA_COUNT; index++) {
-            PartitionReplica replica = partition.getReplica(index);
-            if (replica != null) {
-                invokePartitionBackupReplicaAntiEntropyOp(index, replica, namespaces, null);
+            for (int index = 1; index < MAX_REPLICA_COUNT; index++) {
+                PartitionReplica replica = partition.getReplica(index);
+                if (replica != null) {
+                    invokePartitionBackupReplicaAntiEntropyOp(index, replica, namespaces, null);
+                }
+            }
+        } finally {
+            if (afterRun != null) {
+                afterRun.run();
             }
         }
     }
-
 }

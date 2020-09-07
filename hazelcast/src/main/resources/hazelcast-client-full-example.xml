@@ -306,18 +306,34 @@
             </properties>
         </ssl>
         <auto-detection enabled="false"/>
-        <aws enabled="true" connection-timeout-seconds="11">
-            <inside-aws>true</inside-aws>
-            <access-key>TEST_ACCESS_KEY</access-key>
-            <secret-key>TEST_SECRET_KEY</secret-key>
-            <region>us-east-1</region>
+        <aws enabled="false">
+            <access-key>my-access-key</access-key>
+            <secret-key>my-secret-key</secret-key>
+            <region>us-west-1</region>
             <host-header>ec2.amazonaws.com</host-header>
-            <security-group-name>hazelcast-sg</security-group-name>
+            <connection-timeout-seconds>7</connection-timeout-seconds>
+            <read-timeout-seconds>7</read-timeout-seconds>
+            <connection-retries>4</connection-retries>
+            <hz-port>5701-5710</hz-port>
+            <use-public-ip>true</use-public-ip>
             <tag-key>type</tag-key>
             <tag-value>hz-nodes</tag-value>
+            <security-group-name>hazelcast-sg</security-group-name>
+            <iam-role>dummy</iam-role>
+            <!--
+            <cluster>my-cluster</cluster>
+            <family>test-family</family>
+            <service-name>test-service</service-name>
+            -->
         </aws>
         <gcp enabled="false">
-            <zones>us-east1-b,us-east1-c</zones>
+            <private-key-path>key-path</private-key-path>
+            <projects>project-1,project-2</projects>
+            <region>us-central1</region>
+            <zones>us-central1-b,us-central1-c</zones>
+            <label>key=value</label>
+            <hz-port>5701-5710</hz-port>
+            <use-public-ip>true</use-public-ip>
         </gcp>
         <azure enabled="false">
             <instance-metadata-available>false</instance-metadata-available>
@@ -328,6 +344,8 @@
             <resource-group>RESOURCE-GROUP-NAME</resource-group>
             <scale-set>SCALE-SET-NAME</scale-set>
             <tag>TAG-NAME=HZLCAST001</tag>
+            <hz-port>5701-5707</hz-port>
+            <use-public-ip>true</use-public-ip>
         </azure>
         <kubernetes enabled="false">
             <namespace>MY-KUBERNETES-NAMESPACE</namespace>
@@ -376,7 +394,7 @@
             "name" used to define the name of the attribute. The value of the property is defined in the body.
         * <username-password>
             Defines a static UsernamePasswordCredentials instance as the client's identity. It has mandatory
-             "username" and "password" attributes.
+            "username" and "password" attributes.
         * <token>
             Defines a static TokenCredentials instance as the client's identity. It can have attribute "encoding".
             Content of the element is token value in given encoding (or in plain text).
@@ -578,6 +596,8 @@
         It has the attribute "type". The valid values for the type of the load balancer are"
         * "random": The member the operations to be sent to is chosen randomly.
         * "round-robin": The member the operations to be sent to is chosen in a round-robin fashion.
+        * "custom": The member the operations to be sent to is chosen by provided load balancer implementation.
+                    The implementation class name is specified as text content.
     -->
     <load-balancer type="random"/>
 

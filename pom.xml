@@ -35,6 +35,7 @@
         <module>hazelcast-build-utils</module>
         <module>hazelcast-sql</module>
         <module>hazelcast-all</module>
+        <module>distribution</module>
     </modules>
 
     <properties>
@@ -218,19 +219,6 @@
             </plugin>
 
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>${maven.assembly.plugin.version}</version>
-                <configuration>
-                    <finalName>hazelcast-${project.version}</finalName>
-                    <descriptors>
-                        <descriptor>./src/main/assembly/assembly.xml</descriptor>
-                    </descriptors>
-                    <appendAssemblyId>false</appendAssemblyId>
-                </configuration>
-            </plugin>
-
-            <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <version>${maven.spotbugs.plugin.version}</version>
@@ -285,6 +273,7 @@
                     <excludes>
                         <exclude>**/jsr/**.java</exclude>
                         <exclude>**/**IT.java</exclude>
+                        <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                     </excludes>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>
@@ -415,6 +404,7 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
+                                        <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                                     </excludes>
                                     <groups>
                                         com.hazelcast.test.annotation.QuickTest AND
@@ -454,6 +444,7 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
+                                        <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                                     </excludes>
                                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                                     <excludedGroups>
@@ -497,6 +488,7 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>
@@ -663,6 +655,7 @@
                             </includes>
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -907,6 +900,7 @@
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>**/jsr/**.java</exclude>
+                                <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.NightlyTest,
@@ -975,6 +969,7 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -1096,6 +1091,7 @@
                                 <exclude>**/UserCodeDeploymentSmokeTest.java</exclude>
                                 <exclude>**/OperationRunnerImplTest.java</exclude>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>

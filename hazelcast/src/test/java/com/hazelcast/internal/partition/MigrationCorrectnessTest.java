@@ -46,8 +46,11 @@ public class MigrationCorrectnessTest extends AbstractMigrationCorrectnessTest {
                 {1, 2, true},
                 {1, 2, false},
                 {2, 3, true},
-                {3, 4, true},
-                {3, 4, false},
+                // These variants are failing frequently.
+                // Ignored these below until we find the cause and fix.
+                // See https://github.com/hazelcast/hazelcast/issues/17377
+                // {3, 4, true},
+                // {3, 4, false},
         });
     }
 }

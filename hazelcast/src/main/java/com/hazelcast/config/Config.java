@@ -43,6 +43,7 @@ import com.hazelcast.internal.config.SetConfigReadOnly;
 import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.internal.config.XmlConfigLocator;
 import com.hazelcast.internal.config.YamlConfigLocator;
+import com.hazelcast.internal.config.override.ExternalConfigurationOverride;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
@@ -194,7 +195,9 @@ public class Config {
     /**
      * Populates Hazelcast {@link Config} object from an external configuration file.
      * <p>
-     * It tries to load Hazelcast configuration from a list of well-known locations.
+     * It tries to load Hazelcast configuration from a list of well-known locations,
+     * and then applies overrides found in environment variables/system properties
+     *
      * When no location contains Hazelcast configuration then it returns default.
      * <p>
      * Note that the same mechanism is used when calling {@link com.hazelcast.core.Hazelcast#newHazelcastInstance()}.
@@ -202,6 +205,10 @@ public class Config {
      * @return Config created from a file when exists, otherwise default.
      */
     public static Config load() {
+        return new ExternalConfigurationOverride().overwriteMemberConfig(loadFromFile());
+    }
+
+    private static Config loadFromFile() {
         validateSuffixInSystemProperty(SYSPROP_MEMBER_CONFIG);
 
         XmlConfigLocator xmlConfigLocator = new XmlConfigLocator();

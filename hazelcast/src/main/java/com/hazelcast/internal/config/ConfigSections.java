@@ -83,10 +83,6 @@ public enum ConfigSections {
         return false;
     }
 
-    public boolean isEqual(String name) {
-        return this.name.equals(name);
-    }
-
     public String getName() {
         return name;
     }

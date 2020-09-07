@@ -751,9 +751,14 @@ public class CacheStatsTest extends CacheTestSupport {
         // this put must trigger eviction
         cache1.put(key, "foo");
 
-        // number of evictions on primary and backup must be 1
-        assertEquals(1, cache1.getLocalCacheStatistics().getCacheEvictions()
-                + cache2.getLocalCacheStatistics().getCacheEvictions());
+        try {
+            // number of evictions on primary and backup must be 1
+            assertEquals(1, cache1.getLocalCacheStatistics().getCacheEvictions()
+                    + cache2.getLocalCacheStatistics().getCacheEvictions());
+        } finally {
+            cache1.destroy();
+            cache2.destroy();
+        }
     }
 
     @Test(expected = UnsupportedOperationException.class)

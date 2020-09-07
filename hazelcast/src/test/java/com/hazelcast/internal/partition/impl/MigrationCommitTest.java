@@ -28,12 +28,14 @@ import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationInterceptorImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationProgressNotification;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -65,6 +67,9 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MigrationCommitTest extends HazelcastTestSupport {
+
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug.xml");
 
     private static final int PARTITION_COUNT = 2;
 
@@ -505,6 +510,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(ClusterProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "0");
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
+        config.setProperty(ClusterProperty.PARTITION_MAX_PARALLEL_MIGRATIONS.getName(), "1");
         return config;
     }
 
@@ -659,7 +665,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
     private static class TerminateOtherMemberOnMigrationComplete implements MigrationInterceptor, HazelcastInstanceAware {
 
         private final CountDownLatch migrationStartLatch;
-        private final AtomicBoolean terminated = new AtomicBoolean();
+        private final AtomicReference<MigrationInfo> migrationRef = new AtomicReference<>();
 
         private volatile boolean rollback;
         private volatile HazelcastInstance instance;
@@ -684,7 +690,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
                 return;
             }
 
-            if (!terminated.compareAndSet(false, true)) {
+            if (!migrationRef.compareAndSet(null, migrationInfo)) {
                 return;
             }
 
@@ -700,9 +706,10 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         @Override
         public void onMigrationRollback(MigrationParticipant participant, MigrationInfo migrationInfo) {
-            rollback = true;
-
-            resetInternalMigrationListener(instance);
+            if (migrationInfo.equals(migrationRef.get())) {
+                rollback = true;
+                resetInternalMigrationListener(instance);
+            }
         }
 
         @Override

@@ -3092,9 +3092,11 @@
                 <xs:restriction base="non-space-string">
                     <xs:enumeration value="random"/>
                     <xs:enumeration value="round-robin"/>
+                    <xs:enumeration value="custom"/>
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
+        <xs:attributeGroup ref="class-or-bean-name"/>
     </xs:complexType>
     <xs:complexType name="near-cache-client">
         <xs:complexContent>
@@ -3280,7 +3282,7 @@
         <xs:attribute name="epochStart" type="xs:long" default="1514764800000" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    Sets the offset of timestamp component. Time unit is milliseconds, default is 1514764800000 
+                    Sets the offset of timestamp component. Time unit is milliseconds, default is 1514764800000
                     (1.1.2018 0:00 UTC).
                 </xs:documentation>
             </xs:annotation>

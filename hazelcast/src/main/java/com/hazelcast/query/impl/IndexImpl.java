@@ -19,28 +19,27 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.impl.getters.Extractors;
-
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static java.util.Collections.newSetFromMap;
 
 /**
  * Provides implementation of on-heap indexes.
  */
 public class IndexImpl extends AbstractIndex {
 
-    private final Set<Integer> indexedPartitions = newSetFromMap(new ConcurrentHashMap<>());
+    private final GlobalIndexPartitionTracker partitionTracker;
 
     public IndexImpl(
         IndexConfig config,
         InternalSerializationService ss,
         Extractors extractors,
         IndexCopyBehavior copyBehavior,
-        PerIndexStats stats
+        PerIndexStats stats,
+        int partitionCount
     ) {
         super(config, ss, extractors, copyBehavior, stats, null);
+
+        partitionTracker = new GlobalIndexPartitionTracker(partitionCount);
     }
 
     @Override
@@ -60,12 +59,12 @@ public class IndexImpl extends AbstractIndex {
     @Override
     public void clear() {
         super.clear();
-        indexedPartitions.clear();
+        partitionTracker.clear();
     }
 
     @Override
     public boolean hasPartitionIndexed(int partitionId) {
-        return indexedPartitions.contains(partitionId);
+        return partitionTracker.isIndexed(partitionId);
     }
 
     @Override
@@ -73,18 +72,31 @@ public class IndexImpl extends AbstractIndex {
         // This check guarantees that all partitions are indexed
         // only if there is no concurrent migrations. Check migration stamp
         // to detect concurrent migrations if needed.
-        return ownedPartitionCount < 0 || indexedPartitions.size() == ownedPartitionCount;
+        return ownedPartitionCount < 0 || partitionTracker.indexedCount() == ownedPartitionCount;
+    }
+
+    @Override
+    public void beginPartitionUpdate() {
+        partitionTracker.beginPartitionUpdate();
     }
 
     @Override
     public void markPartitionAsIndexed(int partitionId) {
-        assert !indexedPartitions.contains(partitionId);
-        indexedPartitions.add(partitionId);
+        partitionTracker.partitionIndexed(partitionId);
     }
 
     @Override
     public void markPartitionAsUnindexed(int partitionId) {
-        indexedPartitions.remove(partitionId);
+        partitionTracker.partitionUnindexed(partitionId);
     }
 
+    @Override
+    public long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
+        return partitionTracker.getPartitionStamp(expectedPartitionIds);
+    }
+
+    @Override
+    public boolean validatePartitionStamp(long stamp) {
+        return partitionTracker.validatePartitionStamp(stamp);
+    }
 }

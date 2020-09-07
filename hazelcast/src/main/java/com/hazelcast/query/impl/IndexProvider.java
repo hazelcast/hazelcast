@@ -48,6 +48,7 @@ public interface IndexProvider {
             InternalSerializationService ss,
             IndexCopyBehavior copyBehavior,
             PerIndexStats stats,
-            StoreAdapter storeAdapter
+            StoreAdapter storeAdapter,
+            int partitionCount
     );
 }

@@ -55,27 +55,12 @@
                 </member-list>
             </tcp-ip>
             <aws enabled="false">
-                <access-key>my-access-key</access-key>
-                <secret-key>my-secret-key</secret-key>
-                <!--optional, default is us-east-1 -->
-                <region>us-west-1</region>
-                <!--optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property -->
-                <host-header>ec2.amazonaws.com</host-header>
-                <!-- optional, only instances belonging to this group will be discovered, default will try all running instances -->
-                <security-group-name>hazelcast-sg</security-group-name>
-                <tag-key>type</tag-key>
-                <tag-value>hz-nodes</tag-value>
             </aws>
             <gcp enabled="false">
-                <zones>us-east1-b,us-east1-c</zones>
             </gcp>
             <azure enabled="false">
             </azure>
             <kubernetes enabled="false">
-                <namespace>MY-KUBERNETES-NAMESPACE</namespace>
-                <service-name>MY-SERVICE-NAME</service-name>
-                <service-label-name>MY-SERVICE-LABEL-NAME</service-label-name>
-                <service-label-value>MY-SERVICE-LABEL-VALUE</service-label-value>
             </kubernetes>
             <eureka enabled="false">
                 <self-registration>true</self-registration>
@@ -117,7 +102,7 @@
         <pool-size>16</pool-size>
         <statistics-enabled>true</statistics-enabled>
     </executor-service>
-    <durable-executor-service>
+    <durable-executor-service name="default">
         <capacity>100</capacity>
         <durability>1</durability>
         <pool-size>16</pool-size>

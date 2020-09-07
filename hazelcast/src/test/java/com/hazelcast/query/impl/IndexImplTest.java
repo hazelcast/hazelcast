@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.Data;
@@ -50,8 +51,14 @@ public class IndexImplTest {
 
         IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, ATTRIBUTE_NAME);
 
-        index = new IndexImpl(config, mockSerializationService, mockExtractors,
-                IndexCopyBehavior.COPY_ON_READ, PerIndexStats.EMPTY);
+        index = new IndexImpl(
+            config,
+            mockSerializationService,
+            mockExtractors,
+            IndexCopyBehavior.COPY_ON_READ,
+            PerIndexStats.EMPTY,
+            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
+        );
     }
 
     @Test

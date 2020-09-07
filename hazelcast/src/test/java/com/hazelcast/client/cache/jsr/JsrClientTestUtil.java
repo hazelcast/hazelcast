@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 
+import static com.hazelcast.cache.jsr.JsrTestUtil.assertNoMBeanLeftovers;
 import static com.hazelcast.cache.jsr.JsrTestUtil.clearCachingProviderRegistry;
 import static com.hazelcast.cache.jsr.JsrTestUtil.clearSystemProperties;
 import static com.hazelcast.cache.jsr.JsrTestUtil.setSystemProperties;
@@ -42,6 +43,7 @@ public final class JsrClientTestUtil {
     public static void setupWithHazelcastInstance() {
         assertThatIsNotMultithreadedTest();
         setSystemProperties("client");
+        assertNoMBeanLeftovers();
 
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);

@@ -45,19 +45,19 @@ public final class W3cDomUtil {
             return null;
         }
 
-        return new ElementAdapter(yamlNode);
+        return new YamlElementAdapter(yamlNode);
     }
 
     /**
      * Returns the the wrapped {@link YamlMapping} instance of the
      * provided {@link Node} if the {@code node} is an instance of
-     * {@link ElementAdapter} and the YAML node wrapped by the {@code node}
+     * {@link YamlElementAdapter} and the YAML node wrapped by the {@code node}
      * is a {@link YamlMapping}.
      *
      * @param node The W3C node wrapping a YAML node
      * @return the wrapped YAML node as mapping
      * @throws IllegalArgumentException if the provided node is not an
-     *                                  instance of {@link ElementAdapter}
+     *                                  instance of {@link YamlElementAdapter}
      */
     public static YamlMapping getWrappedYamlMapping(Node node) {
         checkNodeIsElementAdapter(node);
@@ -68,13 +68,13 @@ public final class W3cDomUtil {
     /**
      * Returns the the wrapped {@link YamlSequence} instance of the
      * provided {@link Node} if the {@code node} is an instance of
-     * {@link ElementAdapter} and the YAML node wrapped by the {@code node}
+     * {@link YamlElementAdapter} and the YAML node wrapped by the {@code node}
      * is a {@link YamlSequence}.
      *
      * @param node The W3C node wrapping a YAML node
      * @return the wrapped YAML node as sequence
      * @throws IllegalArgumentException if the provided node is not an
-     *                                  instance of {@link ElementAdapter}
+     *                                  instance of {@link YamlElementAdapter}
      */
     public static YamlSequence getWrappedYamlSequence(Node node) {
         checkNodeIsElementAdapter(node);
@@ -85,13 +85,13 @@ public final class W3cDomUtil {
     /**
      * Returns the the wrapped {@link YamlScalar} instance of the
      * provided {@link Node} if the {@code node} is an instance of
-     * {@link ElementAdapter} and the YAML node wrapped by the {@code node}
+     * {@link YamlElementAdapter} and the YAML node wrapped by the {@code node}
      * is a {@link YamlScalar}.
      *
      * @param node The W3C node wrapping a YAML node
      * @return the wrapped YAML node as scalar
      * @throws IllegalArgumentException if the provided node is not an
-     *                                  instance of {@link ElementAdapter}
+     *                                  instance of {@link YamlElementAdapter}
      */
     public static YamlScalar getWrappedYamlScalar(Node node) {
         checkNodeIsElementAdapter(node);
@@ -102,13 +102,13 @@ public final class W3cDomUtil {
     /**
      * Returns the the wrapped {@link MutableYamlNode} instance of the
      * provided {@link Node} if the {@code node} is an instance of
-     * {@link ElementAdapter} and the YAML node wrapped by the {@code node}
+     * {@link YamlElementAdapter} and the YAML node wrapped by the {@code node}
      * is a {@link MutableYamlNode}.
      *
      * @param node The W3C node wrapping a YAML node
      * @return the wrapped YAML node as a mutable YAML node
      * @throws IllegalArgumentException if the provided node is not an
-     *                                  instance of {@link ElementAdapter}
+     *                                  instance of {@link YamlElementAdapter}
      */
     public static MutableYamlNode getWrappedMutableYamlNode(Node node) {
         checkNodeIsElementAdapter(node);
@@ -125,11 +125,11 @@ public final class W3cDomUtil {
     }
 
     private static <T extends YamlNode> T asYamlType(Node node, Class<T> type) {
-        return YamlUtil.asType(((ElementAdapter) node).getYamlNode(), type);
+        return YamlUtil.asType(((YamlElementAdapter) node).getYamlNode(), type);
     }
 
     private static void checkNodeIsElementAdapter(Node node) {
-        if (!(node instanceof ElementAdapter)) {
+        if (!(node instanceof YamlElementAdapter)) {
             throw new IllegalArgumentException(String.format("The provided node is not an instance of ElementAdapter, it is a %s",
                     node.getClass().getName()));
         }

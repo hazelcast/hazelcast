@@ -89,18 +89,26 @@ public final class JmxLeakHelper {
         return res;
     }
 
+    public static Collection<ObjectInstance> getActiveJmxBeansWithPrefix(String prefix) {
+        return getActiveJmxBeans(prefix);
+    }
+
     private static Collection<ObjectInstance> getActiveJmxBeans() {
+        return getActiveJmxBeans("com.hazelcast");
+    }
+
+    private static Collection<ObjectInstance> getActiveJmxBeans(String prefix) {
         try {
             List<ObjectInstance> res = new ArrayList<>();
 
-            ObjectName objectName = new ObjectName("com.hazelcast*:*");
+            ObjectName objectName = new ObjectName(prefix + "*:*");
 
             Set<ObjectInstance> instances = ManagementFactory.getPlatformMBeanServer().queryMBeans(objectName, null);
 
             for (ObjectInstance instance : instances) {
                 String name = instance.getObjectName().getCanonicalName();
 
-                if (name != null && name.startsWith("com.hazelcast")) {
+                if (name != null && name.startsWith(prefix)) {
                     res.add(instance);
                 }
             }

@@ -316,7 +316,15 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private LoadBalancer initLoadBalancer(ClientConfig config) {
         LoadBalancer lb = config.getLoadBalancer();
         if (lb == null) {
-            lb = new RoundRobinLB();
+            if (config.getLoadBalancerClassName() != null) {
+                try {
+                    return ClassLoaderUtil.newInstance(config.getClassLoader(), config.getLoadBalancerClassName());
+                } catch (Exception e) {
+                    rethrow(e);
+                }
+            } else {
+                lb = new RoundRobinLB();
+            }
         }
         return lb;
     }

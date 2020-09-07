@@ -65,7 +65,7 @@ public class ClientFailoverDomConfigProcessor extends AbstractDomConfigProcessor
 
     protected void handleClients(Node node) {
         for (Node child : childElements(node)) {
-            if ("client".equals(cleanNodeName(child))) {
+            if (matches("client", cleanNodeName(child))) {
                 String clientPath = getTextContent(child);
                 try {
                     ClientConfig config = new XmlClientConfigBuilder(clientPath).build();

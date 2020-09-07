@@ -3185,9 +3185,11 @@
                 <xs:restriction base="non-space-string">
                     <xs:enumeration value="random"/>
                     <xs:enumeration value="round-robin"/>
+                    <xs:enumeration value="custom"/>
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
+        <xs:attributeGroup ref="class-or-bean-name"/>
     </xs:complexType>
     <xs:complexType name="near-cache-client">
         <xs:complexContent>
