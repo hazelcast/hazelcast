@@ -1,96 +1,194 @@
-This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12 release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
+This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 4.1-BETA-1 release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
 
-==== 3.12 ====
+==== 4.1-BETA-1 ====
 
-1. Breaking Changes
+1. New Features
 
-* Support for JDK 6 and 7 has been dropped. The minimum Java version that Hazelcast supports now is Java 8. See the Supports JVMs section.
+* **Instance Tracking:** It is a feature which writes a file on the Hazelcast instance startup
+at the configured location. This file contains metadata about the instance, such as version, product name
+and process ID, and it is not deleted on the member shutdown.
+See https://docs.hazelcast.org/docs/4.1-BETA-1/manual/html-single/#instance-tracking.
+* **SQL Implementation:** Implemented the SQL engine that
+supports map scans, index scans, projections and filters.
+It also introduces the `hazelcast-sql` module to handle the
+SQL engine's dependencies on Apache Calcite.
+See https://docs.hazelcast.org/docs/4.1-BETA-1/manual/html-single/index.html#sql.
 
-2. New Features
+2. Enhancements
 
-Hazelcast IMDG Enterprise New Features:
+* **Improvements in Partial Network Disconnections:** Introduced properties
+to be configured to detect and resolve the partial network issues among the
+Hazelcast IMDG members.
+See https://github.com/hazelcast/hazelcast/pull/16680 and the https://docs.hazelcast.org/docs/4.1-BETA-1/manual/html-single/#partial-network-partitions.
+* **Trusted Interfaces:** It is now possible to restrict the source IP addresses
+from which the Management Center operations are allowed.
+See https://docs.hazelcast.org/docs/4.1-BETA-1/manual/html-single/#limiting-source-addresses.
+* **Out-of-the-Box Kerberos Support:** Introduced support for Kerberos
+authentication protocol which is one of the standard
+solutions for single-sign-on. It also adds the GSSAPI authentication support in
+LDAP configuration.
+See https://docs.hazelcast.org/docs/4.1-BETA-1/manual/html-single/#kerberos-authentication-type.
+* **WAN Throttling Mechanism**: This prevents the WAN consumers from 
+getting overloaded by the WAN producers if transferring the WAN events takes
+less time than processing them in the target cluster. This can be the case with
+WAN synchronization if the network latency is low enough. It can be configured using
+the following properties:
+** `hazelcast.wan.consumer.invocation.threshold`
+** `hazelcast.wan.consumer.ack.delay.backoff.init`
+** `hazelcast.wan.consumer.ack.delay.backoff.max`
+** `hazelcast.wan.consumer.ack.delay.backoff.multiplier`
+https://github.com/hazelcast/hazelcast/pull/17113
 
-* **Blue-Green and Disaster Recovery for Java Clients:** Introduced the support for Hazelcast Java clients to switch between alternative clusters. See the Blue Green Deployment and Disaster Recovery section.
+The following are the other improvements performed to solve the enhancement
+issues opened by the Hazelcast customers/team.
 
-Hazelcast IMDG Open Source New Features:
+* Added support for tenant control when creating caches. [#17122]
+* Added metric count support for sets, and maps having backup reads enabled,
+query caches, map stores, custom attributes and WAN replication configurations.
+[#17053], [#17071], [#17069], [#17081]
+* Added support for `IMap.compute()`. [#17030]
+* Added support to allow submitting and executing operations while a member
+is shutting down to increase the availability of a cluster more that keeps
+large data. [#17028]
+* Added `ExtendedMapEntry` in order to create a mechanism for setting TTLs in
+entry processors. [#16991]
+* Added `hazelcast-azure` discovery plugin to the `hazelcast-all` module. [#16982]
+* Introduced the `ConfigRecognition` API that determines if a
+provided declarative configuration is recognized by the rules defined in a given
+implementation. Along with the API the following three implementations are added:
+** `MemberConfigRecognizer` for recognizing member XML and YAML configurations
+** `ClientConfigRecognizer` for recognizing client XML and YAML configurations
+** `ClientFailoverConfigRecognizer` for recognizing failover client XML and YAML configurations
+[#16958]
+* Made the diagnostics logs more cloud-friendly so that they are sent to
+`stdout` instead of sending to local files. [#16941]
+* Improved the mechanism of partition table updates to
+eliminate the latencies when these updates are sent to the clients by a member. [#16939]
+* Improved the client configuration such that when the client
+failover configuration is provided, the reconnect mode cannot
+be set as `off`; it now fails fast in this case. [#16886]
+* Introduced the `forEach()` loop support for IMap. [#16877]
+* Added the `load()` method to `Config`, `ClientConfig` and
+`ClientFailoverConfig` classes. This method loads the configuration
+with the known locations. If not found, the default configuration is returned. [#16864]
+* Improved the `deleteAll()` (MapStore) and ITopic Javadocs. [#16862], [#16861],
+* Introduced the `ServerConnection` and `ClientConnection` interfaces
+that extend `Connection` for cleaning up purposes. [#16849]
+* Implemented the `root` operator for the SQL engine
+responsible for getting the final result stream. [#16829]
+* Added support for `IMap.computeIfAbsent()`. [#16808]
+* Introduced SQL thread pools for query processing. [#16805]
+* Introduced the network protocol, base executor and row
+interfaces for the SQL engine. [#16799], [#16762]
+* Added the `setAll()` and `setAllAsync()` methods for IMap. [#16787]
+* Added the `writeOrdered()` method to the `Connection` class
+for the purpose of ordered delivery of messages. [#16776]
+* Added the creation time metric for the executor service. [#16775]
+* Improved an unclear exception message for credentials. [#16756]
+* Updated the related aspects of Hazelcast IMDG after the
+changes done on the client protocol side to add the ability
+to add new parameters, methods, services, events and custom types
+to codecs. [#16718]
+* Added the `offset` parameter that can be used while creating
+inputs in `BufferObjectDataInput`. [#16701]
+* Introduced the `putAllAsync()` method for MultiMap. [#16698]
+* Defined metrics for ISet and IList collections. [#16665]
+* Upgraded log4j2 version to 2.13.0. [#16654]
+* Renamed MultiMap proxy implementation to follow the established naming convention:
+`ObjectMultiMapProxy` -> `MultiMapProxyImpl`. [#16637]
+* Improved the `computeIfPresent()` implementation so that now it keeps a
+clone of the old/existing value and uses that for replace/delete operations. [#16636]
+* Introduced the `hazelcast.logging.details.enabled` property
+to make the logging of cluster version, name and IP optional to
+decrease the noise in the logs when, for example, you have a single-member cluster. [#16622]
+* Upgraded the Hazelcast Kubernetes plugin version to 2.0.1. [#16590]
+* * Added the support for automatically detecting the classloader
+of a type for the user code deployment feature. [#16585]
+* Made `IMap.putAllAsync()` and `IMap.submitToKeys()` methods public API. [#16449]
+* Implemented the base type system for SQL: the base SQL data types
+have been defined and mapped to the corresponding Java types.
+Type information is used by executor stages to use the right strategy
+of expression evaluation. [#15241]
+* Clarified the exception message when you connect to a cluster with an
+invalid group name. [#15099]
+* Refactored the check and retry initialization logic of
+`ReplicatedMapProxy` so that they are performed in parallel for different
+partitions. [#14331]
+* Added a test for the `ClientConsoleApp` class.  [#12298]
+* Improved the behavior of `ConcurrentMap.computeIfPresent`:
+combined single client-server round trips instead of two (for `get` and
+`replace` methods). [#11958]
 
-* **CP Subsystem:** Implementing the https://raft.github.io/[Raft consensus algorithm], Hazelcast introduces its CP subsystem which runs within a Hazelcast cluster and offers linearizable implementations of Hazelcast's concurrency APIs. See the CP Subsystem chapter.
-* **Querying JSON Strings:**  You can now query JSON strings stored inside your Hazelcast clusters. See the Querying JSON Strings section.
-* **Pipelining:** Introduced pipelining mechanism using which you can send multiple requests in parallel to Hazelcast members or clients, and read the responses in a single step. See the Pipelining section.
-* **Support for Multiple Endpoints When Configuring Member’s Networking:** Added the ability to configure the Hazelcast members with separate server sockets for different protocols. See the Advanced Network Configuration section.
-* **YAML Configuration Support:** Added the support for configuring Hazelcast in YAML. See the Configuring Declaratively with YAML section.
+3. Breaking Changes
 
-3. Enhancements
-
-Hazelcast IMDG Enterprise Enhancements:
-
-* **Sharing Hot Restart `base-dir` among Multiple Members:** The base directory for the Hot Restart feature (`base-dir`) is now used as a shared directory between multiple members, and each member uses a unique sub-directory
-inside this base directory. This allows using the same configuration on all the members. Previously, each member had to use a separate directory which complicated the deployments on cloud-like environments. During the restart, a member tries to lock an already existing Hot Restart directory inside the base directory. If it cannot acquire any, then it creates a fresh new directory. See the Configuring Hot Restart section.
-* **Lower Latencies and Higher Throughput in WAN Replication:** Improved the design of the WAN replication mechanism to allow configuring it for lower latencies and higher throughput. See the Tuning WAN Replication For Lower Latencies and Higher Throughput section.
-* **Add/Remove WAN Publishers in a Running Cluster:** Introduced the ability to dynamically add or remove WAN publishers (target clusters). See the Dynamically Adding WAN Publishers section.
-* **Automatic Removal of Stale Hot Restart Data:** Introduced an option that allows the stale Hot Restart data to be removed automatically. See the description of the `auto-remove-stale-data` configuration element in the Configuring Hot Restart section.
-* **Client Permission Handling When a New Member Joins:** Introduced a declarative configuration attribute `on-join-operation` for the client permission in the Security configuration (its programmatic configuration equivalent is the `setOnJoinPermissionOperation()` method). This attribute allows to choose whether a new member joining to a cluster will apply the client permissions stored in its own configuration, or will use the ones defined in the cluster. See the Handling Permissions When a New Member Joins section.
-* **Automatic Cluster Version Change after a Rolling Upgrade:** Introduced the ability to automatically upgrade the cluster version after a rolling upgrade. See the Upgrading Cluster Version section.
-* **FIPS 140-2 Validation:** Hazelcast now can be configured to use a FIPS 140-2 validated module. See the FIPS 140-2 section.
-
-Hazelcast IMDG Open Source Enhancements:
-
-* **Client Instance Names and Labels:** You can now retrieve the names of client instances on the member side. Moreover, client labels have been introduced so that you can group your clients and/or perform special operations for specific clients. See the Defining Client Labels section.
-* **Composite Indexes:** Introduced the ability to recognize the queries that use all the indexed properties and treat them as a composite, e.g., `foo = 1 and bar = 2 and foobar = 3`. See the Composite Indexes section.
-* **REST Endpoint Groups:** With this enhancement you can enable or disable the REST API completely, Memcache protocol and REST endpoint groups. See the Using the REST Endpoint Groups section.
-
-The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
-
-* Improved the YAML configuration so that you can configure multiple WAN member sockets. [#14800] 
-* Members now fail fast when the `max-idle-seconds` element for the entries in a map is set to 1 second. See the note in the Configuring Map Eviction section for this element. [#14697]
-* Removed group password from the Hazelcast’s default XML configuration file. Also improved the non-empty password `INFO` message. It's now only logged if security is disabled, password is not empty and password is not the Hazelcast default one. [#14603]
-* Improved the code comments for the `HazelcastInstance` interface. [#14439]
-* Improved the Javadoc of `HazelcastClient` so that the code comments now use "unisocket client" instead of "dumb client". [#14213]
-* Added the ability to perform an LDAP `subtree` search for groups in Hazelcast Management Center’s LDAP authenticator. [#14118]
-* Added the ability to set the `EvictionConfig.comparatorClassName()` in the client’s declarative configuration, too. [#14093]
-* Introduced the `/ready` endpoint to the REST API to allow checking a member if it is ready to be used after it joins to the cluster. [#14089]
-* Improved the syncing of XSD files. [#14070]
-* The `IMap.removeAll()` method now supports `PartitionPredicate`. [#12238]
-* Improved the diagnostics tool so that it automatically creates the configured directory for the diagnostic outputs. [#11946]
+* The `TcpIpConnection` class has been renamed as `ServerConnection`.
+https://github.com/hazelcast/hazelcast/pull/16839[#16839]
 
 4. Fixes
 
-* Fixed an issue where the state of member list on the clients were broken after a hot restart in the cluster. [#14839]
-* Fixed an issue where the outbound pipeline was not waking up properly after merging the write-through changes. [#14830]
-* Fixed an issue where a Hazelcast Java client was not able to connect to the cluster (which has the `advanced-network` configuration) after a split-brain syndrome is healed. [#14768]
-* Fixed an issue where the `like` and `ilike` predicates didn’t catch any entity with the `text` field containing the '\n' character. [#14751]
-* Fixed an issue where ``NullPointerException``s was thrown recursively when a client is connected to an unreachable member during a split-brain. [#14722]
-* Fixed an issue where Hazelcast running on RHEL (OpenJDK8) shows `unknown gc` in the logs, instead of `major gc` and `minor gc`. [#14701]
-* Fixed an issue where the IP client selector was not working for the local clients. [#14654]
-* Fixed the wording of a misleading error in the first attempt to connect to a wrongly configured cluster. The error message has been changed to “Unable to connect to any cluster”.  https://github.com/hazelcast/hazelcast/issues/14574[[#14574]]
-* Fixed an issue where a connection configured using `AdvancedNetworkConfig` was not denied correctly for some inappropriate endpoints. [#14532]
-* Fixed the REST service which was not working when the REST endpoint is configured for   `AdvancedNetworkConfig`. [#14516]
-* Fixed an issue where the `setAsync()` method was throwing `NullPointerException`. [#14445]
-* Fixed an issue where the collection attributes indexed with `[any]` were causing incorrect SQL query results, if the first data inserted to the map has no value for the attribute or the collection is empty. [#14358]
-* Fixed an issue where `mapEvictionPolicy` couldn’t be specified in the JSON configuration file. [#14092]
-* Fixed an issue where the rolling upgrade was failing when all members change their IP addresses. [#14088]
-* Fixed an issue where the resources were not wholly cleared when destroying `DurableExecutorService` causing some resources to be left in the heap. [#14087]
-* Fixed an issue where the REST API was not handling the HTTP requests without headers correctly: when a client sends an HTTP request without headers to the Hazelcast REST API, the `HttpCommand` class was wrongly expecting an additional new line. [#14353]
-* Fixed an issue where `QueryCache` was not returning the copies of the found objects. [#14333]
-* Fixed an issue where the MultiMap's `RemoveOperation` was iterating through the backing collection, which caused performance degradation (when using the `SET` collection type). [#14145]
-* Fixed an issue where the user code deployment feature was throwing `NullPointerException` while loading multiple nested classes and using entry processors. [#14105]
-* Fixed an issue where the newly joining members could not form a cluster when the existing members are killed. [#14051]
-* Fixed an issue where the `IMap.get()` method was not resetting the idle time counter when `read-backup-data` is enabled. [#14026]
-* Fixed an issue where the `addIndex()` method was performing a full copy of entries when a new member joins the cluster, which is not needed. [#13964]
-* Fixed an issue where the initialization failure of `discoveryService` was causing some threads to remain open and the JVM could not be terminated because of these threads. [#13821]
-* Fixed the discrepancy between the XSD on the website and the one in the download package. [#13011]
-* `PagingPredicate` with comparator was failing to serialize when sending from the client or member when the cluster size is more than 1. This has been fixed by making the `PagingPredicateQuery` comparator serializable. [#12208]
-* Fixed an issue where `TcpIpConnectionManager` was putting the connections in a map under the remote endpoint bind address but not under the address to which Hazelcast connects. [#11256]
+* Fixed an issue where `ReliableTopicMessageListener` was firing a warning when the client is shutting down. [#17153]
+* Fixed the broken interoperability between the `CompletableFuture` methods. [#17020]
+* Fixed an issue where touching a map entry having an entry processor working on it
+was modifying its time-to-live. [#16987]
+* Fixed an issue in the cache service where its pre-join
+operation was considering `CacheConfig` as resolved: it
+was assuming that key/value types, user customizations and
+other cache configurations have been loaded. This was an issue
+when the cache is not touched yet. [#16917]
+* Fixed an issue where Management Center was not working as expected
+when the cluster is set up using advanced network configuration. [#16910]
+* Fixed an issue where `ServiceLoader` was round-tripping between URL and URI,
+and consequently loses the associated `URLStreamHandler` when trying to load
+Hazelcast from a custom class loader. [#16846]
+* Fixed an issue where the class definitions, that are registered explicitly in
+the serialization configuration and have the same class ID in different factories,
+were not handled properly. [#16831]
+* Fixed the `NullPointerException` in `IndexCopyBehavior.NEVER` mode. [#16784]
+* Fixed an issue where the client permissions for Reliable Topic and Ringbuffer
+we're missing. [#16755]
+* Fixed an issue where the type information was missing the Metrics MBeans. [#16747]
+* Fixed an issue where the RESP API was always requiring the call URLs
+to end with a slash character. [#16688]
+* Fixed an issue where the service URL for Eureka could not be set
+using the declarative configuration. [#16679]
+* Fixed an issue where the wait key of a blocking call within
+a Raft invocation was still being reported as a live operation,
+when the key times out. [#16614]
+* Fixed an issue where the upload of classes using the client
+user code deployment were not successful when they are retrieved not
+in their created order. [#16612]
+* Fixed an issue where the size() method was returning a negative
+value when map, cache and multimap contain more than Integer.MAX_VALUE entries. [#16594]
+* Fixed an invalidation issue when using a transactional map
+from a cache with a Near Cache: the cache invalidation event occurs
+when the `transactionalMap.put` method is called. As a result,
+the entry was getting invalidated before the change is committed to the map. [#16579]
+* Fixed an issue where `InPredicate` was not invoking value comparison when the
+read attribute is null. [#15100]
+* Fixed an issue where Map, Cache, MultiMap data structures
+were returning negative values (`size()`) when the size is more than
+`Integer.MAX_VALUE`. [#14935]
 
-5. Removed/Deprecated Features
+===  Contributors
 
-* `ILock` interface and implementation of `ILock` has been deprecated, and `FencedLock` has been introduced.
-* The original implementations of `IAtomicLong`, `IAtomicReference`, `ISemaphore` and `ICountDownLatch` have been deprecated. Instead, the implementations provided by the CP Subsystem have been introduced.
-* The following system properties are deprecated:
-  ** `hazelcast.rest.enabled`
-  ** `hazelcast.mc.url.change.enabled`
-  ** `hazelcast.memcache.enabled`
-  ** `hazelcast.http.healthcheck.enabled`
+We would like to thank the contributors from our open source
+community who worked on this release:
 
-
+* Inel Pandzic
+* Omid Pourhadi
+* Ryan Lindeborg
+* Santhosh Kumar
+* Bartek Kowalczyk
+* Ashutosh Agrawal
+* Ádám Berkecz
+* HugeOrangeDev
+* Harry Tran
+* Stephen Russett
+* Ulf Adams
+* Abdul Aziz Ali
+* Dmitry Konstantinov
+* Anmol Chaddha
+* lprimak
+* keteracel
+* Burak Sezer
