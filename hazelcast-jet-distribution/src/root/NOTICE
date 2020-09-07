@@ -52,13 +52,13 @@ Apache License, Version 2.0
   Debezium Connector for PostgreSQL:1.2.1.Final
   Debezium Core:1.2.1.Final
   Debezium ANTLR DDL parsers:1.2.1.Final
-  io.grpc:grpc-api:1.30.0
-  io.grpc:grpc-context:1.30.0
-  io.grpc:grpc-core:1.30.0
-  io.grpc:grpc-netty-shaded:1.30.0
-  io.grpc:grpc-protobuf:1.30.0
-  io.grpc:grpc-protobuf-lite:1.30.0
-  io.grpc:grpc-stub:1.30.0
+  io.grpc:grpc-api:1.31.0
+  io.grpc:grpc-context:1.31.0
+  io.grpc:grpc-core:1.31.0
+  io.grpc:grpc-netty-shaded:1.31.0
+  io.grpc:grpc-protobuf:1.31.0
+  io.grpc:grpc-protobuf-lite:1.31.0
+  io.grpc:grpc-stub:1.31.0
   Netty/Buffer:4.1.39.Final
   Netty/Codec:4.1.39.Final
   Netty/Codec/HTTP:4.1.39.Final
@@ -137,7 +137,7 @@ BSD 2-Clause License
   zstd-jni:1.3.8-1
   PostgreSQL JDBC Driver:42.2.14
 BSD 3-Clause License
-  Protocol Buffers [Core]:3.12.2
+  Protocol Buffers [Core]:3.13.0
   ParaNamer Core:2.7
   ANTLR 4 Runtime:4.7.2
 CC0
