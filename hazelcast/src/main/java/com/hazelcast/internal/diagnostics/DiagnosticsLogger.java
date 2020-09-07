@@ -67,6 +67,7 @@ final class DiagnosticsLogger implements DiagnosticsLog {
     }
 
     private void renderPlugin(DiagnosticsPlugin plugin) {
+        logWriter.resetSectionLevel();
         plugin.run(logWriter);
     }
 }
