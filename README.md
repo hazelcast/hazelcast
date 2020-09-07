@@ -317,6 +317,7 @@ All these features are already included in [Hazelcast Helm Charts](#helm-chart).
 ## Plugin Usages
 
 Apart from embedding Hazelcast in your application as described above, there are multiple other scenarios of how to use the Hazelcast Kubernetes plugin.
+You can also check [Hazelcast Guides: Embedded Hazelcast on Kubernetes](https://guides.hazelcast.org/kubernetes-embedded/) to see the plugin in use.
 
 ### Docker images
 
@@ -351,4 +352,4 @@ The plugin is used to provide the OpenShift integration, please check [Hazelcast
 
 ### Istio
 
-Hazelcast works correctly with Istio >= 1.1.0 without any need of additional configuration. You can use it in both client-server and embedded modes. Also, the Hazelcast cluster can be either outside or inside the Istio mesh.
+Hazelcast works correctly with Istio >= 1.1.0 without any need of additional configuration. You can use it in both client-server and embedded modes. Also, the Hazelcast cluster can be either outside or inside the Istio mesh. Check [Hazelcast Guides: Hazelcast with Istio Service Mesh](https://guides.hazelcast.org/istio) for the details.
