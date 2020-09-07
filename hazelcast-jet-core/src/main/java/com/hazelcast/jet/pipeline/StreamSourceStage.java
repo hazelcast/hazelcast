@@ -47,7 +47,11 @@ public interface StreamSourceStage<T> {
      * Declares that the source will assign the time of ingestion as the event
      * timestamp. It will call {@code System.currentTimeMillis()} at the moment
      * it observes an event from the data source and assign it as the event
-     * timestamp.
+     * timestamp. The actual time of the original event is ignored.
+     * <p>
+     * With this mode, unlike {@link #withTimestamps} or {@link
+     * #withNativeTimestamps}, the <em>sparse events issue</em> isn't present.
+     * You can use this mode to avoid the issue, but there's a caveat:
      * <p>
      * <strong>Note:</strong> when snapshotting is enabled to achieve fault
      * tolerance, after a restart Jet replays all the events that were already
@@ -64,9 +68,7 @@ public interface StreamSourceStage<T> {
      * adjusting it), newer events will get older timestamps and might be
      * dropped as late, because the allowed lag is 0.
      */
-    default StreamStage<T> withIngestionTimestamps() {
-        return withTimestamps(o -> System.currentTimeMillis(), 0);
-    }
+    StreamStage<T> withIngestionTimestamps();
 
     /**
      * Declares that the stream will use the source's native timestamps. This
@@ -75,6 +77,19 @@ public interface StreamSourceStage<T> {
      * <p>
      * If there's no notion of native timestamps in the source, this method
      * will throw a {@link JetException}.
+     * <p>
+     * <b>Issue with sparse events</b>
+     * <p>
+     * Event time progresses only through the ingestion of new events. If the
+     * events are sparse, time will effectively stop until a newer event
+     * arrives. This causes high latency for time-sensitive operations (such as
+     * window aggregation). In addition, Jet tracks event time for every source
+     * partition separately, and if just one partition has sparse events, time
+     * progress in the whole job is hindered.
+     * <p>
+     * To overcome this you can either ensure there's a consistent influx of
+     * events in every partition, or you can use {@link
+     * #withIngestionTimestamps()}.
      *
      * @param allowedLag the allowed lag of a given event's timestamp behind the top
      *                   timestamp value observed so far
@@ -83,6 +98,19 @@ public interface StreamSourceStage<T> {
 
     /**
      * Declares that the source will extract timestamps from the stream items.
+     * <p>
+     * <b>Issue with sparse events</b>
+     * <p>
+     * Event time progresses only through the ingestion of new events. If the
+     * events are sparse, time will effectively stop until a newer event
+     * arrives. This causes high latency for time-sensitive operations (such as
+     * window aggregation). In addition, Jet tracks event time for every source
+     * partition separately, and if just one partition has sparse events, time
+     * progress in the whole job is hindered.
+     * <p>
+     * To overcome this you can either ensure there's a consistent influx of
+     * events in every partition, or you can use {@link
+     * #withIngestionTimestamps()}.
      *
      * @param timestampFn a function that returns the timestamp for each item, typically in
      *                    milliseconds

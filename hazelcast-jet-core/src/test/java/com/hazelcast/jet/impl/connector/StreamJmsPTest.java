@@ -50,6 +50,7 @@ import java.util.function.Function;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -80,7 +81,7 @@ public class StreamJmsPTest extends JetTestSupport {
         String message1 = sendMessage(queueName, true);
         String message2 = sendMessage(queueName, true);
 
-        initializeProcessor(queueName, true);
+        initializeProcessor(queueName, true, null);
         Queue<Object> queue = outbox.queue(0);
 
         // Even though both messages are in queue, the processor might not see them
@@ -104,7 +105,7 @@ public class StreamJmsPTest extends JetTestSupport {
         String topicName = randomString();
         logger.info("using topic: " + topicName);
         sendMessage(topicName, false);
-        initializeProcessor(topicName, false);
+        initializeProcessor(topicName, false, null);
         processor.complete(); // the consumer is created here
         sleepSeconds(1);
         String message2 = sendMessage(topicName, false);
@@ -114,6 +115,31 @@ public class StreamJmsPTest extends JetTestSupport {
         assertTrueEventually(() -> {
             processor.complete();
             assertEquals(message2, queue.poll());
+        });
+    }
+
+    @Test
+    public void when_projectionToNull_then_filteredOut() throws Exception {
+        String queueName = randomString();
+        logger.info("using queue: " + queueName);
+        String message1 = sendMessage(queueName, true);
+        String message2 = sendMessage(queueName, true);
+
+        initializeProcessor(queueName, true, m -> {
+            String msg = ((TextMessage) m).getText();
+            return msg.equals(message1) ? null : msg;
+        });
+        Queue<Object> queue = outbox.queue(0);
+
+        List<Object> actualOutput = new ArrayList<>();
+        assertTrueEventually(() -> {
+            outbox.reset();
+            processor.complete();
+            Object item = queue.poll();
+            if (item != null) {
+                actualOutput.add(item);
+            }
+            assertEquals(singletonList(message2), actualOutput);
         });
     }
 
@@ -138,15 +164,21 @@ public class StreamJmsPTest extends JetTestSupport {
         assertInstanceOf(StreamJmsP.class, function.apply(address2).get(1).iterator().next());
     }
 
-    private void initializeProcessor(String destinationName, boolean isQueue) throws Exception {
+    private void initializeProcessor(
+            String destinationName,
+            boolean isQueue,
+            FunctionEx<Message, String> projectionFn
+    ) throws Exception {
         processorConnection = getConnectionFactory().createConnection();
         processorConnection.start();
 
         FunctionEx<Session, MessageConsumer> consumerFn = s ->
                 s.createConsumer(isQueue ? s.createQueue(destinationName) : s.createTopic(destinationName));
-        FunctionEx<Message, String> textMessageFn = m -> ((TextMessage) m).getText();
+        if (projectionFn == null) {
+            projectionFn = m -> ((TextMessage) m).getText();
+        }
         processor = new StreamJmsP<>(
-                processorConnection, consumerFn, Message::getJMSMessageID, textMessageFn, noEventTime(), NONE);
+                processorConnection, consumerFn, Message::getJMSMessageID, projectionFn, noEventTime(), NONE);
         outbox = new TestOutbox(1);
         processor.init(outbox, new TestProcessorContext());
     }

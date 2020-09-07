@@ -74,9 +74,7 @@ public final class EventTimePolicy<T> implements Serializable {
 
     private static final SupplierEx<WatermarkPolicy> NO_WATERMARKS = () -> new WatermarkPolicy() {
         @Override
-        public long reportEvent(long timestamp) {
-            return Long.MIN_VALUE;
-        }
+        public void reportEvent(long timestamp) { }
 
         @Override
         public long getCurrentWatermark() {

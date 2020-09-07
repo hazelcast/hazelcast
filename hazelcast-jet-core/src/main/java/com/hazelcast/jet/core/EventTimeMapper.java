@@ -34,32 +34,31 @@ import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * A utility to that helps a source emit events according to a given {@link
+ * A utility that helps a source emit events according to a given {@link
  * EventTimePolicy}. Generally this class should be used if a source needs
  * to emit {@link Watermark watermarks}. The mapper deals with the
  * following concerns:
  *
  * <h4>1. Reading partition by partition</h4>
  *
- * Upon restart it can happen that partition <em>partition1</em> has one
- * very recent event and <em>partition2</em> has an old one. If we poll
- * <em>partition1</em> first and emit its recent event, it will advance the
- * watermark. When we poll <em>partition2</em> later on, its event will be
- * behind the watermark and can be dropped as late. This utility tracks the
- * event timestamps for each source partition individually and allows the
- * processor to emit the watermark that is correct with respect to all the
- * partitions.
+ * Upon restart it can happen that partition <em>P1</em> has one very
+ * recent event and <em>P2</em> has an old one. If we poll <em>P1</em>
+ * first and emit its recent event, it will advance the watermark. When we
+ * poll <em>P2</em> later on, its event will be behind the watermark and
+ * can be dropped as late. This utility tracks the event timestamps for
+ * each source partition individually and allows the processor to emit the
+ * watermark that is correct with respect to all the partitions.
  *
  * <h4>2. Some partition having no data</h4>
  *
  * It can happen that some partition does not have any events at all while
- * others do or the processor doesn't get any external partitions assigned
+ * others do, or the processor doesn't get any external partitions assigned
  * to it. If we simply wait for the timestamps in all partitions to advance
  * to some point, we won't be emitting any watermarks. This utility
  * supports the <em>idle timeout</em>: if there's no new data from a
  * partition after the timeout elapses, it will be marked as <em>idle</em>,
- * allowing the processor's watermark to advance as if that partition didn't
- * exist. If all partitions are idle or there are no partitions, the
+ * allowing the processor's watermark to advance as if that partition
+ * didn't exist. If all partitions are idle or there are no partitions, the
  * processor will emit a special <em>idle message</em> and the downstream
  * will exclude this processor from watermark coalescing.
  *
@@ -190,7 +189,7 @@ public class EventTimeMapper<T> {
      * @return a traverser over the given event and the watermark (if it was due)
      */
     @Nonnull
-    public Traverser<Object> flatMapEvent(T event, int partitionIndex, long nativeEventTime) {
+    public Traverser<Object> flatMapEvent(@Nonnull T event, int partitionIndex, long nativeEventTime) {
         return flatMapEvent(System.nanoTime(), event, partitionIndex, nativeEventTime);
     }
 
@@ -213,7 +212,7 @@ public class EventTimeMapper<T> {
         assert traverser.isEmpty() : "the traverser returned previously not yet drained: remove all " +
                 "items from the traverser before you call this method again.";
         if (event == null) {
-            handleNoEventInternal(now);
+            handleNoEventInternal(now, Long.MAX_VALUE);
             return traverser;
         }
         long eventTime;
@@ -233,16 +232,23 @@ public class EventTimeMapper<T> {
         wmPolicies[partitionIndex].reportEvent(eventTime);
         markIdleAt[partitionIndex] = now + idleTimeoutNanos;
         allAreIdle = false;
-        handleNoEventInternal(now);
+        // Some WM policies use the system time to determine the watermark. This
+        // opens the door to race conditions, where we first use the current time
+        // to assign the event time and then check the current time again to
+        // determine the watermark. If enough time passes between these two calls,
+        // the event would be artificially rendered late. Therefore we cap the WM
+        // to this event's timestamp, while still not allowing it to go back.
+        handleNoEventInternal(now, eventTime);
     }
 
-    private void handleNoEventInternal(long now) {
+    private void handleNoEventInternal(long now, long maxWmValue) {
         long min = Long.MAX_VALUE;
         for (int i = 0; i < watermarks.length; i++) {
             if (idleTimeoutNanos > 0 && markIdleAt[i] <= now) {
                 continue;
             }
-            watermarks[i] = Math.max(watermarks[i], wmPolicies[i].getCurrentWatermark());
+            // the new watermark must not be less than the previous watermark and not more than maxWmValue
+            watermarks[i] = Math.max(watermarks[i], Math.min(wmPolicies[i].getCurrentWatermark(), maxWmValue));
             topObservedWm = Math.max(topObservedWm, watermarks[i]);
             min = Math.min(min, watermarks[i]);
         }
@@ -318,7 +324,7 @@ public class EventTimeMapper<T> {
         wmPolicies = arrayRemove(wmPolicies, partitionIndex);
         watermarks = arrayRemove(watermarks, partitionIndex);
         markIdleAt = arrayRemove(markIdleAt, partitionIndex);
-        handleNoEventInternal(now);
+        handleNoEventInternal(now, Long.MAX_VALUE);
         return traverser;
     }
 

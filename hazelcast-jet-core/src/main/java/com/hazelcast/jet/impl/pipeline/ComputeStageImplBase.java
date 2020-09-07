@@ -120,13 +120,13 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     }
 
     @Nonnull
-    public StreamStage<T> addTimestamps(@Nonnull ToLongFunctionEx<? super T> timestampFn, long allowedLateness) {
+    public StreamStage<T> addTimestamps(@Nonnull ToLongFunctionEx<? super T> timestampFn, long allowedLag) {
         checkTrue(fnAdapter.equals(DO_NOT_ADAPT), "This stage already has timestamps assigned to it");
         checkSerializable(timestampFn, "timestampFn");
         TimestampTransform<T> tsTransform = new TimestampTransform<>(transform, eventTimePolicy(
                 timestampFn,
                 (item, ts) -> jetEvent(ts, item),
-                limitingLag(allowedLateness),
+                limitingLag(allowedLag),
                 0, 0, DEFAULT_IDLE_TIMEOUT
         ));
         pipelineImpl.connect(this, tsTransform);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
 import org.junit.Rule;
 import org.junit.Test;
@@ -216,6 +217,37 @@ public class EventTimeMapperTest {
         // Then
         // in this call partition0 will turn idle and partition1 is be removed -> wm(12) is forwarded
         assertTraverser(eventTimeMapper.removePartition(ns(5), 1), wm(12));
+    }
+
+    @Test
+    public void when_currentWmBeyondReportedEventTimestamp_then_eventNotLate() {
+        EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(
+                eventTimePolicy(Long::longValue, constantWmPolicy(42L), 1, 0, 5));
+        eventTimeMapper.addPartitions(0L, 1);
+
+        assertTraverser(eventTimeMapper.flatMapEvent(41L, 0, NO_NATIVE_TIME), wm(41), 41L);
+    }
+
+    @Test
+    public void when_currentWmBeyondReportedEventTimestamp_and_eventLate_then_wmDoesNotGoBack() {
+        EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(
+                eventTimePolicy(Long::longValue, constantWmPolicy(42L), 1, 0, 5));
+        eventTimeMapper.addPartitions(0L, 1);
+
+        assertTraverser(eventTimeMapper.flatMapEvent(41L, 0, NO_NATIVE_TIME), wm(41), 41L);
+        assertTraverser(eventTimeMapper.flatMapEvent(ns(0), 40L, 0, NO_NATIVE_TIME), 40L);
+    }
+
+    private static SupplierEx<WatermarkPolicy> constantWmPolicy(long value) {
+        return () -> new WatermarkPolicy() {
+            @Override
+            public void reportEvent(long timestamp) { }
+
+            @Override
+            public long getCurrentWatermark() {
+                return value;
+            }
+        };
     }
 
     private <T> void assertTraverser(Traverser<T> actual, T ... expected) {

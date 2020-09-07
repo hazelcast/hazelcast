@@ -163,7 +163,10 @@ public class StreamJmsP<T> extends AbstractProcessor {
                         continue;
                     }
                 }
-                pendingTraverser = eventTimeMapper.flatMapEvent(projectionFn.apply(t), 0, handleJmsTimestamp(t));
+                T projectedItem = projectionFn.apply(t);
+                pendingTraverser = projectedItem != null
+                        ? eventTimeMapper.flatMapEvent(projectedItem, 0, handleJmsTimestamp(t))
+                        : eventTimeMapper.flatMapIdle();
             } catch (JMSException e) {
                 throw sneakyThrow(e);
             }

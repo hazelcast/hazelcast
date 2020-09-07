@@ -53,6 +53,10 @@ a `SourceStreamStage` which offers just these methods:
   provides a function to the source that determines the timestamp of
   each event.
 
+- `withIngestionTimestamps()`
+  declares that the source will assign the time of ingestion as the
+  event timestamp. System-time semantics will be used.
+
 - `withoutTimestamps()`
   declares that the source stage has no timestamps. Use this if you
   don't need them (i.e., your pipeline won't perform windowed
@@ -67,21 +71,35 @@ the stream to unpack a series of events from each original item. If you
 do this, however, it will no longer be the source that determines the
 watermark.
 
+#### Issue with Sparse Events
+
+If the time is extracted from the events, time progresses only when
+newer events arrive. If the events are sparse, the time will effectively
+stop until a newer event arrives. This causes high latency for
+time-sensitive operations (such as window aggregation). The time is also
+tracked for every source partition separately and if just one partition
+has sparse events, time progress in the whole job is hindered.
+
+To overcome this you can either ensure there's a consistent influx of
+events in every partition, or you can use `withIngestionTimestamps()`
+which doesn't have this issue because it's based on system clock on the
+member machines.
+
 #### Prefer Assigning Timestamps at the Source
 
 In some source implementations, especially partitioned ones like Kafka,
 there is a risk of high [event time skew](../concepts/event-time)
 occurring across partitions as the Jet processor pulls the data from
-them in batches, in a round-robin fashion. This problem is especially
-pronounced when Jet recovers from a failure and restarts your job. In
-this case Jet must catch up with all the events that arrived since
-taking the last snapshot. It will receive these events at the maximum
-system throughput and thus each partition will have a lot of data each
-time Jet polls it. This means that the interleaving of data from
-different partitions will become much more coarse-grained and there will
-be sudden jumps in event time at the points of transition from one
-partition to the next. The jumps can easily exceed the configured
-`allowedLateness` and cause Jet to drop whole swaths of events as late.
+them. This problem is especially pronounced when Jet recovers from a
+failure and restarts your job. In this case Jet must catch up with all
+the events that arrived since taking the last snapshot. It will receive
+these events at the maximum system throughput and thus each partition
+will have a lot of data each time Jet polls it. This means that the
+interleaving of data from different partitions will become much more
+coarse-grained and there will be sudden jumps in event time at the
+points of transition from one partition to the next. The jumps can
+easily exceed the configured `allowedLag` and cause Jet to drop whole
+swaths of events as late.
 
 In order to mitigate this issue, Jet has special logic in its
 partitioned source implementations that keeps separate track of the
@@ -98,8 +116,7 @@ pipeline branch, and you are allowed to mix both kinds of stages in the
 same pipeline. You can merge the branches with joining transforms such
 as [hash-join](stateless-transforms.md#hashjoin),
 [co-group](stateful-transforms.md#co-group--join) or
-[merge](stateless-transforms.md#merge)
-.
+[merge](stateless-transforms.md#merge).
 
 As an example, you can merge two stages into one by using the `merge`
 operator:

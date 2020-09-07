@@ -43,25 +43,17 @@ public interface WatermarkPolicy {
 
     /**
      * Called to report the observation of an event with the given timestamp.
-     * Returns the watermark that should be (or have been) emitted before
-     * the event.
-     * <p>
-     * If the returned value is greater than the event's timestamp it means
-     * that the event should be dropped.
+     * The next call to {@link #getCurrentWatermark()} should reflect this.
      *
      * @param timestamp event's timestamp
-     * @return the watermark value. May be {@code Long.MIN_VALUE} if there is
-     *         insufficient information to determine any watermark (e.g., no events
-     *         observed)
      */
-    long reportEvent(long timestamp);
+    void reportEvent(long timestamp);
 
     /**
-     * Called to get the current watermark in the absence of an observed
-     * event. The watermark may advance based just on the passage of time.
+     * Called to get the current watermark. The watermark may advance based
+     * just on the passage of time.
      */
     long getCurrentWatermark();
-
 
     /**
      * Maintains a watermark that lags behind the top observed timestamp by the
@@ -84,17 +76,40 @@ public interface WatermarkPolicy {
             private long wm = Long.MIN_VALUE;
 
             @Override
-            public long reportEvent(long timestamp) {
+            public void reportEvent(long timestamp) {
                 // avoid overflow
-                if (timestamp < Long.MIN_VALUE + lag) {
-                    return Long.MIN_VALUE;
+                if (timestamp >= Long.MIN_VALUE + lag) {
+                    wm = max(wm, timestamp - lag);
                 }
-                return wm = max(wm, timestamp - lag);
             }
 
             @Override
             public long getCurrentWatermark() {
                 return wm;
+            }
+        };
+    }
+
+    /**
+     * Maintains a watermark that lags behind the real time by the given
+     * amount. Doesn't consider the event timestamp at all.
+     *
+     * @param lag the desired difference between the top observed timestamp
+     *            and the watermark
+     * @since 4.3
+     */
+    @Nonnull
+    static SupplierEx<WatermarkPolicy> limitingRealTimeLag(long lag) {
+        checkNotNegative(lag, "lag must not be negative");
+
+        return () -> new WatermarkPolicy() {
+            @Override
+            public void reportEvent(long timestamp) {
+            }
+
+            @Override
+            public long getCurrentWatermark() {
+                return System.currentTimeMillis() - lag;
             }
         };
     }

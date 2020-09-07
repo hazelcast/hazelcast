@@ -68,8 +68,8 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
     @BeforeClass
     public static void beforeClass() {
         JetConfig config = new JetConfig();
-        config.getHazelcastConfig().
-            getMapConfig(JOURNALED_MAP_NAME)
+        config.getHazelcastConfig()
+              .getMapConfig("*")
               .getEventJournalConfig().setEnabled(true);
         // use 1 partition for the map journal to have an item in each ption
         config.getHazelcastConfig().setProperty(PARTITION_COUNT.getName(), "1");

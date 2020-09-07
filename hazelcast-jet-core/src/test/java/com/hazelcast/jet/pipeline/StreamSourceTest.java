@@ -57,7 +57,7 @@ public class StreamSourceTest extends PipelineTestSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(source)
-         .withIngestionTimestamps()
+         .withTimestamps(o -> System.currentTimeMillis(), 0)
          .window(WindowDefinition.tumbling(100))
          .aggregate(counting())
          .writeTo(sink);

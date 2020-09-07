@@ -17,12 +17,15 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.jet.Job;
+import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.map.IMap;
+import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.map.EventJournalMapEvent;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -37,6 +40,7 @@ import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -128,7 +132,7 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
 
     @Test
     public void test_withTimestampsButTimestampsNotUsed() {
-        IList sinkList = instance.getList("sinkList");
+        IList<Integer> sinkList = instance.getList("sinkList");
 
         Pipeline p = Pipeline.create();
         p.readFrom(createSourceJournal())
@@ -137,6 +141,28 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
 
         instance.newJob(p);
         assertTrueEventually(() -> assertEquals(Arrays.asList(1, 2), new ArrayList<>(sinkList)), 5);
+    }
+
+    @Test
+    public void when_sparseItemsWithIngestionTimestamps_then_noExtraLatency() {
+        IList<WindowResult<Long>> sinkList = instance.getList(randomMapName());
+        IMap<Integer, Integer> map = instance.getMap(randomMapName());
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.mapJournal(map, START_FROM_OLDEST))
+         .withIngestionTimestamps()
+         .window(WindowDefinition.tumbling(1))
+         .aggregate(AggregateOperations.counting())
+         .writeTo(Sinks.list(sinkList));
+
+        Job job = instance.newJob(p);
+        assertEquals(0, sinkList.size());
+        map.put(3, 3);
+        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 10);
+        map.put(4, 4);
+        assertTrueEventually(() -> assertEquals(2, sinkList.size()), 10);
+
+        job.cancel();
     }
 
     @Test
@@ -163,8 +189,8 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
         DAG dag = p.toDag();
 
         // Then
-        Vertex srcVertex = dag.getVertex("src");
-        Vertex tsVertex = dag.getVertex("src-add-timestamps");
+        Vertex srcVertex = requireNonNull(dag.getVertex("src"));
+        Vertex tsVertex = requireNonNull(dag.getVertex("src-add-timestamps"));
         assertEquals(lp, srcVertex.determineLocalParallelism(-1));
         assertEquals(lp,  tsVertex.determineLocalParallelism(-1));
 }
@@ -184,8 +210,8 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
         DAG dag = p.toDag();
 
         // Then
-        Vertex srcVertex = dag.getVertex("src");
-        Vertex tsVertex = dag.getVertex("src-add-timestamps");
+        Vertex srcVertex = requireNonNull(dag.getVertex("src"));
+        Vertex tsVertex = requireNonNull(dag.getVertex("src-add-timestamps"));
         assertEquals(lp, srcVertex.getLocalParallelism());
         assertEquals(lp, tsVertex.getLocalParallelism());
     }
@@ -205,8 +231,8 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
         DAG dag = p.toDag();
 
         // Then
-        Vertex srcVertex = dag.getVertex("src");
-        Vertex tsVertex = dag.getVertex("src-add-timestamps");
+        Vertex srcVertex = requireNonNull(dag.getVertex("src"));
+        Vertex tsVertex = requireNonNull(dag.getVertex("src-add-timestamps"));
         int lp1 = srcVertex.determineLocalParallelism(-1);
         int lp2 = tsVertex.determineLocalParallelism(-1);
         assertEquals(lp1, lp2);
