@@ -14,6 +14,10 @@ supports map scans, index scans, projections and filters.
 It also introduces the `hazelcast-sql` module to handle the
 SQL engine's dependencies on Apache Calcite.
 See https://docs.hazelcast.org/docs/4.1-BETA-1/manual/html-single/index.html#sql.
+* **Automatic Detection of Discovery Strategy:** It tries to automatically detect the
+applicable discovery mechanism based on the runtime environment.
+See https://docs.hazelcast.org/docs/4.1-BETA-1/manual/html-single/index.html#auto-detection.
+
 
 2. Enhancements
 
