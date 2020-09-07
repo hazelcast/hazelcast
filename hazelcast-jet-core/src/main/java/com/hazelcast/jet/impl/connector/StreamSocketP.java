@@ -30,7 +30,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.util.concurrent.locks.LockSupport;
 
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -44,7 +44,7 @@ public final class StreamSocketP extends AbstractProcessor {
     private final String host;
     private final int port;
     private final CharsetDecoder charsetDecoder;
-    private StringBuilder lineBuilder = new StringBuilder();
+    private final StringBuilder lineBuilder = new StringBuilder();
     private String pendingLine;
     private SocketChannel socketChannel;
     private final ByteBuffer byteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
@@ -75,7 +75,11 @@ public final class StreamSocketP extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        return uncheckCall(this::tryComplete);
+        try {
+            return tryComplete();
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
     }
 
     private boolean tryComplete() throws IOException {

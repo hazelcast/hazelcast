@@ -20,7 +20,7 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,6 +36,7 @@ import java.net.Socket;
 import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamSocketP;
 import static com.hazelcast.jet.core.test.TestSupport.supplierFrom;
@@ -46,11 +47,10 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Category(ParallelJVMTest.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class StreamSocketPTest extends JetTestSupport {
 
     @Parameter
@@ -102,11 +102,15 @@ public class StreamSocketPTest extends JetTestSupport {
 
     private void runTest(byte[] inputBytes, int inputSplitAfter) throws Exception {
         try (ServerSocket serverSocket = new ServerSocket(0)) {
+            CountDownLatch firstPartWritten = new CountDownLatch(1);
+            CountDownLatch readyForSecondPart = new CountDownLatch(1);
+
             Thread thread = new Thread(() -> uncheckRun(() -> {
                 Socket socket = serverSocket.accept();
                 OutputStream outputStream = socket.getOutputStream();
                 outputStream.write(inputBytes, 0, inputSplitAfter);
-                Thread.sleep(300);
+                firstPartWritten.countDown();
+                readyForSecondPart.await();
                 outputStream.write(inputBytes, inputSplitAfter, inputBytes.length - inputSplitAfter);
                 outputStream.close();
                 socket.close();
@@ -116,7 +120,16 @@ public class StreamSocketPTest extends JetTestSupport {
             Processor processor = supplierFrom(streamSocketP("localhost", serverSocket.getLocalPort(), UTF_16)).get();
             processor.init(outbox, context);
 
-            assertTrueEventually(() -> assertTrue(processor.complete()), 3);
+            firstPartWritten.await();
+            for (int i = 0; i < 10; i++) {
+                processor.complete();
+                // sleep a little so that the processor has a chance to read the part of the data
+                sleepMillis(1);
+            }
+            readyForSecondPart.countDown();
+            while (!processor.complete()) {
+                sleepMillis(1);
+            }
             for (String s : output) {
                 assertEquals(s, bucket.poll());
             }
