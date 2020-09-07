@@ -385,7 +385,7 @@
                         </goals>
                         <configuration>
                             <skip>${maven.test.skip}</skip>
-                            <forkCount>0.5C</forkCount>
+                            <forkCount>4</forkCount>
                             <includes>
                                 <include>/com/hazelcast/jet/**/**.java</include>
                             </includes>
