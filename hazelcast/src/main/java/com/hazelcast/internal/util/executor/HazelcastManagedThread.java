@@ -18,9 +18,9 @@ package com.hazelcast.internal.util.executor;
 
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.util.ThreadAffinity;
+import com.hazelcast.internal.util.ThreadAffinityHelper;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import net.openhft.affinity.Affinity;
 
 import java.util.BitSet;
 
@@ -86,8 +86,8 @@ public class HazelcastManagedThread extends Thread {
     @Override
     public final void run() {
         if (allowedCpus != null) {
-            Affinity.setAffinity(allowedCpus);
-            BitSet actualCpus = Affinity.getAffinity();
+            ThreadAffinityHelper.setAffinity(allowedCpus);
+            BitSet actualCpus = ThreadAffinityHelper.getAffinity();
             ILogger logger = Logger.getLogger(HazelcastManagedThread.class);
             if (!actualCpus.equals(allowedCpus)) {
                 logger.warning(getName() + " affinity was not applied successfully. "
