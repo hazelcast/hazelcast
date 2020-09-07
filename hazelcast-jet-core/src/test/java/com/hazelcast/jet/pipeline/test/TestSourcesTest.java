@@ -51,18 +51,30 @@ public class TestSourcesTest extends PipelineTestSupport {
 
     @Test
     public void test_longStream() throws Throwable {
-        int itemsPerSecond = 250;
-        int timeoutSeconds = 10;
-        int numWindowResultsToWaitFor = 3;
+        int itemsPerSecond = 20;
 
         p.readFrom(TestSources.longStream(itemsPerSecond, 0))
          .withNativeTimestamps(0)
          .window(tumbling(SECONDS.toMillis(1)))
          .aggregate(counting())
-         .apply(assertCollectedEventually(timeoutSeconds, windowResults -> {
-             assertTrue("Didn't receive at least three results", windowResults.size() >= numWindowResultsToWaitFor);
-             assertTrue("Invalid items per second",
-                     windowResults.stream().skip(1).allMatch(wr -> wr.result() == itemsPerSecond));
+         .apply(assertCollectedEventually(60, windowResults -> {
+             //look at last 5 windows at most, always ignore first
+             int windowsToConsider = Math.min(5, Math.max(windowResults.size() - 1, 0));
+
+             //count the total no. of items emitted in those windows
+             int totalItems = windowResults.stream()
+                                           .skip(windowResults.size() - windowsToConsider)
+                                           .mapToInt(r -> r.result().intValue())
+                                           .sum();
+
+             //compute their average
+             double avgItems = (double) totalItems / windowsToConsider;
+
+             //compute how far the actual average is from the desired one
+             double deviationFromTarget = Math.abs(avgItems - itemsPerSecond);
+
+             assertTrue(String.format("Average items per second (%.2f) too far from target (%d)",
+                     avgItems, itemsPerSecond), deviationFromTarget <= 0.1d);
          }));
 
         expectedException.expectMessage(AssertionCompletedException.class.getName());
@@ -125,7 +137,7 @@ public class TestSourcesTest extends PipelineTestSupport {
      */
     @Test
     public void test_itemStream_in_expected_range() throws Throwable {
-        int itemsPerSecond = 5327;
+        int itemsPerSecond = 109;
 
         p.readFrom(TestSources.itemStream(itemsPerSecond))
                 .withNativeTimestamps(0)
