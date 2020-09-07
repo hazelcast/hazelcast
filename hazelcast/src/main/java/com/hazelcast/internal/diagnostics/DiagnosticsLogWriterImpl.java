@@ -214,6 +214,12 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
     }
 
     public void init(PrintWriter printWriter) {
+        // Reset the sectionLevel. A proper rendering of a plugin should always
+        // return this value to -1; but in case of an exception while rendering,
+        // the section level isn't reset and subsequent renderings of plugins
+        // will run into an IndexOutOfBoundsException.
+        // https://github.com/hazelcast/hazelcast/issues/14973
+        sectionLevel = -1;
         this.printWriter = printWriter;
     }
 
