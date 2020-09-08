@@ -93,6 +93,7 @@ import static com.hazelcast.jet.impl.SnapshotValidator.validateSnapshot;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.RESTART;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.SUSPEND;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
+import static com.hazelcast.jet.impl.TerminationMode.CANCEL_GRACEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.RESTART_GRACEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
@@ -299,8 +300,9 @@ public class MasterJobContext {
             @SuppressWarnings("SameParameterValue") boolean allowWhileExportingSnapshot
     ) {
         mc.coordinationService().assertOnCoordinatorThread();
-        // Switch graceful method to forceful if we don't do snapshots
-        if (mc.jobConfig().getProcessingGuarantee() == NONE) {
+        // Switch graceful method to forceful if we don't do snapshots, except for graceful
+        // cancellation, which is allowed even if not snapshotting.
+        if (mc.jobConfig().getProcessingGuarantee() == NONE && mode != CANCEL_GRACEFUL) {
             mode = mode.withoutTerminalSnapshot();
         }
 
@@ -521,7 +523,7 @@ public class MasterJobContext {
             logger.fine(opName + " of " + mc.jobIdString() + " terminated after a terminal snapshot");
             TerminationMode mode = requestedTerminationMode;
             assert mode != null && mode.isWithTerminalSnapshot() : "mode=" + mode;
-            return new JobTerminateRequestedException(mode);
+            return mode == CANCEL_GRACEFUL ? new CancellationException() : new JobTerminateRequestedException(mode);
         }
 
         // If all exceptions are of certain type, treat it as TopologyChangedException
