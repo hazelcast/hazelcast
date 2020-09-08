@@ -82,7 +82,7 @@ public class PartitionContainer {
         this.mapService = mapService;
         this.partitionId = partitionId;
         int approxMapCount = mapService.mapServiceContext.getNodeEngine().getConfig().getMapConfigs().size();
-        this.maps  = MapUtil.createConcurrentHashMap(approxMapCount);
+        this.maps = MapUtil.createConcurrentHashMap(approxMapCount);
     }
 
     private RecordStore createRecordStore(String name) {
@@ -96,7 +96,7 @@ public class PartitionContainer {
         HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
 
         MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, nodeEngine.getClusterService(),
-                execService, mapContainer.toData());
+                execService, mapContainer.toData(), serviceContext.getNodeWideLoadedKeyLimiter());
         keyLoader.setMaxBatch(hazelcastProperties.getInteger(ClusterProperty.MAP_LOAD_CHUNK_SIZE));
         keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getEvictionConfig()));
         keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);

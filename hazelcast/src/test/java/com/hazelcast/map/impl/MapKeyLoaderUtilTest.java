@@ -16,12 +16,22 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 import static com.hazelcast.map.impl.MapKeyLoader.Role;
 import static com.hazelcast.map.impl.MapKeyLoader.Role.NONE;
@@ -33,7 +43,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("ConstantConditions")
-public class MapKeyLoaderUtilTest {
+public class MapKeyLoaderUtilTest extends HazelcastTestSupport {
 
     @Test
     public void assignRole_SENDER() {
@@ -121,5 +131,40 @@ public class MapKeyLoaderUtilTest {
         Role role = MapKeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, insignificant);
 
         assertEquals(NONE, role);
+    }
+
+    @Test
+    public void test_toBatches_with_nodeWideLimit() {
+        int nodeWideLimit = 7;
+        int entryCount = 100;
+
+        Semaphore nodeWideLoadedKeyLimiter = new Semaphore(nodeWideLimit);
+        Iterator<Map<Integer, List<Data>>> batches
+                = MapKeyLoaderUtil.toBatches(newIterator(entryCount),
+                1000, nodeWideLoadedKeyLimiter);
+
+        List<Integer> batchSizes = new ArrayList<>();
+        while (batches.hasNext()) {
+            Map<Integer, List<Data>> batch = batches.next();
+            batchSizes.add(batch.size());
+            nodeWideLoadedKeyLimiter.release(batch.values().size());
+        }
+
+        // assert no batch is bigger than nodeWideLimit.
+        assertEquals(0,
+                batchSizes.stream().filter(size -> size > nodeWideLimit).count());
+        // assert sum of all batches equals to entryCount.
+        assertEquals(entryCount,
+                batchSizes.stream().mapToInt(size -> size).sum());
+
+    }
+
+    private static Iterator<Map.Entry<Integer, Data>> newIterator(int entryCount) {
+        Map<Integer, Data> store = new HashMap<>();
+        for (int i = 0; i < entryCount; i++) {
+            store.put(i, new HeapData());
+        }
+
+        return store.entrySet().iterator();
     }
 }
