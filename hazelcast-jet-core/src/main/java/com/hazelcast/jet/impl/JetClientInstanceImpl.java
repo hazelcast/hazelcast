@@ -25,7 +25,6 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.client.protocol.codec.JetExistsDistributedObjectCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsByNameCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec;
@@ -108,8 +107,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     }
 
     @Override
-    public Job newJobProxy(long jobId, DAG dag, JobConfig config) {
-        return new ClientJobProxy(this, jobId, dag, config);
+    public Job newJobProxy(long jobId, Object jobDefinition, JobConfig config) {
+        return new ClientJobProxy(this, jobId, jobDefinition, config);
     }
 
     @Override

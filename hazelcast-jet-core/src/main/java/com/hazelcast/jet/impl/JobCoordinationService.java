@@ -45,6 +45,7 @@ import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.observer.ObservableImpl;
 import com.hazelcast.jet.impl.observer.WrappedThrowable;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.OverflowPolicy;
@@ -181,7 +182,7 @@ public class JobCoordinationService {
         executionService.schedule(COORDINATOR_EXECUTOR_NAME, this::scanJobs, 0, MILLISECONDS);
     }
 
-    public CompletableFuture<Void> submitJob(long jobId, Data serializedDag, Data serializedConfig) {
+    public CompletableFuture<Void> submitJob(long jobId, Data serializedJobDefinition, Data serializedConfig) {
         CompletableFuture<Void> res = new CompletableFuture<>();
         submitToCoordinatorThread(() -> {
             MasterContext masterContext;
@@ -201,7 +202,16 @@ public class JobCoordinationService {
                 }
 
                 int quorumSize = config.isSplitBrainProtectionEnabled() ? getQuorumSize() : 0;
-                DAG dag = deserializeDag(jobId, config, serializedDag);
+                Object jobDefinition = deserializeJobDefinition(jobId, config, serializedJobDefinition);
+                DAG dag;
+                Data serializedDag;
+                if (jobDefinition instanceof PipelineImpl) {
+                    dag = ((PipelineImpl) jobDefinition).toDag();
+                    serializedDag = nodeEngine().getSerializationService().toData(dag);
+                } else {
+                    dag = (DAG) jobDefinition;
+                    serializedDag = serializedJobDefinition;
+                }
                 Set<String> ownedObservables = ownedObservables(dag);
                 JobRecord jobRecord = new JobRecord(jobId, serializedDag, dagToJson(dag), config, ownedObservables);
                 JobExecutionRecord jobExecutionRecord = new JobExecutionRecord(jobId, quorumSize);
@@ -845,9 +855,9 @@ public class JobCoordinationService {
                 && getInternalPartitionService().getPartitionStateManager().isInitialized();
     }
 
-    private DAG deserializeDag(long jobId, JobConfig jobConfig, Data dagData) {
+    private Object deserializeJobDefinition(long jobId, JobConfig jobConfig, Data jobDefinitionData) {
         ClassLoader classLoader = jetService.getJobExecutionService().getClassLoader(jobConfig, jobId);
-        return deserializeWithCustomClassLoader(nodeEngine.getSerializationService(), classLoader, dagData);
+        return deserializeWithCustomClassLoader(nodeEngine().getSerializationService(), classLoader, jobDefinitionData);
     }
 
     private String dagToJson(DAG dag) {

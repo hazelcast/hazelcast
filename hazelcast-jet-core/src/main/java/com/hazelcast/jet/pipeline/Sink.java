@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.pipeline;
 
+import java.io.Serializable;
+
 /**
  * A data sink in a Jet pipeline. It accepts the data the pipeline
  * processed and exports it to an external system.
@@ -26,7 +28,7 @@ package com.hazelcast.jet.pipeline;
  *
  * @since 3.0
  */
-public interface Sink<T> {
+public interface Sink<T> extends Serializable {
 
     /**
      * Returns a descriptive name for this sink.

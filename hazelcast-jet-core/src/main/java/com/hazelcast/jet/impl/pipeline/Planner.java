@@ -68,7 +68,6 @@ public class Planner {
 
     public final DAG dag = new DAG();
     public final Map<Transform, PlannerVertex> xform2vertex = new HashMap<>();
-
     private final PipelineImpl pipeline;
 
     Planner(PipelineImpl pipeline) {

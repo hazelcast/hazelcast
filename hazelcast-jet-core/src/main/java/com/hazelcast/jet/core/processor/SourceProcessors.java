@@ -71,6 +71,7 @@ import static com.hazelcast.jet.Util.cachePutEvents;
 import static com.hazelcast.jet.Util.mapEventToEntry;
 import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.impl.connector.StreamEventJournalP.streamRemoteCacheSupplier;
+import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
@@ -186,8 +187,9 @@ public final class SourceProcessors {
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
+        String clientXml = asXmlString(clientConfig);
         return StreamEventJournalP.streamRemoteMapSupplier(
-                mapName, clientConfig, predicateFn, projectionFn, initialPos, eventTimePolicy);
+                mapName, clientXml, predicateFn, projectionFn, initialPos, eventTimePolicy);
     }
 
     /**
@@ -267,8 +269,9 @@ public final class SourceProcessors {
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
+        String clientXml = asXmlString(clientConfig);
         return streamRemoteCacheSupplier(
-                cacheName, clientConfig, predicateFn, projectionFn, initialPos, eventTimePolicy);
+                cacheName, clientXml, predicateFn, projectionFn, initialPos, eventTimePolicy);
     }
 
     /**

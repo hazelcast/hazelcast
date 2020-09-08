@@ -18,6 +18,7 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.function.FunctionEx;
 
+import java.io.Serializable;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
@@ -50,7 +51,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  *
  * @since 3.0
  */
-public final class JoinClause<K, T0, T1, T1_OUT> {
+public final class JoinClause<K, T0, T1, T1_OUT> implements Serializable {
     private final FunctionEx<? super T0, ? extends K> leftKeyFn;
     private final FunctionEx<? super T1, ? extends K> rightKeyFn;
     private final FunctionEx<? super T1, ? extends T1_OUT> rightProjectFn;

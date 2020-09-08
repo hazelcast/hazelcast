@@ -17,6 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 
 /**
  * The definition of the window for a windowed aggregation operation. To obtain
@@ -24,7 +25,7 @@ import javax.annotation.Nonnull;
  *
  * @since 3.0
  */
-public abstract class WindowDefinition {
+public abstract class WindowDefinition implements Serializable {
 
     private long earlyResultPeriodMs;
 

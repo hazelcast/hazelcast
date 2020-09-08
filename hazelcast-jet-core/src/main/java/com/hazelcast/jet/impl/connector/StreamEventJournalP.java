@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
@@ -67,7 +66,6 @@ import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.dese
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
-import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.ImdgUtil.maybeUnwrapImdgFunction;
 import static com.hazelcast.jet.impl.util.ImdgUtil.maybeUnwrapImdgPredicate;
 import static com.hazelcast.jet.impl.util.Util.distributeObjects;
@@ -348,7 +346,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         private transient Map<Address, List<Integer>> addrToPartitions;
 
         ClusterMetaSupplier(
-                @Nullable ClientConfig clientConfig,
+                @Nullable String clientXml,
                 @Nonnull FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
                         eventJournalReaderSupplier,
                 @Nonnull PredicateEx<? super E> predicate,
@@ -356,7 +354,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                 @Nonnull JournalInitialPosition initialPos,
                 @Nonnull EventTimePolicy<? super T> eventTimePolicy
         ) {
-            this.clientXml = asXmlString(clientConfig);
+            this.clientXml = clientXml;
             this.eventJournalReaderSupplier = eventJournalReaderSupplier;
             this.predicate = predicate;
             this.projection = projection;
@@ -505,7 +503,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     @SuppressWarnings("unchecked")
     public static <K, V, T> ProcessorMetaSupplier streamRemoteMapSupplier(
             @Nonnull String mapName,
-            @Nonnull ClientConfig clientConfig,
+            @Nonnull String clientXml,
             @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicate,
             @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projection,
             @Nonnull JournalInitialPosition initialPos,
@@ -513,7 +511,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 
-        return new ClusterMetaSupplier<>(clientConfig,
+        return new ClusterMetaSupplier<>(clientXml,
                 instance -> (EventJournalReader<EventJournalMapEvent<K, V>>) instance.getMap(mapName),
                 predicate, projection, initialPos, eventTimePolicy);
     }
@@ -536,7 +534,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     @SuppressWarnings("unchecked")
     public static <K, V, T> ProcessorMetaSupplier streamRemoteCacheSupplier(
             @Nonnull String cacheName,
-            @Nonnull ClientConfig clientConfig,
+            @Nonnull String clientXml,
             @Nonnull PredicateEx<? super EventJournalCacheEvent<K, V>> predicate,
             @Nonnull FunctionEx<? super EventJournalCacheEvent<K, V>, ? extends T> projection,
             @Nonnull JournalInitialPosition initialPos,
@@ -544,7 +542,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 
-        return new ClusterMetaSupplier<>(clientConfig,
+        return new ClusterMetaSupplier<>(clientXml,
                 inst -> (EventJournalReader<EventJournalCacheEvent<K, V>>) inst.getCacheManager().getCache(cacheName),
                 predicate, projection, initialPos, eventTimePolicy);
     }

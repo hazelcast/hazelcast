@@ -558,11 +558,19 @@ public final class SourceBuilder<C> {
         @Nonnull
         public StreamSource<T> build() {
             Preconditions.checkNotNull(fillBufferFn, "fillBufferFn() wasn't called");
+
+            FunctionEx<? super Context, ? extends C> createFnLocal = createFn;
+            BiConsumerEx<? super C, ? super SourceBuffer<T>> fillBufferFnLocal = fillBufferFn;
+            FunctionEx<? super C, Object> createSnapshotFnLocal = createSnapshotFn;
+            BiConsumerEx<? super C, ? super List<Object>> restoreSnapshotFnLocal = restoreSnapshotFn;
+            ConsumerEx<? super C> destroyFnLocal = destroyFn;
+            int preferredLocalParallelismLocal = preferredLocalParallelism;
+
             return new StreamSourceTransform<>(
                     name,
                     eventTimePolicy -> convenientSourceP(
-                            createFn, fillBufferFn, createSnapshotFn, restoreSnapshotFn,
-                            destroyFn, preferredLocalParallelism, false),
+                            createFnLocal, fillBufferFnLocal, createSnapshotFnLocal, restoreSnapshotFnLocal,
+                            destroyFnLocal, preferredLocalParallelismLocal, false),
                     false, false);
         }
     }
@@ -635,10 +643,18 @@ public final class SourceBuilder<C> {
         @Nonnull
         public StreamSource<T> build() {
             Preconditions.checkNotNull(fillBufferFn, "fillBufferFn must be set");
+
+            FunctionEx<? super Context, ? extends C> createFnLocal = createFn;
+            BiConsumerEx<? super C, ? super TimestampedSourceBuffer<T>> fillBufferFnLocal = fillBufferFn;
+            FunctionEx<? super C, Object> createSnapshotFnLocal = createSnapshotFn;
+            BiConsumerEx<? super C, ? super List<Object>> restoreSnapshotFnLocal = restoreSnapshotFn;
+            ConsumerEx<? super C> destroyFnLocal = destroyFn;
+            int preferredLocalParallelismLocal = preferredLocalParallelism;
+
             return new StreamSourceTransform<>(
                     name,
-                    eventTimePolicy -> convenientTimestampedSourceP(createFn, fillBufferFn, eventTimePolicy,
-                            createSnapshotFn, restoreSnapshotFn, destroyFn, preferredLocalParallelism),
+                    eventTimePolicy -> convenientTimestampedSourceP(createFnLocal, fillBufferFnLocal, eventTimePolicy,
+                           createSnapshotFnLocal, restoreSnapshotFnLocal, destroyFnLocal, preferredLocalParallelismLocal),
                     true, true);
         }
     }

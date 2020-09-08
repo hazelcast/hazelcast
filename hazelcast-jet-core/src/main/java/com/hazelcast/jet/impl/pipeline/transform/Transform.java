@@ -20,6 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.impl.pipeline.Planner;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -27,7 +28,7 @@ import java.util.List;
  * transformation it represents. {@link Planner} is the implementation class
  * that creates a Core API DAG for a pipeline.
  */
-public interface Transform {
+public interface Transform extends Serializable {
     /**
      * Returns the name of this transformation.
      */

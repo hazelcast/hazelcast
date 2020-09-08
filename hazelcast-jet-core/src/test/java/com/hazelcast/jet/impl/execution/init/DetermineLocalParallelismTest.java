@@ -18,18 +18,15 @@ package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -38,19 +35,18 @@ import java.util.function.Function;
 import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
-public class DetermineLocalParallelismTest extends JetTestSupport {
+public class DetermineLocalParallelismTest extends SimpleTestInClusterSupport {
 
     private static final int DEFAULT_PARALLELISM = 2;
 
-    private NodeEngine nodeEngine;
+    private static NodeEngine nodeEngine;
 
-    @Before
-    public void before() {
+    @BeforeClass
+    public static void before() {
         JetConfig cfg = new JetConfig();
         cfg.getInstanceConfig().setCooperativeThreadCount(DEFAULT_PARALLELISM);
-        JetInstance jet = createJetMember(cfg);
-        nodeEngine = getNode(jet.getHazelcastInstance()).getNodeEngine();
+        initialize(1, cfg);
+        nodeEngine = getNode(instance().getHazelcastInstance()).getNodeEngine();
     }
 
     @Test

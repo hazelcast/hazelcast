@@ -20,6 +20,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 
 /**
  * Models a distributed computation job using an analogy with a system of
@@ -42,7 +43,7 @@ import javax.annotation.Nonnull;
  *
  * @since 3.0
  */
-public interface Pipeline {
+public interface Pipeline extends Serializable {
 
     /**
      * Creates a new, empty pipeline.
@@ -95,8 +96,10 @@ public interface Pipeline {
     /**
      * Transforms the pipeline into a Jet DAG, which can be submitted for
      * execution to a Jet instance.
+     * @deprecated since 4.3, Jet performs this transformation on the server-side.
      */
     @Nonnull
+    @Deprecated()
     DAG toDag();
 
     /**

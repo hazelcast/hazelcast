@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.pipeline.transform;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
@@ -25,7 +26,6 @@ import com.hazelcast.jet.pipeline.StreamSource;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.function.Function;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.jet.core.Edge.between;
@@ -36,7 +36,7 @@ import static java.util.Collections.emptyList;
 
 public class StreamSourceTransform<T> extends AbstractTransform implements StreamSource<T> {
 
-    public final Function<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier> metaSupplierFn;
+    public final FunctionEx<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier> metaSupplierFn;
     private boolean isAssignedToStage;
     private final boolean emitsWatermarks;
 
@@ -47,7 +47,7 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
 
     public StreamSourceTransform(
             @Nonnull String name,
-            @Nonnull Function<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier> metaSupplierFn,
+            @Nonnull FunctionEx<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier> metaSupplierFn,
             boolean emitsWatermarks,
             boolean supportsNativeTimestamps
     ) {

@@ -33,6 +33,7 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.ToResultSetFunction;
+import com.hazelcast.jet.impl.connector.StreamEventJournalP;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.jet.json.JsonUtil;
@@ -53,7 +54,6 @@ import java.sql.ResultSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Function;
 
 import static com.hazelcast.jet.Util.cacheEventToEntry;
 import static com.hazelcast.jet.Util.cachePutEvents;
@@ -67,9 +67,9 @@ import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteListP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
-import static com.hazelcast.jet.core.processor.SourceProcessors.streamRemoteCacheP;
-import static com.hazelcast.jet.core.processor.SourceProcessors.streamRemoteMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamSocketP;
+import static com.hazelcast.jet.impl.connector.StreamEventJournalP.streamRemoteCacheSupplier;
+import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -120,15 +120,18 @@ public final class Sources {
      * If you are implementing a custom source processor, be sure to check out
      * the {@link EventTimeMapper} class that will help you correctly implement
      * watermark emission.
-     *  @param sourceName user-friendly source name
+     *
+     * @param sourceName user-friendly source name
      * @param supportsNativeTimestamps true, if the processor is able to work
-     * @param metaSupplierFn factory of processor meta-suppliers
+     * @param metaSupplierFn factory of processor meta-suppliers. Since Jet
+     *                      4.3 this argument changed from Function to FunctionEx
+     *                      to support serializability.
      */
     @Nonnull
     public static <T> StreamSource<T> streamFromProcessorWithWatermarks(
             @Nonnull String sourceName,
             boolean supportsNativeTimestamps,
-            @Nonnull Function<EventTimePolicy<? super T>, ProcessorMetaSupplier> metaSupplierFn
+            @Nonnull FunctionEx<EventTimePolicy<? super T>, ProcessorMetaSupplier> metaSupplierFn
     ) {
         return new StreamSourceTransform<>(sourceName, metaSupplierFn, true, supportsNativeTimestamps);
     }
@@ -640,8 +643,10 @@ public final class Sources {
             @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
             @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicateFn
     ) {
+        String clientXml = asXmlString(clientConfig);
         return streamFromProcessorWithWatermarks("remoteMapJournalSource(" + mapName + ')',
-                false, w -> streamRemoteMapP(mapName, clientConfig, predicateFn, projectionFn, initialPos, w));
+                false, w -> StreamEventJournalP.streamRemoteMapSupplier(
+                        mapName, clientXml, predicateFn, projectionFn, initialPos, w));
     }
 
     /**
@@ -832,8 +837,10 @@ public final class Sources {
             @Nonnull FunctionEx<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
             @Nonnull PredicateEx<? super EventJournalCacheEvent<K, V>> predicateFn
     ) {
+        String clientXml = asXmlString(clientConfig);
         return streamFromProcessorWithWatermarks("remoteCacheJournalSource(" + cacheName + ')',
-                false, w -> streamRemoteCacheP(cacheName, clientConfig, predicateFn, projectionFn, initialPos, w));
+                false, w -> streamRemoteCacheSupplier(
+                        cacheName, clientXml, predicateFn, projectionFn, initialPos, w));
     }
 
     /**

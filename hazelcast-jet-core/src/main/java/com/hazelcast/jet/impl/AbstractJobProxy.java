@@ -22,7 +22,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -70,13 +69,13 @@ public abstract class AbstractJobProxy<T> implements Job {
         this.logger = loggingService().getLogger(Job.class);
     }
 
-    AbstractJobProxy(T container, long jobId, DAG dag, JobConfig config) {
+    AbstractJobProxy(T container, long jobId, Object jobDefinition, JobConfig config) {
         this.jobId = jobId;
         this.container = container;
         this.logger = loggingService().getLogger(Job.class);
 
         try {
-            doSubmitJob(dag, config);
+            doSubmitJob(jobDefinition, config);
             joinedJob.set(true);
             doInvokeJoinJob();
         } catch (Throwable t) {
@@ -183,7 +182,7 @@ public abstract class AbstractJobProxy<T> implements Job {
     /**
      * Submit and join job with a given DAG and config
      */
-    protected abstract CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config);
+    protected abstract CompletableFuture<Void> invokeSubmitJob(Data jobDefinition, JobConfig config);
 
     /**
      * Join already existing job
@@ -206,10 +205,10 @@ public abstract class AbstractJobProxy<T> implements Job {
         return container;
     }
 
-    private void doSubmitJob(DAG dag, JobConfig config) {
+    private void doSubmitJob(Object jobDefinition, JobConfig config) {
         CompletableFuture<Void> submitFuture = new CompletableFuture<>();
-        SubmitJobCallback callback = new SubmitJobCallback(submitFuture, dag, config);
-        invokeSubmitJob(serializationService().toData(dag), config).whenCompleteAsync(callback);
+        SubmitJobCallback callback = new SubmitJobCallback(submitFuture, jobDefinition, config);
+        invokeSubmitJob(serializationService().toData(jobDefinition), config).whenCompleteAsync(callback);
         submitFuture.join();
     }
 
@@ -225,12 +224,12 @@ public abstract class AbstractJobProxy<T> implements Job {
 
     private class SubmitJobCallback implements BiConsumer<Void, Throwable> {
         private final CompletableFuture<Void> future;
-        private final DAG dag;
+        private final Object jobDefinition;
         private final JobConfig config;
 
-        SubmitJobCallback(CompletableFuture<Void> future, DAG dag, JobConfig config) {
+        SubmitJobCallback(CompletableFuture<Void> future, Object jobDefinition, JobConfig config) {
             this.future = future;
-            this.dag = dag;
+            this.jobDefinition = jobDefinition;
             this.config = config;
         }
 
@@ -260,7 +259,7 @@ public abstract class AbstractJobProxy<T> implements Job {
         private void resubmitJob(Throwable t) {
             if (masterUuid() != null) {
                 logger.fine("Resubmitting job " + idAndName() + " after " + t.getClass().getSimpleName());
-                invokeSubmitJob(serializationService().toData(dag), config).whenCompleteAsync(this);
+                invokeSubmitJob(serializationService().toData(jobDefinition), config).whenCompleteAsync(this);
                 return;
             }
             // job data will be cleaned up eventually by coordinator

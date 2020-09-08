@@ -23,7 +23,6 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
@@ -59,8 +58,8 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
         super(nodeEngine, jobId);
     }
 
-    public JobProxy(NodeEngineImpl engine, long jobId, DAG dag, JobConfig config) {
-        super(engine, jobId, dag, config);
+    public JobProxy(NodeEngineImpl engine, long jobId, Object jobDefinition, JobConfig config) {
+        super(engine, jobId, jobDefinition, config);
     }
 
     @Nonnull @Override

@@ -22,7 +22,6 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.util.ImdgUtil;
@@ -132,8 +131,8 @@ public class JetInstanceImpl extends AbstractJetInstance {
     }
 
     @Override
-    public Job newJobProxy(long jobId, DAG dag, JobConfig config) {
-        return new JobProxy((NodeEngineImpl) nodeEngine, jobId, dag, config);
+    public Job newJobProxy(long jobId, Object jobDefinition, JobConfig config) {
+        return new JobProxy((NodeEngineImpl) nodeEngine, jobId, jobDefinition, config);
     }
 
     @Override

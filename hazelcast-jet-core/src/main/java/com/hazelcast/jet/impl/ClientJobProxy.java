@@ -23,7 +23,6 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.impl.client.protocol.codec.JetExportSnapshotCodec;
@@ -64,8 +63,8 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         super(client, jobId);
     }
 
-    ClientJobProxy(JetClientInstanceImpl client, long jobId, DAG dag, JobConfig config) {
-        super(client, jobId, dag, config);
+    ClientJobProxy(JetClientInstanceImpl client, long jobId, Object jobDefinition, JobConfig config) {
+        super(client, jobId, jobDefinition, config);
     }
 
     @Nonnull

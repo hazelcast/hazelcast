@@ -29,7 +29,6 @@ import com.hazelcast.jet.function.Observer;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.SnapshotValidationRecord;
-import com.hazelcast.jet.impl.pipeline.PipelineImpl;
 import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -138,9 +137,7 @@ public interface JetInstance {
      *      an equal name
      */
     @Nonnull
-    default Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        return newJob(pipeline.toDag(), config.attachAll(((PipelineImpl) pipeline).attachedFiles()));
-    }
+    Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config);
 
     /**
      * Creates and returns a Jet job based on the supplied DAG and job
@@ -188,9 +185,7 @@ public interface JetInstance {
      * See also {@link #newJob}.
      */
     @Nonnull
-    default Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        return newJobIfAbsent(pipeline.toDag(), config.attachAll(((PipelineImpl) pipeline).attachedFiles()));
-    }
+    Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config);
 
     /**
      * Returns all submitted jobs including running and completed ones.
