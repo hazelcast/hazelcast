@@ -32,7 +32,6 @@ public enum TerminationMode {
     SUSPEND_FORCEFUL(false, SUSPEND),
 
     // terminate and complete the job
-    CANCEL_GRACEFUL(true, ActionAfterTerminate.CANCEL),
     CANCEL_FORCEFUL(false, ActionAfterTerminate.CANCEL);
 
     private final boolean withTerminalSnapshot;
@@ -64,9 +63,7 @@ public enum TerminationMode {
     @CheckReturnValue
     public TerminationMode withoutTerminalSnapshot() {
         TerminationMode res = this;
-        if (this == CANCEL_GRACEFUL) {
-            res = CANCEL_FORCEFUL;
-        } else if (this == SUSPEND_GRACEFUL) {
+        if (this == SUSPEND_GRACEFUL) {
             res = SUSPEND_FORCEFUL;
         } else if (this == RESTART_GRACEFUL) {
             res = RESTART_FORCEFUL;

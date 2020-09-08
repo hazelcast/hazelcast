@@ -122,10 +122,6 @@ public class SnapshotContext {
     /**
      * Future which will be created when phase 2 starts and completed and
      * nulled out when the phase 2 completes.
-     * <p>
-     * It will return a collection of errors from the phase 2:
-     * vertexId#globalProcessorIndex -> error. Successful vertices are not
-     * present.
      */
     private volatile CompletableFuture<Void> phase2Future;
 
