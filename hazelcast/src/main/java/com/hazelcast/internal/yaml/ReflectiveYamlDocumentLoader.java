@@ -37,10 +37,6 @@ class ReflectiveYamlDocumentLoader implements YamlDocumentLoader {
     private final Method loadFromReader;
     private final Method loadFromString;
 
-    public static void main(String[] args) {
-        ReflectiveYamlDocumentLoader l = new ReflectiveYamlDocumentLoader();
-    }
-
     ReflectiveYamlDocumentLoader() {
         try {
             // instantiate loadSettings
