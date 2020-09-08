@@ -37,20 +37,24 @@ class ReflectiveYamlDocumentLoader implements YamlDocumentLoader {
     private final Method loadFromReader;
     private final Method loadFromString;
 
+    public static void main(String[] args) {
+        ReflectiveYamlDocumentLoader l = new ReflectiveYamlDocumentLoader();
+    }
+
     ReflectiveYamlDocumentLoader() {
         try {
-            // instantiate LoadSettingsBuilder
+            // instantiate loadSettings
+            Class<?> loadSettingsClass = Class.forName("org.snakeyaml.engine.v1.api.LoadSettings");
             Class<?> loadSettingsBuilderClass = Class.forName("org.snakeyaml.engine.v1.api.LoadSettingsBuilder");
-            Constructor<?> loadSettingsBuilderConstructor = loadSettingsBuilderClass.getConstructor();
-            Object loadSettingsBuilder = loadSettingsBuilderConstructor.newInstance();
+            Method loadSettingsBuilderMethod = loadSettingsClass.getMethod("builder");
             Method buildLoadSettingsMethod = loadSettingsBuilderClass.getMethod("build");
+            Object loadSettingsBuilder = loadSettingsBuilderMethod.invoke(null);
 
             // instantiate LoadSettings via the builder
             Object loadSettings = buildLoadSettingsMethod.invoke(loadSettingsBuilder);
 
             // instantiate Load
-            Class<?> loadSettingsClass = Class.forName("org.snakeyaml.engine.v1.api.LoadSettings");
-            Class<?> loadClass = Class.forName("org.snakeyaml.engine.v1.api.Load");
+            Class<?> loadClass = Class.forName("org.snakeyaml.engine.v2.api.Load");
             Constructor<?> constructor = loadClass.getConstructor(loadSettingsClass);
             load = constructor.newInstance(loadSettings);
 
