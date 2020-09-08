@@ -1,9 +1,7 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 4.1-BETA-1 release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
 
-==== 4.1-BETA-1 ====
-
-1. New Features
+## New Features
 
 * **Instance Tracking:** It is a feature which writes a file on the Hazelcast instance startup
 at the configured location. This file contains metadata about the instance, such as version, product name
@@ -17,9 +15,11 @@ See https://docs.hazelcast.org/docs/4.1-BETA-1/manual/html-single/index.html#sql
 * **Automatic Detection of Discovery Strategy:** It tries to automatically detect the
 applicable discovery mechanism based on the runtime environment.
 See https://docs.hazelcast.org/docs/4.1-BETA-1/manual/html-single/index.html#auto-detection.
+* **Overriding Configuration:** You can now override the configuration entries
+of your cluster without changing the declarative configuration files (XML/YAML).
+See the https://docs.hazelcast.org/docs/4.1-BETA-1/manual/html-single/index.html#overriding-configuration.
 
-
-2. Enhancements
+## Enhancements
 
 * **Improvements in Partial Network Disconnections:** Introduced properties
 to be configured to detect and resolve the partial network issues among the
@@ -124,12 +124,12 @@ partitions. [#14331]
 combined single client-server round trips instead of two (for `get` and
 `replace` methods). [#11958]
 
-3. Breaking Changes
+## Breaking Changes
 
 * The `TcpIpConnection` class has been renamed as `ServerConnection`.
 https://github.com/hazelcast/hazelcast/pull/16839[#16839]
 
-4. Fixes
+## Fixes
 
 * Fixed an issue where `ReliableTopicMessageListener` was firing a warning when the client is shutting down. [#17153]
 * Fixed the broken interoperability between the `CompletableFuture` methods. [#17020]
@@ -174,7 +174,7 @@ read attribute is null. [#15100]
 were returning negative values (`size()`) when the size is more than
 `Integer.MAX_VALUE`. [#14935]
 
-===  Contributors
+## Contributors
 
 We would like to thank the contributors from our open source
 community who worked on this release:
