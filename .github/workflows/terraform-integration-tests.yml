@@ -53,17 +53,15 @@ jobs:
       # DOWNLOAD HAZELCAST JAR WITH VERSION DEFINED IN POM.XML
       - name: Download latest Hazelcast version
         run: |
-          hz_version=$(cat hazelcast-aws/pom.xml | grep -m 1 -Po "<hazelcast.version>\K[-_.a-zA-Z0-9]+(?=</hazelcast.version)")
+          HZ_VERSION=$(cat hazelcast-aws/pom.xml | grep -m 1 -Po "<hazelcast.version>\K[-_.a-zA-Z0-9]+(?=</hazelcast.version)")
           if [[ $hz_version == *"SNAPSHOT"* ]]; then
-            wo_SNAPSHOT=$( echo $hz_version | grep -Po "[.a-zA-Z0-9]+(?=-SNAPSHOT)" )
-            snapshot_link=$(curl -s "https://oss.sonatype.org/content/repositories/snapshots/com/hazelcast/hazelcast/$hz_version/" 2>&1 \
-                 | grep -Po  "hazelcast-$wo_SNAPSHOT-\d{8}.\d{6}-\d+\.jar" | head -1)
-            wget -q "https://oss.sonatype.org/content/repositories/snapshots/com/hazelcast/hazelcast/$hz_version/$snapshot_link"
+            export HZ_JAR_REPO_URL="https://oss.sonatype.org/content/repositories/snapshots"
           else
-            wget -q "https://repo1.maven.org/maven2/com/hazelcast/hazelcast/$hz_version/hazelcast-$hz_version.jar"
+            export HZ_JAR_REPO_URL="https://repo1.maven.org/maven2"
           fi
-          echo "Hazelcast jar is: " hazelcast*.jar
-          cp hazelcast*.jar ~/lib/hazelcast.jar
+          mvn dependency:get -DgroupId=com.hazelcast -DartifactId=hazelcast -Dversion=${HZ_VERSION} \
+                  -Dpackaging=jar -DremoteRepositories=${HZ_JAR_REPO_URL}
+          cp ~/.m2/repository/com/hazelcast/hazelcast/${HZ_VERSION}/hazelcast-${HZ_VERSION}.jar ~/lib/hazelcast.jar
 
       #BUILD TERRAFORM
       - name : Set-up Terraform

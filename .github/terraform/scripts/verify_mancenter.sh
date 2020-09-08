@@ -6,7 +6,7 @@ EXPECTED_SIZE=$1
 
 verify_hazelcast_cluster_size() {
     EXPECTED_SIZE=$1
-    for i in `seq 1 5`; do
+    for i in `seq 1 6`; do
         local MEMBER_COUNT=$(cat ~/logs/mancenter.stdout.log | grep -E " Started communication with (a new )?member" | wc -l) 
 
         if [ "$MEMBER_COUNT" == "$EXPECTED_SIZE" ] ; then
@@ -14,7 +14,7 @@ verify_hazelcast_cluster_size() {
             return 0
         else
             echo "Hazelcast cluster size NOT equal to ${EXPECTED_SIZE}!. Waiting.."
-            sleep 5
+            sleep 10
         fi
     done
     return 1
