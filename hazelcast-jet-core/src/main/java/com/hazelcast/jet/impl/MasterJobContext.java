@@ -614,10 +614,6 @@ public class MasterJobContext {
                 }
                 completeVertices(failure);
 
-                // reset state for the next execution
-                boolean wasCancelled = isCancelled();
-                requestedTerminationMode = null;
-                executionFailureCallback = null;
                 ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
                         ? ((JobTerminateRequestedException) failure).mode().actionAfterTerminate() : null;
                 mc.snapshotContext().onExecutionTerminated();
@@ -626,20 +622,20 @@ public class MasterJobContext {
                 if (terminationModeAction == RESTART) {
                     mc.setJobStatus(NOT_RUNNING);
                     nonSynchronizedAction = () -> mc.coordinationService().restartJob(mc.jobId());
-                } else if (!wasCancelled && isRestartableException(failure) && mc.jobConfig().isAutoScaling()) {
+                } else if (!isCancelled() && isRestartableException(failure) && mc.jobConfig().isAutoScaling()) {
                     // if restart is due to a failure, schedule a restart after a delay
                     scheduleRestart();
                     nonSynchronizedAction = NO_OP;
                 } else if (terminationModeAction == SUSPEND
                         || isRestartableException(failure)
-                        && !wasCancelled
+                        && !isCancelled()
                         && !mc.jobConfig().isAutoScaling()
                         && mc.jobConfig().getProcessingGuarantee() != NONE
                 ) {
                     mc.setJobStatus(SUSPENDED);
                     mc.jobExecutionRecord().setSuspended("Requested by user");
                     nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
-                } else if (failure != null && !wasCancelled && mc.jobConfig().isSuspendOnFailure()) {
+                } else if (failure != null && !isCancelled() && mc.jobConfig().isSuspendOnFailure()) {
                     mc.setJobStatus(SUSPENDED);
                     mc.jobExecutionRecord().setSuspended("Execution failure:\n" +
                             ExceptionUtil.stackTraceToString(failure));
@@ -650,19 +646,22 @@ public class MasterJobContext {
                         logger.fine("Cancelling job " + mc.jobIdString() + " locally: member (local or remote) reset. " +
                                 "We don't delete job metadata: job will restart on majority cluster");
                         setFinalResult(new CancellationException());
-                        return;
+                    } else {
+                        mc.coordinationService()
+                          .completeJob(mc, failure)
+                          .whenComplete(withTryCatch(logger, (r, f) -> {
+                              if (f != null) {
+                                  logger.warning("Completion of " + mc.jobIdString() + " failed", f);
+                              } else {
+                                  setFinalResult(failure);
+                              }
+                          }));
                     }
-                    mc.coordinationService()
-                      .completeJob(mc, failure)
-                      .whenComplete(withTryCatch(logger, (r, f) -> {
-                          if (f != null) {
-                              logger.warning("Completion of " + mc.jobIdString() + " failed", f);
-                          } else {
-                              setFinalResult(failure);
-                          }
-                      }));
                     nonSynchronizedAction = NO_OP;
                 }
+                // reset the state for the next execution
+                requestedTerminationMode = null;
+                executionFailureCallback = null;
             } finally {
                 mc.unlock();
             }

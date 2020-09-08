@@ -75,6 +75,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.util.Collections.nCopies;
 import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -597,6 +598,25 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         Job job = instance().newJob(dag);
         Exception e = assertThrows(Exception.class, () -> job.join());
         assertContains(e.getMessage(), "Failed to serialize");
+    }
+
+    @Test
+    public void test_jobStatusCompleting() {
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new TestProcessors.MockP().streaming());
+        Job job = instance().newJob(dag);
+
+        long endTime = System.nanoTime() + SECONDS.toNanos(2);
+        while (System.nanoTime() < endTime) {
+            //noinspection StatementWithEmptyBody
+            while (job.getStatus() != RUNNING) { }
+
+            // test for https://github.com/hazelcast/hazelcast-jet/pull/2507
+            // we try to restart as soon as the job status is RUNNING. If the `RUNNING` status is
+            // reported incorrectly, the restart will fail with "Cannot RESTART_GRACEFUL,
+            // job status is XXX, should be RUNNING"
+            job.restart();
+        }
     }
 
     public static class NotSerializable_DataSerializable_ProcessorSupplier implements ProcessorSupplier, DataSerializable {
