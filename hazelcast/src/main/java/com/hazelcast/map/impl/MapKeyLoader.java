@@ -25,6 +25,8 @@ import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.internal.util.StateMachine;
+import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
+import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapLoader;
@@ -63,6 +65,7 @@ import static com.hazelcast.map.impl.MapKeyLoaderUtil.toBatches;
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.toPartition;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.MAP_LOAD_ALL_KEYS_EXECUTOR;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -85,6 +88,8 @@ public class MapKeyLoader {
             = new HazelcastProperty(PROP_LOADED_KEY_LIMITER_PER_NODE, DEFAULT_LOADED_KEY_LIMIT_PER_NODE);
 
     private static final long LOADING_TRIGGER_DELAY = SECONDS.toMillis(5);
+    private static final IdleStrategy IDLE_STRATEGY = new BackoffIdleStrategy(
+            0, 0, MILLISECONDS.toNanos(1), MILLISECONDS.toNanos(500));
 
     private ILogger logger;
     private String mapName;
@@ -445,10 +450,16 @@ public class MapKeyLoader {
             Iterator<Entry<Integer, Data>> partitionsAndKeys = map(dataKeys, toPartition(partitionService));
             Iterator<Map<Integer, List<Data>>> batches = toBatches(partitionsAndKeys, maxBatch, nodeWideLoadedKeyLimiter);
 
+            int callCount = 0;
             List<Future> futures = new ArrayList<>();
             while (batches.hasNext()) {
                 Map<Integer, List<Data>> batch = batches.next();
-                futures.addAll(sendBatch(batch, replaceExistingValues, nodeWideLoadedKeyLimiter));
+                if (batch.isEmpty()) {
+                    IDLE_STRATEGY.idle(++callCount);
+                } else {
+                    callCount = 0;
+                    futures.addAll(sendBatch(batch, replaceExistingValues, nodeWideLoadedKeyLimiter));
+                }
             }
 
             // This acts as a barrier to prevent re-ordering of key distribution operations (LoadAllOperation)
@@ -479,11 +490,11 @@ public class MapKeyLoader {
      * the value loading tasks have been completed or that the
      * entries have been loaded and put into the record store.
      *
-     * @param batch                 a map from partition ID
-     *                              to a batch of keys for that partition
-     * @param replaceExistingValues if the existing
-     *                              entries for the loaded keys should be replaced
-     * @param nodeWideLoadedKeyLimiter      controls number of loaded keys
+     * @param batch                    a map from partition ID
+     *                                 to a batch of keys for that partition
+     * @param replaceExistingValues    if the existing
+     *                                 entries for the loaded keys should be replaced
+     * @param nodeWideLoadedKeyLimiter controls number of loaded keys
      * @return a list of futures representing pending
      * completion of the value offloading task
      */
