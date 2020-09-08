@@ -98,7 +98,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
             } catch (SessionExpiredException e) {
                 invalidateSession(sessionId);
             } catch (WaitKeyCancelledException e) {
-                releaseSession(sessionId);
+                releaseSession(sessionId, permits);
                 throw new IllegalStateException("Semaphore[" + objectName + "] not acquired because the acquire call "
                         + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
             }
@@ -145,7 +145,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
                     return false;
                 }
             } catch (WaitKeyCancelledException e) {
-                releaseSession(sessionId);
+                releaseSession(sessionId, permits);
                 return false;
             }
         }

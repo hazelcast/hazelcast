@@ -48,6 +48,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Semaphore;
 import java.util.function.Predicate;
 
 /**
@@ -201,4 +202,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     NodeWideUsedCapacityCounter getNodeWideUsedCapacityCounter();
 
     ExecutorStats getOffloadedEntryProcessorExecutorStats();
+
+    Semaphore getNodeWideLoadedKeyLimiter();
 }
