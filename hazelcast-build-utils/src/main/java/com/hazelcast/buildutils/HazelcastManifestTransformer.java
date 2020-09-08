@@ -87,7 +87,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
     }
 
     @Override
-    public void processResource(String resource, InputStream inputStream, List<Relocator> relocators) throws IOException {
+    public void processResource(String resource, InputStream inputStream, List<Relocator> relocators, long time) throws IOException {
         Attributes attributes;
         if (shadedManifest == null) {
             shadedManifest = new Manifest(inputStream);
