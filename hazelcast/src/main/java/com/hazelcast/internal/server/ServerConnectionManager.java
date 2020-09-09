@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.Packet;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -219,10 +220,10 @@ public interface ServerConnectionManager
      * blocks the caller thread until a connection is established (or failed)
      * or the time runs out
      * @param address
-     * @param nanos
+     * @param millis
      * @param streamId
      */
-    default void blockOnConnect(Address address, long nanos, int streamId) {
-        LockSupport.parkNanos(nanos);
+    default void blockOnConnect(Address address, long millis, int streamId) {
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(millis));
     }
 }

@@ -66,7 +66,7 @@ public class JitterRule implements TestRule {
     public static final long LONG_HICCUP_THRESHOLD = SECONDS.toNanos(1);
 
     private static final String MODE_PROPERTY_NAME = "hazelcast.jitterMonitor.mode";
-    private static final Mode DEFAULT_MODE = Mode.JENKINS;
+    private static final Mode DEFAULT_MODE = Mode.ENABLED;
     private static final boolean ENABLED = isEnabled();
 
     static {

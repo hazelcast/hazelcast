@@ -95,7 +95,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 break;
             }
 
-            clusterService.blockOnJoin(TimeUnit.MILLISECONDS.toNanos(JOIN_RETRY_INTERVAL));
+            clusterService.blockOnJoin(JOIN_RETRY_INTERVAL);
 
             if (isBlacklisted(master)) {
                 clusterService.setMasterAddressToJoin(null);

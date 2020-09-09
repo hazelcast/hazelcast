@@ -117,8 +117,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 connection = connectionManager.getOrConnect(targetAddress);
                 if (connection == null) {
                     //noinspection BusyWait
-                    connectionManager.blockOnConnect(targetAddress,
-                            TimeUnit.MILLISECONDS.toNanos(JOIN_RETRY_WAIT_TIME), 0);
+                    connectionManager.blockOnConnect(targetAddress, JOIN_RETRY_WAIT_TIME, 0);
                     continue;
                 }
                 if (logger.isFineEnabled()) {
@@ -127,7 +126,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 clusterJoinManager.sendJoinRequest(targetAddress);
                 //noinspection BusyWait
                 if (!clusterService.isJoined()) {
-                    clusterService.blockOnJoin(TimeUnit.MILLISECONDS.toNanos(JOIN_RETRY_WAIT_TIME));
+                    clusterService.blockOnJoin(JOIN_RETRY_WAIT_TIME);
                 }
             }
         } catch (final Exception e) {
@@ -264,7 +263,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             }
 
             if (!clusterService.isJoined()) {
-                clusterService.blockOnJoin(TimeUnit.MILLISECONDS.toNanos(JOIN_RETRY_WAIT_TIME));
+                clusterService.blockOnJoin(JOIN_RETRY_WAIT_TIME);
             }
         }
     }

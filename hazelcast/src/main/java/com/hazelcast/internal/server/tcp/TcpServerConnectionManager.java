@@ -83,8 +83,10 @@ import static java.lang.Math.abs;
 import static java.util.Arrays.stream;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.unmodifiableSet;
-import java.util.Optional;
-import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class TcpServerConnectionManager
@@ -242,7 +244,7 @@ public class TcpServerConnectionManager
             });
             return true;
         } finally {
-            unblock(plane.connectionsInProgress.remove(remoteAddress));
+            unblock(plane, remoteAddress);
         }
     }
 
@@ -337,7 +339,7 @@ public class TcpServerConnectionManager
     }
 
     void failedConnection(Address address, int planeIndex, Throwable t, boolean silent) {
-        unblock(planes[planeIndex].connectionsInProgress.remove(address));
+        unblock(planes[planeIndex], address);
         serverContext.onFailedConnection(address);
         if (!silent) {
             getErrorHandler(address, planeIndex, false).onError(t);
@@ -472,14 +474,27 @@ public class TcpServerConnectionManager
     }
 
     @Override
-    public void blockOnConnect(Address address, long nanos, int streamId) {
+    public void blockOnConnect(Address address, long millis, int streamId) {
         Plane plane = getPlane(streamId);
+        ConditionHolder conditionHolder = new ConditionHolder();
+        plane.connectionsInProgress.putIfAbsent(address, conditionHolder);
+        conditionHolder.lock.lock();
         try {
-            assert plane.connectionsInProgress.putIfAbsent(address,
-                    Optional.of(Thread.currentThread())) == null : "block() called recursively or in parallel";
-            LockSupport.parkNanos(nanos);
+            conditionHolder.condition.await(millis, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException ex) {
+            logger.log(Level.WARNING, "blockOnConnect interrupted", ex);
         } finally {
-            plane.connectionsInProgress.replace(address, Optional.empty());
+            conditionHolder.lock.unlock();
+        }
+    }
+
+    private void unblock(Plane plane, final Address remoteAddress) {
+        ConditionHolder conditionHolder = plane.connectionsInProgress.remove(remoteAddress);
+        conditionHolder.lock.lock();
+        try {
+            conditionHolder.condition.signal();
+        } finally {
+            conditionHolder.lock.unlock();
         }
     }
 
@@ -489,13 +504,18 @@ public class TcpServerConnectionManager
 
     static class Plane {
         final ConcurrentHashMap<Address, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
-        final Map<Address, Optional<Thread>> connectionsInProgress = new ConcurrentHashMap<>();
+        final Map<Address, ConditionHolder> connectionsInProgress = new ConcurrentHashMap<>();
         final ConcurrentHashMap<Address, TcpServerConnectionErrorHandler> errorHandlers = new ConcurrentHashMap<>(100);
         final int index;
 
         Plane(int index) {
             this.index = index;
         }
+    }
+
+    static class ConditionHolder {
+        final Lock lock = new ReentrantLock();
+        final Condition condition = lock.newCondition();
     }
 
     private final class SendTask implements Runnable {
@@ -539,7 +559,7 @@ public class TcpServerConnectionManager
                 int planeIndex = connection.getPlaneIndex();
                 if (planeIndex > -1) {
                     Plane plane = planes[connection.getPlaneIndex()];
-                    unblock(plane.connectionsInProgress.remove(remoteAddress));
+                    unblock(plane, remoteAddress);
                     plane.connectionMap.remove(remoteAddress);
                     fireConnectionRemovedEvent(connection, remoteAddress);
                 } //todo: could it be that we have a memory leak by not removing something from the plane.
