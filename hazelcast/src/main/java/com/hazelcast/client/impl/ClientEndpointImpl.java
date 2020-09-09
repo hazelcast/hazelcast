@@ -282,8 +282,12 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         ClientStatistics clientStatistics = statsRef.get();
         if (clientStatistics != null && clientStatistics.metricsBlob() != null) {
-            long timestamp = clientStatistics.timestamp();
             byte[] metricsBlob = clientStatistics.metricsBlob();
+            if (metricsBlob.length == 0) {
+                // zero length means that the client does not support the new format
+                return;
+            }
+            long timestamp = clientStatistics.timestamp();
             MetricConsumer consumer = new MetricConsumer() {
                 @Override
                 public void consumeLong(MetricDescriptor descriptor, long value) {
