@@ -36,6 +36,7 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
@@ -327,15 +328,21 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
     }
 
     private void tryReplicateExpiredWaitKeys(CPGroupId groupId, Collection<BiTuple<String, UUID>> keys) {
+        InternalCompletableFuture future = null;
         try {
             ExpireWaitKeysOp op = new ExpireWaitKeysOp(serviceName(), keys);
             if (raftService.isCpSubsystemEnabled()) {
                 RaftNode raftNode = raftService.getRaftNode(groupId);
                 if (raftNode != null) {
-                    raftNode.replicate(op).get();
+                    future = raftNode.replicate(op);
                 }
             } else {
-                raftService.getInvocationManager().invokeOnPartition(new UnsafeRaftReplicateOp(groupId, op)).join();
+                future = raftService.getInvocationManager()
+                        .invokeOnPartition(new UnsafeRaftReplicateOp(groupId, op));
+            }
+
+            if (future != null) {
+                future.get(WAIT_TIMEOUT_TASK_PERIOD_MILLIS, MILLISECONDS);
             }
         } catch (Exception e) {
             if (logger.isFineEnabled()) {
