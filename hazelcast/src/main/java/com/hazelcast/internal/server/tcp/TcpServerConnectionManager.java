@@ -498,6 +498,16 @@ public class TcpServerConnectionManager
         }
     }
 
+    private void unblock(Plane plane, final Address remoteAddress) {
+        ConditionHolder conditionHolder = plane.connectionsInProgress.remove(remoteAddress);
+        conditionHolder.lock.lock();
+        try {
+            conditionHolder.condition.signal();
+        } finally {
+            conditionHolder.lock.unlock();
+        }
+    }
+
     private void unblock(Optional<Thread> threadToUnblock) {
         LockSupport.unpark(Optional.ofNullable(threadToUnblock).flatMap(t -> t).orElse(null));
     }
