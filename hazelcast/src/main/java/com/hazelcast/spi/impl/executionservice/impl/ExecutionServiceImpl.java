@@ -328,7 +328,9 @@ public final class ExecutionServiceImpl implements ExecutionService {
             logger.finest(e);
         }
         try {
-            cachedExecutorService.awaitTermination(AWAIT_TIME, TimeUnit.SECONDS);
+            if (!cachedExecutorService.awaitTermination(AWAIT_TIME, TimeUnit.SECONDS)) {
+                cachedExecutorService.shutdownNow();
+            }
         } catch (InterruptedException e) {
             currentThread().interrupt();
             logger.finest(e);
@@ -418,5 +420,4 @@ public final class ExecutionServiceImpl implements ExecutionService {
             }
         }
     }
-
 }

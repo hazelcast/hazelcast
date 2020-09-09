@@ -92,13 +92,17 @@ class TwoWayBlockableExecutor {
 
         @Override
         public void run() {
-            lock.lock();
             try {
-                runnable.run();
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                lock.unlock();
+                lock.lockInterruptibly();
+                try {
+                    runnable.run();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    lock.unlock();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
     }
