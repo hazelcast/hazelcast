@@ -188,8 +188,7 @@ public class TcpServerConnectionManager
         Plane plane = getPlane(streamId);
         TcpServerConnection connection = plane.connectionMap.get(address);
         if (connection == null && server.isLive()) {
-            if (!plane.connectionsInProgress.containsKey(address)) {
-                plane.connectionsInProgress.putIfAbsent(address, null);
+            if (plane.connectionsInProgress.putIfAbsent(address, new ConditionHolder()) == null) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet progress");
                 }
@@ -283,7 +282,10 @@ public class TcpServerConnectionManager
 
         connections.forEach(conn -> close(conn, "TcpServer is stopping"));
         acceptedChannels.clear();
-        stream(planes).forEach(plane -> plane.connectionsInProgress.clear());
+        stream(planes).forEach(plane -> {
+            plane.connectionsInProgress.forEach((address, holder) -> unblock(plane, address));
+            plane.connectionsInProgress.clear();
+        });
         stream(planes).forEach(plane -> plane.errorHandlers.clear());
 
         connections.clear();
@@ -476,7 +478,10 @@ public class TcpServerConnectionManager
     public void blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
         Plane plane = getPlane(streamId);
         ConditionHolder conditionHolder = new ConditionHolder();
-        plane.connectionsInProgress.putIfAbsent(address, conditionHolder);
+        ConditionHolder previous = plane.connectionsInProgress.putIfAbsent(address, conditionHolder);
+        if (previous != null) {
+            conditionHolder = previous;
+        }
         conditionHolder.lock.lock();
         try {
             conditionHolder.condition.await(millis, TimeUnit.MILLISECONDS);
