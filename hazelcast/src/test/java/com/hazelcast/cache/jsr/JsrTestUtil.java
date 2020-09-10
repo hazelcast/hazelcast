@@ -63,6 +63,7 @@ public final class JsrTestUtil {
 
         Hazelcast.shutdownAll();
         HazelcastInstanceFactory.terminateAll();
+        assertNoMBeanLeftovers();
     }
 
     /**
