@@ -36,7 +36,7 @@ public class JitterThread extends Thread {
     public void run() {
         long beforeNanos = Timer.nanos();
         long shortestHiccup = Long.MAX_VALUE;
-        while (true) {
+        while (!Thread.currentThread().isInterrupted()) {
             long beforeMillis = System.currentTimeMillis();
             sleepNanos(RESOLUTION_NANOS);
             long delta = Timer.nanosElapsed(beforeNanos);

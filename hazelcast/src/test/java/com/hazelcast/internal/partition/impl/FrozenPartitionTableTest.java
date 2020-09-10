@@ -223,9 +223,10 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         hz3.shutdown();
         assertClusterSizeEventually(2, hz1, hz2);
 
-        newHazelcastInstance(initOrCreateConfig(new Config()),
+        hz3 = newHazelcastInstance(initOrCreateConfig(new Config()),
                 randomName(), new StaticMemberNodeContext(factory, newUnsecureUUID(), member3.getAddress()));
         assertClusterSizeEventually(3, hz1, hz2);
+        waitAllForSafeState(hz1, hz2, hz3);
 
         OperationServiceImpl operationService = getOperationService(hz1);
         operationService.invokeOnPartition(null, new NonRetryablePartitionOperation(), member3PartitionId).join();
