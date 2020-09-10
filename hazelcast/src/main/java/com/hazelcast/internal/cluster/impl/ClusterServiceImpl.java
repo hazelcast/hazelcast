@@ -89,7 +89,6 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.String.format;
 import java.util.concurrent.locks.Condition;
-import java.util.logging.Level;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
@@ -1070,14 +1069,10 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return "ClusterService" + "{address=" + getThisAddress() + '}';
     }
 
-    public void blockOnJoin(long millis) {
+    public void blockOnJoin(long millis) throws InterruptedException {
         lock.lock();
         try {
-            try {
-                joinCondition.await(millis, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException ex) {
-                logger.log(Level.WARNING, "Interrupted on join", ex);
-            }
+            joinCondition.await(millis, TimeUnit.MILLISECONDS);
         } finally {
             lock.unlock();
         }

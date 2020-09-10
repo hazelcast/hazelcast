@@ -86,7 +86,6 @@ import static java.util.Collections.unmodifiableSet;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class TcpServerConnectionManager
@@ -474,15 +473,13 @@ public class TcpServerConnectionManager
     }
 
     @Override
-    public void blockOnConnect(Address address, long millis, int streamId) {
+    public void blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
         Plane plane = getPlane(streamId);
         ConditionHolder conditionHolder = new ConditionHolder();
         plane.connectionsInProgress.putIfAbsent(address, conditionHolder);
         conditionHolder.lock.lock();
         try {
             conditionHolder.condition.await(millis, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException ex) {
-            logger.log(Level.WARNING, "blockOnConnect interrupted", ex);
         } finally {
             conditionHolder.lock.unlock();
         }

@@ -222,8 +222,9 @@ public interface ServerConnectionManager
      * @param address
      * @param millis
      * @param streamId
+     * @throws java.lang.InterruptedException
      */
-    default void blockOnConnect(Address address, long millis, int streamId) {
+    default void blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
         LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(millis));
     }
 }
