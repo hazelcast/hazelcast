@@ -190,7 +190,7 @@ public class TcpServerConnectionManager
         TcpServerConnection connection = plane.connectionMap.get(address);
         if (connection == null && server.isLive()) {
             if (!plane.connectionsInProgress.containsKey(address)) {
-                plane.connectionsInProgress.putIfAbsent(address, Optional.empty());
+                plane.connectionsInProgress.putIfAbsent(address, null);
                 if (logger.isFineEnabled()) {
                     logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet progress");
                 }
@@ -496,20 +496,6 @@ public class TcpServerConnectionManager
         } finally {
             conditionHolder.lock.unlock();
         }
-    }
-
-    private void unblock(Plane plane, final Address remoteAddress) {
-        ConditionHolder conditionHolder = plane.connectionsInProgress.remove(remoteAddress);
-        conditionHolder.lock.lock();
-        try {
-            conditionHolder.condition.signal();
-        } finally {
-            conditionHolder.lock.unlock();
-        }
-    }
-
-    private void unblock(Optional<Thread> threadToUnblock) {
-        LockSupport.unpark(Optional.ofNullable(threadToUnblock).flatMap(t -> t).orElse(null));
     }
 
     static class Plane {
