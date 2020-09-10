@@ -655,13 +655,19 @@ public class ClusterJoinManager {
 
     private void startJoin(MemberInfo memberInfo) {
         sendMasterAnswer(memberInfo.getAddress());
-        scheduleMigrationDelay();
         logger.fine("Starting join...");
         clusterServiceLock.lock();
         try {
             InternalPartitionService partitionService = node.getPartitionService();
+            boolean migrationPaused = false;
             try {
                 joinInProgress = true;
+                if (maxWaitMillisBeforeJoin > 0 && waitMillisBeforeJoin > 0) {
+                    scheduleMigrationDelay();
+                } else {
+                    node.getPartitionService().pauseMigration();
+                    migrationPaused = true;
+                }
 
                 MemberMap memberMap = clusterService.getMembershipManager().getMemberMap();
 
@@ -698,6 +704,9 @@ public class ClusterJoinManager {
                     invokeClusterOp(op, member.getAddress());
                 }
             } finally {
+                if (migrationPaused) {
+                    node.getPartitionService().resumeMigration();
+                }
                 joinInProgress = false;
                 mastershipClaimInProgress = false;
             }
@@ -881,15 +890,10 @@ public class ClusterJoinManager {
     }
 
     void reset() {
-        clusterServiceLock.lock();
-        try {
-            if (cancelMigrationTimeout()) {
-                node.getPartitionService().resumeMigration();
-            }
-            mastershipClaimInProgress = false;
-        } finally {
-            clusterServiceLock.unlock();
+        if (cancelMigrationTimeout()) {
+            node.getPartitionService().resumeMigration();
         }
+        mastershipClaimInProgress = false;
     }
 
     /**
@@ -909,23 +913,21 @@ public class ClusterJoinManager {
         return timedOut;
     }
 
+    /**
+     * assumes clusterServiceLock is locked
+     */
     private void scheduleMigrationDelay() {
-        clusterServiceLock.lock();
-        try {
-            boolean subsequentJoinAttempt = migrationDelayActive.getAndSet(true);
-            if (subsequentJoinAttempt) {
-                assert minDelayFuture.cancel(false) : "Something went wrong canceling min delay future";
-            }
-            minDelayFuture = nodeEngine.getExecutionService().schedule(this::reset,
-                    waitMillisBeforeJoin, TimeUnit.MILLISECONDS);
-            if (!subsequentJoinAttempt) {
-                // pause migrations until no more members are trying to join in the same period
-                node.getPartitionService().pauseMigration();
-                maxDelayFuture = nodeEngine.getExecutionService().schedule(this::reset,
-                        maxWaitMillisBeforeJoin, TimeUnit.MILLISECONDS);
-            }
-        } finally {
-            clusterServiceLock.unlock();
+        boolean subsequentJoinAttempt = migrationDelayActive.getAndSet(true);
+        if (subsequentJoinAttempt) {
+            assert minDelayFuture.cancel(false) : "Something went wrong canceling min delay future";
+        }
+        minDelayFuture = nodeEngine.getExecutionService().schedule(this::reset,
+                waitMillisBeforeJoin, TimeUnit.MILLISECONDS);
+        if (!subsequentJoinAttempt) {
+            // pause migrations until no more members are trying to join in the same period
+            node.getPartitionService().pauseMigration();
+            maxDelayFuture = nodeEngine.getExecutionService().schedule(this::reset,
+                    maxWaitMillisBeforeJoin, TimeUnit.MILLISECONDS);
         }
     }
 }
