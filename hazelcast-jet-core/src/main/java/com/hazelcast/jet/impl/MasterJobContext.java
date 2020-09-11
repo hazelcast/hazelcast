@@ -340,7 +340,7 @@ public class MasterJobContext {
             mc.unlock();
         }
 
-        if (localStatus == SUSPENDED) {
+        if (localStatus == SUSPENDED || localStatus == SUSPENDED_EXPORTING_SNAPSHOT) {
             try {
                 mc.coordinationService().completeJob(mc, new CancellationException()).get();
             } catch (Exception e) {
