@@ -828,8 +828,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             newValue = persistenceEnabledFor(provenance)
                     ? mapDataStore.add(key, newValue, record.getExpirationTime(), now, null) : newValue;
             onStore(record);
-            mutationObserver.onUpdateRecord(key, record, oldValue, newValue, false);
             storage.updateRecordValue(key, record, newValue);
+            mutationObserver.onUpdateRecord(key, record, oldValue, newValue, false);
         }
 
         return newValue != null;
