@@ -468,6 +468,8 @@ public final class ClusterProperty {
 
     public static final HazelcastProperty WAIT_SECONDS_BEFORE_JOIN
             = new HazelcastProperty("hazelcast.wait.seconds.before.join", 5, SECONDS);
+    public static final HazelcastProperty WAIT_SECONDS_BEFORE_JOIN_ASYNC
+            = new HazelcastProperty("hazelcast.wait.seconds.before.join.async", true);
 
     public static final HazelcastProperty MAX_WAIT_SECONDS_BEFORE_JOIN
             = new HazelcastProperty("hazelcast.max.wait.seconds.before.join", 20, SECONDS);
