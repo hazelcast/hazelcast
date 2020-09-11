@@ -1439,7 +1439,13 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
                 return;
             }
             try {
-                executor.execute(() -> future.complete(function.apply((V) value)));
+                executor.execute(() -> {
+                    try {
+                        future.complete(function.apply((V) value));
+                    } catch (Throwable t) {
+                        future.completeExceptionally(t);
+                    }
+                });
             } catch (RejectedExecutionException e) {
                 future.completeExceptionally(wrapToInstanceNotActiveException(e));
                 throw e;
