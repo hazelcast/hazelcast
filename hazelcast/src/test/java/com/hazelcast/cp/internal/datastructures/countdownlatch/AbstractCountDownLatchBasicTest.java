@@ -78,7 +78,7 @@ public abstract class AbstractCountDownLatchBasicTest extends HazelcastRaftTestS
         latch.trySetCount(10);
 
         assertFalse(latch.trySetCount(20));
-        assertFalse(latch.trySetCount(0));
+        assertFalse(latch.trySetCount(1));
         assertEquals(10, latch.getCount());
     }
 
@@ -96,7 +96,7 @@ public abstract class AbstractCountDownLatchBasicTest extends HazelcastRaftTestS
 
         assertFalse(latch.trySetCount(20));
         assertFalse(latch.trySetCount(100));
-        assertFalse(latch.trySetCount(0));
+        assertFalse(latch.trySetCount(1));
         assertEquals(10, latch.getCount());
     }
 
