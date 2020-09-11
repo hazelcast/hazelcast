@@ -1163,7 +1163,7 @@ public abstract class CompletableFutureAbstractTest {
     }
 
     @Test
-        public void acceptEither_whenActionThrowsException() {
+    public void acceptEither_whenActionThrowsException() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
         CompletableFuture<Void> nextStage = future.acceptEither(new CompletableFuture<>(),
                 (v) -> {
