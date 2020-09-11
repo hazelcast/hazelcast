@@ -61,6 +61,11 @@ public abstract class AbstractCountDownLatchBasicTest extends HazelcastRaftTestS
         latch.trySetCount(-20);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testTrySetCount_whenArgumentZero() {
+        latch.trySetCount(0);
+    }
+
     @Test
     public void testTrySetCount_whenCountIsZero() {
         assertTrue(latch.trySetCount(40));

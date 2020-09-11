@@ -130,7 +130,7 @@ public interface ICountDownLatch extends DistributedObject {
      * @param count the number of times {@link #countDown} must be invoked
      *              before threads can pass through {@link #await}
      * @return {@code true} if the new count was set, {@code false} if the current count is not zero
-     * @throws IllegalArgumentException if {@code count} is negative
+     * @throws IllegalArgumentException if {@code count} is negative or zero
      */
     boolean trySetCount(int count);
 }
