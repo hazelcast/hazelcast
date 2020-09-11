@@ -19,16 +19,26 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.TestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.SourceBuilder;
+import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.map.IMap;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
+import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -68,7 +78,24 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
 
         // When
         job.join();
-        assertEquals(job.getStatus(), COMPLETED);
+        assertEquals(COMPLETED, job.getStatus());
+
+        // Then
+        assertThatThrownBy(job::getSuspensionCause)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Job not suspended");
+    }
+
+    @Test
+    public void when_jobFailed_then_suspensionCauseThrows() {
+        // Given
+        DAG dag = new DAG().vertex(new Vertex("test", () -> new NoOutputSourceP()));
+        Job job = jet().newJob(dag, jobConfig);
+        assertJobStatusEventually(job, RUNNING);
+
+        // When
+        job.cancel();
+        assertJobStatusEventually(job, FAILED);
 
         // Then
         assertThatThrownBy(job::getSuspensionCause)
@@ -109,4 +136,52 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
         cancelAndJoin(job);
     }
 
+    @Test
+    public void when_jobSuspendedDueToFailure_then_canBeResumed() {
+        int numItems = 100;
+        int interuptItem = 50;
+
+        StreamSource<Integer> source = SourceBuilder.stream("src", procCtx -> new int[1])
+                .<Integer>fillBufferFn((ctx, buf) -> {
+                    if (ctx[0] < numItems) {
+                        buf.add(ctx[0]++);
+                        sleepMillis(5);
+                    }
+                })
+                .createSnapshotFn(ctx -> ctx[0])
+                .restoreSnapshotFn((ctx, state) -> ctx[0] = state.get(0))
+                .build();
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(source)
+                .withoutTimestamps()
+                .<String, Boolean, Map.Entry<Integer, Integer>>mapUsingIMap("SuspendExecutionOnFailureTest_failureMap",
+                        item -> "key",
+                        (item, value) -> {
+                            if (value && item == interuptItem) {
+                                throw new RuntimeException("Fail deliberately");
+                            }
+                            return entry(item, item);
+                        }).setLocalParallelism(1)
+                .writeTo(Sinks.map("SuspendExecutionOnFailureTest_sinkMap"));
+
+        IMap<String, Boolean> counterMap = jet().getMap("SuspendExecutionOnFailureTest_failureMap");
+        counterMap.put("key", true);
+
+        jobConfig.setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE)
+                .setSnapshotIntervalMillis(50);
+
+        Job job = jet().newJob(p, jobConfig);
+        assertJobStatusEventually(job, SUSPENDED);
+
+        IMap<Integer, Integer> sinkMap = jet().getMap("SuspendExecutionOnFailureTest_sinkMap");
+        assertTrueEventually(() -> assertEquals(interuptItem, sinkMap.size()));
+
+        counterMap.put("key", false);
+        job.resume();
+        assertTrueEventually(() -> assertEquals(numItems, sinkMap.size()));
+        assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()));
+
+        cancelAndJoin(job);
+    }
 }
