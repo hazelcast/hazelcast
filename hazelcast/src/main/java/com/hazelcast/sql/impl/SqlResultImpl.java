@@ -26,6 +26,7 @@ import com.hazelcast.sql.impl.state.QueryState;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Cursor implementation.
@@ -142,9 +143,9 @@ public final class SqlResultImpl extends AbstractSqlResult {
         }
 
         @Override
-        public HasNextImmediatelyResult hasNextImmediately() {
+        public HasNextResult hasNext(long timeout, TimeUnit timeUnit) {
             try {
-                return delegate.hasNextImmediately();
+                return delegate.hasNext(timeout, timeUnit);
             } catch (Exception e) {
                 throw QueryUtils.toPublicException(e, state.getLocalMemberId());
             }
