@@ -492,6 +492,9 @@ public class TcpServerConnectionManager
 
     private void unblock(Plane plane, final Address remoteAddress) {
         ConditionHolder conditionHolder = plane.connectionsInProgress.remove(remoteAddress);
+        if (conditionHolder == null) {
+            return;
+        }
         conditionHolder.lock.lock();
         try {
             conditionHolder.condition.signal();
