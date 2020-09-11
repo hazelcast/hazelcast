@@ -594,6 +594,15 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public abstract void testPersistentMemoryDirectoryConfiguration_simpleAndAdvancedPasses();
 
+    @Test
+    public abstract void testPersistentMemoryConfiguration_SystemMemoryMode();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testPersistentMemoryConfiguration_NotExistingModeThrows();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testPersistentMemoryDirectoryConfiguration_SystemMemoryModeThrows();
+
     protected abstract Config buildAuditlogConfig();
 
 }

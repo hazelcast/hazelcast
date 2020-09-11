@@ -26,6 +26,7 @@ import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.PersistentMemoryConfig;
 import com.hazelcast.config.PersistentMemoryDirectoryConfig;
+import com.hazelcast.config.PersistentMemoryMode;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
@@ -317,21 +318,16 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
     }
 
     @Override
-    protected void handlePersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig, Node n) {
-        for (Node dirsNode : childElements(n)) {
-            String nodeName = cleanNodeName(dirsNode);
-            if (matches("directories", nodeName)) {
-                for (Node dirNode : childElements(dirsNode)) {
-                    String directory = getTextContent(getNamedItemNode(dirNode, "directory"));
-                    String numaNodeIdStr = getTextContent(getNamedItemNode(dirNode, "numa-node"));
-                    if (!StringUtil.isNullOrEmptyAfterTrim(numaNodeIdStr)) {
-                        int numaNodeId = getIntegerValue("numa-node", numaNodeIdStr);
-                        persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory, numaNodeId));
-                    } else {
-                        persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));
-                    }
-                }
-            }
+    protected void handlePersistentMemoryDirectory(PersistentMemoryConfig persistentMemoryConfig,
+                                                   PersistentMemoryMode mode, Node dirNode) {
+        String directory = getTextContent(getNamedItemNode(dirNode, "directory"));
+        String numaNodeIdStr = getTextContent(getNamedItemNode(dirNode, "numa-node"));
+        if (!StringUtil.isNullOrEmptyAfterTrim(numaNodeIdStr)) {
+            int numaNodeId = getIntegerValue("numa-node", numaNodeIdStr);
+            persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory, numaNodeId));
+        } else {
+            persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));
         }
     }
+
 }
