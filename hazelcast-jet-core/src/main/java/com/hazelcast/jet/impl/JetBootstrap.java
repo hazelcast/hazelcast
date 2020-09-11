@@ -33,6 +33,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.jet.impl.util.JetConsoleLogHandler;
+import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
@@ -253,8 +254,18 @@ public final class JetBootstrap {
         }
 
         @Nonnull @Override
+        public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
+            return instance.newJob(pipeline, updateJobConfig(config));
+        }
+
+        @Nonnull @Override
         public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
             return instance.newJob(dag, updateJobConfig(config));
+        }
+
+        @Nonnull @Override
+        public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
+            return instance.newJobIfAbsent(pipeline, updateJobConfig(config));
         }
 
         @Nonnull @Override
