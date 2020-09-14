@@ -29,6 +29,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
+import org.apache.calcite.util.ConversionUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -305,20 +306,20 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
 
     @Test
     public void test_varchar() {
-        checkIndexForCondition("f_varchar='1'", "index_varchar", "=($10, _UTF-16LE'1')");
-        checkIndexForCondition("f_varchar='1' OR f_varchar='3'", "index_varchar", "OR(=($10, _UTF-16LE'1'), =($10, _UTF-16LE'3'))");
+        checkIndexForCondition("f_varchar='1'", "index_varchar", fixByteOrder("=($10, _UTF-16'1')"));
+        checkIndexForCondition("f_varchar='1' OR f_varchar='3'", "index_varchar", fixByteOrder("OR(=($10, _UTF-16'1'), =($10, _UTF-16'3'))"));
         checkIndexForCondition("f_varchar IS NULL", "index_varchar", "IS NULL($10)");
 
-        checkIndexForCondition("f_varchar_char='1'", "index_varchar_char", "=($11, _UTF-16LE'1')");
-        checkIndexForCondition("f_varchar_char='1' OR f_varchar_char='3'", "index_varchar_char", "OR(=($11, _UTF-16LE'1'), =($11, _UTF-16LE'3'))");
+        checkIndexForCondition("f_varchar_char='1'", "index_varchar_char", fixByteOrder("=($11, _UTF-16'1')"));
+        checkIndexForCondition("f_varchar_char='1' OR f_varchar_char='3'", "index_varchar_char", fixByteOrder("OR(=($11, _UTF-16'1'), =($11, _UTF-16'3'))"));
         checkIndexForCondition("f_varchar_char IS NULL", "index_varchar_char", "IS NULL($11)");
 
         if (indexType == IndexType.SORTED) {
-            checkIndexForCondition("f_varchar>'1'", "index_varchar", ">($10, _UTF-16LE'1')");
-            checkIndexForCondition("f_varchar>'1' AND f_varchar<'3'", "index_varchar", "AND(>($10, _UTF-16LE'1'), <($10, _UTF-16LE'3'))");
+            checkIndexForCondition("f_varchar>'1'", "index_varchar", fixByteOrder(">($10, _UTF-16'1')"));
+            checkIndexForCondition("f_varchar>'1' AND f_varchar<'3'", "index_varchar", fixByteOrder("AND(>($10, _UTF-16'1'), <($10, _UTF-16'3'))"));
 
-            checkIndexForCondition("f_varchar_char>'1'", "index_varchar_char", ">($11, _UTF-16LE'1')");
-            checkIndexForCondition("f_varchar_char>'1' AND f_varchar_char<'3'", "index_varchar_char", "AND(>($11, _UTF-16LE'1'), <($11, _UTF-16LE'3'))");
+            checkIndexForCondition("f_varchar_char>'1'", "index_varchar_char", fixByteOrder(">($11, _UTF-16'1')"));
+            checkIndexForCondition("f_varchar_char>'1' AND f_varchar_char<'3'", "index_varchar_char", fixByteOrder("AND(>($11, _UTF-16'1'), <($11, _UTF-16'3'))"));
         }
 
         checkNoIndexForCondition("CAST(f_varchar AS TINYINT)=1");
@@ -328,6 +329,13 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
         checkNoIndexForCondition("CAST(f_varchar AS DECIMAL)=1");
         checkNoIndexForCondition("CAST(f_varchar AS REAL)=1");
         checkNoIndexForCondition("CAST(f_varchar AS DOUBLE)=1");
+    }
+
+    /**
+     * This helper method ensures that expression's signature has a proper byte order: UTF-16LE or UTF-16BE.
+     */
+    private static String fixByteOrder(String input) {
+        return input.replaceAll("UTF-16", ConversionUtil.NATIVE_UTF16_CHARSET_NAME);
     }
 
     @Test
