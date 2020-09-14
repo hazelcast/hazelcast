@@ -51,7 +51,7 @@ public class QueryUtilsTest extends SqlTestSupport {
         String memberVersion = nodeEngine.getLocalMember().getVersion().toString();
 
         try {
-            QueryUtils.createPartitionMap(nodeEngine, new MemberVersion(0, 0, 0));
+            QueryUtils.createPartitionMap(nodeEngine, new MemberVersion(0, 0, 0), false);
 
             fail("Must fail");
         } catch (QueryException e) {
