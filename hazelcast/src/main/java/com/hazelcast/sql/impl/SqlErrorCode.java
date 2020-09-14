@@ -32,8 +32,8 @@ public final class SqlErrorCode {
     /** Query was cancelled due to timeout. */
     public static final int TIMEOUT = 1004;
 
-    /** Partition distribution has changed. */
-    public static final int PARTITION_DISTRIBUTION_CHANGED = 1005;
+    /** A problem with partition distribution. */
+    public static final int PARTITION_DISTRIBUTION = 1005;
 
     /** An error caused by a concurrent destroy of a map. */
     public static final int MAP_DESTROYED = 1006;

@@ -423,7 +423,7 @@ public class MapScanExecTest extends SqlTestSupport {
         );
 
         QueryException exception = assertThrows(QueryException.class, () -> exec.setup(emptyFragmentContext()));
-        assertEquals(SqlErrorCode.PARTITION_DISTRIBUTION_CHANGED, exception.getCode());
+        assertEquals(SqlErrorCode.PARTITION_DISTRIBUTION, exception.getCode());
         assertTrue(exception.isInvalidatePlan());
     }
 
@@ -502,7 +502,7 @@ public class MapScanExecTest extends SqlTestSupport {
 
             // Try advance, should fail.
             QueryException exception = assertThrows(QueryException.class, exec::advance);
-            assertEquals(SqlErrorCode.PARTITION_DISTRIBUTION_CHANGED, exception.getCode());
+            assertEquals(SqlErrorCode.PARTITION_DISTRIBUTION, exception.getCode());
             assertTrue(exception.isInvalidatePlan());
         } finally {
             instance3.shutdown();

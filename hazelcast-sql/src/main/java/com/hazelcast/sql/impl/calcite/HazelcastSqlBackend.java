@@ -122,7 +122,7 @@ public class HazelcastSqlBackend implements SqlBackend {
 
         PlanCreateVisitor visitor = new PlanCreateVisitor(
             localMember.getUuid(),
-            QueryUtils.createPartitionMap(nodeEngine, localMember.getVersion()),
+            QueryUtils.createPartitionMap(nodeEngine, localMember.getVersion(), true),
             relIdMap,
             new PlanCacheKey(task.getSearchPaths(), sql),
             convertResult.getFieldNames(),
