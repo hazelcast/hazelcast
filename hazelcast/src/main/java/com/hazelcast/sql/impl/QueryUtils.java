@@ -195,7 +195,10 @@ public final class QueryUtils {
 
             if (owner == null) {
                 if (failOnUnassignedPartition) {
-                    throw QueryException.error("Partition is not assigned to any member: " + part.getPartitionId());
+                    throw QueryException.error(
+                        SqlErrorCode.PARTITION_DISTRIBUTION,
+                        "Partition is not assigned to any member: " + part.getPartitionId()
+                    ).withInvalidate();
                 } else {
                     continue;
                 }

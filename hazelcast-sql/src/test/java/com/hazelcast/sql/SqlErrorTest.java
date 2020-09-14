@@ -100,7 +100,7 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
         HazelcastSqlException error = assertSqlException(instance1, query());
         assertTrue(
             "Error code: " + error.getCode(),
-            error.getCode() == SqlErrorCode.CONNECTION_PROBLEM || error.getCode() == SqlErrorCode.PARTITION_DISTRIBUTION_CHANGED
+            error.getCode() == SqlErrorCode.CONNECTION_PROBLEM || error.getCode() == SqlErrorCode.PARTITION_DISTRIBUTION
         );
         assertEquals(instance1.getLocalEndpoint().getUuid(), error.getOriginatingMemberId());
     }
