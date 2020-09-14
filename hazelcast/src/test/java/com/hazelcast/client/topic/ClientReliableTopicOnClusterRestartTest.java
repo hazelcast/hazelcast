@@ -163,9 +163,9 @@ public class ClientReliableTopicOnClusterRestartTest {
 
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
-        int invocationTimeoutSeconds = 2;
-        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), String.valueOf(invocationTimeoutSeconds));
+        clientConfig.getConnectionStrategyConfig()
+                    .getConnectionRetryConfig()
+                    .setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         AtomicLong messageCount = new AtomicLong();
