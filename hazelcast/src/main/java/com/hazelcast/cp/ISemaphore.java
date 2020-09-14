@@ -131,6 +131,7 @@ public interface ISemaphore extends DistributedObject {
      *
      * @param permits the given permit count
      * @return true if initialization success. false if already initialized
+     * @throws IllegalArgumentException if {@code permits} is negative
      */
     boolean init(int permits);
 
@@ -187,7 +188,7 @@ public interface ISemaphore extends DistributedObject {
      *
      * @param permits the number of permits to acquire
      * @throws InterruptedException     if the current thread is interrupted
-     * @throws IllegalArgumentException if {@code permits} is negative
+     * @throws IllegalArgumentException if {@code permits} is negative or zero
      * @throws IllegalStateException    if hazelcast instance is shutdown while waiting
      */
     void acquire(int permits) throws InterruptedException;
@@ -271,7 +272,7 @@ public interface ISemaphore extends DistributedObject {
      * of a semaphore is established by programming convention in the application.
      *
      * @param permits the number of permits to release
-     * @throws IllegalArgumentException if {@code permits} is negative
+     * @throws IllegalArgumentException if {@code permits} is negative or zero
      * @throws IllegalStateException if the Semaphore is non-JDK-compatible
      *         and the caller does not have a permit
      */
@@ -378,7 +379,7 @@ public interface ISemaphore extends DistributedObject {
      * @return {@code true} if all permits were acquired,
      * {@code false} if the waiting time elapsed before all permits could be acquired
      * @throws InterruptedException     if the current thread is interrupted
-     * @throws IllegalArgumentException if {@code permits} is negative
+     * @throws IllegalArgumentException if {@code permits} is negative or zero
      * @throws IllegalStateException    if hazelcast instance is shutdown while waiting
      */
     boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException;
