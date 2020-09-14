@@ -70,9 +70,7 @@ public abstract class AbstractJobProxy<T> implements Job {
     }
 
     AbstractJobProxy(T container, long jobId, Object jobDefinition, JobConfig config) {
-        this.jobId = jobId;
-        this.container = container;
-        this.logger = loggingService().getLogger(Job.class);
+        this(container, jobId);
 
         try {
             doSubmitJob(jobDefinition, config);

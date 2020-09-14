@@ -25,6 +25,7 @@ import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
+import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -191,6 +192,12 @@ class MasterSnapshotContext {
             @Nullable CompletableFuture<Void> future
     ) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
+            if (executionId != this.mc.executionId()) {
+                LoggingUtil.logFine(logger, "%s: ignoring responses for snapshot %s phase 1: " +
+                                "the responses are from a different execution: %s. Responses: %s",
+                        mc.jobIdString(), snapshotId, idToString(executionId), responses);
+                return;
+            }
             // Note: this method can be called after finalizeJob() is called or even after new execution started.
             // We only wait for snapshot completion if the job completed with a terminal snapshot and the job
             // was successful.
@@ -283,6 +290,13 @@ class MasterSnapshotContext {
             long startTime
     ) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
+            if (executionId != this.mc.executionId()) {
+                LoggingUtil.logFine(logger, "%s: ignoring responses for snapshot %s phase 2: " +
+                                "the responses are from a different execution: %s. Responses: %s",
+                        mc.jobIdString(), snapshotId, idToString(executionId), responses);
+                return;
+            }
+
             for (Entry<MemberInfo, Object> response : responses) {
                 if (response.getValue() instanceof Throwable) {
                     logger.warning(SnapshotPhase2Operation.class.getSimpleName() + " for snapshot " + snapshotId + " in "
