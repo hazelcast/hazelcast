@@ -19,14 +19,10 @@ package com.hazelcast.internal.util;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.operationservice.WrappableException;
 
 import javax.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
@@ -36,14 +32,6 @@ import java.util.function.BiFunction;
  * Contains various exception related utility methods.
  */
 public final class ExceptionUtil {
-
-    private static final MethodHandles.Lookup LOOKUP = MethodHandles.publicLookup();
-    // new Throwable(String message, Throwable cause)
-    private static final MethodType MT_INIT_STRING_THROWABLE = MethodType.methodType(void.class, String.class, Throwable.class);
-    // new Throwable(Throwable cause)
-    private static final MethodType MT_INIT_THROWABLE = MethodType.methodType(void.class, Throwable.class);
-    // new Throwable(String message)
-    private static final MethodType MT_INIT_STRING = MethodType.methodType(void.class, String.class);
 
     private static final BiFunction<Throwable, String, HazelcastException> HAZELCAST_EXCEPTION_WRAPPER = (throwable, message) -> {
         if (message != null) {
@@ -111,7 +99,7 @@ public final class ExceptionUtil {
     public static <T, W extends Throwable> Throwable peel(final Throwable t, Class<T> allowedType,
                                                           String message, BiFunction<Throwable, String, W> exceptionWrapper) {
         if (t instanceof RuntimeException) {
-            return wrapException(t, message, exceptionWrapper);
+            return t;
         }
 
         if (t instanceof ExecutionException || t instanceof InvocationTargetException) {
@@ -130,20 +118,7 @@ public final class ExceptionUtil {
         return exceptionWrapper.apply(t, message);
     }
 
-    public static <W extends Throwable> Throwable wrapException(Throwable t, String message,
-                                                                BiFunction<Throwable, String, W> exceptionWrapper) {
-        if (t instanceof WrappableException) {
-            return ((WrappableException) t).wrap();
-        }
-        Throwable wrapped = tryWrapInSameClass(t);
-        return wrapped == null ? exceptionWrapper.apply(t, message) : wrapped;
-    }
-
-    public static RuntimeException wrapException(RuntimeException t) {
-        return (RuntimeException) wrapException(t, null, HAZELCAST_EXCEPTION_WRAPPER);
-    }
-
-    public static RuntimeException rethrow(final Throwable t) {
+    public static RuntimeException rethrow(Throwable t) {
         rethrowIfError(t);
         throw peel(t);
     }
@@ -176,13 +151,8 @@ public final class ExceptionUtil {
             if (t instanceof OutOfMemoryError) {
                 OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);
             }
-            throw wrapError((Error) t);
+            throw (Error) t;
         }
-    }
-
-    public static Error wrapError(Error cause) {
-        Error result = tryWrapInSameClass(cause);
-        return result == null ? cause : result;
     }
 
     public static RuntimeException rethrowAllowInterrupted(final Throwable t) throws InterruptedException {
@@ -223,28 +193,5 @@ public final class ExceptionUtil {
                 logger.severe(message, e);
             }
         };
-    }
-
-    public static <T extends Throwable> T tryWrapInSameClass(T cause) {
-        Class<? extends Throwable> exceptionClass = cause.getClass();
-        MethodHandle constructor;
-        try {
-            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING_THROWABLE);
-            return (T) constructor.invokeWithArguments(cause.getMessage(), cause);
-        } catch (Throwable ignored) {
-        }
-        try {
-            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_THROWABLE);
-            return (T) constructor.invokeWithArguments(cause);
-        } catch (Throwable ignored) {
-        }
-        try {
-            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING);
-            T result = (T) constructor.invokeWithArguments(cause.getMessage());
-            result.initCause(cause);
-            return result;
-        } catch (Throwable ignored) {
-        }
-        return null;
     }
 }
