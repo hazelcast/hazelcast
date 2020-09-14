@@ -34,7 +34,6 @@ import com.hazelcast.crdt.MutationDisallowedException;
 import com.hazelcast.crdt.TargetNotReplicaException;
 import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.memory.NativeOutOfMemoryError;
@@ -273,8 +272,7 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new IndeterminateOperationStateException(randomString())},
                 new Object[]{new TargetNotReplicaException(randomString())},
                 new Object[]{new MutationDisallowedException(randomString())},
-                new Object[]{new ConsistencyLostException(randomString())},
-                new Object[]{ExceptionUtil.tryWrapInSameClass(new NullPointerException())}
+                new Object[]{new ConsistencyLostException(randomString())}
         );
     }
 }

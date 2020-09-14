@@ -24,8 +24,4 @@ public class HazelcastClientOfflineException extends IllegalStateException {
     public HazelcastClientOfflineException() {
         super("No connection found to cluster");
     }
-
-    public HazelcastClientOfflineException(Throwable cause) {
-        super(cause);
-    }
 }
