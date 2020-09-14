@@ -96,6 +96,13 @@ public abstract class AbstractAtomicRefBasicTest extends HazelcastRaftTestSuppor
     }
 
     @Test
+    public void test_getAndSet() {
+        assertNull(atomicRef.getAndSet("str1"));
+        assertEquals("str1", atomicRef.getAndSet("str2"));
+        assertEquals("str2", atomicRef.get());
+    }
+
+    @Test
     public void test_setAsync() throws ExecutionException, InterruptedException {
         atomicRef.setAsync("str1").toCompletableFuture().get();
         assertEquals("str1", atomicRef.get());
