@@ -33,7 +33,7 @@
 
     <log4j.version>1.2.17</log4j.version>
     <junit.version>4.13</junit.version>
-    <wiremock.version>2.27.1</wiremock.version>
+    <wiremock.version>2.27.2</wiremock.version>
     <hamcrest.version>2.2</hamcrest.version>
     <mockito.version>3.5.10</mockito.version>
     <powermock.version>2.0.7</powermock.version>
