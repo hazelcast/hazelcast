@@ -20,6 +20,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.core.DAG;
@@ -72,8 +73,10 @@ import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertAnyOrder;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertOrdered;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -603,7 +606,7 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
-    public void mapUsingIMapAsync() {
+    public void mapUsingIMap() {
         // Given
         List<Integer> input = sequence(itemCount);
         String prefix = "value-";
@@ -627,7 +630,7 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
-    public void mapUsingIMapAsync_keyed() {
+    public void mapUsingIMap_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
         String prefix = "value-";
@@ -649,6 +652,27 @@ public class BatchStageTest extends PipelineTestSupport {
         assertEquals(
                 streamToString(input.stream().map(i -> entry(i, prefix + i)), formatFn),
                 streamToString(sinkStreamOfEntry(), formatFn));
+    }
+
+    @Test
+    public void mapUsingIMap_when_functionThrows_then_jobFails() {
+        // Given
+        IMap<Integer, String> map = member.getMap(randomMapName());
+        map.put(1, "1");
+
+        // When
+        BatchStage<Entry<Integer, String>> stage = batchStageFromList(singletonList(1))
+                .groupingKey(i -> i)
+                .mapUsingIMap(map, (k, v) -> {
+                    throw new RuntimeException("mock error");
+                });
+
+        // Then
+        stage.writeTo(sink);
+        Job job = jet().newJob(p);
+
+        assertThatThrownBy(() -> job.join())
+                .hasMessageContaining("mock error");
     }
 
     @Test

@@ -781,7 +781,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
-    public void mapUsingIMapAsync() {
+    public void mapUsingIMap() {
         // Given
         List<Integer> input = sequence(itemCount);
         String valuePrefix = "value-";
@@ -809,7 +809,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
-    public void mapUsingIMapAsync_keyed() {
+    public void mapUsingIMap_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
         String valuePrefix = "value-";
