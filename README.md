@@ -89,7 +89,7 @@ Hazelcast Kubernetes Discovery requires creating a service to PODs where Hazelca
 ```yaml
 kind: Service
 metadata:
-  name: SERVICE-NAME
+  name: MY-SERVICE-NAME
 spec:
   type: LoadBalancer
   selector:
@@ -150,7 +150,7 @@ Headless service is a service of type `ClusterIP` with the `clusterIP` property 
 ```yaml
 kind: Service
 metadata:
-  name: SERVICE-NAME
+  name: MY-SERVICE-NAME
 spec:
   type: ClusterIP
   clusterIP: None
