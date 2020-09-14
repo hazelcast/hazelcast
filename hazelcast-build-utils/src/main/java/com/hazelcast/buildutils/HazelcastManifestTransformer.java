@@ -51,7 +51,7 @@ import static org.codehaus.plexus.util.StringUtils.join;
  */
 public class HazelcastManifestTransformer extends ManifestResourceTransformer {
 
-    private static final ILogger logger = Logger.getLogger(HazelcastManifestTransformer.class);
+    private static final ILogger LOGGER = Logger.getLogger(HazelcastManifestTransformer.class);
 
     private static final String VERSION_PREFIX = "version=";
     private static final String RESOLUTION_PREFIX = "resolution:=";
@@ -214,7 +214,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             for (String packageInstruction : packageInstructions) {
                 PackageDefinition packageDefinition = new PackageDefinition(packageInstruction);
                 Instruction instruction = Instruction.getPattern(packageDefinition.packageName);
-                logger.fine("Compiled import instruction '" + packageInstruction + "' -> " + instruction);
+                LOGGER.fine("Compiled import instruction '" + packageInstruction + "' -> " + instruction);
                 importOverrideInstructions.add(new InstructionDefinition(packageDefinition, instruction));
             }
         }
@@ -224,7 +224,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             for (String packageInstruction : packageInstructions) {
                 PackageDefinition packageDefinition = new PackageDefinition(packageInstruction);
                 Instruction instruction = Instruction.getPattern(packageDefinition.packageName);
-                logger.fine("Compiled export instruction '" + packageInstruction + "' -> " + instruction);
+                LOGGER.fine("Compiled export instruction '" + packageInstruction + "' -> " + instruction);
                 exportOverrideInstructions.add(new InstructionDefinition(packageDefinition, instruction));
             }
         }
@@ -235,7 +235,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
         for (Map.Entry<String, PackageDefinition> entry : exportedPackages.entrySet()) {
             String definition = entry.getValue().buildDefinition(false);
             exports.add(definition);
-            logger.fine("Adding shaded export -> " + definition);
+            LOGGER.fine("Adding shaded export -> " + definition);
         }
         return exports;
     }
@@ -252,9 +252,9 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             if (overridden != null) {
                 String definition = overridden.buildDefinition(true);
                 imports.add(definition);
-                logger.fine("Adding shaded import -> " + definition);
+                LOGGER.fine("Adding shaded import -> " + definition);
             } else {
-                logger.fine("Removing shaded import -> " + entry.getValue().packageName);
+                LOGGER.fine("Removing shaded import -> " + entry.getValue().packageName);
             }
         }
         return imports;
@@ -266,11 +266,11 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             if (instruction.matches(packageDefinition.packageName)) {
                 // is remove instruction?
                 if (instruction.isNegated()) {
-                    logger.fine("Instruction '" + instruction + "' -> package '" + packageDefinition.packageName + "'");
+                    LOGGER.fine("Instruction '" + instruction + "' -> package '" + packageDefinition.packageName + "'");
                     return null;
                 }
 
-                logger.fine("Instruction '" + instruction + "' -> package '" + packageDefinition.packageName + "'");
+                LOGGER.fine("Instruction '" + instruction + "' -> package '" + packageDefinition.packageName + "'");
 
                 PackageDefinition override = instructionDefinition.packageDefinition;
                 String packageName = packageDefinition.packageName;
