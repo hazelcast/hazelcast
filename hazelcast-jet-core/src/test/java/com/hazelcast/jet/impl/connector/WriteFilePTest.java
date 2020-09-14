@@ -65,6 +65,7 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeFileP;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.pipeline.FileSinkBuilder.DISABLE_ROLLING;
 import static com.hazelcast.jet.pipeline.FileSinkBuilder.TEMP_FILE_SUFFIX;
@@ -373,15 +374,21 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
     private void stressTest(boolean graceful, boolean exactlyOnce) throws Exception {
         int numItems = 500;
         Pipeline p = Pipeline.create();
-        p.readFrom(SourceBuilder.stream("src", procCtx -> new int[1])
+        p.readFrom(SourceBuilder.stream("src", procCtx -> tuple2(new int[1], procCtx.logger()))
                                 .fillBufferFn((ctx, buf) -> {
-                                    if (ctx[0] < numItems) {
-                                        buf.add(ctx[0]++);
+                                    if (ctx.f0()[0] < numItems) {
+                                        buf.add(ctx.f0()[0]++);
                                         sleepMillis(5);
                                     }
                                 })
-                                .createSnapshotFn(ctx -> ctx[0])
-                                .restoreSnapshotFn((ctx, state) -> ctx[0] = state.get(0))
+                                .createSnapshotFn(ctx -> {
+                                    ctx.f1().fine("src vertex saved to snapshot: " + ctx.f0()[0]);
+                                    return ctx.f0()[0];
+                                })
+                                .restoreSnapshotFn((ctx, state) -> {
+                                    ctx.f1().fine("src vertex restored from snapshot: " + ctx.f0()[0]);
+                                    ctx.f0()[0] = state.get(0);
+                                })
                                 .build())
          .withoutTimestamps()
          .writeTo(Sinks.filesBuilder(directory.toString())
