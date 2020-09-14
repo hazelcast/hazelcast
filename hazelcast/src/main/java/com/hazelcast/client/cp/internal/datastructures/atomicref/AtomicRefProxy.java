@@ -135,7 +135,7 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
         Data data = getContext().getSerializationService().toData(newValue);
         ClientMessage request = AtomicRefSetCodec.encodeRequest(groupId, objectName, data, false);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefGetCodec::decodeResponse);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefSetCodec::decodeResponse);
     }
 
     @Override
@@ -143,7 +143,7 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
         Data data = getContext().getSerializationService().toData(newValue);
         ClientMessage request = AtomicRefSetCodec.encodeRequest(groupId, objectName, data, true);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefGetCodec::decodeResponse);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefSetCodec::decodeResponse);
     }
 
     @Override
