@@ -124,10 +124,12 @@ public abstract class AbstractConfigLocator {
         return locateInWorkDir() || locateOnClasspath();
     }
 
+
     protected void loadDefaultConfigurationFromClasspath(String defaultConfigFile) {
         try {
             LOGGER.info(String.format("Loading '%s' from the classpath.", defaultConfigFile));
 
+            // default files should be always located in the same jar as Config class
             configurationUrl = Config.class.getClassLoader().getResource(defaultConfigFile);
 
             if (configurationUrl == null) {
@@ -146,7 +148,8 @@ public abstract class AbstractConfigLocator {
 
     protected boolean loadConfigurationFromClasspath(String configFileName) {
         try {
-            URL url = Config.class.getClassLoader().getResource(configFileName);
+            // Config.class classloader is looked up first to maximize backward compatibility
+            URL url = resolveResourceUrl(configFileName);
             if (url == null) {
                 LOGGER.finest(String.format("Could not find '%s' in the classpath.", configFileName));
                 return false;
@@ -155,7 +158,7 @@ public abstract class AbstractConfigLocator {
             LOGGER.info(String.format("Loading '%s' from the classpath.", configFileName));
 
             configurationUrl = url;
-            in = Config.class.getClassLoader().getResourceAsStream(configFileName);
+            in = resolveResourceAsStream(configFileName);
             if (in == null) {
                 throw new HazelcastException(String.format("Could not load '%s' from the classpath", configFileName));
             }
@@ -295,10 +298,24 @@ public abstract class AbstractConfigLocator {
             throw new HazelcastException("classpath resource can't be empty");
         }
 
-        in = Config.class.getClassLoader().getResourceAsStream(resource);
+        in = resolveResourceAsStream(resource);
         if (in == null) {
             throw new HazelcastException(String.format("Could not load classpath resource: %s", resource));
         }
-        configurationUrl = Config.class.getClassLoader().getResource(resource);
+        configurationUrl = resolveResourceUrl(resource);
+    }
+
+    private URL resolveResourceUrl(String configFileName) {
+        URL resource = Config.class.getClassLoader().getResource(configFileName);
+        return resource != null
+          ? resource
+          : Thread.currentThread().getContextClassLoader().getResource(configFileName);
+    }
+
+    private InputStream resolveResourceAsStream(String configFileName) {
+        InputStream resource = Config.class.getClassLoader().getResourceAsStream(configFileName);
+        return resource != null
+          ? resource
+          : Thread.currentThread().getContextClassLoader().getResourceAsStream(configFileName);
     }
 }
