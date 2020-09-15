@@ -404,6 +404,8 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
                 + "<security>"
                 + "    <kerberos>\n"
                 + "        <realm>HAZELCAST.COM</realm>"
+                + "        <principal>jduke</principal>"
+                + "        <keytab-file>/opt/jduke.keytab</keytab-file>"
                 + "        <security-realm>krb5Initiator</security-realm>"
                 + "        <service-name-prefix>hz/</service-name-prefix>"
                 + "        <use-canonical-hostname>true</use-canonical-hostname>"
@@ -415,6 +417,8 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         KerberosIdentityConfig identityConfig = config.getSecurityConfig().getKerberosIdentityConfig();
         assertNotNull(identityConfig);
         assertEquals("HAZELCAST.COM", identityConfig.getRealm());
+        assertEquals("jduke", identityConfig.getPrincipal());
+        assertEquals("/opt/jduke.keytab", identityConfig.getKeytabFile());
         assertEquals("krb5Initiator", identityConfig.getSecurityRealm());
         assertEquals("hz/", identityConfig.getServiceNamePrefix());
         assertTrue(identityConfig.getUseCanonicalHostname());

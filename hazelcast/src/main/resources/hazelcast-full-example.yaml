@@ -527,8 +527,8 @@ hazelcast:
   #     protocol: TLS
   #     mutualAuthentication: REQUIRED
   # * "socket-interceptor":
-  # Lets you add custom hooks to join and perform connection procedures (like identity checking using
-  # Kerberos, etc.). This feature is available only in Hazelcast Enterprise. To be able to use it, you
+  # Lets you add custom hooks to join and perform connection procedures (like a custom authentication protocol, etc.).
+  # This feature is available only in Hazelcast Enterprise. To be able to use it, you
   # should first implement the MemberSocketInterceptor (for members joining to a cluster) or
   # SocketInterceptor (for clients connecting to a member) class. Its configuration contains the class you
   # implemented and socket interceptor properties. By default, it is disabled. The following is an example:
@@ -536,8 +536,8 @@ hazelcast:
   #   enabled: true
   #   class-name: com.hazelcast.examples.MySocketInterceptor
   #   properties:
-  #     kerberos-host: kerb-host-name
-  #     kerberos-config-file: kerb.conf
+  #     property1: value1
+  #     property2: value2
   # * "symmetric-encryption":
   # Lets you encrypt the entire socket level communication among all Hazelcast members.
   # This feature is available only in Hazelcast Enterprise.  Its configuration contains the encryption
@@ -2276,6 +2276,16 @@ hazelcast:
             service-name-prefix: hz/
             use-canonical-hostname: true
             spn: hz/127.0.0.1@HAZELCAST.COM
+      - name: simpleKerberosRealm
+        authentication:
+          kerberos:
+            principal: hz/127.0.0.1@HAZELCAST.COM
+            keytab-file: /opt/localhost.keytab
+        identity:
+          kerberos:
+            realm: HAZELCAST.COM
+            principal: hz/127.0.0.1@HAZELCAST.COM
+            keytab-file: /opt/localhost.keytab
       - name: krb5Acceptor
         authentication:
           jaas:
@@ -2865,8 +2875,8 @@ hazelcast:
   #              protocol: TLS
   #              mutualAuthentication: REQUIRED
   #      * "socket-interceptor":
-  #          Lets you add custom hooks to join and perform connection procedures (like identity checking using
-  #          Kerberos, etc.). This feature is available only in Hazelcast Enterprise. To be able to use it, you
+  #          Lets you add custom hooks to join and perform connection procedures (like a custom authentication
+  #          protocol, etc.). This feature is available only in Hazelcast Enterprise. To be able to use it, you
   #          should first implement the MemberSocketInterceptor (for members joining to a cluster) or
   #          SocketInterceptor (for clients connecting to a member) class. Its configuration contains the class you
   #          implemented and socket interceptor properties. By default, it is disabled. The following is an example:
@@ -2874,8 +2884,8 @@ hazelcast:
   #            enabled: true
   #            class-name: com.hazelcast.examples.MySocketInterceptor
   #            properties:
-  #              kerberos-host: kerb-host-name
-  #              kerberos-config-file: kerb.conf
+  #              property1: value1
+  #              property2: value2
   #      * "symmetric-encryption":
   #          Lets you encrypt the entire socket level communication among all Hazelcast members.
   #          This feature is available only in Hazelcast Enterprise.  Its configuration contains the encryption

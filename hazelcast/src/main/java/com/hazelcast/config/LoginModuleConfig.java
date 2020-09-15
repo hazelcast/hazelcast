@@ -99,7 +99,11 @@ public class LoginModuleConfig {
     }
 
     public LoginModuleConfig setProperty(String key, String value) {
-        properties.setProperty(key, value);
+        if (value != null) {
+            properties.setProperty(key, value);
+        } else {
+            properties.remove(key);
+        }
         return this;
     }
 

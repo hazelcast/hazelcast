@@ -685,6 +685,10 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
                 kerbIdentity.setRealm(getTextContent(child));
             } else if (matches("security-realm", nodeName)) {
                 kerbIdentity.setSecurityRealm(getTextContent(child));
+            } else if (matches("principal", nodeName)) {
+                kerbIdentity.setPrincipal(getTextContent(child));
+            } else if (matches("keytab-file", nodeName)) {
+                kerbIdentity.setKeytabFile(getTextContent(child));
             } else if (matches("service-name-prefix", nodeName)) {
                 kerbIdentity.setServiceNamePrefix(getTextContent(child));
             } else if (matches("spn", nodeName)) {
