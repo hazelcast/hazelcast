@@ -44,8 +44,6 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -176,7 +174,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
     @Override
     public InternalCompletableFuture<Long> addAllAsync(@Nonnull Collection<? extends E> collection,
-                                                @Nonnull OverflowPolicy overflowPolicy) {
+                                                       @Nonnull OverflowPolicy overflowPolicy) {
         checkNotNull(collection, "collection can't be null");
         checkNotNull(overflowPolicy, "overflowPolicy can't be null");
         checkFalse(collection.isEmpty(), "collection can't be empty");
@@ -195,7 +193,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
     @Override
     public InternalCompletableFuture<ReadResultSet<E>> readManyAsync(long startSequence, int minCount,
-                                                              int maxCount, IFunction<E, Boolean> filter) {
+                                                                     int maxCount, IFunction<E, Boolean> filter) {
         checkSequence(startSequence);
         checkNotNegative(minCount, "minCount can't be smaller than 0");
         checkTrue(maxCount >= minCount, "maxCount should be equal or larger than minCount");
@@ -233,17 +231,11 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
     protected <T> T invoke(ClientMessage clientMessage, int partitionId) {
         try {
-            final Future future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
-            return (T) future.get();
-        } catch (ExecutionException e) {
-            if (e.getCause() instanceof StaleSequenceException) {
-                StaleSequenceException se = (StaleSequenceException) e.getCause();
-                long l = headSequence();
-                throw new StaleSequenceException(se.getMessage(), l);
-            }
-            throw rethrow(e);
-        } catch (Exception e) {
-            throw rethrow(e);
+            ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+            return (T) future.joinInternal();
+        } catch (StaleSequenceException e) {
+            long l = headSequence();
+            throw new StaleSequenceException(e.getMessage(), l);
         }
     }
 

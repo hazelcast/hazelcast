@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.WrappableException;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
 import java.util.concurrent.CancellationException;
@@ -33,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.internal.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.ExceptionUtil.cloneExceptionWithFixedAsyncStackTrace;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.CALL_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.HEARTBEAT_TIMEOUT;
@@ -68,9 +70,9 @@ public final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
     @Override
     public boolean isCompletedExceptionally() {
         return (state instanceof ExceptionalResult
-            || state == CALL_TIMEOUT
-            || state == HEARTBEAT_TIMEOUT
-            || state == INTERRUPTED);
+                || state == CALL_TIMEOUT
+                || state == HEARTBEAT_TIMEOUT
+                || state == INTERRUPTED);
     }
 
     @Override
@@ -99,20 +101,24 @@ public final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
     }
 
     // public for tests
-    public static <T> T returnOrThrowWithGetConventions(Object resolved) throws ExecutionException, InterruptedException {
-        if (!(resolved instanceof ExceptionalResult)) {
-            return (T) resolved;
+    public static <T> T returnOrThrowWithGetConventions(Object response) throws ExecutionException, InterruptedException {
+        if (!(response instanceof ExceptionalResult)) {
+            return (T) response;
+        }
+        response = ((ExceptionalResult) response).getCause();
+        if (response instanceof WrappableException) {
+            response = ((WrappableException) response).wrap();
+        } else if (response instanceof RuntimeException || response instanceof Error) {
+            response = cloneExceptionWithFixedAsyncStackTrace((Throwable) response);
+        }
+        if (response instanceof CancellationException) {
+            throw (CancellationException) response;
+        } else if (response instanceof ExecutionException) {
+            throw (ExecutionException) response;
+        } else if (response instanceof InterruptedException) {
+            throw (InterruptedException) response;
         } else {
-            Throwable cause = ((ExceptionalResult) resolved).getCause();
-            if (cause instanceof CancellationException) {
-                throw (CancellationException) cause;
-            } else if (cause instanceof ExecutionException) {
-                throw (ExecutionException) cause;
-            } else if (cause instanceof InterruptedException) {
-                throw (InterruptedException) cause;
-            } else {
-                throw new ExecutionException(cause);
-            }
+            throw new ExecutionException((Throwable) response);
         }
     }
 
@@ -147,7 +153,7 @@ public final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
 
         if (invocation.shouldFailOnIndeterminateOperationState()
                 && (value instanceof IndeterminateOperationState
-                    || cause instanceof IndeterminateOperationState)) {
+                || cause instanceof IndeterminateOperationState)) {
             value = wrapThrowable(new IndeterminateOperationStateException("indeterminate operation state",
                     cause == null ? (Throwable) value : cause));
         }
