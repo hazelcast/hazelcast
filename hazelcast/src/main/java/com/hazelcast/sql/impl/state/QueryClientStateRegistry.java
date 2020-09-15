@@ -159,7 +159,7 @@ public class QueryClientStateRegistry {
         for (QueryClientState victim : victims) {
             QueryException error = QueryException.clientMemberConnection(victim.getClientId());
 
-            victim.getSqlResult().closeOnError(error);
+            victim.getSqlResult().close(error);
 
             deleteClientCursor(victim);
         }
