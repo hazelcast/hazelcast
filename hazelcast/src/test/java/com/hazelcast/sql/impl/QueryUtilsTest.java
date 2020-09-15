@@ -16,7 +16,9 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -28,7 +30,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Map;
+import java.util.UUID;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -51,7 +57,7 @@ public class QueryUtilsTest extends SqlTestSupport {
         String memberVersion = nodeEngine.getLocalMember().getVersion().toString();
 
         try {
-            QueryUtils.createPartitionMap(nodeEngine, new MemberVersion(0, 0, 0));
+            QueryUtils.createPartitionMap(nodeEngine, new MemberVersion(0, 0, 0), false);
 
             fail("Must fail");
         } catch (QueryException e) {
@@ -59,6 +65,33 @@ public class QueryUtilsTest extends SqlTestSupport {
             assertEquals("Cannot execute SQL query when members have different versions (make sure that all members "
                 + "have the same version) {localMemberId=" + memberId + ", localMemberVersion=0.0.0, remoteMemberId="
                 + memberId + ", remoteMemberVersion=" + memberVersion + "}", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testUnassignedPartition_ignore() {
+        HazelcastInstance member = factory.newHazelcastInstance();
+
+        member.getCluster().changeClusterState(ClusterState.FROZEN);
+
+        Map<UUID, PartitionIdSet> map = QueryUtils.createPartitionMap(nodeEngine(member), null, false);
+
+        assertTrue(map.isEmpty());
+    }
+
+    @Test
+    public void testUnassignedPartition_exception() {
+        HazelcastInstance member = factory.newHazelcastInstance();
+
+        member.getCluster().changeClusterState(ClusterState.FROZEN);
+
+        try {
+            QueryUtils.createPartitionMap(nodeEngine(member), null, true);
+
+            fail("Must fail");
+        } catch (QueryException e) {
+            assertEquals(SqlErrorCode.PARTITION_DISTRIBUTION, e.getCode());
+            assertTrue(e.getMessage(), e.getMessage().startsWith("Partition is not assigned to any member"));
         }
     }
 }

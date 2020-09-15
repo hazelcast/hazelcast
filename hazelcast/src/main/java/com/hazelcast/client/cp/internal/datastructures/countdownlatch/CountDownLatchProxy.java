@@ -17,18 +17,18 @@
 package com.hazelcast.client.cp.internal.datastructures.countdownlatch;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.CPGroupDestroyCPObjectCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchAwaitCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchCountDownCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetCountCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetRoundCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchTrySetCountCodec;
-import com.hazelcast.client.impl.protocol.codec.CPGroupDestroyCPObjectCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.internal.util.EmptyStatement;
@@ -37,6 +37,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 
 /**
@@ -102,6 +103,8 @@ public class CountDownLatchProxy extends ClientProxy implements ICountDownLatch 
 
     @Override
     public boolean trySetCount(int count) {
+        checkPositive(count, "Count must be positive!");
+
         ClientMessage request = CountDownLatchTrySetCountCodec.encodeRequest(groupId, objectName, count);
         ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().joinInternal();
 

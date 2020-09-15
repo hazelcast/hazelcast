@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.map.impl.record.Record;
 
 import java.util.AbstractSet;
@@ -171,26 +172,24 @@ public abstract class BaseIndexStore implements IndexStore {
 
         @Override
         public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
-            if (map != null && isExpirable()) {
-                return new ExpirationAwareHashMapDelegate(map);
+            if (MapUtil.isNullOrEmpty(map)) {
+                return map;
             }
-            return map;
-        }
 
+            return isExpirable() ? new ExpirationAwareHashMapDelegate(map) : map;
+        }
     }
 
     private class CopyInputFunctor implements CopyFunctor<Data, QueryableEntry> {
 
         @Override
         public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
-            if (map != null && !map.isEmpty()) {
-                HashMap<Data, QueryableEntry> newMap = new HashMap<>(map);
-                if (isExpirable()) {
-                    return new ExpirationAwareHashMapDelegate(newMap);
-                }
-                return newMap;
+            if (MapUtil.isNullOrEmpty(map)) {
+                return map;
             }
-            return map;
+
+            Map<Data, QueryableEntry> newMap = new HashMap<>(map);
+            return isExpirable() ? new ExpirationAwareHashMapDelegate(newMap) : newMap;
         }
 
     }

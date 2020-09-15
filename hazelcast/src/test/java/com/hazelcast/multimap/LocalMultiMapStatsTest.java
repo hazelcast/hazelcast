@@ -115,12 +115,11 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
         putAllOperation.accept(mmap1);
         putAllOperation.accept(mmap2);
 
-        sleepMillis(100);
         for (int i = 0; i < 100; i++) {
-            mmap1.get(i);
-            mmap2.get(i);
+            int index = i;
+            assertTrueEventually(() -> assertTrue(mmap1.get(index).size() > 0));
+            assertTrueEventually(() -> assertTrue(mmap2.get(index).size() > 0));
         }
-        sleepMillis(10);
         testPutAllAndHitsGeneratedTemplateVerify();
     }
 

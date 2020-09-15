@@ -23,7 +23,7 @@ import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.ResultIterator;
-import com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult;
+import com.hazelcast.sql.impl.ResultIterator.HasNextResult;
 import com.hazelcast.sql.impl.client.SqlPage;
 
 import java.util.ArrayList;
@@ -32,8 +32,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.DONE;
-import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.YES;
+import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.DONE;
+import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.TIMEOUT;
+import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Registry of active client cursors.
@@ -50,7 +52,7 @@ public class QueryClientStateRegistry {
     ) {
         QueryClientState clientCursor = new QueryClientState(clientId, result);
 
-        SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService);
+        SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, true);
 
         if (!page.isLast()) {
             clientCursors.put(result.getQueryId(), clientCursor);
@@ -71,7 +73,7 @@ public class QueryClientStateRegistry {
             throw QueryException.error("Query cursor is not found (closed?): " + queryId);
         }
 
-        SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService);
+        SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, false);
 
         if (page.isLast()) {
             deleteClientCursor(clientCursor);
@@ -83,12 +85,13 @@ public class QueryClientStateRegistry {
     private SqlPage fetchInternal(
         QueryClientState clientCursor,
         int cursorBufferSize,
-        InternalSerializationService serializationService
+        InternalSerializationService serializationService,
+        boolean isFirstPage
     ) {
         ResultIterator<SqlRow> iterator = clientCursor.getIterator();
 
         List<List<Data>> page = new ArrayList<>(cursorBufferSize);
-        boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService);
+        boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService, isFirstPage);
 
         if (last) {
             deleteClientCursor(clientCursor);
@@ -101,21 +104,35 @@ public class QueryClientStateRegistry {
         ResultIterator<SqlRow> iterator,
         List<List<Data>> page,
         int cursorBufferSize,
-        InternalSerializationService serializationService
+        InternalSerializationService serializationService,
+        boolean isFirstPage
     ) {
         assert cursorBufferSize > 0;
 
-        if (!iterator.hasNext()) {
-            return true;
+        if (isFirstPage) {
+            // Block for up to 1 second to get the row.
+            // Note: the implementation of ResultIterator in IMDG ignores the time limit and blocks
+            // until a next item is available.
+            HasNextResult hasNextResult = iterator.hasNext(1, SECONDS);
+            if (hasNextResult == TIMEOUT) {
+                return false;
+            } else if (hasNextResult == DONE) {
+                return true;
+            }
+        } else {
+            // block without a limit to get a row
+            if (!iterator.hasNext()) {
+                return true;
+            }
         }
 
-        HasNextImmediatelyResult hasNextResult;
+        HasNextResult hasNextResult;
         do {
             SqlRow row = iterator.next();
             List<Data> convertedRow = convertRow(row, serializationService);
 
             page.add(convertedRow);
-            hasNextResult = iterator.hasNextImmediately();
+            hasNextResult = iterator.hasNext(0, SECONDS);
         } while (hasNextResult == YES && page.size() < cursorBufferSize);
 
         return hasNextResult == DONE;
@@ -159,7 +176,7 @@ public class QueryClientStateRegistry {
         for (QueryClientState victim : victims) {
             QueryException error = QueryException.clientMemberConnection(victim.getClientId());
 
-            victim.getSqlResult().closeOnError(error);
+            victim.getSqlResult().close(error);
 
             deleteClientCursor(victim);
         }

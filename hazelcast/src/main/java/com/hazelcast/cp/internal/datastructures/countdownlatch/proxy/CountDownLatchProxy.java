@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 
 /**
@@ -76,6 +77,8 @@ public class CountDownLatchProxy implements ICountDownLatch {
 
     @Override
     public boolean trySetCount(int count) {
+        checkPositive(count, "Count must be positive!");
+
         return invocationManager.<Boolean>invoke(groupId, new TrySetCountOp(objectName, count)).joinInternal();
     }
 

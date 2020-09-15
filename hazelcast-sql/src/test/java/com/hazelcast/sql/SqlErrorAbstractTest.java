@@ -146,7 +146,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
 
         // Start query
         HazelcastSqlException error = assertSqlException(useClient ? client : instance1, query());
-        assertEquals(SqlErrorCode.PARTITION_DISTRIBUTION_CHANGED, error.getCode());
+        assertEquals(SqlErrorCode.PARTITION_DISTRIBUTION, error.getCode());
     }
 
     protected void checkMapDestroy(boolean useClient, boolean firstMember) {

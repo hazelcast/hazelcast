@@ -22,9 +22,10 @@ import com.hazelcast.sql.impl.row.Row;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.DONE;
-import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.YES;
+import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.DONE;
+import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
 
 /**
  * Blocking array-based result consumer which delivers the results to API caller.
@@ -176,8 +177,8 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
         }
 
         @Override
-        public HasNextImmediatelyResult hasNextImmediately() {
-            // We never return RETRY, but we block until next item is available or the end is reached.
+        public HasNextResult hasNext(long timeout, TimeUnit timeUnit) {
+            // We never return TIMEOUT, but we block until a next item is available or the end is reached.
             return hasNext() ? YES : DONE;
         }
 

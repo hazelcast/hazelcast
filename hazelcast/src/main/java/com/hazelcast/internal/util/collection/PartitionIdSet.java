@@ -219,10 +219,6 @@ public class PartitionIdSet extends AbstractSet<Integer> {
             return false;
         }
 
-        if (!super.equals(o)) {
-            return false;
-        }
-
         PartitionIdSet other = (PartitionIdSet) o;
 
         return partitionCount == other.partitionCount && bitSet.equals(other.bitSet);

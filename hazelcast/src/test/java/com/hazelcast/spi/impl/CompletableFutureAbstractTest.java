@@ -162,6 +162,31 @@ public abstract class CompletableFutureAbstractTest {
     }
 
     @Test
+    public void thenAccept_onCompletedFuture_whenActionThrowsException() {
+        thenAccept_whenActionThrowsException(0L);
+    }
+
+    @Test
+    public void thenAccept_onIncompleteFuture_whenActionThrowsException() {
+        thenAccept_whenActionThrowsException(1000L);
+    }
+
+    private void thenAccept_whenActionThrowsException(long completionDelay) {
+        CompletableFuture<Object> future = newCompletableFuture(false, completionDelay);
+        CompletableFuture<Void> chained = future.thenAccept(value -> {
+            throw new ExpectedRuntimeException();
+        });
+
+        assertTrueEventually(() -> assertTrue(future.isDone()));
+        assertTrueEventually(() -> assertTrue(chained.isDone()));
+        assertFalse(future.isCompletedExceptionally());
+        assertTrue(chained.isCompletedExceptionally());
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
+        chained.join();
+    }
+
+    @Test
     public void thenApply_whenCompletedFuture() {
         CompletionStage<Object> future = newCompletableFuture(false, 0L);
         CompletableFuture<Object> chained = future.thenApply(value -> {
@@ -259,6 +284,31 @@ public abstract class CompletableFutureAbstractTest {
     }
 
     @Test
+    public void thenApply_onCompletedFuture_whenActionThrowsException() {
+        thenApply_whenActionThrowsException(0L);
+    }
+
+    @Test
+    public void thenApply_onIncompleteFuture_whenActionThrowsException() {
+        thenApply_whenActionThrowsException(1000L);
+    }
+
+    public void thenApply_whenActionThrowsException(long completionDelay) {
+        CompletableFuture<Object> future = newCompletableFuture(false, completionDelay);
+        CompletableFuture<Void> chained = future.thenApply(value -> {
+            throw new ExpectedRuntimeException();
+        });
+
+        assertTrueEventually(() -> assertTrue(future.isDone()));
+        assertTrueEventually(() -> assertTrue(chained.isDone()));
+        assertFalse(future.isCompletedExceptionally());
+        assertTrue(chained.isCompletedExceptionally());
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
+        chained.join();
+    }
+
+    @Test
     public void thenRun_whenCompletedFuture() {
         CompletionStage<Object> future = newCompletableFuture(false, 0L);
         CompletableFuture<Void> chained = future.thenRunAsync(CompletableFutureTestUtil::ignore, CALLER_RUNS)
@@ -342,7 +392,7 @@ public abstract class CompletableFutureAbstractTest {
     }
 
     @Test
-    public void thenRun_whenExceptionThrownFromRunnable() {
+    public void thenRun_whenActionThrowsException() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
         CompletableFuture<Void> chained = future.thenRun(() -> {
             throw new IllegalStateException();
@@ -352,6 +402,31 @@ public abstract class CompletableFutureAbstractTest {
         assertTrue(chained.isCompletedExceptionally());
         expectedException.expect(CompletionException.class);
         expectedException.expectCause(new RootCauseMatcher(IllegalStateException.class));
+        chained.join();
+    }
+
+    @Test
+    public void thenRun_onCompletedFuture_whenActionThrowsException() {
+        thenRun_whenActionThrowsException(0L);
+    }
+
+    @Test
+    public void thenRun_onIncompleteFuture_whenActionThrowsException() {
+        thenRun_whenActionThrowsException(1000L);
+    }
+
+    private void thenRun_whenActionThrowsException(long completionDelay) {
+        CompletableFuture<Object> future = newCompletableFuture(false, completionDelay);
+        CompletableFuture<Void> chained = future.thenRun(() -> {
+            throw new ExpectedRuntimeException();
+        });
+
+        assertTrueEventually(() -> assertTrue(future.isDone()));
+        assertTrueEventually(() -> assertTrue(chained.isDone()));
+        assertFalse(future.isCompletedExceptionally());
+        assertTrue(chained.isCompletedExceptionally());
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
         chained.join();
     }
 
@@ -1045,6 +1120,29 @@ public abstract class CompletableFutureAbstractTest {
     }
 
     @Test
+    public void applyToEitherAsync_onIncompleteFuture_whenExecutionRejected() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
+        future.applyToEitherAsync(newCompletedFuture(null), v -> null, REJECTING_EXECUTOR).join();
+    }
+
+    @Test
+    public void applyToEither_whenActionThrowsException() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
+        CompletableFuture<Long> nextStage = future.applyToEither(new CompletableFuture<Long>(),
+                (v) -> {
+            throw new ExpectedRuntimeException();
+        });
+
+        assertTrueEventually(() -> assertTrue(nextStage.isDone()));
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
+        nextStage.join();
+    }
+
+    @Test
     public void acceptEither() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
         CompletableFuture<Void> nextStage = future.acceptEither(new CompletableFuture<>(),
@@ -1065,12 +1163,17 @@ public abstract class CompletableFutureAbstractTest {
     }
 
     @Test
-    public void applyToEitherAsync_onIncompleteFuture_whenExecutionRejected() {
+    public void acceptEither_whenActionThrowsException() {
         CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
+        CompletableFuture<Void> nextStage = future.acceptEither(new CompletableFuture<>(),
+                (v) -> {
+            throw new ExpectedRuntimeException();
+        });
 
+        assertTrueEventually(() -> assertTrue(nextStage.isDone()));
         expectedException.expect(CompletionException.class);
-        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
-        future.applyToEitherAsync(newCompletedFuture(null), v -> null, REJECTING_EXECUTOR).join();
+        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
+        nextStage.join();
     }
 
     @Test
@@ -1112,6 +1215,17 @@ public abstract class CompletableFutureAbstractTest {
     }
 
     @Test
+    public void runAfterBoth_whenActionThrowsException() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
+        future.runAfterBoth(newCompletedFuture(null), () -> {
+            throw new ExpectedRuntimeException();
+        }).join();
+    }
+
+    @Test
     public void runAfterEither() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
         CompletableFuture<Void> nextStage = future.runAfterEither(new CompletableFuture<>(),
@@ -1148,6 +1262,17 @@ public abstract class CompletableFutureAbstractTest {
     }
 
     @Test
+    public void runAfterEither_whenActionThrowsException() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
+        future.runAfterEither(newCompletedFuture(null), () -> {
+            throw new ExpectedRuntimeException();
+        }).join();
+    }
+
+    @Test
     public void thenAcceptBoth() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
         CompletableFuture<Void> nextStage = future.thenAcceptBoth(newCompletedFuture(returnValue),
@@ -1181,6 +1306,18 @@ public abstract class CompletableFutureAbstractTest {
         expectedException.expect(CompletionException.class);
         expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
         future.thenAcceptBothAsync(newCompletedFuture(null), (v, u)  -> ignore(), REJECTING_EXECUTOR).join();
+    }
+
+    @Test
+    public void thenAcceptBoth_whenActionThrowsException() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
+        future.thenAcceptBoth(newCompletedFuture(null),
+                (v, u) -> {
+            throw new ExpectedRuntimeException();
+        }).join();
     }
 
     @Test
@@ -1222,6 +1359,17 @@ public abstract class CompletableFutureAbstractTest {
     }
 
     @Test
+    public void thenCombine_whenActionThrowsException() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
+        future.thenCombine(newCompletedFuture(null), (t, u) -> {
+            throw new ExpectedRuntimeException();
+        }).join();
+    }
+
+    @Test
     public void thenComposeAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
 
@@ -1237,6 +1385,17 @@ public abstract class CompletableFutureAbstractTest {
         expectedException.expect(CompletionException.class);
         expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
         future.thenComposeAsync(v -> newCompletedFuture(null), REJECTING_EXECUTOR).join();
+    }
+
+    @Test
+    public void thenCompose_whenActionThrowsException() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(ExpectedRuntimeException.class));
+        future.thenCompose(v -> {
+            throw new ExpectedRuntimeException();
+        }).join();
     }
 
     public static class RejectingExecutor implements Executor {

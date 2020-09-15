@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.proxy.ClientReliableTopicProxy;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -154,35 +155,36 @@ public class ClientReliableTopicOnClusterRestartTest {
     }
 
     @Test
-    public void shouldFail_OnClusterRestart_whenDataLoss_notLossTolerant() throws InterruptedException {
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
+    public void shouldFail_OnClusterRestart_whenDataLoss_notLossTolerant() {
+        Config config = smallInstanceConfig();
+        String topicName = "topic";
+        config.getRingbufferConfig(topicName)
+              .setCapacity(10);
+
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
-        int invocationTimeoutSeconds = 2;
-        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), String.valueOf(invocationTimeoutSeconds));
+        clientConfig.getConnectionStrategyConfig()
+                    .getConnectionRetryConfig()
+                    .setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
-        final AtomicLong messageCount = new AtomicLong();
-        String topicName = "topic";
+        AtomicLong messageCount = new AtomicLong();
 
-        member.getReliableTopic(topicName).publish("message");
-        member.getReliableTopic(topicName).publish("message");
+        // initialises listener seq up to 10000
+        for (int i = 0; i < 10_000; i++) {
+            member.getReliableTopic(topicName).publish("message");
+        }
 
-        final ITopic<String> topic = client.getReliableTopic(topicName);
-
-        final UUID registrationId = topic.addMessageListener(createListener(false, m -> messageCount.incrementAndGet()));
+        ITopic<String> topic = client.getReliableTopic(topicName);
+        UUID registrationId = topic.addMessageListener(createListener(false, m -> messageCount.incrementAndGet()));
 
         member.shutdown();
+        member = hazelcastFactory.newHazelcastInstance(config);
 
-        member = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
-
-        // wait some time for re-subscription
-        Thread.sleep(TimeUnit.SECONDS.toMillis(invocationTimeoutSeconds));
-
-        // we require at least one new message to detect that the ringbuffer was recreated
-        member.getReliableTopic(topicName).publish("message");
-
+        HazelcastInstance finalMember = member;
         assertTrueEventually(() -> {
+            // we require at least one new message to detect that the ringbuffer was recreated
+            finalMember.getReliableTopic(topicName).publish("message");
             ClientReliableTopicProxy<?> proxy = (ClientReliableTopicProxy<?>) topic;
             assertTrue(proxy.isListenerCancelled(registrationId));
         });

@@ -88,11 +88,11 @@ public class CountDownLatch extends BlockingResource<AwaitInvocationKey> impleme
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "'round' field is updated only by a single thread.")
     @SuppressWarnings("NonAtomicOperationOnVolatileField")
     boolean trySetCount(int count) {
+        checkTrue(count > 0, "cannot set non-positive count: " + count);
+
         if (getRemainingCount() > 0) {
             return false;
         }
-
-        checkTrue(count > 0, "cannot set non-positive count: " + count);
 
         countDownFrom = count;
         round++;

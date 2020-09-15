@@ -22,10 +22,15 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.util.executor.UnblockableThread;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.operationservice.WrappableException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -46,8 +51,6 @@ import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.internal.util.ExceptionUtil.wrapError;
-import static com.hazelcast.internal.util.ExceptionUtil.wrapException;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 import static java.util.concurrent.locks.LockSupport.park;
@@ -56,7 +59,6 @@ import static java.util.concurrent.locks.LockSupport.unpark;
 
 /**
  * Custom implementation of {@link java.util.concurrent.CompletableFuture}.
- *
  * @param <V>
  */
 @SuppressFBWarnings(value = "DLS_DEAD_STORE_OF_CLASS_LITERAL", justification = "Recommended way to prevent classloading bug")
@@ -69,6 +71,13 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             return "UNRESOLVED";
         }
     };
+    private static final Lookup LOOKUP = MethodHandles.publicLookup();
+    // new Throwable(String message, Throwable cause)
+    private static final MethodType MT_INIT_STRING_THROWABLE = MethodType.methodType(void.class, String.class, Throwable.class);
+    // new Throwable(Throwable cause)
+    private static final MethodType MT_INIT_THROWABLE = MethodType.methodType(void.class, Throwable.class);
+    // new Throwable(String message)
+    private static final MethodType MT_INIT_STRING = MethodType.methodType(void.class, String.class);
 
     private static final AtomicReferenceFieldUpdater<AbstractInvocationFuture, Object> STATE_UPDATER =
             newUpdater(AbstractInvocationFuture.class, Object.class, "state");
@@ -1439,7 +1448,13 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
                 return;
             }
             try {
-                executor.execute(() -> future.complete(function.apply((V) value)));
+                executor.execute(() -> {
+                    try {
+                        future.complete(function.apply((V) value));
+                    } catch (Throwable t) {
+                        future.completeExceptionally(t);
+                    }
+                });
             } catch (RejectedExecutionException e) {
                 future.completeExceptionally(wrapToInstanceNotActiveException(e));
                 throw e;
@@ -1903,7 +1918,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             return cause;
         }
         if (cause instanceof RuntimeException) {
-            return wrapException((RuntimeException) cause);
+            return wrapRuntimeException((RuntimeException) cause);
         }
         if ((cause instanceof ExecutionException || cause instanceof InvocationTargetException)
                 && cause.getCause() != null) {
@@ -1918,4 +1933,39 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         return new HazelcastException(cause);
     }
 
+    private static RuntimeException wrapRuntimeException(RuntimeException cause) {
+        if (cause instanceof WrappableException) {
+            return  ((WrappableException) cause).wrap();
+        }
+        RuntimeException wrapped = tryWrapInSameClass(cause);
+        return wrapped == null ?  new HazelcastException(cause) : wrapped;
+    }
+
+    private static Error wrapError(Error cause) {
+        Error result = tryWrapInSameClass(cause);
+        return result == null ? cause : result;
+    }
+
+    private static <T extends Throwable> T tryWrapInSameClass(T cause) {
+        Class<? extends Throwable> exceptionClass = cause.getClass();
+        MethodHandle constructor;
+        try {
+            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING_THROWABLE);
+            return (T) constructor.invokeWithArguments(cause.getMessage(), cause);
+        } catch (Throwable ignored) {
+        }
+        try {
+            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_THROWABLE);
+            return (T) constructor.invokeWithArguments(cause);
+        } catch (Throwable ignored) {
+        }
+        try {
+            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING);
+            T result = (T) constructor.invokeWithArguments(cause.getMessage());
+            result.initCause(cause);
+            return result;
+        } catch (Throwable ignored) {
+        }
+        return null;
+    }
 }

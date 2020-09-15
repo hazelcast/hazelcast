@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
 import com.hazelcast.sql.impl.plan.Plan;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -189,10 +190,14 @@ public final class QueryState implements QueryStateCallback {
     }
 
     @Override
-    public void cancel(Exception error) {
+    public void cancel(@Nullable Exception error) {
         // Make sure that this thread changes the state.
         if (!completionGuard.compareAndSet(false, true)) {
             return;
+        }
+
+        if (error == null) {
+            error = QueryException.cancelledByUser();
         }
 
         QueryException error0 = prepareCancelError(error);

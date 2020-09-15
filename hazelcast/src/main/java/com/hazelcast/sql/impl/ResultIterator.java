@@ -17,29 +17,28 @@
 package com.hazelcast.sql.impl;
 
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Java standard {@link Iterator} enhanced with {@link
- * #hasNextImmediately()} to allow for non-blocking iteration.
+ * Java standard {@link Iterator} enhanced with {@link #hasNext(long,
+ * TimeUnit)} to allow for non-blocking iteration.
  */
 public interface ResultIterator<T> extends Iterator<T> {
 
     /**
-     * Checks if a next item is available immediately.
+     * Checks if a next item is available, with a timeout.
      * <p>
-     * The implementation is free to either:<ul>
-     *     <li>block until an item is available or the end is reached
-     *     <li>not block and return {@link HasNextImmediatelyResult#RETRY} if we're
-     *         not done and an item is not immediately available.
-     * </ul>
+     * The implementation is allowed to block until an item is available and
+     * never actually return TIMEOUT response.
      * <p>
      * This can be used to implement either blocking or non-blocking behavior.
      *
-     * @return see {@link HasNextImmediatelyResult}
+     * @return see {@link HasNextResult}
+     * @param timeout the timeout, 0 means check an immediate next item
      */
-    HasNextImmediatelyResult hasNextImmediately();
+    HasNextResult hasNext(long timeout, TimeUnit timeUnit);
 
-    enum HasNextImmediatelyResult {
+    enum HasNextResult {
         /**
          * The next item is available immediately. Subsequent {@link #next()} call
          * is guaranteed to succeed and not block.
@@ -51,7 +50,7 @@ public interface ResultIterator<T> extends Iterator<T> {
          * The caller should check again later. Also there might not be a next
          * item at all.
          */
-        RETRY,
+        TIMEOUT,
 
         /**
          * The last item was already returned. A call to {@link #next()} will fail.
