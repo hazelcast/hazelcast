@@ -123,7 +123,6 @@ public class ClientInvocationFutureTest {
         invocationFuture.completeExceptionally(new IllegalArgumentException());
 
         expected.expect(IllegalArgumentException.class);
-        expected.expectCause(new RootCauseMatcher(IllegalArgumentException.class));
         invocationFuture.joinInternal();
     }
 

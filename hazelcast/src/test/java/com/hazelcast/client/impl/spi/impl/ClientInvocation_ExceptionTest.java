@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.operationservice.impl;
+package com.hazelcast.client.impl.spi.impl;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.Matcher;
 import org.hamcrest.core.IsNull;
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,16 +37,16 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.Serializable;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.test.Accessors.getOperationService;
-
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class Invocation_ExceptionTest extends HazelcastTestSupport {
+public class ClientInvocation_ExceptionTest extends HazelcastTestSupport {
 
     private static final int GET = 0;
     private static final int JOIN = 1;
@@ -53,70 +54,70 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "{0} - {1}")
     public static Object[] parameters() {
-        return new Object[] {
+        return new Object[]{
                 // params: synchronization type, exception thrown, class of expected exception, cause matcher
 
                 //// joinInternal()
                 // RuntimeException with a constructor accepting a Throwable cause
-                new Object[] {JOIN_INTERNAL, new IllegalStateException("message"), IllegalStateException.class,
+                new Object[]{JOIN_INTERNAL, new IllegalStateException("message"), IllegalStateException.class,
                         IsNull.nullValue(Throwable.class)},
                 // RuntimeException with no constructor accepting a Throwable cause
-                new Object[] {JOIN_INTERNAL, new IllegalThreadStateException("message"), IllegalThreadStateException.class,
+                new Object[]{JOIN_INTERNAL, new IllegalThreadStateException("message"), IllegalThreadStateException.class,
                         IsNull.nullValue(Throwable.class)},
                 // OperationTimeoutException: OperationTimeoutException is only expected to be
                 // thrown with a local stack trace; this test is about verifying the exception remains unwrapped
-                new Object[] {JOIN_INTERNAL, new OperationTimeoutException("message"), OperationTimeoutException.class,
-                              IsNull.nullValue(Throwable.class)},
+                new Object[]{JOIN_INTERNAL, new OperationTimeoutException("message"), OperationTimeoutException.class,
+                        IsNull.nullValue(Throwable.class)},
                 // CancellationException: CancellationException is only expected to be
                 // thrown with a local stack trace; this test is about verifying the exception remains unwrapped
-                new Object[] {JOIN_INTERNAL, new CancellationException("message"), CancellationException.class,
-                              IsNull.nullValue(Throwable.class)},
+                new Object[]{JOIN_INTERNAL, new CancellationException("message"), CancellationException.class,
+                        IsNull.nullValue(Throwable.class)},
                 // Checked exception is wrapped in HazelcastException
-                new Object[] {JOIN_INTERNAL, new Exception("message"), HazelcastException.class,
-                              new RootCauseMatcher(Exception.class, "message")},
-                // Error subclass rethrown as same type without wrapping
-                new Object[] {JOIN_INTERNAL, new ExceptionInInitializerError("message"), ExceptionInInitializerError.class,
+                new Object[]{JOIN_INTERNAL, new ClassNotFoundException("message"), HazelcastException.class,
+                        new RootCauseMatcher(ClassNotFoundException.class, "message")},
+                // Error subclass rethrown as same type
+                new Object[]{JOIN_INTERNAL, new OutOfMemoryError("message"), OutOfMemoryError.class,
                         IsNull.nullValue(Throwable.class)},
 
                 //// join()
                 // RuntimeException with a constructor accepting a Throwable cause
-                new Object[] {JOIN, new IllegalStateException("message"), CompletionException.class,
-                              new RootCauseMatcher(IllegalStateException.class, "message")},
+                new Object[]{JOIN, new IllegalStateException("message"), CompletionException.class,
+                        new RootCauseMatcher(IllegalStateException.class, "message")},
                 // RuntimeException with no constructor accepting a Throwable cause
-                new Object[] {JOIN, new IllegalThreadStateException("message"), CompletionException.class,
-                              new RootCauseMatcher(IllegalThreadStateException.class, "message")},
+                new Object[]{JOIN, new IllegalThreadStateException("message"), CompletionException.class,
+                        new RootCauseMatcher(IllegalThreadStateException.class, "message")},
                 // OperationTimeoutException is wrapped in CompletionException
-                new Object[] {JOIN, new OperationTimeoutException("message"), CompletionException.class,
-                              new RootCauseMatcher(OperationTimeoutException.class, "message")},
+                new Object[]{JOIN, new OperationTimeoutException("message"), CompletionException.class,
+                        new RootCauseMatcher(OperationTimeoutException.class, "message")},
                 // CancellationException is expected to be thrown from join() unwrapped
-                new Object[] {JOIN, new CancellationException("message"), CancellationException.class,
-                              IsNull.nullValue(Throwable.class)},
+                new Object[]{JOIN, new CancellationException("message"), CancellationException.class,
+                        IsNull.nullValue(Throwable.class)},
                 // Checked exception is wrapped in CompletionException
-                new Object[] {JOIN, new Exception("message"), CompletionException.class,
-                              new RootCauseMatcher(Exception.class, "message")},
+                new Object[]{JOIN, new ClassNotFoundException("message"), CompletionException.class,
+                        new RootCauseMatcher(ClassNotFoundException.class, "message")},
                 // Error subclass is wrapped in CompletionException
-                new Object[] {JOIN, new ExceptionInInitializerError("message"), CompletionException.class,
-                              new RootCauseMatcher(ExceptionInInitializerError.class, "message")},
+                new Object[]{JOIN, new OutOfMemoryError("message"), CompletionException.class,
+                        new RootCauseMatcher(OutOfMemoryError.class, "message")},
 
                 //// get()
                 // RuntimeException with a constructor accepting a Throwable cause
-                new Object[] {GET, new IllegalStateException("message"), ExecutionException.class,
-                              new RootCauseMatcher(IllegalStateException.class, "message")},
+                new Object[]{GET, new IllegalStateException("message"), ExecutionException.class,
+                        new RootCauseMatcher(IllegalStateException.class, "message")},
                 // RuntimeException with no constructor accepting a Throwable cause
-                new Object[] {GET, new IllegalThreadStateException("message"), ExecutionException.class,
-                              new RootCauseMatcher(IllegalThreadStateException.class, "message")},
+                new Object[]{GET, new IllegalThreadStateException("message"), ExecutionException.class,
+                        new RootCauseMatcher(IllegalThreadStateException.class, "message")},
                 // OperationTimeoutException is wrapped in ExecutionException
-                new Object[] {GET, new OperationTimeoutException("message"), ExecutionException.class,
-                              new RootCauseMatcher(OperationTimeoutException.class, "message")},
+                new Object[]{GET, new OperationTimeoutException("message"), ExecutionException.class,
+                        new RootCauseMatcher(OperationTimeoutException.class, "message")},
                 // CancellationException is expected to be thrown from get() unwrapped
-                new Object[] {GET, new CancellationException("message"), CancellationException.class,
-                              IsNull.nullValue(Throwable.class)},
+                new Object[]{GET, new CancellationException("message"), CancellationException.class,
+                        IsNull.nullValue(Throwable.class)},
                 // Checked exception is wrapped in HazelcastException
-                new Object[] {GET, new Exception("message"), ExecutionException.class,
-                              new RootCauseMatcher(Exception.class, "message")},
+                new Object[]{GET, new ClassNotFoundException("message"), ExecutionException.class,
+                        new RootCauseMatcher(ClassNotFoundException.class, "message")},
                 // Error subclass is wrapped in ExecutionException
-                new Object[] {GET, new ExceptionInInitializerError("message"), ExecutionException.class,
-                              new RootCauseMatcher(ExceptionInInitializerError.class, null)},
+                new Object[]{GET, new OutOfMemoryError("message"), ExecutionException.class,
+                        new RootCauseMatcher(OutOfMemoryError.class, null)},
 
         };
     }
@@ -136,12 +137,21 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
+    TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
+    }
+
     @Test
     public void test() throws Exception {
-        HazelcastInstance local = createHazelcastInstance();
-        OperationService operationService = getOperationService(local);
-        InternalCompletableFuture f = operationService.invokeOnPartition(null, new OperationsReturnsNoResponse(
-                exception), 0);
+
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        IExecutorService executorService = client.getExecutorService("test");
+
+        InternalCompletableFuture f = (InternalCompletableFuture) executorService.submit(new ExceptionThrowingCallable(exception));
         assertCompletesEventually(f);
 
         expected.expect(expectedExceptionClass);
@@ -165,16 +175,16 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
         }
     }
 
-    public class OperationsReturnsNoResponse extends Operation {
+    public static class ExceptionThrowingCallable implements Callable, Serializable {
 
         private final Throwable t;
 
-        public OperationsReturnsNoResponse(Throwable t) {
+        public ExceptionThrowingCallable(Throwable t) {
             this.t = t;
         }
 
         @Override
-        public void run() throws Exception {
+        public Object call() throws Exception {
             if (t instanceof Error) {
                 throw (Error) t;
             } else if (t instanceof RuntimeException) {
@@ -183,11 +193,6 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
                 throw (Exception) t;
             }
             throw new AssertionError("Unknown exception type " + t);
-        }
-
-        @Override
-        public boolean returnsResponse() {
-            return false;
         }
     }
 }

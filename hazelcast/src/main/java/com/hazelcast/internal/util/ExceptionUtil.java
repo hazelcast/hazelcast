@@ -21,8 +21,12 @@ import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
@@ -32,6 +36,18 @@ import java.util.function.BiFunction;
  * Contains various exception related utility methods.
  */
 public final class ExceptionUtil {
+
+    private static final String EXCEPTION_SEPARATOR = "------ submitted from ------";
+
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.publicLookup();
+    // new Throwable(String message, Throwable cause)
+    private static final MethodType MT_INIT_STRING_THROWABLE = MethodType.methodType(void.class, String.class, Throwable.class);
+    // new Throwable(Throwable cause)
+    private static final MethodType MT_INIT_THROWABLE = MethodType.methodType(void.class, Throwable.class);
+    // new Throwable(String message)
+    private static final MethodType MT_INIT_STRING = MethodType.methodType(void.class, String.class);
+    // new Throwable()
+    private static final MethodType MT_INIT = MethodType.methodType(void.class);
 
     private static final BiFunction<Throwable, String, HazelcastException> HAZELCAST_EXCEPTION_WRAPPER = (throwable, message) -> {
         if (message != null) {
@@ -194,4 +210,76 @@ public final class ExceptionUtil {
             }
         };
     }
+
+    /**
+     * Tries to create the exception with appropriate constructor in the following order.
+     * In all cases the cause is set(via constructor or via initCause)
+     * new Throwable(String message, Throwable cause)
+     * new Throwable(Throwable cause)
+     * new Throwable(String message)
+     * new Throwable()
+     *
+     * @param exceptionClass class of the exception
+     * @param message        message to be pass to constructor of the exception
+     * @param cause          cause to be set to the exception
+     * @return null if can not find a constructor as described above, otherwise return newly constructed expcetion
+     */
+    public static <T extends Throwable> T tryCreateExceptionWithMessageAndCause(Class<? extends Throwable> exceptionClass,
+                                                                                String message, @Nullable Throwable cause) {
+        MethodHandle constructor;
+        try {
+            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING_THROWABLE);
+            T clone = (T) constructor.invokeWithArguments(message, cause);
+            return clone;
+        } catch (Throwable ignored) {
+        }
+        try {
+            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_THROWABLE);
+            T clone = (T) constructor.invokeWithArguments(cause);
+            return clone;
+        } catch (Throwable ignored) {
+        }
+        try {
+            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING);
+            T clone = (T) constructor.invokeWithArguments(message);
+            clone.initCause(cause);
+            return clone;
+        } catch (Throwable ignored) {
+        }
+        try {
+            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT);
+            T clone = (T) constructor.invokeWithArguments();
+            clone.initCause(cause);
+            return clone;
+        } catch (Throwable ignored) {
+        }
+        return null;
+    }
+
+    /**
+     * @param original exception to be cloned with fixed stack trace
+     * @param <T>      type of the original exception
+     * @return a cloned exception with the current stacktrace is added on top of the original exceptions stack-trace
+     * the cloned exception has the same cause and the message as the original exception
+     */
+    public static <T extends Throwable> T cloneExceptionWithFixedAsyncStackTrace(T original) {
+        StackTraceElement[] fixedStackTrace = getFixedStackTrace(original, Thread.currentThread().getStackTrace());
+        Class<? extends Throwable> exceptionClass = original.getClass();
+        Throwable clone = tryCreateExceptionWithMessageAndCause(exceptionClass, original.getMessage(), original.getCause());
+        if (clone != null) {
+            clone.setStackTrace(fixedStackTrace);
+            return (T) clone;
+        }
+        return null;
+    }
+
+    private static StackTraceElement[] getFixedStackTrace(Throwable throwable, StackTraceElement[] localSideStackTrace) {
+        StackTraceElement[] remoteStackTrace = throwable.getStackTrace();
+        StackTraceElement[] newStackTrace = new StackTraceElement[localSideStackTrace.length + remoteStackTrace.length];
+        System.arraycopy(remoteStackTrace, 0, newStackTrace, 0, remoteStackTrace.length);
+        newStackTrace[remoteStackTrace.length] = new StackTraceElement(EXCEPTION_SEPARATOR, "", "", -1);
+        System.arraycopy(localSideStackTrace, 1, newStackTrace, remoteStackTrace.length + 1, localSideStackTrace.length - 1);
+        return newStackTrace;
+    }
+
 }

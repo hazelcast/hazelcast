@@ -24,7 +24,6 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -35,6 +34,8 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationFuture.returnOrThrowWithGetConventions;
 
 public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessage> {
 
@@ -91,25 +92,7 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
 
     @Override
     public ClientMessage resolveAndThrowIfException(Object response) throws ExecutionException, InterruptedException {
-        if (response instanceof ExceptionalResult) {
-            response = ((ExceptionalResult) response).getCause();
-        }
-        if (response instanceof Throwable) {
-            if (response instanceof ExecutionException) {
-                throw (ExecutionException) response;
-            }
-            if (response instanceof Error) {
-                throw (Error) response;
-            }
-            if (response instanceof InterruptedException) {
-                throw (InterruptedException) response;
-            }
-            if (response instanceof CancellationException) {
-                throw (CancellationException) response;
-            }
-            throw new ExecutionException((Throwable) response);
-        }
-        return (ClientMessage) response;
+        return returnOrThrowWithGetConventions(response);
     }
 
     public ClientInvocation getInvocation() {
