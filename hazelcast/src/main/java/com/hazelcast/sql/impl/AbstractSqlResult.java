@@ -29,7 +29,7 @@ public abstract class AbstractSqlResult implements SqlResult {
     /**
      * Closes the result, releasing all the resources.
      *
-     * @param exception exception that cause the close operation or {@code null} if the query is closed due to user request
+     * @param exception exception that caused the close operation or {@code null} if the query is closed due to user request
      */
     public abstract void close(@Nullable QueryException exception);
 
