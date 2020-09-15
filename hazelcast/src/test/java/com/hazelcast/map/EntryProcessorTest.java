@@ -532,6 +532,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = getConfig();
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        nodeFactory.newHazelcastInstance(cfg);
 
         IMap<Integer, Integer> map = instance1.getMap(MAP_NAME);
         int size = 100;
