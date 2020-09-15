@@ -100,7 +100,6 @@ public class SqlClientService implements SqlService {
             handleResponseError(response.error);
 
             return new SqlClientResult(
-                response.isUpdateCount,
                 this,
                 connection,
                 response.queryId,
@@ -108,7 +107,7 @@ public class SqlClientService implements SqlService {
                 response.rowPage,
                 response.rowPageLast,
                 statement.getCursorBufferSize(),
-                response.updatedCount
+                response.updateCount
             );
         } catch (Exception e) {
             throw rethrow(e, connection);
