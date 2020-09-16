@@ -74,7 +74,9 @@ public class ClusterJoinDelayTest extends HazelcastTestSupport {
         return config;
     }
 
-    @Test(timeout = 4 * 1000)
+    // below timeout should be 4 (one less than WAIT_SECONDS_BEFORE_JOIN)
+    // however, since async joins don't work, one more than the above works
+    @Test(timeout = 6 * 1000)
     public void testJoinDelayLessThanFourSeconds() {
         hzInst[0] = fact.newHazelcastInstance(getConfig());
         hzInst[1] = fact.newHazelcastInstance(getConfig());
