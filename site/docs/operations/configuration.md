@@ -101,11 +101,11 @@ below:
 
 |Option|Default|Description|
 |------|:------|:----|
-|instance/cooperativeThreadCount|number of cores|The number of threads Jet creates in its cooperative multithreading pool. |
-|instance/setFlowControlPeriodMs|100|Jet uses a flow control mechanism between cluster members to prevent a slower vertex from getting overflowed with data from a faster upstream vertex. Each receiver regularly reports to each sender how much more data it may send over a given DAG edge. This method sets the duration (in milliseconds) of the interval between flow-control packets.|
-|instance/setBackupCount|1|The number of synchronous backups to configure on the IMap that Jet needs internally to store job metadata and snapshots. The maximum allowed value is 6.|
-|instance/setScaleUpDelayMillis|10,000|The delay after which the auto-scaled jobs restart if a new member joins the cluster. It has no effect on jobs with auto scaling disabled.|
-|instance/setLosslessRestartEnabled|false|Specifies whether the Lossless Cluster Restart feature is enabled. With this feature, you can restart the whole cluster without losing the jobs and their state. It is implemented on top of Hazelcast IMDG's Hot Restart Persistence feature, which persists the data to disk. You need to have the Hazelcast Jet Enterprise edition and configure Hazelcast IMDG's Hot Restart Persistence to use this feature. The default value is `false`, i.e., disabled.|
+|instance/cooperative-thread-count|number of cores|The number of threads Jet creates in its cooperative multithreading pool. |
+|instance/flow-control-period-ms|100|Jet uses a flow control mechanism between cluster members to prevent a slower vertex from getting overflowed with data from a faster upstream vertex. Each receiver regularly reports to each sender how much more data it may send over a given DAG edge. This method sets the duration (in milliseconds) of the interval between flow-control packets.|
+|instance/backup-count|1|The number of synchronous backups to configure on the IMap that Jet needs internally to store job metadata and snapshots. The maximum allowed value is 6.|
+|instance/scale-up-delay-millis|10,000|The delay after which the auto-scaled jobs restart if a new member joins the cluster. It has no effect on jobs with auto scaling disabled.|
+|instance/lossless-restart-enabled|false|Specifies whether the Lossless Cluster Restart feature is enabled. With this feature, you can restart the whole cluster without losing the jobs and their state. It is implemented on top of Hazelcast IMDG's Hot Restart Persistence feature, which persists the data to disk. You need to have the Hazelcast Jet Enterprise edition and configure Hazelcast IMDG's Hot Restart Persistence to use this feature. The default value is `false`, i.e., disabled.|
 
 ## List of configuration properties
 

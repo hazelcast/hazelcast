@@ -5,6 +5,9 @@ hazelcast-jet:
     jet.idle.noncooperative.min.microseconds: 50
     jet.idle.noncooperative.max.microseconds: 1000
   instance:
+    # the number of threads Jet creates in its cooperative multithreading pool.
+    # The default is Runtime.availableProcessors().
+    #cooperative-thread-count:
     # period between flow control packets in milliseconds
     flow-control-period: 100
     # number of backup copies to configure for Hazelcast IMaps used internally in a Jet job
