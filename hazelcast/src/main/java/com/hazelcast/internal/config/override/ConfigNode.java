@@ -31,6 +31,7 @@ class ConfigNode {
     private final String name;
     private final Map<String, ConfigNode> children = new LinkedHashMap<>();
     private String value;
+    private boolean unread = true;
 
     ConfigNode(@Nonnull String name) {
         this(name, null);
@@ -42,12 +43,21 @@ class ConfigNode {
         this.parent = parent;
     }
 
+    boolean isUnread() {
+        return unread;
+    }
+
     String getName() {
         return name;
     }
 
-    Optional<String> getValue() {
-        return Optional.ofNullable(value);
+    boolean hasValue() {
+        return value != null;
+    }
+
+    String getValue() {
+        unread = false;
+        return value;
     }
 
     void setValue(String value) {
