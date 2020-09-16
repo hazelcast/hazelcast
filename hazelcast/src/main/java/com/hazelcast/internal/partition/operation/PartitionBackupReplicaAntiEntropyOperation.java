@@ -16,17 +16,20 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
+import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
-import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -63,8 +66,34 @@ public final class PartitionBackupReplicaAntiEntropyOperation
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
 
+        InternalPartitionImpl partition = partitionService.getPartitionStateManager().getPartitionImpl(partitionId);
+        int currentReplicaIndex = partition.getReplicaIndex(PartitionReplica.from(getNodeEngine().getLocalMember()));
+
+        ILogger logger = getLogger();
+        if (replicaIndex != currentReplicaIndex) {
+            logger.fine("Anti-entropy operation for partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex()
+                    + " is received, but this node is not the expected backup replica!"
+                    + " Current replicaIndex=" + currentReplicaIndex);
+            response = false;
+            return;
+        }
+
+        Address ownerAddress = partition.getOwnerOrNull();
+        if (!getCallerAddress().equals(ownerAddress)) {
+            logger.fine("Anti-entropy operation for partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex()
+                    + " is received from " + getCallerAddress() + ", but it's not the known primary replica owner: "
+                    + ownerAddress);
+            response = false;
+            return;
+        }
+
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
         replicaManager.retainNamespaces(partitionId, versions.keySet());
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("Retained namespaces for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
+                    + ". Namespaces=" + replicaManager.getNamespaces(partitionId));
+        }
 
         Iterator<Map.Entry<ServiceNamespace, Long>> iter = versions.entrySet().iterator();
         while (iter.hasNext()) {
