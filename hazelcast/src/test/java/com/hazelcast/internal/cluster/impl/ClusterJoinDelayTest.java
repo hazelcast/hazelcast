@@ -17,18 +17,20 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
+import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.Arrays;
 import org.junit.After;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,24 +43,21 @@ import org.junit.runner.RunWith;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClusterJoinDelayTest extends HazelcastTestSupport {
-    private HazelcastInstance[] hzInst;
+    // the below value should be true when async migration is implemented
+    @Rule
+    public final OverridePropertyRule overridePropertyRule = set(HAZELCAST_TEST_USE_NETWORK, "false");
+
     private TestHazelcastInstanceFactory fact;
     private final int numInstances = 3;
-
-    @BeforeClass
-    public static void init() {
-        System.setProperty(HAZELCAST_TEST_USE_NETWORK, Boolean.TRUE.toString());
-    }
 
     @Before
     public void beforeRun() {
         fact = createHazelcastInstanceFactory(numInstances);
-        hzInst = new HazelcastInstance[numInstances];
     }
 
     @After
     public void afterRun() {
-        Arrays.stream(hzInst).forEach(HazelcastInstance::shutdown);
+        Hazelcast.shutdownAll();
     }
 
     @Override
@@ -74,14 +73,12 @@ public class ClusterJoinDelayTest extends HazelcastTestSupport {
         return config;
     }
 
-    // below timeout should be 4 (one less than WAIT_SECONDS_BEFORE_JOIN)
-    // however, since async joins don't work, one more than the above works
-    @Test(timeout = 6 * 1000)
+    @Test(timeout = 4 * 1000)
     public void testJoinDelayLessThanFourSeconds() {
-        hzInst[0] = fact.newHazelcastInstance(getConfig());
-        hzInst[1] = fact.newHazelcastInstance(getConfig());
-        hzInst[2] = fact.newHazelcastInstance(getConfig());
-        assertTrue("hz1 should always be numInstances members here", hzInst[0].getCluster().getMembers().size() == numInstances);
-        assertTrue("hz2 should always be numInstances members here", hzInst[1].getCluster().getMembers().size() == numInstances);
+        HazelcastInstance hz1 = fact.newHazelcastInstance(getConfig());
+        HazelcastInstance hz2 = fact.newHazelcastInstance(getConfig());
+        HazelcastInstance hz3 = fact.newHazelcastInstance(getConfig());
+        assertTrue("hz1 should always be numInstances members here", hz1.getCluster().getMembers().size() == numInstances);
+        assertTrue("hz2 should always be numInstances members here", hz2.getCluster().getMembers().size() == numInstances);
     }
 }
