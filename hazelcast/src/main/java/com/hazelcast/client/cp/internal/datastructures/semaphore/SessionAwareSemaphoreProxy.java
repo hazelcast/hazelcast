@@ -243,10 +243,6 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
 
     private void doChangePermits(int delta) {
         long sessionId = sessionManager.acquireSession(groupId);
-        if (sessionId == NO_SESSION_ID) {
-            throw newIllegalStateException(null);
-        }
-
         long threadId = getThreadId();
         UUID invocationUid = newUnsecureUUID();
 
