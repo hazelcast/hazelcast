@@ -48,17 +48,22 @@ import java.util.Iterator;
  * </pre>
  *
  * You don't need to call {@link #close()} in this case.
- *
- * <h4>Determining the type of the result</h4>
- *
- * To determine whether the result contains rows or an update count, call
- * {@link #updateCount()}. If it returns -1, the result is rows, otherwise
- * it's update count.
  */
 public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
 
     /**
-     * Gets the row metadata or {@code null} if this result is an update count.
+     * Return whether this result has rows to iterate using the {@link
+     * #iterator()} method.
+     */
+    default boolean hasRows() {
+        return updateCount() == -1;
+    }
+
+    /**
+     * Gets the row metadata.
+     *
+     * @throws IllegalStateException if the result doesn't have rows, but
+     *     only an update count
      */
     @Nonnull
     SqlRowMetadata getRowMetadata();
