@@ -57,30 +57,9 @@ This plugin supports **two different options** of how Hazelcast members discover
 
 #### Granting Permissions to use Kubernetes API
 
-Using Kubernetes API requires granting certain permissions. Therefore, you may need to create `rbac.yaml` with the following content.
+Using Kubernetes API requires granting certain permissions. To grant them for 'default' service account in 'default' namespace execute the following command.
 
-```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: default-cluster
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: view
-subjects:
-- kind: ServiceAccount
-  name: default
-  namespace: default
-```
-  
-Then, apply `rbac.yaml`.
-
-```bash
-$ kubectl apply -f rbac.yaml
-```
-
-*Note*: You can be even more strict with the permissions and create your own Role. For details, please check the implementation of [Hazelcast Helm Chart](https://github.com/helm/charts/tree/master/stable/hazelcast).
+    kubectl apply -f https://raw.githubusercontent.com/hazelcast/hazelcast-kubernetes/master/rbac.yaml
 
 #### Creating Service
 
