@@ -48,7 +48,9 @@ import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.flakeidgen.impl.NodeIdOutOfRangeException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.memory.NativeOutOfMemoryError;
@@ -125,8 +127,10 @@ import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.WAIT_K
 public class ClientExceptionFactory {
 
     private final Map<Integer, ExceptionFactory> intToFactory = new HashMap<Integer, ExceptionFactory>();
+    private final ClassLoader classLoader;
 
-    public ClientExceptionFactory(boolean jcacheAvailable) {
+    public ClientExceptionFactory(boolean jcacheAvailable, ClassLoader classLoader) {
+        this.classLoader = classLoader;
         if (jcacheAvailable) {
             register(ClientProtocolErrorCodes.CACHE, CacheException.class, new ExceptionFactory() {
                 @Override
@@ -707,12 +711,32 @@ public class ClientExceptionFactory {
         ExceptionFactory exceptionFactory = intToFactory.get(errorHolder.getErrorCode());
         Throwable throwable;
         if (exceptionFactory == null) {
-            throwable = new UndefinedErrorCodeException(errorHolder.getMessage(), errorHolder.getClassName());
+            String className = errorHolder.getClassName();
+            assert checkClassNameForValidity(className) : "Exception should be defined in the protocol : " + className;
+            try {
+                Class<? extends Throwable> exceptionClass =
+                        (Class<? extends Throwable>) ClassLoaderUtil.loadClass(classLoader, className);
+                throwable = ExceptionUtil.tryCreateExceptionWithMessageAndCause(exceptionClass, errorHolder.getMessage(),
+                        createException(iterator));
+            } catch (Exception e) {
+                throwable = new UndefinedErrorCodeException(errorHolder.getMessage(), className, createException(iterator));
+            }
         } else {
             throwable = exceptionFactory.createException(errorHolder.getMessage(), createException(iterator));
         }
         throwable.setStackTrace(errorHolder.getStackTraceElements().toArray(new StackTraceElement[0]));
         return throwable;
+    }
+
+    /**
+     * hazelcast and jdk exceptions should always be defined
+     * in {@link com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes} and
+     * in {@link com.hazelcast.client.impl.clientside.ClientExceptionFactory}
+     * so that a well defined error code could be delivered to non-java clients.
+     * So we don't try to load them via ClassLoader to be able to catch the missing exceptions
+     */
+    private boolean checkClassNameForValidity(String exceptionClassName) {
+        return !exceptionClassName.startsWith("com.hazelcast") && !exceptionClassName.startsWith("java");
     }
 
     // method is used by Jet
