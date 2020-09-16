@@ -38,7 +38,6 @@ import java.util.function.BiFunction;
 public final class ExceptionUtil {
 
     private static final String EXCEPTION_SEPARATOR = "------ submitted from ------";
-
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.publicLookup();
     // new Throwable(String message, Throwable cause)
     private static final MethodType MT_INIT_STRING_THROWABLE = MethodType.methodType(void.class, String.class, Throwable.class);
@@ -281,5 +280,4 @@ public final class ExceptionUtil {
         System.arraycopy(localSideStackTrace, 1, newStackTrace, remoteStackTrace.length + 1, localSideStackTrace.length - 1);
         return newStackTrace;
     }
-
 }
