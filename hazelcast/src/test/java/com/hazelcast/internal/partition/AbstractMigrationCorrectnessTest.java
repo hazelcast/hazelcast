@@ -90,17 +90,14 @@ public abstract class AbstractMigrationCorrectnessTest extends PartitionCorrectn
         fillData(hz);
         assertSizeAndDataEventually();
 
-        waitAllForSafeState(factory.getAllHazelcastInstances());
         int size = 1;
         while (size < (nodeCount + 1)) {
             startNodes(config, backupCount + 1);
-            waitAllForSafeState(factory.getAllHazelcastInstances());
             size += (backupCount + 1);
 
             assertSizeAndDataEventually();
 
             terminateNodes(backupCount);
-            waitAllForSafeState(factory.getAllHazelcastInstances());
             size -= backupCount;
 
             if (checkAfterTerminate) {
