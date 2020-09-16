@@ -35,17 +35,20 @@ Apache License, Version 2.0
   Google Android Annotations Library:4.1.1.4
   proto-google-common-protos:1.17.0
   FindBugs-jsr305:3.0.2
-  Gson:2.8.6
+  Gson:2.3.1
   error-prone annotations:2.3.4
   Guava InternalFutureFailureAccess and InternalFutures:1.0.1
   Guava: Google Core Libraries for Java:28.1-android
   Guava ListenableFuture only:9999.0-empty-to-avoid-conflict-with-guava
   J2ObjC Annotations:1.3
+  junixsocket-common:2.0.4
+  junixsocket-native-common:2.0.4
   T-Digest:3.2
   Netty Reactive Streams Implementation:2.0.3
   Netty Reactive Streams HTTP support:2.0.3
   Apache Commons Codec:1.11
   Commons Logging:1.1.3
+  Toxiproxy Java Client:2.1.3
   picocli - a mighty tiny Command Line Interface:3.9.0
   Debezium API:1.2.1.Final
   Debezium Connector for MySQL:1.2.1.Final
@@ -72,6 +75,8 @@ Apache License, Version 2.0
   perfmark:perfmark-api:0.19.0
   jmx_prometheus_javaagent:0.13.0
   Joda-Time:2.10.1
+  Java Native Access:5.5.0
+  Java Native Access Platform:5.5.0
   Apache Avro:1.8.2
   Apache Commons Compress:1.8.1
   Apache HttpAsyncClient:4.1.4
@@ -114,6 +119,7 @@ Apache License, Version 2.0
   lang-mustache:7.0.0
   parent-join:7.0.0
   rank-eval:7.0.0
+  JetBrains Java Annotations:19.0.0
   LZ4 and xxHash:1.5.0
   SnakeYAML Engine:1.0
   snappy-java:1.1.1.3
@@ -142,18 +148,27 @@ BSD 3-Clause License
   ANTLR 4 Runtime:4.7.2
 CC0
   reactive-streams:1.0.2
+  Native Library Loader:2.0.2
 EPL 2.0
   javax.ws.rs-api:2.1.1
 GNU General Public License, version 2 (GPL2), with the classpath exception
   Checker Qual:2.5.5
 GPL2 w/ CPE
   javax.ws.rs-api:2.1.1
+LGPL, version 2.1
+  Java Native Access:5.5.0
+  Java Native Access Platform:5.5.0
 MIT License
   ClassGraph:4.8.66
   JOpt Simple:5.0.2
   Checker Qual:2.5.5
   Animal Sniffer Annotations:1.18
+  TCP to Unix Socket Proxy:1.0.2
+  Duct Tape:1.0.8
+  Visible Assertions:2.1.2
   SLF4J API Module:1.7.25
+  Testcontainers Core:1.14.3
+  Testcontainers :: Toxiproxy:1.14.3
 Public Domain
   XZ for Java:1.5
 Public Domain, per Creative Commons CC0

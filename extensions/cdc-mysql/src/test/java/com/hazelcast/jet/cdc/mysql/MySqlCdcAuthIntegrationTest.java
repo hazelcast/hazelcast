@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.cdc.mysql;
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.cdc.ChangeRecord;
@@ -26,14 +27,11 @@ import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.sql.SQLException;
-
-import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 
 @Category(NightlyTest.class)
-public class MySqlCdcAuthAndConnectionIntegrationTest extends AbstractMySqlCdcIntegrationTest {
+public class MySqlCdcAuthIntegrationTest extends AbstractMySqlCdcIntegrationTest {
 
     @Test
     public void wrongPassword() {
@@ -53,33 +51,8 @@ public class MySqlCdcAuthAndConnectionIntegrationTest extends AbstractMySqlCdcIn
         Job job = jet.newJob(pipeline);
         // then
         assertThatThrownBy(job::join)
-                .hasRootCauseInstanceOf(SQLException.class)
+                .hasRootCauseInstanceOf(JetException.class)
                 .hasStackTraceContaining("Access denied for user");
-    }
-
-    @Test
-    public void incorrectAddress() {
-        String containerIpAddress = mysql.getContainerIpAddress();
-        String wrongContainerIpAddress = "172.17.5.10";
-        if (containerIpAddress.equals(wrongContainerIpAddress)) {
-            wrongContainerIpAddress = "172.17.5.20";
-        }
-        StreamSource<ChangeRecord> source = MySqlCdcSources.mysql("name")
-                .setDatabaseAddress(wrongContainerIpAddress)
-                .setDatabasePort(mysql.getMappedPort(MYSQL_PORT))
-                .setDatabaseUser("debezium")
-                .setDatabasePassword("dbz")
-                .setClusterName("dbserver1")
-                .build();
-
-        Pipeline pipeline = pipeline(source);
-
-        JetInstance jet = createJetMembers(2)[0];
-
-        // when
-        Job job = jet.newJob(pipeline);
-        // then
-        assertJobStatusEventually(job, FAILED);
     }
 
     private Pipeline pipeline(StreamSource<ChangeRecord> source) {

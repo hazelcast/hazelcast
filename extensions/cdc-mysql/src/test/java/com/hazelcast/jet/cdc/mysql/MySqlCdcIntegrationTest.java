@@ -105,6 +105,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
             assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("results")), expectedRecords);
         } finally {
             job.cancel();
+            assertJobStatusEventually(job, JobStatus.FAILED);
         }
     }
 
@@ -149,6 +150,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
             assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("results")), expectedRecords);
         } finally {
             job.cancel();
+            assertJobStatusEventually(job, JobStatus.FAILED);
         }
     }
 
@@ -215,6 +217,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
             assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("results")), expectedRecords);
         } finally {
             job.cancel();
+            assertJobStatusEventually(job, JobStatus.FAILED);
         }
     }
 

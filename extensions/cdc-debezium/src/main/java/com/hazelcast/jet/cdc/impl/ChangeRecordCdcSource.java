@@ -17,6 +17,7 @@
 package com.hazelcast.jet.cdc.impl;
 
 import com.hazelcast.jet.cdc.ChangeRecord;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.StreamSource;
 import io.debezium.transforms.ExtractNewRecordState;
@@ -40,10 +41,11 @@ public class ChangeRecordCdcSource extends CdcSource<ChangeRecord> {
     private final SequenceExtractor sequenceExtractor;
     private final ExtractNewRecordState<SourceRecord> transform;
 
-    public ChangeRecordCdcSource(Properties properties) {
-        super(properties);
+    public ChangeRecordCdcSource(Processor.Context context, Properties properties) {
+        super(context, properties);
         try {
-            sequenceExtractor = newInstance(properties, SEQUENCE_EXTRACTOR_CLASS_PROPERTY);
+            sequenceExtractor = newInstance(properties.getProperty(SEQUENCE_EXTRACTOR_CLASS_PROPERTY),
+                    "sequence extractor ");
             transform = initTransform(properties.getProperty(DB_SPECIFIC_EXTRA_FIELDS_PROPERTY));
         } catch (Exception e) {
             throw rethrow(e);
@@ -66,7 +68,7 @@ public class ChangeRecordCdcSource extends CdcSource<ChangeRecord> {
 
     public static StreamSource<ChangeRecord> fromProperties(Properties properties) {
         String name = properties.getProperty("name");
-        return SourceBuilder.timestampedStream(name, ctx -> new ChangeRecordCdcSource(properties))
+        return SourceBuilder.timestampedStream(name, ctx -> new ChangeRecordCdcSource(ctx, properties))
                 .fillBufferFn(ChangeRecordCdcSource::fillBuffer)
                 .createSnapshotFn(CdcSource::createSnapshot)
                 .restoreSnapshotFn(CdcSource::restoreSnapshot)

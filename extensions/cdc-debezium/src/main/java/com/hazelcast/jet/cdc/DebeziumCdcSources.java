@@ -91,7 +91,10 @@ public final class DebeziumCdcSources {
          *                       Kafka Connect source
          * @param connectorClass name of the Java class for the connector, hardcoded for each type of DB
          */
-        private Builder(String name, String connectorClass, FunctionEx<Properties, StreamSource<T>> buildFn) {
+        private Builder(@Nonnull String name,
+                        @Nonnull String connectorClass,
+                        @Nonnull FunctionEx<Properties, StreamSource<T>> buildFn
+        ) {
             config = new DebeziumConfig(name, connectorClass);
             config.setProperty(CdcSource.SEQUENCE_EXTRACTOR_CLASS_PROPERTY, ConstantSequenceExtractor.class.getName());
 

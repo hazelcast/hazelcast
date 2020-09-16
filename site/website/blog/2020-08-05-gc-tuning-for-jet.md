@@ -57,8 +57,8 @@ it a bunch of data to process, the task will run for a short while and
 return. It doesn't have to process all the data in one go and the
 execution engine will give it control again later with all the
 still-pending data. This basic design is also present in the concepts of
-_green threads_ and _coroutines_. In Hazelcast Jet we call them
-[_tasklets_](/docs/architecture/execution-engine#tasklet).
+*green threads* and *coroutines*. In Hazelcast Jet we call them
+[*tasklets*](/docs/architecture/execution-engine#tasklet).
 
 This design allows Jet to always use the same, fixed-size thread pool no
 matter how many concurrent tasks it instantiates to run a data pipeline.
@@ -87,16 +87,16 @@ There are still as many threads as CPU cores and the OS doesn't have to
 do any context switching. We did give up one entire CPU core just for
 GC, reducing the CPU capacity available to Jet, but we allowed
 background GC to run truly concurrently to the Jet tasks. In low-latency
-scenarios, **the application doesn't need 100% CPU, but it needs its
-share of the CPU 100% of the time.**
+scenarios, *the application doesn't need 100% CPU, but it needs its
+share of the CPU 100% of the time.*
 
 We went to see if this setup really makes the difference we hope for,
 and found it indeed had a drammatic impact on the latency with both
 garbage collectors we tested (G1 and ZGC). The most important outcome
 was that we were now able to push G1 below the 10 ms line. Since G1 is
 stable across a wide range of throughputs, we immediately got it to
-perform within 10 ms at **double the throughput than in the previous
-round**.
+perform within 10 ms at *double the throughput than in the previous
+round*.
 
 ## The Setup
 
@@ -149,9 +149,9 @@ a solid 25% improvement.
 The effect on G1 is sort of dual to the above: while the G1 already had
 great throughput but fell just short of making it below the 10 ms line,
 in this round its latency improved across the board, up to 40% at
-places. The best news: **the maximum throughput at which a single
+places. The best news: *the maximum throughput at which a single
 Hazelcast Jet node maintains 99.99% latency within 10 ms now lies at 20
-million items per second**, a 250% boost!
+million items per second*, a 250% boost!
 
 ![Latency on c5.4xlarge, 1 M Events per Second](assets/2020-08-05-latency-1m.png)
 

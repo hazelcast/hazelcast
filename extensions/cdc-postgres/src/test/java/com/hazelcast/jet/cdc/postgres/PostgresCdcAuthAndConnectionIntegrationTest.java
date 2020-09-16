@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.cdc.postgres;
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.cdc.ChangeRecord;
@@ -26,10 +27,6 @@ import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.sql.SQLException;
-import org.postgresql.util.PSQLException;
-
-import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
@@ -54,33 +51,8 @@ public class PostgresCdcAuthAndConnectionIntegrationTest extends AbstractPostgre
         Job job = jet.newJob(pipeline);
         // then
         assertThatThrownBy(job::join)
-                .hasRootCauseInstanceOf(SQLException.class)
+                .hasRootCauseInstanceOf(JetException.class)
                 .hasStackTraceContaining("password authentication failed for user \"postgres\"");
-    }
-
-    @Test
-    public void incorrectAddress() {
-        String containerIpAddress = postgres.getContainerIpAddress();
-        String wrongContainerIpAddress = "172.17.5.10";
-        if (containerIpAddress.equals(wrongContainerIpAddress)) {
-            wrongContainerIpAddress = "172.17.5.20";
-        }
-        StreamSource<ChangeRecord> source = PostgresCdcSources.postgres("name")
-                .setDatabaseAddress(wrongContainerIpAddress)
-                .setDatabasePort(postgres.getMappedPort(POSTGRESQL_PORT))
-                .setDatabaseUser("postgres")
-                .setDatabasePassword("postgres")
-                .setDatabaseName("postgres")
-                .build();
-
-        Pipeline pipeline = pipeline(source);
-
-        JetInstance jet = createJetMembers(2)[0];
-
-        // when
-        Job job = jet.newJob(pipeline);
-        // then
-        assertJobStatusEventually(job, FAILED);
     }
 
     @Test
@@ -101,7 +73,7 @@ public class PostgresCdcAuthAndConnectionIntegrationTest extends AbstractPostgre
         Job job = jet.newJob(pipeline);
         // then
         assertThatThrownBy(job::join)
-                .hasRootCauseInstanceOf(PSQLException.class)
+                .hasRootCauseInstanceOf(JetException.class)
                 .hasStackTraceContaining("database \"wrongDatabaseName\" does not exist");
     }
 

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.cdc;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.github.dockerjava.api.DockerClient;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
@@ -25,13 +26,15 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.map.IMap;
+import org.junit.experimental.categories.Category;
+import org.testcontainers.DockerClientFactory;
+import org.testcontainers.containers.GenericContainer;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import org.junit.experimental.categories.Category;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -114,6 +117,17 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
         public String toString() {
             return "TableRow {id=" + id + ", value1=" + value1 + ", value2=" + value2 + ", value3=" + value3 + '}';
         }
+    }
+
+    /**
+     * Stops a container via the `docker stop` command. Necessary because the
+     * {@code stop()} method of test containers is implemented via `docker kill`
+     * and this matters for some tests.
+     */
+    protected static void stopContainer(GenericContainer<?> container) {
+        String containerId = container.getContainerId();
+        DockerClient dockerClient = DockerClientFactory.instance().client();
+        dockerClient.stopContainerCmd(containerId).exec();
     }
 
 }

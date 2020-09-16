@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.cdc.impl;
 
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.StreamSource;
 import org.apache.kafka.connect.data.Values;
@@ -28,8 +29,8 @@ import static com.hazelcast.jet.Util.entry;
 
 public class JsonCdcSource extends CdcSource<Entry<String, String>> {
 
-    public JsonCdcSource(Properties properties) {
-        super(properties);
+    public JsonCdcSource(Processor.Context context, Properties properties) {
+        super(context, properties);
     }
 
     @Override
@@ -41,7 +42,7 @@ public class JsonCdcSource extends CdcSource<Entry<String, String>> {
 
     public static StreamSource<Entry<String, String>> fromProperties(Properties properties) {
         String name = properties.getProperty("name");
-        return SourceBuilder.timestampedStream(name, ctx -> new JsonCdcSource(properties))
+        return SourceBuilder.timestampedStream(name, ctx -> new JsonCdcSource(ctx, properties))
                 .fillBufferFn(JsonCdcSource::fillBuffer)
                 .createSnapshotFn(CdcSource::createSnapshot)
                 .restoreSnapshotFn(CdcSource::restoreSnapshot)

@@ -34,7 +34,6 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -108,6 +107,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
             assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("results")), expectedRecords);
         } finally {
             job.cancel();
+            assertJobStatusEventually(job, JobStatus.FAILED);
         }
     }
 
@@ -148,6 +148,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
             assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("results")), expectedRecords);
         } finally {
             job.cancel();
+            assertJobStatusEventually(job, JobStatus.FAILED);
         }
     }
 
@@ -215,6 +216,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
             assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("results")), expectedRecords);
         } finally {
             job.cancel();
+            assertJobStatusEventually(job, JobStatus.FAILED);
         }
     }
 
@@ -288,7 +290,6 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
 
     @Test
     @Category(NightlyTest.class)
-    @Ignore //todo: until https://issues.redhat.com/browse/DBZ-2288 fixed
     public void dataLoss() throws Exception {
         int offset = 1005;
         int length = 9995;
@@ -354,11 +355,11 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
                 int size = map.size();
                 System.out.println("No. of records: " + size);
                 assertEquals(expectedRecords.size(), size);
-
                 assertMatch(expectedRecords, mapResultsToSortedList(map));
             });
         } finally {
             job.cancel();
+            assertJobStatusEventually(job, JobStatus.FAILED);
         }
     }
 

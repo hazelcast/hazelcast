@@ -312,3 +312,91 @@ of a standby.
 There are discussions in the PostgreSQL community around a feature
 called *failover slots* which would help mitigate this problem, but as
 of version 12 they have not been implemented yet.
+
+## Troubleshooting
+
+### MySQL
+
+The general behaviour of the MySQL connector when loosing connection to
+the database is governed by a configurable reconnect strategy and a
+boolean flag specifying if state should be reset on reconnects or not.
+For details see the
+[javadoc](/javadoc/{jet-version}/com/hazelcast/jet/cdc/mysql/MySqlCdcSources.html).
+
+There are however some discrepancies and peculiarities in the behavior.
+
+#### During database snapshotting
+
+If the connection to the database fails during the snapshotting phase
+then the connector is stuck in this state until the connection
+disruption is resolved externally (the database comes back online
+or the network outage passes). The connector will not initiate any
+reconnect attempts. It will just wait indefinitely until the problem
+disappears.
+
+This, unfortunately, is the case regardless of the reconnect strategy
+specified and is related to the peculiarities of the underlying
+implementation classes used.
+
+#### Database goes down
+
+If the database process/machine dies during the binlog trailing phase of
+the connector and the network is intact, allowing the connector to
+detect what happened, then reconnecting will work as specified by the
+reconnect strategy. The connector will initiate reconnect attempts by
+restarting itself with the configured timings and as many times as
+specified.
+
+#### Network outage
+
+If there is a network outage during the binlog trailing phase of the
+connector, then the connector will detect the outage, and it will
+reconnect. The configured reconnect strategy will, however, be only
+partially applied. This is caused by the fact that such network outages
+are handled internally, by the connector's underlying implementation
+classes, and those mechanism are only capable of fixed period retrying
+without an upper limit on the number of attempts made.
+
+The length of the reconnect period will be taken from the reconnect
+strategy, and it will be equal to the delay the later has configured for
+the first reconnect attempt (more precisely what its `IntervalFunction`
+returns when applied to `1`). So for example, if we have reconnect
+periods with exponential backoff configured, then the backoff will not
+be applied.
+
+Just as the retry strategy is not fully taken into consideration when
+reconnection is handled in this manner, the state reset setting is also
+ignored. Internal reconnects will never reset the state.
+
+### Postgres
+
+The general behaviour of the Postgres connector when loosing connection
+to the database is governed by a configurable reconnect strategy and a
+boolean flag specifying if state should be reset on reconnects or not.
+For details see the
+[javadoc](/javadoc/{jet-version}/com/hazelcast/jet/cdc/postgres/PostgresCdcSources.html).
+
+There are however some peculiarities aspects to the behaviour.
+
+#### Replication slot must be intact
+
+The reconnect process can work automatically only as long as the
+Postgres replication slot, which it's based on, has not lost data. When
+the Postgres database cluster experiences failures and the source needs
+to be connected to a different database instance, manual intervention
+from an administrator might become necessary to ensure that the
+replication slot has been re-created properly, without data loss.
+
+#### No active outage detection
+
+The Postgres connector does not have any active connection monitoring.
+Because of that, if there is any connection loss (database
+machine/process dies, network outage and so on), the connector notices
+the failure only after a long delay. It is basically at the mercy of
+timeouts at the level of the network stack. In many situations, these
+long delays need to be waited out before the reconnect process can
+start.
+
+If the connection loss is short and recovers on its own, the connector
+doesn't even notice and will work properly, due to replication slots
+ensuring the continuity of data.

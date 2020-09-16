@@ -23,6 +23,8 @@ import com.hazelcast.jet.cdc.impl.CdcSource;
 import com.hazelcast.jet.cdc.impl.ChangeRecordCdcSource;
 import com.hazelcast.jet.cdc.impl.DebeziumConfig;
 import com.hazelcast.jet.cdc.impl.PropertyRules;
+import com.hazelcast.jet.retry.RetryStrategies;
+import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.cdc.postgres.impl.PostgresSequenceExtractor;
 import com.hazelcast.jet.pipeline.StreamSource;
 
@@ -46,12 +48,25 @@ public final class PostgresCdcSources {
      * Creates a CDC source that streams change data from a PostgreSQL database
      * to Hazelcast Jet.
      * <p>
-     * <b>KNOWN ISSUE 1:</b> If Jet can't reach the database when it attempts to
-     * start the source or if it looses the connection to the database from an
-     * already running source, it throws an exception and terminate the
-     * execution of the job. This behaviour is not ideal, would be much better
-     * to try to reconnect, at least for a certain amount of time. Future
-     * versions will address the problem.
+     * You can configure how the source will behave if the database connection
+     * breaks, by passing one of the {@linkplain RetryStrategy retry strategies}
+     * to {@code setReconnectBehavior()}.
+     * <p>
+     * The default reconnect behavior is <em>never</em>, which treats any
+     * connection failure as an unrecoverable problem and triggers the failure
+     * of the source and the entire job.
+     * <p>
+     * Other behavior options, which specify that retry attempts should be
+     * made, will result in the source initiating reconnects to the database.
+     * <p>
+     * There is a further setting influencing reconnect behavior, specified via
+     * the {@code setShouldStateBeResetOnReconnect()}. The boolean flag passed
+     * in specifies what should happen to the connector's state on reconnect,
+     * whether it should be kept or reset. If the state is kept, then
+     * snapshotting should not be repeated and streaming the WAL should resume
+     * at the position where it left off. If the state is reset, then the source
+     * will behave as on its initial start, so will do a snapshot and will start
+     * trailing the WAL where it syncs with the snapshot's end.
      *
      * @param name name of this source, needs to be unique, will be passed to
      *             the underlying Kafka Connect source
@@ -84,7 +99,7 @@ public final class PostgresCdcSources {
          * @param name name of the source, needs to be unique, will be passed to
          *             the underlying Kafka Connect source
          */
-        private Builder(String name) {
+        private Builder(@Nonnull String name) {
             Objects.requireNonNull(name, "name");
 
             config = new DebeziumConfig(name, "io.debezium.connector.postgresql.PostgresConnector");
@@ -356,6 +371,34 @@ public final class PostgresCdcSources {
         @Nonnull
         public Builder setSslRootCertificateFile(@Nonnull String file) {
             config.setProperty("database.sslrootcert", file);
+            return this;
+        }
+
+        /**
+         * Specifies how the connector should behave when it detects that the
+         * backing database has been shut dow.
+         * <p>
+         * Defaults to {@link RetryStrategies#never()}.
+         *
+         */
+        @Nonnull
+        public Builder setReconnectBehavior(RetryStrategy retryStrategy) {
+            config.setProperty(CdcSource.RECONNECT_BEHAVIOR_PROPERTY, retryStrategy);
+            return this;
+        }
+
+        /**
+         * Specifies if the source's state should be kept or discarded during
+         * reconnect attempts to the database. If the state is kept, then
+         * snapshotting should not be repeated and streaming the binlog should
+         * resume at the position where it left off. If the state is reset, then
+         * the source will behave as if it were its initial start, so will do a
+         * snapshot and will start trailing the binlog where it syncs with the
+         * snapshot's end.
+         */
+        @Nonnull
+        public Builder setShouldStateBeResetOnReconnect(boolean reset) {
+            config.setProperty(CdcSource.RECONNECT_RESET_STATE_PROPERTY, reset);
             return this;
         }
 
