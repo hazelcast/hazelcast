@@ -17,6 +17,7 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.SqlErrorCode;
@@ -51,6 +52,11 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
         client = null;
 
         factory.shutdownAll();
+    }
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
     }
 
     protected void checkTimeout(boolean useClient) {
