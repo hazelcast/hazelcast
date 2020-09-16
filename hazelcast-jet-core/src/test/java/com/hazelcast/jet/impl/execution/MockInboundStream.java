@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.util.ProgressState;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
@@ -53,8 +54,8 @@ public class MockInboundStream implements InboundEdgeStream {
         this.ordinal = ordinal;
     }
 
-    @Override
-    public ProgressState drainTo(Predicate<Object> dest) {
+    @Nonnull @Override
+    public ProgressState drainTo(@Nonnull Predicate<Object> dest) {
         if (done) {
             return WAS_ALREADY_DONE;
         }

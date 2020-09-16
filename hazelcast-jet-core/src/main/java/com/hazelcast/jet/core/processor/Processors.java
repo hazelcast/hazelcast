@@ -28,6 +28,7 @@ import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
@@ -46,6 +47,7 @@ import com.hazelcast.jet.impl.processor.GroupP;
 import com.hazelcast.jet.impl.processor.InsertWatermarksP;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SlidingWindowP;
+import com.hazelcast.jet.impl.processor.SortP;
 import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.impl.processor.TransformStatefulP;
 import com.hazelcast.jet.impl.processor.TransformUsingServiceP;
@@ -53,8 +55,10 @@ import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.PriorityQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
@@ -970,6 +974,22 @@ public final class Processors {
     ) {
         return TransformUsingServiceP.<C, S, T, R>supplier(serviceFactory,
                 (singletonTraverser, service, item) -> flatMapFn.apply(service, item));
+    }
+
+    /**
+     * Returns a supplier of processors for a vertex that sorts its input using
+     * a {@link PriorityQueue} and emits it in the {@code complete} phase.
+     * <p>
+     * The output edge of this vertex should be {@link Edge#distributed
+     * distributed} {@link Edge#monotonicOrder monotonicOrder} {@link
+     * Edge#allToOne allToOne} so it preserves the ordering when merging
+     * the data from all upstream processors.
+     *
+     * @since 4.3
+     */
+    @Nonnull
+    public static <T> SupplierEx<Processor> sortP(Comparator<T> comparator) {
+        return () -> new SortP<>(comparator);
     }
 
     /**

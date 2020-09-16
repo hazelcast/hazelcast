@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.EdgeConfig;
@@ -94,7 +95,7 @@ public class Edge implements IdentifiedDataSerializable {
     private Address distributedTo;
     private Partitioner<?> partitioner;
     private RoutingPolicy routingPolicy = RoutingPolicy.UNICAST;
-
+    private ComparatorEx<?> comparator;
     private EdgeConfig config;
 
     protected Edge() {
@@ -363,12 +364,43 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
+     * Specifies that the data will travel along this edge in a monotonically
+     * ascending order according to the provided comparator. The tasklet of
+     * the destination processor will ensure it always takes the least item
+     * of all those available at the head of the input queues. For this
+     * behavior to be useful, every upstream processor must ensure it emits the
+     * data according to the same ordering.
+     * <p>
+     * The purpose of this edge type is distributed sorting. The processors
+     * of the source vertex sort their partial data and the processor in the
+     * destination vertex maintains the sort order while consuming the data
+     * from many concurrent inputs.
+     *
+     * @since 4.3
+     */
+    public <T> Edge monotonicOrder(@Nonnull ComparatorEx<T> comparator) {
+        this.comparator = comparator;
+        return this;
+    }
+
+    /**
      * Returns the instance encapsulating the partitioning strategy in effect
      * on this edge.
      */
     @Nullable
     public Partitioner<?> getPartitioner() {
         return partitioner;
+    }
+
+    /**
+     * Returns the comparator defined on this edge using {@link
+     * #monotonicOrder(ComparatorEx)}.
+     *
+     * @since 4.3
+     **/
+    @Nullable
+    public ComparatorEx<?> getComparator() {
+        return comparator;
     }
 
     /**
@@ -568,6 +600,7 @@ public class Edge implements IdentifiedDataSerializable {
         out.writeUTF(getDestName());
         out.writeInt(getDestOrdinal());
         out.writeInt(getPriority());
+        out.writeObject(getComparator());
         out.writeObject(getDistributedTo());
         out.writeObject(getRoutingPolicy());
         CustomClassLoadedObject.write(out, getPartitioner());
@@ -581,6 +614,7 @@ public class Edge implements IdentifiedDataSerializable {
         destName = in.readUTF();
         destOrdinal = in.readInt();
         priority = in.readInt();
+        comparator = in.readObject();
         distributedTo = in.readObject();
         routingPolicy = in.readObject();
         try {

@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.SupplierEx;
@@ -82,6 +83,16 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
     @Nonnull @Override
     public BatchStage<T> rebalance() {
         return new BatchStageImpl<>(this, true);
+    }
+
+    @Nonnull @Override
+    public BatchStage<T> sort() {
+        return attachSort(null);
+    }
+
+    @Nonnull @Override
+    public BatchStage<T> sort(@Nonnull ComparatorEx<? super T> comparator) {
+        return attachSort(comparator);
     }
 
     @Nonnull @Override

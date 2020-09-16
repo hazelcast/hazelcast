@@ -18,6 +18,7 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.SupplierEx;
@@ -65,6 +66,37 @@ public interface BatchStage<T> extends GeneralStage<T> {
 
     @Nonnull @Override
     BatchStage<T> rebalance();
+
+    /**
+     * Attaches a stage that sorts the input items according to their natural order.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * items.sort()
+     * }</pre>
+     *
+     * @return the newly attached stage
+     * @see ComparatorEx#naturalOrder
+     * @since 4.3
+     */
+    @Nonnull
+    BatchStage<T> sort();
+
+    /**
+     * Attaches a stage that sorts the input items according to the supplied
+     * comparator.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * trades.sort(Trade::ticker)
+     * }</pre>
+     *
+     * @param comparator the user-provided comparator that will be used for sorting.
+     * @return the newly attached stage
+     * @since 4.3
+     */
+    @Nonnull
+    BatchStage<T> sort(@Nonnull ComparatorEx<? super T> comparator);
 
     @Nonnull @Override
     <R> BatchStage<R> map(@Nonnull FunctionEx<? super T, ? extends R> mapFn);

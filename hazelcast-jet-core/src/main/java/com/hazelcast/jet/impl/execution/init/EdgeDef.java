@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
@@ -39,6 +40,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
     private RoutingPolicy routingPolicy;
     private Partitioner<?> partitioner;
     private EdgeConfig config;
+    private ComparatorEx<?> comparator;
 
     // transient fields populated and used after deserialization
     private transient String id;
@@ -57,6 +59,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
         this.routingPolicy = edge.getRoutingPolicy();
         this.partitioner = edge.getPartitioner();
         this.config = config;
+        this.comparator = edge.getComparator();
     }
 
     void initTransientFields(Map<Integer, VertexDef> vMap, VertexDef nearVertex, boolean isOutbound) {
@@ -115,6 +118,10 @@ public class EdgeDef implements IdentifiedDataSerializable {
         return config;
     }
 
+    ComparatorEx<?> getComparator() {
+        return comparator;
+    }
+
 
     // IdentifiedDataSerializable implementation
 
@@ -134,6 +141,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
         out.writeInt(destOrdinal);
         out.writeInt(sourceOrdinal);
         out.writeInt(priority);
+        out.writeObject(comparator);
         out.writeObject(distributedTo);
         out.writeObject(routingPolicy);
         CustomClassLoadedObject.write(out, partitioner);
@@ -146,6 +154,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
         destOrdinal = in.readInt();
         sourceOrdinal = in.readInt();
         priority = in.readInt();
+        comparator = in.readObject();
         distributedTo = in.readObject();
         routingPolicy = in.readObject();
         partitioner = CustomClassLoadedObject.read(in);

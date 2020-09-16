@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.impl.util.ProgressState;
 
+import javax.annotation.Nonnull;
 import java.util.function.Predicate;
 
 /**
@@ -40,7 +41,8 @@ public interface InboundEdgeStream {
     /**
      * Passes the items from the queues to the predicate while it returns {@code true}.
      */
-    ProgressState drainTo(Predicate<Object> dest);
+    @Nonnull
+    ProgressState drainTo(@Nonnull Predicate<Object> dest);
 
     /**
      * Returns true after all the input queues are done.

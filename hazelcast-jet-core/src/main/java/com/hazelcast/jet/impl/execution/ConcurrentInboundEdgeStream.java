@@ -16,16 +16,21 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.Pipe;
 import com.hazelcast.internal.util.concurrent.QueuedPipe;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.impl.util.ObjectWithPartitionId;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import javax.annotation.Nonnull;
 import java.util.BitSet;
+import java.util.Comparator;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 
@@ -47,7 +52,7 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
     private final ConcurrentConveyor<Object> conveyor;
     private final ProgressTracker tracker = new ProgressTracker();
     private final ItemDetector itemDetector = new ItemDetector();
-
+    private Comparator<Object> comparator;
     private final WatermarkCoalescer watermarkCoalescer;
     private final BitSet receivedBarriers; // indicates if current snapshot is received on the queue
     private final ILogger logger;
@@ -58,7 +63,6 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
     // Once a terminal snapshot barrier is reached, this is always true.
     private boolean waitForAllBarriers;
     private SnapshotBarrier currentBarrier;  // next snapshot barrier to emit
-    private long numActiveQueues; // number of active queues remaining
 
     /**
      * @param waitForAllBarriers If {@code true}, a queue that had a barrier won't
@@ -66,19 +70,28 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
      *          queues. This will enforce exactly-once vs. at-least-once, if it
      *          is {@code false}.
      */
-    public ConcurrentInboundEdgeStream(ConcurrentConveyor<Object> conveyor, int ordinal, int priority,
-                                       boolean waitForAllBarriers, String debugName) {
+    public ConcurrentInboundEdgeStream(
+            @Nonnull ConcurrentConveyor<Object> conveyor, int ordinal, int priority, boolean waitForAllBarriers,
+            @Nonnull String debugName
+    ) {
         this.conveyor = conveyor;
         this.ordinal = ordinal;
         this.priority = priority;
         this.waitForAllBarriers = waitForAllBarriers;
 
         watermarkCoalescer = WatermarkCoalescer.create(conveyor.queueCount());
-
-        numActiveQueues = conveyor.queueCount();
         receivedBarriers = new BitSet(conveyor.queueCount());
         logger = Logger.getLogger(ConcurrentInboundEdgeStream.class.getName() + "." + debugName);
         logger.finest("Coalescing " + conveyor.queueCount() + " input queues");
+    }
+
+    @SuppressWarnings("unchecked")
+    public ConcurrentInboundEdgeStream(
+            @Nonnull ConcurrentConveyor<Object> conveyor, int ordinal, int priority, boolean waitForAllBarriers,
+            @Nonnull String debugName, @Nonnull ComparatorEx<?> comparator
+    ) {
+        this(conveyor, ordinal, priority, waitForAllBarriers, debugName);
+        this.comparator = (Comparator<Object>) comparator;
     }
 
     @Override
@@ -91,8 +104,11 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
         return priority;
     }
 
-    @Override
-    public ProgressState drainTo(Predicate<Object> dest) {
+    @Nonnull @Override
+    public ProgressState drainTo(@Nonnull Predicate<Object> dest) {
+        if (comparator != null) {
+            return drainToWithComparator(dest);
+        }
         tracker.reset();
         for (int queueIndex = 0; queueIndex < conveyor.queueCount(); queueIndex++) {
             final QueuedPipe<Object> q = conveyor.queue(queueIndex);
@@ -111,13 +127,12 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
             if (itemDetector.item == DONE_ITEM) {
                 conveyor.removeQueue(queueIndex);
                 receivedBarriers.clear(queueIndex);
-                numActiveQueues--;
                 long wmTimestamp = watermarkCoalescer.queueDone(queueIndex);
                 if (maybeEmitWm(wmTimestamp, dest)) {
                     if (logger.isFinestEnabled()) {
                         logger.finest("Queue " + queueIndex + " is done, forwarding " + new Watermark(wmTimestamp));
                     }
-                    return numActiveQueues == 0 ? DONE : MADE_PROGRESS;
+                    return conveyor.liveQueueCount() == 0 ? DONE : MADE_PROGRESS;
                 }
             } else if (itemDetector.item instanceof Watermark) {
                 long wmTimestamp = ((Watermark) itemDetector.item).timestamp();
@@ -137,20 +152,18 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
                 watermarkCoalescer.observeEvent(queueIndex);
             }
 
-            if (numActiveQueues == 0) {
+            int liveQueueCount = conveyor.liveQueueCount();
+            if (liveQueueCount == 0) {
                 return tracker.toProgressState();
             }
-
-            if (itemDetector.item != null) {
-                // if we have received the current snapshot from all active queues, forward it
-                if (receivedBarriers.cardinality() == numActiveQueues) {
-                    assert currentBarrier != null : "currentBarrier == null";
-                    boolean res = dest.test(currentBarrier);
-                    assert res : "test result expected to be true";
-                    currentBarrier = null;
-                    receivedBarriers.clear();
-                    return MADE_PROGRESS;
-                }
+            // if we have received the current snapshot from all active queues, forward it
+            if (itemDetector.item != null && receivedBarriers.cardinality() == liveQueueCount) {
+                assert currentBarrier != null : "currentBarrier == null";
+                boolean res = dest.test(currentBarrier);
+                assert res : "test result expected to be true";
+                currentBarrier = null;
+                receivedBarriers.clear();
+                return MADE_PROGRESS;
             }
         }
 
@@ -159,10 +172,65 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
             return MADE_PROGRESS;
         }
 
-        if (numActiveQueues > 0) {
+        if (conveyor.liveQueueCount() > 0) {
             tracker.notDone();
         }
         return tracker.toProgressState();
+    }
+
+    private ProgressState drainToWithComparator(Predicate<Object> dest) {
+        tracker.reset();
+        tracker.notDone();
+        int batchSize = -1;
+        Object lastItem = null;
+        do {
+            int minIndex = 0;
+            Object minItem = null;
+            for (int queueIndex = 0; queueIndex < conveyor.queueCount(); queueIndex++) {
+                final QueuedPipe<Object> q = conveyor.queue(queueIndex);
+                if (q == null) {
+                    continue;
+                }
+                Object headItem = unwrap(q.peek());
+                if (headItem == null) {
+                    return tracker.toProgressState();
+                }
+                if (headItem == DONE_ITEM) {
+                    conveyor.removeQueue(queueIndex);
+                    continue;
+                }
+                if (minItem == null || comparator.compare(minItem, headItem) > 0) {
+                    minIndex = queueIndex;
+                    minItem = headItem;
+                }
+            }
+            if (conveyor.liveQueueCount() == 0) {
+                tracker.done();
+                return tracker.toProgressState();
+            }
+            if (batchSize == -1) {
+                batchSize = conveyor.queue(minIndex).size();
+            }
+            if (lastItem != null && comparator.compare(lastItem, minItem) > 0) {
+                throw new JetException(String.format(
+                    "Disorder on a monotonicOrder edge: received %s and then %s from the same queue",
+                        lastItem, minItem
+                ));
+            }
+            lastItem = minItem;
+            Object polledItem = unwrap(conveyor.queue(minIndex).poll());
+            tracker.madeProgress();
+            assert polledItem == minItem : "polledItem != minItem";
+            boolean consumeResult = dest.test(minItem);
+            assert consumeResult : "consumeResult is false";
+        } while (--batchSize > 0);
+        return tracker.toProgressState();
+    }
+
+    private Object unwrap(Object item) {
+        return item instanceof ObjectWithPartitionId
+                ? ((ObjectWithPartitionId) item).getItem()
+                : item;
     }
 
     private boolean maybeEmitWm(long timestamp, Predicate<Object> dest) {
@@ -176,7 +244,7 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
 
     @Override
     public boolean isDone() {
-        return numActiveQueues == 0;
+        return conveyor.liveQueueCount() == 0;
     }
 
     /**

@@ -323,13 +323,40 @@ p.readFrom(TestSources.items("joe", "john", "jenny", "maria"))
  .writeTo(Sinks.logger());
 ```
 
-The output will be something like this (although it's undefined which of
-the names starting with "j" ends up being output):
+This is a possible output (Jet can choose any of the names starting in
+"j"):
 
 ```text
 14:05:29.382 [ INFO] [c.h.j.i.c.W.loggerSink#0] joe
 14:05:29.383 [ INFO] [c.h.j.i.c.W.loggerSink#0] maria
 ```
+
+## sort
+
+Sorting only works on a batch stage. It sorts the input according to its
+natural ordering (the type must be `Comparable`) or according to the
+`Comparator` you provide. Example:
+
+```java
+Pipeline p = Pipeline.create();
+p.readFrom(TestSources.items("bob", "alice", "dan", "chuck"))
+ .sort()
+ .writeTo(Sinks.logger());
+```
+
+This is how the output should look:
+
+```text
+10:43:54.523 [ INFO] [c.h.j.i.c.W.loggerSink#0] alice
+10:43:54.524 [ INFO] [c.h.j.i.c.W.loggerSink#0] bob
+10:43:54.524 [ INFO] [c.h.j.i.c.W.loggerSink#0] chuck
+10:43:54.524 [ INFO] [c.h.j.i.c.W.loggerSink#0] dan
+```
+
+Jet sorts the data in two steps: first it sorts the data that is local
+on each node, and then it merges the sorted streams into the final
+output. The first step requires O(n) heap memory, but the second step
+just receives the data in the correct order and has O(1) memory needs.
 
 ## mapStateful
 

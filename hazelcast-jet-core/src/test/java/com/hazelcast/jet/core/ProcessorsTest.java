@@ -46,6 +46,7 @@ import static com.hazelcast.jet.core.processor.Processors.flatMapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceAsyncP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
+import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP.DEFAULT_MAX_CONCURRENT_OPS;
 import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP.DEFAULT_PRESERVE_ORDER;
 import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
@@ -153,6 +154,15 @@ public class ProcessorsTest extends SimpleTestInClusterSupport {
                 .verifyProcessor(filterP(o -> o.equals(1)))
                 .input(asList(1, 2, 1, 2))
                 .expectOutput(asList(1, 1));
+    }
+
+    @Test
+    public void sort() {
+        TestSupport
+                .verifyProcessor(sortP(null))
+                .input(asList(3, 5, 2, 1, 4))
+                .disableSnapshots()
+                .expectOutput(asList(1, 2, 3, 4, 5));
     }
 
     @Test
