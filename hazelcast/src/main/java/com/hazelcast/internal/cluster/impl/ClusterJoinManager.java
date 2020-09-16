@@ -56,6 +56,7 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Future;
@@ -70,11 +71,6 @@ import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBra
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
-import java.util.Arrays;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * ClusterJoinManager manages member join process.
@@ -101,17 +97,15 @@ public class ClusterJoinManager {
     private final ClusterClockImpl clusterClock;
     private final ClusterStateManager clusterStateManager;
 
+    private final Map<Address, MemberInfo> joiningMembers = new LinkedHashMap<>();
     private final Map<UUID, Long> recentlyJoinedMemberUuids = new HashMap<>();
     private final long maxWaitMillisBeforeJoin;
     private final long waitMillisBeforeJoin;
     private final long staleJoinPreventionDuration;
-    private final AtomicBoolean migrationDelayActive = new AtomicBoolean();
-    private final ClusterJoinManagerSyncJoinStrategy syncJoinStrategy;
 
+    private long firstJoinRequest;
+    private long timeToStartJoin;
     private volatile boolean joinInProgress;
-    private volatile boolean mastershipClaimInProgress;
-    private ScheduledFuture<?> minDelayFuture;
-    private ScheduledFuture<?> maxDelayFuture;
 
     ClusterJoinManager(Node node, ClusterServiceImpl clusterService, Lock clusterServiceLock) {
         this.node = node;
@@ -126,25 +120,27 @@ public class ClusterJoinManager {
         maxWaitMillisBeforeJoin = node.getProperties().getMillis(ClusterProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
         waitMillisBeforeJoin = node.getProperties().getMillis(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN);
         staleJoinPreventionDuration = TimeUnit.SECONDS.toMillis(STALE_JOIN_PREVENTION_DURATION_SECONDS);
-        syncJoinStrategy = node.getProperties().getBoolean(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN_ASYNC)
-                ? null : new ClusterJoinManagerSyncJoinStrategy(logger, maxWaitMillisBeforeJoin, waitMillisBeforeJoin);
     }
 
     boolean isJoinInProgress() {
-        if (syncJoinStrategy == null || joinInProgress) {
-            return joinInProgress;
-        } else {
-            clusterServiceLock.lock();
-            try {
-                return joinInProgress || !syncJoinStrategy.getJoiningMembers().isEmpty();
-            } finally {
-                clusterServiceLock.unlock();
-            }
+        if (joinInProgress) {
+            return true;
+        }
+        clusterServiceLock.lock();
+        try {
+            return joinInProgress || !joiningMembers.isEmpty();
+        } finally {
+            clusterServiceLock.unlock();
         }
     }
 
     boolean isMastershipClaimInProgress() {
-        return mastershipClaimInProgress;
+        clusterServiceLock.lock();
+        try {
+            return joinInProgress && joiningMembers.isEmpty();
+        } finally {
+            clusterServiceLock.unlock();
+        }
     }
 
     /**
@@ -268,11 +264,7 @@ public class ClusterJoinManager {
                 return;
             }
 
-            if (syncJoinStrategy == null) {
-                startJoin(joinRequest.toMemberInfo());
-            } else {
-                syncJoinStrategy.startJoinRequest(this, joinRequest.toMemberInfo());
-            }
+            startJoinRequest(joinRequest.toMemberInfo());
         } finally {
             clusterServiceLock.unlock();
         }
@@ -362,7 +354,7 @@ public class ClusterJoinManager {
     }
 
     private boolean authenticate(JoinRequest joinRequest, Connection connection) {
-        if (syncJoinStrategy == null || !syncJoinStrategy.getJoiningMembers().containsKey(joinRequest.getAddress())) {
+        if (!joiningMembers.containsKey(joinRequest.getAddress())) {
             try {
                 secureLogin(joinRequest, connection);
             } catch (Exception e) {
@@ -421,6 +413,46 @@ public class ClusterJoinManager {
             }
         }
         return true;
+    }
+
+    /**
+     * Start processing the join request. This method is executed by the master node. In the case that there hasn't been any
+     * previous join requests from the {@code memberInfo}'s address the master will first respond by sending the master answer.
+     *
+     * Also, during the first {@link ClusterProperty#MAX_WAIT_SECONDS_BEFORE_JOIN} period since the master received the first
+     * join request from any node, the master will always wait for {@link ClusterProperty#WAIT_SECONDS_BEFORE_JOIN} before
+     * allowing any join request to proceed. This means that in the initial period from receiving the first ever join request,
+     * every new join request from a different address will prolong the wait time. After the initial period, join requests
+     * will get processed as they arrive for the first time.
+     *
+     * @param memberInfo the joining member info
+     */
+    private void startJoinRequest(MemberInfo memberInfo) {
+        long now = Clock.currentTimeMillis();
+        if (logger.isFineEnabled()) {
+            String timeToStart = (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
+            logger.fine(format("Handling join from %s, joinInProgress: %b%s", memberInfo.getAddress(),
+                    joinInProgress, timeToStart));
+        }
+
+        if (firstJoinRequest == 0) {
+            firstJoinRequest = now;
+        }
+
+        final MemberInfo existing = joiningMembers.put(memberInfo.getAddress(), memberInfo);
+        if (existing == null) {
+            sendMasterAnswer(memberInfo.getAddress());
+            if (now - firstJoinRequest < maxWaitMillisBeforeJoin) {
+                timeToStartJoin = now + waitMillisBeforeJoin;
+            }
+        } else if (!existing.getUuid().equals(memberInfo.getUuid())) {
+            logger.warning("Received a new join request from " + memberInfo.getAddress()
+                    + " with a new UUID " + memberInfo.getUuid()
+                    + ". Previous UUID was " + existing.getUuid());
+        }
+        if (now >= timeToStartJoin) {
+            startJoin();
+        }
     }
 
     /**
@@ -577,7 +609,7 @@ public class ClusterJoinManager {
      *
      * @param target the node receiving the master answer
      */
-    void sendMasterAnswer(Address target) {
+    private void sendMasterAnswer(Address target) {
         Address masterAddress = clusterService.getMasterAddress();
         if (masterAddress == null) {
             logger.info(format("Cannot send master answer to %s since master node is not known yet", target));
@@ -669,32 +701,28 @@ public class ClusterJoinManager {
     }
 
     void setMastershipClaimInProgress() {
-        mastershipClaimInProgress = true;
+        clusterServiceLock.lock();
+        try {
+            joinInProgress = true;
+            joiningMembers.clear();
+        } finally {
+            clusterServiceLock.unlock();
+        }
     }
 
-    void startJoin(MemberInfo memberInfo) {
-        if (syncJoinStrategy == null) {
-            sendMasterAnswer(memberInfo.getAddress());
-        }
+    private void startJoin() {
         logger.fine("Starting join...");
         clusterServiceLock.lock();
         try {
             InternalPartitionService partitionService = node.getPartitionService();
-            boolean migrationPaused = false;
             try {
                 joinInProgress = true;
-                if ((maxWaitMillisBeforeJoin > 0 && waitMillisBeforeJoin > 0) && syncJoinStrategy == null) {
-                    scheduleMigrationDelay();
-                } else {
-                    node.getPartitionService().pauseMigration();
-                    migrationPaused = true;
-                }
 
+                // pause migrations until join, member-update and post-join operations are completed
+                partitionService.pauseMigration();
                 MemberMap memberMap = clusterService.getMembershipManager().getMemberMap();
 
-                MembersView newMembersView = MembersView.cloneAdding(memberMap.toMembersView(),
-                    syncJoinStrategy == null ? Stream.of(memberInfo).collect(Collectors.toList())
-                            : syncJoinStrategy.getJoiningMembers().values());
+                MembersView newMembersView = MembersView.cloneAdding(memberMap.toMembersView(), joiningMembers.values());
 
                 long time = clusterClock.getClusterTime();
 
@@ -705,55 +733,35 @@ public class ClusterJoinManager {
                     return;
                 }
 
+                // post join operations must be lock free, that means no locks at all:
+                // no partition locks, no key-based locks, no service level locks!
+                OnJoinOp preJoinOp = preparePreJoinOps();
+                OnJoinOp postJoinOp = preparePostJoinOp();
+
                 PartitionRuntimeState partitionRuntimeState = partitionService.createPartitionState();
-                sendFinalizeJoinOp(memberInfo, thisUuid, newMembersView, partitionRuntimeState, time);
-                updateMembers(memberInfo, memberMap, newMembersView, thisUuid, time, partitionRuntimeState);
+                for (MemberInfo member : joiningMembers.values()) {
+                    long startTime = clusterClock.getClusterStartTime();
+                    Operation op = new FinalizeJoinOp(member.getUuid(), newMembersView, preJoinOp, postJoinOp, time,
+                            clusterService.getClusterId(), startTime, clusterStateManager.getState(),
+                            clusterService.getClusterVersion(), partitionRuntimeState);
+                    op.setCallerUuid(thisUuid);
+                    invokeClusterOp(op, member.getAddress());
+                }
+                for (MemberImpl member : memberMap.getMembers()) {
+                    if (member.localMember() || joiningMembers.containsKey(member.getAddress())) {
+                        continue;
+                    }
+                    Operation op = new MembersUpdateOp(member.getUuid(), newMembersView, time, partitionRuntimeState, true);
+                    op.setCallerUuid(thisUuid);
+                    invokeClusterOp(op, member.getAddress());
+                }
+
             } finally {
-                if (syncJoinStrategy == null) {
-                    joinInProgress = false;
-                    mastershipClaimInProgress = false;
-                } else {
-                    reset();
-                }
-                if (migrationPaused) {
-                    node.getPartitionService().resumeMigration();
-                }
+                reset();
+                partitionService.resumeMigration();
             }
         } finally {
             clusterServiceLock.unlock();
-        }
-    }
-
-    private void sendFinalizeJoinOp(MemberInfo memberInfo, UUID thisUuid, MembersView newMembersView,
-            PartitionRuntimeState partitionRuntimeState, long time) {
-        // post join operations must be lock free, that means no locks at all:
-        // no partition locks, no key-based locks, no service level locks!
-        OnJoinOp preJoinOp = preparePreJoinOps();
-        OnJoinOp postJoinOp = preparePostJoinOp();
-
-        for (MemberInfo member : syncJoinStrategy == null ? Arrays.asList(memberInfo)
-                : syncJoinStrategy.getJoiningMembers().values()) {
-            long startTime = clusterClock.getClusterStartTime();
-            Operation finalizeJoinOp = new FinalizeJoinOp(member.getUuid(), newMembersView, preJoinOp, postJoinOp, time,
-                    clusterService.getClusterId(), startTime, clusterStateManager.getState(),
-                    clusterService.getClusterVersion(), partitionRuntimeState);
-            finalizeJoinOp.setCallerUuid(thisUuid);
-            invokeClusterOp(finalizeJoinOp, member.getAddress());
-        }
-    }
-
-    private void updateMembers(MemberInfo memberInfo, MemberMap memberMap, MembersView newMembersView, UUID thisUuid,
-            long time, PartitionRuntimeState partitionRuntimeState) {
-        for (MemberImpl member : memberMap.getMembers()) {
-            if (member.localMember() || memberInfo.getAddress().equals(member.getAddress())) {
-                continue;
-            }
-            if (syncJoinStrategy != null && syncJoinStrategy.getJoiningMembers().containsKey(member.getAddress())) {
-                continue;
-            }
-            Operation op = new MembersUpdateOp(member.getUuid(), newMembersView, time, partitionRuntimeState, true);
-            op.setCallerUuid(thisUuid);
-            invokeClusterOp(op, member.getAddress());
         }
     }
 
@@ -932,61 +940,18 @@ public class ClusterJoinManager {
     }
 
     void reset() {
-        if (syncJoinStrategy == null) {
-            if (cancelMigrationTimeout()) {
-                node.getPartitionService().resumeMigration();
-            }
-            mastershipClaimInProgress = false;
-        } else {
-            clusterServiceLock.lock();
-            try {
-                joinInProgress = false;
-                syncJoinStrategy.reset();
-            } finally {
-                clusterServiceLock.unlock();
-            }
+        clusterServiceLock.lock();
+        try {
+            joinInProgress = false;
+            joiningMembers.clear();
+            timeToStartJoin = Clock.currentTimeMillis() + waitMillisBeforeJoin;
+            firstJoinRequest = 0;
+        } finally {
+            clusterServiceLock.unlock();
         }
     }
 
-    /**
-     * assumes clusterServiceLock is locked
-     *
-     * @return true if timeout needed to be canceled
-     */
-    private boolean cancelMigrationTimeout() {
-        boolean timedOut = migrationDelayActive.getAndSet(false);
-        if (timedOut) {
-            minDelayFuture.cancel(false);
-            maxDelayFuture.cancel(false);
-            // only for posterity's sake
-            minDelayFuture = null;
-            maxDelayFuture = null;
-        }
-        return timedOut;
-    }
-
-    /**
-     * assumes clusterServiceLock is locked
-     */
-    private void scheduleMigrationDelay() {
-        boolean subsequentJoinAttempt = migrationDelayActive.getAndSet(true);
-        if (subsequentJoinAttempt) {
-            assert minDelayFuture.cancel(false) : "Something went wrong canceling min delay future";
-        }
-        minDelayFuture = nodeEngine.getExecutionService().schedule(this::reset,
-                waitMillisBeforeJoin, TimeUnit.MILLISECONDS);
-        if (!subsequentJoinAttempt) {
-            // pause migrations until no more members are trying to join in the same period
-            node.getPartitionService().pauseMigration();
-            maxDelayFuture = nodeEngine.getExecutionService().schedule(this::reset,
-                    maxWaitMillisBeforeJoin, TimeUnit.MILLISECONDS);
-        }
-    }
-
-    // only used for sync join trategy
     void removeJoin(Address address) {
-        if (syncJoinStrategy != null) {
-            syncJoinStrategy.getJoiningMembers().remove(address);
-        }
+        joiningMembers.remove(address);
     }
 }

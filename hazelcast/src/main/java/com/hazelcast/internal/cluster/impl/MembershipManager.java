@@ -714,9 +714,7 @@ public class MembershipManager {
             }
 
             logger.info("Removing " + member);
-            // the following is only used when sync join strategy is used
             clusterService.getClusterJoinManager().removeJoin(address);
-
             clusterService.getClusterHeartbeatManager().removeMember(member);
             partialDisconnectionHandler.removeMember(member);
 
