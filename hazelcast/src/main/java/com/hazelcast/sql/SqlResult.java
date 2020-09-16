@@ -55,7 +55,7 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
      * Return whether this result has rows to iterate using the {@link
      * #iterator()} method.
      */
-    default boolean hasRows() {
+    default boolean isRowSet() {
         return updateCount() == -1;
     }
 
