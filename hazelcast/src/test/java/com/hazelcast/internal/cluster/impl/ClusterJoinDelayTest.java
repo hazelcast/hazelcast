@@ -17,7 +17,6 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -57,7 +56,7 @@ public class ClusterJoinDelayTest extends HazelcastTestSupport {
 
     @After
     public void afterRun() {
-        Hazelcast.shutdownAll();
+        fact.shutdownAll();
     }
 
     @Override
