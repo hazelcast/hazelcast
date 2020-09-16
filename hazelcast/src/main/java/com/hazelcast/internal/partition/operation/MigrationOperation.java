@@ -162,15 +162,13 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
                 replicaManager.setPartitionReplicaVersions(migrationInfo.getPartitionId(), namespace,
                                                            replicaVersions, replicaOffset);
                 if (logger.isFinestEnabled()) {
-                    logger.finest("ReplicaVersions are set after migration. partitionId="
-                            + migrationInfo.getPartitionId() + " namespace: " + namespace
-                            + " replicaVersions=" + Arrays.toString(replicaVersions));
+                    logger.finest("ReplicaVersions are set after migration. " + migrationInfo
+                            + ", namespace=" + namespace + ", replicaVersions=" + Arrays.toString(replicaVersions));
                 }
             }
 
         } else if (logger.isFinestEnabled()) {
-            logger.finest("ReplicaVersions are not set since migration failed. partitionId="
-                    + migrationInfo.getPartitionId());
+            logger.finest("ReplicaVersions are not set since migration failed. " + migrationInfo);
         }
 
         migrationInfo.doneProcessing();
@@ -193,7 +191,7 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
     protected PartitionMigrationEvent getMigrationEvent() {
         return new PartitionMigrationEvent(MigrationEndpoint.DESTINATION,
                 migrationInfo.getPartitionId(), migrationInfo.getDestinationCurrentReplicaIndex(),
-                migrationInfo.getDestinationNewReplicaIndex());
+                migrationInfo.getDestinationNewReplicaIndex(), migrationInfo.getUid());
     }
 
     @Override

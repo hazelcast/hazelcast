@@ -100,9 +100,7 @@ final class PartitionReplicaFragmentVersions {
     }
 
     void clear() {
-        for (int i = 0; i < versions.length; i++) {
-            versions[i] = 0;
-        }
+        Arrays.fill(versions, 0);
         dirty = false;
     }
 

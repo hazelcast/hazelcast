@@ -194,11 +194,16 @@ public final class SerializationUtil {
     }
 
     public static <K, V> void writeMap(@Nonnull Map<K, V> map, ObjectDataOutput out) throws IOException {
-        out.writeInt(map.size());
+        int size = map.size();
+        out.writeInt(size);
+
+        int k = 0;
         for (Map.Entry<K, V> entry : map.entrySet()) {
             out.writeObject(entry.getKey());
             out.writeObject(entry.getValue());
+            k++;
         }
+        assert size == k : "Map has been updated during serialization! Initial size: " + size + ", written size: " + k;
     }
 
     /**
@@ -277,10 +282,15 @@ public final class SerializationUtil {
      * @throws IOException when an error occurs while writing to the output
      */
     public static <T> void writeCollection(Collection<T> items, ObjectDataOutput out) throws IOException {
-        out.writeInt(items.size());
+        int size = items.size();
+        out.writeInt(size);
+
+        int k = 0;
         for (T item : items) {
             out.writeObject(item);
+            k++;
         }
+        assert size == k : "Collection has been updated during serialization! Initial size: " + size + ", written size: " + k;
     }
 
     /**

@@ -1264,7 +1264,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             activeMigration.setStatus(migration.getStatus());
             migrationManager.finalizeMigration(migration);
             if (logger.isFineEnabled()) {
-                logger.fine("Committed " + migration + " on destination with partition state version: " + finalVersion);
+                logger.fine("Committed " + migration + " on destination with partition version: " + finalVersion);
             }
             return true;
         } finally {
