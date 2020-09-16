@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.config.MetricsConfig;
+import com.hazelcast.jet.annotation.EvolvingApi;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.DAG;
@@ -97,6 +98,7 @@ public interface Job {
      *
      * @since 4.3
      */
+    @EvolvingApi
     @Nonnull
     String getSuspensionCause();
 
