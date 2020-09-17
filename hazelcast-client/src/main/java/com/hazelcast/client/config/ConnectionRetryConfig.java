@@ -16,6 +16,9 @@
 
 package com.hazelcast.client.config;
 
+import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static com.hazelcast.util.Preconditions.checkTrue;
+
 /**
  * Connection Retry Config is controls the period among the retries and when should a client gave up
  * retrying. Exponential behaviour can be chosen or jitter can be added to wait periods.
@@ -59,6 +62,7 @@ public class ConnectionRetryConfig {
      * @return updated ConnectionRetryConfig
      */
     public ConnectionRetryConfig setInitialBackoffMillis(int initialBackoffMillis) {
+        checkNotNegative(initialBackoffMillis, "Initial backoff must be non-negative!");
         this.initialBackoffMillis = initialBackoffMillis;
         return this;
     }
@@ -81,6 +85,7 @@ public class ConnectionRetryConfig {
      * @return updated ConnectionRetryConfig
      */
     public ConnectionRetryConfig setMaxBackoffMillis(int maxBackoffMillis) {
+        checkNotNegative(maxBackoffMillis, "Max backoff must be non-negative!");
         this.maxBackoffMillis = maxBackoffMillis;
         return this;
     }
@@ -99,6 +104,7 @@ public class ConnectionRetryConfig {
      * @return updated ConnectionRetryConfig
      */
     public ConnectionRetryConfig setMultiplier(double multiplier) {
+        checkTrue(multiplier >= 1.0, "Multiplier must be greater than or equal to 1.0!");
         this.multiplier = multiplier;
         return this;
     }
@@ -142,6 +148,7 @@ public class ConnectionRetryConfig {
      * @return updated ConnectionRetryConfig
      */
     public ConnectionRetryConfig setJitter(double jitter) {
+        checkTrue(jitter >= 0.0 && jitter <= 1.0, "Jitter must be in range [0.0, 1.0]");
         this.jitter = jitter;
         return this;
     }

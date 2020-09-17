@@ -466,8 +466,8 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
             }
             //random_between
             // Random(-jitter * current_backoff, jitter * current_backoff)
-            long actualSleepTime = (long) (currentBackoffMillis - (currentBackoffMillis * jitter)
-                    + (currentBackoffMillis * jitter * random.nextDouble()));
+            long actualSleepTime = (long) (currentBackoffMillis
+                    + currentBackoffMillis * jitter * (2.0 * random.nextDouble() - 1.0));
 
             logger.warning(String.format("Unable to get live cluster connection, retry in %d ms, attempt %d"
                     + ", retry timeout millis %d cap", actualSleepTime, attempt, maxBackoffMillis));
