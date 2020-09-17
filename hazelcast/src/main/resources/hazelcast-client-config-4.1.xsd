@@ -272,7 +272,7 @@
     <xs:complexType name="near-cache-client">
         <xs:complexContent>
             <xs:extension base="near-cache">
-                <xs:attribute name="name" use="required">
+                <xs:attribute name="name" use="optional" default="default">
                     <xs:simpleType>
                         <xs:restriction base="xs:string"/>
                     </xs:simpleType>

@@ -550,7 +550,7 @@ hazelcast-client:
   #
   # Configuration element's name is "near-cache".
   # It has the following attribute:
-  #   - name: You can give a name for your Near Cache. It is optional and its default value is "default".
+  #   - name: You can give a name for your Near Cache. It is mandatory.
   #
   # It has the following sub-nodes:
   #   - "max-size":

@@ -224,6 +224,22 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         buildConfig(xml);
     }
 
+    @Test
+    public void testNearCacheDefaultName() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "  <near-cache>\n"
+                + "    <in-memory-format>NATIVE</in-memory-format>\n"
+                + "    <serialize-keys>false</serialize-keys>\n"
+                + "  </near-cache>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        ClientConfig clientConfig = buildConfig(xml);
+        NearCacheConfig ncConfig = clientConfig.getNearCacheConfig("default");
+
+        assertEquals(InMemoryFormat.NATIVE, ncConfig.getInMemoryFormat());
+        assertTrue(ncConfig.isSerializeKeys());
+    }
+
     @Override
     @Test
     public void testNearCacheInMemoryFormatNative_withKeysByReference() {
