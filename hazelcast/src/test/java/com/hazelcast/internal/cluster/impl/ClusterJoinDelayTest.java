@@ -41,9 +41,8 @@ import org.junit.runner.RunWith;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClusterJoinDelayTest extends HazelcastTestSupport {
-    // the below value should be true when async migration is implemented
     @Rule
-    public final OverridePropertyRule overridePropertyRule = set(HAZELCAST_TEST_USE_NETWORK, "false");
+    public final OverridePropertyRule overridePropertyRule = set(HAZELCAST_TEST_USE_NETWORK, "true");
 
     private TestHazelcastInstanceFactory fact;
     private final int numInstances = 3;
