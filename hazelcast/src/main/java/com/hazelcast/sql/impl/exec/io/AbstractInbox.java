@@ -20,6 +20,7 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControl;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
+import java.util.PriorityQueue;
 import java.util.UUID;
 
 /**
@@ -32,13 +33,18 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
     /** Remaining active sources. */
     private int remainingStreams;
 
+    private final boolean ordered;
     private final QueryOperationHandler operationHandler;
     private final FlowControl flowControl;
+
+    private long expectedOrdinal;
+    private PriorityQueue<InboundBatch> pendingBatches;
 
     protected AbstractInbox(
         QueryOperationHandler operationHandler,
         QueryId queryId,
         int edgeId,
+        boolean ordered,
         int rowWidth,
         UUID localMemberId,
         int remainingStreams,
@@ -46,6 +52,7 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
     ) {
         super(queryId, edgeId, rowWidth, localMemberId);
 
+        this.ordered = ordered;
         this.operationHandler = operationHandler;
         this.remainingStreams = remainingStreams;
         this.flowControl = flowControl;
@@ -57,22 +64,63 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
 
     @Override
     public final void onBatch(InboundBatch batch, long remainingMemory) {
-        onBatch0(batch);
-
-        // Track done condition
+        // Increment the number of enqueued batches that is used as done condition
         enqueuedBatches++;
 
-        if (batch.isLast()) {
-            remainingStreams--;
-        }
-
-        // Track backpressure.
+        // Track the backpressure
         flowControl.onBatchAdded(
             batch.getSenderId(),
             getBatchSize(batch),
             batch.isLast(),
             remainingMemory
         );
+
+        if (!ordered) {
+            // If the batch is not ordered, it could be processed right immediately.
+            processBatch(batch);
+        } else {
+            if (batch.getOrdinal() == expectedOrdinal) {
+                // Process the current batch
+                processBatch(batch);
+
+                long expectedOrdinal0 = expectedOrdinal + 1;
+
+                // Unwind pending batches, if any
+                if (pendingBatches != null) {
+                    while (true) {
+                         InboundBatch nextBatch = pendingBatches.peek();
+
+                         if (nextBatch != null && nextBatch.getOrdinal() == expectedOrdinal0) {
+                             pendingBatches.poll();
+
+                             processBatch(nextBatch);
+
+                             expectedOrdinal0++;
+                         } else {
+                             break;
+                         }
+                    }
+                }
+
+                // Adjust the expected ordinal
+                expectedOrdinal = expectedOrdinal0;
+            } else {
+                // Put the batch into the pending queue
+                if (pendingBatches == null) {
+                    pendingBatches = new PriorityQueue<>(1, InboundBatchOrdinalComparator.INSTANCE);
+                }
+
+                pendingBatches.add(batch);
+            }
+        }
+    }
+
+    private void processBatch(InboundBatch batch) {
+        onBatch0(batch);
+
+        if (batch.isLast()) {
+            remainingStreams--;
+        }
     }
 
     protected abstract void onBatch0(InboundBatch batch);

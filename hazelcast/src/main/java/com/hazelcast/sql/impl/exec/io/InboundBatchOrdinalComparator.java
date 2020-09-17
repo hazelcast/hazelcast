@@ -14,32 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.operation;
+package com.hazelcast.sql.impl.exec.io;
 
-import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import java.util.Comparator;
 
-import java.util.Collection;
+public class InboundBatchOrdinalComparator implements Comparator<InboundBatch> {
 
-/**
- * Operation to check whether the query is still active. Sent from participant to coordinator.
- */
-public class QueryCheckOperation extends QueryAbstractCheckOperation {
-    public QueryCheckOperation() {
+    public static final InboundBatchOrdinalComparator INSTANCE = new InboundBatchOrdinalComparator();
+
+    private InboundBatchOrdinalComparator() {
         // No-op.
     }
 
-    public QueryCheckOperation(Collection<QueryId> queryIds) {
-        super(queryIds);
-    }
-
     @Override
-    public boolean isSystem() {
-        return true;
-    }
-
-    @Override
-    public int getClassId() {
-        return SqlDataSerializerHook.OPERATION_CHECK;
+    public int compare(InboundBatch batch1, InboundBatch batch2) {
+        return Long.compare(batch1.getOrdinal(), batch2.getOrdinal());
     }
 }

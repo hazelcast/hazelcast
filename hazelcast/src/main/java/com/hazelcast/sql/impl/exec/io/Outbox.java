@@ -46,6 +46,9 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
     /** Pending rows. */
     private List<Row> rows;
 
+    /** Ordinal of the next batch */
+    private long ordinal;
+
     /** Channel to send operations through. */
     private QueryOperationChannel operationChannel;
 
@@ -169,6 +172,7 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
             edgeId,
             targetMemberId,
             batch,
+            ordinal++,
             last,
             remainingMemory
         );

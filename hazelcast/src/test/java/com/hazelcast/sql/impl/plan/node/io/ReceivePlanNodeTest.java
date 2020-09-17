@@ -41,7 +41,7 @@ public class ReceivePlanNodeTest extends SqlTestSupport {
         int edgeId = 2;
         List<QueryDataType> types = Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR);
 
-        ReceivePlanNode node = new ReceivePlanNode(id, edgeId, types);
+        ReceivePlanNode node = new ReceivePlanNode(id, edgeId, false, types);
 
         assertEquals(id, node.getId());
         assertEquals(edgeId, node.getEdgeId());
@@ -59,15 +59,15 @@ public class ReceivePlanNodeTest extends SqlTestSupport {
         List<QueryDataType> types1 = Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR);
         List<QueryDataType> types2 = Arrays.asList(QueryDataType.DECIMAL, QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
 
-        checkEquals(new ReceivePlanNode(id1, edgeId1, types1), new ReceivePlanNode(id1, edgeId1, types1), true);
-        checkEquals(new ReceivePlanNode(id1, edgeId1, types1), new ReceivePlanNode(id2, edgeId1, types1), false);
-        checkEquals(new ReceivePlanNode(id1, edgeId1, types1), new ReceivePlanNode(id1, edgeId2, types1), false);
-        checkEquals(new ReceivePlanNode(id1, edgeId1, types1), new ReceivePlanNode(id1, edgeId1, types2), false);
+        checkEquals(new ReceivePlanNode(id1, edgeId1, false, types1), new ReceivePlanNode(id1, edgeId1, false, types1), true);
+        checkEquals(new ReceivePlanNode(id1, edgeId1, false, types1), new ReceivePlanNode(id2, edgeId1, false, types1), false);
+        checkEquals(new ReceivePlanNode(id1, edgeId1, false, types1), new ReceivePlanNode(id1, edgeId2, false, types1), false);
+        checkEquals(new ReceivePlanNode(id1, edgeId1, false, types1), new ReceivePlanNode(id1, edgeId1, false, types2), false);
     }
 
     @Test
     public void testSerialization() {
-        ReceivePlanNode original = new ReceivePlanNode(1, 2, Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR));
+        ReceivePlanNode original = new ReceivePlanNode(1, 2, false, Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR));
         ReceivePlanNode restored = serializeAndCheck(original, SqlDataSerializerHook.NODE_RECEIVE);
 
         checkEquals(original, restored, true);

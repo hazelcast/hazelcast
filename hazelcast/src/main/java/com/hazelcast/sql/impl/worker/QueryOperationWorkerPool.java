@@ -19,68 +19,81 @@ package com.hazelcast.sql.impl.worker;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.impl.LocalMemberIdProvider;
-import com.hazelcast.sql.impl.operation.QueryOperation;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Thread pool that executes query operations.
  */
+// TODO: Rename
 public class QueryOperationWorkerPool {
 
-    private final int threadCount;
-    private final QueryOperationWorker[] workers;
+    private final LocalMemberIdProvider localMemberIdProvider;
+    private final QueryOperationHandler operationHandler;
+    private final SerializationService serializationService;
+    private final ILogger logger;
 
+    private final ExecutorService exec;
+
+    // TODO: Remove context variables from here?
     public QueryOperationWorkerPool(
         String instanceName,
+        String workerName,
         int threadCount,
         LocalMemberIdProvider localMemberIdProvider,
         QueryOperationHandler operationHandler,
         SerializationService serializationService,
         ILogger logger
     ) {
-        this.threadCount = threadCount;
+        this.localMemberIdProvider = localMemberIdProvider;
+        this.operationHandler = operationHandler;
+        this.serializationService = serializationService;
+        this.logger = logger;
 
-        workers = new QueryOperationWorker[threadCount];
-
-        for (int i = 0; i < threadCount; i++) {
-            QueryOperationWorker worker =
-                new QueryOperationWorker(localMemberIdProvider, operationHandler, serializationService, instanceName, i, logger);
-
-            workers[i] = worker;
-        }
+        exec = Executors.newFixedThreadPool(threadCount, new PoolThreadFactory(instanceName, workerName));
     }
 
-    public void submit(int partition, QueryOperationExecutable task) {
-        int index = getWorkerIndex(partition);
-
-        QueryOperationWorker worker = getWorker(index);
-
-        worker.submit(task);
+    public void submit(QueryOperationExecutable task) {
+        exec.submit(
+            new QueryPoolTask(
+                task,
+                localMemberIdProvider,
+                operationHandler,
+                serializationService,
+                logger
+            )
+        );
     }
 
     public void stop() {
-        for (QueryOperationWorker worker : workers) {
-            worker.stop();
-        }
+        exec.shutdownNow();
     }
 
-    QueryOperationWorker getWorker(int index) {
-        return workers[index];
-    }
+    private static final class PoolThreadFactory implements ThreadFactory {
 
-    private int getWorkerIndex(int partition) {
-        int index;
+        private final AtomicLong counter = new AtomicLong();
+        private final String instanceName;
+        private final String workerName;
 
-        if (partition == QueryOperation.PARTITION_ANY) {
-            index = ThreadLocalRandom.current().nextInt(threadCount);
-        } else {
-            index = partition % threadCount;
+        private PoolThreadFactory(String instanceName, String workerName) {
+            this.instanceName = instanceName;
+            this.workerName = workerName;
         }
 
-        assert index >= 0 && index < threadCount;
+        @Override
+        public Thread newThread(@NotNull Runnable r) {
+            String name = QueryUtils.workerName(instanceName, workerName, counter.incrementAndGet());
 
-        return index;
+            Thread thread = new Thread(r);
+            thread.setName(name);
+
+            return thread;
+        }
     }
 }

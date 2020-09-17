@@ -19,10 +19,11 @@ package com.hazelcast.sql.impl.operation;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.NodeServiceProvider;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitor;
 import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitorHook;
 import com.hazelcast.sql.impl.exec.Exec;
@@ -33,7 +34,6 @@ import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateCompletionCallback;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
 import com.hazelcast.sql.impl.worker.QueryFragmentExecutable;
-import com.hazelcast.sql.impl.worker.QueryFragmentWorkerPool;
 import com.hazelcast.sql.impl.worker.QueryOperationExecutable;
 import com.hazelcast.sql.impl.worker.QueryOperationWorkerPool;
 
@@ -51,12 +51,13 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     private final NodeServiceProvider nodeServiceProvider;
     private final InternalSerializationService serializationService;
     private final QueryStateRegistry stateRegistry;
-    private final QueryFragmentWorkerPool fragmentPool;
-    private final QueryOperationWorkerPool operationPool;
+    private final QueryOperationWorkerPool fragmentPool;
+    private final QueryOperationWorkerPool systemPool;
     private final int outboxBatchSize;
     private final FlowControlFactory flowControlFactory;
     private volatile CreateExecPlanNodeVisitorHook execHook;
 
+    // TODO: Remove thread count (here and from config and beans)
     public QueryOperationHandlerImpl(
         String instanceName,
         NodeServiceProvider nodeServiceProvider,
@@ -73,15 +74,20 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         this.outboxBatchSize = outboxBatchSize;
         this.flowControlFactory = flowControlFactory;
 
-        fragmentPool = new QueryFragmentWorkerPool(
+        fragmentPool = new QueryOperationWorkerPool(
             instanceName,
+            QueryUtils.WORKER_TYPE_FRAGMENT,
             threadCount,
-            nodeServiceProvider.getLogger(QueryFragmentWorkerPool.class)
+            nodeServiceProvider,
+            this,
+            serializationService,
+            nodeServiceProvider.getLogger(QueryOperationWorkerPool.class)
         );
 
-        operationPool = new QueryOperationWorkerPool(
+        systemPool = new QueryOperationWorkerPool(
             instanceName,
-            operationThreadCount,
+            QueryUtils.WORKER_TYPE_SYSTEM,
+            1,
             nodeServiceProvider,
             this,
             serializationService,
@@ -91,7 +97,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
 
     public void stop() {
         fragmentPool.stop();
-        operationPool.stop();
+        systemPool.stop();
     }
 
     @Override
@@ -114,7 +120,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     public void submitLocal(UUID callerId, QueryOperation operation) {
         operation.setCallerId(callerId);
 
-        operationPool.submit(operation.getPartition(), QueryOperationExecutable.local(operation));
+        submitToPool(QueryOperationExecutable.local(operation), operation.isSystem());
     }
 
     public boolean submitRemote(UUID callerId, Connection connection, QueryOperation operation, boolean ordered) {
@@ -122,7 +128,11 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
 
         byte[] bytes = serializeOperation(operation);
 
-        Packet packet = new Packet(bytes, operation.getPartition()).setPacketType(Packet.Type.SQL);
+        Packet packet = new Packet(bytes).setPacketType(Packet.Type.SQL);
+
+        if (operation.isSystem()) {
+            packet.raiseFlags(Packet.FLAG_SQL_SYSTEM_OPERATION);
+        }
 
         if (ordered) {
             return connection.writeOrdered(packet);
@@ -214,8 +224,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
                 operation.getArguments(),
                 exec,
                 inboxes,
-                outboxes,
-                fragmentPool
+                outboxes
             );
 
             fragmentExecutables.add(fragmentExecutable);
@@ -352,9 +361,15 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     }
 
     public void onPacket(Packet packet) {
-        int partition = packet.hasPartitionHash() ? packet.getPartitionId() : QueryOperation.PARTITION_ANY;
+        boolean system = packet.isFlagRaised(Packet.FLAG_SQL_SYSTEM_OPERATION);
 
-        operationPool.submit(partition, QueryOperationExecutable.remote(packet));
+        submitToPool(QueryOperationExecutable.remote(packet), system);
+    }
+
+    private void submitToPool(QueryOperationExecutable task, boolean system) {
+        QueryOperationWorkerPool pool = system ? systemPool : fragmentPool;
+
+        pool.submit(task);
     }
 
     private Connection getConnection(UUID memberId) {

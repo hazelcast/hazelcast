@@ -145,6 +145,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
             operationHandler,
             operation.getQueryId(),
             edgeId,
+            node.isOrdered(),
             node.getSchema().getEstimatedRowSize(),
             localMemberId,
             fragmentMemberCount,

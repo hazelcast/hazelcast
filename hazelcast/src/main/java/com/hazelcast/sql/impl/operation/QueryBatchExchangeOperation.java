@@ -33,6 +33,7 @@ public class QueryBatchExchangeOperation extends QueryAbstractExchangeOperation 
 
     private UUID targetMemberId;
     private RowBatch batch;
+    private long ordinal;
     private boolean last;
     private long remainingMemory;
 
@@ -45,6 +46,7 @@ public class QueryBatchExchangeOperation extends QueryAbstractExchangeOperation 
         int edgeId,
         UUID targetMemberId,
         RowBatch batch,
+        long ordinal,
         boolean last,
         long remainingMemory
     ) {
@@ -55,6 +57,7 @@ public class QueryBatchExchangeOperation extends QueryAbstractExchangeOperation 
 
         this.targetMemberId = targetMemberId;
         this.batch = batch;
+        this.ordinal = ordinal;
         this.last = last;
         this.remainingMemory = remainingMemory;
     }
@@ -65,6 +68,10 @@ public class QueryBatchExchangeOperation extends QueryAbstractExchangeOperation 
 
     public RowBatch getBatch() {
         return batch;
+    }
+
+    public long getOrdinal() {
+        return ordinal;
     }
 
     public boolean isLast() {
@@ -89,6 +96,7 @@ public class QueryBatchExchangeOperation extends QueryAbstractExchangeOperation 
     protected void writeInternal2(ObjectDataOutput out) throws IOException {
         UUIDSerializationUtil.writeUUID(out, targetMemberId);
         out.writeObject(batch);
+        out.writeLong(ordinal);
         out.writeBoolean(last);
         out.writeLong(remainingMemory);
     }
@@ -97,6 +105,7 @@ public class QueryBatchExchangeOperation extends QueryAbstractExchangeOperation 
     protected void readInternal2(ObjectDataInput in) throws IOException {
         targetMemberId = UUIDSerializationUtil.readUUID(in);
         batch = in.readObject();
+        ordinal = in.readLong();
         last = in.readBoolean();
         remainingMemory = in.readLong();
     }

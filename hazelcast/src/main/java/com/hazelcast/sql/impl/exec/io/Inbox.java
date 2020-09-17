@@ -34,12 +34,13 @@ public class Inbox extends AbstractInbox {
         QueryOperationHandler operationHandler,
         QueryId queryId,
         int edgeId,
+        boolean ordered,
         int rowWidth,
         UUID localMemberId,
         int remainingStreams,
         FlowControl flowControl
     ) {
-        super(operationHandler, queryId, edgeId, rowWidth, localMemberId, remainingStreams, flowControl);
+        super(operationHandler, queryId, edgeId, ordered, rowWidth, localMemberId, remainingStreams, flowControl);
     }
 
     @Override

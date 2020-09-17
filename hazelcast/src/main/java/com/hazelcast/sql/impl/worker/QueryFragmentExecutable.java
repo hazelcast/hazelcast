@@ -46,7 +46,6 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
     private final Exec exec;
     private final Map<Integer, InboundHandler> inboxes;
     private final Map<Integer, Map<UUID, OutboundHandler>> outboxes;
-    private final QueryFragmentWorkerPool fragmentPool;
 
     /** Operations to be processed. */
     private final ConcurrentLinkedDeque<Object> operations = new ConcurrentLinkedDeque<>();
@@ -68,15 +67,13 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
         List<Object> arguments,
         Exec exec,
         Map<Integer, InboundHandler> inboxes,
-        Map<Integer, Map<UUID, OutboundHandler>> outboxes,
-        QueryFragmentWorkerPool fragmentPool
+        Map<Integer, Map<UUID, OutboundHandler>> outboxes
     ) {
         this.stateCallback = stateCallback;
         this.arguments = arguments;
         this.exec = exec;
         this.inboxes = inboxes;
         this.outboxes = outboxes;
-        this.fragmentPool = fragmentPool;
     }
 
     public Collection<Integer> getInboxEdgeIds() {
@@ -120,6 +117,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
 
                     InboundBatch batch = new InboundBatch(
                         operation0.getBatch(),
+                        operation0.getOrdinal(),
                         operation0.isLast(),
                         operation0.getCallerId()
                     );
@@ -183,7 +181,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
         boolean res = !scheduled.get() && scheduled.compareAndSet(false, true);
 
         if (res) {
-            submit();
+            run();
         }
 
         return res;
@@ -198,7 +196,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
         // Check for new operations. If there are some, re-submit the fragment for execution immediately.
         if (!completed0 && !operations.isEmpty()) {
             // New operations arrived. Submit the fragment for execution again without resetting the "scheduled" flag.
-            submit();
+            run();
 
             return;
         }
@@ -213,10 +211,6 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
         if (!completed0 && !operations.isEmpty()) {
             schedule();
         }
-    }
-
-    private void submit() {
-        fragmentPool.submit(this);
     }
 
     private void setupExecutor() {

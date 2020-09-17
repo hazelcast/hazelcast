@@ -48,12 +48,6 @@ public abstract class QueryAbstractExchangeOperation extends QueryAbstractIdAwar
      */
     public abstract boolean isInbound();
 
-    @SuppressWarnings("checkstyle:MagicNumber")
-    @Override
-    public int getPartition() {
-        return getPartitionForHash(31 * queryId.hashCode() + edgeId);
-    }
-
     @Override
     protected final void writeInternal1(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);

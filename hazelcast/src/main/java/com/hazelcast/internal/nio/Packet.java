@@ -96,6 +96,11 @@ public final class Packet extends HeapData implements OutboundFrame {
      */
     public static final int FLAG_JET_FLOW_CONTROL = 1 << 1;
 
+    // 3.c SQL packet flags
+
+    /** The SQL packet with this flag should be executed in the system pool rather than fragment pool */
+    public static final int FLAG_SQL_SYSTEM_OPERATION = 1 << 1;
+
 
     //            END OF HEADER FLAG SECTION
 
