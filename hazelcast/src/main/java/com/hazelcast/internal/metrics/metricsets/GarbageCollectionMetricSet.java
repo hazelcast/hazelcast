@@ -23,8 +23,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
-import java.util.Collections;
-import java.util.Set;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.GC_METRIC_MAJOR_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.GC_METRIC_MAJOR_TIME;
@@ -37,7 +35,6 @@ import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
