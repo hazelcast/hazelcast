@@ -186,6 +186,8 @@ public class JobConfig implements IdentifiedDataSerializable {
      * By default it's disabled.
      *
      * @return {@code this} instance for fluent API
+     *
+     * @since 4.3
      */
     public JobConfig setSuspendOnFailure(boolean suspendOnFailure) {
         this.suspendOnFailure = suspendOnFailure;
@@ -195,6 +197,8 @@ public class JobConfig implements IdentifiedDataSerializable {
     /**
      * Returns whether the job will be suspended on failure, see
      * {@link #setSuspendOnFailure(boolean)}.
+     *
+     * @since 4.3
      */
     public boolean isSuspendOnFailure() {
         return suspendOnFailure;
