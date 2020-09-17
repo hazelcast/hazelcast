@@ -80,8 +80,10 @@ import static org.junit.Assert.fail;
  *     <li>L - leave of the other member</li>
  * </ul>
  */
+// TODO: Remove @Ignore, rework to the new model
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
+@Ignore
 public class QueryOperationHandlerTest extends SqlTestSupport {
 
     private static final int EDGE_ID = 1;

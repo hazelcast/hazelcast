@@ -16,11 +16,11 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.FaultyQueryOperationHandler;
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
@@ -96,8 +96,6 @@ public class OutboxTest extends SqlTestSupport {
         Outbox outbox = createOutbox(operationHandler);
 
         outbox.onRowBatch(createMonotonicBatch(0, 4), true, 0, rowIndex -> rowIndex > 1);
-
-        assertEquals(1, operationHandler.getChannel().getSubmitCounter());
 
         LoggingQueryOperationHandler.SubmitInfo submitInfo = operationHandler.tryPollSubmitInfo();
         assertEquals(LOCAL_MEMBER_ID, submitInfo.getSourceMemberId());
@@ -192,7 +190,6 @@ public class OutboxTest extends SqlTestSupport {
 
         assertTrue(last);
         assertTrue(operationCount > 0);
-        assertEquals(operationHandler.getChannel().getSubmitCounter(), operationCount);
         checkMonotonicBatch(new ListRowBatch(rows), 0, value);
 
         // Validate memory: outbox current remaining == initial mem + memory increase from control flows - row memory.
@@ -234,8 +231,6 @@ public class OutboxTest extends SqlTestSupport {
             BATCH_SIZE,
             REMAINING_MEMORY
         );
-
-        res.setup();
 
         return res;
     }

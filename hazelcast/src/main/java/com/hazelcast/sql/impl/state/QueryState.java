@@ -58,6 +58,9 @@ public final class QueryState implements QueryStateCallback {
     /** Local member ID. */
     private final UUID localMemberId;
 
+    /** Whether the state is created in the cancelled state right away. */
+    private final boolean cancelled;
+
     /** Error which caused query completion. */
     private volatile QueryException completionError;
 
@@ -74,7 +77,8 @@ public final class QueryState implements QueryStateCallback {
         CachedPlanInvalidationCallback initiatorPlanInvalidationCallback,
         SqlRowMetadata initiatorRowMetadata,
         QueryResultProducer initiatorRowSource,
-        ClockProvider clockProvider
+        ClockProvider clockProvider,
+        boolean cancelled
     ) {
         // Set common state.
         this.queryId = queryId;
@@ -98,6 +102,12 @@ public final class QueryState implements QueryStateCallback {
 
         startTime = clockProvider.currentTimeMillis();
         checkTime = startTime;
+
+        this.cancelled = cancelled;
+
+        if (cancelled) {
+            completionGuard.compareAndSet(false, true);
+        }
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -122,7 +132,8 @@ public final class QueryState implements QueryStateCallback {
             initiatorPlanInvalidationCallback,
             initiatorRowMetadata,
             initiatorResultProducer,
-            clockProvider
+            clockProvider,
+            false
         );
     }
 
@@ -136,6 +147,7 @@ public final class QueryState implements QueryStateCallback {
         QueryId queryId,
         UUID localMemberId,
         QueryStateCompletionCallback completionCallback,
+        boolean cancelled,
         ClockProvider clockProvider
     ) {
         return new QueryState(
@@ -148,7 +160,8 @@ public final class QueryState implements QueryStateCallback {
             null,
             null,
             null,
-            clockProvider
+            clockProvider,
+            cancelled
         );
     }
 
@@ -174,6 +187,10 @@ public final class QueryState implements QueryStateCallback {
 
     public QueryDistributedState getDistributedState() {
         return distributedState;
+    }
+
+    public boolean isCancelled() {
+        return cancelled;
     }
 
     @Override

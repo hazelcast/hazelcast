@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -52,13 +51,6 @@ public class SendExecTest extends SqlTestSupport {
 
     private static final int ROWS_IN_BATCH = 4;
     private static final int ROWS_IN_REMAINING_MEMORY = 8;
-
-    @Test
-    public void testSetup() {
-        Sender sender = create();
-
-        assertNotNull(sender.getOperationHandler().getChannel());
-    }
 
     @Test
     public void testAdvance() {

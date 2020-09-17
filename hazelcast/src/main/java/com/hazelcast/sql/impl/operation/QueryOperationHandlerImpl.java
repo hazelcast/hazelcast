@@ -181,11 +181,11 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         }
 
         // Get or create query state.
-        QueryState state = stateRegistry.onDistributedQueryStarted(localMemberId, operation.getQueryId(), this);
+        QueryState state = stateRegistry.onDistributedQueryStarted(localMemberId, operation.getQueryId(), this, false);
 
-        if (state == null) {
-            // Race condition when query start request arrived after query cancel.
-            return;
+        if (state.isCancelled()) {
+            // Race condition when query start request arrived after query cancel
+            stateRegistry.onQueryCompleted(state.getQueryId());
         }
 
         List<QueryFragmentExecutable> fragmentExecutables = new ArrayList<>(operation.getFragments().size());
@@ -246,12 +246,17 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             return;
         }
 
-        QueryState state = stateRegistry.onDistributedQueryStarted(localMemberId, operation.getQueryId(), this);
+        QueryState state = stateRegistry.onDistributedQueryStarted(localMemberId, operation.getQueryId(), this, false);
 
         if (state == null) {
             // Received stale batch for the query initiated on a local member, ignore.
             assert localMemberId.equals(operation.getQueryId().getMemberId());
 
+            return;
+        }
+
+        if (state.isCancelled()) {
+            // Returned a batch for a cancelled query, ignore.
             return;
         }
 
@@ -269,26 +274,32 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         QueryState state = stateRegistry.getState(queryId);
 
         if (state == null) {
-            // Query already completed.
-            return;
+            // State is not found. The query is either not started yet, or already completed.
+            // Create a surrogate state that will be cleared by either subsequent processing of the "execute" request,
+            // or via periodic check.
+            stateRegistry.onDistributedQueryStarted(getLocalMemberId(), operation.getQueryId(), this, true);
+        } else {
+            // We pass originating member ID here instead of caller ID to preserve the causality:
+            // in the "participant1 -> coordinator -> participant2" flow, the participant2
+            // get the ID of participant1.
+            QueryException error = QueryException.error(
+                operation.getErrorCode(),
+                operation.getErrorMessage(),
+                operation.getOriginatingMemberId()
+            );
+
+            state.cancel(error);
         }
-
-        // We pass originating member ID here instead of caller ID to preserve the causality:
-        // in the "participant1 -> coordinator -> participant2" flow, the participant2
-        // get the ID of participant1.
-        QueryException error = QueryException.error(
-            operation.getErrorCode(),
-            operation.getErrorMessage(),
-            operation.getOriginatingMemberId()
-        );
-
-        state.cancel(error);
     }
 
     private void handleFlowControl(QueryFlowControlExchangeOperation operation) {
         QueryState state = stateRegistry.getState(operation.getQueryId());
 
         if (state == null) {
+            return;
+        }
+
+        if (state.isCancelled()) {
             return;
         }
 

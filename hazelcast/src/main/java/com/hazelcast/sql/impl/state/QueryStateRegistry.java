@@ -81,17 +81,19 @@ public class QueryStateRegistry {
      * of these events. This is not a problem, because {@link QueryStateRegistryUpdater} will eventually detect that
      * the query is not longer active on the initiator member.
      *
-     * @param localMemberId Cache local member ID.
-     * @param queryId Query ID.
-     * @param completionCallback Callback that will be invoked when the query is completed.
-     * @return Query state or {@code null} if the query with the given ID is guaranteed to be already completed.
+     * @param localMemberId cached local member ID
+     * @param queryId query ID
+     * @param completionCallback callback that will be invoked when the query is completed
+     * @param cancelled if the query should be created in the cancelled state
+     * @return query state or {@code null} if the query with the given ID is guaranteed to be already completed
      */
     public QueryState onDistributedQueryStarted(
         UUID localMemberId,
         QueryId queryId,
-        QueryStateCompletionCallback completionCallback
+        QueryStateCompletionCallback completionCallback,
+        boolean cancelled
     ) {
-        UUID initiatorMemberId =  queryId.getMemberId();
+        UUID initiatorMemberId = queryId.getMemberId();
 
         boolean local = localMemberId.equals(initiatorMemberId);
 
@@ -107,6 +109,7 @@ public class QueryStateRegistry {
                     queryId,
                     localMemberId,
                     completionCallback,
+                    cancelled,
                     clockProvider
                 );
 

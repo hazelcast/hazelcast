@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.exec.io;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
-import com.hazelcast.sql.impl.operation.QueryOperationChannel;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
@@ -49,9 +48,6 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
     /** Ordinal of the next batch */
     private long ordinal;
 
-    /** Channel to send operations through. */
-    private QueryOperationChannel operationChannel;
-
     /** Amount of remote memory which is available at the moment. */
     private long remainingMemory;
 
@@ -74,10 +70,6 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
         this.targetMemberId = targetMemberId;
         this.batchSize = batchSize;
         this.remainingMemory = remainingMemory;
-    }
-
-    public void setup() {
-        operationChannel = operationHandler.createChannel(localMemberId, targetMemberId);
     }
 
     public UUID getTargetMemberId() {
@@ -184,7 +176,7 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
             remainingMemory
         );
 
-        boolean success = operationChannel.submit(op);
+        boolean success = operationHandler.submit(localMemberId, targetMemberId, op);
 
         if (!success) {
             throw QueryException.memberConnection(targetMemberId);
