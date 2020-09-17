@@ -275,7 +275,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             return;
         }
 
-        // We pass originating member ID here instead if caller ID to preserve the causality:
+        // We pass originating member ID here instead of caller ID to preserve the causality:
         // in the "participant1 -> coordinator -> participant2" flow, the participant2
         // get the ID of participant1.
         QueryException error = QueryException.error(
