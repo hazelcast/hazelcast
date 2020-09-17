@@ -100,6 +100,7 @@ public final class ClusterProperty {
     /**
      * Prefer IPv4 network interface when picking a local address.
      */
+    @SuppressWarnings("checkstyle:constantname")
     public static final HazelcastProperty PREFER_IPv4_STACK
             = new HazelcastProperty("hazelcast.prefer.ipv4.stack", true);
 
