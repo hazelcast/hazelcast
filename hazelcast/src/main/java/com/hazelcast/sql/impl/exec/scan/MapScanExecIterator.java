@@ -88,7 +88,7 @@ public class MapScanExecIterator implements KeyValueIterator {
                 } else {
                     int nextPart = partsIterator.next();
 
-                    boolean isOwned = map.getMapServiceContext().getOwnedPartitions().contains(nextPart);
+                    boolean isOwned = map.getMapServiceContext().getOrInitCachedMemberPartitions().contains(nextPart);
 
                     if (!isOwned) {
                         throw QueryException.error(

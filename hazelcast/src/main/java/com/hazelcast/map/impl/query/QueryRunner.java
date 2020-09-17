@@ -119,7 +119,7 @@ public class QueryRunner {
      */
     public Result runIndexOrPartitionScanQueryOnOwnedPartitions(Query query, boolean doPartitionScan) {
         int migrationStamp = getMigrationStamp();
-        PartitionIdSet initialPartitions = mapServiceContext.getOwnedPartitions();
+        PartitionIdSet initialPartitions = mapServiceContext.getOrInitCachedMemberPartitions();
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
 
         // to optimize the query we need to get any index instance
@@ -171,7 +171,7 @@ public class QueryRunner {
      */
     public Result runIndexQueryOnOwnedPartitions(Query query) {
         int migrationStamp = getMigrationStamp();
-        PartitionIdSet initialPartitions = mapServiceContext.getOwnedPartitions();
+        PartitionIdSet initialPartitions = mapServiceContext.getOrInitCachedMemberPartitions();
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
 
         // to optimize the query we need to get any index instance

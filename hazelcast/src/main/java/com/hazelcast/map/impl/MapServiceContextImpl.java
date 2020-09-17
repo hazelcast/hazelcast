@@ -484,34 +484,23 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public PartitionIdSet getOwnedPartitions() {
-        PartitionIdSet partitions = ownedPartitions.get();
-        if (partitions == null) {
-            do {
-                reloadOwnedPartitions();
-                partitions = ownedPartitions.get();
-            } while (partitions == null);
+    public PartitionIdSet getOrInitCachedMemberPartitions() {
+        PartitionIdSet ownedPartitionIdSet = ownedPartitions.get();
+        if (ownedPartitionIdSet != null) {
+            return ownedPartitionIdSet;
         }
-        return partitions;
-    }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The method will set the owned partition set in a CAS loop because
-     * this method can be called concurrently.
-     */
-    @Override
-    public void reloadOwnedPartitions() {
-        IPartitionService partitionService = nodeEngine.getPartitionService();
-        for (; ; ) {
-            PartitionIdSet expected = ownedPartitions.get();
-            Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
-            PartitionIdSet newSet = immutablePartitionIdSet(partitionService.getPartitionCount(), partitions);
-            if (ownedPartitions.compareAndSet(expected, newSet)) {
-                return;
+        synchronized (this) {
+            ownedPartitionIdSet = ownedPartitions.get();
+            if (ownedPartitionIdSet != null) {
+                return ownedPartitionIdSet;
             }
+            IPartitionService partitionService = nodeEngine.getPartitionService();
+            Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
+            ownedPartitionIdSet = immutablePartitionIdSet(partitionService.getPartitionCount(), partitions);
+            ownedPartitions.set(ownedPartitionIdSet);
         }
+        return ownedPartitionIdSet;
     }
 
     @Override
