@@ -146,7 +146,7 @@
                 </executions>
                 <configuration>
                     <outputDirectory>${project.build.directory}</outputDirectory>
-                    <fileTemplate>${project.basedir}/src/main/resources/ThirdParty.txt.ftl</fileTemplate>
+                    <fileTemplate>${project.basedir}/src/main/resources/THIRD-PARTY.txt.ftl</fileTemplate>
                     <excludedGroups>com.hazelcast</excludedGroups>
                     <excludedScopes>test,provided</excludedScopes>
                     <failOnBlacklist>true</failOnBlacklist>
