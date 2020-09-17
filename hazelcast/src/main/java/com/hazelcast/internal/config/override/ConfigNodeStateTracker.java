@@ -33,7 +33,7 @@ class ConfigNodeStateTracker {
     }
 
     private void findAllUnreadNodes(List<ConfigNode> acc, ConfigNode node) {
-        if (node.hasValue() && node.isUnread()) {
+        if (node.hasValue() && !node.isRead()) {
             acc.add(node);
         }
 
