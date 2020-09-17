@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.metrics.metricsets;
 
+import com.hazelcast.internal.memory.GCStatsSupport;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -44,26 +45,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public final class GarbageCollectionMetricSet {
 
-    private static final Set<String> YOUNG_GC;
-    private static final Set<String> OLD_GC;
     private static final int PUBLISH_FREQUENCY_SECONDS = 1;
-
-    static {
-        final Set<String> youngGC = createHashSet(4);
-        youngGC.add("PS Scavenge");
-        youngGC.add("ParNew");
-        youngGC.add("G1 Young Generation");
-        youngGC.add("Copy");
-        YOUNG_GC = Collections.unmodifiableSet(youngGC);
-
-        final Set<String> oldGC = createHashSet(5);
-        oldGC.add("PS MarkSweep");
-        oldGC.add("ConcurrentMarkSweep");
-        oldGC.add("G1 Old Generation");
-        oldGC.add("G1 Mixed Generation");
-        oldGC.add("MarkSweepCompact");
-        OLD_GC = Collections.unmodifiableSet(oldGC);
-    }
 
     private GarbageCollectionMetricSet() {
     }
@@ -112,10 +94,10 @@ public final class GarbageCollectionMetricSet {
                     continue;
                 }
 
-                if (YOUNG_GC.contains(gc.getName())) {
+                if (GCStatsSupport.YOUNG_GC.contains(gc.getName())) {
                     minorCount += count;
                     minorTime += gc.getCollectionTime();
-                } else if (OLD_GC.contains(gc.getName())) {
+                } else if (GCStatsSupport.OLD_GC.contains(gc.getName())) {
                     majorCount += count;
                     majorTime += gc.getCollectionTime();
                 } else {
