@@ -150,6 +150,7 @@ public class SendExecTest extends SqlTestSupport {
         private final List<Row> rows = new ArrayList<>();
 
         private int rowsSubmitted;
+        private long flowControlOrdinal;
 
         private Sender(SendExec sender, UpstreamExec upstream, Outbox outbox, LoggingQueryOperationHandler operationHandler) {
             this.sender = sender;
@@ -179,7 +180,7 @@ public class SendExecTest extends SqlTestSupport {
         }
 
         private void restoreRemainingMemory() {
-            outbox.onFlowControl(ROW_WIDTH * ROWS_IN_REMAINING_MEMORY);
+            outbox.onFlowControl(flowControlOrdinal++, ROW_WIDTH * ROWS_IN_REMAINING_MEMORY);
         }
 
         private void checkRows(int maxValue) {

@@ -50,6 +50,8 @@ public class SimpleFlowControl implements FlowControl {
     /** Remote streams that should be notified. */
     private HashMap<UUID, SimpleFlowControlStream> pendingStreams;
 
+    private long ordinal;
+
     public SimpleFlowControl(long maxMemory, double thresholdPercentage) {
         this.maxMemory = maxMemory;
         this.thresholdPercentage = thresholdPercentage;
@@ -160,6 +162,7 @@ public class SimpleFlowControl implements FlowControl {
         QueryFlowControlExchangeOperation operation = new QueryFlowControlExchangeOperation(
             queryId,
             edgeId,
+            ordinal++,
             stream.getLocalMemory()
         );
 

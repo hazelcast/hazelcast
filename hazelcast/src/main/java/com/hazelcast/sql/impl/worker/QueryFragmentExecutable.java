@@ -132,7 +132,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
                     OutboundHandler outbox = edgeOutboxes.get(operation0.getCallerId());
                     assert outbox != null;
 
-                    outbox.onFlowControl(operation0.getRemainingMemory());
+                    outbox.onFlowControl(operation0.getOrdinal(), operation0.getRemainingMemory());
                 } else {
                     assert operation == RESCHEDULE_OPERATION;
                 }

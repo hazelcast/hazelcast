@@ -55,6 +55,9 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
     /** Amount of remote memory which is available at the moment. */
     private long remainingMemory;
 
+    /** Ordinal of the last received flow control message to filter out stale flow control messages. */
+    private long lastFlowControlOrdinal = -1;
+
     public Outbox(
         QueryOperationHandler operationHandler,
         QueryId queryId,
@@ -153,8 +156,12 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
     }
 
     @Override
-    public void onFlowControl(long remainingMemory) {
-        this.remainingMemory = remainingMemory;
+    public void onFlowControl(long ordinal, long remainingMemory) {
+        if (lastFlowControlOrdinal < ordinal) {
+            this.remainingMemory = remainingMemory;
+
+            lastFlowControlOrdinal = ordinal;
+        }
     }
 
     /**

@@ -63,6 +63,8 @@ public class OutboxTest extends SqlTestSupport {
     /** Must be greater than (remaining memory / row width). */
     private static final int MAX_ROWS_IN_BATCH = 20;
 
+    private long flowControlOrdinal;
+
     @Test
     public void testState() {
         Outbox outbox = createOutbox(new LoggingQueryOperationHandler());
@@ -82,7 +84,7 @@ public class OutboxTest extends SqlTestSupport {
 
         long remainingMemory = REMAINING_MEMORY * 2;
 
-        outbox.onFlowControl(remainingMemory);
+        outbox.onFlowControl(0L, remainingMemory);
 
         assertEquals(remainingMemory, outbox.getRemainingMemory());
     }
@@ -208,7 +210,7 @@ public class OutboxTest extends SqlTestSupport {
             if (outbox.getRemainingMemory() < ROW_WIDTH) {
                 memoryIncrease.addAndGet(REMAINING_MEMORY - outbox.getRemainingMemory());
 
-                outbox.onFlowControl(REMAINING_MEMORY);
+                outbox.onFlowControl(flowControlOrdinal++, REMAINING_MEMORY);
             }
 
             position = outbox.onRowBatch(batch, last, position, AlwaysTrueOutboxSendQualifier.INSTANCE);

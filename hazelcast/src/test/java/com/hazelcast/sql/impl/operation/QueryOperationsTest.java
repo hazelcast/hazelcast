@@ -248,15 +248,17 @@ public class QueryOperationsTest extends SqlTestSupport {
     }
 
     private QueryFlowControlExchangeOperation prepareFlowControl(QueryId queryId, int edgeId) {
+        long ordinal = randomLong();
         long remainingMemory = randomLong();
 
         QueryFlowControlExchangeOperation res = withCallerId(
-            new QueryFlowControlExchangeOperation(queryId, edgeId, remainingMemory)
+            new QueryFlowControlExchangeOperation(queryId, edgeId, ordinal, remainingMemory)
         );
 
         assertFalse(res.isInbound());
         assertEquals(queryId, res.getQueryId());
         assertEquals(edgeId, res.getEdgeId());
+        assertEquals(ordinal, res.getOrdinal());
         assertEquals(remainingMemory, res.getRemainingMemory());
 
         return res;

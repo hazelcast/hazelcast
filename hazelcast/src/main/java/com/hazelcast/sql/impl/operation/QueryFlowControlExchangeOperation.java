@@ -28,18 +28,24 @@ import java.io.IOException;
  */
 public class QueryFlowControlExchangeOperation extends QueryAbstractExchangeOperation {
 
+    private long ordinal;
     private long remainingMemory;
 
     public QueryFlowControlExchangeOperation() {
         // No-op.
     }
 
-    public QueryFlowControlExchangeOperation(QueryId queryId, int edgeId, long remainingMemory) {
+    public QueryFlowControlExchangeOperation(QueryId queryId, int edgeId, long ordinal, long remainingMemory) {
         super(queryId, edgeId);
 
         assert remainingMemory >= 0L;
 
+        this.ordinal = ordinal;
         this.remainingMemory = remainingMemory;
+    }
+
+    public long getOrdinal() {
+        return ordinal;
     }
 
     public long getRemainingMemory() {
@@ -58,11 +64,13 @@ public class QueryFlowControlExchangeOperation extends QueryAbstractExchangeOper
 
     @Override
     protected void writeInternal2(ObjectDataOutput out) throws IOException {
+        out.writeLong(ordinal);
         out.writeLong(remainingMemory);
     }
 
     @Override
     protected void readInternal2(ObjectDataInput in) throws IOException {
+        ordinal = in.readLong();
         remainingMemory = in.readLong();
     }
 }

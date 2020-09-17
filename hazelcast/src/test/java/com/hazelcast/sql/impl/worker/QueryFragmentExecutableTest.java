@@ -206,7 +206,8 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
                 }
             };
 
-            OutboundHandler outboundHandler = outboundQueue::add;
+            // TODO: Careful here
+            OutboundHandler outboundHandler = (ordinal, remainingMemory) -> outboundQueue.add(remainingMemory);
 
             // Prepare executable.
             QueryId queryId = QueryId.create(UUID.randomUUID());
@@ -249,6 +250,8 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
 
             Runnable run = () -> {
                 try {
+                    long flowControlOrdinal = 0L;
+
                     while (true) {
                         int counter = doneOperationCount.getAndIncrement();
 
@@ -269,7 +272,7 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
                                 counter
                             );
                         } else {
-                            operation = new QueryFlowControlExchangeOperation(queryId, edgeId, counter);
+                            operation = new QueryFlowControlExchangeOperation(queryId, edgeId, flowControlOrdinal, counter);
                         }
 
                         operation.setCallerId(callerId);
