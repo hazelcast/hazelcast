@@ -83,9 +83,7 @@ import static java.lang.Math.abs;
 import static java.util.Arrays.stream;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.unmodifiableSet;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.CountDownLatch;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class TcpServerConnectionManager
@@ -188,7 +186,7 @@ public class TcpServerConnectionManager
         Plane plane = getPlane(streamId);
         TcpServerConnection connection = plane.connectionMap.get(address);
         if (connection == null && server.isLive()) {
-            if (plane.connectionsInProgress.putIfAbsent(address, new ConditionHolder()) == null) {
+            if (plane.connectionsInProgress.putIfAbsent(address, new CountDownLatch(1)) == null) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet progress");
                 }
@@ -477,46 +475,30 @@ public class TcpServerConnectionManager
     @Override
     public void blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
         Plane plane = getPlane(streamId);
-        ConditionHolder conditionHolder = new ConditionHolder();
-        ConditionHolder previous = plane.connectionsInProgress.putIfAbsent(address, conditionHolder);
+        CountDownLatch latch = new CountDownLatch(1);
+        CountDownLatch previous = plane.connectionsInProgress.putIfAbsent(address, latch);
         if (previous != null) {
-            conditionHolder = previous;
+            latch = previous;
         }
-        conditionHolder.lock.lock();
-        try {
-            conditionHolder.condition.await(millis, TimeUnit.MILLISECONDS);
-        } finally {
-            conditionHolder.lock.unlock();
-        }
+        latch.await(millis, TimeUnit.MILLISECONDS);
     }
 
     private void unblock(Plane plane, final Address remoteAddress) {
-        ConditionHolder conditionHolder = plane.connectionsInProgress.remove(remoteAddress);
-        if (conditionHolder == null) {
-            return;
-        }
-        conditionHolder.lock.lock();
-        try {
-            conditionHolder.condition.signal();
-        } finally {
-            conditionHolder.lock.unlock();
+        CountDownLatch latch = plane.connectionsInProgress.remove(remoteAddress);
+        if (latch != null) {
+            latch.countDown();
         }
     }
 
     static class Plane {
         final ConcurrentHashMap<Address, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
-        final Map<Address, ConditionHolder> connectionsInProgress = new ConcurrentHashMap<>();
+        final Map<Address, CountDownLatch> connectionsInProgress = new ConcurrentHashMap<>();
         final ConcurrentHashMap<Address, TcpServerConnectionErrorHandler> errorHandlers = new ConcurrentHashMap<>(100);
         final int index;
 
         Plane(int index) {
             this.index = index;
         }
-    }
-
-    static class ConditionHolder {
-        final Lock lock = new ReentrantLock();
-        final Condition condition = lock.newCondition();
     }
 
     private final class SendTask implements Runnable {
