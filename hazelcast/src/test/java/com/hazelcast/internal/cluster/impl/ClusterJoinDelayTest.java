@@ -27,7 +27,6 @@ import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -62,7 +61,7 @@ public class ClusterJoinDelayTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         Config config = new Config();
-        // make sure the wait is longer than the tesed-for delay.
+        // make sure the wait is longer than the tested-for delay.
         // here we make sure that the newHazelcastInstance() call returns w/o blocking
         config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "5");
         config.setProperty(ClusterProperty.MAX_WAIT_SECONDS_BEFORE_JOIN.getName(), "20");
@@ -77,7 +76,6 @@ public class ClusterJoinDelayTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = fact.newHazelcastInstance(getConfig());
         HazelcastInstance hz2 = fact.newHazelcastInstance(getConfig());
         HazelcastInstance hz3 = fact.newHazelcastInstance(getConfig());
-        assertTrue("hz1 should always be numInstances members here", hz1.getCluster().getMembers().size() == numInstances);
-        assertTrue("hz2 should always be numInstances members here", hz2.getCluster().getMembers().size() == numInstances);
+        assertClusterSizeEventually(numInstances, hz1, hz2, hz3);
     }
 }
