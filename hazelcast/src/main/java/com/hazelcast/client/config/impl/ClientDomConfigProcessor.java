@@ -277,6 +277,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleNearCacheNode(Node node) {
         String name = getName(node);
+        name = name == null ? "default" : name;
         NearCacheConfig nearCacheConfig = new NearCacheConfig(name);
         Boolean serializeKeys = null;
         for (Node child : childElements(node)) {
