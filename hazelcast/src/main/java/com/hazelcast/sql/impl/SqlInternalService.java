@@ -71,8 +71,7 @@ public class SqlInternalService {
         String instanceName,
         NodeServiceProvider nodeServiceProvider,
         InternalSerializationService serializationService,
-        int operationThreadCount,
-        int fragmentThreadCount,
+        int threadCount,
         int outboxBatchSize,
         long stateCheckFrequency,
         PlanCacheChecker planCacheChecker
@@ -91,8 +90,7 @@ public class SqlInternalService {
             stateRegistry,
             outboxBatchSize,
             FLOW_CONTROL_FACTORY,
-            fragmentThreadCount,
-            operationThreadCount
+            threadCount
         );
 
         // State checker depends on state registries and operation handler.

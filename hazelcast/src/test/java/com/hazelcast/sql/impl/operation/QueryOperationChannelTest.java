@@ -70,7 +70,6 @@ public class QueryOperationChannelTest extends SqlTestSupport {
             new QueryStateRegistry(TestClockProvider.createDefault()),
             1000,
             SimpleFlowControlFactory.INSTANCE,
-            1,
             1
         );
 

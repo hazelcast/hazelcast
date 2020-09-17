@@ -73,8 +73,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private final NodeServiceProviderImpl nodeServiceProvider;
     private final PlanCache planCache = new PlanCache(PLAN_CACHE_SIZE);
 
-    private final int executorPoolSize;
-    private final int operationPoolSize;
+    private final int poolSize;
     private final long queryTimeout;
 
     private JetSqlCoreBackend jetSqlCoreBackend;
@@ -89,24 +88,17 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
         SqlConfig config = nodeEngine.getConfig().getSqlConfig();
 
-        int executorPoolSize = config.getExecutorPoolSize();
-        int operationPoolSize = config.getOperationPoolSize();
+        int poolSize = config.getExecutorPoolSize();
         long queryTimeout = config.getStatementTimeoutMillis();
 
-        if (executorPoolSize == SqlConfig.DEFAULT_EXECUTOR_POOL_SIZE) {
-            executorPoolSize = Runtime.getRuntime().availableProcessors();
+        if (poolSize == SqlConfig.DEFAULT_EXECUTOR_POOL_SIZE) {
+            poolSize = Runtime.getRuntime().availableProcessors();
         }
 
-        if (operationPoolSize == SqlConfig.DEFAULT_OPERATION_POOL_SIZE) {
-            operationPoolSize = Runtime.getRuntime().availableProcessors();
-        }
-
-        assert executorPoolSize > 0;
-        assert operationPoolSize > 0;
+        assert poolSize > 0;
         assert queryTimeout >= 0L;
 
-        this.executorPoolSize = executorPoolSize;
-        this.operationPoolSize = operationPoolSize;
+        this.poolSize = poolSize;
         this.queryTimeout = queryTimeout;
     }
 
@@ -134,8 +126,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             instanceName,
             nodeServiceProvider,
             serializationService,
-            operationPoolSize,
-            executorPoolSize,
+            poolSize,
             OUTBOX_BATCH_SIZE,
             STATE_CHECK_FREQUENCY,
             planCacheChecker

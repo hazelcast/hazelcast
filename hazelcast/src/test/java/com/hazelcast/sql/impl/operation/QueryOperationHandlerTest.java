@@ -600,7 +600,6 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             nodeServiceProvider,
             serializationService,
             Runtime.getRuntime().availableProcessors(),
-            Runtime.getRuntime().availableProcessors(),
             1000,
             stateCheckFrequency,
             null

@@ -57,7 +57,6 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     private final FlowControlFactory flowControlFactory;
     private volatile CreateExecPlanNodeVisitorHook execHook;
 
-    // TODO: Remove thread count (here and from config and beans)
     public QueryOperationHandlerImpl(
         String instanceName,
         NodeServiceProvider nodeServiceProvider,
@@ -65,8 +64,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         QueryStateRegistry stateRegistry,
         int outboxBatchSize,
         FlowControlFactory flowControlFactory,
-        int threadCount,
-        int operationThreadCount
+        int threadCount
     ) {
         this.nodeServiceProvider = nodeServiceProvider;
         this.serializationService = serializationService;
