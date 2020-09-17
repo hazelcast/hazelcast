@@ -33,6 +33,7 @@ import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -257,9 +258,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
 
     @Test
     public void when_databaseShutdownOrLongDisconnectDuringBinlogReading() throws Exception {
-        if (reconnectBehavior.getMaxAttempts() < 0 && !resetStateOnReconnect) {
-            return; //doesn't make sense to test this mode with this scenario
-        }
+        Assume.assumeFalse(reconnectBehavior.getMaxAttempts() < 0 && !resetStateOnReconnect);
 
         int port = findRandomOpenPort();
         PostgreSQLContainer<?> postgres = initPostgres(null, port);
