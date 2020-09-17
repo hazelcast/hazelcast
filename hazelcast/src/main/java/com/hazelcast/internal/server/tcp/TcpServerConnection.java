@@ -318,6 +318,7 @@ public class TcpServerConnection implements ServerConnection {
                 + ", endpoint=" + remoteAddress
                 + ", alive=" + alive
                 + ", connectionType=" + connectionType
+                + ", planeIndex=" + planeIndex
                 + "]";
     }
 }

@@ -29,15 +29,8 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-/**
- * THis is a test for https://github.com/hazelcast/hazelcast-enterprise/issues/2492
- * The cause of the problem is the new pipeline in 3.11.
- * In the old approach, the channel wasn't registered before the connection was established.
- * So in case of failure, nothing needs to be unregistered.
- * But with the new pipeline the channel gets registered (created) before the connection is established
- * but it didn't get unregistered if the connection could not be established. Leading to a memory leak.
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class TcpServerConnectionManager_MemoryLeakTest
@@ -48,6 +41,14 @@ public class TcpServerConnectionManager_MemoryLeakTest
         Hazelcast.shutdownAll();
     }
 
+    /**
+     * This is a test for https://github.com/hazelcast/hazelcast-enterprise/issues/2492
+     * The cause of the problem is the new pipeline in 3.11.
+     * In the old approach, the channel wasn't registered before the connection was established.
+     * So in case of failure, nothing needs to be unregistered.
+     * But with the new pipeline the channel gets registered (created) before the connection is established
+     * but it didn't get unregistered if the connection could not be established. Leading to a memory leak.
+     */
     @Test
     public void test() {
         HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
@@ -61,5 +62,30 @@ public class TcpServerConnectionManager_MemoryLeakTest
         TcpServerConnectionManager connectionManager = networkingService.getConnectionManager(EndpointQualifier.MEMBER);
 
         assertTrueAllTheTime(() -> assertEquals(0, connectionManager.acceptedChannels.size()), 5);
+    }
+
+    /**
+     * When a connection is quickly closed by the remote side, it can be the case
+     * that the {@link com.hazelcast.internal.cluster.impl.MemberHandshake}
+     * was not processed on the originating member and the
+     * {@code TcpServerConnection#planeIndex} was left to its default value (-1).
+     * This race results in further connection attempts being blocked due to
+     * leftover data in {@code Plane#connectionsInProgress}.
+     * See https://github.com/hazelcast/hazelcast/issues/17238#issuecomment-694241589
+    */
+    @Test
+    public void test_connectionCleanedUpWhenClosed_withoutPlaneIndexSet() {
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
+        TcpServer networkingService = (TcpServer) getNode(hz1).getServer();
+
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+        assertClusterSizeEventually(2, hz1);
+        TcpServerConnectionManager connectionManager = networkingService.getConnectionManager(EndpointQualifier.MEMBER);
+        TcpServerConnection connection = (TcpServerConnection) connectionManager.get(getNode(hz2).getThisAddress());
+        connection.setPlaneIndex(-1);
+        hz2.shutdown();
+
+        assertClusterSizeEventually(1, hz1);
+        assertTrue(connectionManager.getConnections().isEmpty());
     }
 }

@@ -45,6 +45,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -523,7 +524,27 @@ public class TcpServerConnectionManager
                     plane.connectionsInProgress.remove(remoteAddress);
                     plane.connectionMap.remove(remoteAddress);
                     fireConnectionRemovedEvent(connection, remoteAddress);
-                } //todo: could it be that we have a memory leak by not removing something from the plane.
+                } else {
+                    // it might be the case that the connection was closed quickly enough
+                    // that the planeIndex was not set. Instead look for the connection
+                    // by remoteAddress and connectionId over all planes and remove it wherever found.
+                    boolean removed = false;
+                    for (Plane plane : planes) {
+                        plane.connectionsInProgress.remove(remoteAddress);
+                        // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
+                        Iterator<TcpServerConnection> connections = plane.connectionMap.values().iterator();
+                        while (connections.hasNext()) {
+                            TcpServerConnection cxn = connections.next();
+                            if (cxn.getConnectionId() == connection.getConnectionId()) {
+                                connections.remove();
+                                removed = true;
+                            }
+                        }
+                    }
+                    if (removed) {
+                        fireConnectionRemovedEvent(connection, remoteAddress);
+                    }
+                }
             }
 
             if (cause != null) {
