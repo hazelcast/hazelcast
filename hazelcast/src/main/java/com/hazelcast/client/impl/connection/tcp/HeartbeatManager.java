@@ -85,10 +85,9 @@ public class HeartbeatManager implements Runnable {
         }
 
         if (now - connection.lastReadTimeMillis() > heartbeatTimeout) {
-            if (connection.isAlive()) {
-                logger.warning("Heartbeat failed over the connection: " + connection);
-                onHeartbeatStopped(connection, "Heartbeat timed out");
-            }
+            logger.warning("Heartbeat failed over the connection: " + connection);
+            onHeartbeatStopped(connection, "Heartbeat timed out");
+            return;
         }
 
         if (now - connection.lastWriteTimeMillis() > heartbeatInterval) {
