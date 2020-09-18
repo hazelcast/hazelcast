@@ -124,7 +124,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private volatile Address masterAddress;
     private volatile MemberImpl localMember;
 
-    private class JoinHolder {
+    private static class JoinHolder {
         private final CountDownLatch latch = new CountDownLatch(1);
         private final boolean isJoined;
 
@@ -1077,6 +1077,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return "ClusterService" + "{address=" + getThisAddress() + '}';
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
     public void blockOnJoin(long millis) throws InterruptedException {
         joined.get().latch.await(millis, TimeUnit.MILLISECONDS);
     }

@@ -472,6 +472,7 @@ public class TcpServerConnectionManager
         }
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
     @Override
     public void blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
         Plane plane = getPlane(streamId);
