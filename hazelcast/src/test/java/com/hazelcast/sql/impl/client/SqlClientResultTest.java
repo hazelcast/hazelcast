@@ -26,8 +26,6 @@ import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class SqlClientResultTest {
@@ -35,17 +33,15 @@ public class SqlClientResultTest {
     public void test_rowsResult() {
         SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("n", SqlColumnType.INTEGER)));
 
-        SqlClientResult r = new SqlClientResult(false, null, null, null, metadata, emptyList(), true, 10, 0);
+        SqlClientResult r = new SqlClientResult(null, null, null, metadata, emptyList(), true, 10, -1);
 
-        assertFalse(r.isUpdateCount());
+        assertEquals(-1, r.updateCount());
         assertEquals(metadata, r.getRowMetadata());
-        assertThrows(IllegalStateException.class, "This result doesn't contain update count", () -> r.updateCount());
     }
 
     @Test
     public void test_updateCountResult() {
-        SqlClientResult r = new SqlClientResult(true, null, null, null, null, null, true, 0, 10);
-        assertTrue(r.isUpdateCount());
+        SqlClientResult r = new SqlClientResult(null, null, null, null, null, true, 0, 10);
         assertEquals(10, r.updateCount());
         assertThrows(IllegalStateException.class, "This result contains only update count", () -> r.iterator());
         assertThrows(IllegalStateException.class, "This result contains only update count", () -> r.getRowMetadata());

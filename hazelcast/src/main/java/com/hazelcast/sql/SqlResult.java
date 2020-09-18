@@ -41,7 +41,6 @@ import java.util.Iterator;
  * }
  * </pre>
  *
- * <p>
  * <h4>Usage for update count</h4>
  *
  * <pre>
@@ -53,21 +52,18 @@ import java.util.Iterator;
 public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
 
     /**
-     * If this result represents a row set, this method returns {@code false}.
-     * If this result represents an update count (such as for a DML query), it
-     * returns {@code true}.
-     *
-     * @return {@code false} for a rows result and {@code true} for an update
-     *     count result
+     * Return whether this result has rows to iterate using the {@link
+     * #iterator()} method.
      */
-    boolean isUpdateCount();
+    default boolean isRowSet() {
+        return updateCount() == -1;
+    }
 
     /**
-     * Gets row metadata.
+     * Gets the row metadata.
      *
-     * @throws IllegalStateException if this result doesn't have rows (i.e.
-     *     when {@link #isUpdateCount()} returns {@code true})
-     * @return row metadata
+     * @throws IllegalStateException if the result doesn't have rows, but
+     *     only an update count
      */
     @Nonnull
     SqlRowMetadata getRowMetadata();
@@ -79,8 +75,7 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
      *
      * @return iterator
      * @throws IllegalStateException if the method is invoked more than once or
-     *    if this result doesn't have rows (i.e. when {@link #isUpdateCount()}
-     *    returns {@code true})
+     *    if this result doesn't have rows
      * @throws HazelcastSqlException in case of an SQL-related error condition
      */
     @Nonnull
@@ -88,20 +83,18 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
     Iterator<SqlRow> iterator();
 
     /**
-     * Returns the number of rows updated by the statement.
-     *
-     * @throws IllegalStateException if this result doesn't represent an update
-     *     count (i.e. when {@link #isUpdateCount()} returns {@code false})
+     * Returns the number of rows updated by the statement or -1 if this result
+     * is a row set. In case the result doesn't contain rows but the update
+     * count isn't applicable or known, 0 is returned.
      */
     long updateCount();
 
     /**
-     * Release the resources associated with the query result. Must be called only if the {@linkplain
-     * #isUpdateCount()} returns {@code false}, that is when it's a result with rows, otherwise it's a no-op.
+     * Release the resources associated with the query result.
      * <p>
      * The query engine delivers the rows asynchronously. The query may become inactive even before all rows are
      * consumed. The invocation of this command will cancel the execution of the query on all members if the query
-     * is still active. Otherwise it is no-op.
+     * is still active. Otherwise it is no-op. For a result with an update count it is always no-op.
      */
     @Override
     void close();

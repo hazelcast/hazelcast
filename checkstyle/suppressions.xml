@@ -197,6 +197,7 @@
     <!-- SPI -->
     <suppress checks="FileLength"
               files="com[\\/]hazelcast[\\/]spi[\\/]impl[\\/]AbstractInvocationFuture"/>
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]spi[\\/]properties[\\/]ClusterProperty"/>
 
     <!-- Transaction -->
     <suppress checks="Javadoc(Method|Type)" files="com[\\/]hazelcast[\\/]transaction[\\/]"/>

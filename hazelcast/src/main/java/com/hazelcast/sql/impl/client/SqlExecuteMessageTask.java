@@ -55,7 +55,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
 
             AbstractSqlResult result = (AbstractSqlResult) sqlService.execute(query);
 
-            if (result.isUpdateCount()) {
+            if (result.updateCount() >= 0) {
                 return SqlExecuteResponse.updateCountResponse(result.updateCount());
             } else {
                 SqlPage page = sqlService.getInternalService().getClientStateRegistry().registerAndFetch(
@@ -94,12 +94,11 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         Collection<Collection<Data>> rowPage0 = (Collection<Collection<Data>>) (Object) rowPage;
 
         return SqlExecuteCodec.encodeResponse(
-            response0.isUpdateCount(),
             response0.getQueryId(),
             response0.getRowMetadata(),
             rowPage0,
             response0.isRowPageLast(),
-            response0.getUpdatedCount(),
+            response0.getUpdateCount(),
             response0.getError()
         );
     }
