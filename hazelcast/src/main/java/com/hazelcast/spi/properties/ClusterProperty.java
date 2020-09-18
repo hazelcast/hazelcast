@@ -147,8 +147,8 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.socket.send.buffer.size", 128);
 
     /**
-     * If the bytebuffers used in the socket should be a direct bytebuffer (true)
-     * or a regular bytebuffer (false).
+     * If the bytebuffers used in the socket should be a direct bytebuffer ({@code true})
+     * or a regular bytebuffer ({@code false}).
      */
     public static final HazelcastProperty SOCKET_BUFFER_DIRECT
             = new HazelcastProperty("hazelcast.socket.buffer.direct", false);
@@ -183,6 +183,10 @@ public final class ClusterProperty {
     public static final HazelcastProperty SOCKET_CLIENT_SEND_BUFFER_SIZE
             = new HazelcastProperty("hazelcast.socket.client.send.buffer.size", -1);
 
+    /**
+     * If the bytebuffers used in the socket should be a direct bytebuffer ({@code true})
+     * or a regular bytebuffer ({@code false}).
+     */
     public static final HazelcastProperty SOCKET_CLIENT_BUFFER_DIRECT
             = new HazelcastProperty("hazelcast.socket.client.buffer.direct", false);
 
@@ -577,6 +581,12 @@ public final class ClusterProperty {
     public static final HazelcastProperty CLIENT_HEARTBEAT_TIMEOUT_SECONDS
             = new HazelcastProperty("hazelcast.client.max.no.heartbeat.seconds", 300, SECONDS);
 
+    /**
+     * Once a member initiates cluster shutdown, it will either wait for all
+     * members to leave the cluster before shutting itself down. This parameter
+     * defines a timeout after which there may still be some members in the
+     * cluster but the initiator will give up and shut itself down regardless.
+     */
     public static final HazelcastProperty CLUSTER_SHUTDOWN_TIMEOUT_SECONDS
             = new HazelcastProperty("hazelcast.cluster.shutdown.timeout.seconds", 900, SECONDS);
 
@@ -755,6 +765,12 @@ public final class ClusterProperty {
     public static final HazelcastProperty ENABLE_JMX
             = new HazelcastProperty("hazelcast.jmx", false);
 
+    /**
+     * Some JMX MBeans are cached (e.g. map, multimap, queue and replicated map)
+     * to reduce the overhead of calculating statistics. This parameter determines
+     * how much the MBeans can go stale, meaning after how much time elapses since
+     * the last calculated statistics should the MBean be refreshed.
+     */
     public static final HazelcastProperty JMX_UPDATE_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.jmx.update.interval.seconds", 5, SECONDS);
 
