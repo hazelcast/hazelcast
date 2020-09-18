@@ -25,6 +25,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -56,7 +58,7 @@ public class QueryOperationWorkerPool {
         this.serializationService = serializationService;
         this.logger = logger;
 
-        exec = Executors.newFixedThreadPool(threadCount, new PoolThreadFactory(instanceName, workerName));
+        exec = new ForkJoinPool(threadCount);
     }
 
     public void submit(QueryOperationExecutable task) {
@@ -75,7 +77,7 @@ public class QueryOperationWorkerPool {
         exec.shutdownNow();
     }
 
-    private static final class PoolThreadFactory implements ThreadFactory {
+    private static final class PoolThreadFactory implements ForkJoinPool.ForkJoinWorkerThreadFactory {
 
         private final AtomicLong counter = new AtomicLong();
         private final String instanceName;
