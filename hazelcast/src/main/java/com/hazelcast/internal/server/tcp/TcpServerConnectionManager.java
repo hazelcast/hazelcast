@@ -83,7 +83,6 @@ import static java.lang.Math.abs;
 import static java.util.Arrays.stream;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.unmodifiableSet;
-import java.util.concurrent.CountDownLatch;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class TcpServerConnectionManager
@@ -186,7 +185,7 @@ public class TcpServerConnectionManager
         Plane plane = getPlane(streamId);
         TcpServerConnection connection = plane.connectionMap.get(address);
         if (connection == null && server.isLive()) {
-            if (plane.connectionsInProgress.putIfAbsent(address, new CountDownLatch(1)) == null) {
+            if (plane.connectionsInProgress.add(address)) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet progress");
                 }
@@ -240,7 +239,7 @@ public class TcpServerConnectionManager
             });
             return true;
         } finally {
-            unblock(plane, remoteAddress);
+            plane.connectionsInProgress.remove(remoteAddress);
         }
     }
 
@@ -280,10 +279,7 @@ public class TcpServerConnectionManager
 
         connections.forEach(conn -> close(conn, "TcpServer is stopping"));
         acceptedChannels.clear();
-        stream(planes).forEach(plane -> {
-            plane.connectionsInProgress.forEach((address, holder) -> unblock(plane, address));
-            plane.connectionsInProgress.clear();
-        });
+        stream(planes).forEach(plane -> plane.connectionsInProgress.clear());
         stream(planes).forEach(plane -> plane.errorHandlers.clear());
 
         connections.clear();
@@ -338,7 +334,7 @@ public class TcpServerConnectionManager
     }
 
     void failedConnection(Address address, int planeIndex, Throwable t, boolean silent) {
-        unblock(planes[planeIndex], address);
+        planes[planeIndex].connectionsInProgress.remove(address);
         serverContext.onFailedConnection(address);
         if (!silent) {
             getErrorHandler(address, planeIndex, false).onError(t);
@@ -472,27 +468,9 @@ public class TcpServerConnectionManager
         }
     }
 
-    @Override
-    public void blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
-        Plane plane = getPlane(streamId);
-        CountDownLatch latch = new CountDownLatch(1);
-        CountDownLatch previous = plane.connectionsInProgress.putIfAbsent(address, latch);
-        if (previous != null) {
-            latch = previous;
-        }
-        latch.await(millis, TimeUnit.MILLISECONDS);
-    }
-
-    private void unblock(Plane plane, final Address remoteAddress) {
-        CountDownLatch latch = plane.connectionsInProgress.remove(remoteAddress);
-        if (latch != null) {
-            latch.countDown();
-        }
-    }
-
     static class Plane {
         final ConcurrentHashMap<Address, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
-        final Map<Address, CountDownLatch> connectionsInProgress = new ConcurrentHashMap<>();
+        final Set<Address> connectionsInProgress = newSetFromMap(new ConcurrentHashMap<>());
         final ConcurrentHashMap<Address, TcpServerConnectionErrorHandler> errorHandlers = new ConcurrentHashMap<>(100);
         final int index;
 
@@ -542,7 +520,7 @@ public class TcpServerConnectionManager
                 int planeIndex = connection.getPlaneIndex();
                 if (planeIndex > -1) {
                     Plane plane = planes[connection.getPlaneIndex()];
-                    unblock(plane, remoteAddress);
+                    plane.connectionsInProgress.remove(remoteAddress);
                     plane.connectionMap.remove(remoteAddress);
                     fireConnectionRemovedEvent(connection, remoteAddress);
                 } //todo: could it be that we have a memory leak by not removing something from the plane.

@@ -251,7 +251,6 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         //we are closing a connection and making sure It is not established ever again
         waitFlag.set(true);
         instance1.shutdown();
-        waitAllForSafeState(instance2);
 
         //we expect these operations to run without throwing exception, since they are done on live instance.
         clientMap.put(keyOwnedBy2, 1);
