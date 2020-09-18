@@ -28,6 +28,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.util.FilteringClassLoader;
 import org.junit.After;
 import org.junit.Test;
+import usercodedeployment.DomainClassWithInnerClass;
 import usercodedeployment.EntryProcessorWithAnonymousAndInner;
 import usercodedeployment.IncrementingEntryProcessor;
 import usercodedeployment.blacklisted.BlacklistedEP;
@@ -215,6 +216,62 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
 
         EntryProcessor<Integer, Integer> myEP = new IncrementingEntryProcessor();
         executeSimpleTestScenario(i1Config, i2Config, myEP);
+    }
+
+    @Test
+    public void testInnerClassFetchedFirst_thenMainClassFetchedFromRemote() {
+        Config i1Config = new Config();
+        i1Config.getUserCodeDeploymentConfig()
+                .setEnabled(true)
+                .setClassCacheMode(getClassCacheMode());
+
+        Config filteredConfig = new Config();
+        FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
+        filteredConfig.setClassLoader(filteringCL);
+        filteredConfig.getUserCodeDeploymentConfig()
+                .setEnabled(true)
+                .setClassCacheMode(getClassCacheMode());
+        factory = newFactory();
+        HazelcastInstance instanceWithClasses = factory.newHazelcastInstance(i1Config);
+        HazelcastInstance instanceWithoutTheClasses = factory.newHazelcastInstance(filteredConfig);
+
+        IMap<Object, Object> map = instanceWithClasses.getMap("test");
+        DomainClassWithInnerClass mainDomainObject = new DomainClassWithInnerClass(new DomainClassWithInnerClass.InnerClass(2));
+        map.put("main", mainDomainObject);
+        DomainClassWithInnerClass.InnerClass innerObject = new DomainClassWithInnerClass.InnerClass(1);
+        map.put("inner", innerObject);
+
+        IMap<Object, Object> map2 = instanceWithoutTheClasses.getMap("test");
+        map2.get("inner");
+        map2.get("main");
+    }
+
+    @Test
+    public void testMainClassFetchedFirst_thenInnerClassFetchedFromRemote() {
+        Config i1Config = new Config();
+        i1Config.getUserCodeDeploymentConfig()
+                .setEnabled(true)
+                .setClassCacheMode(getClassCacheMode());
+
+        Config filteredConfig = new Config();
+        FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
+        filteredConfig.setClassLoader(filteringCL);
+        filteredConfig.getUserCodeDeploymentConfig()
+                .setEnabled(true)
+                .setClassCacheMode(getClassCacheMode());
+        factory = newFactory();
+        HazelcastInstance instanceWithClasses = factory.newHazelcastInstance(i1Config);
+        HazelcastInstance instanceWithoutTheClasses = factory.newHazelcastInstance(filteredConfig);
+
+        IMap<Object, Object> map = instanceWithClasses.getMap("test");
+        DomainClassWithInnerClass mainDomainObject = new DomainClassWithInnerClass(new DomainClassWithInnerClass.InnerClass(2));
+        map.put("main", mainDomainObject);
+        DomainClassWithInnerClass.InnerClass innerObject = new DomainClassWithInnerClass.InnerClass(1);
+        map.put("inner", innerObject);
+
+        IMap<Object, Object> map2 = instanceWithoutTheClasses.getMap("test");
+        map2.get("main");
+        map2.get("inner");
     }
 
     protected void executeSimpleTestScenario(Config config, Config epFilteredConfig, EntryProcessor<Integer, Integer> ep) {
