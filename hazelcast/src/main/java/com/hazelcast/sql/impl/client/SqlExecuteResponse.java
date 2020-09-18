@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.impl.QueryId;
 
@@ -24,29 +25,26 @@ import java.util.List;
 
 public final class SqlExecuteResponse {
 
-    private final boolean isUpdateCount;
     private final QueryId queryId;
     private final List<SqlColumnMetadata> rowMetadata;
     private final List<List<Data>> rowPage;
     private final boolean rowPageLast;
     private final SqlError error;
-    private final long updatedCount;
+    private final long updateCount;
 
     private SqlExecuteResponse(
-        boolean isUpdateCount,
         QueryId queryId,
         List<SqlColumnMetadata> rowMetadata,
         List<List<Data>> rowPage,
         boolean rowPageLast,
-        long updatedCount,
+        long updateCount,
         SqlError error
     ) {
-        this.isUpdateCount = isUpdateCount;
         this.queryId = queryId;
         this.rowMetadata = rowMetadata;
         this.rowPage = rowPage;
         this.rowPageLast = rowPageLast;
-        this.updatedCount = updatedCount;
+        this.updateCount = updateCount;
         this.error = error;
     }
 
@@ -56,21 +54,18 @@ public final class SqlExecuteResponse {
         List<List<Data>> rowPage,
         boolean rowPageLast
     ) {
-        return new SqlExecuteResponse(false, queryId, rowMetadata, rowPage, rowPageLast, 0, null);
+        return new SqlExecuteResponse(queryId, rowMetadata, rowPage, rowPageLast, -1, null);
     }
 
     public static SqlExecuteResponse errorResponse(SqlError error) {
-        return new SqlExecuteResponse(false, null, null, null, true, 0, error);
+        return new SqlExecuteResponse(null, null, null, true, -1, error);
     }
 
     // used by Jet
     @SuppressWarnings("unused")
-    public static SqlExecuteResponse updateCountResponse(long updatedCount) {
-        return new SqlExecuteResponse(true, null, null, null, true, updatedCount, null);
-    }
-
-    public boolean isUpdateCount() {
-        return isUpdateCount;
+    public static SqlExecuteResponse updateCountResponse(long updateCount) {
+        Preconditions.checkNotNegative(updateCount, "the updateCount must be >= 0");
+        return new SqlExecuteResponse(null, null, null, true, updateCount, null);
     }
 
     public QueryId getQueryId() {
@@ -93,7 +88,7 @@ public final class SqlExecuteResponse {
         return error;
     }
 
-    public long getUpdatedCount() {
-        return updatedCount;
+    public long getUpdateCount() {
+        return updateCount;
     }
 }
