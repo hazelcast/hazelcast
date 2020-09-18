@@ -88,13 +88,16 @@ public class HeartbeatManager implements Runnable {
             if (connection.isAlive()) {
                 logger.warning("Heartbeat failed over the connection: " + connection);
                 onHeartbeatStopped(connection, "Heartbeat timed out");
+                return;
             }
         }
 
         if (now - connection.lastWriteTimeMillis() > heartbeatInterval) {
-            ClientMessage request = ClientPingCodec.encodeRequest();
-            ClientInvocation clientInvocation = new ClientInvocation(client, request, null, connection);
-            clientInvocation.invokeUrgent();
+            if (connection.isAlive()) {
+                ClientMessage request = ClientPingCodec.encodeRequest();
+                ClientInvocation clientInvocation = new ClientInvocation(client, request, null, connection);
+                clientInvocation.invokeUrgent();
+            }
         }
     }
 
