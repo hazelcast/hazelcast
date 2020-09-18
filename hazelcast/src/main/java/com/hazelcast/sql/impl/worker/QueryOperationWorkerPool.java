@@ -21,14 +21,13 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.impl.LocalMemberIdProvider;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 
 /**
  * Thread pool that executes query operations.
@@ -58,7 +57,7 @@ public class QueryOperationWorkerPool {
         this.serializationService = serializationService;
         this.logger = logger;
 
-        exec = new ForkJoinPool(threadCount);
+        exec = new ForkJoinPool(threadCount, new WorkerThreadFactory(instanceName, workerName), new ExceptionHandler(), true);
     }
 
     public void submit(QueryOperationExecutable task) {
@@ -77,25 +76,39 @@ public class QueryOperationWorkerPool {
         exec.shutdownNow();
     }
 
-    private static final class PoolThreadFactory implements ForkJoinPool.ForkJoinWorkerThreadFactory {
+    private static final class WorkerThread extends ForkJoinWorkerThread {
+        private WorkerThread(ForkJoinPool pool) {
+            super(pool);
+        }
+    }
+
+    private static final class WorkerThreadFactory implements ForkJoinPool.ForkJoinWorkerThreadFactory {
 
         private final AtomicLong counter = new AtomicLong();
         private final String instanceName;
         private final String workerName;
 
-        private PoolThreadFactory(String instanceName, String workerName) {
+        private WorkerThreadFactory(String instanceName, String workerName) {
             this.instanceName = instanceName;
             this.workerName = workerName;
         }
 
         @Override
-        public Thread newThread(@NotNull Runnable r) {
+        public ForkJoinWorkerThread newThread(ForkJoinPool pool) {
             String name = QueryUtils.workerName(instanceName, workerName, counter.incrementAndGet());
 
-            Thread thread = new Thread(r);
+            WorkerThread thread = new WorkerThread(pool);
             thread.setName(name);
 
             return thread;
+        }
+    }
+
+    private class ExceptionHandler implements Thread.UncaughtExceptionHandler {
+        @Override
+        public void uncaughtException(Thread thread, Throwable t) {
+            inspectOutOfMemoryError(t);
+            logger.severe(t);
         }
     }
 }
