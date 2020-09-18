@@ -39,6 +39,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import usercodedeployment.CapitalizatingFirstnameExtractor;
+import usercodedeployment.DomainClassWithInnerClass;
 import usercodedeployment.EntryProcessorWithAnonymousAndInner;
 import usercodedeployment.IncrementingEntryProcessor;
 import usercodedeployment.Person;
@@ -282,6 +283,30 @@ public class ClientUserCodeDeploymentTest extends HazelcastTestSupport {
 
          */
         clientUserCodeDeploymentConfig.addJar("ChildParent.jar");
+        clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
+
+        factory.newHazelcastInstance(createNodeConfig());
+        factory.newHazelcastClient(clientConfig);
+    }
+
+    @Test
+    public void testWithMainAndInnerClassesWorksIndependentOfOrder_withInnerFirst() {
+        ClientConfig clientConfig = new ClientConfig();
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+        clientUserCodeDeploymentConfig.addClass(DomainClassWithInnerClass.InnerClass.class);
+        clientUserCodeDeploymentConfig.addClass(DomainClassWithInnerClass.class);
+        clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
+
+        factory.newHazelcastInstance(createNodeConfig());
+        factory.newHazelcastClient(clientConfig);
+    }
+
+    @Test
+    public void testWithMainAndInnerClassesWorksIndependentOfOrder_withMainFirst() {
+        ClientConfig clientConfig = new ClientConfig();
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+        clientUserCodeDeploymentConfig.addClass(DomainClassWithInnerClass.class);
+        clientUserCodeDeploymentConfig.addClass(DomainClassWithInnerClass.InnerClass.class);
         clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
 
         factory.newHazelcastInstance(createNodeConfig());
