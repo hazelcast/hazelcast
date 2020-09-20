@@ -32,9 +32,9 @@ class TcpServerConnectionErrorHandler {
     private int faults;
     private long lastFaultTime;
 
-    TcpServerConnectionErrorHandler(ServerContext serverContext, Address endPoint) {
+    TcpServerConnectionErrorHandler(TcpServerConnectionManager connectionManager, Address endPoint) {
         this.endPoint = endPoint;
-        this.serverContext = serverContext;
+        this.serverContext = connectionManager.getServer().getContext();
         this.minInterval = serverContext.getConnectionMonitorInterval();
         this.maxFaults = serverContext.getConnectionMonitorMaxFaults();
         this.logger = serverContext.getLoggingService().getLogger(getClass());
