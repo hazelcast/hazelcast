@@ -85,7 +85,7 @@ import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.unmodifiableSet;
 import java.util.concurrent.CountDownLatch;
 
-@SuppressWarnings("checkstyle:methodcount")
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:ClassFanOutComplexity"})
 public class TcpServerConnectionManager
         implements ServerConnectionManager, Consumer<Packet>, DynamicMetricsProvider {
 
