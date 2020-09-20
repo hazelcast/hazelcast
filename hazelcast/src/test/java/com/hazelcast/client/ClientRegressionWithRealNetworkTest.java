@@ -44,8 +44,10 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -251,6 +253,9 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         //we are closing a connection and making sure It is not established ever again
         waitFlag.set(true);
         instance1.shutdown();
+
+        // workaround for timing issue introduced with reduction of join delays
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(2));
 
         //we expect these operations to run without throwing exception, since they are done on live instance.
         clientMap.put(keyOwnedBy2, 1);

@@ -69,6 +69,8 @@ import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -350,9 +352,17 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         dropOperationsFrom(slave3, F_ID, singletonList(HEARTBEAT));
 
         suspectMember(slave2, master);
+        // workaround for timing issue introduced with reduction of join delays
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(500));
         suspectMember(slave2, slave1);
+        // workaround for timing issue introduced with reduction of join delays
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(500));
         suspectMember(slave3, master);
+        // workaround for timing issue introduced with reduction of join delays
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(500));
         suspectMember(slave3, slave1);
+        // workaround for timing issue introduced with reduction of join delays
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(500));
 
         assertClusterSizeEventually(2, slave2, slave3);
 
