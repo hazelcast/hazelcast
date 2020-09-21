@@ -26,7 +26,7 @@ import org.apache.calcite.sql.parser.SqlParser;
 import java.util.Properties;
 
 /**
- * Configuration pased to the Calcite.
+ * Configuration passed to the Calcite.
  * <p>
  * At the moment we do only case-sensitive identifier comparison. It violates SQL standard and negatively affects usability.
  * Case insensitive processing is going to be implemented in future.
