@@ -50,14 +50,14 @@ public class ReceiverTaskletSendLimitTest {
         tasklet = new ReceiverTasklet(null,
                 new DefaultSerializationServiceBuilder().build(),
                 RWIN_MULTIPLIER, FLOW_CONTROL_PERIOD_MS,
-                new LoggingServiceImpl(null, null, BuildInfoProvider.getBuildInfo(), false), new Address(), 0, "");
+                new LoggingServiceImpl(null, null, BuildInfoProvider.getBuildInfo(), false), new Address(), 0, "", null);
     }
 
     @Test
     public void when_noData_then_rwinRemainsUnchanged() {
         double expectedSeq = INITIAL_RECEIVE_WINDOW_COMPRESSED;
         for (int i = 0; i < 10; i++) {
-            assertEquals((long) expectedSeq, tasklet.updateAndGetSendSeqLimitCompressed(START + i * ACK_PERIOD));
+            assertEquals((long) expectedSeq, tasklet.updateAndGetSendSeqLimitCompressed(START + i * ACK_PERIOD, null));
             expectedSeq = ceil(expectedSeq);
         }
     }
@@ -73,7 +73,7 @@ public class ReceiverTaskletSendLimitTest {
         // When
         for (int i = 0; i < iterCount; i++) {
             tasklet.ackItem(ackedSeqsPerIter);
-            seqLimitCompressed = tasklet.updateAndGetSendSeqLimitCompressed(START + i * ACK_PERIOD);
+            seqLimitCompressed = tasklet.updateAndGetSendSeqLimitCompressed(START + i * ACK_PERIOD, null);
         }
 
         // Then
@@ -94,14 +94,14 @@ public class ReceiverTaskletSendLimitTest {
 
         for (int i = 0; i < warmupIters; i++, iter++) {
             tasklet.ackItem(ackedSeqsPerIter);
-            tasklet.updateAndGetSendSeqLimitCompressed(START + iter * ACK_PERIOD);
+            tasklet.updateAndGetSendSeqLimitCompressed(START + iter * ACK_PERIOD, null);
         }
 
         // When
         tasklet.setNumWaitingInInbox(1);
         long seqLimit = 0;
         for (int i = 0; i < hiccupIters; i++, iter++) {
-            seqLimit = tasklet.updateAndGetSendSeqLimitCompressed(START + iter * ACK_PERIOD);
+            seqLimit = tasklet.updateAndGetSendSeqLimitCompressed(START + iter * ACK_PERIOD, null);
         }
 
         // Then
@@ -124,10 +124,10 @@ public class ReceiverTaskletSendLimitTest {
 
         for (int i = 0; i < warmupIters; i++, iter++) {
             ackedBeforeHiccup = tasklet.ackItem(ackedSeqsPerIter);
-            seqLimitBeforeHiccup = tasklet.updateAndGetSendSeqLimitCompressed(START + iter * ACK_PERIOD);
+            seqLimitBeforeHiccup = tasklet.updateAndGetSendSeqLimitCompressed(START + iter * ACK_PERIOD, null);
         }
         for (int i = 0; i < hiccupIters; i++, iter++) {
-            tasklet.updateAndGetSendSeqLimitCompressed(START + iter * ACK_PERIOD);
+            tasklet.updateAndGetSendSeqLimitCompressed(START + iter * ACK_PERIOD, null);
         }
 
         // When
@@ -135,7 +135,7 @@ public class ReceiverTaskletSendLimitTest {
         // After a hiccup all the enqueued items are processed within one ack period:
         final long recoverySize = (seqLimitBeforeHiccup << COMPRESSED_SEQ_UNIT_LOG2) - ackedBeforeHiccup;
         final long ackedAfterRecover = tasklet.ackItem(recoverySize);
-        final int seqLimitAfterRecover = tasklet.updateAndGetSendSeqLimitCompressed(START + iter * ACK_PERIOD);
+        final int seqLimitAfterRecover = tasklet.updateAndGetSendSeqLimitCompressed(START + iter * ACK_PERIOD, null);
 
         // Then
         final long ackedSeqCompressed = ackedAfterRecover >> COMPRESSED_SEQ_UNIT_LOG2;

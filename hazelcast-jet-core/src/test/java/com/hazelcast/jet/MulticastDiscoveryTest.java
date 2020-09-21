@@ -19,9 +19,11 @@ package com.hazelcast.jet;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JetClientConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors;
 import com.hazelcast.jet.test.SerialTest;
@@ -59,16 +61,22 @@ public class MulticastDiscoveryTest extends JetTestSupport {
 
     @Test
     public void when_twoJetInstancesCreated_then_clusterOfTwoShouldBeFormed() {
-        JetInstance instance = Jet.newJetInstance();
-        Jet.newJetInstance();
+        JetConfig config = new JetConfig();
+        config.getHazelcastConfig().setClusterName(randomName());
+
+        JetInstance instance = Jet.newJetInstance(config);
+        Jet.newJetInstance(config);
 
         assertEquals(2, instance.getCluster().getMembers().size());
     }
 
     @Test
     public void when_twoJetAndTwoHzInstancesCreated_then_twoClustersOfTwoShouldBeFormed() {
-        JetInstance jetInstance = Jet.newJetInstance();
-        Jet.newJetInstance();
+        JetConfig config = new JetConfig();
+        config.getHazelcastConfig().setClusterName(randomName());
+
+        JetInstance jetInstance = Jet.newJetInstance(config);
+        Jet.newJetInstance(config);
 
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
         Hazelcast.newHazelcastInstance();
@@ -79,8 +87,11 @@ public class MulticastDiscoveryTest extends JetTestSupport {
 
     @Test
     public void when_jetClientCreated_then_connectsToJetCluster() {
-        JetInstance jetInstance1 = Jet.newJetInstance();
-        JetInstance jetInstance2 = Jet.newJetInstance();
+        JetConfig config = new JetConfig();
+        config.getHazelcastConfig().setClusterName(randomName());
+
+        JetInstance jetInstance1 = Jet.newJetInstance(config);
+        JetInstance jetInstance2 = Jet.newJetInstance(config);
 
         // Configure client with the address of the created instance
         // Sometimes the instances are created with a different port number
@@ -92,7 +103,10 @@ public class MulticastDiscoveryTest extends JetTestSupport {
 
     @Test
     public void when_jetClientCreated_then_doesNotConnectToHazelcastCluster() {
-        Hazelcast.newHazelcastInstance();
+        Config config = new Config();
+        config.setClusterName(randomName());
+
+        Hazelcast.newHazelcastInstance(config);
 
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage(UNABLE_TO_CONNECT_MESSAGE);
@@ -101,7 +115,10 @@ public class MulticastDiscoveryTest extends JetTestSupport {
 
     @Test
     public void when_hazelcastClientCreated_then_doesNotConnectToJetCluster() {
-        Jet.newJetInstance();
+        JetConfig config = new JetConfig();
+        config.getHazelcastConfig().setClusterName(randomName());
+
+        Jet.newJetInstance(config);
 
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage(UNABLE_TO_CONNECT_MESSAGE);

@@ -22,6 +22,7 @@ import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.internal.util.counters.Counter;
@@ -38,6 +39,7 @@ import com.hazelcast.logging.LoggingService;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.Objects;
 import java.util.Queue;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
@@ -52,13 +54,14 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class ReceiverTasklet implements Tasklet {
 
     /**
-     * The {@code ackedSeq} atomic array holds, per sending member, the sequence
-     * number acknowledged to the sender as having been received and processed.
-     * The sequence increments in terms of the estimated heap occupancy of each
-     * received item, in bytes. However, to save on network traffic, the number
-     * reported to the sender is coarser-grained: it counts in units of {@code
-     * 1 << COMPRESSED_SEQ_UNIT_LOG2}. For example, with a value of 20 the unit
-     * would be one megabyte. The coarse-grained seq is called "compressed seq".
+     * The {@code ackedSeq} field holds the sequence number acknowledged to the
+     * sender as having been received and processed. The sequence increments in
+     * terms of the estimated heap occupancy of each received item, in bytes.
+     * However, to save on network traffic, the number reported to the sender
+     * is coarser-grained: it counts in units of {@code 1 <<
+     * COMPRESSED_SEQ_UNIT_LOG2}. For example, with a value of 20 the unit
+     * would be one megabyte. The coarse-grained seq is called "compressed
+     * seq".
      */
     static final int COMPRESSED_SEQ_UNIT_LOG2 = 16;
     /**
@@ -67,9 +70,6 @@ public class ReceiverTasklet implements Tasklet {
      * correspondence between a compressed seq unit and bytes is defined by the
      * constant {@link #COMPRESSED_SEQ_UNIT_LOG2}.
      * <p>
-     * The receiver tasklet keeps an array of receive window sizes, one for each
-     * sender.
-     * <p>
      * This constant specifies the initial size of the receive window. The
      * window is constantly adapted according to the actual data flow through
      * the receiver tasklet.
@@ -77,8 +77,8 @@ public class ReceiverTasklet implements Tasklet {
     static final int INITIAL_RECEIVE_WINDOW_COMPRESSED = 800;
 
     /**
-     * Receive Window converges towards the amount of data processed per flow-control
-     * period multiplied by this number.
+     * The Receive Window converges towards the amount of data processed per
+     * flow-control period multiplied by this number.
      */
     private final int rwinMultiplier;
     private final double flowControlPeriodNs;
@@ -88,6 +88,7 @@ public class ReceiverTasklet implements Tasklet {
     private final String sourceAddressString;
     private final String ordinalString;
     private final String destinationVertexName;
+    private final Connection memberConnection;
 
     private final Queue<BufferObjectDataInput> incoming = new MPSCQueue<>(null);
     private final ProgressTracker tracker = new ProgressTracker();
@@ -109,6 +110,7 @@ public class ReceiverTasklet implements Tasklet {
     // read by a task scheduler thread, written by a tasklet execution thread
     private volatile long ackedSeq;
     private volatile int numWaitingInInbox;
+    private volatile boolean connectionChanged;
 
     // read and written by updateAndGetSendSeqLimitCompressed(), which is invoked sequentially by a task scheduler
     private int receiveWindowCompressed;
@@ -120,7 +122,8 @@ public class ReceiverTasklet implements Tasklet {
     public ReceiverTasklet(
             OutboundCollector collector, InternalSerializationService serializationService,
             int rwinMultiplier, int flowControlPeriodMs, LoggingService loggingService,
-            Address sourceAddress, int ordinal, String destinationVertexName
+            Address sourceAddress, int ordinal, String destinationVertexName,
+            Connection memberConnection
     ) {
         this.collector = collector;
         this.serializationService = serializationService;
@@ -129,6 +132,7 @@ public class ReceiverTasklet implements Tasklet {
         this.sourceAddressString = sourceAddress.toString();
         this.ordinalString = "" + ordinal;
         this.destinationVertexName = destinationVertexName;
+        this.memberConnection = memberConnection;
         String loggerName = String.format("%s.receiverFor:%s#%d", getClass().getName(), destinationVertexName, ordinal);
         this.logger = loggingService.getLogger(loggerName);
         this.receiveWindowCompressed = INITIAL_RECEIVE_WINDOW_COMPRESSED;
@@ -140,9 +144,13 @@ public class ReceiverTasklet implements Tasklet {
         if (receptionDone) {
             return collector.offerBroadcast(DONE_ITEM);
         }
+        if (connectionChanged) {
+            throw new RuntimeException("The member was reconnected: " + sourceAddressString);
+        }
         tracker.reset();
         tracker.notDone();
         tryFillInbox();
+        int ackItemLocal = 0;
         for (ObjWithPtionIdAndSize o; (o = inbox.peek()) != null; ) {
             final Object item = o.getItem();
             if (item == DONE_ITEM) {
@@ -160,8 +168,9 @@ public class ReceiverTasklet implements Tasklet {
             }
             tracker.madeProgress();
             inbox.remove();
-            ackItem(o.estimatedMemoryFootprint);
+            ackItemLocal += o.estimatedMemoryFootprint;
         }
+        ackItem(ackItemLocal);
         numWaitingInInbox = inbox.size();
         return tracker.toProgressState();
     }
@@ -172,11 +181,11 @@ public class ReceiverTasklet implements Tasklet {
     }
 
     /**
-     * Calls {@link #updateAndGetSendSeqLimitCompressed(long)} with {@code
+     * Calls {@link #updateAndGetSendSeqLimitCompressed(long, Connection)} with {@code
      * System.nanoTime()} and the current acked seq for the given sender ID.
      */
-    public int updateAndGetSendSeqLimitCompressed() {
-        return updateAndGetSendSeqLimitCompressed(System.nanoTime());
+    public int updateAndGetSendSeqLimitCompressed(Connection expectedConnection) {
+        return updateAndGetSendSeqLimitCompressed(System.nanoTime(), expectedConnection);
     }
 
     /**
@@ -208,9 +217,14 @@ public class ReceiverTasklet implements Tasklet {
      *
      * @param timestampNow value of the timestamp at the time the method is called. The timestamp
      *                     must be obtained from {@code System.nanoTime()}.
+     * @param expectedConnection The connection to which the result will be sent. We use it
+     *                           to check that it's the same connection the tasklet was crated with.
      */
     // Invoked sequentially by a task scheduler
-    int updateAndGetSendSeqLimitCompressed(long timestampNow) {
+    int updateAndGetSendSeqLimitCompressed(long timestampNow, Connection expectedConnection) {
+        if (!Objects.equals(expectedConnection, memberConnection)) {
+            connectionChanged = true;
+        }
         final boolean hadPrevStats = prevTimestamp != 0 || prevAckedSeqCompressed != 0;
 
         final long ackTimeDelta = timestampNow - prevTimestamp;

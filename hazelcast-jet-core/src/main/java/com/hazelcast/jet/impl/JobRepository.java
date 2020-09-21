@@ -401,8 +401,8 @@ public class JobRepository {
      */
     void deleteJob(long jobId) {
         // delete the job record and related records
-        jobExecutionRecords.remove(jobId);
-        jobRecords.remove(jobId);
+        jobExecutionRecords.delete(jobId);
+        jobRecords.delete(jobId);
     }
 
     /**

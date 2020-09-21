@@ -23,6 +23,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
+import com.hazelcast.jet.impl.execution.ReceiverTasklet;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
 import com.hazelcast.jet.impl.serialization.MemoryReader;
 import com.hazelcast.logging.ILogger;
@@ -31,6 +32,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 
@@ -113,11 +115,11 @@ public class Networking {
     private void broadcastFlowControlPacket() {
         try {
             getRemoteMembers(nodeEngine).forEach(member -> uncheckRun(() -> {
-                final byte[] packetBuf = createFlowControlPacket(member);
+                Connection conn = getMemberConnection(nodeEngine, member);
+                final byte[] packetBuf = createFlowControlPacket(member, conn);
                 if (packetBuf.length == 0) {
                     return;
                 }
-                Connection conn = getMemberConnection(nodeEngine, member);
                 if (conn != null) {
                     conn.write(new Packet(packetBuf)
                             .setPacketType(Packet.Type.JET)
@@ -129,23 +131,32 @@ public class Networking {
         }
     }
 
-    private byte[] createFlowControlPacket(Address member) throws IOException {
+    private byte[] createFlowControlPacket(Address member, Connection expectedConnection) throws IOException {
         try (BufferObjectDataOutput output = createObjectDataOutput(nodeEngine, lastFlowPacketSize)) {
-            final boolean[] hasData = {false};
+            boolean hasData = false;
             Map<Long, ExecutionContext> executionContexts = jobExecutionService.getExecutionContextsFor(member);
             output.writeInt(executionContexts.size());
-            executionContexts.forEach((execId, exeCtx) -> uncheckRun(() -> {
-                output.writeLong(execId);
-                output.writeInt(exeCtx.receiverMap().values().stream().mapToInt(Map::size).sum());
-                exeCtx.receiverMap().forEach((vertexId, ordinalToSenderToTasklet) ->
-                        ordinalToSenderToTasklet.forEach((ordinal, senderToTasklet) -> uncheckRun(() -> {
-                            output.writeInt(vertexId);
-                            output.writeInt(ordinal);
-                            output.writeInt(senderToTasklet.get(member).updateAndGetSendSeqLimitCompressed());
-                            hasData[0] = true;
-                        })));
-            }));
-            if (hasData[0]) {
+            for (Entry<Long, ExecutionContext> executionIdAndCtx : executionContexts.entrySet()) {
+                output.writeLong(executionIdAndCtx.getKey());
+                // dest vertex id --> dest ordinal --> sender addr --> receiver tasklet
+                Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap =
+                        executionIdAndCtx.getValue().receiverMap();
+                output.writeInt(receiverMap.values().stream().mapToInt(Map::size).sum());
+                for (Entry<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> e1 : receiverMap.entrySet()) {
+                    int vertexId = e1.getKey();
+                    Map<Integer, Map<Address, ReceiverTasklet>> ordinalToMemberToTasklet = e1.getValue();
+                    for (Entry<Integer, Map<Address, ReceiverTasklet>> e2 : ordinalToMemberToTasklet.entrySet()) {
+                        int ordinal = e2.getKey();
+                        Map<Address, ReceiverTasklet> memberToTasklet = e2.getValue();
+                        output.writeInt(vertexId);
+                        output.writeInt(ordinal);
+                        ReceiverTasklet receiverTasklet = memberToTasklet.get(member);
+                        output.writeInt(receiverTasklet.updateAndGetSendSeqLimitCompressed(expectedConnection));
+                        hasData = true;
+                    }
+                }
+            }
+            if (hasData) {
                 byte[] payload = output.toByteArray();
                 lastFlowPacketSize = payload.length;
                 return payload;
