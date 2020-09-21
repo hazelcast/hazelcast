@@ -54,7 +54,9 @@ public abstract class AbstractUnsafeRaftOp extends Operation implements Identifi
     public final CallStatus call() throws Exception {
         RaftService service = getService();
         if (service.isCpSubsystemEnabled()) {
-            throw new IllegalStateException("CP subsystem is enabled!");
+            throw new IllegalStateException("CP subsystem is enabled on this member, "
+                    + "but received an UNSAFE operation! This could be due to a misconfiguration on the caller side. "
+                    + "CP subsystem configuration must be the same on all members.");
         }
 
         NodeEngine nodeEngine = getNodeEngine();
