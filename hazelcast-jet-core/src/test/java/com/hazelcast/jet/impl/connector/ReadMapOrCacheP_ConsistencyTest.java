@@ -17,6 +17,8 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -66,7 +68,7 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
     private static CountDownLatch startLatch;
     private static CountDownLatch proceedLatch;
 
-    private List<HazelcastInstance> remoteInstances = new ArrayList<>();
+    private final List<HazelcastInstance> remoteInstances = new ArrayList<>();
     private JetInstance jet;
 
     @Before
@@ -96,8 +98,8 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
         remoteInstances.add(hz);
 
-        ClientConfig clientConfig = new ClientConfig().setClusterName(config.getClusterName());
-        test_addingItems(hz.getMap(MAP_NAME), clientConfig);
+
+        test_addingItems(hz.getMap(MAP_NAME), clientConfig(hz));
     }
 
     @Test
@@ -111,8 +113,7 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
         remoteInstances.add(hz);
 
-        ClientConfig clientConfig = new ClientConfig().setClusterName(config.getClusterName());
-        test_removingItems(hz.getMap(MAP_NAME), clientConfig);
+        test_removingItems(hz.getMap(MAP_NAME), clientConfig(hz));
     }
 
     @Test
@@ -126,9 +127,7 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
         remoteInstances.add(hz);
 
-        ClientConfig clientConfig = new ClientConfig().setClusterName(config.getClusterName());
-
-        test_migration(hz.getMap(MAP_NAME), clientConfig,
+        test_migration(hz.getMap(MAP_NAME), clientConfig(hz),
                 () -> remoteInstances.add(Hazelcast.newHazelcastInstance(config)));
     }
 
@@ -256,5 +255,16 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
 
     private BatchSource<Entry<Integer, Integer>> mapSource(ClientConfig clientConfig) {
         return clientConfig == null ? map(MAP_NAME) : remoteMap(MAP_NAME, clientConfig);
+    }
+
+    private ClientConfig clientConfig(HazelcastInstance instance) {
+        Member member = instance.getCluster().getLocalMember();
+        Address address = member.getAddress();
+        String hostPort = address.getHost() + ":" + address.getPort();
+
+        ClientConfig clientConfig = new ClientConfig().setClusterName(instance.getConfig().getClusterName());
+        clientConfig.getNetworkConfig().addAddress(hostPort);
+
+        return clientConfig;
     }
 }
