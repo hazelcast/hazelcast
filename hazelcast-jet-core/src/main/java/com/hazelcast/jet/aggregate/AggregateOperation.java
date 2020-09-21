@@ -288,9 +288,9 @@ public interface AggregateOperation<A, R> extends Serializable {
     <R_NEW> AggregateOperation<A, R_NEW> andThen(FunctionEx<? super R, ? extends R_NEW> thenFn);
 
     /**
-     * Returns a builder object, initialized with the supplied {@code create}
-     * primitive, that can be used to construct the definition of an aggregate
-     * operation in a step-by-step manner.
+     * Returns a builder object, initialized with the supplied {@link #createFn()
+     * create} primitive, that can be used to construct the definition of an
+     * aggregate operation in a step-by-step manner.
      * <p>
      * The same builder is used to construct both fixed- and variable-arity
      * aggregate operations:

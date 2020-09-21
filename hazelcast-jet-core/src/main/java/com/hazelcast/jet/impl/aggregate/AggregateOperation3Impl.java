@@ -106,7 +106,7 @@ public class AggregateOperation3Impl<T0, T1, T2, A, R>
 
     @Nonnull @Override
     @SuppressWarnings("unchecked")
-    public <T> BiConsumerEx<? super A, T> accumulateFn(Tag<T> tag) {
+    public <T> BiConsumerEx<? super A, T> accumulateFn(@Nonnull Tag<T> tag) {
         if (tag.index() > 2) {
             throw new IllegalArgumentException(
                     "AggregateOperation3 only recognizes tags with index 0, 1 and 2, but asked for " + tag.index());

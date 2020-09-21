@@ -54,12 +54,13 @@ public final class AggregateOperationBuilder<A> {
     }
 
     /**
-     * Registers the supplied {@code accumulate} primitive. Also selects the
-     * fixed-arity variant of the aggregate operation.
+     * Registers the {@link AggregateOperation1#accumulateFn()} accumulate}
+     * primitive. Also selects the fixed-arity variant of the aggregate
+     * operation.
      * <p>
-     * This method is synonymous with {@link #andAccumulate0(
-     *BiConsumerEx)}, but makes more sense when defining a
-     * simple, arity-1 aggregate operation.
+     * This method is synonymous with {@link #andAccumulate0(BiConsumerEx)
+     * andAccumulate0()}, but makes more sense when defining a simple, arity-1
+     * aggregate operation.
      *
      * @param accumulateFn the {@code accumulate} primitive, parameters are
      *              {@code (accumulator, item)}
@@ -73,8 +74,9 @@ public final class AggregateOperationBuilder<A> {
     }
 
     /**
-     * Registers the supplied {@code accumulate} primitive for stream-0.
-     * Also selects the fixed-arity variant of the aggregate operation.
+     * Registers the {@link AggregateOperation1#accumulateFn() accumulate}
+     * primitive for stream-0. Also selects the fixed-arity variant of the
+     * aggregate operation.
      *
      * @param accumulateFn0 the {@code accumulate} primitive for stream-0
      * @param <T0> the expected type of item in stream-0
@@ -97,9 +99,9 @@ public final class AggregateOperationBuilder<A> {
     }
 
     /**
-     * Registers the supplied {@code accumulate} primitive for the stream tagged
-     * with the supplied tag. Also selects the variable-arity variant of the
-     * aggregate operation.
+     * Registers the {@link AggregateOperation#accumulateFn(Tag) accumulate}
+     * primitive for the stream tagged with the supplied tag. Also selects the
+     * variable-arity variant of the aggregate operation.
      *
      * @param tag the tag of the associated input stream
      * @param accumulateFn the {@code accumulate} primitive
@@ -116,9 +118,8 @@ public final class AggregateOperationBuilder<A> {
     }
 
     /**
-     * The arity-1 variant of the aggregate operation builder. Can be
-     * raised to arity-2 by calling {@link #andAccumulate1(
-     *BiConsumerEx) andAccumulate1()}.
+     * The arity-1 variant of the aggregate operation builder. Can be raised to
+     * arity-2 by calling {@link #andAccumulate1(BiConsumerEx) andAccumulate1()}.
      *
      * @param <T0> type of item in stream-0
      * @param <A> type of the accumulator
@@ -142,8 +143,8 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the supplied {@code accumulate} primitive for stream-1,
-         * returning the arity-2 variant of the builder.
+         * Registers the {@link AggregateOperation2#accumulateFn1()} accumulate}
+         * primitive for stream-1, returning the arity-2 variant of the builder.
          *
          * @param accumulateFn1 the {@code accumulate} primitive for stream-1
          * @param <T1> the expected type of item in stream-1
@@ -158,7 +159,7 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the {@code combine} primitive.
+         * Registers the {@link AggregateOperation#combineFn() combine} primitive.
          */
         @Nonnull
         public Arity1<T0, A, R> andCombine(@Nullable BiConsumerEx<? super A, ? super A> combineFn) {
@@ -168,7 +169,7 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the {@code deduct} primitive.
+         * Registers the {@link AggregateOperation#deductFn() deduct} primitive.
          */
         @Nonnull
         public Arity1<T0, A, R> andDeduct(@Nullable BiConsumerEx<? super A, ? super A> deductFn) {
@@ -178,7 +179,7 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the {@code export} primitive.
+         * Registers the {@link AggregateOperation#exportFn() export} primitive.
          */
         @Nonnull
         public <R_NEW> Arity1<T0, A, R_NEW> andExport(
@@ -192,9 +193,9 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the supplied function as the {@code finish} primitive. Constructs
-         * and returns an {@link AggregateOperation1} from the current state of the
-         * builder.
+         * Registers the {@link AggregateOperation#finishFn() finish} primitive.
+         * Constructs and returns an {@link AggregateOperation1} from the current
+         * state of the builder.
          *
          * @throws IllegalStateException if the {@code export} primitive was
          * not registered
@@ -215,9 +216,10 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the supplied function as both the {@code export} and {@code
-         * finish} primitive. Constructs and returns an {@link AggregateOperation1}
-         * from the current state of the builder.
+         * Registers the supplied function as both the {@link AggregateOperation#exportFn()
+         * export} and {@link AggregateOperation#finishFn() finish} primitive.
+         * Constructs and returns an {@link AggregateOperation1} from the current
+         * state of the builder.
          *
          * @throws IllegalStateException if the {@code export} primitive is
          * already registered
@@ -237,9 +239,8 @@ public final class AggregateOperationBuilder<A> {
     }
 
     /**
-     * The arity-2 variant of the aggregate operation builder. Can be
-     * raised to arity-3 by calling {@link #andAccumulate2(
-     *BiConsumerEx) andAccumulate2()}.
+     * The arity-2 variant of the aggregate operation builder. Can be raised to
+     * arity-3 by calling {@link #andAccumulate2(BiConsumerEx) andAccumulate2()}.
      *
      * @param <T0> the type of item in stream-0
      * @param <T1> the type of item in stream-1
@@ -264,8 +265,8 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the supplied {@code accumulate} primitive for stream-2,
-         * returning the arity-3 variant of the builder.
+         * Registers the {@link AggregateOperation3#accumulateFn2() accumulate}
+         * primitive for stream-2, returning the arity-3 variant of the builder.
          *
          * @param accumulateFn2 the {@code accumulate} primitive for stream-2
          * @param <T2> the expected type of item in stream-2
@@ -280,7 +281,7 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the {@code combine} primitive.
+         * Registers the {@link AggregateOperation#combineFn() combine} primitive.
          */
         @Nonnull
         public Arity2<T0, T1, A, R> andCombine(@Nullable BiConsumerEx<? super A, ? super A> combineFn) {
@@ -290,7 +291,7 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the {@code deduct} primitive.
+         * Registers the {@link AggregateOperation#deductFn() deduct} primitive.
          */
         @Nonnull
         public Arity2<T0, T1, A, R> andDeduct(@Nullable BiConsumerEx<? super A, ? super A> deductFn) {
@@ -300,7 +301,7 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the {@code export} primitive.
+         * Registers the {@link AggregateOperation#exportFn() export} primitive.
          */
         @Nonnull
         public <R_NEW> Arity2<T0, T1, A, R_NEW> andExport(
@@ -314,9 +315,9 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the supplied function as the {@code finish} primitive. Constructs
-         * and returns an {@link AggregateOperation1} from the current state of the
-         * builder.
+         * Registers the {@link AggregateOperation#finishFn() finish} primitive.
+         * Constructs and returns an {@link AggregateOperation2} from the current
+         * state of the builder.
          *
          * @throws IllegalStateException if the {@code export} primitive was
          * not registered
@@ -337,9 +338,10 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the supplied function as both the {@code export} and {@code
-         * finish} primitive. Constructs and returns an {@link AggregateOperation2}
-         * from the current state of the builder.
+         * Registers the supplied function as both the {@link AggregateOperation#exportFn()
+         * export} and {@link AggregateOperation#finishFn() finish} primitive.
+         * Constructs and returns an {@link AggregateOperation2} from the current
+         * state of the builder.
          *
          * @throws IllegalStateException if the {@code export} primitive is
          * already registered
@@ -375,7 +377,7 @@ public final class AggregateOperationBuilder<A> {
         private BiConsumerEx<? super A, ? super A> deductFn;
         private FunctionEx<? super A, ? extends R> exportFn;
 
-        Arity3(Arity2<T0, T1, A, R> arity2, BiConsumerEx<? super A, ? super T2> accumulateFn2) {
+        Arity3(Arity2<T0, T1, A, R> arity2, @Nonnull BiConsumerEx<? super A, ? super T2> accumulateFn2) {
             this.createFn = arity2.createFn;
             this.accumulateFn0 = arity2.accumulateFn0;
             this.accumulateFn1 = arity2.accumulateFn1;
@@ -383,7 +385,7 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the {@code combine} primitive.
+         * Registers the {@link AggregateOperation#combineFn() combine} primitive.
          */
         @Nonnull
         public Arity3<T0, T1, T2, A, R> andCombine(@Nullable BiConsumerEx<? super A, ? super A> combineFn) {
@@ -393,7 +395,7 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the {@code deduct} primitive.
+         * Registers the {@link AggregateOperation#deductFn() deduct} primitive.
          */
         @Nonnull
         public Arity3<T0, T1, T2, A, R> andDeduct(@Nullable BiConsumerEx<? super A, ? super A> deductFn) {
@@ -403,7 +405,7 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the {@code export} primitive.
+         * Registers the {@link AggregateOperation#exportFn() export} primitive.
          */
         @Nonnull
         public <R_NEW> Arity3<T0, T1, T2, A, R_NEW> andExport(
@@ -417,9 +419,9 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the supplied function as the {@code finish} primitive. Constructs
-         * and returns an {@link AggregateOperation1} from the current state of the
-         * builder.
+         * Registers the {@link AggregateOperation#finishFn() finish} primitive.
+         * Constructs and returns an {@link AggregateOperation3} from the current
+         * state of the builder.
          *
          * @throws IllegalStateException if the {@code export} primitive was
          * not registered
@@ -441,9 +443,10 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the supplied function as both the {@code export} and {@code
-         * finish} primitive. Constructs and returns an {@link AggregateOperation3}
-         * from the current state of the builder.
+         * Registers the supplied function as both the {@link AggregateOperation#exportFn()
+         * export} and {@link AggregateOperation#finishFn() finish} primitive.
+         * Constructs and returns an {@link AggregateOperation3} from the current
+         * state of the builder.
          *
          * @throws IllegalStateException if the {@code export} primitive is
          * already registered
@@ -489,8 +492,8 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the supplied {@code accumulate} primitive for the stream tagged
-         * with the supplied tag.
+         * Registers the {@link AggregateOperation#accumulateFn(Tag) accumulate}
+         * primitive for the stream tagged with the supplied tag.
          *
          * @param tag the tag of the associated input stream
          * @param accumulateFn the {@code accumulate} primitive
@@ -509,7 +512,7 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the {@code combine} primitive.
+         * Registers the {@link AggregateOperation#combineFn() combine} primitive.
          */
         @Nonnull
         public VarArity<A, R> andCombine(@Nullable BiConsumerEx<? super A, ? super A> combineFn) {
@@ -519,7 +522,7 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the {@code deduct} primitive.
+         * Registers the {@link AggregateOperation#deductFn() deduct} primitive.
          */
         @Nonnull
         public VarArity<A, R> andDeduct(@Nullable BiConsumerEx<? super A, ? super A> deductFn) {
@@ -529,7 +532,7 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the {@code export} primitive.
+         * Registers the {@link AggregateOperation#exportFn() export} primitive.
          */
         @Nonnull
         public <R_NEW> VarArity<A, R_NEW> andExport(
@@ -543,9 +546,9 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the supplied function as the {@code finish} primitive. Constructs
-         * and returns an {@link AggregateOperation1} from the current state of the
-         * builder.
+         * Registers the {@link AggregateOperation#finishFn() finish} primitive.
+         * Constructs and returns an {@link AggregateOperation} from the current
+         * state of the builder.
          *
          * @throws IllegalStateException if the {@code export} primitive was
          * not registered
@@ -566,9 +569,10 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the supplied function as both the {@code export} and {@code
-         * finish} primitive. Constructs and returns an {@link AggregateOperation1}
-         * from the current state of the builder.
+         * Registers the supplied function as both the {@link AggregateOperation#exportFn()
+         * export} and {@link AggregateOperation#finishFn() finish} primitive.
+         * Constructs and returns an {@link AggregateOperation} from the current
+         * state of the builder.
          *
          * @throws IllegalStateException if the {@code export} primitive is
          * already registered
