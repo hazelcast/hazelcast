@@ -16,7 +16,12 @@
 
 package com.hazelcast.sql;
 
+import com.googlecode.junittoolbox.ExcludeCategories;
+import com.googlecode.junittoolbox.IncludeCategories;
 import com.googlecode.junittoolbox.WildcardPatternSuite;
+import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.runner.RunWith;
 
 /**
@@ -25,5 +30,7 @@ import org.junit.runner.RunWith;
  */
 @RunWith(WildcardPatternSuite.class)
 @com.googlecode.junittoolbox.SuiteClasses("**/*Test.class")
+@IncludeCategories(QuickTest.class)
+@ExcludeCategories({SlowTest.class, NightlyTest.class})
 public class SqlIntegrationTestSuite {
 }

@@ -118,7 +118,7 @@ public abstract class SqlTestInstanceFactory {
                 if (clientConfig != null) {
                     clientConfig.setClusterName("jet");
                 }
-                Object jetInstance = jetFactory.getClass().getMethod("newClient", clientConfig.getClass())
+                Object jetInstance = jetFactory.getClass().getMethod("newClient", ClientConfig.class)
                                                .invoke(jetFactory, clientConfig);
                 return (HazelcastInstance) jetInstance.getClass().getMethod("getHazelcastInstance").invoke(jetInstance);
             } catch (Exception e) {
