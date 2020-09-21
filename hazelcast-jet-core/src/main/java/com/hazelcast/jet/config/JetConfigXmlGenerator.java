@@ -29,6 +29,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.io.StringWriter;
+import javax.xml.XMLConstants;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 
@@ -88,6 +89,8 @@ public final class JetConfigXmlGenerator {
             Source xmlInput = new StreamSource(new StringReader(input));
             xmlOutput = new StreamResult(new StringWriter());
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
             /*
              * Older versions of Xalan still use this method of setting indent values.
              * Attempt to make this work but don't completely fail if it's a problem.
