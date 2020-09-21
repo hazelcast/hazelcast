@@ -133,6 +133,7 @@ public class MulticastDiscoveryTest extends JetTestSupport {
         JetClientConfig jetClientConfig = new JetClientConfig();
         ClientNetworkConfig networkConfig = jetClientConfig.getNetworkConfig();
         for (JetInstance jet : jetInstances) {
+            jetClientConfig.setClusterName(jet.getConfig().getHazelcastConfig().getClusterName());
             Address address = getAddress(jet);
             networkConfig.addAddress(address.getHost() + ":" + address.getPort());
         }
