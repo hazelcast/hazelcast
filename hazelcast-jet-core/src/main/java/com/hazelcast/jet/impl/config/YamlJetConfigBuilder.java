@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.config;
 import com.hazelcast.config.AbstractYamlConfigBuilder;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.config.yaml.YamlDomChecker;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
@@ -80,6 +81,8 @@ public class YamlJetConfigBuilder extends AbstractYamlConfigBuilder {
             yamlRootNode = ((YamlMapping) YamlLoader.load(in));
         } catch (Exception ex) {
             throw new InvalidConfigurationException("Invalid YAML configuration", ex);
+        } finally {
+            IOUtil.closeResource(in);
         }
 
         YamlNode jetRoot = yamlRootNode.childAsMapping(JetConfigSections.HAZELCAST_JET.name);
@@ -96,7 +99,6 @@ public class YamlJetConfigBuilder extends AbstractYamlConfigBuilder {
         new YamlJetDomConfigProcessor(true, config).buildConfig(w3cRootNode);
     }
 
-
     public YamlJetConfigBuilder setProperties(@Nullable Properties properties) {
         if (properties == null) {
             properties = System.getProperties();
@@ -104,5 +106,4 @@ public class YamlJetConfigBuilder extends AbstractYamlConfigBuilder {
         setPropertiesInternal(properties);
         return this;
     }
-
 }

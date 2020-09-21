@@ -42,11 +42,11 @@ public class YamlJetConfigResolutionTest {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private JetDeclarativeConfigFileHelper helper = new JetDeclarativeConfigFileHelper();
+    private final JetDeclarativeConfigFileHelper helper = new JetDeclarativeConfigFileHelper();
 
     @Before
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         System.clearProperty(SYSPROP_JET_CONFIG);
         helper.ensureTestConfigDeleted();
     }

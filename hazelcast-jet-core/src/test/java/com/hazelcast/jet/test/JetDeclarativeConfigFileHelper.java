@@ -24,33 +24,28 @@ import java.net.URL;
 public class JetDeclarativeConfigFileHelper extends DeclarativeConfigFileHelper {
 
     public URL givenYamlJetConfigFileOnClasspath(String filename, String property, String value) throws Exception {
-        String yaml = this.yamlJetConfigWithProperty(property, value);
-        return this.givenConfigFileOnClasspath(filename, yaml);
+        String yaml = yamlJetConfigWithProperty(property, value);
+        return givenConfigFileOnClasspath(filename, yaml);
     }
 
     public URL givenYmlJetConfigFileOnClasspath(String filename, String property, String value) throws Exception {
-        String yaml = this.yamlJetConfigWithProperty(property, value);
-        return this.givenConfigFileOnClasspath(filename, yaml);
+        String yaml = yamlJetConfigWithProperty(property, value);
+        return givenConfigFileOnClasspath(filename, yaml);
     }
 
     public File givenYamlJetConfigFileOnWorkdir(String filename, String property, String value) throws Exception {
-        String yaml = this.yamlJetConfigWithProperty(property, value);
-        return this.givenConfigFileInWorkDir(filename, yaml);
+        String yaml = yamlJetConfigWithProperty(property, value);
+        return givenConfigFileInWorkDir(filename, yaml);
     }
 
     public File givenYmlJetConfigFileOnWorkdir(String filename, String property, String value) throws Exception {
-        String yaml = this.yamlJetConfigWithProperty(property, value);
-        return this.givenConfigFileInWorkDir(filename, yaml);
-    }
-
-    public URL givenXmlJetConfigFileOnClasspath(String filename, String property, String value) throws Exception {
-        String xml = this.xmlJetConfigWithProperty(property, value);
-        return this.givenConfigFileOnClasspath(filename, xml);
+        String yaml = yamlJetConfigWithProperty(property, value);
+        return givenConfigFileInWorkDir(filename, yaml);
     }
 
     public File givenXmlJetConfigFileOnWorkdir(String filename, String property, String value) throws Exception {
-        String xml = this.xmlJetConfigWithProperty(property, value);
-        return this.givenConfigFileInWorkDir(filename, xml);
+        String xml = xmlJetConfigWithProperty(property, value);
+        return givenConfigFileInWorkDir(filename, xml);
     }
 
     private String yamlJetConfigWithProperty(String property, String value) {
@@ -64,6 +59,4 @@ public class JetDeclarativeConfigFileHelper extends DeclarativeConfigFileHelper 
                 "<property name=\"" + property + "\">" + value + "</property>\n</properties>\n" +
                 "</hazelcast-jet>";
     }
-
-
 }
