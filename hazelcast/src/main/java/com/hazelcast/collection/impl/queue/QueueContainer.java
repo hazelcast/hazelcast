@@ -48,11 +48,14 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static com.hazelcast.collection.impl.collection.CollectionContainer.ID_PROMOTION_OFFSET;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.createLinkedHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
@@ -98,7 +101,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     // to avoid reloading same items
     private long lastIdLoaded;
 
-    private volatile Map<Long, QueueItem> backupMap;
+    private volatile ConcurrentMap<Long, QueueItem> backupMap;
 
     public QueueContainer() {
     }
@@ -926,7 +929,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     private Queue<QueueItem> createLinkedList() {
         Queue<QueueItem> queue = new LinkedList<>();
-        Map<Long, QueueItem> backupMap = this.backupMap;
+        ConcurrentMap<Long, QueueItem> backupMap = this.backupMap;
         if (backupMap != null && !backupMap.isEmpty()) {
             List<QueueItem> values = new ArrayList<>(backupMap.values());
             Collections.sort(values);
@@ -943,7 +946,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     private Queue<QueueItem> createPriorityQueue() {
         Queue<QueueItem> queue = createPriorityQueue(config);
-        Map<Long, QueueItem> backupMap = this.backupMap;
+        ConcurrentMap<Long, QueueItem> backupMap = this.backupMap;
         if (backupMap != null && !backupMap.isEmpty()) {
             queue.addAll(backupMap.values());
             long maxItemId = backupMap.values().stream()
@@ -983,18 +986,18 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return backup replica map from item ID to queue item
      */
     public Map<Long, QueueItem> getBackupMap() {
-        Map<Long, QueueItem> backupMap = this.backupMap;
+        ConcurrentMap<Long, QueueItem> backupMap = this.backupMap;
         if (backupMap == null) {
             Queue<QueueItem> itemQueue = this.itemQueue;
             if (itemQueue != null) {
-                backupMap = createHashMap(this.itemQueue.size());
+                backupMap = createConcurrentHashMap(this.itemQueue.size());
                 for (QueueItem item : this.itemQueue) {
                     backupMap.put(item.getItemId(), item);
                 }
                 itemQueue.clear();
                 this.itemQueue = null;
             } else {
-                backupMap = new HashMap<>();
+                backupMap = new ConcurrentHashMap<>();
             }
 
             this.backupMap = backupMap;
@@ -1183,7 +1186,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         if (itemQueue != null) {
             itemQueue.clear();
         }
-        Map<Long, QueueItem> backupMap = this.backupMap;
+        ConcurrentMap<Long, QueueItem> backupMap = this.backupMap;
         if (backupMap != null) {
             backupMap.clear();
         }
