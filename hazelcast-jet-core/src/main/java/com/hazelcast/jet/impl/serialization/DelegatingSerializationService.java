@@ -50,8 +50,10 @@ public class DelegatingSerializationService extends AbstractSerializationService
 
     private volatile boolean active;
 
-    public DelegatingSerializationService(Map<Class<?>, ? extends Serializer> serializers,
-                                          AbstractSerializationService delegate) {
+    public DelegatingSerializationService(
+            Map<Class<?>, ? extends Serializer> serializers,
+            AbstractSerializationService delegate
+    ) {
         super(delegate);
 
         if (serializers.isEmpty()) {
@@ -178,8 +180,10 @@ public class DelegatingSerializationService extends AbstractSerializationService
         }
     }
 
-    public static InternalSerializationService from(SerializationService serializationService,
-                                                    Map<String, String> serializerConfigs) {
+    public static InternalSerializationService from(
+            SerializationService serializationService,
+            Map<String, String> serializerConfigs
+    ) {
         ClassLoader classLoader = currentThread().getContextClassLoader();
         Map<Class<?>, ? extends Serializer> serializers = new HashMap<>();
         for (Entry<String, String> entry : serializerConfigs.entrySet()) {

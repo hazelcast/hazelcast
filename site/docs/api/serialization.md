@@ -139,18 +139,15 @@ src.mapUsingService(serviceFactory,
 
 ## Serialization of Data Types
 
-Hazelcast Jet closely integrates with Hazelcast IMDG exposing many of
-its features to Jet users. In particular, you can use IMDG data
-structure as Jet `Source` and/or `Sink`. Objects retrieved from and
-stored in those have to be serializable.
+Hazelcast Jet closely integrates with Hazelcast IMDG, exposing many of
+its features to Jet users. In particular, you can use an IMDG data
+structure as a Jet `Source` and/or `Sink`. The objects you store in them
+must be serializable.
 
-Another case which might require serializable objects is sending
-computation results between nodes such as in a grouping operation.
-Hazelcast Jet tries to minimize network traffic as much as possible,
-nonetheless different parts of a [DAG](concepts/dag.md) can reside on
-separate cluster members. To catch serialization issues early on, we
-recommend using a 2-member local Jet cluster for development and
-testing.
+Another case that requires serializable objects is sending computation
+results between nodes, for example when grouping by key. To catch
+serialization issues early on, we recommend using a 2-member local Jet
+cluster for development and testing.
 
 Currently, Hazelcast Jet supports 4 interfaces to serialize custom
 types:
@@ -164,14 +161,14 @@ The following table provides a comparison between them to help you in
 deciding which interface to use in your applications.
 |Serialization interface|Advantages|Drawbacks|
 |:---------------------:|:---------|:--------|
-|Serializable|Easy to start with, requires no implementation or registration|CPU intensive and space inefficient|
-|Externalizable|Faster and more space efficient than Serializable, but no registration required|CPU intensive, space inefficient and requires implementation|
-|Portable|Faster and more space efficient than java standard interfaces. Supports versioningSupports partial deserialization|Requires implementation and factory registration during cluster setup|
-|StreamSerializer|The fastest and lightest out of supported interfaces|Requires implementation and registration during cluster setup|
+|Serializable|Easy to start with, does not require implementation or registration|CPU intensive and space inefficient|
+|Externalizable|Does not require registration, faster and more space efficient than Serializable|CPU intensive, space inefficient and requires implementation|
+|Portable|Faster and more space efficient than Serializable. Supports versioning and partial deserialization|Requires implementation and registration|
+|StreamSerializer|Fastest and lightest|Requires implementation and registration|
 
 Below you can find rough performance numbers you can expect when
-employing each of those strategies. A straightforward benchmark which
-continuously serializes and then deserializes very simple object:
+employing each of those strategies. A straightforward benchmark that
+continuously serializes and then deserializes this simple object:
 
 ```java
 class Person {
@@ -182,7 +179,7 @@ class Person {
 }
 ```
 
-counting the total throughput, yields following results:
+yields following throughputs:
 
 ```text
 # Processor: Intel(R) Core(TM) i7-4700HQ CPU @ 2.40GHz
@@ -195,8 +192,7 @@ SerializationBenchmark.portable       thrpt    3  1.171 ± 0.539  ops/us
 SerializationBenchmark.stream         thrpt    3  4.828 ± 1.227  ops/us
 ```
 
-The very same object instantiated with sample data will also be encoded
-with different number of bytes depending on used strategy:
+Here are the sizes of the serialized form by each serializer:
 
 ```text
 Strategy                                        Number of Bytes  Overhead %
@@ -242,6 +238,10 @@ class PersonSerializer implements StreamSerializer<Person> {
     }
 }
 ```
+
+The type ID you use must be unique across all the serializers you
+register for a job, and additionally it must not clash with any
+global serializers you registered with the Hazelcast Jet cluster.
 
 ## Register a Serializer for a Single Jet Job
 

@@ -956,14 +956,17 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Registers the given serializer for the given class for the scope of the job.
-     * It will be accessible to all the code attached to the underlying pipeline or
-     * DAG, but not to any other code.
+     * Registers the given serializer for the given class for the scope of the
+     * job. It will be accessible to all the code attached to the underlying
+     * pipeline or DAG, but not to any other code. There are several serializer
+     * types you can register, see the
+     * <a href="https://jet-start.sh/docs/api/serialization#serialization-of-data-types
+     * Programming Guide</a>.
      * <p>
-     * Serializers registered on a job level have precedence over any serializer
-     * registered on a cluster level.
+     * A serializer registered on the job level has precedence over any
+     * serializer registered on the cluster level.
      * <p>
-     * Serializer must have no-arg constructor.
+     * The serializer must have no-arg constructor.
      *
      * @param clazz           class to register serializer for
      * @param serializerClass class of the serializer to be registered
@@ -972,8 +975,10 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     @EvolvingApi
-    public <T, S extends StreamSerializer<T>> JobConfig registerSerializer(@Nonnull Class<T> clazz,
-            @Nonnull Class<S> serializerClass) {
+    public <T, S extends StreamSerializer<T>> JobConfig registerSerializer(
+            @Nonnull Class<T> clazz,
+            @Nonnull Class<S> serializerClass
+    ) {
         Preconditions.checkFalse(serializerConfigs.containsKey(clazz.getName()),
                 "Serializer for " + clazz + " already registered");
         serializerConfigs.put(clazz.getName(), serializerClass.getName());
