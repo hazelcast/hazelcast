@@ -144,6 +144,12 @@ public interface ChangeRecord {
     /**
      * Returns the value part of the CDC event. It includes fields like the
      * timestamp, operation, and database record data.
+     * <p>
+     * For <em>insert</em> and <em>update</em> operations the value describes
+     * the database record as it looks AFTER the event, so the latest image.
+     * <p>
+     * For <em>delete</em> operations the value describes the database record as
+     * it looked BEFORE the event, so the previous image.
      */
     @Nonnull
     RecordPart value();

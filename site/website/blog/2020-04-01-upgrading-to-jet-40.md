@@ -1,6 +1,6 @@
 ---
 title: Upgrading to Jet 4.0
-author: Bartok Jozsef
+author: Bartók József
 authorURL: https://www.linkedin.com/in/bjozsef/
 authorImageURL: https://www.itdays.ro/public/images/speakers-big/Jozsef_Bartok.jpg
 ---
@@ -158,8 +158,8 @@ We made multiple breaking changes in Jet’s own APIs too:
   `withUnorderedAsyncResponses()` were removed from `ServiceFactory`.
   These properties are relevant only in the context of asynchronous
   operations and were used in conjunction with
-  `GeneralStage.mapUsingServiceAsync(…​)`. In Jet 4.0 the
-  `GeneralStage.mapUsingServiceAsync(…​)` method has a new variant with
+  `GeneralStage.mapUsingServiceAsync(…)`. In Jet 4.0 the
+  `GeneralStage.mapUsingServiceAsync(…)` method has a new variant with
   explicit parameters for the above settings:
 
   ```java
@@ -229,7 +229,7 @@ We made multiple breaking changes in Jet’s own APIs too:
   running through `jet submit`. If used from `jet submit`, the behaviour
   remains the same.
 
-* `JobConfig.addResource(…​`) is now `addClasspathResource(…​`).
+* `JobConfig.addResource(…)` is now `addClasspathResource(…)`.
 
 * `ResourceType`, `ResourceConfig` and `JobConfig.getResourceConfigs()`
   are now labeled as private API and we discourage their direct usage.
