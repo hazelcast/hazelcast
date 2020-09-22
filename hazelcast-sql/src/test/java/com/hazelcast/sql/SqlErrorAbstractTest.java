@@ -330,31 +330,28 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
     protected HazelcastInstance newHazelcastInstance(boolean awaitAssignment) {
         HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
 
-        assertTrueEventually(() -> {
-            Set<UUID> memberIds = new HashSet<>();
-
-            for (Member member : instance.getCluster().getMembers()) {
-                memberIds.add(member.getUuid());
-            }
-
-            PartitionService partitionService = instance.getPartitionService();
-
-            Set<UUID> assignedMemberIds = new HashSet<>();
-
-            for (Partition partition : partitionService.getPartitions()) {
-                Member owner = partition.getOwner();
-
-                assertNotNull(partition.getOwner());
-
-                assignedMemberIds.add(owner.getUuid());
-            }
-
-            assertEquals(memberIds, assignedMemberIds);
-        });
-
-
         if (awaitAssignment) {
-            instance.getCluster().getMembers();
+            assertTrueEventually(() -> {
+                Set<UUID> memberIds = new HashSet<>();
+
+                for (Member member : instance.getCluster().getMembers()) {
+                    memberIds.add(member.getUuid());
+                }
+
+                PartitionService partitionService = instance.getPartitionService();
+
+                Set<UUID> assignedMemberIds = new HashSet<>();
+
+                for (Partition partition : partitionService.getPartitions()) {
+                    Member owner = partition.getOwner();
+
+                    assertNotNull(partition.getOwner());
+
+                    assignedMemberIds.add(owner.getUuid());
+                }
+
+                assertEquals(memberIds, assignedMemberIds);
+            });
         }
 
         return instance;
