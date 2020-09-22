@@ -50,6 +50,8 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
+import static com.hazelcast.scheduledexecutor.impl.TaskDefinition.Type.AT_FIXED_RATE;
+import static com.hazelcast.scheduledexecutor.impl.TaskDefinition.Type.SINGLE_RUN;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static java.lang.String.format;
 import static java.util.logging.Level.FINE;
@@ -467,12 +469,12 @@ public class ScheduledExecutorContainer {
         try {
             switch (definition.getType()) {
                 case SINGLE_RUN:
-                    runner = new TaskRunner<>(this, descriptor);
+                    runner = new TaskRunner<>(this, descriptor, SINGLE_RUN);
                     future = new DelegatingScheduledFutureStripper<V>(executionService
                             .scheduleDurable(name, (Callable) runner, definition.getInitialDelay(), definition.getUnit()));
                     break;
                 case AT_FIXED_RATE:
-                    runner = new TaskRunner<>(this, descriptor);
+                    runner = new TaskRunner<>(this, descriptor, AT_FIXED_RATE);
                     future = executionService
                             .scheduleDurableWithRepetition(name, runner, definition.getInitialDelay(), definition.getPeriod(),
                                     definition.getUnit());
