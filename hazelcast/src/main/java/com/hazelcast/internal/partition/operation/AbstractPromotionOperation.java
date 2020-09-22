@@ -39,7 +39,8 @@ abstract class AbstractPromotionOperation extends AbstractPartitionOperation
     }
 
     PartitionMigrationEvent getPartitionMigrationEvent() {
-        return new PartitionMigrationEvent(DESTINATION, getPartitionId(), migrationInfo.getDestinationCurrentReplicaIndex(), 0);
+        return new PartitionMigrationEvent(DESTINATION, getPartitionId(), migrationInfo.getDestinationCurrentReplicaIndex(),
+                0, migrationInfo.getUid());
     }
 
     @Override

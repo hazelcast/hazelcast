@@ -215,12 +215,13 @@ public class PartitionServiceProxy implements PartitionService {
         @Override
         public Member getOwner() {
             // triggers initial partition assignment
-            final Address address = partitionService.getPartitionOwner(partitionId);
-            if (address == null) {
+            InternalPartition partition = partitionService.getPartition(partitionId);
+            PartitionReplica owner = partition.getOwnerReplicaOrNull();
+            if (owner == null) {
                 return null;
             }
 
-            return nodeEngine.getClusterService().getMember(address);
+            return nodeEngine.getClusterService().getMember(owner.address(), owner.uuid());
         }
 
         @Override

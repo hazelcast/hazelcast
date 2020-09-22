@@ -780,8 +780,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
             if (newVersion < currentVersion) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Already applied partition state change. Local version: " + currentVersion
-                            + ", Master version: " + newVersion + " Master: " + sender);
+                    logger.finest("Already applied partition update. partitionId=" + partitionId
+                            + ", local version: " + currentVersion
+                            + ", master version: " + newVersion + ", master: " + sender);
                 }
                 continue;
             } else if (newVersion == currentVersion) {
@@ -790,7 +791,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                              + ", Received: " + newPartition);
                 }
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Already applied partition state change. Version: " + currentVersion + ", Master: " + sender);
+                    logger.finest("Already applied partition update. partitionId=" + partitionId
+                            + ", version: " + currentVersion + ", master: " + sender);
                 }
                 accepted = true;
                 continue;
@@ -1442,7 +1444,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             activeMigration.setStatus(migration.getStatus());
             migrationManager.finalizeMigration(migration);
             if (logger.isFineEnabled()) {
-                logger.fine("Committed " + migration + " on destination with partition state version: " + finalVersion);
+                logger.fine("Committed " + migration + " on destination with partition version: " + finalVersion);
             }
             return true;
         } finally {

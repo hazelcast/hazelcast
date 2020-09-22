@@ -42,7 +42,7 @@ public abstract class TestAbstractMigrationAwareService<N> implements ManagedSer
 
     public volatile int backupCount;
 
-    private volatile ILogger logger;
+    protected volatile ILogger logger;
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {

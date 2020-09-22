@@ -326,8 +326,8 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                     PartitionReplicaVersionsView backupReplicaVersionsView
                             = getPartitionReplicaVersionsView(backupNode, partitionId);
                     long[] backupReplicaVersions = backupReplicaVersionsView.getVersions(namespace);
-                    assertNotNull("Versions null on " + backupNode.address + ", partitionId: " + partitionId,
-                            backupReplicaVersions);
+                    assertNotNull(namespace + " replica versions are null on " + backupNode.address
+                                    + ", partitionId: " + partitionId + ", replicaIndex: " + replica, backupReplicaVersions);
 
                     for (int i = replica - 1; i < actualBackupCount; i++) {
                         assertEquals("Replica version mismatch! Owner: " + thisAddress + ", Backup: " + address

@@ -491,13 +491,11 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     }
 
     @Override
-    public Collection<ServiceNamespace> getNamespaces(
-            int partitionId) {
+    public Collection<ServiceNamespace> getNamespaces(int partitionId) {
         return replicaVersions[partitionId].getNamespaces();
     }
 
-    public void retainNamespaces(int partitionId, Collection<
-            ServiceNamespace> namespaces) {
+    public void retainNamespaces(int partitionId, Collection<ServiceNamespace> namespaces) {
         PartitionReplicaVersions versions = replicaVersions[partitionId];
         versions.retainNamespaces(namespaces);
     }
