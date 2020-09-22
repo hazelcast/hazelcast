@@ -243,7 +243,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     protected PartitionMigrationEvent getMigrationEvent() {
         return new PartitionMigrationEvent(MigrationEndpoint.SOURCE,
                 migrationInfo.getPartitionId(), migrationInfo.getSourceCurrentReplicaIndex(),
-                migrationInfo.getSourceNewReplicaIndex());
+                migrationInfo.getSourceNewReplicaIndex(), migrationInfo.getUid());
     }
 
     @Override

@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.parse;
 
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.calcite.CalciteConfiguration;
 import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
@@ -99,7 +100,7 @@ public class QueryParser {
 
     private static Config createConfig(SqlParserImplFactory parserImplFactory) {
         SqlParser.ConfigBuilder configBuilder = SqlParser.configBuilder();
-        CasingConfiguration.DEFAULT.toParserConfig(configBuilder);
+        CalciteConfiguration.DEFAULT.toParserConfig(configBuilder);
         configBuilder.setConformance(HazelcastSqlConformance.INSTANCE);
         if (parserImplFactory != null) {
             configBuilder.setParserFactory(parserImplFactory);

@@ -22,7 +22,6 @@ import com.hazelcast.sql.impl.calcite.opt.QueryPlanner;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.metadata.HazelcastRelMdRowCount;
-import com.hazelcast.sql.impl.calcite.parse.CasingConfiguration;
 import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryConverter;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
@@ -64,7 +63,7 @@ public final class OptimizerContext {
         DefaultRelMetadataProvider.INSTANCE
     ));
 
-    private static final CalciteConnectionConfig CONNECTION_CONFIG = CasingConfiguration.DEFAULT.toConnectionConfig();
+    private static final CalciteConnectionConfig CONNECTION_CONFIG = CalciteConfiguration.DEFAULT.toConnectionConfig();
 
     private final HazelcastRelOptCluster cluster;
     private final QueryParser parser;

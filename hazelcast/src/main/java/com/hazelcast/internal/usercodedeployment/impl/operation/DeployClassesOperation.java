@@ -46,9 +46,6 @@ public class DeployClassesOperation extends Operation implements IdentifiedDataS
     @Override
     public void run() throws Exception {
         UserCodeDeploymentService service = getService();
-//        for (Map.Entry<String, byte[]> classDefinition : classDefinitions) {
-//            service.defineClass(classDefinition.getKey(), classDefinition.getValue());
-//        }
         service.defineClasses(classDefinitions);
     }
 
