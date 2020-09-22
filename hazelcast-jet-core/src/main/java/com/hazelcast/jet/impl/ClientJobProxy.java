@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
@@ -170,9 +171,13 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         });
     }
 
-    @Override
+    @Nonnull @Override
     protected UUID masterUuid() {
-        return container().getHazelcastClient().getClientClusterService().getMasterMember().getUuid();
+        Member masterMember = container().getHazelcastClient().getClientClusterService().getMasterMember();
+        if (masterMember == null) {
+            throw new IllegalStateException("Master isn't known");
+        }
+        return masterMember.getUuid();
     }
 
     @Override
@@ -183,6 +188,11 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     @Override
     protected LoggingService loggingService() {
         return container().getHazelcastClient().getLoggingService();
+    }
+
+    @Override
+    protected boolean isRunning() {
+        return container().getHazelcastClient().getLifecycleService().isRunning();
     }
 
     private ClientInvocation invocation(ClientMessage request, UUID invocationUuid) {

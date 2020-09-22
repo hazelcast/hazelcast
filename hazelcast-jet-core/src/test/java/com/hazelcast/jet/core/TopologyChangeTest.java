@@ -96,7 +96,7 @@ public class TopologyChangeTest extends JetTestSupport {
     private JetInstance[] instances;
     private JetConfig config;
 
-    @Parameterized.Parameters(name = "liteMemberFlags({index}")
+    @Parameterized.Parameters(name = "liteMemberFlags({index})")
     public static Collection<boolean[]> parameters() {
         return Arrays.asList(new boolean[][]{
                 {false, false, false},

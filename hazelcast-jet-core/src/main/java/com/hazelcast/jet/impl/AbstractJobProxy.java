@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.serialization.Data;
@@ -193,18 +194,26 @@ public abstract class AbstractJobProxy<T> implements Job {
 
     protected abstract JobConfig doGetJobConfig();
 
+    /**
+     * Get the current master UUID.
+     *
+     * @throws IllegalStateException if the master isn't known
+     */
+    @Nonnull
     protected abstract UUID masterUuid();
 
     protected abstract SerializationService serializationService();
 
     protected abstract LoggingService loggingService();
 
+    protected abstract boolean isRunning();
+
     protected T container() {
         return container;
     }
 
     private void doSubmitJob(Object jobDefinition, JobConfig config) {
-        CompletableFuture<Void> submitFuture = new CompletableFuture<>();
+        NonCompletableFuture submitFuture = new NonCompletableFuture();
         SubmitJobCallback callback = new SubmitJobCallback(submitFuture, jobDefinition, config);
         invokeSubmitJob(serializationService().toData(jobDefinition), config).whenCompleteAsync(callback);
         submitFuture.join();
@@ -213,97 +222,100 @@ public abstract class AbstractJobProxy<T> implements Job {
     private boolean isRestartable(Throwable t) {
         return t instanceof MemberLeftException
                 || t instanceof TargetDisconnectedException
-                || t instanceof TargetNotMemberException;
+                || t instanceof TargetNotMemberException
+                || t instanceof HazelcastInstanceNotActiveException && isRunning();
     }
 
     private void doInvokeJoinJob() {
         invokeJoinJob().whenCompleteAsync(joinJobCallback);
     }
 
-    private class SubmitJobCallback implements BiConsumer<Void, Throwable> {
-        private final CompletableFuture<Void> future;
-        private final Object jobDefinition;
-        private final JobConfig config;
+    private abstract class CallbackBase implements BiConsumer<Void, Throwable> {
+        private final NonCompletableFuture future;
 
-        SubmitJobCallback(CompletableFuture<Void> future, Object jobDefinition, JobConfig config) {
+        protected CallbackBase(NonCompletableFuture future) {
             this.future = future;
-            this.jobDefinition = jobDefinition;
-            this.config = config;
         }
 
         @Override
-        public void accept(Void aVoid, Throwable t) {
+        public final void accept(Void aVoid, Throwable t) {
             if (t != null) {
                 Throwable ex = peel(t);
                 if (ex instanceof LocalMemberResetException) {
-                    String msg = "Submission of job " + idAndName() + " failed because the cluster is performing " +
-                            "split-brain merge";
-                    logger.warning(msg, ex);
-                    future.completeExceptionally(new CancellationException(msg));
-                } else if (!isRestartable(ex)) {
-                    future.completeExceptionally(ex);
-                } else {
-                    try {
-                        resubmitJob(t);
-                    } catch (Exception e) {
-                        future.completeExceptionally(peel(e));
-                    }
-                }
-            } else {
-                future.complete(null);
-            }
-        }
-
-        private void resubmitJob(Throwable t) {
-            if (masterUuid() != null) {
-                logger.fine("Resubmitting job " + idAndName() + " after " + t.getClass().getSimpleName());
-                invokeSubmitJob(serializationService().toData(jobDefinition), config).whenCompleteAsync(this);
-                return;
-            }
-            // job data will be cleaned up eventually by coordinator
-            String msg = "Job " + idAndName() + " failed because the cluster is performing "
-                    + " split-brain merge and coordinator is not known";
-            logger.warning(msg, t);
-            future.completeExceptionally(new CancellationException(msg));
-        }
-    }
-
-    private class JoinJobCallback implements BiConsumer<Void, Throwable> {
-
-        @Override
-        public void accept(Void aVoid, Throwable t) {
-            if (t != null) {
-                Throwable ex = peel(t);
-                if (ex instanceof LocalMemberResetException) {
-                    String msg = "Job " + idAndName() + " failed because the cluster is performing a split-brain merge";
+                    String msg = operationName() + " failed for job " + idAndName()
+                            + " because the cluster is performing split-brain merge";
                     logger.warning(msg, ex);
                     future.internalCompleteExceptionally(new CancellationException(msg));
                 } else if (!isRestartable(ex)) {
                     future.internalCompleteExceptionally(ex);
                 } else {
                     try {
-                        rejoinJob(t);
+                        retryAction(t);
                     } catch (Exception e) {
                         future.internalCompleteExceptionally(peel(e));
                     }
                 }
             } else {
-                // job completed successfully
                 future.internalComplete();
             }
         }
 
-        private void rejoinJob(Throwable t) {
-            if (masterUuid() != null) {
-                logger.fine("Rejoining to job " + idAndName() + " after " + t.getClass().getSimpleName());
-                doInvokeJoinJob();
+        private void retryAction(Throwable t) {
+            try {
+                // calling for the side-effect of throwing ISE if master not known
+                masterUuid();
+            } catch (IllegalStateException e) {
+                // job data will be cleaned up eventually by the coordinator
+                String msg = operationName() + " failed for job " + idAndName() + " because the cluster " +
+                        "is performing  split-brain merge and the coordinator is not known";
+                logger.warning(msg, t);
+                future.internalCompleteExceptionally(new CancellationException(msg));
                 return;
             }
-            // job data will be cleaned up eventually by coordinator
-            String msg = "Job " + idAndName() + " failed because the cluster is performing "
-                    + " split-brain merge and coordinator is not known";
-            logger.warning(msg, t);
-            future.internalCompleteExceptionally(new CancellationException(msg));
+            retryActionInt(t);
+        }
+
+        protected abstract void retryActionInt(Throwable t);
+        protected abstract String operationName();
+    }
+
+    private class SubmitJobCallback extends CallbackBase {
+        private final Object jobDefinition;
+        private final JobConfig config;
+
+        SubmitJobCallback(NonCompletableFuture future, Object jobDefinition, JobConfig config) {
+            super(future);
+            this.jobDefinition = jobDefinition;
+            this.config = config;
+        }
+
+        @Override
+        protected void retryActionInt(Throwable t) {
+            logger.fine("Resubmitting job " + idAndName() + " after " + t.getClass().getSimpleName());
+            invokeSubmitJob(serializationService().toData(jobDefinition), config).whenCompleteAsync(this);
+        }
+
+        @Override
+        protected String operationName() {
+            return "Submit";
+        }
+    }
+
+    private class JoinJobCallback extends CallbackBase {
+
+        JoinJobCallback() {
+            super(AbstractJobProxy.this.future);
+        }
+
+        @Override
+        protected void retryActionInt(Throwable t) {
+            logger.fine("Rejoining to job " + idAndName() + " after " + t.getClass().getSimpleName(), t);
+            doInvokeJoinJob();
+        }
+
+        @Override
+        protected String operationName() {
+            return "Join";
         }
     }
 }

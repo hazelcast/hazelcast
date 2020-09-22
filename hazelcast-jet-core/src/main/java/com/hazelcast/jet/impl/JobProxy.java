@@ -154,7 +154,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
         }
     }
 
-    @Override
+    @Nonnull @Override
     protected UUID masterUuid() {
         Collection<Member> members = container().getClusterService().getMembers();
         if (members.isEmpty()) {
@@ -171,6 +171,11 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     @Override
     protected LoggingService loggingService() {
         return container().getLoggingService();
+    }
+
+    @Override
+    protected boolean isRunning() {
+        return container().isRunning();
     }
 
     private <T> CompletableFuture<T> invokeOp(Operation op) {

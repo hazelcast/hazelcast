@@ -20,6 +20,8 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -27,7 +29,13 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static com.hazelcast.jet.Util.idToString;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Base class for tests that share the cluster for all jobs. The subclass must
@@ -35,6 +43,8 @@ import java.util.concurrent.TimeUnit;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class SimpleTestInClusterSupport extends JetTestSupport {
+
+    private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SimpleTestInClusterSupport.class);
 
     private static JetTestInstanceFactory factory;
     private static JetConfig jetConfig;
@@ -74,10 +84,18 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
             return;
         }
         // after each test ditch all jobs and objects
-        for (Job job : instances[0].getJobs()) {
+        List<Job> jobs = instances[0].getJobs();
+        SUPPORT_LOGGER.info("Ditching " + jobs.size() + " jobs in SimpleTestInClusterSupport.@After: " +
+                jobs.stream().map(j -> idToString(j.getId())).collect(joining(", ", "[", "]")));
+        for (Job job : jobs) {
             ditchJob(job, instances());
         }
-        for (DistributedObject o : instances()[0].getHazelcastInstance().getDistributedObjects()) {
+        Collection<DistributedObject> objects = instances()[0].getHazelcastInstance().getDistributedObjects();
+        SUPPORT_LOGGER.info("Destroying " + objects.size()
+                + " distributed objects in SimpleTestInClusterSupport.@After: "
+                + objects.stream().map(o -> o.getServiceName() + "/" + o.getName())
+                         .collect(Collectors.joining(", ", "[", "]")));
+        for (DistributedObject o : objects) {
             o.destroy();
         }
     }
@@ -85,6 +103,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     @AfterClass
     public static void supportAfterClass() throws Exception {
         if (factory != null) {
+            SUPPORT_LOGGER.info("Terminating instance factory in SimpleTestInClusterSupport.@AfterClass");
             spawn(() -> factory.terminateAll())
                     .get(1, TimeUnit.MINUTES);
         }
