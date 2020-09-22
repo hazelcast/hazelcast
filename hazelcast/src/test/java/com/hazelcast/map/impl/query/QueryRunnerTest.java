@@ -39,6 +39,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -99,7 +100,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
         map.addIndex(IndexType.HASH, "this");
         Predicate predicate = new EqualPredicate("this", value);
 
-        mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
+        mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1, UUID.randomUUID()));
 
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
         QueryResult result = (QueryResult) queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
@@ -114,7 +115,8 @@ public class QueryRunnerTest extends HazelcastTestSupport {
             @Override
             public Set<QueryableEntry> filter(QueryContext queryContext) {
                 // start a new migration while executing an indexed query
-                mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
+                mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1,
+                        UUID.randomUUID()));
                 return super.filter(queryContext);
             }
         };
@@ -127,7 +129,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     public void verifyFullScanFailureWhileMigrating() {
         Predicate predicate = new EqualPredicate("this", value);
 
-        mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
+        mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1, UUID.randomUUID()));
 
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
         QueryResult result = (QueryResult) queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
@@ -140,7 +142,8 @@ public class QueryRunnerTest extends HazelcastTestSupport {
             @Override
             protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
                 // start a new migration while executing a full scan
-                mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
+                mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1,
+                        UUID.randomUUID()));
                 return super.applyForSingleAttributeValue(attributeValue);
             }
         };

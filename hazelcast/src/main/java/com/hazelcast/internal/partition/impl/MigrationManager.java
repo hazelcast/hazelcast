@@ -221,6 +221,9 @@ public class MigrationManager {
                 op.setPartitionId(partitionId).setNodeEngine(nodeEngine).setValidateTarget(false).setService(partitionService);
                 registerFinalizingMigration(migrationInfo);
                 OperationServiceImpl operationService = nodeEngine.getOperationService();
+                if (logger.isFineEnabled()) {
+                    logger.fine("Finalizing " + migrationInfo);
+                }
                 if (operationService.isRunAllowed(op)) {
                     // When migration finalization is triggered by subsequent migrations
                     // on partition thread, finalization may run directly on calling thread.
@@ -235,6 +238,9 @@ public class MigrationManager {
             } else {
                 PartitionReplica partitionOwner = partitionStateManager.getPartitionImpl(partitionId).getOwnerReplicaOrNull();
                 if (localReplica.equals(partitionOwner)) {
+                    // This is the primary owner of the partition and the migration was a backup replica migration.
+                    // In this case, primary owner has nothing to do anymore,
+                    // just remove the active migration and clear the migrating flag.
                     removeActiveMigration(partitionId);
                     partitionStateManager.clearMigratingFlag(partitionId);
                 } else {
@@ -348,6 +354,9 @@ public class MigrationManager {
             if (migrationInfo.equals(activeMigrationInfo)) {
                 if (activeMigrationInfo.startProcessing()) {
                     activeMigrationInfo.setStatus(migrationInfo.getStatus());
+                    if (logger.isFineEnabled()) {
+                        logger.fine("Scheduled finalization of " + activeMigrationInfo);
+                    }
                     finalizeMigration(activeMigrationInfo);
                 } else {
                     // This case happens when master crashes while migration operation is running
@@ -365,7 +374,29 @@ public class MigrationManager {
             PartitionReplica source = migrationInfo.getSource();
             if (source != null && migrationInfo.getSourceCurrentReplicaIndex() > 0
                     && source.isIdentical(node.getLocalMember())) {
-                // Finalize migration on old backup replica owner
+                // This is former backup replica owner.
+                // Former backup owner does not participate in migration transaction, data always copied
+                // from the primary replica. Former backup replica is not notified about this migration
+                // until the migration is committed on destination. Active migration is not set
+                // for this migration.
+
+                // This path can be executed multiple times,
+                // when a periodic update (latest completed migrations or the whole partition table) is received
+                // and a new migration request is submitted concurrently.
+                // That's why, migration should be validated by partition table, to determine whether
+                // this migration finalization is already processed or not.
+                InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(migrationInfo.getPartitionId());
+
+                if (migrationInfo.getStatus() == MigrationStatus.SUCCESS
+                        && migrationInfo.getSourceNewReplicaIndex() != partition.getReplicaIndex(source)) {
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Already finalized " + migrationInfo + " on former backup replica. -> " + partition);
+                    }
+                    return;
+                }
+                if (logger.isFineEnabled()) {
+                    logger.fine("Scheduled finalization of " + migrationInfo + " on former backup replica.");
+                }
                 finalizeMigration(migrationInfo);
             }
         } finally {
