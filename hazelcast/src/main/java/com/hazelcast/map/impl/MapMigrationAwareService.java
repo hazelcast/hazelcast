@@ -59,10 +59,13 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
     protected final MapServiceContext mapServiceContext;
     protected final SerializationService serializationService;
 
+    private final ILogger logger;
+
     MapMigrationAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
         this.containers = mapServiceContext.getPartitionContainers();
+        this.logger = mapServiceContext.getNodeEngine().getLogger(getClass());
     }
 
     @Override
@@ -294,8 +297,6 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             Indexes.markPartitionAsIndexed(event.getPartitionId(), indexesSnapshot);
         }
 
-        Class<? extends MapMigrationAwareService> aClass = getClass();
-        ILogger logger = mapServiceContext.getNodeEngine().getLogger(aClass);
         if (logger.isFinestEnabled()) {
             logger.finest(String.format("Populated indexes at step `%s`:[%s]", stepName, event));
         }
@@ -331,7 +332,6 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             Indexes.markPartitionAsUnindexed(event.getPartitionId(), indexesSnapshot);
         }
 
-        ILogger logger = mapServiceContext.getNodeEngine().getLogger(getClass());
         if (logger.isFinestEnabled()) {
             logger.finest(String.format("Depopulated indexes at step `%s`:[%s]", stepName, event));
         }
