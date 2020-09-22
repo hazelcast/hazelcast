@@ -17,9 +17,12 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.exec.BlockingExec;
@@ -29,9 +32,13 @@ import org.junit.After;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 
@@ -65,8 +72,8 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
 
     protected void checkTimeout(boolean useClient, int dataSetSize) {
         // Start two instances and fill them with data
-        instance1 = factory.newHazelcastInstance();
-        instance2 = factory.newHazelcastInstance();
+        instance1 = newHazelcastInstance(false);
+        instance2 = newHazelcastInstance(true);
         client = newClient();
 
         populate(instance1, dataSetSize);
@@ -93,8 +100,8 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
 
     protected void checkExecutionError(boolean useClient, boolean fromFirstMember) {
         // Start two instances and fill them with data
-        instance1 = factory.newHazelcastInstance();
-        instance2 = factory.newHazelcastInstance();
+        instance1 = newHazelcastInstance(false);
+        instance2 = newHazelcastInstance(true);
         client = newClient();
 
         populate(instance1);
@@ -123,7 +130,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
 
     protected void checkMapMigration(boolean useClient) {
         // Start one instance and fill it with data
-        instance1 = factory.newHazelcastInstance();
+        instance1 = newHazelcastInstance(true);
         client = newClient();
 
         populate(instance1);
@@ -144,7 +151,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
             try {
                 blocker.awaitReached();
 
-                factory.newHazelcastInstance();
+                newHazelcastInstance(true);
             } finally {
                 blocker.unblockAfter(2000);
             }
@@ -157,8 +164,8 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
 
     protected void checkMapDestroy(boolean useClient, boolean firstMember) {
         // Start two instances and fill them with data
-        instance1 = factory.newHazelcastInstance();
-        instance2 = factory.newHazelcastInstance();
+        instance1 = newHazelcastInstance(false);
+        instance2 = newHazelcastInstance(true);
         client = newClient();
 
         populate(instance1);
@@ -194,8 +201,8 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
 
     protected void checkDataTypeMismatch(boolean useClient) {
         // Start two instances and fill them with data
-        instance1 = factory.newHazelcastInstance();
-        instance2 = factory.newHazelcastInstance();
+        instance1 = newHazelcastInstance(false);
+        instance2 = newHazelcastInstance(true);
         client = newClient();
 
         IMap<Long, Object> map = instance1.getMap(MAP_NAME);
@@ -218,7 +225,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
     }
 
     protected void checkParsingError(boolean useClient) {
-        instance1 = factory.newHazelcastInstance();
+        instance1 = newHazelcastInstance(true);
         client = newClient();
 
         IMap<Long, Long> map = instance1.getMap(MAP_NAME);
@@ -232,7 +239,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
 
     @SuppressWarnings("StatementWithEmptyBody")
     protected void checkUserCancel(boolean useClient) {
-        instance1 = factory.newHazelcastInstance();
+        instance1 = newHazelcastInstance(true);
         client = newClient();
 
         IMap<Long, Long> map = instance1.getMap(MAP_NAME);
@@ -312,5 +319,44 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
 
     protected static void assertErrorCode(int expected, HazelcastSqlException error) {
         assertEquals(error.getCode() + ": " + error.getMessage(), expected, error.getCode());
+    }
+
+    /**
+     * Start the new Hazelcast instance.
+     *
+     * @param awaitAssignment whether to wait for a partition assignment to a new member
+     * @return created instance
+     */
+    protected HazelcastInstance newHazelcastInstance(boolean awaitAssignment) {
+        HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
+
+        assertTrueEventually(() -> {
+            Set<UUID> memberIds = new HashSet<>();
+
+            for (Member member : instance.getCluster().getMembers()) {
+                memberIds.add(member.getUuid());
+            }
+
+            PartitionService partitionService = instance.getPartitionService();
+
+            Set<UUID> assignedMemberIds = new HashSet<>();
+
+            for (Partition partition : partitionService.getPartitions()) {
+                Member owner = partition.getOwner();
+
+                assertNotNull(partition.getOwner());
+
+                assignedMemberIds.add(owner.getUuid());
+            }
+
+            assertEquals(memberIds, assignedMemberIds);
+        });
+
+
+        if (awaitAssignment) {
+            instance.getCluster().getMembers();
+        }
+
+        return instance;
     }
 }

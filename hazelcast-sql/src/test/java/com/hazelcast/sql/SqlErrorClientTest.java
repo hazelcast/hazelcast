@@ -23,9 +23,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.client.SqlClientService;
-import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.exec.BlockingExec;
 import com.hazelcast.sql.impl.exec.scan.MapScanExec;
+import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -142,7 +142,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
      */
     @Test
     public void testMemberDisconnect_execute() {
-        instance1 = factory.newHazelcastInstance();
+        instance1 = newHazelcastInstance(true);
         client = newClient();
 
         populate(instance1);
@@ -173,7 +173,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
     @Test
     public void testMemberDisconnect_fetch() {
-        instance1 = factory.newHazelcastInstance();
+        instance1 = newHazelcastInstance(true);
         client = newClient();
 
         populate(instance1, SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE + 1);
@@ -199,7 +199,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
     @Test
     public void testMemberDisconnect_close() {
-        instance1 = factory.newHazelcastInstance();
+        instance1 = newHazelcastInstance(true);
         client = newClient();
 
         populate(instance1, SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE + 1);
@@ -222,7 +222,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
      */
     @Test
     public void testCursorCleanupOnClientLeave() {
-        instance1 = factory.newHazelcastInstance();
+        instance1 = newHazelcastInstance(true);
         client = newClient();
 
         Map<Integer, Integer> localMap = new HashMap<>();
@@ -247,7 +247,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
     @Test
     public void testParameterError_serialization() {
-        instance1 = factory.newHazelcastInstance();
+        instance1 = newHazelcastInstance(true);
         client = newClient();
 
         SqlStatement query = new SqlStatement("SELECT * FROM map").addParameter(new BadParameter(true, false));
@@ -259,7 +259,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
     @Test
     public void testParameterError_deserialization() {
-        instance1 = factory.newHazelcastInstance();
+        instance1 = newHazelcastInstance(true);
         client = newClient();
 
         SqlStatement query = new SqlStatement("SELECT * FROM map").addParameter(new BadParameter(false, true));
@@ -272,7 +272,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
     @Test
     public void testRowError_deserialization() {
         try {
-            instance1 = factory.newHazelcastInstance();
+            instance1 = newHazelcastInstance(true);
             client = newClient();
 
             Map<Integer, BadValue> localMap = new HashMap<>();
@@ -308,7 +308,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
     @Test
     public void testMissingHandler() {
-        instance1 = factory.newHazelcastInstance();
+        instance1 = newHazelcastInstance(true);
         client = newClient();
 
         try {
