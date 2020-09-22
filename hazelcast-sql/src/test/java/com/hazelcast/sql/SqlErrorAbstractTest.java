@@ -85,7 +85,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
         // Execute query on the instance1.
         try {
             HazelcastSqlException error = assertSqlException(useClient ? client : instance1, query().setTimeoutMillis(100L));
-            assertEquals(SqlErrorCode.TIMEOUT, error.getCode());
+            assertErrorCode(SqlErrorCode.TIMEOUT, error);
         } finally {
             blocker.unblock();
         }
@@ -116,7 +116,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
         // Execute query.
         HazelcastSqlException error = assertSqlException(target, query());
 
-        assertEquals(SqlErrorCode.GENERIC, error.getCode());
+        assertErrorCode(SqlErrorCode.GENERIC, error);
         assertEquals(member.getLocalEndpoint().getUuid(), error.getOriginatingMemberId());
         assertTrue(error.getMessage().contains(errorMessage));
     }
@@ -152,7 +152,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
 
         // Start query
         HazelcastSqlException error = assertSqlException(useClient ? client : instance1, query());
-        assertEquals(SqlErrorCode.PARTITION_DISTRIBUTION, error.getCode());
+        assertErrorCode(SqlErrorCode.PARTITION_DISTRIBUTION, error);
     }
 
     protected void checkMapDestroy(boolean useClient, boolean firstMember) {
@@ -189,7 +189,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
 
         // Start query
         HazelcastSqlException error = assertSqlException(useClient ? client : instance1, query());
-        assertEquals(SqlErrorCode.MAP_DESTROYED, error.getCode());
+        assertErrorCode(SqlErrorCode.MAP_DESTROYED, error);
     }
 
     protected void checkDataTypeMismatch(boolean useClient) {
@@ -209,7 +209,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
         // Execute query.
         HazelcastSqlException error = assertSqlException(useClient ? client : instance1, query());
 
-        assertEquals(SqlErrorCode.DATA_EXCEPTION, error.getCode());
+        assertErrorCode(SqlErrorCode.DATA_EXCEPTION, error);
         assertEquals(
             "Failed to extract map entry value because of type mismatch "
                 + "[expectedClass=java.lang.Long, actualClass=java.lang.String]",
@@ -227,7 +227,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
         HazelcastInstance target = useClient ? client : instance1;
 
         HazelcastSqlException error = assertSqlException(target, new SqlStatement("SELECT bad_field FROM " + MAP_NAME));
-        assertEquals(SqlErrorCode.PARSING, error.getCode());
+        assertErrorCode(SqlErrorCode.PARSING, error);
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
@@ -251,7 +251,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
 
                 fail("Exception is not thrown");
             } catch (HazelcastSqlException e) {
-                assertEquals(SqlErrorCode.CANCELLED_BY_USER, e.getCode());
+                assertErrorCode(SqlErrorCode.CANCELLED_BY_USER, e);
             }
         }
     }
@@ -308,5 +308,9 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
 
     protected ClientConfig clientConfig() {
         return new ClientConfig();
+    }
+
+    protected static void assertErrorCode(int expected, HazelcastSqlException error) {
+        assertEquals(error.getCode() + ": " + error.getMessage(), expected, error.getCode());
     }
 }

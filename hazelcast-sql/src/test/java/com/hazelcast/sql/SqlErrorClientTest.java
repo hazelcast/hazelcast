@@ -26,7 +26,7 @@ import com.hazelcast.sql.impl.client.SqlClientService;
 import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.exec.BlockingExec;
 import com.hazelcast.sql.impl.exec.scan.MapScanExec;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -52,7 +52,7 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
  * Test for different error conditions (client).
  */
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
@@ -123,7 +123,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         client = factory.newHazelcastClient(null);
 
         HazelcastSqlException error = assertSqlException(client, query());
-        assertEquals(SqlErrorCode.CONNECTION_PROBLEM, error.getCode());
+        assertErrorCode(SqlErrorCode.CONNECTION_PROBLEM, error);
         assertEquals("Client must be connected to at least one data member to execute SQL queries", error.getMessage());
     }
 
@@ -168,7 +168,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         }).start();
 
         HazelcastSqlException error = assertSqlException(client, query());
-        assertEquals(SqlErrorCode.CONNECTION_PROBLEM, error.getCode());
+        assertErrorCode(SqlErrorCode.CONNECTION_PROBLEM, error);
     }
 
     @Test
@@ -193,7 +193,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
             fail("Should fail");
         } catch (HazelcastSqlException e) {
-            assertEquals(SqlErrorCode.CONNECTION_PROBLEM, e.getCode());
+            assertErrorCode(SqlErrorCode.CONNECTION_PROBLEM, e);
         }
     }
 
@@ -213,7 +213,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
             fail("Should fail");
         } catch (HazelcastSqlException e) {
-            assertEquals(SqlErrorCode.CONNECTION_PROBLEM, e.getCode());
+            assertErrorCode(SqlErrorCode.CONNECTION_PROBLEM, e);
         }
     }
 
@@ -253,7 +253,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         SqlStatement query = new SqlStatement("SELECT * FROM map").addParameter(new BadParameter(true, false));
 
         HazelcastSqlException error = assertSqlException(client, query);
-        assertEquals(SqlErrorCode.GENERIC, error.getCode());
+        assertErrorCode(SqlErrorCode.GENERIC, error);
         assertTrue(error.getMessage().contains("Failed to serialize query parameter"));
     }
 
@@ -265,7 +265,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         SqlStatement query = new SqlStatement("SELECT * FROM map").addParameter(new BadParameter(false, true));
 
         HazelcastSqlException error = assertSqlException(client, query);
-        assertEquals(SqlErrorCode.GENERIC, error.getCode());
+        assertErrorCode(SqlErrorCode.GENERIC, error);
         assertTrue(error.getMessage().contains("Read error"));
     }
 
@@ -297,7 +297,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
                 fail("Should fail");
             } catch (HazelcastSqlException e) {
-                assertEquals(SqlErrorCode.GENERIC, e.getCode());
+                assertErrorCode(SqlErrorCode.GENERIC, e);
                 assertEquals(client.getLocalEndpoint().getUuid(), e.getOriginatingMemberId());
                 assertTrue(e.getMessage().contains("Failed to deserialize query result value"));
             }
