@@ -27,8 +27,10 @@ import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -41,7 +43,9 @@ import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDES
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class StreamSourceStageTest extends StreamSourceStageTestBase {
@@ -162,6 +166,28 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
         map.put(4, 4);
         assertTrueEventually(() -> assertEquals(2, sinkList.size()), 10);
 
+        job.cancel();
+    }
+
+    @Test
+    @Category(NightlyTest.class)
+    public void when_sparseItemsWithIngestionTimestamps_then_windowIsNotEmittedTooEarly() {
+        IList<WindowResult<Long>> sinkList = instance.getList(randomMapName());
+        IMap<Integer, Integer> map = instance.getMap(randomMapName());
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.mapJournal(map, START_FROM_OLDEST))
+         .withIngestionTimestamps()
+         .window(WindowDefinition.session(15_000))
+         .aggregate(AggregateOperations.counting())
+         .writeTo(Sinks.list(sinkList));
+
+        long start = System.nanoTime();
+        Job job = instance.newJob(p);
+        assertEquals(0, sinkList.size());
+        map.put(5, 5);
+        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 30);
+        assertTrue(System.nanoTime() - start > SECONDS.toNanos(15));
         job.cancel();
     }
 
