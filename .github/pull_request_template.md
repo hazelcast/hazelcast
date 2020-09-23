@@ -1,17 +1,15 @@
 Add description here
 
+Fixes #NNNN (point out issues this PR fixes, if any)
+
 Checklist
-- [ ] Tags Set
-- [ ] Milestone Set
-- [ ] Any breaking changes are documented
+- [ ] Labels and Milestone set
+- [ ] Breaking changes documented
 - [ ] New public APIs have `@Nonnull/@Nullable` annotations
 - [ ] New public APIs have `@since` tags in Javadoc
 - [ ] For code samples, code sample main readme is updated
 
-Links to issues fixed (if any):
 
-Fixes #NNNN
-
-List of breaking changes:
+Breaking changes:
 
 * ..
