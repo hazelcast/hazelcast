@@ -38,7 +38,7 @@
         <servlet.api.version>3.0.1</servlet.api.version>
 
         <pax.exam.version>2.6.0</pax.exam.version>
-        <pax.runner.version>1.8.6</pax.runner.version>
+        <pax.runner.version>1.9.0</pax.runner.version>
         <javax.inject.version>1</javax.inject.version>
     </properties>
 
