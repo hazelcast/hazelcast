@@ -115,11 +115,11 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
                     .hasStackTraceContaining("Failed to connect to database");
             assertTrue(jet.getMap("results").isEmpty());
         } else {
-            // then can't connect to DB
+            // and can't connect to DB
             assertJobStatusEventually(job, RUNNING);
             assertTrue(jet.getMap("results").isEmpty());
 
-            // when DB starts
+            // and DB starts
             postgres = initPostgres(null, port);
             try {
                 // then source connects successfully
@@ -155,7 +155,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
 
             // and some time passes
             MILLISECONDS.sleep(2 * RECONNECT_INTERVAL_MS);
-            //it takes the bloody thing 150 seconds to notice the connection being down, so it won't notice this...
+            //it takes the bloody thing ages to notice the connection being down, so it won't notice this...
 
             // and connection recovers
             proxy.setConnectionCut(false);

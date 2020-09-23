@@ -52,8 +52,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -62,9 +64,10 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.runners.Parameterized.Parameter;
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 
@@ -106,13 +109,11 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
         // when job starts
         JetInstance jet = createJetMembers(2)[0];
         Job job = jet.newJob(pipeline);
-
+        // then
         boolean neverReconnect = reconnectBehavior.getMaxAttempts() == 0;
         if (neverReconnect) {
             // then job fails
-            assertThatThrownBy(job::join)
-                    .hasRootCauseInstanceOf(JetException.class)
-                    .hasStackTraceContaining("Failed to connect to database");
+            assertJobFailsWithConnectException(job, false);
             assertTrue(jet.getMap("results").isEmpty());
         } else {
             // and can't connect to DB
@@ -191,9 +192,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             boolean neverReconnect = reconnectBehavior.getMaxAttempts() == 0;
             if (neverReconnect) {
                 // then job fails
-                assertThatThrownBy(job::join)
-                        .hasRootCauseInstanceOf(JetException.class)
-                        .hasStackTraceContaining("Failed to connect to database");
+                assertJobFailsWithConnectException(job, true);
             } else {
                 // and DB is started anew
                 mysql = initMySql(null, port);
@@ -273,9 +272,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             boolean neverReconnect = reconnectBehavior.getMaxAttempts() == 0;
             if (neverReconnect) {
                 // then job fails
-                assertThatThrownBy(job::join)
-                        .hasRootCauseInstanceOf(JetException.class)
-                        .hasStackTraceContaining("Failed to connect to database");
+                assertJobFailsWithConnectException(job, true);
             } else {
                 // and results are cleared
                 jet.getMap("results").clear();
@@ -405,6 +402,29 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
         }
 
         throw new IOException("No free port in range [" + fromInclusive + ", " +  toExclusive + ")");
+    }
+
+    @SuppressWarnings("StatementWithEmptyBody")
+    private static void assertJobFailsWithConnectException(Job job, boolean lenient) throws InterruptedException {
+        try {
+            //wait for job to finish w/ timeout
+            job.getFuture().get(5, SECONDS);
+        } catch (TimeoutException te) {
+            //explicitly cancelling the job because it has not completed so far
+            job.cancel();
+
+            if (lenient) {
+                //ignore the timeout; not all tests are deterministic, sometimes we don't end up in the state
+                //we actually want to test
+            } else {
+                fail("Connection failure not thrown");
+            }
+        } catch (ExecutionException ee) {
+            //job completed exceptionally, as expected, we check the details of it
+            assertThat(ee)
+                    .hasRootCauseInstanceOf(JetException.class)
+                    .hasStackTraceContaining("Failed to connect to database");
+        }
     }
 
 }
