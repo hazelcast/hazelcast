@@ -21,7 +21,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -62,12 +61,6 @@ public class MapEntryReplacingEntryProcessor<K, V> implements EntryProcessor<K, 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         function = in.readObject();
-    }
-
-    @Nullable
-    @Override
-    public EntryProcessor<K, V, V> getBackupProcessor() {
-        return null;
     }
 
 }
