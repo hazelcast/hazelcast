@@ -1,5 +1,5 @@
 ---
-title: The Low-Latency Rematch: Performance of Modern Java on Data-Heavy Workloads
+title: Performance of Modern Java on Data-Heavy Workloads: The Low-Latency Rematch
 description: Revisiting the Low Latency Garbage Collectors
 author: Marko Topolnik
 authorURL: https://twitter.com/mtopolnik
