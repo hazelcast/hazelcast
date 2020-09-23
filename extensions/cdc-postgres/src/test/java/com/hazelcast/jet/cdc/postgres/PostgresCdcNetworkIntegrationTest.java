@@ -34,7 +34,10 @@ import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -76,6 +79,9 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
 
     private static final long RECONNECT_INTERVAL_MS = SECONDS.toMillis(1);
 
+    @Rule
+    public final EnvironmentVariables environmentVariables = new EnvironmentVariables();
+
     @Parameter(value = 0)
     public RetryStrategy reconnectBehavior;
 
@@ -92,6 +98,16 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
                 { RetryStrategies.indefinitely(RECONNECT_INTERVAL_MS), false, "reconnect"},
                 { RetryStrategies.indefinitely(RECONNECT_INTERVAL_MS), true, "reconnect w/ state reset"}
         });
+    }
+
+    @Before
+    public void before() {
+        //disable Testcontainer's automatic resource manager
+        //containers are cleaned up explicitly
+        //automatic resource manager is just an extra thing that can break
+        //(have had problems with it not being cleaned up properly itself)
+        environmentVariables.set("TESTCONTAINERS_RYUK_DISABLED", "true");
+        assertEquals("true", System.getenv("TESTCONTAINERS_RYUK_DISABLED"));
     }
 
     @Test
@@ -139,32 +155,35 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
                 ToxiproxyContainer toxiproxy = initToxiproxy(network);
         ) {
             PostgreSQLContainer<?> postgres = initPostgres(network, null);
-            ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, postgres);
-            Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
-            // when job starts
-            JetInstance jet = createJetMembers(2)[0];
-            Job job = jet.newJob(pipeline);
-            assertJobStatusEventually(job, RUNNING);
-
-            // and snapshotting is ongoing (we have no exact way of identifying
-            // the moment, but random sleep will catch it at least some of the time)
-            MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(0, 500));
-
-            // and connection is cut
-            proxy.setConnectionCut(true);
-
-            // and some time passes
-            MILLISECONDS.sleep(2 * RECONNECT_INTERVAL_MS);
-            //it takes the bloody thing ages to notice the connection being down, so it won't notice this...
-
-            // and connection recovers
-            proxy.setConnectionCut(false);
-
-            // then connector manages to reconnect and finish snapshot
             try {
-                assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+                ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, postgres);
+                Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
+                // when job starts
+                JetInstance jet = createJetMembers(2)[0];
+                Job job = jet.newJob(pipeline);
+                assertJobStatusEventually(job, RUNNING);
+
+                // and snapshotting is ongoing (we have no exact way of identifying
+                // the moment, but random sleep will catch it at least some of the time)
+                MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(0, 500));
+
+                // and connection is cut
+                proxy.setConnectionCut(true);
+
+                // and some time passes
+                MILLISECONDS.sleep(2 * RECONNECT_INTERVAL_MS);
+                //it takes the bloody thing ages to notice the connection being down, so it won't notice this...
+
+                // and connection recovers
+                proxy.setConnectionCut(false);
+
+                // then connector manages to reconnect and finish snapshot
+                try {
+                    assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+                } finally {
+                    abortJob(job);
+                }
             } finally {
-                abortJob(job);
                 stopContainer(postgres);
             }
         }
@@ -222,35 +241,38 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
                 ToxiproxyContainer toxiproxy = initToxiproxy(network);
         ) {
             PostgreSQLContainer<?> postgres = initPostgres(network, null);
-            ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, postgres);
-            Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
-            // when connector is up and transitions to binlog reading
-            JetInstance jet = createJetMembers(2)[0];
-            Job job = jet.newJob(pipeline);
-            assertEqualsEventually(() -> jet.getMap("results").size(), 4);
-            SECONDS.sleep(3);
-            insertRecords(postgres, 1005);
-            assertEqualsEventually(() -> jet.getMap("results").size(), 5);
-
-            // and the connection is cut
-            proxy.setConnectionCut(true);
-
-            // and some new events get generated in the DB
-            insertRecords(postgres, 1006, 1007);
-
-            // and some time passes
-            MILLISECONDS.sleep(5 * RECONNECT_INTERVAL_MS);
-
-            // and the connection is re-established
-            proxy.setConnectionCut(false);
-
-            // then
             try {
-                // then job keeps running, connector starts freshly, including snapshotting
-                assertEqualsEventually(() -> jet.getMap("results").size(), 7);
-                assertEquals(RUNNING, job.getStatus());
+                ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, postgres);
+                Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
+                // when connector is up and transitions to binlog reading
+                JetInstance jet = createJetMembers(2)[0];
+                Job job = jet.newJob(pipeline);
+                assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+                SECONDS.sleep(3);
+                insertRecords(postgres, 1005);
+                assertEqualsEventually(() -> jet.getMap("results").size(), 5);
+
+                // and the connection is cut
+                proxy.setConnectionCut(true);
+
+                // and some new events get generated in the DB
+                insertRecords(postgres, 1006, 1007);
+
+                // and some time passes
+                MILLISECONDS.sleep(5 * RECONNECT_INTERVAL_MS);
+
+                // and the connection is re-established
+                proxy.setConnectionCut(false);
+
+                // then
+                try {
+                    // then job keeps running, connector starts freshly, including snapshotting
+                    assertEqualsEventually(() -> jet.getMap("results").size(), 7);
+                    assertEquals(RUNNING, job.getStatus());
+                } finally {
+                    abortJob(job);
+                }
             } finally {
-                abortJob(job);
                 stopContainer(postgres);
             }
         }
