@@ -329,7 +329,7 @@ public interface Ringbuffer<E> extends DistributedObject {
      * @throws IllegalArgumentException if collection is empty
      */
     CompletionStage<Long> addAllAsync(@Nonnull Collection<? extends E> collection,
-                                         @Nonnull OverflowPolicy overflowPolicy);
+                                      @Nonnull OverflowPolicy overflowPolicy);
 
     /**
      * Reads a batch of items from the Ringbuffer. If the number of available
@@ -339,6 +339,11 @@ public interface Ringbuffer<E> extends DistributedObject {
      * <p>
      * If there are less items available than {@code minCount}, then this call
      * blocks.
+     * <p>
+     * <b>Warning:</b>
+     * <p>
+     * These blocking calls consume server memory and if there are many calls,
+     * it can be possible to see leaking memory or OOME.
      * <p>
      * Reading a batch of items is likely to perform better because less
      * overhead is involved.
@@ -381,5 +386,5 @@ public interface Ringbuffer<E> extends DistributedObject {
      *                                  or if maxCount larger than 1000 (to prevent overload)
      */
     CompletionStage<ReadResultSet<E>> readManyAsync(long startSequence, int minCount, int maxCount,
-                                                       @Nullable IFunction<E, Boolean> filter);
+                                                    @Nullable IFunction<E, Boolean> filter);
 }
