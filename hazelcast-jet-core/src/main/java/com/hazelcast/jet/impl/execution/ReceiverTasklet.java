@@ -27,6 +27,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
@@ -145,7 +146,7 @@ public class ReceiverTasklet implements Tasklet {
             return collector.offerBroadcast(DONE_ITEM);
         }
         if (connectionChanged) {
-            throw new RuntimeException("The member was reconnected: " + sourceAddressString);
+            throw new RestartableException("The member was reconnected: " + sourceAddressString);
         }
         tracker.reset();
         tracker.notDone();

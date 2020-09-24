@@ -161,8 +161,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
         assertJobStatusEventually(job, RUNNING);
         assertTrueEventually(() -> assertEquals(2, NoOutputSourceP.initCount.get()));
 
-        Connection connection = ImdgUtil.getMemberConnection(getNodeEngineImpl(instance()),
-                instances()[1].getHazelcastInstance().getCluster().getLocalMember().getAddress());
+        Connection connection = ImdgUtil.getMemberConnection(getNodeEngineImpl(instance()), getAddress(instances()[1]));
         // When
         connection.close(null, null);
         System.out.println("connection closed");

@@ -27,8 +27,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.JobStatus.RUNNING;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class MemberReconnectionTest extends JetTestSupport {
@@ -49,17 +47,16 @@ public class MemberReconnectionTest extends JetTestSupport {
             dag.edge(between(v1, v2).distributed());
 
             Job job = inst1.newJob(dag);
-            assertJobStatusEventually(job, RUNNING);
+            long executionId = assertJobRunningEventually(inst1, job, null);
 
             // Close the connection. Nothing is sent through the SenderTasklet, therefore we won't detect
             // it there. We rely on detecting it in ReceiverTasklet, we assert that it was detected there.
+            logger.info("closing the connection...");
             ImdgUtil.getMemberConnection(getNodeEngineImpl(inst1), getNodeEngineImpl(inst2).getThisAddress())
                     .close("mock close", new Exception("mock close"));
 
-            logger.info("joining...");
-            assertThatThrownBy(() -> job.join())
-                    .hasMessageContaining("The member was reconnected")
-                    .hasMessageContaining("Exception in ReceiverTasklet");
+            // assert that the job was restarted
+            assertJobRunningEventually(inst1, job, executionId);
         } finally {
             Jet.shutdownAll();
         }
