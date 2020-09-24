@@ -49,7 +49,7 @@ import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallI
 /**
  * Responsible for the registration of all pending invocations.
  * <p>
- * Using the InvocationRegistry the Invocation and its response(s) can be linked to each other.
+ * By using the InvocationRegistry, the Invocation and its response(s) can be linked to each other.
  * <p>
  * When an invocation is registered, a callId is determined. Based on this call ID, when a
  * {@link com.hazelcast.spi.impl.operationservice.impl.responses.Response} comes in, the
