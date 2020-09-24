@@ -87,8 +87,4 @@ abstract class PartitionSpecificClientProxy extends ClientProxy {
             throw ExceptionUtil.rethrowAllowInterrupted(e);
         }
     }
-
-    public int getPartitionId() {
-        return partitionId;
-    }
 }

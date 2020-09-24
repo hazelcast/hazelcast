@@ -157,14 +157,8 @@ public class TopicTest extends HazelcastTestSupport {
         });
 
         final CompletableFuture<Void> f = topic.publishAsync("TestMessage").toCompletableFuture();
-        f.get();
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, count.get());
-            }
-        });
+        assertCompletesEventually(f);
+        assertEquals(1, count.get());
     }
 
     @Test
@@ -186,12 +180,7 @@ public class TopicTest extends HazelcastTestSupport {
         final List<String> messages = Arrays.asList("message 1", "message 2", "messgae 3");
         topic.publishAll(messages);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(messages.size(), count.get());
-            }
-        });
+        assertEquals(messages.size(), count.get());
     }
 
 
@@ -213,13 +202,8 @@ public class TopicTest extends HazelcastTestSupport {
         final List<String> messages = Arrays.asList("message 1", "message 2", "messgae 3");
         final CompletableFuture<Void> f = topic.publishAllAsync(messages).toCompletableFuture();
         f.get();
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(messages.size(), count.get());
-            }
-        });
+        assertCompletesEventually(f);
+        assertEquals(messages.size(), count.get());
     }
 
 

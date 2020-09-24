@@ -52,16 +52,6 @@ public class PublishAllOperation extends AbstractNamedOperation
         this.messages = messages;
     }
 
-    /**
-     * {@inheritDoc}
-     * Increments the local statistics for the number of published
-     * messages.
-     *
-     * @throws Exception
-     */
-    @Override
-    public void beforeRun() throws Exception { }
-
     @Override
     public void run() throws Exception {
         TopicService service = getService();
@@ -73,8 +63,8 @@ public class PublishAllOperation extends AbstractNamedOperation
         try {
             for (Data item : messages) {
                 TopicEvent topicEvent = new TopicEvent(name, item, getCallerAddress());
-                service.incrementPublishes(name);
                 eventService.publishEvent(TopicService.SERVICE_NAME, registrations, topicEvent, name.hashCode());
+                service.incrementPublishes(name);
             }
         } finally {
             lock.unlock();

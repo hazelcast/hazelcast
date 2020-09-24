@@ -17,7 +17,6 @@
 package com.hazelcast.topic.impl;
 
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.topic.ITopic;
@@ -42,11 +41,9 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
 
     protected static final String NULL_MESSAGE_IS_NOT_ALLOWED = "Null message is not allowed!";
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
-    private final SerializationService serializationService;
 
     public TopicProxy(String name, NodeEngine nodeEngine, TopicService service) {
         super(name, nodeEngine, service);
-        this.serializationService = nodeEngine.getSerializationService();
     }
 
     @Override

@@ -27,6 +27,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -111,43 +112,21 @@ public class ClientTopicTest {
     @Test
     public void testPublish() throws InterruptedException {
         String publishValue = "message";
-        ITopic<String> topic = client.getTopic(randomString());
         final AtomicInteger count = new AtomicInteger(0);
         final Collection<String> receivedValues = new ArrayList<>();
+        ITopic<String> topic = createTopic(count, receivedValues);
 
-        topic.addMessageListener(new MessageListener<String>() {
-
-            @Override
-            public void onMessage(Message<String> message) {
-                count.incrementAndGet();
-                receivedValues.add(message.getMessageObject());
-            }
-        });
         topic.publish(publishValue);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, count.get());
-                assertTrue(receivedValues.contains(publishValue));
-            }
-        });
+        assertEquals(1, count.get());
+        assertTrue(receivedValues.contains(publishValue));
     }
 
-
     @Test
-    public void testPublishAsync() throws InterruptedException {
-        ITopic<String> topic = client.getTopic(randomString());
+    public void testPublishAsync() {
         final AtomicInteger count = new AtomicInteger(0);
         final List<String> receivedValues = new ArrayList<>();
+        ITopic<String> topic = createTopic(count, receivedValues);
 
-        topic.addMessageListener(new MessageListener<String>() {
-
-            @Override
-            public void onMessage(Message<String> message) {
-                count.incrementAndGet();
-                receivedValues.add(message.getMessageObject());
-            }
-        });
         final String message = "message";
         topic.publishAsync(message);
         assertTrueEventually(new AssertTask() {
@@ -160,21 +139,13 @@ public class ClientTopicTest {
     }
 
     @Test
-    public void testPublishAll() throws InterruptedException {
-        ITopic<String> topic = client.getTopic(randomString());
+    public void testPublishAll() throws InterruptedException, ExecutionException {
         final AtomicInteger count = new AtomicInteger(0);
         final Collection<String> receivedValues = new ArrayList<>();
+        ITopic<String> topic = createTopic(count, receivedValues);
 
-        topic.addMessageListener(new MessageListener<String>() {
-
-            @Override
-            public void onMessage(Message<String> message) {
-                count.incrementAndGet();
-                receivedValues.add(message.getMessageObject());
-            }
-        });
         final List<String> messages = Arrays.asList("message 1", "message 2", "message 3");
-        topic.publishAllAsync(messages);
+        topic.publishAll(messages);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
@@ -185,19 +156,10 @@ public class ClientTopicTest {
     }
 
     @Test
-    public void testPublishAllAsync() throws InterruptedException {
-        ITopic<String> topic = client.getTopic(randomString());
+    public void testPublishAllAsync() {
         final AtomicInteger count = new AtomicInteger(0);
         final Collection<String> receivedValues = new ArrayList<>();
-
-        topic.addMessageListener(new MessageListener<String>() {
-
-            @Override
-            public void onMessage(Message<String> message) {
-                count.incrementAndGet();
-                receivedValues.add(message.getMessageObject());
-            }
-        });
+        ITopic<String> topic = createTopic(count, receivedValues);
 
         final List<String> messages = Arrays.asList("message 1", "message 2", "messgae 3");
 
@@ -219,5 +181,19 @@ public class ClientTopicTest {
         messages.add(null);
         messages.add(3);
         topic.publishAll(messages);
+    }
+
+    @NotNull
+    private ITopic<String> createTopic(AtomicInteger count, Collection<String> receivedValues) {
+        ITopic<String> topic = client.getTopic(randomString());
+        topic.addMessageListener(new MessageListener<String>() {
+
+            @Override
+            public void onMessage(Message<String> message) {
+                count.incrementAndGet();
+                receivedValues.add(message.getMessageObject());
+            }
+        });
+        return topic;
     }
 }
