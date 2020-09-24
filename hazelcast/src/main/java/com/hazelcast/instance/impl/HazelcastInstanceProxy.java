@@ -62,9 +62,9 @@ import java.util.concurrent.ConcurrentMap;
  * A proxy around the actual HazelcastInstanceImpl. This class serves 2 purposes:
  * <ol>
  * <li>
- * if the HazelcastInstance is shutdown, the reference to the original HazelcastInstanceImpl is null'ed and
- * this HazelcastInstanceImpl and all its dependencies can be gc'ed. If the HazelcastInstanceImpl would
- * be exposed directly, it could still retain unusable objects due to its not null fields.</li>
+ * if the HazelcastInstance is shut down, the reference to the original HazelcastInstanceImpl is nulled and
+ * this HazelcastInstanceImpl and all its dependencies can be GCed. If the HazelcastInstanceImpl would
+ * be exposed directly, it could still retain unusable objects due to its not-null fields.</li>
  * <li>
  * it provides a barrier for accessing the HazelcastInstanceImpl internals. Otherwise a simple cast to HazelcastInstanceImpl
  * would be sufficient but now a bit of reflection is needed to get there.
