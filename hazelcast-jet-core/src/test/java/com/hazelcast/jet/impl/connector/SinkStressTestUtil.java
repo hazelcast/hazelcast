@@ -47,6 +47,8 @@ import static org.junit.Assert.assertEquals;
 
 public final class SinkStressTestUtil {
 
+    private static final int TEST_TIMEOUT_SECONDS = 120;
+
     private SinkStressTestUtil() { }
 
     public static void test_withRestarts(
@@ -78,13 +80,13 @@ public final class SinkStressTestUtil {
                 .setSnapshotIntervalMillis(50);
         JobProxy job = (JobProxy) instance.newJob(p, config);
 
-        long endTime = System.nanoTime() + SECONDS.toNanos(60);
+        long endTime = System.nanoTime() + SECONDS.toNanos(TEST_TIMEOUT_SECONDS);
         int lastCount = 0;
         String expectedRows = IntStream.range(0, numItems)
                                        .mapToObj(i -> i + (exactlyOnce ? "=1" : ""))
                                        .collect(joining("\n"));
-        // We'll restart once, then restart again after a short sleep (possibly during initialization), then restart
-        // again and then assert some output so that the test isn't constantly restarting without any progress
+        // We'll restart once, then restart again after a short sleep (possibly during initialization),
+        // and then assert some output so that the test isn't constantly restarting without any progress
         Long lastExecutionId = null;
         for (;;) {
             lastExecutionId = assertJobRunningEventually(instance, job, lastExecutionId);

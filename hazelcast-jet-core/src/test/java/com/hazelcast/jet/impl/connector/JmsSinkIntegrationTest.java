@@ -209,8 +209,7 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
                 .build();
 
         try (
-                Connection connection = new ActiveMQConnectionFactory(broker.getVmURL())
-                        .createConnection();
+                Connection connection = new ActiveMQConnectionFactory(broker.getVmURL()).createConnection();
                 Session session = connection.createSession(false, DUPS_OK_ACKNOWLEDGE);
                 MessageConsumer consumer = session.createConsumer(session.createQueue(destinationName))
         ) {
