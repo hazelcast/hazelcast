@@ -117,8 +117,13 @@ public class ClientTopicTest {
         ITopic<String> topic = createTopic(count, receivedValues);
 
         topic.publish(publishValue);
-        assertEquals(1, count.get());
-        assertTrue(receivedValues.contains(publishValue));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(1, count.get());
+                assertTrue(receivedValues.contains(publishValue));
+            }
+        });
     }
 
     @Test
@@ -162,7 +167,6 @@ public class ClientTopicTest {
         ITopic<String> topic = createTopic(count, receivedValues);
 
         final List<String> messages = Arrays.asList("message 1", "message 2", "messgae 3");
-
         topic.publishAllAsync(messages);
         assertTrueEventually(new AssertTask() {
             @Override

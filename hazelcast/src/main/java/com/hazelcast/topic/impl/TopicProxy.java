@@ -55,7 +55,7 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
     @Override
     public CompletionStage<Void> publishAsync(@Nonnull E message) {
         checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
-        publish(message);
+        publishInternal(message);
         return InternalCompletableFuture.completedFuture(null);
     }
 
