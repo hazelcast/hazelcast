@@ -270,28 +270,28 @@ The pipeline definition is quite straightforward:
 ```java
 pipeline.readFrom(source)                                       //1
         .withoutTimestamps()
-        .writeTo(CdcSinks.remoteMap(                            //2
-                "entities",                                     //3
-                new CustomClientConfig(env.get("CACHE_HOST")),  //4
-                r -> r.key().toMap().get("id"),                 //5
-                r -> r.value().toObject(Person.class)           //6
+        .map(r -> {
+            Person person = r.value().toObject(Person.class);   //2
+            return Util.entry(person.id, person);               //3
+        })
+        .writeTo(Sinks.remoteMap(                               //4
+                "entities",                                     //5
+                new CustomClientConfig(env.get("CACHE_HOST"))   //6
         ));
 ```
 
-1. Get a stream of Jet `ChangeRecord` items
+1. Get a stream of Jet `ChangeRecord`
 
-2. Create the sink to write to a remote map
+2. Convert `ChangeRecord` to a regular `Person` POJO
 
-3. Name of the remote map
+3. Wrap `Person` objects into `Map.Entry`s keyed by ID
 
-4. Client configuration so it can connect to the right host, cluster
-and instance
+4. Create the sink to write to, a remote map
 
-5. Provide a mapping function to extract the cache key from the
-`ChangeRecord`
+5. Name of the remote map
 
-6. Provide a mapping function to extract the cache value (`Person` POJO)
-from the `ChangeRecord`
+6. Client configuration so it can connect to the right host, cluster
+  and instance
 
 ```java
 public class CustomClientConfig extends ClientConfig {
