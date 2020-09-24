@@ -38,7 +38,7 @@ jobs:
       - run : mkdir ~/lib
 
       # BUILD HAZELCAST GCP SNAPSHOT
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.3
         with:
           path: hazelcast-gcp
 
