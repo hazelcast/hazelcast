@@ -59,7 +59,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
         this.routingPolicy = edge.getRoutingPolicy();
         this.partitioner = edge.getPartitioner();
         this.config = config;
-        this.comparator = edge.getComparator();
+        this.comparator = edge.getOrderComparator();
     }
 
     void initTransientFields(Map<Integer, VertexDef> vMap, VertexDef nearVertex, boolean isOutbound) {
@@ -118,7 +118,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
         return config;
     }
 
-    ComparatorEx<?> getComparator() {
+    ComparatorEx<?> getOrderComparator() {
         return comparator;
     }
 

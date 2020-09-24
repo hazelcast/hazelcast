@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.jet.impl.util.ProgressState;
@@ -37,12 +38,12 @@ import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
-import static com.hazelcast.jet.impl.util.ProgressState.WAS_ALREADY_DONE;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @Category(ParallelJVMTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
-public class ConcurrentInboundEdgeStreamTest {
+public class ConcurrentInboundEdgeStream_OrderedDrainTest {
 
     private static final Object senderGone = new Object();
 
@@ -60,7 +61,7 @@ public class ConcurrentInboundEdgeStreamTest {
         q2 = new OneToOneConcurrentArrayQueue<>(128);
         conveyor = ConcurrentConveyor.concurrentConveyor(senderGone, q1, q2);
 
-        stream = ConcurrentInboundEdgeStream.create(conveyor, 0, 0, false, "cies", null);
+        stream = ConcurrentInboundEdgeStream.create(conveyor, 0, 0, false, "cies", ComparatorEx.naturalOrder());
     }
 
     @Test
@@ -71,9 +72,6 @@ public class ConcurrentInboundEdgeStreamTest {
 
         add(q2, 7, DONE_ITEM);
         drainAndAssert(DONE, 7);
-
-        // both emitters are now done and made no progress since last call
-        drainAndAssert(WAS_ALREADY_DONE);
     }
 
     @Test
@@ -90,109 +88,32 @@ public class ConcurrentInboundEdgeStreamTest {
         q1.add(DONE_ITEM);
         q2.add(DONE_ITEM);
         drainAndAssert(DONE);
-        drainAndAssert(WAS_ALREADY_DONE);
     }
 
     @Test
     public void when_oneEmitterWithNoProgress_then_noProgress() {
         add(q2, 1, DONE_ITEM);
-        drainAndAssert(MADE_PROGRESS, 1);
-
-        // now emitter2 is done, emitter1 is not but has no progress
+        drainAndAssert(NO_PROGRESS);
         drainAndAssert(NO_PROGRESS);
 
         // now make emitter1 done, without returning anything
         q1.add(DONE_ITEM);
 
-        drainAndAssert(DONE);
-        drainAndAssert(WAS_ALREADY_DONE);
+        drainAndAssert(DONE, 1);
     }
 
     @Test
-    public void when_receivingWatermarks_then_coalesce() {
+    public void when_receivingWatermarks_then_fail() {
         add(q1, wm(1));
-        add(q2, wm(2));
-        drainAndAssert(MADE_PROGRESS, wm(1));
-
-        add(q1, wm(3));
-        add(q2, wm(3));
-        drainAndAssert(MADE_PROGRESS, wm(2));
-        drainAndAssert(MADE_PROGRESS, wm(3));
+        assertThatThrownBy(() -> drainAndAssert(MADE_PROGRESS))
+                .hasMessageContaining("Unexpected item observed: Watermark");
     }
 
     @Test
-    public void when_receivingBarriers_then_coalesce() {
-        add(q1, barrier(0));
-        add(q2, 1);
-        drainAndAssert(MADE_PROGRESS, 1);
-
-        add(q1, 2);
-        add(q2, barrier(0));
-        drainAndAssert(MADE_PROGRESS, 2, barrier(0));
-    }
-
-    @Test
-    public void when_receivingBarriers_then_waitForBarrier() {
-        stream = ConcurrentInboundEdgeStream.create(conveyor, 0, 0, true, "cies", null);
-
-        add(q1, barrier(0));
-        add(q2, 1);
-        drainAndAssert(MADE_PROGRESS, 1);
-
-        add(q1, 2);
-        drainAndAssert(NO_PROGRESS);
-
-        add(q2, barrier(0));
-        drainAndAssert(MADE_PROGRESS, barrier(0));
-        drainAndAssert(MADE_PROGRESS, 2);
-    }
-
-    @Test
-    public void when_receivingBarriersWhileDone_then_coalesce() {
-        stream = ConcurrentInboundEdgeStream.create(conveyor, 0, 0, true, "cies", null);
-
-        add(q1, 1, barrier(0));
-        add(q2, DONE_ITEM);
-        drainAndAssert(MADE_PROGRESS, 1, barrier(0));
-
-        add(q1, DONE_ITEM);
-        drainAndAssert(DONE);
-    }
-
-    @Test
-    public void when_receiveOnlyBarrierAndDoneItemFromSameQueue_then_coalesce() {
-        add(q1, 1, barrier(0), DONE_ITEM);
-        drainAndAssert(MADE_PROGRESS, 1);
-        drainAndAssert(MADE_PROGRESS);
-
-        add(q2, barrier(0));
-        drainAndAssert(MADE_PROGRESS, barrier(0));
-    }
-
-    @Test
-    public void when_barrierAndWmInQueues_then_notReordered() {
-        // When
-        add(q1, wm(1));
-        add(q2, barrier(0));
-        drainAndAssert(MADE_PROGRESS);
-        assertEquals(0, q1.size());
-        assertEquals(0, q2.size());
-
-        add(q1, barrier(0));
-        add(q2, wm(1));
-
-        // Then
-        drainAndAssert(MADE_PROGRESS, barrier(0));
-        drainAndAssert(MADE_PROGRESS, wm(1));
-    }
-
-    @Test
-    public void when_barrierAndDone_then_barrierEmitted() {
-        add(q1, barrier(0), DONE_ITEM);
-        add(q2, barrier(0), DONE_ITEM);
-
-        drainAndAssert(MADE_PROGRESS, barrier(0));
-        drainAndAssert(DONE);
+    public void when_receivingBarriers_then_fail() {
+        add(q1, barrier(1));
+        assertThatThrownBy(() -> drainAndAssert(NO_PROGRESS))
+                .hasMessageContaining("Unexpected item observed: SnapshotBarrier");
     }
 
     @Test
@@ -200,38 +121,19 @@ public class ConcurrentInboundEdgeStreamTest {
         add(q1, DONE_ITEM);
         drainAndAssert(MADE_PROGRESS);
 
-        add(q2, barrier(0));
-        drainAndAssert(MADE_PROGRESS, barrier(0));
+        add(q2, 1);
+        drainAndAssert(MADE_PROGRESS, 1);
 
-        add(q2, wm(0));
-        drainAndAssert(MADE_PROGRESS, wm(0));
+        add(q2, 2);
+        drainAndAssert(MADE_PROGRESS, 2);
     }
 
     @Test
-    public void when_nonSpecificBroadcastItems_then_drainedInOneBatch() {
-        // When
-        BroadcastEntry<String, String> entry = new BroadcastEntry<>("k", "v");
-        add(q1, entry);
-        add(q1, entry);
-
-        // Then
-        drainAndAssert(MADE_PROGRESS, entry, entry);
-    }
-
-    @Test
-    public void when_wmInOneQueueAndTheOtherDoneLater_then_wmEmitted_v1() {
-        add(q1, wm(1));
-        add(q2, DONE_ITEM);
-        drainAndAssert(MADE_PROGRESS, wm(1));
-    }
-
-    @Test
-    public void when_wmInOneQueueAndTheOtherDoneLater_then_wmEmitted_v2() {
-        add(q1, wm(1));
-        drainAndAssert(MADE_PROGRESS);
-
-        add(q2, DONE_ITEM);
-        drainAndAssert(MADE_PROGRESS, wm(1));
+    public void when_disorder_then_throw() {
+        add(q1, 2, 1);
+        add(q2, 3);
+        assertThatThrownBy(() -> drainAndAssert(DONE))
+                .hasMessageContaining("Disorder on a monotonicOrder edge");
     }
 
     private void drainAndAssert(ProgressState expectedState, Object... expectedItems) {

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -48,6 +49,7 @@ import com.hazelcast.jet.impl.execution.Tasklet;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl;
+import com.hazelcast.jet.impl.util.ObjectWithPartitionId;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -171,8 +173,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             Arrays.setAll(snapshotQueues, i -> new OneToOneConcurrentArrayQueue<>(SNAPSHOT_QUEUE_SIZE));
             ConcurrentConveyor<Object> ssConveyor = ConcurrentConveyor.concurrentConveyor(null, snapshotQueues);
             StoreSnapshotTasklet ssTasklet = new StoreSnapshotTasklet(snapshotContext,
-                    new ConcurrentInboundEdgeStream(ssConveyor, 0, 0, true,
-                            "ssFrom:" + vertex.name()),
+                    ConcurrentInboundEdgeStream.create(ssConveyor, 0, 0, true, "ssFrom:" + vertex.name(), null),
                     new AsyncSnapshotWriterImpl(nodeEngine, snapshotContext, vertex.name(), memberIndex, memberCount,
                             jobSerializationService),
                     nodeEngine.getLogger(StoreSnapshotTasklet.class.getName() + "."
@@ -405,9 +406,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             for (Address destAddr : remoteMembers.get()) {
                 final ConcurrentConveyor<Object> conveyor = createConveyorArray(
                         1, edge.sourceVertex().localParallelism(), edge.getConfig().getQueueSize())[0];
+                @SuppressWarnings("unchecked")
+                ComparatorEx<Object> origComparator = (ComparatorEx<Object>) edge.getOrderComparator();
+                ComparatorEx<ObjectWithPartitionId> adaptedComparator = origComparator == null ? null
+                        : (l, r) -> origComparator.compare(l.getItem(), r.getItem());
+
                 final ConcurrentInboundEdgeStream inboundEdgeStream = newEdgeStream(edge, conveyor,
                         "sender-toVertex:" + edge.destVertex().name() + "-toMember:"
-                                + destAddr.toString().replace('.', '-'));
+                                + destAddr.toString().replace('.', '-'), adaptedComparator);
                 final int destVertexId = edge.destVertex().vertexId();
                 final SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine, destAddr,
                         memberConnections.get(destAddr),
@@ -603,17 +609,17 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             // each tasklet has one input conveyor per edge
             final ConcurrentConveyor<Object> conveyor = localConveyorMap.get(inEdge.edgeId())[localProcessorIdx];
             inboundStreams.add(newEdgeStream(inEdge, conveyor,
-                    "inputTo:" + inEdge.destVertex().name() + '#' + globalProcessorIdx));
+                    "inputTo:" + inEdge.destVertex().name() + '#' + globalProcessorIdx, inEdge.getOrderComparator()));
         }
         return inboundStreams;
     }
 
     private ConcurrentInboundEdgeStream newEdgeStream(
-            EdgeDef inEdge, ConcurrentConveyor<Object> conveyor, String debugName
+            EdgeDef inEdge, ConcurrentConveyor<Object> conveyor, String debugName, ComparatorEx<?> comparator
     ) {
-        return new ConcurrentInboundEdgeStream(conveyor, inEdge.destOrdinal(), inEdge.priority(),
+        return ConcurrentInboundEdgeStream.create(conveyor, inEdge.destOrdinal(), inEdge.priority(),
                 jobConfig.getProcessingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE,
-                debugName, inEdge.getComparator());
+                debugName, comparator);
     }
 
     public List<Processor> getProcessors() {

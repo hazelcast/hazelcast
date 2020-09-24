@@ -50,11 +50,11 @@ public class SortTransform<T> extends AbstractTransform {
     @Override
     public void addToDag(Planner p) {
         Vertex v1 = p.dag.newVertex(name(), sortP(comparator));
-        PlannerVertex pv2 = p.addVertex(this, name() + COLLECT_STAGE_SUFFIX, 1, ProcessorMetaSupplier
-                .forceTotalParallelismOne(ProcessorSupplier.of(mapP(identity())), name()));
+        PlannerVertex pv2 = p.addVertex(this, name() + COLLECT_STAGE_SUFFIX, 1,
+                ProcessorMetaSupplier.forceTotalParallelismOne(ProcessorSupplier.of(mapP(identity())), name()));
         p.addEdges(this, v1);
         p.dag.edge(between(v1, pv2.v).distributed()
                                      .allToOne(name())
-                                     .monotonicOrder(comparator));
+                                     .ordered(comparator));
     }
 }

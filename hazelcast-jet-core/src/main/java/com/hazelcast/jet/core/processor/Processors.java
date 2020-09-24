@@ -981,7 +981,7 @@ public final class Processors {
      * a {@link PriorityQueue} and emits it in the {@code complete} phase.
      * <p>
      * The output edge of this vertex should be {@link Edge#distributed
-     * distributed} {@link Edge#monotonicOrder monotonicOrder} {@link
+     * distributed} {@link Edge#ordered monotonicOrder} {@link
      * Edge#allToOne allToOne} so it preserves the ordering when merging
      * the data from all upstream processors.
      *
