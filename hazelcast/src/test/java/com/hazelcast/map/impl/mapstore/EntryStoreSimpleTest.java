@@ -98,6 +98,36 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testPut_returns_old_value_from_entry_store() {
+        // 1. Insert value into entry-store
+        map.put("key", "value1");
+
+        // 2. Then remove it only from memory, entry still exists in entry-store
+        map.evict("key");
+
+        // 3. Update entry value to a new one
+        String old = map.put("key", "value2");
+
+        // 4. Expect we got correct old value
+        assertEquals("value1", old);
+    }
+
+    @Test
+    public void testReplace_returns_old_value_from_entry_store() {
+        // 1. Insert value into entry-store
+        map.put("key", "value1");
+
+        // 2. Then remove it only from memory, entry still exists in entry-store
+        map.evict("key");
+
+        // 3. Replace entry value with a new one
+        String old = map.replace("key", "value2");
+
+        // 4. Expect we got correct old value
+        assertEquals("value1", old);
+    }
+
+    @Test
     public void testPut_withTtl() {
         map.put("key", "value", 10, TimeUnit.DAYS);
         assertEntryStore("key", "value", 10, TimeUnit.DAYS, 10000);
@@ -127,7 +157,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testPutAll_WithoutMapListener() {
         final int max = 100;
         final Map<String, String> businessObjects = IntStream.range(0, max).boxed()
-            .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
+                .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
 
         map.putAll(businessObjects);
 
@@ -139,7 +169,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testPutAll_WithMapListener() {
         final int max = 100;
         final Map<String, String> businessObjects = IntStream.range(0, max).boxed()
-            .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
+                .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
 
         final CountDownLatch latch = new CountDownLatch(max);
         map.addEntryListener((EntryAddedListener) event -> latch.countDown(), true);
@@ -288,7 +318,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testSetAll_WithoutMapListener() {
         final int max = 100;
         final Map<String, String> businessObjects = IntStream.range(0, max).boxed()
-            .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
+                .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
 
         map.setAll(businessObjects);
 
@@ -300,7 +330,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testSetAll_WithMapListener() {
         final int max = 100;
         final Map<String, String> businessObjects = IntStream.range(0, max).boxed()
-            .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
+                .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
 
         final CountDownLatch latch = new CountDownLatch(max);
         map.addEntryListener((EntryAddedListener) event -> latch.countDown(), true);
@@ -316,7 +346,7 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testSetAllAsync() {
         final int max = 100;
         final Map<String, String> businessObjects = IntStream.range(0, max).boxed()
-            .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
+                .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
 
         final Future<Void> future = map.setAllAsync(businessObjects).toCompletableFuture();
         assertEqualsEventually(future::isDone, true);
