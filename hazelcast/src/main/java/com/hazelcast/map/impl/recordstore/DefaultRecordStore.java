@@ -1046,7 +1046,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record record = getRecordOrNull(key, now, false);
         Object oldValue;
         if (record == null) {
-            oldValue = loadRecordOrNull(key, false, callerAddress);
+            Record loadedRecord = loadRecordOrNull(key, false, callerAddress);
+            oldValue = loadedRecord != null ? loadedRecord.getValue() : null;
         } else {
             accessRecord(record, now);
             oldValue = record.getValue();
