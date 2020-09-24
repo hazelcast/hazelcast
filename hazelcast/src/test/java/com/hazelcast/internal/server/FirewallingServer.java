@@ -400,6 +400,18 @@ public class FirewallingServer
         public Throwable getCloseCause() {
             return delegate.getCloseCause();
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            FirewallingConnection that = (FirewallingConnection) o;
+            return delegate == that.delegate;
+        }
     }
 
 }
