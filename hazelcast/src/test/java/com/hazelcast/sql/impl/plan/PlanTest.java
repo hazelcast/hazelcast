@@ -58,7 +58,8 @@ public class PlanTest extends SqlTestSupport {
             null,
             QueryParameterMetadata.EMPTY,
             null,
-            Collections.emptySet()
+            Collections.emptySet(),
+            Collections.emptyList()
         );
 
         assertSame(partitionMap, plan.getPartitionMap());

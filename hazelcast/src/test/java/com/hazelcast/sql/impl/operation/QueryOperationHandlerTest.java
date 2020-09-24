@@ -506,7 +506,8 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             null,
             QueryParameterMetadata.EMPTY,
             null,
-            Collections.emptySet()
+            Collections.emptySet(),
+            Collections.emptyList()
         );
 
         QueryId queryId = initiatorService.getStateRegistry().onInitiatorQueryStarted(

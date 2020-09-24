@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.optimizer;
+package com.hazelcast.sql.impl.security;
 
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
-/**
- * Abstraction over execution plan that allows for specialization for an execution backend.
- */
-public interface SqlPlan {
-    void checkSecurityPermission(SecurityContext securityContext, SqlSecurityContext sqlSecurityContext);
+public interface SqlSecurityContext {
+    boolean isSecurityEnabled();
+    void checkMapReadPermission(SecurityContext securityContext, String mapName);
 }

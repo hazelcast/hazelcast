@@ -126,6 +126,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Collected IDs of objects used in the plan. */
     private final Set<PlanObjectKey> objectIds = new HashSet<>();
 
+    /** Map names. */
+    private final List<String> mapNames = new ArrayList<>();
+
     public PlanCreateVisitor(
         UUID localMemberId,
         Map<UUID, PartitionIdSet> partMap,
@@ -182,7 +185,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             rowMetadata,
             parameterMetadata,
             planKey,
-            objectIds
+            objectIds,
+            mapNames
         );
     }
 
@@ -238,6 +242,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         pushUpstream(scanNode);
 
         objectIds.add(table.getObjectKey());
+        mapNames.add(table.getMapName());
     }
 
     @Override
@@ -265,6 +270,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         pushUpstream(scanNode);
 
         objectIds.add(table.getObjectKey());
+        mapNames.add(table.getMapName());
     }
 
     @Override

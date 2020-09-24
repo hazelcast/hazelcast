@@ -21,12 +21,17 @@ import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.permission.SqlPermission;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
+import com.hazelcast.sql.impl.security.SqlSecurityContextImpl;
 
+import java.security.AccessControlException;
 import java.security.Permission;
 import java.util.Collection;
 import java.util.List;
@@ -41,6 +46,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
 
     @Override
     protected Object call() throws Exception {
+        SqlSecurityContext sqlSecurityContext = prepareSecurityContext();
+
         try {
             SqlStatement query = new SqlStatement(parameters.sql);
 
@@ -53,7 +60,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
 
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
-            AbstractSqlResult result = (AbstractSqlResult) sqlService.execute(query);
+            AbstractSqlResult result = (AbstractSqlResult) sqlService.execute(query, sqlSecurityContext);
 
             if (result.updateCount() >= 0) {
                 return SqlExecuteResponse.updateCountResponse(result.updateCount());
@@ -72,7 +79,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
                     page.isLast()
                 );
             }
-
+        } catch (AccessControlException e) {
+            throw e;
         } catch (Exception e) {
             SqlError error = SqlClientUtils.exceptionToClientError(e, nodeEngine.getLocalMember().getUuid());
 
@@ -131,5 +139,15 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
     @Override
     public Permission getRequiredPermission() {
         return new SqlPermission();
+    }
+
+    private SqlSecurityContext prepareSecurityContext() {
+        SecurityContext securityContext = clientEngine.getSecurityContext();
+
+        if (securityContext == null) {
+            return NoOpSqlSecurityContext.INSTANCE;
+        } else {
+            return new SqlSecurityContextImpl(endpoint.getSubject());
+        }
     }
 }

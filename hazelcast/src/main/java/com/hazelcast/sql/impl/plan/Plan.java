@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.plan;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.security.SecurityContext;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.plan.cache.CacheablePlan;
@@ -24,6 +25,7 @@ import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
 import com.hazelcast.sql.impl.plan.cache.PlanCheckContext;
 import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import java.util.Collection;
 import java.util.List;
@@ -63,6 +65,8 @@ public class Plan implements CacheablePlan {
 
     private final QueryParameterMetadata parameterMetadata;
 
+    private final List<String> mapNames;
+
     /** IDs of objects used in the plan. */
     private final Set<PlanObjectKey> objectIds;
 
@@ -77,7 +81,8 @@ public class Plan implements CacheablePlan {
         SqlRowMetadata rowMetadata,
         QueryParameterMetadata parameterMetadata,
         PlanCacheKey planKey,
-        Set<PlanObjectKey> objectIds
+        Set<PlanObjectKey> objectIds,
+        List<String> mapNames
     ) {
         this.partMap = partMap;
         this.fragments = fragments;
@@ -89,6 +94,7 @@ public class Plan implements CacheablePlan {
         this.parameterMetadata = parameterMetadata;
         this.planKey = planKey;
         this.objectIds = objectIds;
+        this.mapNames = mapNames;
     }
 
     @Override
@@ -109,6 +115,13 @@ public class Plan implements CacheablePlan {
     @Override
     public boolean isPlanValid(PlanCheckContext context) {
         return context.isValid(objectIds, partMap);
+    }
+
+    @Override
+    public void checkSecurityPermission(SecurityContext securityContext, SqlSecurityContext sqlSecurityContext) {
+        for (String mapName : mapNames) {
+            sqlSecurityContext.checkMapReadPermission(securityContext, mapName);
+        }
     }
 
     public Map<UUID, PartitionIdSet> getPartitionMap() {
