@@ -36,6 +36,7 @@ import com.hazelcast.map.impl.ComputeEntryProcessor;
 import com.hazelcast.map.impl.ComputeIfAbsentEntryProcessor;
 import com.hazelcast.map.impl.ComputeIfPresentEntryProcessor;
 import com.hazelcast.map.impl.KeyValueConsumingEntryProcessor;
+import com.hazelcast.map.impl.MapEntryReplacingEntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MergeEntryProcessor;
 import com.hazelcast.map.impl.SimpleEntryView;
@@ -1207,6 +1208,19 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                     return value;
                 }
             }
+        }
+    }
+
+    @Override
+    public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+        checkNotNull(function, NULL_BIFUNCTION_IS_NOT_ALLOWED);
+
+        if (SerializationUtil.isClassStaticAndSerializable(function)
+                && isClusterVersionGreaterOrEqual(Versions.V4_1)) {
+            MapEntryReplacingEntryProcessor<K, V> ep = new MapEntryReplacingEntryProcessor<>(function);
+            executeOnEntries(ep);
+        } else {
+            super.replaceAll(function);
         }
     }
 
