@@ -112,7 +112,6 @@ public abstract class AbstractJetInstance implements JetInstance {
 
     @Nonnull @Override
     public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        config = config.attachAll(((PipelineImpl) pipeline).attachedFiles());
         return newJobIfAbsent((Object) pipeline, config);
     }
 
