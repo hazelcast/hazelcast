@@ -120,6 +120,11 @@ public final class ClientProtocolErrorCodes {
     public static final int LEADER_DEMOTED_EXCEPTION = 95;
     public static final int STALE_APPEND_REQUEST_EXCEPTION = 96;
     public static final int NOT_LEADER_EXCEPTION = 97;
+    public static final int NO_SUCH_METHOD_ERROR = 98;
+    public static final int NO_SUCH_METHOD_EXCEPTION = 99;
+    public static final int NO_SUCH_FIELD_ERROR = 100;
+    public static final int NO_SUCH_FIELD_EXCEPTION = 101;
+    public static final int NO_CLASS_DEF_FOUND_ERROR = 102;
 
     // These exception codes are reserved to by used by hazelcast-jet project
     public static final int JET_EXCEPTIONS_RANGE_START = 500;

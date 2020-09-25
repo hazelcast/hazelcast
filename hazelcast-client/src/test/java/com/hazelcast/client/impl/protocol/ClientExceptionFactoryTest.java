@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.cache.CacheNotExistsException;
-import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.impl.clientside.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
@@ -73,6 +72,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
+import usercodedeployment.CustomExceptions;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CacheLoaderException;
@@ -109,7 +109,8 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
     public Throwable throwable;
 
     private ClientExceptions exceptions = new ClientExceptions(true);
-    private ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(true);
+    private ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(true,
+            Thread.currentThread().getContextClassLoader());
 
     @Test
     public void testException() {
@@ -131,21 +132,20 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
             return false;
         }
 
-        if (exceptions.isKnownClass(expected.getClass())) {
-            if (!expected.getClass().equals(actual.getClass())) {
-                return false;
-            }
-
-            // We compare the message only for known exceptions.
-            // We also ignore it for URISyntaxException, as it is not possible to restore it without special, probably JVM-version specific logic.
-            if (expected.getClass() != URISyntaxException.class && !equals(expected.getMessage(), actual.getMessage())) {
+        if (UndefinedErrorCodeException.class.equals(actual.getClass())) {
+            if (!expected.getClass().getName().equals(((UndefinedErrorCodeException) actual).getOriginClassName())) {
                 return false;
             }
         } else {
-            if (!UndefinedErrorCodeException.class.equals(actual.getClass())
-                    || !expected.getClass().getName().equals(((UndefinedErrorCodeException) actual).getOriginClassName())) {
+            if (!expected.getClass().equals(actual.getClass())) {
                 return false;
             }
+        }
+
+        // We compare the message only for known exceptions.
+        // We also ignore it for URISyntaxException, as it is not possible to restore it without special, probably JVM-version specific logic.
+        if (expected.getClass() != URISyntaxException.class && !equals(expected.getMessage(), actual.getMessage())) {
+            return false;
         }
 
         if (!stackTraceArrayEquals(expected.getStackTrace(), actual.getStackTrace())) {
@@ -187,7 +187,6 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new EntryProcessorException(randomString())},
                 new Object[]{new ArrayIndexOutOfBoundsException(randomString())},
                 new Object[]{new ArrayStoreException(randomString())},
-                new Object[]{new AuthenticationException(randomString())},
                 new Object[]{new CacheNotExistsException(randomString())},
                 new Object[]{new CallerNotMemberException(randomString())},
                 new Object[]{new CancellationException(randomString())},
@@ -272,7 +271,6 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 // exception with message and cause without message
                 new Object[]{new RuntimeException("blabla", new NullPointerException())},
                 // custom exception in causes
-                new Object[]{new RuntimeException("blabla", new DummyUncheckedHazelcastTestException())},
                 new Object[]{new RuntimeException("fun", new RuntimeException("codec \n is \n not \n pwned"))},
                 new Object[]{
                         new RuntimeException("fun",
@@ -282,7 +280,13 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new IndeterminateOperationStateException(randomString())},
                 new Object[]{new TargetNotReplicaException(randomString())},
                 new Object[]{new MutationDisallowedException(randomString())},
-                new Object[]{new ConsistencyLostException(randomString())}
+                new Object[]{new ConsistencyLostException(randomString())},
+                new Object[]{new CustomExceptions.CustomException()},
+                new Object[]{new CustomExceptions.CustomExceptionWithMessage(randomString())},
+                new Object[]{new CustomExceptions.CustomExceptionWithMessageAndCause(randomString(),
+                        new CustomExceptions.CustomExceptionWithMessage(randomString()))},
+                new Object[]{new CustomExceptions.CustomExceptionWithCause(new RuntimeException())},
+                new Object[]{new RuntimeException("blabla", new CustomExceptions.CustomExceptionWithMessage(randomString()))}
         );
     }
 }

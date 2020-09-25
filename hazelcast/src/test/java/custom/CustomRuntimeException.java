@@ -14,23 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol;
+package custom;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+public class CustomRuntimeException extends RuntimeException {
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
-public class ClientProtocolErrorCodesTest extends HazelcastTestSupport {
+    private static final long serialVersionUID = 83105880382695411L;
 
-    @Test
-    public void testConstructor() {
-        assertUtilityConstructor(ClientProtocolErrorCodes.class);
+    public CustomRuntimeException() {
+        this("Expected exception");
     }
 
+    public CustomRuntimeException(String msg) {
+        super(msg);
+    }
 }

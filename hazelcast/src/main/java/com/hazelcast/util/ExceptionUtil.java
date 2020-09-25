@@ -19,8 +19,10 @@ package com.hazelcast.util;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 
+import javax.annotation.Nullable;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutionException;
 
@@ -230,5 +232,54 @@ public final class ExceptionUtil {
                 nextElement.getFileName(), nextElement.getLineNumber());
         System.arraycopy(localSideStackTrace, 1, newStackTrace, remoteStackTrace.length + 2, localSideStackTrace.length - 1);
         throwable.setStackTrace(newStackTrace);
+    }
+
+    /**
+     * Tries to create the exception with appropriate constructor in the following order.
+     * In all cases the cause is set(via constructor or via initCause)
+     * new Throwable(String message, Throwable cause)
+     * new Throwable(Throwable cause)
+     * new Throwable(String message)
+     * new Throwable()
+     *
+     * @param exceptionClass class of the exception
+     * @param message        message to be pass to constructor of the exception
+     * @param cause          cause to be set to the exception
+     * @return null if can not find a constructor as described above, otherwise return newly constructed expcetion
+     */
+    public static <T extends Throwable> T tryCreateExceptionWithMessageAndCause(Class<? extends Throwable> exceptionClass,
+                                                                                String message, @Nullable Throwable cause) {
+
+        try {
+            Constructor<? extends Throwable> constructor = exceptionClass.getConstructor(String.class, Throwable.class);
+            T clone = (T) constructor.newInstance(message, cause);
+            return clone;
+        } catch (Throwable ignored) {
+            EmptyStatement.ignore(ignored);
+        }
+        try {
+            Constructor<? extends Throwable> constructor = exceptionClass.getConstructor(Throwable.class);
+            T clone = (T) constructor.newInstance(cause);
+            return clone;
+        } catch (Throwable ignored) {
+            EmptyStatement.ignore(ignored);
+        }
+        try {
+            Constructor<? extends Throwable> constructor = exceptionClass.getConstructor(String.class);
+            T clone = (T) constructor.newInstance(message);
+            clone.initCause(cause);
+            return clone;
+        } catch (Throwable ignored) {
+            EmptyStatement.ignore(ignored);
+        }
+        try {
+            Constructor<? extends Throwable> constructor = exceptionClass.getConstructor();
+            T clone = (T) constructor.newInstance();
+            clone.initCause(cause);
+            return clone;
+        } catch (Throwable ignored) {
+            EmptyStatement.ignore(ignored);
+        }
+        return null;
     }
 }
