@@ -211,7 +211,7 @@ public class MasterContext {
         } catch (RuntimeException e) {
             // We don't bubble up the exceptions, if we can't write the record out, the universe is
             // probably crumbling apart anyway. And we don't depend on it, we only write out for
-            // others to know or for the case should the master we fail.
+            // others to know or for the case should the master fail.
             logger.warning("Failed to update JobExecutionRecord", e);
         }
     }

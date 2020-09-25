@@ -976,7 +976,7 @@ public class JobCoordinationService {
             }
         } catch (HazelcastInstanceNotActiveException ignored) {
             // ignore this exception
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.severe("Scanning jobs failed", e);
         }
         ExecutionService executionService = nodeEngine.getExecutionService();
@@ -1059,10 +1059,14 @@ public class JobCoordinationService {
 
     private void completeObservables(Set<String> observables, Throwable error) {
         for (String observable : observables) {
-            String ringbufferName = ObservableImpl.ringbufferName(observable);
-            Ringbuffer<Object> ringbuffer = nodeEngine.getHazelcastInstance().getRingbuffer(ringbufferName);
-            Object completion = error == null ? DoneItem.DONE_ITEM : WrappedThrowable.of(error);
-            ringbuffer.addAsync(completion, OverflowPolicy.OVERWRITE);
+            try {
+                String ringbufferName = ObservableImpl.ringbufferName(observable);
+                Ringbuffer<Object> ringbuffer = nodeEngine.getHazelcastInstance().getRingbuffer(ringbufferName);
+                Object completion = error == null ? DoneItem.DONE_ITEM : WrappedThrowable.of(error);
+                ringbuffer.addAsync(completion, OverflowPolicy.OVERWRITE);
+            } catch (Exception e) {
+                logger.severe("Failed to complete observable '" + observable + "': " + e, e);
+            }
         }
     }
 }

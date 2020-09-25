@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetException;
@@ -65,6 +66,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
@@ -82,10 +85,10 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 
 public class JobRepository {
-
 
     /**
      * Prefix of all Hazelcast internal objects used by Jet (such as job
@@ -369,27 +372,36 @@ public class JobRepository {
     ) {
         long jobId = masterContext.jobId();
 
-        JobRecord jobRecord = getJobRecord(jobId);
-        if (jobRecord == null) {
-            throw new JobNotFoundException(jobId);
-        }
-
-        JobConfig config = jobRecord.getConfig();
-        long creationTime = jobRecord.getCreationTime();
+        JobConfig config = masterContext.jobRecord().getConfig();
+        long creationTime = masterContext.jobRecord().getCreationTime();
         JobResult jobResult = new JobResult(jobId, config, creationTime, System.currentTimeMillis(),
                 toErrorMsg(error));
 
         if (terminalMetrics != null) {
-            List<RawJobMetrics> prevMetrics = jobMetrics.put(jobId, terminalMetrics);
-            if (prevMetrics != null) {
-                logger.warning("Overwriting job metrics for job " + jobResult);
+            try {
+                List<RawJobMetrics> prevMetrics = jobMetrics.put(jobId, terminalMetrics);
+                if (prevMetrics != null) {
+                    logger.warning("Overwriting job metrics for job " + jobResult);
+                }
+            } catch (Exception e) {
+                logger.warning("Storing the job metrics failed, ignoring: " + e, e);
             }
         }
-        JobResult prev = jobResults.putIfAbsent(jobId, jobResult);
-        if (prev != null) {
-            throw new IllegalStateException("Job result already exists in the " + jobResults.getName() + " map:\n" +
-                    "previous record: " + prev + "\n" +
-                    "new record: " + jobResult);
+        for (;;) {
+            // keep trying to store the JobResult until it succeeds
+            try {
+                jobResults.set(jobId, jobResult);
+                break;
+            } catch (Exception e) {
+                // if the local instance was shut down, re-throw the error
+                if (e instanceof HazelcastInstanceNotActiveException && (!instance.getLifecycleService().isRunning())) {
+                    throw e;
+                }
+                // retry otherwise, after a delay
+                long retryTimeoutSeconds = 1;
+                logger.warning("Failed to store JobResult, will retry in " + retryTimeoutSeconds + " seconds: " + e, e);
+                LockSupport.parkNanos(SECONDS.toNanos(retryTimeoutSeconds));
+            }
         }
 
         deleteJob(jobId);
@@ -401,8 +413,15 @@ public class JobRepository {
      */
     void deleteJob(long jobId) {
         // delete the job record and related records
-        jobExecutionRecords.delete(jobId);
-        jobRecords.delete(jobId);
+        // ignore the eventual failure - there's a separate cleanup process that will take care
+        BiConsumer<Object, Throwable> callback = (v, t) -> {
+            if (t != null) {
+                logger.warning("Failed to remove " + v.getClass().getSimpleName() + " for job "
+                            + idToString(jobId) + ", ignoring", t);
+            }
+        };
+        jobExecutionRecords.removeAsync(jobId).whenComplete(callback);
+        jobRecords.removeAsync(jobId).whenComplete(callback);
     }
 
     /**
@@ -611,7 +630,11 @@ public class JobRepository {
     }
 
     void cacheValidationRecord(@Nonnull String snapshotName, @Nonnull SnapshotValidationRecord validationRecord) {
-        exportedSnapshotDetailsCache.set(snapshotName, validationRecord);
+        try {
+            exportedSnapshotDetailsCache.set(snapshotName, validationRecord);
+        } catch (Exception e) {
+            logger.warning("Snapshot name: '" + snapshotName + "', failed to store validation record to cache: " + e, e);
+        }
     }
 
     public static final class UpdateJobExecutionRecordEntryProcessor implements
