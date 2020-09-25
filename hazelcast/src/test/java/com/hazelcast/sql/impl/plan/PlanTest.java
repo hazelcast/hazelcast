@@ -88,7 +88,7 @@ public class PlanTest extends SqlTestSupport {
 
         private final int id;
 
-        public TestPlanObjectKey(int id) {
+        private TestPlanObjectKey(int id) {
             this.id = id;
         }
 
