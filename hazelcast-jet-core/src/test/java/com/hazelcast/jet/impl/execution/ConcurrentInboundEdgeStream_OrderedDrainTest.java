@@ -52,14 +52,13 @@ public class ConcurrentInboundEdgeStream_OrderedDrainTest {
 
     private OneToOneConcurrentArrayQueue<Object> q1;
     private OneToOneConcurrentArrayQueue<Object> q2;
-    private ConcurrentInboundEdgeStream stream;
-    private ConcurrentConveyor<Object> conveyor;
+    private InboundEdgeStream stream;
 
     @Before
     public void setUp() {
         q1 = new OneToOneConcurrentArrayQueue<>(128);
         q2 = new OneToOneConcurrentArrayQueue<>(128);
-        conveyor = ConcurrentConveyor.concurrentConveyor(senderGone, q1, q2);
+        ConcurrentConveyor<Object> conveyor = ConcurrentConveyor.concurrentConveyor(senderGone, q1, q2);
 
         stream = ConcurrentInboundEdgeStream.create(conveyor, 0, 0, false, "cies", ComparatorEx.naturalOrder());
     }

@@ -411,7 +411,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 ComparatorEx<ObjectWithPartitionId> adaptedComparator = origComparator == null ? null
                         : (l, r) -> origComparator.compare(l.getItem(), r.getItem());
 
-                final ConcurrentInboundEdgeStream inboundEdgeStream = newEdgeStream(edge, conveyor,
+                final InboundEdgeStream inboundEdgeStream = newEdgeStream(edge, conveyor,
                         "sender-toVertex:" + edge.destVertex().name() + "-toMember:"
                                 + destAddr.toString().replace('.', '-'), adaptedComparator);
                 final int destVertexId = edge.destVertex().vertexId();
@@ -614,7 +614,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return inboundStreams;
     }
 
-    private ConcurrentInboundEdgeStream newEdgeStream(
+    private InboundEdgeStream newEdgeStream(
             EdgeDef inEdge, ConcurrentConveyor<Object> conveyor, String debugName, ComparatorEx<?> comparator
     ) {
         return ConcurrentInboundEdgeStream.create(conveyor, inEdge.destOrdinal(), inEdge.priority(),

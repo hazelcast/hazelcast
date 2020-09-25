@@ -51,7 +51,7 @@ public class ConcurrentInboundEdgeStreamTest {
 
     private OneToOneConcurrentArrayQueue<Object> q1;
     private OneToOneConcurrentArrayQueue<Object> q2;
-    private ConcurrentInboundEdgeStream stream;
+    private InboundEdgeStream stream;
     private ConcurrentConveyor<Object> conveyor;
 
     @Before

@@ -48,23 +48,7 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
  * The conveyor has as many 1-to-1 concurrent queues as there are upstream tasklets
  * contributing to it.
  */
-public abstract class ConcurrentInboundEdgeStream implements InboundEdgeStream {
-
-    final ProgressTracker tracker = new ProgressTracker();
-    private final ConcurrentConveyor<Object> conveyor;
-    private final int ordinal;
-    private final int priority;
-    private final ILogger logger;
-
-    private ConcurrentInboundEdgeStream(
-            @Nonnull ConcurrentConveyor<Object> conveyor, int ordinal, int priority, @Nonnull String debugName) {
-        this.conveyor = conveyor;
-        this.ordinal = ordinal;
-        this.priority = priority;
-
-        logger = Logger.getLogger(ConcurrentInboundEdgeStream.class.getName() + "." + debugName);
-        logger.finest("Coalescing " + conveyor.queueCount() + " input queues");
-    }
+public abstract class ConcurrentInboundEdgeStream {
 
     /**
      * @param waitForAllBarriers If {@code true}, a queue that had a barrier won't
@@ -72,7 +56,7 @@ public abstract class ConcurrentInboundEdgeStream implements InboundEdgeStream {
      *          queues. This will enforce exactly-once vs. at-least-once, if it
      *          is {@code false}.
      */
-    public static ConcurrentInboundEdgeStream create(
+    public static InboundEdgeStream create(
             @Nonnull ConcurrentConveyor<Object> conveyor,
             int ordinal,
             int priority,
@@ -87,47 +71,65 @@ public abstract class ConcurrentInboundEdgeStream implements InboundEdgeStream {
         }
     }
 
-    @Override
-    public int ordinal() {
-        return ordinal;
-    }
+    private abstract static class InboundEdgeStreamBase implements InboundEdgeStream {
+        final ProgressTracker tracker = new ProgressTracker();
+        final ConcurrentConveyor<Object> conveyor;
+        final int ordinal;
+        final int priority;
+        final ILogger logger;
 
-    @Override
-    public int priority() {
-        return priority;
-    }
+        private InboundEdgeStreamBase(
+                @Nonnull ConcurrentConveyor<Object> conveyor, int ordinal, int priority, @Nonnull String debugName) {
+            this.conveyor = conveyor;
+            this.ordinal = ordinal;
+            this.priority = priority;
 
-    @Override
-    public boolean isDone() {
-        return conveyor.liveQueueCount() == 0;
-    }
-
-    @Override
-    public int sizes() {
-        return conveyorSum(QueuedPipe::size);
-    }
-
-    @Override
-    public int capacities() {
-        return conveyorSum(QueuedPipe::capacity);
-    }
-
-    private int conveyorSum(ToIntFunction<QueuedPipe<Object>> toIntF) {
-        int sum = 0;
-        for (int queueIndex = 0; queueIndex < conveyor.queueCount(); queueIndex++) {
-            final QueuedPipe<Object> q = conveyor.queue(queueIndex);
-            if (q != null) {
-                sum += toIntF.applyAsInt(q);
-            }
+            logger = Logger.getLogger(ConcurrentInboundEdgeStream.class.getName() + "." + debugName);
+            logger.finest("Coalescing " + conveyor.queueCount() + " input queues");
         }
-        return sum;
+
+        @Override
+        public int ordinal() {
+            return ordinal;
+        }
+
+        @Override
+        public int priority() {
+            return priority;
+        }
+
+        @Override
+        public boolean isDone() {
+            return conveyor.liveQueueCount() == 0;
+        }
+
+        @Override
+        public int sizes() {
+            return conveyorSum(QueuedPipe::size);
+        }
+
+        @Override
+        public int capacities() {
+            return conveyorSum(QueuedPipe::capacity);
+        }
+
+        private int conveyorSum(ToIntFunction<QueuedPipe<Object>> toIntF) {
+            int sum = 0;
+            for (int queueIndex = 0; queueIndex < conveyor.queueCount(); queueIndex++) {
+                final QueuedPipe<Object> q = conveyor.queue(queueIndex);
+                if (q != null) {
+                    sum += toIntF.applyAsInt(q);
+                }
+            }
+            return sum;
+        }
     }
 
     /**
      * An implementation that drains the full contents of each queue once into
      * the dest, while handling watermarks & barriers.
      */
-    private static final class RoundRobinDrain extends ConcurrentInboundEdgeStream {
+    private static final class RoundRobinDrain extends InboundEdgeStreamBase {
         private final ItemDetector itemDetector = new ItemDetector();
         private final WatermarkCoalescer watermarkCoalescer;
         private final BitSet receivedBarriers; // indicates if current snapshot is received on the queue
@@ -155,8 +157,8 @@ public abstract class ConcurrentInboundEdgeStream implements InboundEdgeStream {
         @Nonnull @Override
         public ProgressState drainTo(@Nonnull Predicate<Object> dest) {
             tracker.reset();
-            for (int queueIndex = 0; queueIndex < super.conveyor.queueCount(); queueIndex++) {
-                final QueuedPipe<Object> q = super.conveyor.queue(queueIndex);
+            for (int queueIndex = 0; queueIndex < conveyor.queueCount(); queueIndex++) {
+                final QueuedPipe<Object> q = conveyor.queue(queueIndex);
                 if (q == null) {
                     continue;
                 }
@@ -170,21 +172,21 @@ public abstract class ConcurrentInboundEdgeStream implements InboundEdgeStream {
                 tracker.mergeWith(result);
 
                 if (itemDetector.item == DONE_ITEM) {
-                    super.conveyor.removeQueue(queueIndex);
+                    conveyor.removeQueue(queueIndex);
                     receivedBarriers.clear(queueIndex);
                     long wmTimestamp = watermarkCoalescer.queueDone(queueIndex);
                     if (maybeEmitWm(wmTimestamp, dest)) {
-                        if (super.logger.isFinestEnabled()) {
-                            super.logger.finest("Queue " + queueIndex + " is done, forwarding "
+                        if (logger.isFinestEnabled()) {
+                            logger.finest("Queue " + queueIndex + " is done, forwarding "
                                     + new Watermark(wmTimestamp));
                         }
-                        return super.conveyor.liveQueueCount() == 0 ? DONE : MADE_PROGRESS;
+                        return conveyor.liveQueueCount() == 0 ? DONE : MADE_PROGRESS;
                     }
                 } else if (itemDetector.item instanceof Watermark) {
                     long wmTimestamp = ((Watermark) itemDetector.item).timestamp();
                     boolean forwarded = maybeEmitWm(watermarkCoalescer.observeWm(queueIndex, wmTimestamp), dest);
-                    if (super.logger.isFinestEnabled()) {
-                        super.logger.finest("Received " + itemDetector.item + " from queue " + queueIndex
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Received " + itemDetector.item + " from queue " + queueIndex
                                 + (forwarded ? ", forwarded=" : ", not forwarded")
                                 + ", coalescedWm=" + toLocalTime(watermarkCoalescer.coalescedWm())
                                 + ", topObservedWm=" + toLocalTime(topObservedWm()));
@@ -198,7 +200,7 @@ public abstract class ConcurrentInboundEdgeStream implements InboundEdgeStream {
                     watermarkCoalescer.observeEvent(queueIndex);
                 }
 
-                int liveQueueCount = super.conveyor.liveQueueCount();
+                int liveQueueCount = conveyor.liveQueueCount();
                 if (liveQueueCount == 0) {
                     return tracker.toProgressState();
                 }
@@ -218,7 +220,7 @@ public abstract class ConcurrentInboundEdgeStream implements InboundEdgeStream {
                 return MADE_PROGRESS;
             }
 
-            if (super.conveyor.liveQueueCount() > 0) {
+            if (conveyor.liveQueueCount() > 0) {
                 tracker.notDone();
             }
             return tracker.toProgressState();
@@ -303,7 +305,7 @@ public abstract class ConcurrentInboundEdgeStream implements InboundEdgeStream {
      * the inputs into one output stream, preserving the order. Currently
      * doesn't handle watermarks or barriers.
      */
-    private static final class OrderedDrain extends ConcurrentInboundEdgeStream {
+    private static final class OrderedDrain extends InboundEdgeStreamBase {
         private final Comparator<Object> comparator;
 
         private final List<QueuedPipe<Object>> queues;
@@ -322,10 +324,10 @@ public abstract class ConcurrentInboundEdgeStream implements InboundEdgeStream {
             super(conveyor, ordinal, priority, debugName);
 
             this.comparator = (Comparator<Object>) comparator;
-            drainedItems = new ArrayList<>(super.conveyor.queueCount());
-            queues = new ArrayList<>(super.conveyor.queueCount());
-            for (int i = 0; i < super.conveyor.queueCount(); i++) {
-                QueuedPipe<Object> q = super.conveyor.queue(i);
+            drainedItems = new ArrayList<>(conveyor.queueCount());
+            queues = new ArrayList<>(conveyor.queueCount());
+            for (int i = 0; i < conveyor.queueCount(); i++) {
+                QueuedPipe<Object> q = conveyor.queue(i);
                 drainedItems.add(new ArrayDeque<>(q.capacity()));
                 queues.add(q);
             }
