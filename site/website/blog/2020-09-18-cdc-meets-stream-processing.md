@@ -155,8 +155,9 @@ post](https://jet-start.sh/blog/2020/07/16/designing-evergreen-cache-cdc).
 
 The Jet - Debezium integration is currently provided under the [Apache
 License, Version 2](https://www.apache.org/licenses/LICENSE-2.0.txt),
-just like Debezium and most of Jet, so making full usage of the
-combination of the two should have no impediments in your own projects.
+just like Debezium and most of Jet (full details [here](https://jet-start.sh/license)),
+so making full usage of the combination of the two should have no
+impediments in your own projects.
 
 ## Looking ahead
 
