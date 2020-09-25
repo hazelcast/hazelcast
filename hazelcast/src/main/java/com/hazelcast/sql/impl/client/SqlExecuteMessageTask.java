@@ -28,7 +28,6 @@ import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
-import com.hazelcast.sql.impl.security.SqlSecurityContextImpl;
 
 import java.security.AccessControlException;
 import java.security.Permission;
@@ -146,7 +145,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         if (securityContext == null) {
             return NoOpSqlSecurityContext.INSTANCE;
         } else {
-            return new SqlSecurityContextImpl(securityContext, endpoint.getSubject());
+            return securityContext.createSqlContext(endpoint.getSubject());
         }
     }
 }
