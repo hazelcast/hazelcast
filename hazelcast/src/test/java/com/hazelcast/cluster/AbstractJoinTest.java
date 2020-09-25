@@ -50,6 +50,23 @@ public class AbstractJoinTest extends HazelcastTestSupport {
         assertClusterSize(2, h2);
     }
 
+    protected void testJoin(Config config1, Config config2) throws Exception {
+        config1.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        config2.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
+        assertClusterSize(1, h1);
+
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
+        assertClusterSize(2, h1, h2);
+
+        h1.shutdown();
+        h1 = Hazelcast.newHazelcastInstance(config1);
+        // when h1 is returned, it's guaranteed that it should see 2 members
+        assertClusterSize(2, h1);
+        assertClusterSize(2, h2);
+    }
+
     protected void testJoinEventually(Config config) throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         assertClusterSize(1, h1);

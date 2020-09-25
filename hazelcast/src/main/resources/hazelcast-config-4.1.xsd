@@ -1401,6 +1401,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="scan-start-port" type="xs:int" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The initial port where to start port scan for another member.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="port">
         <xs:simpleContent>

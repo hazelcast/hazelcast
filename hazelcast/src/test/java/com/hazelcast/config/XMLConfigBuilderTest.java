@@ -3447,7 +3447,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<advanced-network enabled=\"true\">"
                 + "  <join>\n"
                 + "      <multicast enabled=\"false\"/>\n"
-                + "      <tcp-ip enabled=\"true\">\n"
+                + "      <tcp-ip enabled=\"true\" scan-start-port=\"5801\">\n"
                 + "        <required-member>10.10.1.10</required-member>\n"
                 + "        <member>10.10.1.11</member>\n"
                 + "        <member>10.10.1.12</member>\n"

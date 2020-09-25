@@ -62,6 +62,7 @@ hazelcast:
       tcp-ip:
         enabled: false
         connection-timeout-seconds: 123
+        scan-start-port: 5801
         required-member: dummy
         member: dummy1,dummy2
         interface: 127.0.0.10

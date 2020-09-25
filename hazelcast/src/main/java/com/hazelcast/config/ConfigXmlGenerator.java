@@ -1289,8 +1289,18 @@ public class ConfigXmlGenerator {
 
     private static void tcpConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
         TcpIpConfig c = join.getTcpIpConfig();
-        gen.open("tcp-ip", "enabled", c.isEnabled(), "connection-timeout-seconds", c.getConnectionTimeoutSeconds())
-                .open("member-list");
+        Object[] attributes;
+        if (c.getScanStartPort() == -1) {
+            attributes = new Object[] {
+                    "enabled", c.isEnabled(),
+                    "connection-timeout-seconds", c.getConnectionTimeoutSeconds()};
+        } else {
+            attributes = new Object[] {
+                    "enabled", c.isEnabled(),
+                    "connection-timeout-seconds", c.getConnectionTimeoutSeconds(),
+                    "scan-start-port", c.getScanStartPort()};
+        }
+        gen.open("tcp-ip", attributes).open("member-list");
         for (String m : c.getMembers()) {
             gen.node("member", m);
         }

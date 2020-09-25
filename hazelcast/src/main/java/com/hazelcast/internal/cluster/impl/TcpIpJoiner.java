@@ -79,6 +79,11 @@ public class TcpIpJoiner extends AbstractJoiner {
         return joinConfig.getTcpIpConfig().getConnectionTimeoutSeconds();
     }
 
+    private int getScanStartPort() {
+        final int scanStartPort = joinConfig.getTcpIpConfig().getScanStartPort();
+        return scanStartPort == -1 ? getActiveMemberNetworkConfig(config).getPort() : scanStartPort;
+    }
+
     @Override
     public void doJoin() {
         final Address targetAddress = getTargetAddress();
@@ -323,7 +328,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             try {
                 boolean portIsDefined = addressHolder.getPort() != -1 || !networkConfig.isPortAutoIncrement();
                 int count = portIsDefined ? 1 : maxPortTryCount;
-                int port = addressHolder.getPort() != -1 ? addressHolder.getPort() : networkConfig.getPort();
+                int port = addressHolder.getPort() != -1 ? addressHolder.getPort() : getScanStartPort();
                 AddressMatcher addressMatcher = null;
                 try {
                     addressMatcher = AddressUtil.getAddressMatcher(addressHolder.getAddress());

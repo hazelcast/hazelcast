@@ -61,6 +61,29 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     }
 
     @Test
+    public void test_whenScanStartPortConfigured() throws Exception {
+        Config config1 = new Config();
+        Config config2 = new Config();
+
+        NetworkConfig networkConfig = config1.getNetworkConfig();
+        JoinConfig join = networkConfig.getJoin();
+        TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
+        tcpIpConfig.setEnabled(true);
+        tcpIpConfig.setScanStartPort(5800);
+        tcpIpConfig.addMember("127.0.0.1");
+
+        networkConfig = config2.getNetworkConfig();
+        networkConfig.setPort(5801);
+        join = networkConfig.getJoin();
+        tcpIpConfig = join.getTcpIpConfig();
+        tcpIpConfig.setEnabled(true);
+        tcpIpConfig.setScanStartPort(5700);
+        tcpIpConfig.addMember("127.0.0.1");
+
+        testJoin(config1, config2);
+    }
+
+    @Test
     public void test_whenExplicitPortConfigured() throws Exception {
         Config config = new Config();
 
