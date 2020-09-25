@@ -193,7 +193,7 @@ public final class MapSampleMetadataResolver {
 
             while (currentClass != Object.class) {
                 for (Field field : currentClass.getDeclaredFields()) {
-                    if (!Modifier.isPublic(field.getModifiers())) {
+                    if (!Modifier.isPublic(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
                         continue;
                     }
 

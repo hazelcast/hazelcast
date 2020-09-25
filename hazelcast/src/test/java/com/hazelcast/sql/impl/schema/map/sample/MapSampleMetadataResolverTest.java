@@ -229,6 +229,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         checkFields(
             metadata,
+            field("publicFieldBase", QueryDataType.INT, true),
             field("publicField", QueryDataType.INT, true),
             hiddenField(KEY, QueryDataType.OBJECT, true)
         );
@@ -237,6 +238,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         checkFields(
             metadata,
+            field("publicFieldBase", QueryDataType.INT, true),
             field("publicField", QueryDataType.INT, true),
             hiddenField(KEY, QueryDataType.OBJECT, true)
         );
@@ -536,11 +538,20 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
     }
 
 
-    private static class JavaFields implements Serializable {
+    private static class JavaFieldsBase implements Serializable {
+        public int publicFieldBase;
+        int defaultFieldBase;
+        protected int protectedFieldBase;
+        private int privateFieldBase;
+        public static int staticFieldBase;
+    }
+
+    private static class JavaFields extends JavaFieldsBase {
         public int publicField;
         int defaultField;
         protected int protectedField;
         private int privateField;
+        public static int staticField;
     }
 
     private static class JavaGetters implements Serializable {
