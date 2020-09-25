@@ -38,6 +38,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.IOUtil.copyStream;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -244,14 +245,15 @@ class PythonServiceContext {
             @Nonnull Predicate<? super Set<PosixFilePermission>> editFn
     ) throws IOException {
         List<String> filesNotMarked = new ArrayList<>();
-        Files.walk(basePath).forEach(path -> {
-            try {
-                editPermissions(path, editFn);
-            } catch (Exception e) {
-                filesNotMarked.add(basePath.relativize(path).toString());
-            }
-
-        });
+        try (Stream<Path> walk = Files.walk(basePath)) {
+            walk.forEach(path -> {
+                try {
+                    editPermissions(path, editFn);
+                } catch (Exception e) {
+                    filesNotMarked.add(basePath.relativize(path).toString());
+                }
+            });
+        }
         if (!filesNotMarked.isEmpty()) {
             logger.info("Couldn't 'chmod " + chmodOp + "' these files: " + filesNotMarked);
         }
