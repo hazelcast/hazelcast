@@ -291,7 +291,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private void securityRealmGenerator(XmlGenerator gen, String name, RealmConfig c) {
+    protected void securityRealmGenerator(XmlGenerator gen, String name, RealmConfig c) {
         gen.open("realm", "name", name);
         if (c.isAuthenticationConfigured()) {
             gen.open("authentication");
@@ -1733,7 +1733,7 @@ public class ConfigXmlGenerator {
         gen.node("memcache-protocol", null, "enabled", c.isEnabled());
     }
 
-    private String format(String input, int indent) {
+    protected String format(String input, int indent) {
         if (!formatted) {
             return input;
         }
