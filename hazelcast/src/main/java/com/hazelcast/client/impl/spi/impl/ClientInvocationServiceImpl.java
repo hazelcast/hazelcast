@@ -297,7 +297,7 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
 
                 if (!connection.isAlive()) {
                     notifyException(invocation, connection);
-                    return;
+                    continue;
                 }
 
                 if (isBackupAckToClientEnabled) {
