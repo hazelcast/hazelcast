@@ -19,10 +19,10 @@ package com.hazelcast.test.starter.answer;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftOp;
+import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import org.mockito.invocation.InvocationOnMock;
 
 import java.lang.reflect.Method;
@@ -46,7 +46,7 @@ class RaftInvocationManagerAnswer
     private final Method delegateToObjectMethod;
     private final Class<?> delegateOperationClass;
     private final Class<?> delegateCPGroupIdClass;
-    private final Class<?> delegateInvocationFutureClass;
+    private final Class<?> delegateQueryPolicyClass;
 
     RaftInvocationManagerAnswer(Object delegate, Object delegateSerializationService) throws Exception {
         super(delegate);
@@ -55,7 +55,7 @@ class RaftInvocationManagerAnswer
         delegateToObjectMethod = delegateSerializationService.getClass().getMethod("toObject", Object.class);
         delegateOperationClass = delegateClassloader.loadClass(RaftOp.class.getName());
         delegateCPGroupIdClass = delegateClassloader.loadClass(CPGroupId.class.getName());
-        delegateInvocationFutureClass = delegateClassloader.loadClass(InvocationFuture.class.getName());
+        delegateQueryPolicyClass = delegateClassloader.loadClass(QueryPolicy.class.getName());
     }
 
     @Override
@@ -75,6 +75,8 @@ class RaftInvocationManagerAnswer
                 argumentClasses[i] = Integer.TYPE;
             } else if (arguments[i] instanceof RaftGroupId) {
                 argumentClasses[i] = delegateCPGroupIdClass;
+            } else if (arguments[i] instanceof QueryPolicy) {
+                  argumentClasses[i] = delegateQueryPolicyClass;
             } else {
                 argumentClasses[i] = arguments[i].getClass();
             }
