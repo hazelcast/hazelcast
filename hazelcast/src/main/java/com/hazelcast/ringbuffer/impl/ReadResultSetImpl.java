@@ -20,14 +20,14 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
-import com.hazelcast.internal.serialization.SerializationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -76,8 +76,6 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
                              IFunction<O, Boolean> filter) {
         this.minSize = minSize;
         this.maxSize = maxSize;
-        this.items = new Data[maxSize];
-        this.seqs = new long[maxSize];
         this.serializationService = serializationService;
         this.filter = filter;
     }
@@ -177,6 +175,12 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
             }
         } else {
             resultItem = serializationService.toData(item);
+        }
+
+        // lazily create item and seqs arrays
+        if (items == null) {
+            items = new Data[maxSize];
+            seqs = new long[maxSize];
         }
 
         items[size] = resultItem;
