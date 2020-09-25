@@ -86,9 +86,11 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * Attaches a stage that sorts the input items according to the supplied
      * comparator.
      * <p>
-     * Sample usage:
+     * For example, you can sort a stream of trade events based on their
+     * stock ticker:
      * <pre>{@code
-     * trades.sort(Trade::ticker)
+     * BatchStage<Trade> trades = pipeline.readFrom(tradeSource);
+     * BatchStage<Trade> sortedTrades = trades.sort(ComparatorEx.comparing(Trade::ticker));
      * }</pre>
      *
      * @param comparator the user-provided comparator that will be used for sorting.
