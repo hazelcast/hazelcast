@@ -167,4 +167,11 @@ public class Plan implements CacheablePlan {
         return parameterMetadata;
     }
 
+    public Set<PlanObjectKey> getObjectIds() {
+        return objectIds;
+    }
+
+    public List<Permission> getPermissions() {
+        return permissions;
+    }
 }

@@ -17,8 +17,11 @@
 package com.hazelcast.sql.impl.plan;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.MockPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -28,9 +31,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.security.Permission;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -48,6 +53,9 @@ public class PlanTest extends SqlTestSupport {
         Map<Integer, Integer> inboundEdgeMap = Collections.singletonMap(2, 2);
         Map<Integer, Integer> inboundEdgeMemberCountMap = Collections.singletonMap(3, 3);
 
+        Set<PlanObjectKey> objectIds = Collections.singleton(new TestPlanObjectKey(1));
+        List<Permission> permissions = Collections.singletonList(new MapPermission("map", ActionConstants.ACTION_READ));
+
         Plan plan = new Plan(
             partitionMap,
             fragments,
@@ -58,8 +66,8 @@ public class PlanTest extends SqlTestSupport {
             null,
             QueryParameterMetadata.EMPTY,
             null,
-            Collections.emptySet(),
-            Collections.emptyList()
+            objectIds,
+            permissions
         );
 
         assertSame(partitionMap, plan.getPartitionMap());
@@ -71,5 +79,37 @@ public class PlanTest extends SqlTestSupport {
         assertSame(outboundEdgeMap, plan.getOutboundEdgeMap());
         assertSame(inboundEdgeMap, plan.getInboundEdgeMap());
         assertSame(inboundEdgeMemberCountMap, plan.getInboundEdgeMemberCountMap());
+
+        assertSame(objectIds, plan.getObjectIds());
+        assertSame(permissions, plan.getPermissions());
+    }
+
+    private static class TestPlanObjectKey implements PlanObjectKey {
+
+        private final int id;
+
+        public TestPlanObjectKey(int id) {
+            this.id = id;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            TestPlanObjectKey that = (TestPlanObjectKey) o;
+
+            return id == that.id;
+        }
+
+        @Override
+        public int hashCode() {
+            return id;
+        }
     }
 }
