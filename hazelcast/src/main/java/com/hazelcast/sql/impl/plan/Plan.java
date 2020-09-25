@@ -61,8 +61,10 @@ public class Plan implements CacheablePlan {
     /** Map from inbound edge ID to number of members which will write into it. */
     private final Map<Integer, Integer> inboundEdgeMemberCountMap;
 
+    /** Result set metadata (columns name and types). */
     private final SqlRowMetadata rowMetadata;
 
+    /** Parameter metadata (number of parameter and their types). */
     private final QueryParameterMetadata parameterMetadata;
 
     /** IDs of objects used in the plan. */

@@ -30,7 +30,7 @@ import java.util.Objects;
  * This object is mutable. Properties are read once before the execution is started.
  * Changes to properties do not affect the behavior of already running statements.
  */
-public class SqlStatement {
+public final class SqlStatement {
     /** Value for the timeout that is not set. */
     public static final long TIMEOUT_NOT_SET = -1;
 

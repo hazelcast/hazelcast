@@ -22,5 +22,10 @@ import com.hazelcast.sql.impl.security.SqlSecurityContext;
  * Abstraction over execution plan that allows for specialization for an execution backend.
  */
 public interface SqlPlan {
+    /**
+     * Check whether the user has enough permissions to execute this plan.
+     *
+     * @param context security context
+     */
     void checkPermissions(SqlSecurityContext context);
 }

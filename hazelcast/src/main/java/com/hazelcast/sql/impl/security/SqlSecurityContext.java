@@ -18,7 +18,21 @@ package com.hazelcast.sql.impl.security;
 
 import java.security.Permission;
 
+/**
+ * SQL security context that is used to check for user permissions before the query is executed.
+ */
 public interface SqlSecurityContext {
+    /**
+     * Check whether the security is enabled.
+     *
+     * @return {@code true} if security is enabled
+     */
     boolean isSecurityEnabled();
+
+    /**
+     * Check whether the user has the given permission.
+     *
+     * @param permission permission to be checked
+     */
     void checkPermission(Permission permission);
 }
