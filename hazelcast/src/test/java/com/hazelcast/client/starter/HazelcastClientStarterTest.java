@@ -22,13 +22,9 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.starter.HazelcastStarter;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 
@@ -46,12 +42,11 @@ public class HazelcastClientStarterTest {
     }
 
     @Test
-    @Ignore("To be enabled in 4.1 with 4.x instances - see https://github.com/hazelcast/hazelcast/issues/15457")
     public void testClientLifecycle() {
-        memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
+        memberInstance = HazelcastStarter.newHazelcastInstance("4.0.3");
 
-        for (int i = 1; i < 6; i++) {
-            String version = "3.7." + i;
+        for (int i = 1; i < 4; i++) {
+            String version = "4.0." + i;
             System.out.println("Starting client " + version);
             HazelcastInstance instance = HazelcastClientStarter.newHazelcastClient(version, false);
             System.out.println("Stopping client " + version);
@@ -59,13 +54,12 @@ public class HazelcastClientStarterTest {
         }
     }
 
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/15021")
     @Test
     public void testClientMap() {
         HazelcastInstance clientInstance = null;
         try {
-            memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
-            clientInstance = HazelcastClientStarter.newHazelcastClient("3.7.2", false);
+            memberInstance = HazelcastStarter.newHazelcastInstance("4.0.3");
+            clientInstance = HazelcastClientStarter.newHazelcastClient("4.0.3", false);
 
             IMap<Integer, Integer> clientMap = clientInstance.getMap("myMap");
             IMap<Integer, Integer> memberMap = memberInstance.getMap("myMap");
@@ -81,34 +75,12 @@ public class HazelcastClientStarterTest {
     }
 
     @Test
-    @Ignore("To be enabled in 4.1 with 4.x instances - see https://github.com/hazelcast/hazelcast/issues/15457")
     public void testAdvancedClientMap() {
-        memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
-        HazelcastInstance clientInstance = HazelcastClientStarter.newHazelcastClient("3.7.2", false);
+        memberInstance = HazelcastStarter.newHazelcastInstance("4.0.3");
+        HazelcastInstance clientInstance = HazelcastClientStarter.newHazelcastClient("4.0.3", false);
 
         System.out.println("About to terminate the client");
         clientInstance.getLifecycleService().terminate();
         System.out.println("Client terminated");
-    }
-
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/15021")
-    @Test
-    public void testClientMap_async() throws InterruptedException, ExecutionException {
-        HazelcastInstance clientInstance = null;
-        try {
-            memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
-            clientInstance = HazelcastClientStarter.newHazelcastClient("3.7.2", false);
-
-            IMap<Integer, Integer> clientMap = clientInstance.getMap("myMap");
-            clientMap.put(0, 1);
-            Future<Integer> async = clientMap.getAsync(0).toCompletableFuture();
-            int value = async.get();
-
-            assertEquals(1, value);
-        } finally {
-            if (clientInstance != null) {
-                clientInstance.shutdown();
-            }
-        }
     }
 }
