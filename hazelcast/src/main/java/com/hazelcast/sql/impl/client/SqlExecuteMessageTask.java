@@ -22,7 +22,6 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.security.permission.SqlPermission;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.SqlInternalService;
@@ -138,7 +137,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
 
     @Override
     public Permission getRequiredPermission() {
-        return new SqlPermission();
+        return null;
     }
 
     private SqlSecurityContext prepareSecurityContext() {

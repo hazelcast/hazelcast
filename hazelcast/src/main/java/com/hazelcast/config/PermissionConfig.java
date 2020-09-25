@@ -160,11 +160,7 @@ public class PermissionConfig implements IdentifiedDataSerializable {
         /**
          * ReliableTopic
          */
-        RELIABLE_TOPIC("reliable-topic-permission"),
-        /**
-         * SQL
-         */
-        SQL("sql-permission");
+        RELIABLE_TOPIC("reliable-topic-permission");
         private final String nodeName;
 
         PermissionType(String nodeName) {
