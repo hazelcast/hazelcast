@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.plan;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.security.SecurityContext;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.plan.cache.CacheablePlan;
@@ -27,6 +26,7 @@ import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
+import java.security.Permission;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -65,10 +65,11 @@ public class Plan implements CacheablePlan {
 
     private final QueryParameterMetadata parameterMetadata;
 
-    private final List<String> mapNames;
-
     /** IDs of objects used in the plan. */
     private final Set<PlanObjectKey> objectIds;
+
+    /** Permissions that are required to execute this plan. */
+    private final List<Permission> permissions;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public Plan(
@@ -82,7 +83,7 @@ public class Plan implements CacheablePlan {
         QueryParameterMetadata parameterMetadata,
         PlanCacheKey planKey,
         Set<PlanObjectKey> objectIds,
-        List<String> mapNames
+        List<Permission> permissions
     ) {
         this.partMap = partMap;
         this.fragments = fragments;
@@ -94,7 +95,7 @@ public class Plan implements CacheablePlan {
         this.parameterMetadata = parameterMetadata;
         this.planKey = planKey;
         this.objectIds = objectIds;
-        this.mapNames = mapNames;
+        this.permissions = permissions;
     }
 
     @Override
@@ -118,9 +119,9 @@ public class Plan implements CacheablePlan {
     }
 
     @Override
-    public void checkSecurityPermission(SecurityContext securityContext, SqlSecurityContext sqlSecurityContext) {
-        for (String mapName : mapNames) {
-            sqlSecurityContext.checkMapReadPermission(securityContext, mapName);
+    public void checkPermissions(SqlSecurityContext context) {
+        for (Permission permission : permissions) {
+            context.checkPermission(permission);
         }
     }
 

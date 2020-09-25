@@ -147,7 +147,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         if (securityContext == null) {
             return NoOpSqlSecurityContext.INSTANCE;
         } else {
-            return new SqlSecurityContextImpl(endpoint.getSubject());
+            return new SqlSecurityContextImpl(securityContext, endpoint.getSubject());
         }
     }
 }

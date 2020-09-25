@@ -16,12 +16,11 @@
 
 package com.hazelcast.sql.impl.optimizer;
 
-import com.hazelcast.security.SecurityContext;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 /**
  * Abstraction over execution plan that allows for specialization for an execution backend.
  */
 public interface SqlPlan {
-    void checkSecurityPermission(SecurityContext securityContext, SqlSecurityContext sqlSecurityContext);
+    void checkPermissions(SqlSecurityContext context);
 }

@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.security;
 
-import com.hazelcast.security.SecurityContext;
+import java.security.Permission;
 
 public interface SqlSecurityContext {
     boolean isSecurityEnabled();
-    void checkMapReadPermission(SecurityContext securityContext, String mapName);
+    void checkPermission(Permission permission);
 }

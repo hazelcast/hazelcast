@@ -1,6 +1,6 @@
 package com.hazelcast.sql.impl.security;
 
-import com.hazelcast.security.SecurityContext;
+import java.security.Permission;
 
 public final class NoOpSqlSecurityContext implements SqlSecurityContext {
 
@@ -16,7 +16,7 @@ public final class NoOpSqlSecurityContext implements SqlSecurityContext {
     }
 
     @Override
-    public void checkMapReadPermission(SecurityContext securityContext, String mapName) {
+    public void checkPermission(Permission permission) {
         // No-op.
     }
 }

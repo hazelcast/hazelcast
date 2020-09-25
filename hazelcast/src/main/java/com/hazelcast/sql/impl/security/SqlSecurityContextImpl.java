@@ -1,16 +1,17 @@
 package com.hazelcast.sql.impl.security;
 
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MapPermission;
 
 import javax.security.auth.Subject;
+import java.security.Permission;
 
 public class SqlSecurityContextImpl implements SqlSecurityContext {
 
+    private final SecurityContext context;
     private final Subject subject;
 
-    public SqlSecurityContextImpl(Subject subject) {
+    public SqlSecurityContextImpl(SecurityContext context, Subject subject) {
+        this.context = context;
         this.subject = subject;
     }
 
@@ -20,9 +21,7 @@ public class SqlSecurityContextImpl implements SqlSecurityContext {
     }
 
     @Override
-    public void checkMapReadPermission(SecurityContext securityContext, String mapName) {
-        MapPermission permission = new MapPermission(mapName, ActionConstants.ACTION_READ);
-
-        securityContext.checkPermission(subject, permission);
+    public void checkPermission(Permission permission) {
+        context.checkPermission(subject, permission);
     }
 }

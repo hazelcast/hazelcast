@@ -244,7 +244,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         SqlPlan plan = prepare(sql);
 
         if (securityContext.isSecurityEnabled()) {
-            plan.checkSecurityPermission(nodeEngine.getNode().securityContext, securityContext);
+            plan.checkPermissions(securityContext);
         }
 
         return execute(plan, params0, timeout, pageSize);
