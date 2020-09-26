@@ -377,9 +377,10 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
         ringbuffer.addAllAsync(messages, overflowPolicy).whenCompleteAsync((id, t) -> {
             if (t != null) {
                 returnFuture.completeExceptionally(t);
+            } else {
+                returnFuture.complete(null);
+                messages.forEach(p -> localTopicStats.incrementPublishes());
             }
-            returnFuture.complete(null);
-            messages.forEach(p -> localTopicStats.incrementPublishes());
         });
         return returnFuture;
     }

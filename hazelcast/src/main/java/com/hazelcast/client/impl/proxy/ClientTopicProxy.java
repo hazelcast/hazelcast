@@ -68,8 +68,8 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
         checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
 
         Data data = toData(message);
-        final ClientMessage clientMessage = TopicPublishCodec.encodeRequest(name, data);
-        return invokeOnPartitionAsync(clientMessage, null);
+        final ClientMessage request = TopicPublishCodec.encodeRequest(name, data);
+        return invokeOnPartitionAsync(request, clientMessage -> null);
     }
 
     @Nonnull
@@ -103,8 +103,8 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
     public InternalCompletableFuture<Void> publishAllAsync(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
-        final ClientMessage clientMessage = getClientMessage(messages);
-        return invokeOnPartitionAsync(clientMessage, null);
+        final ClientMessage request = getClientMessage(messages);
+        return invokeOnPartitionAsync(request, clientMessage -> null);
     }
 
     private ClientMessage getClientMessage(@Nonnull Collection<? extends E> messages) {

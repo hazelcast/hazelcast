@@ -219,6 +219,22 @@ public class TopicTest extends HazelcastTestSupport {
         });
     }
 
+    @Test
+    public void testBlockingAsync() {
+        AtomicInteger count = new AtomicInteger(0);
+        final String randomName = "testTopicPublishingAllAsync" + generateRandomString(5);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = factory.newHazelcastInstance();
+        ITopic<String> topic = instance.getTopic(randomName);
+        topic.addMessageListener(message -> count.incrementAndGet());
+        for (int i = 0; i < 10; i++) {
+            topic.publish("message");
+        }
+        assertTrueEventually(() -> assertEquals(10, count.get()));
+        final List<String> data = Arrays.asList("msg 1", "msg 2", "msg 3", "msg 4", "msg 5");
+        assertCompletesEventually(topic.publishAllAsync(data).toCompletableFuture());
+        assertTrueEventually(() -> assertEquals(15, count.get()));
+    }
 
     @Test(expected = NullPointerException.class)
     public void testTopicPublishingAllException() throws ExecutionException, InterruptedException {

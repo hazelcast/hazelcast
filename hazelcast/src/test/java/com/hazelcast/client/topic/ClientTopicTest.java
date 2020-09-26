@@ -39,11 +39,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertCompletesEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
@@ -175,6 +177,39 @@ public class ClientTopicTest {
                 assertTrue(messages.containsAll(receivedValues));
             }
         });
+    }
+
+    @Test
+    public void testNullMessageDecoder() {
+        final AtomicInteger count = new AtomicInteger(0);
+        final Collection<String> receivedValues = new ArrayList<>();
+        ITopic<String> topic = createTopic(count, receivedValues);
+
+        final List<String> messages = Arrays.asList("message 1", "message 2", "messgae 3");
+        final CompletionStage<Void> completionStage = topic.publishAllAsync(messages);
+        completionStage.toCompletableFuture().join();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(messages.size(), count.get());
+                assertTrue(messages.containsAll(receivedValues));
+            }
+        });
+    }
+
+    @Test
+    public void testBlockingAsync() {
+        AtomicInteger count = new AtomicInteger(0);
+        final Collection<String> receivedValues = new ArrayList<>();
+        ITopic<String> topic = client.getTopic(randomString());
+        topic.addMessageListener(message -> count.incrementAndGet());
+        for (int i = 0; i < 10; i++) {
+            topic.publish("message");
+        }
+        assertTrueEventually(() -> assertEquals(10, count.get()));
+        final List<String> data = Arrays.asList("msg 1", "msg 2", "msg 3", "msg 4", "msg 5");
+        assertCompletesEventually(topic.publishAllAsync(data).toCompletableFuture());
+        assertTrueEventually(() -> assertEquals(15, count.get()));
     }
 
     @Test(expected = NullPointerException.class)

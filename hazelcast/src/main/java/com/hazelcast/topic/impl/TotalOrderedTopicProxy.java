@@ -22,7 +22,6 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
@@ -85,10 +84,7 @@ public class TotalOrderedTopicProxy<E> extends TopicProxy<E> {
 
     private InternalCompletableFuture<Void> publishInternalAsync(Operation operation) {
         try {
-            final InvocationFuture<Void> invocationFuture = operationService.invokeOnPartition(
-                    OperationService.SERVICE_NAME, operation, partitionId);
-            topicStats.incrementPublishes();
-            return invocationFuture;
+            return operationService.invokeOnPartition(OperationService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable t) {
             throw rethrow(t);
         }

@@ -314,8 +314,9 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
         ringbuffer.addAllAsync(messages, overflowPolicy).whenCompleteAsync((id, t) -> {
             if (t != null) {
                 returnFuture.completeExceptionally(t);
+            } else {
+                returnFuture.complete(null);
             }
-            returnFuture.complete(null);
         });
         return returnFuture;
     }
