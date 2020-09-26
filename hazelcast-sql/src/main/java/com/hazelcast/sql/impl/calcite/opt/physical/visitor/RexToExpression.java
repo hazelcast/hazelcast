@@ -138,6 +138,9 @@ public final class RexToExpression {
         QueryDataType resultType = SqlToQueryType.map(call.getType().getSqlTypeName());
 
         switch (operator.getKind()) {
+            case DEFAULT:
+                return ConstantExpression.create(null, resultType);
+
             case CAST:
                 if (operands[0].getType().equals(resultType)) {
                     // It might happen that two types Calcite considers different
