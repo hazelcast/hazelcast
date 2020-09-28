@@ -38,6 +38,7 @@
       "api/submitting-jobs",
       "api/data-structures",
       "api/serialization",
+      "api/error-handling",
       "api/testing",
       "api/spring"
     ],
