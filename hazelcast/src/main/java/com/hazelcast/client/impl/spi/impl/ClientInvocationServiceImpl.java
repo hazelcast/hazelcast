@@ -244,7 +244,8 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         return connection.write(clientMessage);
     }
 
-    private void registerInvocation(ClientInvocation clientInvocation, ClientConnection connection) {
+    // package-visible for tests
+    void registerInvocation(ClientInvocation clientInvocation, ClientConnection connection) {
         ClientMessage clientMessage = clientInvocation.getClientMessage();
         long correlationId = clientMessage.getCorrelationId();
         invocations.put(correlationId, clientInvocation);
@@ -299,7 +300,7 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
 
                 if (!connection.isAlive()) {
                     notifyException(invocation, connection);
-                    return;
+                    continue;
                 }
 
                 invocation.detectAndHandleBackupTimeout(operationBackupTimeoutMillis);
