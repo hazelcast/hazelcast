@@ -26,6 +26,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonValue;
@@ -935,6 +936,21 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     @Test
     public void testIssue16987_customTtls() {
+        EntryProcessor entryProcessor
+                = new TTLChangingEntryProcessor<>(3, Duration.ofSeconds(1234));
+
+        customTtl_with_entryProcessor(entryProcessor);
+    }
+
+    @Test
+    public void testIssue16987_customTtls_with_offloadable_entry_processor() {
+        EntryProcessor entryProcessor
+                = new TTLChangingEntryProcessorOffloadable(3, Duration.ofSeconds(1234));
+
+        customTtl_with_entryProcessor(entryProcessor);
+    }
+
+    private void customTtl_with_entryProcessor(EntryProcessor entryProcessor) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = getConfig();
         cfg.getMapConfig(MAP_NAME).setReadBackupData(true);
@@ -950,17 +966,21 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertEquals(1337000L, view.getTtl());
         assertEquals(1, view.getValue().intValue());
 
-        instance1Map.executeOnKey(1, new TTLChangingEntryProcessor<>(3, Duration.ofSeconds(1234)));
+        instance1Map.executeOnKey(1, entryProcessor);
 
         view = instance1Map.getEntryView(1);
         assertEquals("ttl was not updated", 1234000L, view.getTtl());
 
         Data key = new DefaultSerializationServiceBuilder().build().toData(1);
-        if (instance1.getPartitionService().getPartition(1).getOwner().localMember()) {
-            assertTtlFromLocalRecordStore(instance2, key, 1234000L);
-        } else {
-            assertTtlFromLocalRecordStore(instance1, key, 1234000L);
-        }
+
+        // used eventual assertion to be sure from backups are updated.
+        assertTrueEventually(() -> {
+            if (instance1.getPartitionService().getPartition(1).getOwner().localMember()) {
+                assertTtlFromLocalRecordStore(instance2, key, 1234000L);
+            } else {
+                assertTtlFromLocalRecordStore(instance1, key, 1234000L);
+            }
+        });
     }
 
     private void assertTtlFromLocalRecordStore(HazelcastInstance instance, Data key, long expectedTtl) {
@@ -1239,7 +1259,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void receivesEntryRemovedEvent_onPostProcessingMapStore_after_executeOnKey() {
         Config config = getConfig();
         config.getMapConfig(MAP_NAME)
-              .getMapStoreConfig().setEnabled(true).setImplementation(new TestPostProcessingMapStore<>());
+                .getMapStoreConfig().setEnabled(true).setImplementation(new TestPostProcessingMapStore<>());
         IMap<Integer, Integer> map = createHazelcastInstance(config).getMap(MAP_NAME);
         final CountDownLatch latch = new CountDownLatch(1);
         map.addEntryListener((EntryRemovedListener<Integer, Integer>) event -> latch.countDown(), true);
@@ -1258,7 +1278,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void receivesEntryRemovedEvent_onPostProcessingMapStore_after_executeOnEntries() {
         Config config = getConfig();
         config.getMapConfig(MAP_NAME)
-              .getMapStoreConfig().setEnabled(true).setImplementation(new TestPostProcessingMapStore<>());
+                .getMapStoreConfig().setEnabled(true).setImplementation(new TestPostProcessingMapStore<>());
         IMap<Integer, Integer> map = createHazelcastInstance(config).getMap(MAP_NAME);
         final CountDownLatch latch = new CountDownLatch(1);
         map.addEntryListener((EntryRemovedListener<Integer, Integer>) event -> latch.countDown(), true);
@@ -1407,8 +1427,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     private void testEntryProcessorWithPredicate_updatesLastAccessTime(boolean accessExpected) {
         Config config = withoutNetworkJoin(smallInstanceConfig());
         config.getMapConfig(MAP_NAME)
-              .setTimeToLiveSeconds(60)
-              .setMaxIdleSeconds(30);
+                .setTimeToLiveSeconds(60)
+                .setMaxIdleSeconds(30);
 
         HazelcastInstance member = createHazelcastInstance(config);
         IMap<String, String> map = member.getMap(MAP_NAME);
@@ -1850,7 +1870,20 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         public V process(Entry<K, V> entry) {
             return ((ExtendedMapEntry<K, V>) entry).setValue(newValue, newTtl.toMillis(), TimeUnit.MILLISECONDS);
         }
+    }
 
+    private static class TTLChangingEntryProcessorOffloadable<K, V>
+            extends TTLChangingEntryProcessor implements Offloadable {
+
+
+        TTLChangingEntryProcessorOffloadable(Object newValue, Duration newTtl) {
+            super(newValue, newTtl);
+        }
+
+        @Override
+        public String getExecutorName() {
+            return OFFLOADABLE_EXECUTOR;
+        }
     }
 
     /**

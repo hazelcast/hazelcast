@@ -44,6 +44,7 @@ import java.util.Set;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 /**
  * GOTCHA: This operation does NOT load missing keys from map-store for now.
@@ -182,7 +183,7 @@ public class PartitionWideEntryOperation extends MapOperation
             Object newValue = outComes.poll();
             EntryEventType eventType = (EntryEventType) outComes.poll();
 
-            operator.init(dataKey, oldValue, newValue, null, eventType, null)
+            operator.init(dataKey, oldValue, newValue, null, eventType, null, UNSET)
                     .doPostOperateOps();
         }
     }

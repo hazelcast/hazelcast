@@ -27,13 +27,13 @@ import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Metadata;
 import com.hazelcast.query.impl.getters.Extractors;
 
-import static com.hazelcast.map.impl.record.Record.UNSET;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 /**
  * A {@link java.util.Map.Entry Map.Entry} implementation
@@ -80,11 +80,12 @@ public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V>
         init(serializationService, key, value, extractors);
     }
 
-    @Override
-    public LazyMapEntry init(InternalSerializationService serializationService, Data key, Object value, Extractors extractors) {
+    public LazyMapEntry init(InternalSerializationService serializationService,
+                             Data key, Object value, Extractors extractors, long ttl) {
         super.init(serializationService, key, value, extractors);
         modified = false;
         metadata = null;
+        newTtl = ttl;
         return this;
     }
 
