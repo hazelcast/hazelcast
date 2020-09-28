@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -67,7 +67,7 @@ public class ClassDefinitionImpl implements ClassDefinition {
 
     @Override
     public Set<String> getFieldNames() {
-        return new HashSet<String>(fieldDefinitionsMap.keySet());
+        return Collections.unmodifiableSet(fieldDefinitionsMap.keySet());
     }
 
     @Override
