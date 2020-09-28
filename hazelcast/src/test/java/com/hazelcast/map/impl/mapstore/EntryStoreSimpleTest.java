@@ -21,6 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -36,12 +37,15 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -93,6 +97,36 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testPut_returns_old_value_from_entry_store() {
+        // 1. Insert value into entry-store
+        map.put("key", "value1");
+
+        // 2. Then remove it only from memory, entry still exists in entry-store
+        map.evict("key");
+
+        // 3. Update entry value to a new one
+        String old = map.put("key", "value2");
+
+        // 4. Expect we got correct old value
+        assertEquals("value1", old);
+    }
+
+    @Test
+    public void testReplace_returns_old_value_from_entry_store() {
+        // 1. Insert value into entry-store
+        map.put("key", "value1");
+
+        // 2. Then remove it only from memory, entry still exists in entry-store
+        map.evict("key");
+
+        // 3. Replace entry value with a new one
+        String old = map.replace("key", "value2");
+
+        // 4. Expect we got correct old value
+        assertEquals("value1", old);
+    }
+
+    @Test
     public void testPut_withTtl() {
         map.put("key", "value", 10, TimeUnit.DAYS);
         assertEntryStore("key", "value", 10, TimeUnit.DAYS, 10000);
@@ -119,15 +153,31 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutAll() {
-        Map<String, String> businessObjects = new HashMap<>();
-        for (int i = 0; i < 100; i++) {
-            businessObjects.put("k" + i, "v" + i);
-        }
+    public void testPutAll_WithoutMapListener() {
+        final int max = 100;
+        final Map<String, String> businessObjects = IntStream.range(0, max).boxed()
+                .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
+
         map.putAll(businessObjects);
-        for (int i = 0; i < 100; i++) {
-            assertEntryStore("k" + i, "v" + i);
-        }
+
+        IntStream.range(0, max).forEach(i -> assertEntryStore("k" + i, "v" + i));
+        assertEquals(0, testEntryStore.getLoadCallCount());
+    }
+
+    @Test
+    public void testPutAll_WithMapListener() {
+        final int max = 100;
+        final Map<String, String> businessObjects = IntStream.range(0, max).boxed()
+                .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
+
+        final CountDownLatch latch = new CountDownLatch(max);
+        map.addEntryListener((EntryAddedListener) event -> latch.countDown(), true);
+
+        map.putAll(businessObjects);
+
+        IntStream.range(0, max).forEach(i -> assertEntryStore("k" + i, "v" + i));
+        assertEquals(max, testEntryStore.getLoadCallCount());
+        assertOpenEventually(latch);
     }
 
     @Test
