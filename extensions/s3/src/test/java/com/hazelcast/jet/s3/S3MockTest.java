@@ -117,7 +117,7 @@ public class S3MockTest extends S3TestBase {
 
         try (S3Client client = clientSupplier().get()) {
             List<String> lines = client
-                    .listObjects(req -> req.bucket(SINK_BUCKET))
+                    .listObjectsV2(req -> req.bucket(SINK_BUCKET))
                     .contents()
                     .stream()
                     .peek(o -> System.out.println("Found object: " + o))

@@ -27,8 +27,12 @@ import com.hazelcast.jet.pipeline.test.Assertions;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.map.IMap;
 import org.junit.Before;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -84,11 +88,10 @@ abstract class S3TestBase extends JetTestSupport {
         try (S3Client client = clientSupplier().get()) {
             assertTrueEventually(() -> {
                 long lineCount = client
-                        .listObjects(req -> req.bucket(bucketName).prefix(prefix))
+                        .listObjectsV2(req -> req.bucket(bucketName).prefix(prefix))
                         .contents()
                         .stream()
-                        .map(o -> client.getObject(req -> req.bucket(bucketName).key(o.key()), toInputStream()))
-                        .flatMap(this::inputStreamToLines)
+                        .flatMap(o -> s3ObjectToLines(o, client, bucketName))
                         .peek(line -> assertEquals(payload, line))
                         .count();
                 assertEquals(itemCount, lineCount);
@@ -166,6 +169,18 @@ abstract class S3TestBase extends JetTestSupport {
             client.deleteBucket(b -> b.bucket(bucket));
         } catch (NoSuchBucketException ignored) {
         }
+    }
+
+    Stream<String> s3ObjectToLines(S3Object o, S3Client client, String bucketName) {
+        try {
+            ResponseInputStream<GetObjectResponse> is = client
+                    .getObject(req -> req.bucket(bucketName).key(o.key()), toInputStream());
+            return inputStreamToLines(is);
+        } catch (S3Exception e) {
+            logger.warning("S3 side is having eventual consistency issue that it could not" +
+                    " find the key that is listed before. We ignore this issue.", e);
+        }
+        return Stream.empty();
     }
 
     Stream<String> inputStreamToLines(InputStream is) {
