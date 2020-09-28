@@ -81,6 +81,8 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         addIndex(map1);
         addIndex(map2);
 
+        waitAllForSafeState(instance1, instance2);
+
         for (int i = 0; i < entryCount; ++i) {
             map1.put(i, i);
         }
@@ -98,16 +100,6 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
             map2.entrySet(Predicates.lessEqual("this", lessEqualCount));
         }
 
-        assertEquals(3 * queriesBulk, stats(map1).getQueryCount());
-        assertEquals(2 * queriesBulk, stats(map1).getIndexedQueryCount());
-        assertEquals(2 * queriesBulk, valueStats(map1).getQueryCount());
-        assertEquals(3 * queriesBulk, stats(map2).getQueryCount());
-        assertEquals(2 * queriesBulk, stats(map2).getIndexedQueryCount());
-        assertEquals(2 * queriesBulk, valueStats(map2).getQueryCount());
-
-        double originalOverallAverageHitSelectivity = calculateOverallSelectivity(map1, map2);
-        assertEquals((expectedEqual + expectedGreaterEqual) / 2, originalOverallAverageHitSelectivity, 0.015);
-
         long originalMap1QueryCount = stats(map1).getQueryCount();
         long originalMap1IndexedQueryCount = stats(map1).getIndexedQueryCount();
         long originalMap1IndexQueryCount = valueStats(map1).getQueryCount();
@@ -118,6 +110,15 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         long originalMap2IndexQueryCount = valueStats(map2).getQueryCount();
         long originalMap2AverageHitLatency = valueStats(map2).getAverageHitLatency();
         double originalMap2AverageHitSelectivity = valueStats(map2).getAverageHitSelectivity();
+        double originalOverallAverageHitSelectivity = calculateOverallSelectivity(map1, map2);
+        assertEquals((expectedEqual + expectedGreaterEqual) / 2, originalOverallAverageHitSelectivity, 0.015);
+
+        assertEquals(3 * queriesBulk, originalMap1QueryCount);
+        assertEquals(2 * queriesBulk, originalMap1IndexedQueryCount);
+        assertEquals(2 * queriesBulk, originalMap1IndexQueryCount);
+        assertEquals(3 * queriesBulk, originalMap2QueryCount);
+        assertEquals(2 * queriesBulk, originalMap2IndexedQueryCount);
+        assertEquals(2 * queriesBulk, originalMap2IndexQueryCount);
 
         // let's add another member
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
@@ -232,6 +233,8 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         addIndex(map1);
         addIndex(map2);
 
+        waitAllForSafeState(instance1, instance2);
+
         assertEquals(0, valueStats(map1).getInsertCount());
         assertEquals(0, valueStats(map1).getUpdateCount());
         assertEquals(0, valueStats(map1).getRemoveCount());
@@ -256,17 +259,6 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
             map2.remove(i);
         }
 
-        assertEquals(inserts, valueStats(map1).getInsertCount() + valueStats(map2).getInsertCount());
-        assertEquals(2 * updates, valueStats(map1).getUpdateCount() + valueStats(map2).getUpdateCount());
-        assertEquals(removes, valueStats(map1).getRemoveCount() + valueStats(map2).getRemoveCount());
-
-        assertTrue(valueStats(map1).getTotalInsertLatency() > 0);
-        assertTrue(valueStats(map1).getTotalRemoveLatency() > 0);
-        assertTrue(valueStats(map1).getTotalUpdateLatency() > 0);
-        assertTrue(valueStats(map2).getTotalInsertLatency() > 0);
-        assertTrue(valueStats(map2).getTotalRemoveLatency() > 0);
-        assertTrue(valueStats(map2).getTotalUpdateLatency() > 0);
-
         long originalMap1InsertCount = valueStats(map1).getInsertCount();
         long originalMap1UpdateCount = valueStats(map1).getUpdateCount();
         long originalMap1RemoveCount = valueStats(map1).getRemoveCount();
@@ -279,6 +271,17 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         long originalMap2TotalInsertLatency = valueStats(map2).getTotalInsertLatency();
         long originalMap2TotalRemoveLatency = valueStats(map2).getTotalRemoveLatency();
         long originalMap2TotalUpdateLatency = valueStats(map2).getTotalUpdateLatency();
+
+        assertEquals(inserts, originalMap1InsertCount + originalMap2InsertCount);
+        assertEquals(2 * updates, originalMap1UpdateCount + originalMap2UpdateCount);
+        assertEquals(removes, originalMap1RemoveCount + originalMap2RemoveCount);
+
+        assertTrue(originalMap1TotalInsertLatency > 0);
+        assertTrue(originalMap1TotalRemoveLatency > 0);
+        assertTrue(originalMap1TotalUpdateLatency > 0);
+        assertTrue(originalMap2TotalInsertLatency > 0);
+        assertTrue(originalMap2TotalRemoveLatency > 0);
+        assertTrue(originalMap2TotalUpdateLatency > 0);
 
         // let's add another member
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
@@ -371,21 +374,21 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
                 valueStats(map1).getRemoveCount() + valueStats(map3).getRemoveCount());
     }
 
-    protected LocalMapStats stats(IMap map) {
+    protected LocalMapStats stats(IMap<?, ?> map) {
         return map.getLocalMapStats();
     }
 
-    protected LocalIndexStats valueStats(IMap map) {
+    protected LocalIndexStats valueStats(IMap<?, ?> map) {
         return stats(map).getIndexStats().get("this");
     }
 
-    protected double calculateOverallSelectivity(IMap... maps) {
+    protected double calculateOverallSelectivity(IMap<?, ?>... maps) {
         return calculateOverallSelectivity(0, 0.0, maps);
     }
 
-    protected double calculateOverallSelectivity(long initialHits, double initialTotalSelectivityCount, IMap... maps) {
+    protected double calculateOverallSelectivity(long initialHits, double initialTotalSelectivityCount, IMap<?, ?>... maps) {
         List<Indexes> allIndexes = new ArrayList<>();
-        for (IMap map : maps) {
+        for (IMap<?, ?> map : maps) {
             allIndexes.addAll(getAllIndexes(map));
         }
 
@@ -405,7 +408,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         }
     }
 
-    protected void addIndex(IMap map) {
+    protected void addIndex(IMap<?, ?> map) {
         map.addIndex(new IndexConfig(IndexType.HASH, "this").setName("this"));
     }
 
