@@ -57,7 +57,7 @@ public class RecordStoreTest extends HazelcastTestSupport {
     private void clearIndexes(IMap<Object, Object> map) {
         MapServiceContext mapServiceContext = getMapServiceContext((MapProxyImpl) map);
         MapContainer mapContainer = mapServiceContext.getMapContainer(map.getName());
-        for (int partitionId : mapServiceContext.getOwnedPartitions()) {
+        for (int partitionId : mapServiceContext.getOrInitCachedMemberPartitions()) {
             mapContainer.getIndexes(partitionId).destroyIndexes();
         }
     }
