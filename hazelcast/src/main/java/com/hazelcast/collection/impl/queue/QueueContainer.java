@@ -986,22 +986,31 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return backup replica map from item ID to queue item
      */
     public Map<Long, QueueItem> getBackupMap() {
+        // if backupMap is not null return it
         ConcurrentMap<Long, QueueItem> backupMap = this.backupMap;
-        if (backupMap == null) {
-            Queue<QueueItem> itemQueue = this.itemQueue;
-            if (itemQueue != null) {
-                backupMap = createConcurrentHashMap(this.itemQueue.size());
-                for (QueueItem item : this.itemQueue) {
-                    backupMap.put(item.getItemId(), item);
-                }
-                itemQueue.clear();
-                this.itemQueue = null;
-            } else {
-                backupMap = new ConcurrentHashMap<>();
-            }
-
-            this.backupMap = backupMap;
+        if (backupMap != null) {
+            return backupMap;
         }
+
+        // if backupMap and itemQueue are both
+        // null, init backupMap and return it.
+        Queue<QueueItem> itemQueue = this.itemQueue;
+        if (itemQueue == null) {
+            backupMap = new ConcurrentHashMap<>();
+            this.backupMap = backupMap;
+            return backupMap;
+        }
+
+        // if backupMap is null but if we have items
+        // in itemQueue, remove items from itemQueue by
+        // putting them into backupMap and return backupMap
+        backupMap = createConcurrentHashMap(itemQueue.size());
+        QueueItem item;
+        while ((item = itemQueue.poll()) != null) {
+            backupMap.put(item.getItemId(), item);
+        }
+        this.itemQueue = null;
+        this.backupMap = backupMap;
         return backupMap;
     }
 
