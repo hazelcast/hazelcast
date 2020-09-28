@@ -115,7 +115,6 @@
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Exclude signatures -->
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
@@ -127,6 +126,7 @@
                                     <excludes>
                                         <!-- Avoid automatic discovery of Calcite JDBC. -->
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>**/package-info.java</exclude>
                                     </excludes>
                                 </filter>
@@ -135,6 +135,7 @@
                                     <excludes>
                                         <!-- Avoid automatic discovery of Avatica JDBC. -->
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Exclude Avatica ProtoBuf definitions, since Avatica is not used. -->
                                         <exclude>*.proto</exclude>
                                     </excludes>
@@ -200,7 +201,6 @@
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Exclude signatures -->
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
@@ -212,6 +212,7 @@
                                     <excludes>
                                         <!-- Avoid automatic discovery of Calcite JDBC. -->
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>codegen/**</exclude>
                                         <exclude>**/package-info.java</exclude>
                                     </excludes>
@@ -221,6 +222,7 @@
                                     <excludes>
                                         <!-- Avoid automatic discovery of Avatica JDBC. -->
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Exclude Avatica ProtoBuf definitions, since Avatica is not used. -->
                                         <exclude>*.proto</exclude>
                                     </excludes>
@@ -228,6 +230,7 @@
                                 <filter>
                                     <artifact>org.codehaus.janino:janino</artifact>
                                     <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Replace with the one from src/main/resources for correct reflection in runtime. -->
                                         <exclude>org.codehaus.commons.compiler.properties</exclude>
                                     </excludes>
