@@ -27,6 +27,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -43,7 +44,7 @@ import static com.hazelcast.map.impl.operation.EntryOperator.operator;
  * See the javadoc on {@link EntryOperation}
  */
 public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
-        implements BackupAwareOperation, Notifier {
+        implements BackupAwareOperation, Notifier, Versioned {
 
     protected long begin;
     protected long newTtl;
