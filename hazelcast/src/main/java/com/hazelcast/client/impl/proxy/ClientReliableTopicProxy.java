@@ -268,7 +268,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                     addAsync(messages, OverflowPolicy.FAIL);
                     break;
                 case BLOCK:
-                    addAsyncAndBlock(payload, returnFuture, messages, INITIAL_BACKOFF_MS);
+                    addAsyncAndBlock(returnFuture, messages, INITIAL_BACKOFF_MS);
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown overloadPolicy:" + overloadPolicy);
@@ -280,14 +280,14 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
         return returnFuture;
     }
 
-    private void addAsyncAndBlock(@Nonnull Collection<? extends E> payload, InternalCompletableFuture<Void> returnFuture,
-                                  List<ReliableTopicMessage> messages, long pauseMillis) {
+    private void addAsyncAndBlock(InternalCompletableFuture<Void> returnFuture, List<ReliableTopicMessage> messages,
+                                  long pauseMillis) {
         ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).whenCompleteAsync((id, t) -> {
             if (t != null) {
                 returnFuture.completeExceptionally(t);
             } else if (id == -1) {
                 getContext().getTaskScheduler().schedule(
-                        () -> addAsyncAndBlock(payload, returnFuture, messages, Math.min(pauseMillis * 2, MAX_BACKOFF)),
+                        () -> addAsyncAndBlock(returnFuture, messages, Math.min(pauseMillis * 2, MAX_BACKOFF)),
                         pauseMillis, MILLISECONDS);
             } else {
                 returnFuture.complete(null);

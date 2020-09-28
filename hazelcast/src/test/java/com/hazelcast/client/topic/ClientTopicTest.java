@@ -180,7 +180,7 @@ public class ClientTopicTest {
     }
 
     @Test
-    public void testNullMessageDecoder() {
+    public void testPublishAllAsync_thenJoin() {
         final AtomicInteger count = new AtomicInteger(0);
         final Collection<String> receivedValues = new ArrayList<>();
         ITopic<String> topic = createTopic(count, receivedValues);
@@ -200,7 +200,6 @@ public class ClientTopicTest {
     @Test
     public void testBlockingAsync() {
         AtomicInteger count = new AtomicInteger(0);
-        final Collection<String> receivedValues = new ArrayList<>();
         ITopic<String> topic = client.getTopic(randomString());
         topic.addMessageListener(message -> count.incrementAndGet());
         for (int i = 0; i < 10; i++) {
