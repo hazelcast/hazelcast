@@ -44,11 +44,16 @@ import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 /**
- * {@link InboundEdgeStream} implemented in terms of a {@link ConcurrentConveyor}.
- * The conveyor has as many 1-to-1 concurrent queues as there are upstream tasklets
- * contributing to it.
+ * This non-instantiable class contains implementations of {@link
+ * InboundEdgeStream} in terms of a {@link ConcurrentConveyor}. The
+ * conveyor has as many 1-to-1 concurrent queues as there are upstream
+ * tasklets contributing to it.
  */
-public abstract class ConcurrentInboundEdgeStream {
+public final class ConcurrentInboundEdgeStream {
+
+    // Prevents instantiation
+    private ConcurrentInboundEdgeStream() {
+    }
 
     /**
      * @param waitForAllBarriers If {@code true}, a queue that had a barrier won't
@@ -126,8 +131,9 @@ public abstract class ConcurrentInboundEdgeStream {
     }
 
     /**
-     * An implementation that drains the full contents of each queue once into
-     * the dest, while handling watermarks & barriers.
+     * This implementation performs a single {@code drainTo} operation on all
+     * the input queues queues and forwards the data to the destination, while
+     * handling watermarks & barriers.
      */
     private static final class RoundRobinDrain extends InboundEdgeStreamBase {
         private final ItemDetector itemDetector = new ItemDetector();
@@ -301,9 +307,9 @@ public abstract class ConcurrentInboundEdgeStream {
     }
 
     /**
-     * An implementation that assumes that the inputs are ordered and merges
-     * the inputs into one output stream, preserving the order. Currently
-     * doesn't handle watermarks or barriers.
+     * This implementation asserts that the inputs are ordered according to the
+     * supplied {@code Comparator} and merges them into one output stream while
+     * preserving the order. Currently doesn't handle watermarks or barriers.
      */
     private static final class OrderedDrain extends InboundEdgeStreamBase {
         private final Comparator<Object> comparator;

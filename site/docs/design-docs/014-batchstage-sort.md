@@ -5,9 +5,11 @@ description: Distributed sorting for batch workloads
 
 *Target Release:* 4.3
 
-So far Jet has not had an option to sort the data except indirectly,
-through a special aggregate operation. This design implements sorting,
-but only for a batch workload. We gain the following methods:
+Currently, Jet can sort the data only indirectly, through a special
+aggregate operation, resulting in a single output item that is the whole
+sorted list. This design implements a transform that affects just the
+order and not the type of the stream items (`T` vs. `List<T>`), but only
+for a batch workload. We gain the following methods:
 
 ```java
 BatchStage<T> BatchStage.sort()
@@ -27,7 +29,7 @@ Distributed sorting happens in two phases:
 1. Sort the data on every cluster node locally, using a single `SortP`
   processor per node
 2. Receive the partially sorted data on a single node, using a new type
-  of edge, `monotonicOrder`
+  of edge, `ordered(Comparator)`
 
 `SortP` is a very simple processor, it just puts all the received data
 into a `PriorityQueue` with a user-supplied `Comparator`. In the
@@ -57,12 +59,12 @@ public class SortP<T> extends AbstractProcessor {
 }
 ```
 
-The `monotonicOrder` edge ensures that it always receives the least item
-available from all the incoming data streams (one from each node). Even
-though this is trivially simple high-level logic, implementing the
+The `ordered(Comparator)` edge ensures that it always receives the least
+item available from all the incoming data streams (one from each node).
+Even though this is trivially simple high-level logic, implementing the
 monotonic reception with cooperative multithreading in mind is the most
 complex part of this work. It is implemented inside
-`ConcurrentInboundEdgeStream`.
+`ConcurrentInboundEdgeStream.OrderedDrain`.
 
 ## Limitations
 
