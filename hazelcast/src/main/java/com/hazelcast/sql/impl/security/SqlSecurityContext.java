@@ -14,18 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.optimizer;
+package com.hazelcast.sql.impl.security;
 
-import com.hazelcast.sql.impl.security.SqlSecurityContext;
+import java.security.Permission;
 
 /**
- * Abstraction over execution plan that allows for specialization for an execution backend.
+ * SQL security context that is used to check for user permissions before the query is executed.
  */
-public interface SqlPlan {
+public interface SqlSecurityContext {
     /**
-     * Check whether the user has enough permissions to execute this plan.
+     * Check whether the security is enabled.
      *
-     * @param context security context
+     * @return {@code true} if security is enabled
      */
-    void checkPermissions(SqlSecurityContext context);
+    boolean isSecurityEnabled();
+
+    /**
+     * Check whether the user has the given permission.
+     *
+     * @param permission permission to be checked
+     */
+    void checkPermission(Permission permission);
 }

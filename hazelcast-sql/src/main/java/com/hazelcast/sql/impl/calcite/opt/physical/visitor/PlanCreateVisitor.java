@@ -17,6 +17,8 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
@@ -55,6 +57,7 @@ import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexNode;
 
+import java.security.Permission;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -77,54 +80,26 @@ import java.util.UUID;
  * created, and then exchange is converted into a pair of appropriate send/receive operators. Send operator is added to the
  * previous fragment, receive operator is a starting point for the new fragment.
  */
-@SuppressWarnings("rawtypes")
+@SuppressWarnings({"rawtypes", "checkstyle:ClassDataAbstractionCoupling"})
 public class PlanCreateVisitor implements PhysicalRelVisitor {
-    /** ID of query coordinator. */
+
     private final UUID localMemberId;
-
-    /** Partition mapping. */
     private final Map<UUID, PartitionIdSet> partMap;
-
-    /** Participant IDs. */
     private final Set<UUID> memberIds;
-
-    /** Rel ID map. */
     private final Map<PhysicalRel, List<Integer>> relIdMap;
-
-    /** Key used for plan caching. */
     private final PlanCacheKey planKey;
-
-    /** Names of the returned columns from the original query. */
     private final List<String> rootColumnNames;
-
     private final QueryParameterMetadata parameterMetadata;
-
-    /** Prepared fragments. */
     private final List<PlanNode> fragments = new ArrayList<>();
-
-    /** Fragment mappings. */
     private final List<PlanFragmentMapping> fragmentMappings = new ArrayList<>();
-
-    /** Outbound edge of the fragment. */
     private final List<Integer> fragmentOutboundEdge = new ArrayList<>();
-
-    /** Inbound edges of the fragment. */
     private final List<List<Integer>> fragmentInboundEdges = new ArrayList<>();
-
-    /** Upstream nodes. Normally it is one node, except for multi-source operations (e.g. joins, sets, subqueries). */
     private final Deque<PlanNode> upstreamNodes = new ArrayDeque<>();
-
-    /** ID of current edge. */
     private int nextEdgeGenerator;
-
-    /** Root physical rel. */
     private RootPhysicalRel rootPhysicalRel;
-
-    /** Row metadata. */
     private SqlRowMetadata rowMetadata;
-
-    /** Collected IDs of objects used in the plan. */
     private final Set<PlanObjectKey> objectIds = new HashSet<>();
+    private final Set<String> mapNames = new HashSet<>();
 
     public PlanCreateVisitor(
         UUID localMemberId,
@@ -172,6 +147,12 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         assert rootPhysicalRel != null;
         assert rowMetadata != null;
 
+        List<Permission> permissions = new ArrayList<>();
+
+        for (String mapName : mapNames) {
+            permissions.add(new MapPermission(mapName, ActionConstants.ACTION_READ));
+        }
+
         return new Plan(
             partMap,
             fragments,
@@ -182,7 +163,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             rowMetadata,
             parameterMetadata,
             planKey,
-            objectIds
+            objectIds,
+            permissions
         );
     }
 
@@ -238,6 +220,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         pushUpstream(scanNode);
 
         objectIds.add(table.getObjectKey());
+        mapNames.add(table.getMapName());
     }
 
     @Override
@@ -265,6 +248,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         pushUpstream(scanNode);
 
         objectIds.add(table.getObjectKey());
+        mapNames.add(table.getMapName());
     }
 
     @Override
@@ -443,5 +427,17 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     private PlanFragmentMapping dataMemberMapping() {
         return new PlanFragmentMapping(memberIds, true);
+    }
+
+    private List<Permission> createPermissions() {
+        ArrayList<Permission> permissions = new ArrayList<>();
+
+        for (String mapName : mapNames) {
+            permissions.add(new MapPermission(mapName, ActionConstants.ACTION_READ));
+        }
+
+        permissions.trimToSize();
+
+        return permissions;
     }
 }

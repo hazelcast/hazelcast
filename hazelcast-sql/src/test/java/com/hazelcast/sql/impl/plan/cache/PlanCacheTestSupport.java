@@ -72,7 +72,8 @@ public class PlanCacheTestSupport extends SqlTestSupport {
             null,
             QueryParameterMetadata.EMPTY,
             key,
-            objectIds0
+            objectIds0,
+            Collections.emptyList()
         );
 
         assertEquals(key, plan.getPlanKey());

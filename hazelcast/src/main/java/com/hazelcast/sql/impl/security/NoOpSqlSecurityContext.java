@@ -14,23 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.security.permission;
+package com.hazelcast.sql.impl.security;
 
 import java.security.Permission;
 
-public class SqlPermission extends ClusterPermission {
+/**
+ * SQL securtiy that is used when the security is disabled. Does nothing.
+ */
+public final class NoOpSqlSecurityContext implements SqlSecurityContext {
 
-    public SqlPermission() {
-        super("<sql>");
+    public static final NoOpSqlSecurityContext INSTANCE = new NoOpSqlSecurityContext();
+
+    private NoOpSqlSecurityContext() {
+        // No-op.
     }
 
     @Override
-    public boolean implies(Permission permission) {
-        return getClass() == permission.getClass();
+    public boolean isSecurityEnabled() {
+        return false;
     }
 
     @Override
-    public String getActions() {
-        return "sql";
+    public void checkPermission(Permission permission) {
+        // No-op.
     }
 }
