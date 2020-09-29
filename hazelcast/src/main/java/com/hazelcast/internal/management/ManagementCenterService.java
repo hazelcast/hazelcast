@@ -740,6 +740,8 @@ public class ManagementCenterService {
 
             connection.setRequestProperty("Connection", "keep-alive");
             connection.setRequestMethod("POST");
+            connection.setConnectTimeout(CONNECTION_TIMEOUT_MILLIS);
+            connection.setReadTimeout(CONNECTION_TIMEOUT_MILLIS);
             return connection;
         }
 
