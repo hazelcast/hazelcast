@@ -380,6 +380,7 @@ public class ClusterJoinManager {
                 LoginContext loginContext = node.securityContext.createMemberLoginContext(remoteClusterName, credentials,
                         connection);
                 loginContext.login();
+                connection.attributeMap().put(LoginContext.class, loginContext);
                 passed = Boolean.TRUE;
             } catch (LoginException e) {
                 throw new SecurityException(format("Authentication has failed for %s @%s, cause: %s",
