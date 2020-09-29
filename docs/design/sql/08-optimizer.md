@@ -307,17 +307,110 @@ abstract class RelNode {
 }
 ```
 
-#### 2.1.2 Properties
+#### 2.1.2 Traits
 
 The operator may have a custom property, defined by the `RelTrait` interface. Example property is collation (sort order).
 Every `RelTrait` has a relevant `RelTraitDef` instance, that defines whether two traits of the same type satisfies one 
-another. For example, `[a ASC, b ASC]` satisfies `[a ASC]` 
+another. For example, `[a ASC, b ASC]` satisfies `[a ASC]`, but not the vice versa.
+
+Apache Calcite comes with two built-in traits:
+- `RelCollation` - collation
+- `Convention` - an opaque marker, that describes the application-specific type of the node
+
+#### 2.1.3 Memoization
+
+The search space is organized in a collection of groups of equivalent operators, called `RelSet`. Within the `RelSet`
+operators are further grouped by their physical properties into one or more `RelSubset`.  
+
+For example, the join equivalence group might look like this:
+```
+RelSet#1 {
+    RelSubset#1: [convention=LOGICAL, collation=NONE] -> LogicalJoin(AXB), LogicalJoin(BxA)
+    RelSubset#2: [convention=PHYSICAL, collation=NONE] -> HashJoin(AXB), HashJoin(BxA)
+    RelSubset#3: [convention=PHYSICAL, collation={A.a ASC}] -> MergeJoin(AXB)
+}
+```
   
- Operator properties are stored in the 
-`RelTraitSet` data structure. 
+When the plan is submitted for optimization, it's operators are copied into the MEMO. Concrete operator inputs are
+replaced with the relevant RelSubset-s. E.g.:
+```
+BEFORE:
+Sort(Scan)
+  Scan
 
-It is possible to enforce a special   
+AFTER:
+RelSet#1 {
+    RelSubset#1: [convention=LOGICAL] -> Sort(RelSubset#2)
+}
+RelSet#2 {
+    RelSubset#2: [convention=LOGICAL] -> Scan
+}
+```
+  
+Every operator has a signature string that uniquely identifies it. Two operators with the same signature are placed into
+the same equivalence group. For example, for the query `SELECT * FROM t JOIN t`, two table operators will end up in the 
+same subset:
+```
+RelSet#1 {
+    RelSubset#1: [convention=LOGICAL] -> Join(RelSubset#2, RelSubset#2)
+}
+RelSet#2 {
+    RelSubset#2: [convention=LOGICAL] -> Scan(t)
+}
+``` 
+  
+When a rule is being executed a new operator might be created. This operator is added to the search space through 
+the `RelOptRuleCall.transformTo(RelNode newOperator)` call. The `RelOptRuleCall` knows the original operator it was
+called for, and hence it adds the `newOperator` to the same `RelSet` as the original one. For example, when an index
+scan is applicable for the given table scan, it will be added to the same group:
+```
+BEFORE:
+RelSet#1 {
+    RelSubset#1: [convention=LOGICAL] -> Scan(t)
+}
 
+AFTER:
+RelSet#1 {
+    RelSubset#1: [convention=PHYSICAL] -> Scan(table)
+    RelSubset#2: [convention=PHYSICAL, collation={a ASC}] -> IndexScan(table, index(a))
+}
+```
+  
+#### 2.1.4 Enforcers  
+  
+It is possible to enforce a certain trait on the operator. This is done through a `RelOptRule.convert` call. When the 
+conversion is requested, the optimizer creates a special `AbstractConverter` operator. When a converter is created, an 
+instance of the `AbstractConverter.ExpandConversionRule` is scheduled to expand it. When this rule fires, it compares
+the properties of original operator, and the requested properties. If the original properties do not satisfy the requested
+ones, the relevant `RelTraitDef` is invoked to enforce the required property. The result of the enforcement could be 
+either a new operator with the desired property, or `null`, which means that the conversion is not possible.
+
+For example, consider the following MEMO:
+```
+RelSet#1: [LogicalAgg(a)]
+RelSet#2: [LogicalScan]
+```    
+There could be a rule to produce a non-blocking streaming physical aggregate. Such an aggregate requires the input to be 
+sorted on the group key `a`. Therefore, the rule may enforce the conversion:    
+```
+RelSet#1: [LogicalAgg(a)]
+RelSet#2: [LogicalScan, AbstractConverter(LogicalScan, a ASC)]
+```
+
+Later, the `AbstractConverter.ExpandConversionRule` instance expands the converter. It calls the `RelTraitDef` of the 
+collation property, that adds a `LogicalSort` operator on top of the scan:
+```
+RelSet#1: [LogicalAgg(a)]
+RelSet#2: [LogicalScan, AbstractConverter(LogicalScan, a ASC), LogicalSort(LogicalScan, a ASC)]
+``` 
+
+#### 2.1.5 Execution
+
+TODO
+
+## 3 Hazelcast Mustang Optimizer
+
+TODO
 
 [1]: https://dl.acm.org/doi/10.1145/38713.38734 "The EXODUS optimizer generator"
 [2]: https://dl.acm.org/doi/10.5555/645478.757691 "The Volcano Optimizer Generator: Extensibility and Efficient Search"
