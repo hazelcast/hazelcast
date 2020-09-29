@@ -32,6 +32,8 @@ import java.util.HashSet;
 import static com.hazelcast.function.Functions.wholeItem;
 import static com.hazelcast.jet.Traversers.traverseArray;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
+import static com.hazelcast.jet.core.metrics.MetricNames.EMITTED_COUNT;
+import static com.hazelcast.jet.core.metrics.MetricNames.RECEIVED_COUNT;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -45,8 +47,6 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
     private static final String GROUP_AND_AGGREGATE_PREPARE_VERTEX = "group-and-aggregate-prepare";
     private static final String GROUP_AND_AGGREGATE_VERTEX = "group-and-aggregate";
     private static final String SINK_VERTEX = "mapSink(counts)";
-    private static final String RECEIVE_COUNT_METRIC = "receivedCount";
-    private static final String EMITTED_COUNT_METRIC = "emittedCount";
 
     private static final String COMMON_TEXT = "look at some common text here and uncommon text here";
 
@@ -162,14 +162,14 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
         int wordCount = words.length;
         int uniqueWordCount = new HashSet<>(asList(words)).size();
 
-        assertEquals(1, sumValueFor(metrics, SOURCE_VERTEX, EMITTED_COUNT_METRIC));
-        assertEquals(1, sumValueFor(metrics, FLAT_MAP_AND_FILTER_VERTEX, RECEIVE_COUNT_METRIC));
-        assertEquals(wordCount, sumValueFor(metrics, FLAT_MAP_AND_FILTER_VERTEX, EMITTED_COUNT_METRIC));
-        assertEquals(wordCount, sumValueFor(metrics, GROUP_AND_AGGREGATE_PREPARE_VERTEX, RECEIVE_COUNT_METRIC));
-        assertEquals(uniqueWordCount, sumValueFor(metrics, GROUP_AND_AGGREGATE_PREPARE_VERTEX, EMITTED_COUNT_METRIC));
-        assertEquals(uniqueWordCount, sumValueFor(metrics, GROUP_AND_AGGREGATE_VERTEX, RECEIVE_COUNT_METRIC));
-        assertEquals(uniqueWordCount, sumValueFor(metrics, GROUP_AND_AGGREGATE_VERTEX, EMITTED_COUNT_METRIC));
-        assertEquals(uniqueWordCount, sumValueFor(metrics, SINK_VERTEX, RECEIVE_COUNT_METRIC));
+        assertEquals(1, sumValueFor(metrics, SOURCE_VERTEX, EMITTED_COUNT));
+        assertEquals(1, sumValueFor(metrics, FLAT_MAP_AND_FILTER_VERTEX, RECEIVED_COUNT));
+        assertEquals(wordCount, sumValueFor(metrics, FLAT_MAP_AND_FILTER_VERTEX, EMITTED_COUNT));
+        assertEquals(wordCount, sumValueFor(metrics, GROUP_AND_AGGREGATE_PREPARE_VERTEX, RECEIVED_COUNT));
+        assertEquals(uniqueWordCount, sumValueFor(metrics, GROUP_AND_AGGREGATE_PREPARE_VERTEX, EMITTED_COUNT));
+        assertEquals(uniqueWordCount, sumValueFor(metrics, GROUP_AND_AGGREGATE_VERTEX, RECEIVED_COUNT));
+        assertEquals(uniqueWordCount, sumValueFor(metrics, GROUP_AND_AGGREGATE_VERTEX, EMITTED_COUNT));
+        assertEquals(uniqueWordCount, sumValueFor(metrics, SINK_VERTEX, RECEIVED_COUNT));
     }
 
     private long sumValueFor(JobMetrics metrics, String vertex, String metric) {

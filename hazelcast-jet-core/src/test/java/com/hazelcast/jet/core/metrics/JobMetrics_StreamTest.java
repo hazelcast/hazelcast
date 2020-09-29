@@ -36,6 +36,8 @@ import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
+import static com.hazelcast.jet.core.metrics.MetricNames.EMITTED_COUNT;
+import static com.hazelcast.jet.core.metrics.MetricNames.RECEIVED_COUNT;
 import static org.junit.Assert.assertEquals;
 
 public class JobMetrics_StreamTest extends TestInClusterSupport {
@@ -44,8 +46,6 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
     private static final String FILTER_OUT_PREFIX = "nok";
 
     private static final String FLAT_MAP_AND_FILTER_VERTEX = "fused(map, filter)";
-    private static final String RECEIVE_COUNT_METRIC = "receivedCount";
-    private static final String EMITTED_COUNT_METRIC = "emittedCount";
 
     private static String journalMapName;
     private static String sinkListName;
@@ -95,7 +95,7 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
     }
 
     @Test
-    public void when_jobWithExactlyOnceSuspendAndResume_then_metricsReset() {
+    public void when_suspendAndResume_then_metricsReset() {
         Map<String, String> map = jet().getMap(journalMapName);
         putIntoMap(map, 2, 1);
         List<String> sink = jet().getList(sinkListName);
@@ -222,11 +222,11 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     private void assertMetrics(JobMetrics metrics, int allItems, int filterOutItems) {
         Assert.assertNotNull(metrics);
-        assertEquals(allItems, sumValueFor(metrics, "mapJournalSource(" + journalMapName + ")", EMITTED_COUNT_METRIC));
-        assertEquals(allItems, sumValueFor(metrics, FLAT_MAP_AND_FILTER_VERTEX, RECEIVE_COUNT_METRIC));
-        assertEquals(allItems - filterOutItems, sumValueFor(metrics, FLAT_MAP_AND_FILTER_VERTEX, EMITTED_COUNT_METRIC));
+        assertEquals(allItems, sumValueFor(metrics, "mapJournalSource(" + journalMapName + ")", EMITTED_COUNT));
+        assertEquals(allItems, sumValueFor(metrics, FLAT_MAP_AND_FILTER_VERTEX, RECEIVED_COUNT));
+        assertEquals(allItems - filterOutItems, sumValueFor(metrics, FLAT_MAP_AND_FILTER_VERTEX, EMITTED_COUNT));
         assertEquals(allItems - filterOutItems,
-                sumValueFor(metrics, "listSink(" + sinkListName + ")", RECEIVE_COUNT_METRIC));
+                sumValueFor(metrics, "listSink(" + sinkListName + ")", RECEIVED_COUNT));
     }
 
     private long sumValueFor(JobMetrics metrics, String vertex, String metric) {
