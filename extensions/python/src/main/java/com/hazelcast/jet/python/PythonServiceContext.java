@@ -19,6 +19,7 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedReader;
@@ -239,6 +240,8 @@ class PythonServiceContext {
         }
     }
 
+    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
+            justification = "https://github.com/spotbugs/spotbugs/issues/756")
     private void editPermissionsRecursively(
             @Nonnull Path basePath,
             @Nonnull String chmodOp,
