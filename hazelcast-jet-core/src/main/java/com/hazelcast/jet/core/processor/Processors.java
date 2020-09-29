@@ -41,6 +41,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.impl.processor.AggregateP;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceOrderedP;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceUnorderedP;
 import com.hazelcast.jet.impl.processor.GroupP;
@@ -65,7 +66,6 @@ import java.util.function.Supplier;
 import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.jet.core.TimestampKind.EVENT;
 import static com.hazelcast.jet.impl.util.Util.toList;
-import static java.util.Collections.nCopies;
 import static java.util.Collections.singletonList;
 
 /**
@@ -220,13 +220,15 @@ public final class Processors {
     /**
      * Returns a supplier of processors for a vertex that performs the provided
      * aggregate operation on all the items it receives. After exhausting all
-     * its input it emits a single item of type {@code R} &mdash;the result of
-     * the aggregate operation.
+     * its input, it emits a single item of type {@code R} &mdash; the result of
+     * the aggregate operation's {@link AggregateOperation#finishFn() finish}
+     * primitive. The primitive may return {@code null}, in that case the vertex
+     * will not produce any output.
      * <p>
      * Since the input to this vertex must be bounded, its primary use case are
      * batch jobs.
      * <p>
-     * This processor has state, but does not save it to snapshot. On job
+     * This processor has state, but does not save it to the snapshot. On job
      * restart, the state will be lost.
      * @param <A> type of accumulator returned from {@code
      *            aggrOp.createAccumulatorFn()}
@@ -240,19 +242,19 @@ public final class Processors {
     ) {
         // We should use the same constant key as the input edges do, but since
         // the processor doesn't save the state, there's no need to.
-        return () -> new GroupP<>(nCopies(aggrOp.arity(), t -> "ALL"), aggrOp, (k, r) -> r);
+        return () -> new AggregateP<>(aggrOp);
     }
 
     /**
-     * Returns a supplier of processors for a vertex that performs the provided
-     * aggregate operation on all the items it receives. After exhausting all
-     * its input it emits a single item of type {@code R} &mdash;the result of
-     * the aggregate operation.
+     * Returns a supplier of processors for a vertex that performs the
+     * accumulation step of the provided aggregate operation on all the items
+     * it receives. After exhausting all its input, it emits a single item of
+     * type {@code A} &mdash; the accumulator object.
      * <p>
      * Since the input to this vertex must be bounded, its primary use case are
      * batch jobs.
      * <p>
-     * This processor has state, but does not save it to snapshot. On job
+     * This processor has state, but does not save it to the snapshot. On job
      * restart, the state will be lost.
      * @param <A> type of accumulator returned from {@code
      *            aggrOp.createAccumulatorFn()}
@@ -262,24 +264,23 @@ public final class Processors {
      */
     @Nonnull
     public static <A, R> SupplierEx<Processor> accumulateP(@Nonnull AggregateOperation<A, R> aggrOp) {
-        return () -> new GroupP<>(
-                // We should use the same constant key as the input edges do, but since
-                // the processor doesn't save the state, there's no need to.
-                nCopies(aggrOp.arity(), t -> "ALL"),
-                aggrOp.withIdentityFinish(),
-                (k, r) -> r);
+        return () -> new AggregateP<>(aggrOp.withIdentityFinish());
     }
 
     /**
-     * Returns a supplier of processors for a vertex that performs the provided
-     * aggregate operation on all the items it receives. After exhausting all
-     * its input it emits a single item of type {@code R} &mdash; the result of
-     * the aggregate operation.
+     * Returns a supplier of processors for a vertex that performs the
+     * combining and finishing steps of the provided aggregate operation. It
+     * expects to receive the accumulator objects from the upstream {@link
+     * #accumulateP} vertex and combines their state into a single
+     * accumulator. After exhausting all its input, it emits a single result
+     * of type {@code R} &mdash; the result of applying the {@code finish}
+     * primitive to the combined accumulator. The primitive may return {@code
+     * null}, in that case the vertex will not produce any output.
      * <p>
      * Since the input to this vertex must be bounded, its primary use case is
      * batch jobs.
      * <p>
-     * This processor has state, but does not save it to snapshot. On job
+     * This processor has state, but does not save it to the snapshot. On job
      * restart, the state will be lost.
      * @param <A> type of accumulator returned from {@code
      *            aggrOp.createAccumulatorFn()}
@@ -291,12 +292,7 @@ public final class Processors {
     public static <A, R> SupplierEx<Processor> combineP(
             @Nonnull AggregateOperation<A, R> aggrOp
     ) {
-        return () -> new GroupP<>(
-                // We should use the same constant key as the input edges do, but since
-                // the processor doesn't save the state, there's no need to.
-                t -> "ALL",
-                aggrOp.withCombiningAccumulateFn(identity()),
-                (k, r) -> r);
+        return () -> new AggregateP<>(aggrOp.withCombiningAccumulateFn(identity()));
     }
 
     /**

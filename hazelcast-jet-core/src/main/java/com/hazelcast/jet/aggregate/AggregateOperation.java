@@ -235,7 +235,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * i}, as returned by {@link #accumulateFn(int)}.
      */
     @Nonnull
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     AggregateOperation<A, R> withAccumulateFns(BiConsumerEx... accumulateFns);
 
     /**

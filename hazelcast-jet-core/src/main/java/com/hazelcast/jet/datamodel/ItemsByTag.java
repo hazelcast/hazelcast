@@ -47,7 +47,7 @@ public final class ItemsByTag {
      * populated with these pairs.
      */
     @Nonnull
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static ItemsByTag itemsByTag(@Nonnull Object... tagsAndVals) {
         ItemsByTag ibt = new ItemsByTag();
         for (int i = 0; i < tagsAndVals.length;) {
@@ -79,7 +79,7 @@ public final class ItemsByTag {
      * {@code null}, but the value may be, and in that case the tag will be
      * associated with a {@code null} value.
      */
-    public <E> void put(@Nonnull Tag<E> tag, E value) {
+    public <E> void put(@Nonnull Tag<E> tag, @Nullable E value) {
         map.put(tag, value);
     }
 

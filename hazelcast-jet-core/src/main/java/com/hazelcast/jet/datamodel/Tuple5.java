@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.datamodel;
 
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -30,11 +31,11 @@ import java.util.Objects;
  * @since 3.0
  */
 public final class Tuple5<E0, E1, E2, E3, E4> {
-    private E0 f0;
-    private E1 f1;
-    private E2 f2;
-    private E3 f3;
-    private E4 f4;
+    private final E0 f0;
+    private final E1 f1;
+    private final E2 f2;
+    private final E3 f3;
+    private final E4 f4;
 
     /**
      * Constructs a new 3-tuple with the supplied values.
@@ -50,13 +51,16 @@ public final class Tuple5<E0, E1, E2, E3, E4> {
     /**
      * Returns a new 5-tuple with the supplied values.
      */
-    public static <E0, E1, E2, E3, E4> Tuple5<E0, E1, E2, E3, E4> tuple5(E0 f0, E1 f1, E2 f2, E3 f3, E4 f4) {
+    public static <E0, E1, E2, E3, E4> Tuple5<E0, E1, E2, E3, E4> tuple5(
+            @Nullable E0 f0, @Nullable E1 f1, @Nullable E2 f2, @Nullable E3 f3, @Nullable E4 f4
+    ) {
         return new Tuple5<>(f0, f1, f2, f3, f4);
     }
 
     /**
      * Returns the value of the field 0.
      */
+    @Nullable
     public E0 f0() {
         return f0;
     }
@@ -64,6 +68,7 @@ public final class Tuple5<E0, E1, E2, E3, E4> {
     /**
      * Returns the value of the field 1.
      */
+    @Nullable
     public E1 f1() {
         return f1;
     }
@@ -71,6 +76,7 @@ public final class Tuple5<E0, E1, E2, E3, E4> {
     /**
      * Returns the value of the field 2.
      */
+    @Nullable
     public E2 f2() {
         return f2;
     }
@@ -78,6 +84,7 @@ public final class Tuple5<E0, E1, E2, E3, E4> {
     /**
      * Returns the value of the field 3.
      */
+    @Nullable
     public E3 f3() {
         return f3;
     }
@@ -85,11 +92,13 @@ public final class Tuple5<E0, E1, E2, E3, E4> {
     /**
      * Returns the value of the field 4.
      */
+    @Nullable
     public E4 f4() {
         return f4;
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public boolean equals(Object obj) {
         final Tuple5 that;
         return this == obj

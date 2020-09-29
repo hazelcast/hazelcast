@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.datamodel;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Objects;
 
@@ -29,8 +30,8 @@ import java.util.Objects;
  * @since 3.0
  */
 public final class Tuple2<E0, E1> implements Map.Entry<E0, E1> {
-    private E0 f0;
-    private E1 f1;
+    private final E0 f0;
+    private final E1 f1;
 
     /**
      * Constructs a new 2-tuple with the supplied values.
@@ -43,13 +44,14 @@ public final class Tuple2<E0, E1> implements Map.Entry<E0, E1> {
     /**
      * Returns a new 2-tuple with the supplied values.
      */
-    public static <E0, E1> Tuple2<E0, E1> tuple2(E0 f0, E1 f1) {
+    public static <E0, E1> Tuple2<E0, E1> tuple2(@Nullable E0 f0, @Nullable E1 f1) {
         return new Tuple2<>(f0, f1);
     }
 
     /**
      * Returns the value of the field 0.
      */
+    @Nullable
     public E0 f0() {
         return f0;
     }
@@ -57,6 +59,7 @@ public final class Tuple2<E0, E1> implements Map.Entry<E0, E1> {
     /**
      * Returns the value of the field 1.
      */
+    @Nullable
     public E1 f1() {
         return f1;
     }
@@ -64,22 +67,23 @@ public final class Tuple2<E0, E1> implements Map.Entry<E0, E1> {
 
     // Implementation of Map.Entry
 
-    @Override
+    @Nullable @Override
     public E0 getKey() {
         return f0;
     }
 
-    @Override
+    @Nullable @Override
     public E1 getValue() {
         return f1;
     }
 
     @Override
-    public E1 setValue(E1 value) {
+    public E1 setValue(@Nullable E1 value) {
         throw new UnsupportedOperationException("Tuple2 is immutable");
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public boolean equals(Object obj) {
         final Tuple2 that;
         return this == obj

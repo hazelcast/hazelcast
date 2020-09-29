@@ -92,6 +92,7 @@ public final class KeyedWindowResult<K, R> extends WindowResult<R> implements En
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public boolean equals(Object obj) {
         KeyedWindowResult that;
         return this == obj

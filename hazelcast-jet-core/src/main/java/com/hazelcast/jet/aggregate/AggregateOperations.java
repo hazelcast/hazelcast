@@ -171,12 +171,20 @@ public final class AggregateOperations {
      * BatchStage<Person> youngestPerson =
      *         people.aggregate(minBy(ComparatorEx.comparing(Person::age)));
      * }</pre>
-     * If the aggregate operation doesn't observe any items, its result will
-     * be {@code null}. If several items tie for the least one, it will choose
-     * any one to return and may choose a different one each time.
+     * <strong>NOTE:</strong> if this aggregate operation doesn't observe any
+     * items, its result will be {@code null}. Since the non-keyed {@link
+     * BatchStage#aggregate} emits just the naked aggregation result, and since
+     * a {@code null} cannot travel through a Jet pipeline, you will not get
+     * any output in that case.
+     * <p>
+     * If several items tie for the least one, this aggregate operation will
+     * choose any one to return and may choose a different one each time.
      * <p>
      * <em>Implementation note:</em> this aggregate operation does not
      * implement the {@link AggregateOperation1#deductFn() deduct} primitive.
+     * This has performance implications for <a
+     * href="https://jet-start.sh/docs/architecture/sliding-window">sliding
+     * window aggregation</a>.
      *
      * @param comparator comparator to compare the items
      * @param <T> type of the input item
@@ -199,12 +207,20 @@ public final class AggregateOperations {
      * BatchStage<Person> oldestPerson =
      *         people.aggregate(maxBy(ComparatorEx.comparing(Person::age)));
      * }</pre>
-     * If the aggregate operation doesn't observe any items, its result will
-     * be {@code null}. If several items tie for the greatest one, it will
+     * <strong>NOTE:</strong> if this aggregate operation doesn't observe any
+     * items, its result will be {@code null}. Since the non-keyed {@link
+     * BatchStage#aggregate} emits just the naked aggregation result, and since
+     * a {@code null} cannot travel through a Jet pipeline, you will not get
+     * any output in that case.
+     * <p>
+     * If several items tie for the greatest one, this aggregate operation will
      * choose any one to return and may choose a different one each time.
      * <p>
      * <em>Implementation note:</em> this aggregate operation does not
      * implement the {@link AggregateOperation1#deductFn() deduct} primitive.
+     * This has performance implications for <a
+     * href="https://jet-start.sh/docs/architecture/sliding-window">sliding
+     * window aggregation</a>.
      *
      * @param comparator comparator to compare the items
      * @param <T> type of the input item
@@ -242,6 +258,9 @@ public final class AggregateOperations {
      * }</pre>
      * <em>Implementation note:</em> this aggregate operation does not
      * implement the {@link AggregateOperation1#deductFn() deduct} primitive.
+     * This has performance implications for <a
+     * href="https://jet-start.sh/docs/architecture/sliding-window">sliding
+     * window aggregation</a>.
      *
      * @param n number of top items to find
      * @param comparator compares the items
@@ -292,6 +311,9 @@ public final class AggregateOperations {
      * }</pre>
      * <em>Implementation note:</em> this aggregate operation does not
      * implement the {@link AggregateOperation1#deductFn() deduct} primitive.
+     * This has performance implications for <a
+     * href="https://jet-start.sh/docs/architecture/sliding-window">sliding
+     * window aggregation</a>.
      *
      * @param n number of bottom items to find
      * @param comparator compares the items
@@ -315,7 +337,10 @@ public final class AggregateOperations {
      * BatchStage<Double> meanAge = people.aggregate(averagingLong(Person::age));
      * }</pre>
      * <p>
-     * <strong>Note:</strong> this operation accumulates the sum and the
+     * If the aggregate operation does not observe any input, its result is
+     * {@link Double#NaN NaN}.
+     * <p>
+     * <strong>NOTE:</strong> this operation accumulates the sum and the
      * count as separate {@code long} variables and combines them at the end
      * into the mean value. If either of these variables exceeds {@code
      * Long.MAX_VALUE}, the job will fail with an {@link ArithmeticException}.
@@ -361,6 +386,9 @@ public final class AggregateOperations {
      * BatchStage<Person> people = pipeline.readFrom(peopleSource);
      * BatchStage<Double> meanAge = people.aggregate(averagingDouble(Person::age));
      * }</pre>
+     * <p>
+     * If the aggregate operation does not observe any input, its result is
+     * {@link Double#NaN NaN}.
      *
      * @param getDoubleValueFn function that extracts the {@code double} value from the item
      * @param <T> type of the input item
@@ -410,10 +438,12 @@ public final class AggregateOperations {
      *     .window(WindowDefinition.sliding(MINUTES.toMillis(5), SECONDS.toMillis(1)))
      *     .aggregate(linearTrend(Trade::getTimestamp, Trade::getPrice));
      * }</pre>
-     *
      * With the trade price given in cents and the timestamp in milliseconds,
      * the output will be in cents per millisecond. Make sure you apply a
      * scaling factor if you want another, more natural unit of measure.
+     * <p>
+     * If this aggregate operation does not observe any input, its result is
+     * {@link Double#NaN NaN}.
      *
      * @param getXFn a function to extract <strong>x</strong> from the input
      * @param getYFn a function to extract <strong>y</strong> from the input
@@ -1047,7 +1077,7 @@ public final class AggregateOperations {
      * @see #groupingBy(FunctionEx, AggregateOperation1)
      * @see #toMap(FunctionEx, FunctionEx)
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public static <T, K, R, A, M extends Map<K, R>> AggregateOperation1<T, Map<K, A>, M> groupingBy(
             FunctionEx<? super T, ? extends K> keyFn,
             SupplierEx<M> createMapFn,
@@ -1149,13 +1179,14 @@ public final class AggregateOperations {
         checkSerializable(deductAccValueFn, "deductAccValueFn");
 
         // workaround for spotbugs issue: https://github.com/spotbugs/spotbugs/issues/552
+        @SuppressWarnings("UnnecessaryLocalVariable")
         BinaryOperatorEx<A> deductFn = deductAccValueFn;
         return AggregateOperation
                 .withCreate(() -> new MutableReference<>(emptyAccValue))
                 .andAccumulate((MutableReference<A> a, T t) ->
                         a.set(combineAccValuesFn.apply(a.get(), toAccValueFn.apply(t))))
                 .andCombine((a, b) -> a.set(combineAccValuesFn.apply(a.get(), b.get())))
-                .andDeduct(deductAccValueFn != null
+                .andDeduct(deductFn != null
                         ? (a, b) -> a.set(deductFn.apply(a.get(), b.get()))
                         : null)
                 .andExportFinish(MutableReference::get);
@@ -1177,7 +1208,11 @@ public final class AggregateOperations {
      *         people.groupingKey(Person::getLastName)
      *               .aggregate(pickAny());
      * }</pre>
-     *
+     * <strong>NOTE:</strong> if this aggregate operation doesn't observe any
+     * items, its result will be {@code null}. Since the non-keyed {@link
+     * BatchStage#aggregate} emits just the naked aggregation result, and since
+     * a {@code null} cannot travel through a Jet pipeline, you will not get
+     * any output in that case.
      * @param <T> type of the input item
      */
     @Nonnull
@@ -1793,8 +1828,8 @@ public final class AggregateOperations {
      * calls.
      * <p>
      * Using {@code IMap} aggregations can be desirable when you want to make
-     * use of {@linkplain IMap#addIndex(String, boolean) indices} when doing aggregations
-     * and want to use the Jet aggregations API instead of writing a custom
+     * use of {@linkplain IMap#addIndex indices} when doing aggregations and
+     * want to use the Jet aggregations API instead of writing a custom
      * {@link Aggregator}.
      * <p>
      * For example, the following aggregation can be used to group people by

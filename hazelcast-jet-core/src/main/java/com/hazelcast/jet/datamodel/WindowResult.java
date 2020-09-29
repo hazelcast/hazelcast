@@ -90,6 +90,7 @@ public class WindowResult<R> {
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public boolean equals(Object obj) {
         WindowResult that;
         return this == obj

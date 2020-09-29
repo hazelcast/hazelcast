@@ -23,6 +23,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
@@ -269,11 +270,17 @@ public interface BatchStage<T> extends GeneralStage<T> {
 
     /**
      * Attaches a stage that performs the given aggregate operation over all
-     * the items it receives. The aggregating stage emits a single item.
+     * the items it receives. It emits a single item, the result of the
+     * aggregate operation's {@link AggregateOperation#finishFn() finish}
+     * primitive. The result may be {@code null} (e.g., {@link
+     * AggregateOperations#maxBy} with no input), in that case the stage
+     * does not produce any output.
      * <p>
      * Sample usage:
      * <pre>{@code
-     * stage.aggregate(AggregateOperations.counting())
+     * BatchStage<Integer> stage = pipeline.readFrom(TestSources.items(1, 2));
+     * // Emits a single item, the number 2:
+     * BatchStage<Long> count = stage.aggregate(AggregateOperations.counting());
      * }</pre>
      *
      * @see AggregateOperations AggregateOperations
@@ -296,10 +303,11 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * stage0.aggregate2(aggrOp0, stage1, aggrOp1)} because it offers a simpler
      * API and you can use the already defined single-input operations. Use
      * this variant only when you have the need to implement an aggregate
-     * operation that combines the input streams into the same
-     * accumulator.
+     * operation that combines the input streams into the same accumulator.
      * <p>
-     * The returned stage emits a single item.
+     * The stage emits a single item, the result of the aggregate operation's
+     * {@link AggregateOperation#finishFn() finish} primitive. The result may
+     * be {@code null}, in that case the stage does not produce any output.
      * <p>
      * Sample usage:
      * <pre>{@code
@@ -322,10 +330,8 @@ public interface BatchStage<T> extends GeneralStage<T> {
 
     /**
      * Attaches a stage that co-aggregates the data from this and the supplied
-     * stage by performing a separate aggregate operation on each and emitting
-     * a {@link Tuple2} with their results.
-     * <p>
-     * The returned stage emits a single item.
+     * stage by performing a separate aggregate operation on each and emits a
+     * single {@link Tuple2} with their results.
      * <p>
      * Sample usage:
      * <pre>{@code
@@ -366,7 +372,9 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * aggregate operation that combines the input streams into the same
      * accumulator.
      * <p>
-     * The returned stage emits a single item.
+     * The stage emits a single item, the result of the aggregate operation's
+     * {@link AggregateOperation#finishFn() finish} primitive. The result may
+     * be {@code null}, in that case the stage does not produce any output.
      * <p>
      * Sample usage:
      * <pre>{@code
@@ -395,9 +403,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
     /**
      * Attaches a stage that co-aggregates the data from this and the two
      * supplied stages by performing a separate aggregate operation on each and
-     * emitting a {@link Tuple3} with their results.
-     * <p>
-     * The returned stage emits a single item.
+     * emits a single {@link Tuple3} with their results.
      * <p>
      * Sample usage:
      * <pre>{@code
@@ -440,7 +446,9 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * to retrieve the aggregated result for that stage. Use {@link
      * AggregateBuilder#tag0() builder.tag0()} as the tag of this stage. You
      * will also be able to supply a function to the builder that immediately
-     * transforms the {@code ItemsByTag} to the desired output type.
+     * transforms the {@code ItemsByTag} to the desired output type. Your
+     * function may return {@code null} and in that case the stage will not
+     * emit anything.
      * <p>
      * This example counts the items in stage-0, sums those in stage-1 and takes
      * the average of those in stage-2:
@@ -472,7 +480,10 @@ public interface BatchStage<T> extends GeneralStage<T> {
     /**
      * Offers a step-by-step API to build a pipeline stage that co-aggregates
      * the data from several input stages. The current stage will be already
-     * registered with the builder you get.
+     * registered with the builder you get. The stage it builds will emit a
+     * single item, the one that the aggregate operation's {@link
+     * AggregateOperation#finishFn() finish} primitive returns. If it returns
+     * {@code null}, the stage will not emit any output.
      * <p>
      * This builder requires you to provide a multi-input aggregate operation.
      * If you can express your logic in terms of single-input aggregate

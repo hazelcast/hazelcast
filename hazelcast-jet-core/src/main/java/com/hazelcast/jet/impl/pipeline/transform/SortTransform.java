@@ -49,12 +49,15 @@ public class SortTransform<T> extends AbstractTransform {
 
     @Override
     public void addToDag(Planner p) {
-        Vertex v1 = p.dag.newVertex(name(), sortP(comparator));
-        PlannerVertex pv2 = p.addVertex(this, name() + COLLECT_STAGE_SUFFIX, 1,
-                ProcessorMetaSupplier.forceTotalParallelismOne(ProcessorSupplier.of(mapP(identity())), name()));
+        String vertexName = name();
+        Vertex v1 = p.dag.newVertex(vertexName, sortP(comparator))
+                         .localParallelism(localParallelism());
+        PlannerVertex pv2 = p.addVertex(this, vertexName + COLLECT_STAGE_SUFFIX, 1,
+                ProcessorMetaSupplier.forceTotalParallelismOne(ProcessorSupplier.of(mapP(identity())), vertexName));
         p.addEdges(this, v1);
-        p.dag.edge(between(v1, pv2.v).distributed()
-                                     .allToOne(name())
-                                     .ordered(comparator));
+        p.dag.edge(between(v1, pv2.v)
+                .distributed()
+                .allToOne(vertexName)
+                .ordered(comparator));
     }
 }

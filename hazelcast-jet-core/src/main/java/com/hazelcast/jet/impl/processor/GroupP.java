@@ -41,10 +41,12 @@ import static java.util.Collections.singletonList;
  * accumulation functions as there are inbound edges.
  */
 public class GroupP<K, A, R, OUT> extends AbstractProcessor {
-    @Nonnull private final List<FunctionEx<?, ? extends K>> groupKeyFns;
-    @Nonnull private final AggregateOperation<A, R> aggrOp;
 
-    private final Map<K, A> keyToAcc = new HashMap<>();
+    final Map<K, A> keyToAcc = new HashMap<>();
+    @Nonnull
+    private final List<FunctionEx<?, ? extends K>> groupKeyFns;
+    @Nonnull
+    private final AggregateOperation<A, R> aggrOp;
     private Traverser<OUT> resultTraverser;
     private final BiFunction<? super K, ? super R, OUT> mapToOutputFn;
 

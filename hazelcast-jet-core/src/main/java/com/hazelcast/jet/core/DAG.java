@@ -79,10 +79,10 @@ import static java.util.stream.Collectors.joining;
  */
 public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
-    private Set<Edge> edges = new LinkedHashSet<>();
-    private Map<String, Vertex> nameToVertex = new HashMap<>();
+    private final Set<Edge> edges = new LinkedHashSet<>();
+    private final Map<String, Vertex> nameToVertex = new HashMap<>();
     // Transient field:
-    private Set<Vertex> verticesByIdentity = newSetFromMap(new IdentityHashMap<>());
+    private final Set<Vertex> verticesByIdentity = newSetFromMap(new IdentityHashMap<>());
 
     /**
      * Creates a vertex from a {@code Supplier<Processor>} and adds it to this DAG.

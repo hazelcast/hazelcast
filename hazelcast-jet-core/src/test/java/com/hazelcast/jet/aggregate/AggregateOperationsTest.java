@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.aggregate;
 
+import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.Traversers;
@@ -98,11 +99,6 @@ public class AggregateOperationsTest {
     public ExpectedException exception = ExpectedException.none();
 
     @Test
-    public void when_pickAny() {
-        validateOpWithoutDeduct(pickAny(), MutableReference::get, 1, 2, 1, 1, 1);
-    }
-
-    @Test
     public void when_counting() {
         validateOp(counting(), LongAccumulator::get,
                 null, null, 1L, 2L, 2L);
@@ -127,14 +123,43 @@ public class AggregateOperationsTest {
     }
 
     @Test
-    public void when_averagingLongOverflow_thenException() {
+    public void when_averagingLong_noInput_then_NaN() {
+        // Given
+        AggregateOperation1<Long, LongLongAccumulator, Double> aggrOp = averagingLong(Long::longValue);
+        LongLongAccumulator acc = aggrOp.createFn().get();
+
+        // When
+        double result = aggrOp.finishFn().apply(acc);
+
+        // Then
+        assertEquals(Double.NaN, result, 0.0);
+    }
+
+    @Test
+    public void when_averagingLong_tooManyItems_then_exception() {
         // Given
         AggregateOperation1<Long, LongLongAccumulator, Double> aggrOp = averagingLong(Long::longValue);
         LongLongAccumulator acc = new LongLongAccumulator(Long.MAX_VALUE, 0L);
 
-        // When and Then
+        // Then
         exception.expect(ArithmeticException.class);
+
+        // When
         aggrOp.accumulateFn().accept(acc, 0L);
+    }
+
+    @Test
+    public void when_averagingLong_sumTooLarge_then_exception() {
+        // Given
+        AggregateOperation1<Long, LongLongAccumulator, Double> aggrOp = averagingLong(Long::longValue);
+        LongLongAccumulator acc = aggrOp.createFn().get();
+
+        // Then
+        exception.expect(ArithmeticException.class);
+
+        // When
+        aggrOp.accumulateFn().accept(acc, Long.MAX_VALUE);
+        aggrOp.accumulateFn().accept(acc, 1L);
     }
 
     @Test
@@ -144,20 +169,48 @@ public class AggregateOperationsTest {
     }
 
     @Test
-    public void when_averagingDoubleOverflow_thenException() {
+    public void when_averagingDouble_tooManyItems_then_exception() {
         // Given
         AggregateOperation1<Double, LongDoubleAccumulator, Double> aggrOp = averagingDouble(Double::doubleValue);
         LongDoubleAccumulator acc = new LongDoubleAccumulator(Long.MAX_VALUE, 0.0d);
 
-        // When and Then
+        // Then
         exception.expect(ArithmeticException.class);
+
+        // When
         aggrOp.accumulateFn().accept(acc, 0.0d);
+    }
+
+    @Test
+    public void when_averagingDouble_noInput_then_NaN() {
+        // Given
+        AggregateOperation1<Double, LongDoubleAccumulator, Double> aggrOp = averagingDouble(Double::doubleValue);
+        LongDoubleAccumulator acc = aggrOp.createFn().get();
+
+        // When
+        double result = aggrOp.finishFn().apply(acc);
+
+        // Then
+        assertEquals(Double.NaN, result, 0.0);
     }
 
     @Test
     public void when_maxBy() {
         validateOpWithoutDeduct(maxBy(naturalOrder()), MutableReference::get,
                 10L, 11L, 10L, 11L, 11L);
+    }
+
+    @Test
+    public void when_maxBy_noInput_then_nullResult() {
+        // Given
+        AggregateOperation1<String, MutableReference<String>, String> aggrOp = maxBy(naturalOrder());
+        MutableReference<String> acc = aggrOp.createFn().get();
+
+        // When
+        String result = aggrOp.finishFn().apply(acc);
+
+        // Then
+        assertNull(result);
     }
 
     @Test
@@ -204,6 +257,7 @@ public class AggregateOperationsTest {
     @Test
     public void when_allOfWithoutDeduct_then_noDeduct() {
         validateOpWithoutDeduct(
+                // JDK 11 can't infer <Long>
                 allOf(counting(), AggregateOperations.<Long>maxBy(naturalOrder())),
                 identity(), 10L, 11L,
                 tuple2(longAcc(1), new MutableReference<>(10L)),
@@ -254,20 +308,24 @@ public class AggregateOperationsTest {
         // Given
         AggregateOperation1<Entry<Long, Long>, LinTrendAccumulator, Double> op =
                 linearTrend(Entry::getKey, Entry::getValue);
-        Supplier<LinTrendAccumulator> newFn = op.createFn();
+        Supplier<LinTrendAccumulator> createFn = op.createFn();
         BiConsumer<? super LinTrendAccumulator, ? super Entry<Long, Long>> accFn = op.accumulateFn();
         BiConsumer<? super LinTrendAccumulator, ? super LinTrendAccumulator> combineFn = op.combineFn();
         BiConsumer<? super LinTrendAccumulator, ? super LinTrendAccumulator> deductFn = op.deductFn();
         Function<? super LinTrendAccumulator, ? extends Double> finishFn = op.finishFn();
+        assertNotNull(createFn);
+        assertNotNull(accFn);
+        assertNotNull(combineFn);
         assertNotNull(deductFn);
+        assertNotNull(finishFn);
 
         // When
-        LinTrendAccumulator a1 = newFn.get();
+        LinTrendAccumulator a1 = createFn.get();
         accFn.accept(a1, entry(1L, 3L));
         accFn.accept(a1, entry(2L, 5L));
         assertEquals(2.0, finishFn.apply(a1), Double.MIN_VALUE);
 
-        LinTrendAccumulator a2 = newFn.get();
+        LinTrendAccumulator a2 = createFn.get();
         accFn.accept(a2, entry(5L, 11L));
         accFn.accept(a2, entry(6L, 13L));
         assertEquals(2.0, finishFn.apply(a2), Double.MIN_VALUE);
@@ -282,7 +340,7 @@ public class AggregateOperationsTest {
         assertEquals(Double.valueOf(2), result);
 
         // When
-        LinTrendAccumulator acc = newFn.get();
+        LinTrendAccumulator acc = createFn.get();
         // Then
         assertTrue("NaN expected if nothing accumulated", Double.isNaN(finishFn.apply(acc)));
 
@@ -336,7 +394,7 @@ public class AggregateOperationsTest {
     }
 
     @Test
-    public void when_toMapDuplicateAccumulate_then_fail() {
+    public void when_toMapDuplicateAccumulate_then_exception() {
         AggregateOperation1<Entry<Integer, Integer>, Map<Integer, Integer>, Map<Integer, Integer>> op =
                 toMap(Entry::getKey, Entry::getValue);
 
@@ -348,17 +406,22 @@ public class AggregateOperationsTest {
     }
 
     @Test
-    public void when_toMapDuplicateCombine_then_fail() {
+    public void when_toMapCombinesDuplicates_then_exception() {
+        // Given
         AggregateOperation1<Entry<Integer, Integer>, Map<Integer, Integer>, Map<Integer, Integer>> op =
                 toMap(Entry::getKey, Entry::getValue);
-
+        BiConsumerEx<? super Map<Integer, Integer>, ? super Map<Integer, Integer>> combineFn = op.combineFn();
+        assertNotNull("combineFn", combineFn);
         Map<Integer, Integer> acc1 = op.createFn().get();
         op.accumulateFn().accept(acc1, entry(1, 1));
         Map<Integer, Integer> acc2 = op.createFn().get();
         op.accumulateFn().accept(acc2, entry(1, 2));
 
+        // Then
         exception.expect(IllegalStateException.class);
-        op.combineFn().accept(acc1, acc2);
+
+        // When
+        combineFn.accept(acc1, acc2);
     }
 
     @Test
@@ -572,6 +635,23 @@ public class AggregateOperationsTest {
     }
 
     @Test
+    public void when_pickAny() {
+        validateOpWithoutDeduct(pickAny(), MutableReference::get, 1, 2, 1, 1, 1);
+    }
+
+    @Test
+    public void when_pickAny_noInput_then_nullResult() {
+        // Given
+        AggregateOperation1<Object, MutableReference<Object>, Object> aggrOp = pickAny();
+
+        // When
+        Object result = aggrOp.finishFn().apply(aggrOp.createFn().get());
+
+        // Then
+        assertNull(result);
+    }
+
+    @Test
     public void when_sorting() {
         validateOpWithoutDeduct(
                 sorting(naturalOrder()),
@@ -616,8 +696,10 @@ public class AggregateOperationsTest {
             R expectFinished
     ) {
         // Given
-        BiConsumer<? super A, ? super A> deductAccFn = op.deductFn();
-        assertNotNull("deductAccFn was null", deductAccFn);
+        BiConsumer<? super A, ? super A> deductFn = op.deductFn();
+        BiConsumerEx<? super A, ? super A> combineFn = op.combineFn();
+        assertNotNull("combineFn", combineFn);
+        assertNotNull("deductFn", deductFn);
 
         // When
         A acc1 = op.createFn().get();
@@ -636,7 +718,7 @@ public class AggregateOperationsTest {
         byte[] acc1ExportedSerialized = serialize(acc1Exported);
 
         // When
-        op.combineFn().accept(acc1, acc2);
+        combineFn.accept(acc1, acc2);
         // Then
         assertEqualsOrArrayEquals("combined", expectCombined, getAccValFn.apply(acc1));
 
@@ -656,7 +738,7 @@ public class AggregateOperationsTest {
         assertEqualsOrArrayEquals("finished", expectFinished, finished);
 
         // When
-        deductAccFn.accept(acc1, acc2);
+        deductFn.accept(acc1, acc2);
         // Then
         assertEqualsOrArrayEquals("deducted", expectAcced1, getAccValFn.apply(acc1));
 
@@ -699,8 +781,10 @@ public class AggregateOperationsTest {
             X expectCombined,
             R expectFinished
     ) {
-        // Then
-        assertNull("deductFn must be null", op.deductFn());
+        // Given
+        assertNull("deductFn", op.deductFn());
+        BiConsumerEx<? super A, ? super A> combineFn = op.combineFn();
+        assertNotNull("combineFn", combineFn);
 
         // When
         A acc1 = op.createFn().get();
@@ -719,7 +803,7 @@ public class AggregateOperationsTest {
         byte[] acc1ExportedSerialized = serialize(acc1Exported);
 
         // When
-        op.combineFn().accept(acc1, acc2);
+        combineFn.accept(acc1, acc2);
         // Then
         assertEquals("combined", expectCombined, getAccValFn.apply(acc1));
 

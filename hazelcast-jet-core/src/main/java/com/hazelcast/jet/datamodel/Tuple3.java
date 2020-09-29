@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.datamodel;
 
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -28,9 +29,9 @@ import java.util.Objects;
  * @since 3.0
  */
 public final class Tuple3<E0, E1, E2> {
-    private E0 f0;
-    private E1 f1;
-    private E2 f2;
+    private final E0 f0;
+    private final E1 f1;
+    private final E2 f2;
 
     /**
      * Constructs a new 3-tuple with the supplied values.
@@ -44,13 +45,16 @@ public final class Tuple3<E0, E1, E2> {
     /**
      * Returns a new 3-tuple with the supplied values.
      */
-    public static <E0, E1, E2> Tuple3<E0, E1, E2> tuple3(E0 f0, E1 f1, E2 f2) {
+    public static <E0, E1, E2> Tuple3<E0, E1, E2> tuple3(
+            @Nullable E0 f0, @Nullable E1 f1, @Nullable E2 f2
+    ) {
         return new Tuple3<>(f0, f1, f2);
     }
 
     /**
      * Returns the value of the field 0.
      */
+    @Nullable
     public E0 f0() {
         return f0;
     }
@@ -58,6 +62,7 @@ public final class Tuple3<E0, E1, E2> {
     /**
      * Returns the value of the field 1.
      */
+    @Nullable
     public E1 f1() {
         return f1;
     }
@@ -65,11 +70,13 @@ public final class Tuple3<E0, E1, E2> {
     /**
      * Returns the value of the field 2.
      */
+    @Nullable
     public E2 f2() {
         return f2;
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public boolean equals(Object obj) {
         final Tuple3 that;
         return this == obj
