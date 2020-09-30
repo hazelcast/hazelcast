@@ -28,6 +28,7 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.spi.properties.ClientProperty;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -46,7 +47,6 @@ import com.hazelcast.util.executor.StripedRunnable;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -323,39 +323,40 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         eventHandlerMap.remove(callId);
     }
 
-    private Boolean deregisterListenerInternal(String userRegistrationId) {
+    private Boolean deregisterListenerInternal(final String userRegistrationId) {
         //This method should only be called from registrationExecutor
         assert (Thread.currentThread().getName().contains("eventRegistration"));
 
         ClientRegistrationKey key = new ClientRegistrationKey(userRegistrationId);
-        Map<Connection, ClientEventRegistration> registrationMap = registrations.get(key);
+        Map<Connection, ClientEventRegistration> registrationMap = registrations.remove(key);
         if (registrationMap == null) {
             return false;
         }
-        boolean successful = true;
 
-        for (Iterator<ClientEventRegistration> iterator = registrationMap.values().iterator(); iterator.hasNext(); ) {
-            ClientEventRegistration registration = iterator.next();
-            Connection subscriber = registration.getSubscriber();
-            try {
-                ListenerMessageCodec listenerMessageCodec = registration.getCodec();
-                String serverRegistrationId = registration.getServerRegistrationId();
-                ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
-                new ClientInvocation(client, request, null, subscriber).invoke().get();
-                removeEventHandler(registration.getCallId());
-                iterator.remove();
-            } catch (Exception e) {
-                if (subscriber.isAlive()) {
-                    successful = false;
-                    logger.warning("Deregistration of listener with ID " + userRegistrationId
-                            + " has failed to address " + subscriber.getEndPoint(), e);
+        for (ClientEventRegistration registration : registrationMap.values()) {
+            final Connection subscriber = registration.getSubscriber();
+            //remove local handler
+            removeEventHandler(registration.getCallId());
+            //the rest is for deleting remote registration
+            ListenerMessageCodec listenerMessageCodec = registration.getCodec();
+            String serverRegistrationId = registration.getServerRegistrationId();
+            ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
+            ClientInvocation invocation = new ClientInvocation(client, request, null, subscriber);
+            invocation.setInvocationTimeoutMillis(Long.MAX_VALUE);
+            invocation.invokeUrgent().andThen(new ExecutionCallback<ClientMessage>() {
+                @Override
+                public void onResponse(ClientMessage response) {
+
                 }
-            }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    logger.warning("Deregistration of listener with ID " + userRegistrationId
+                            + " has failed to address " + subscriber.getEndPoint(), t);
+                }
+            });
         }
-        if (successful) {
-            registrations.remove(key);
-        }
-        return successful;
+        return true;
     }
 
     private final class ClientEventProcessor implements StripedRunnable {
