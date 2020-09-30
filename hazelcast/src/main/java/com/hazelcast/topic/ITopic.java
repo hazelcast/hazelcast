@@ -19,7 +19,10 @@ package com.hazelcast.topic;
 import com.hazelcast.core.DistributedObject;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Hazelcast provides distribution mechanism for publishing messages that are
@@ -64,6 +67,14 @@ public interface ITopic<E> extends DistributedObject {
     void publish(@Nonnull E message);
 
     /**
+     * Publishes the message asynchronously to all subscribers of this topic.
+     *
+     * @param message the message to publish asynchronously to all subscribers of this topic
+     * @return the CompletionStage to synchronize on completion.
+     */
+    CompletionStage<Void> publishAsync(@Nonnull E message);
+
+    /**
      * Subscribes to this topic. When a message is published, the
      * {@link MessageListener#onMessage(Message)} method of the given
      * MessageListener is called.
@@ -95,4 +106,21 @@ public interface ITopic<E> extends DistributedObject {
      * @return statistics about this topic
      */
     @Nonnull LocalTopicStats getLocalTopicStats();
+
+    /**
+     * Publishes all messages to all subscribers of this topic.
+     *
+     * @param messages the messages to publish to all subscribers of this topic
+     * @throws TopicOverloadException if the consumer is too slow
+     *                                (only works in combination with reliable topic)
+     */
+    void publishAll(@Nonnull Collection<? extends E> messages) throws ExecutionException, InterruptedException;
+
+    /**
+     * Publishes all messages asynchronously to all subscribers of this topic.
+     *
+     * @param messages the messages to publish asynchronously to all subscribers of this topic
+     * @return the CompletionStage to synchronize on completion.
+     */
+    CompletionStage<Void> publishAllAsync(@Nonnull Collection<? extends E> messages);
 }

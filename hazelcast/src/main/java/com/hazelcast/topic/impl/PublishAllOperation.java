@@ -18,13 +18,14 @@ package com.hazelcast.topic.impl;
 
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -37,48 +38,38 @@ import java.util.concurrent.locks.Lock;
  * @see TotalOrderedTopicProxy
  * @see TopicConfig#isGlobalOrderingEnabled()
  */
-public class PublishOperation extends AbstractNamedOperation
+public class PublishAllOperation extends AbstractNamedOperation
         implements IdentifiedDataSerializable {
 
-    private Data message;
+    private Data[] messages;
 
-    public PublishOperation() {
+    public PublishAllOperation() {
     }
 
-    public PublishOperation(String name, Data message) {
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public PublishAllOperation(String name, Data[] messages) {
         super(name);
-        this.message = message;
-    }
-
-    /**
-     * {@inheritDoc}
-     * Increments the local statistics for the number of published
-     * messages.
-     *
-     * @throws Exception
-     */
-    @Override
-    public void afterRun() throws Exception {
-        TopicService service = getService();
-        service.incrementPublishes(name);
+        this.messages = messages;
     }
 
     @Override
     public void run() throws Exception {
         TopicService service = getService();
-        TopicEvent topicEvent = new TopicEvent(name, message, getCallerAddress());
         EventService eventService = getNodeEngine().getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(TopicService.SERVICE_NAME, name);
 
         Lock lock = service.getOrderLock(name);
         lock.lock();
         try {
-            eventService.publishEvent(TopicService.SERVICE_NAME, registrations, topicEvent, name.hashCode());
+            for (Data item : messages) {
+                TopicEvent topicEvent = new TopicEvent(name, item, getCallerAddress());
+                eventService.publishEvent(TopicService.SERVICE_NAME, registrations, topicEvent, name.hashCode());
+                service.incrementPublishes(name);
+            }
         } finally {
             lock.unlock();
         }
     }
-
 
     @Override
     public int getFactoryId() {
@@ -87,7 +78,7 @@ public class PublishOperation extends AbstractNamedOperation
 
     @Override
     public int getClassId() {
-        return TopicDataSerializerHook.PUBLISH;
+        return TopicDataSerializerHook.PUBLISH_ALL;
     }
 
     @Override
@@ -98,12 +89,19 @@ public class PublishOperation extends AbstractNamedOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        IOUtil.writeData(out, message);
+        out.writeInt(messages.length);
+        for (Data item : messages) {
+            IOUtil.writeData(out, item);
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        message = IOUtil.readData(in);
+        int length = in.readInt();
+        messages = new Data[length];
+        for (int k = 0; k < messages.length; k++) {
+            messages[k] = IOUtil.readData(in);
+        }
     }
 }

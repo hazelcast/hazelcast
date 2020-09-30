@@ -22,17 +22,17 @@ import com.hazelcast.client.impl.proxy.ClientReliableTopicProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.topic.Message;
-import com.hazelcast.topic.MessageListener;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.impl.reliable.DurableSubscriptionTest;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerMock;
-import com.hazelcast.internal.util.Clock;
 import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
@@ -318,5 +318,4 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
         assertOpenEventually(messageArrived);
         TestCase.assertTrue(topic.removeMessageListener(id));
     }
-
 }

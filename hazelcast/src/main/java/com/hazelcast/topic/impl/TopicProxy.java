@@ -16,14 +16,19 @@
 
 package com.hazelcast.topic.impl;
 
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.MessageListener;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -47,6 +52,13 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
         publishInternal(message);
     }
 
+    @Override
+    public CompletionStage<Void> publishAsync(@Nonnull E message) {
+        checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
+        publishInternal(message);
+        return InternalCompletableFuture.completedFuture(null);
+    }
+
     @Nonnull
     @Override
     public UUID addMessageListener(@Nonnull MessageListener<E> listener) {
@@ -63,6 +75,29 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
     @Override
     public LocalTopicStats getLocalTopicStats() {
         return getLocalTopicStatsInternal();
+    }
+
+    @Override
+    public void publishAll(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        messages.forEach(this::publishInternal);
+    }
+
+    @Override
+    public CompletionStage<Void> publishAllAsync(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        publishAll(messages);
+        return InternalCompletableFuture.completedFuture(null);
+    }
+
+
+    protected Data[] toDataArray(Collection<? extends E> collection) {
+        return collection.stream().map(item -> {
+            checkNotNull(item, "collection can't contains null items");
+            return toData(item);
+        }).toArray(Data[]::new);
     }
 }
 
