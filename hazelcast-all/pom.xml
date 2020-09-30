@@ -149,6 +149,7 @@
                     <fileTemplate>${project.basedir}/src/main/resources/THIRD-PARTY.txt.ftl</fileTemplate>
                     <excludedGroups>com.hazelcast</excludedGroups>
                     <excludedScopes>test,provided</excludedScopes>
+                    <excludedArtifacts>checker-compat-qual</excludedArtifacts>
                     <failOnBlacklist>true</failOnBlacklist>
                     <failOnMissing>true</failOnMissing>
                     <includedLicenses>
