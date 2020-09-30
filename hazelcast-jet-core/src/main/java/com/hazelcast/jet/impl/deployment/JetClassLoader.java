@@ -102,11 +102,8 @@ public class JetClassLoader extends ClassLoader {
         if (getPackage(packageName) != null) {
             return;
         }
-        Package clPackage = JetClassLoader.class.getPackage();
         try {
-            definePackage(packageName, clPackage.getSpecificationTitle(), clPackage.getSpecificationVersion(),
-                    clPackage.getSpecificationVendor(), clPackage.getImplementationTitle(),
-                    clPackage.getImplementationVersion(), clPackage.getImplementationVendor(), null);
+            definePackage(packageName, null, null,null, null,null, null, null);
         } catch (IllegalArgumentException ignored) {
         }
     }
