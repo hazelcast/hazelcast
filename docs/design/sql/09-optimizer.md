@@ -282,11 +282,6 @@ optimizer.
 Apache Calcite has two optimizers - heuristic (`HepPlanner`) and cost-based (`VolcanoPlanner`). Since the heuristic
 optimizer cannot guarantee the optimal plan, we use cost-based `VolcanoPlanner`. Below we discuss the design of the latter.
 
-The `VolcanoPlanner` employs EXODUS-like approach to query optimization. It uses rules to find alternative plans. However, it 
-doesn't employ the guided top-down search strategy. Instead, the optimizer organizes rule instances in a queue, and  
-The word `Volcano` in the name is a bit misleading, because the optimizer doesn't actually follow the main ideas from the 
-Volcano/Cascades papers.
-
 ### 2.1 Operators and Rules
 
 The operator abstraction is defined in the `RelNode` interface. The operator may have zero or more inputs, and a set of 
@@ -404,11 +399,16 @@ RelSet#1: [LogicalAgg(a)]
 RelSet#2: [LogicalScan, AbstractConverter(LogicalScan, a ASC), LogicalSort(LogicalScan, a ASC)]
 ``` 
 
-###
+### 2.5 Metadata
 
-#### 2.6 Execution
+Many rels
 
-TODO
+### 2.6 Execution
+
+The `VolcanoPlanner` employs EXODUS-like approach to query optimization. It uses rules to find alternative plans. However, it 
+doesn't employ the guided top-down search strategy. Instead, the optimizer organizes rule instances in a queue, and  
+The word `Volcano` in the name is a bit misleading, because the optimizer doesn't actually follow the main ideas from the 
+Volcano/Cascades papers.
 
 ## 3 Hazelcast Mustang Optimizer
 
