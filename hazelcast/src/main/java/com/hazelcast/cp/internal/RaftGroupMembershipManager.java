@@ -112,7 +112,8 @@ class RaftGroupMembershipManager {
     }
 
     private boolean skipRunningTask() {
-        return !raftService.getMetadataGroupManager().isMetadataGroupLeader();
+        return !(raftService.isDiscoveryCompleted() && raftService.isStartCompleted()
+                && raftService.getMetadataGroupManager().isMetadataGroupLeader());
     }
 
     void rebalanceGroupLeaderships() {

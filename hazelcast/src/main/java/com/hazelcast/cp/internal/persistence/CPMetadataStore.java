@@ -41,6 +41,12 @@ public interface CPMetadataStore {
     boolean tryMarkAPMember() throws IOException;
 
     /**
+     * Returns true if this member has local member file persisted
+     * on the storage layer.
+     */
+    boolean containsLocalMemberFile();
+
+    /**
      * Persists {@link CPMember} identity of the local member to storage.
      */
     void persistLocalCPMember(CPMember member) throws IOException;
