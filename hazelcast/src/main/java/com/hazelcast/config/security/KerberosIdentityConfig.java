@@ -56,6 +56,24 @@ public class KerberosIdentityConfig implements IdentityConfig {
         return this;
     }
 
+    public String getKeytabFile() {
+        return factoryConfig.getProperties().getProperty("keytabFile");
+    }
+
+    public KerberosIdentityConfig setKeytabFile(String keytabFile) {
+        factoryConfig.getProperties().setProperty("keytabFile", keytabFile);
+        return this;
+    }
+
+    public String getPrincipal() {
+        return factoryConfig.getProperties().getProperty("principal");
+    }
+
+    public KerberosIdentityConfig setPrincipal(String principal) {
+        factoryConfig.getProperties().setProperty("principal", principal);
+        return this;
+    }
+
     public String getSecurityRealm() {
         return factoryConfig.getProperties().getProperty("securityRealm");
     }
@@ -117,6 +135,8 @@ public class KerberosIdentityConfig implements IdentityConfig {
         return "KerberosIdentityConfig [spn=" + getSpn() + ", serviceNamePrefix=" + getServiceNamePrefix()
                 + ", realm=" + getRealm()
                 + ", securityRealm=" + getSecurityRealm()
+                + ", principal=" + getPrincipal()
+                + ", keytabFile=" + getKeytabFile()
                 + ", useCanonicalHostname=" + getUseCanonicalHostname()
                 + "]";
     }

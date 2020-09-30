@@ -2993,6 +2993,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 kerbIdentity.setRealm(getTextContent(child));
             } else if (matches("security-realm", nodeName)) {
                 kerbIdentity.setSecurityRealm(getTextContent(child));
+            } else if (matches("principal", nodeName)) {
+                kerbIdentity.setPrincipal(getTextContent(child));
+            } else if (matches("keytab-file", nodeName)) {
+                kerbIdentity.setKeytabFile(getTextContent(child));
             } else if (matches("service-name-prefix", nodeName)) {
                 kerbIdentity.setServiceNamePrefix(getTextContent(child));
             } else if (matches("spn", nodeName)) {
@@ -3076,6 +3080,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 krbCfg.setUseNameWithoutRealm(getBooleanValue(getTextContent(child)));
             } else if (matches("security-realm", nodeName)) {
                 krbCfg.setSecurityRealm(getTextContent(child));
+            } else if (matches("principal", nodeName)) {
+                krbCfg.setPrincipal(getTextContent(child));
+            } else if (matches("keytab-file", nodeName)) {
+                krbCfg.setKeytabFile(getTextContent(child));
             } else if (matches("ldap", nodeName)) {
                 krbCfg.setLdapAuthenticationConfig(createLdapAuthentication(child));
             }
