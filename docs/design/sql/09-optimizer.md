@@ -630,9 +630,113 @@ thrown in this case.
 Last, we manually add a special `RootLogicalRel` on top of the result. This operator is an abstraction of a user query
 cursor that returns query results on the initiator member. 
 
+The result of the logical optimization is an optimized tree of operators with the `HazelcastConvention.LOGICAL` convention, 
+that has `RootLogicalRel` at the root.
+
 ### 3.5 Physical Optimization
 
-TODO
+The goal of the physical optimization is to find the physical implementations of logical operators. Some physical operators
+have 1-to-1 mapping to their logical counterparts (e.g. project), while others may have completely different implementations 
+(e.g. index scan created out of logical table scan). 
+
+We do not perform any logical transformations at this phase. As explained in the previous paragraph, it could lead to non-optimal 
+plans when we add joins. Therefore, the architecture may change in the future.
+
+#### 3.5.1 Distribution Trait
+
+Since Hazelcast stores data on multiple nodes, we should take the data distribution in count during planning. This is achieved
+through the `DistributionTrait` property that is assigned to physical operators during planning.   
+
+*Table 6: Distribution Types*
+
+| Name | Description |
+|---|---|
+| `ROOT` | The result set is located on the initiator member only |
+| `PARTITIONED` | The results set is distributed across member, every row is located on one member only |
+| `REPLICATED` | The copy of the whole result set is located on every member |
+
+When the planning starts, we explicit request, that the planning result must have `ROOT` distribution, which literally
+means "deliver the final result to the initiator member". 
+
+The `DistributionTraitDef` defines what should happen if a parent member requests a certain distribution that cannot
+be satisfied by the child. If the data movement is needed, a special `Exchange` operator is injected between the 
+parent and the child. The goal of the `Exchange` operator is to move data between member to get the desired distirbution.
+Therefore, the `Exchange` operator is the enforcer operator for the `DistributionTrait`, similarly to `Sort` that is the
+enforcer operator for the `RelCollation`.
+
+Currently we support only `RootExchangePhysicalRel` that delivers results to the initiator node. Implementation of joins,
+aggregations, and sorting will require more implementations of the `Exchange` operator. 
+
+The table below summarizes how the ROOT distribution is enforced.
+
+*Table 7: Root Distribution Enforcers*
+| Input Distribution | Result |
+|---|---|
+| `ROOT` | No-op, the child operator is already located on the initiator |
+| `PARTITIONED` | No-op, if there is only one member in the topology. Otherwise, inject `RootExchangePhysicalRel` on top of the child |
+| `REPLICATED` | No-op, the child operator is already located on all members, including the initiator |
+
+Below is the example of the distribution enforcement for the simple logical plan:
+```
+LOGICAL:
+RootLogicalRel                     // Return to the user from the initiator
+  MapScanLogicalRel                // Scan an IMap
+
+PHYSICAL:
+RootLogicalRel[ROOT]               // Return to the user from the initiator
+  RootExchangePhysicalRel[ROOT]    // Send to the initiator
+    MapScanLogicalRel[PARTITIONED] // Scan an IMap on all nodes
+```
+
+#### 3.5.2 Optimization Algorithm
+
+The goal of the optimizer is to find the cheapest plan that has the `ROOT` distribution at the top operator.  
+
+Currently, the optimization is peformed **bottom-up**. We start with the leaf nodes, because their distribution is
+always known. When physical implementations for the leaf node is found, rules are trigerred on the parent nodes, and 
+parent distributions are resolved. The process continues until we reach the root node, that always has `ROOT` distribution. 
+Then the root node enforces the `ROOT` distribution on the input, adding the `RootExchangePhysicalRel` if needed.
+
+*Table 8: Distributions of the Leaf Nodes*
+
+| Node | Distribution | Comment |
+|---|---|---|
+| `MapScanLogicalRel` | `PARTITIONED` | Scan of the partitioned `IMap` |
+| `ValuesLogicalRel` | `REPLICATED` | Constant values, that are delivered to all members as a part of the plan |
+  
+The `VolcanoPlanner` is not suitable to work in the bottom-up trait propagation out-of-the-box. Therefore, we adjust our 
+integration with the Apache Calcite as follows:
+1. During the physical optimization, we gradually converting nodes from the `LOGICAL` convention to `PHYSICAL`. For the 
+`PHYSICAL` convention we override a couple of methods (see `HazelcastConventions.PHYSICAL`) that roughly forces the optimizer
+to do the following: "when a new `PHYSICAL` node is created, force re-optimization of the `LOGICAL` parent". This way, whenever a 
+new `PHYSICAL` node is added to MEMO, the rules for the `LOGICAL` parent node is added to the execution queue 
+1. Optimization rules for the intermediate nodes (i.e. not leafs, and not root) follow the same pattent: get the input's 
+`RelSet`, extract all `RelSubset`-s with `PHYSICAL` convention, and create one intermediate physical node per `RelSubset`. This
+way we ensure that all possibly interesting properties of the current group is propagated to parent groups.
+
+Note that this algorithm uses the optimistic approach, when we create an intermediate physical nodes for every possible
+combination of physical properties, assuming that it will help parent find better plans. For complex plans, this may
+create too many operators. A better approach would be to create only those intermediate operators that are really
+required by parents, effectively changing the direction of the optimization: top-down instead of bottom-up. To achieve
+this we may use the solution used in Apache Flink (see `FlinkExpandConversionRule`). It is likely, that we will have
+to switch to this approach, when joins are implemented.
+        
+#### 3.5.3 Optimizations
+
+Currently we have the following physical optimizations.
+
+*Table 9: Physical Optimizations*
+
+| Name | Produces | Description |
+|---|---|---|
+| `RootPhysicalRule` | `RootPhysicalRel` | Convert logical root to physical root, enforcing the `ROOT` distribution on the input |
+| `ProjectPhysicalRule` | `ProjectPhysicalRel` | Convert logical project to physical project, propagate input properties |
+| `FilterPhysicalRule` | `FilterPhysicalRel` | Convert logical filter to physical filter, propagate input properties |
+| `ValuesPhysicalRule` | `ValuesPhysicalRel` | Convert logical values to physical values, assign `REPLICATED` distribution |
+| `MapScanPhysicalRule` | `MapScanPhysicalRel`, `MapIndexScanPhysicalRel` | Convert logical map scan to physical map scan or physical map index scan based on the filter condition, assign `PARTITIONED` distribution |
+
+The result of the physical optimization is an optimized tree of operators with the `HazelcastConvention.PHYSICAL` convention, 
+that has `RootPhysicalRel` at the root, and has zero or more `Exchange` operators that move data within the cluster.
 
 ### 3.6 Splitting
 
