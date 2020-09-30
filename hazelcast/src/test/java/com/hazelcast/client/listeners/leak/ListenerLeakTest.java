@@ -84,10 +84,12 @@ public class ListenerLeakTest extends ClientTestSupport {
 
     private void assertNoLeftOver(Collection<Node> nodes, HazelcastInstance client, UUID id
             , Collection<ClientConnectionRegistration> registrations) {
-        for (Node node : nodes) {
-            assertNoLeftOverOnNode(node, registrations);
-        }
-        assertEquals(0, getClientEventRegistrations(client, id).size());
+        assertTrueEventually(() -> {
+            for (Node node : nodes) {
+                assertNoLeftOverOnNode(node, registrations);
+            }
+            assertEquals(0, getClientEventRegistrations(client, id).size());
+        });
     }
 
     private Collection<Node> createNodes() {

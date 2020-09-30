@@ -46,7 +46,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -307,39 +306,33 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         //This method should only be called from registrationExecutor
         assert (Thread.currentThread().getName().contains("eventRegistration"));
 
-        ClientListenerRegistration listenerRegistration = registrations.get(userRegistrationId);
+        ClientListenerRegistration listenerRegistration = registrations.remove(userRegistrationId);
         if (listenerRegistration == null) {
             return false;
         }
-        boolean successful = true;
 
         Map<Connection, ClientConnectionRegistration> registrations = listenerRegistration.getConnectionRegistrations();
-        Iterator<Map.Entry<Connection, ClientConnectionRegistration>> iterator = registrations.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<Connection, ClientConnectionRegistration> entry = iterator.next();
+        for (Map.Entry<Connection, ClientConnectionRegistration> entry : registrations.entrySet()) {
             ClientConnectionRegistration registration = entry.getValue();
-            Connection subscriber = entry.getKey();
-            try {
-                ListenerMessageCodec listenerMessageCodec = listenerRegistration.getCodec();
-                UUID serverRegistrationId = registration.getServerRegistrationId();
-                ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
-                if (request != null) {
-                    new ClientInvocation(client, request, null, subscriber).invoke().get();
-                }
-                ((ClientConnection) subscriber).removeEventHandler(registration.getCallId());
-                iterator.remove();
-            } catch (Exception e) {
-                if (subscriber.isAlive()) {
-                    successful = false;
-                    logger.warning("Deregistration of listener with ID " + userRegistrationId
-                            + " has failed to address " + subscriber.getEndPoint(), e);
-                }
+            ClientConnection subscriber = (ClientConnection) entry.getKey();
+            //remove local handler
+            subscriber.removeEventHandler(registration.getCallId());
+            //the rest is for deleting remote registration
+            ListenerMessageCodec listenerMessageCodec = listenerRegistration.getCodec();
+            UUID serverRegistrationId = registration.getServerRegistrationId();
+            ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
+            if (request == null) {
+                continue;
             }
+            ClientInvocation clientInvocation = new ClientInvocation(client, request, null, subscriber);
+            clientInvocation.setInvocationTimeoutMillis(Long.MAX_VALUE);
+            clientInvocation.invokeUrgent().exceptionally(throwable -> {
+                logger.warning("Deregistration of listener with ID " + userRegistrationId
+                        + " has failed to address " + subscriber.getEndPoint(), throwable);
+                return null;
+            });
         }
-        if (successful) {
-            this.registrations.remove(userRegistrationId);
-        }
-        return successful;
+        return true;
     }
 
     private final class ClientEventProcessor implements StripedRunnable {
