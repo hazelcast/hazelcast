@@ -103,7 +103,7 @@ public class JetClassLoader extends ClassLoader {
             return;
         }
         try {
-            definePackage(packageName, null, null,null, null,null, null, null);
+            definePackage(packageName, null, null, null, null, null, null, null);
         } catch (IllegalArgumentException ignored) {
         }
     }
