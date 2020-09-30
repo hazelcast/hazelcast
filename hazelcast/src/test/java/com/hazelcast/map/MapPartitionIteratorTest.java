@@ -17,7 +17,9 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Immutable;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -25,6 +27,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import junit.framework.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,12 +35,14 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -200,6 +205,31 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
         assertUniques(readKeysP2, iteratorP2);
     }
 
+    @Test
+    public void test_iterating_immutable_values() {
+        Config config = getConfig();
+        config.getMapConfig("default")
+              .setInMemoryFormat(InMemoryFormat.OBJECT);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+
+        MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
+
+        int partitionCount = getNodeEngineImpl(instance).getPartitionService().getPartitionCount();
+        String value = randomString();
+        for (int i = 0; i < partitionCount; i++) {
+            String key = generateKeyForPartition(instance, i);
+            proxy.put(key, new ImmutableValue(value));
+        }
+
+        for (int i = 0; i < partitionCount; i++) {
+            Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator(10, i, prefetchValues);
+            Assert.assertTrue(iterator.hasNext());
+            assertEquals(value, ((ImmutableValue) iterator.next().getValue()).value);
+        }
+    }
+
     private void assertUniques(HashSet<String> readKeys, Iterator<Map.Entry<String, String>> iterator) {
         while (iterator.hasNext()) {
             Map.Entry<String, String> entry = iterator.next();
@@ -224,6 +254,17 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
         for (int i = 0; i < count; i++) {
             String key = generateKeyForPartition(instance, partitionId);
             proxy.put(key, value);
+        }
+    }
+
+    public static class ImmutableValue implements Immutable, Serializable {
+        public String value;
+
+        public ImmutableValue(String value) {
+            this.value = value;
+        }
+
+        public ImmutableValue() {
         }
     }
 }

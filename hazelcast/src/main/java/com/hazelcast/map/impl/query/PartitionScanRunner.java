@@ -162,11 +162,11 @@ public class PartitionScanRunner {
         while (resultList.size() < fetchSize && pointers[pointers.length - 1].getIndex() >= 0) {
             MapEntriesWithCursor cursor = recordStore.fetchEntries(pointers, fetchSize - resultList.size());
             pointers = cursor.getIterationPointers();
-            Collection<? extends Entry<Data, Data>> entries = cursor.getBatch();
+            Collection<? extends Entry<Data, Object>> entries = cursor.getBatch();
             if (entries.isEmpty()) {
                 break;
             }
-            for (Entry<Data, Data> entry : entries) {
+            for (Entry<Data, Object> entry : entries) {
                 QueryableEntry queryEntry = new LazyMapEntry(entry.getKey(), entry.getValue(), ss, extractors);
                 if (predicate.apply(queryEntry)) {
                     resultList.add(queryEntry);

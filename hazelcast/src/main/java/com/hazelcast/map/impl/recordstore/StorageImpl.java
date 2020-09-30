@@ -155,7 +155,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     public MapEntriesWithCursor fetchEntries(IterationPointer[] pointers, int size) {
         List<Map.Entry<Data, R>> entries = new ArrayList<>(size);
         IterationPointer[] newPointers = records.fetchEntries(pointers, size, entries);
-        List<Map.Entry<Data, Data>> entriesData = new ArrayList<>(entries.size());
+        List<Map.Entry<Data, Object>> entriesData = new ArrayList<>(entries.size());
         for (Map.Entry<Data, R> entry : entries) {
             R record = entry.getValue();
             Data dataValue = serializationService.toData(record.getValue());
