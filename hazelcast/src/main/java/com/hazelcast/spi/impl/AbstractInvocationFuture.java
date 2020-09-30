@@ -486,6 +486,21 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     @Override
+    public InternalCompletableFuture<V> exceptionally(@Nonnull Function<Throwable, ? extends V> fn) {
+        requireNonNull(fn);
+        final InternalCompletableFuture<V> future = newCompletableFuture();
+        if (isDone()) {
+            unblockExceptionally(fn, future);
+        } else {
+            Object result = registerWaiter(new ExceptionallyNode<>(future, fn), null);
+            if (result != UNRESOLVED) {
+                unblockExceptionally(fn, future);
+            }
+        }
+        return future;
+    }
+
+    @Override
     public InternalCompletableFuture<V> toCompletableFuture() {
         return this;
     }
@@ -864,33 +879,19 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
     }
 
-    @Override
-    public InternalCompletableFuture<V> exceptionally(@Nonnull Function<Throwable, ? extends V> fn) {
-        requireNonNull(fn);
+    private void unblockExceptionally(@Nonnull Function<Throwable, ? extends V> fn,
+                                      InternalCompletableFuture<V> future) {
         Object result = resolve(state);
-        final InternalCompletableFuture<V> future = newCompletableFuture();
-        for (; ; ) {
-            if (result != UNRESOLVED && isDone()) {
-                if (result instanceof ExceptionalResult) {
-                    Throwable throwable = ((ExceptionalResult) result).cause;
-                    try {
-                        V value = fn.apply(throwable);
-                        future.complete(value);
-                    } catch (Throwable t) {
-                        future.completeExceptionally(t);
-                    }
-                } else {
-                    future.complete((V) result);
-                }
-                return future;
-            } else {
-                result = registerWaiter(new ExceptionallyNode<>(future, fn), null);
-                if (result == UNRESOLVED) {
-                    return future;
-                } else {
-                    result = resolve(state);
-                }
+        if (result instanceof ExceptionalResult) {
+            Throwable throwable = ((ExceptionalResult) result).cause;
+            try {
+                V value = fn.apply(throwable);
+                future.complete(value);
+            } catch (Throwable t) {
+                future.completeExceptionally(t);
             }
+        } else {
+            future.complete((V) result);
         }
     }
 
