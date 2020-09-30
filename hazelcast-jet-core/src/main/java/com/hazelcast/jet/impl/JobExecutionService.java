@@ -394,9 +394,14 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        descriptor.withTag(MetricTags.MODULE, "jet");
-        executionContexts.forEach((id, ctx) -> {
-            ctx.provideDynamicMetrics(descriptor.copy(), context);
-        });
+        try {
+            descriptor.withTag(MetricTags.MODULE, "jet");
+            executionContexts.forEach((id, ctx) -> {
+                ctx.provideDynamicMetrics(descriptor.copy(), context);
+            });
+        } catch (Throwable t) {
+            logger.warning("Dynamic metric collection failed", t);
+            throw t;
+        }
     }
 }
