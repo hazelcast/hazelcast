@@ -560,7 +560,7 @@ The result of this stage is the optimized operator tree (`RelNode`) without subq
 Further optimization is split into two independent phases - logical and physical.
 
 The logical optimization is concerned with transformations to the operator tree, that simplifies the plan, without 
-consdering their physical implementations. Generally, we do the following:
+considering their physical implementations. Generally, we do the following:
 - Fuse operators together to make the tree smaller
 - Removing operators that have no impact on the final result
 - Removing operators that do not produce any results
@@ -598,7 +598,7 @@ optimization in a separate step, extract only one best plan from the search spac
 to on the next stage. This way, we have to consider only `N + M` plans, that alleviates the inefficiency of the core
 search algorithm of `VolcanoPlanner`.
 
-The fundamental observation, is that splitting optimization into serveral phases `doesn't guarantee the optimal plan` 
+The fundamental observation, is that splitting optimization into several phases `doesn't guarantee the optimal plan` 
 in the general case. That is, if we generated plans `P1, P2 ... Pm ...`, and picked `Pm` as the best one, it
 doesn't mean that applying additional rules to `Pm` will produce the optimal plan `Pm'`. Another plan `Pn`, 
 such that `cost(Pn) > cost(Pm)`, could yield better plan `Pn'`, such that `cost(Pn') < cost(Pm')`.
@@ -615,7 +615,7 @@ to our own logical operators with the convention `HazelcastConvention.LOGICAL`. 
 rules that extend Calcite's `ConverterRule`.  
 
 If there is a Calcite operator in the tree that doesn't have a logical counterpart, then it indicates that there is either an 
-unsupported operation, that we missed, during valdation phase, or that we miss some conversion rule. An exception will be 
+unsupported operation, that we missed, during validation phase, or that we miss some conversion rule. An exception will be 
 thrown in this case.
 
 *Table 5: Logical Conversion Rules*
@@ -660,11 +660,11 @@ means "deliver the final result to the initiator member".
 
 The `DistributionTraitDef` defines what should happen if a parent member requests a certain distribution that cannot
 be satisfied by the child. If the data movement is needed, a special `Exchange` operator is injected between the 
-parent and the child. The goal of the `Exchange` operator is to move data between member to get the desired distirbution.
+parent and the child. The goal of the `Exchange` operator is to move data between members to get the desired distribution.
 Therefore, the `Exchange` operator is the enforcer operator for the `DistributionTrait`, similarly to `Sort` that is the
 enforcer operator for the `RelCollation`.
 
-Currently we support only `RootExchangePhysicalRel` that delivers results to the initiator node. Implementation of joins,
+Currently, we support only `RootExchangePhysicalRel` that delivers results to the initiator node. Implementation of joins,
 aggregations, and sorting will require more implementations of the `Exchange` operator. 
 
 The table below summarizes how the ROOT distribution is enforced.
@@ -692,8 +692,8 @@ RootLogicalRel[ROOT]               // Return to the user from the initiator
 
 The goal of the optimizer is to find the cheapest plan that has the `ROOT` distribution at the top operator.  
 
-Currently, the optimization is peformed **bottom-up**. We start with the leaf nodes, because their distribution is
-always known. When physical implementations for the leaf node is found, rules are trigerred on the parent nodes, and 
+Currently, the optimization is performed **bottom-up**. We start with the leaf nodes, because their distribution is
+always known. When physical implementations for the leaf node is found, rules are triggered on the parent nodes, and 
 parent distributions are resolved. The process continues until we reach the root node, that always has `ROOT` distribution. 
 Then the root node enforces the `ROOT` distribution on the input, adding the `RootExchangePhysicalRel` if needed.
 
@@ -706,16 +706,16 @@ Then the root node enforces the `ROOT` distribution on the input, adding the `Ro
   
 The `VolcanoPlanner` is not suitable to work in the bottom-up trait propagation out-of-the-box. Therefore, we adjust our 
 integration with the Apache Calcite as follows:
-1. During the physical optimization, we gradually converting nodes from the `LOGICAL` convention to `PHYSICAL`. For the 
+1. During the physical optimization, we gradually convert nodes from the `LOGICAL` convention to `PHYSICAL`. For the 
 `PHYSICAL` convention we override a couple of methods (see `HazelcastConventions.PHYSICAL`) that roughly forces the optimizer
 to do the following: "when a new `PHYSICAL` node is created, force re-optimization of the `LOGICAL` parent". This way, whenever a 
-new `PHYSICAL` node is added to MEMO, the rules for the `LOGICAL` parent node is added to the execution queue 
-1. Optimization rules for the intermediate nodes (i.e. not leafs, and not root) follow the same pattent: get the input's 
+new `PHYSICAL` node is added to MEMO, the rules for the `LOGICAL` parent node is added to the execution queue. 
+1. Optimization rules for the intermediate nodes (i.e. not leaves, and not root) follow the same pattern: get the input's 
 `RelSet`, extract all `RelSubset`-s with `PHYSICAL` convention, and create one intermediate physical node per `RelSubset`. This
 way we ensure that all possibly interesting properties of the current group is propagated to parent groups.
 
-Note that this algorithm uses the optimistic approach, when we create an intermediate physical nodes for every possible
-combination of physical properties, assuming that it will help parent find better plans. For complex plans, this may
+Note that this algorithm uses the optimistic approach: we create intermediate physical nodes for every possible
+combination of physical properties, assuming it will help parent find better plans. For complex plans, this may
 create too many operators. A better approach would be to create only those intermediate operators that are really
 required by parents, effectively changing the direction of the optimization: top-down instead of bottom-up. To achieve
 this we may use the solution used in Apache Flink (see `FlinkExpandConversionRule`). It is likely, that we will have
@@ -723,7 +723,7 @@ to switch to this approach, when joins are implemented.
         
 #### 3.5.3 Optimizations
 
-Currently we have the following physical optimizations.
+Currently, we have the following physical optimizations.
 
 *Table 9: Physical Optimizations*
 
@@ -740,7 +740,31 @@ that has `RootPhysicalRel` at the root, and has zero or more `Exchange` operator
 
 ### 3.6 Splitting
 
-TODO
+Finally, we split the physical plan into one or more fragments, using `Exchange` operators as fragment boundaries:
+1. Every node is converted to the `PlanNode` counterpart, that could be serialized and sent over network
+1. Every `Exchange` node is converted into a pair of `send` and `receive` plan nodes (actual implementation depends on the 
+exchange type)
+
+Consider the following physical plan:
+```
+RootLogicalRel[ROOT]               // Return to the user from the initiator
+  RootExchangePhysicalRel[ROOT]    // Send to the initiator
+    MapScanLogicalRel[PARTITIONED] // Scan an IMap on all nodes
+```
+
+After the split it is converted into the plan with two fragments:
+```
+FRAGMENT 1:
+RootPlanNode                       // Return to the user from the initiator
+  ReceivePlanNode[edge=1]          // Receive results from all members
+
+FRAGMENT 2:
+RootSendPlanNode[edge=1]           // Send results to the initiator
+  MapScanLogicalRel[PARTITIONED]   // Scan an IMap locally
+```
+
+The split logic is located in the `PlanCreateVisitor` class. The result is the `Plan` object, that doesn't depend
+on the Apache Calcite, and could be sent to other nodes for execution.
 
 [1]: https://dl.acm.org/doi/10.1145/38713.38734 "The EXODUS optimizer generator"
 [2]: https://dl.acm.org/doi/10.5555/645478.757691 "The Volcano Optimizer Generator: Extensibility and Efficient Search"
