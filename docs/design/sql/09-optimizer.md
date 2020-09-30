@@ -35,7 +35,7 @@ that could be CPU, memory, network. The optimization goal could be also defined 
 as "find the plan with the minimal latency".
 
 To formalize the optimization goal, every operator is assigned a **cost** - an abstract comparable value, that depends on the 
-operator type, and operator arguments. The plan with the **least cost** is said to be the best plan for the given query.     
+operator type, and operator arguments. The plan with the least cost is said to be the best plan for the given query.     
 
 ### 1.3 Properties
 
@@ -83,7 +83,7 @@ the second query has collation `[a DESC]`.
 ### 1.4 MEMO
 
 During the optimization, quite a few alternative plans could be created (thousands, millions, etc). Therefore, it is important
-to encode the search space efficiently, to prevent out-of-memory conditions. The so-called **MEMO** data strcuture is often used
+to encode the search space efficiently, to prevent out-of-memory conditions. The so-called **MEMO** data structure is often used
 for this purpose. 
 
 A **group** is a collection of equivalent operators. When a plan is submitted for optimization, its operators are copied and 
@@ -96,7 +96,7 @@ Consider a simple query that performs a table scan:
 SELECT name FROM person
 ```  
 If there is an index on the table, then there are two access paths (table scan, index scan), and two equivalent plans. Without
-MEMO we would have to create two separate plans:
+the MEMO, we would have to create two separate plans:
 ```
 Project[name]
   TableScan[person]
@@ -105,7 +105,7 @@ Project[name]
 Project[name]
   IndexScan[person, index]
 ```
-With MEMO, the plan is first copied into the search space:
+With the MEMO, the plan is first copied into the search space:
 ```
 G1
   G2
@@ -124,9 +124,9 @@ G2: {TableScan[person], IndexScan[person, index]}
 
 ### 1.5 Logical and Physical Operators
 
-In query optimization literature, there are typically two operator types. **Logical operators** are operators that define data 
-transformations. **Physical operators** are specific algorithms that implement particular transformations. Below are several 
-examples of logical operators and their physical counterparts.
+In query optimization literature, there are typically two types of operators. **Logical operators** are operators that define 
+data transformations. **Physical operators** are specific algorithms that implement particular transformations. Below are 
+several examples of logical operators and their physical counterparts.
 
 *Table 1: Logical and Physical Operators*
 
@@ -174,12 +174,12 @@ scheduled for execution on parent operators (i.e. added to OPEN). This step is c
    
 The algorithm proceeds until OPEN is empty.
 
-The EXODUS optimizer doesn't have a strict order of rule execution. One may assign weigths to rule instance to make them
+The EXODUS optimizer doesn't have a strict order of rule execution. One may assign weights to rule instance to make them
 fire earlier, but generally the search is not guided - every rule instance fires independently of others. As a result, the
 same rule may fire multiple times during reanalyzing/rematching, what makes the engine inefficient.
 
-Consider the following operator initial plan, and two rules one that changes the join order, and the other one that attempts 
-to remove the sort operator if its input is already sorted:
+Consider the following operator initial plan, and two rules - one changes the join order, and the other one attempts 
+to remove the sort operator if the input is already sorted:
 ```
 MEMO:
 G1: [Sort]
@@ -212,9 +212,9 @@ and Cascades [[3]] optimizers.
 The main difference that is that Volcano/Cascades uses a **guided top-down search** strategy. Operators are optimized only
 if requested explicitly by parents. Therefore, the optimizer is free to define any optimization logic it finds useful - it may 
 prune some nodes completely, perform partial optimization of a node, etc. Since a search is guided, many redundant rule calls
-could be avoided, since reanalyzing/rematching required by EXODUS is no longer needed.
+could be avoided, since reanalyzing/rematching is no longer needed.
 
-The guided search could be implemented either as a recursive function calls, or as a queue of tasks. But while in the EXODUS
+The guided search could be implemented either as a recursive function calls, or as a queue of tasks. In the EXODUS,
 the task is a rule instance, in the Cascades the queue contains optimization tasks, such as "transform this operator".
 
 Consider the similar query plan, now optimized with the Cascades approach:
@@ -251,7 +251,7 @@ STACK:
 
 Last, the sort elimination rule is fired on top of the already optimized `G2`.
 
-Notice, how we avoid excessive pattern matching and rule execution due to a guided search. 
+Notice, how we avoid the excessive pattern matching and rule execution due to a guided search. 
 
 The Cascades design clearly separates logical optimization (exploration) and physical optimization (implementation).
 When an unoptimized group is reached, matching transformation rules are scheduled. Then the optimization proceeds
@@ -279,9 +279,7 @@ extent at the cost of poor optimizer performance (discussed below). At the same 
 own optimizer will take enormous time. Therefore, the final decision was to proceed with Apache Calcite as a basis for our 
 optimizer.
 
-### 2.1 Design
-
-Apache Calcite has two optimizers - heuristical (`HepPlanner`) and cost-based (`VolcanoPlanner`). Since the heurisitical
+Apache Calcite has two optimizers - heuristic (`HepPlanner`) and cost-based (`VolcanoPlanner`). Since the heuristic
 optimizer cannot guarantee the optimal plan, we use cost-based `VolcanoPlanner`. Below we discuss the design of the latter.
 
 The `VolcanoPlanner` employs EXODUS-like approach to query optimization. It uses rules to find alternative plans. However, it 
@@ -289,7 +287,7 @@ doesn't employ the guided top-down search strategy. Instead, the optimizer organ
 The word `Volcano` in the name is a bit misleading, because the optimizer doesn't actually follow the main ideas from the 
 Volcano/Cascades papers.
 
-#### 2.1.1 Operators and Rules
+### 2.1 Operators and Rules
 
 The operator abstraction is defined in the `RelNode` interface. The operator may have zero or more inputs, and a set of 
 properties encoded in the `RelTraitSet` data structure:
@@ -307,7 +305,7 @@ abstract class RelNode {
 }
 ```
 
-#### 2.1.2 Traits
+### 2.2 Traits
 
 The operator may have a custom property, defined by the `RelTrait` interface. Example property is collation (sort order).
 Every `RelTrait` has a relevant `RelTraitDef` instance, that defines whether two traits of the same type satisfies one 
@@ -317,7 +315,9 @@ Apache Calcite comes with two built-in traits:
 - `RelCollation` - collation
 - `Convention` - an opaque marker, that describes the application-specific type of the node
 
-#### 2.1.3 Memoization
+We will use the terms `property` and `trait` interchangeably.
+
+### 2.3 Memoization
 
 The search space is organized in a collection of groups of equivalent operators, called `RelSet`. Within the `RelSet`
 operators are further grouped by their physical properties into one or more `RelSubset`.  
@@ -348,7 +348,7 @@ RelSet#2 {
 ```
   
 Every operator has a signature string that uniquely identifies it. Two operators with the same signature are placed into
-the same equivalence group. For example, for the query `SELECT * FROM t JOIN t`, two table operators will end up in the 
+the same equivalence group. For example, for the query `SELECT * FROM t JOIN t`, two scans will end up in the 
 same subset:
 ```
 RelSet#1 {
@@ -376,14 +376,14 @@ RelSet#1 {
 }
 ```
   
-#### 2.1.4 Enforcers  
+### 2.4 Enforcers  
   
 It is possible to enforce a certain trait on the operator. This is done through a `RelOptRule.convert` call. When the 
 conversion is requested, the optimizer creates a special `AbstractConverter` operator. When a converter is created, an 
-instance of the `AbstractConverter.ExpandConversionRule` is scheduled to expand it. When this rule fires, it compares
-the properties of original operator, and the requested properties. If the original properties do not satisfy the requested
-ones, the relevant `RelTraitDef` is invoked to enforce the required property. The result of the enforcement could be 
-either a new operator with the desired property, or `null`, which means that the conversion is not possible.
+instance of the `AbstractConverter.ExpandConversionRule` is scheduled to expand it. This rule compares the properties 
+of original operator, and the requested properties. If the original properties do not satisfy the requested ones, the
+relevant `RelTraitDef` is invoked to enforce the required property. The result of the enforcement could be either a 
+new operator with the desired property, or `null`, which means that the conversion is not possible.
 
 For example, consider the following MEMO:
 ```
@@ -404,7 +404,9 @@ RelSet#1: [LogicalAgg(a)]
 RelSet#2: [LogicalScan, AbstractConverter(LogicalScan, a ASC), LogicalSort(LogicalScan, a ASC)]
 ``` 
 
-#### 2.1.5 Execution
+###
+
+#### 2.6 Execution
 
 TODO
 
