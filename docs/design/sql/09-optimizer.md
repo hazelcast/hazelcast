@@ -557,7 +557,78 @@ The result of this stage is the optimized operator tree (`RelNode`) without subq
 
 ### 3.4 Logical Optimization
 
-Further optimization is split into two independent phases - logical and physical. During  
+Further optimization is split into two independent phases - logical and physical.
+
+The logical optimization is concerned with transformations to the operator tree, that simplifies the plan, without 
+consdering their physical implementations. Generally, we do the following:
+- Fuse operators together to make the tree smaller
+- Removing operators that have no impact on the final result
+- Removing operators that do not produce any results
+  
+We define the following logical operators and rules:
+
+*Table 3: Logical Operators*
+
+| Name | Description |
+|---|---|
+| `LogicalTableScan` | Scan a table |
+| `LogicalProject` | Perform a projection (e.g. get an expression `a + b` from the relation `[a, b, c]` |
+| `LogicalFilter` | Filter rows of the input based on the provided condition |
+
+*Table 4: Logical Rules*
+
+| Name | Product | Description |
+|---|---|---|
+| `FilterMergeRule` | Calcite | Merges two adjacent `LogicalFilter` into one to make the operator tree simpler |
+| `FilterProjectTransposeRule` | Calcite | Moves `LogicalFilter` past `LogicalProject` (aka "filter pushdown") to allow for further optimizations, such as `FilterIntoScanLogicalRule` |
+| `FilterIntoScanLogicalRule` | Hazelcast | Moves a `LogicalFilter` in the table of the `LogicalScan` to make the operator tree simpler |
+| `ProjectMergeRule` | Calcite | Merges two adjacent `LogicalProject` into one to make the operator tree simpler |
+| `ProjectFilterTransposeRule` | Calcite | Moves `LogicalProject` past `LogicalFilter` to allow for further optimizations, such as `ProjectIntoScanLogicalRule` |
+| `ProjectIntoScanLogicalRule` | Hazelcast | Gets the list of required input fields from the `LogicalProject` and ensures that the child `LogicalScan` doesn't return unused fields |
+| `ProjectRemoveRule` | Calcite | Removes a `LogicalProject` if it doesn't do anything, e.g. `SELECT a, b FROM (SELECT a, b FROM table)` |
+| `PruneEmptyRules` | Calcite | Removes `LogicalProject` and `LogicalProject` if their input is known to be empty, e.g. `SELECT a, b FROM table WHERE 1 != 1` |
+
+Execution of these rules might create many hundreds and thousands of alternative plans. If we add physical optimization
+to this step, it could easily blow the search space, because the EXODUS-like search algorithm do not allow for search
+space pruning. 
+
+Consider that we produced `N` different logical plans, and have physical rules that may produce `M` alternatives 
+for every logical plan. As a result, we will have to consider `N * M` plans. Instead, we perform the logical 
+optimization in a separate step, extract only one best plan from the search space, and then apply the physical rules
+to on the next stage. This way, we have to consider only `N + M` plans, that alleviates the inefficiency of the core
+search algorithm of `VolcanoPlanner`.
+
+The fundamental observation, is that splitting optimization into serveral phases `doesn't guarantee the optimal plan` 
+in the general case. That is, if we generated plans `P1, P2 ... Pm ...`, and picked `Pm` as the best one, it
+doesn't mean that applying additional rules to `Pm` will produce the optimal plan `Pm'`. Another plan `Pn`, 
+such that `cost(Pn) > cost(Pm)`, could yield better plan `Pn'`, such that `cost(Pn') < cost(Pm')`.
+
+Therefore, the logical phase should generally include rules, that will produce the best plan, that will yield
+the best plan after physical optimization with high probability. Operator fusion, removal of unused operators, scan 
+field trimming, and filter pushdowns produces better plans in almost all cases, this is why we execute them at this 
+stage. This is a common sense, we do not have a rigorous proof.
+
+To contrast, join order rules could produce optimal logical plan, that will be not optimal during physical optimization. 
+
+As a part of the logical optimization process, we convert the Calcite operators with the convention `Convention.NONE` 
+to our own logical operators with the convention `HazelcastConvention.LOGICAL`. We do this through a special conversion
+rules that extend Calcite's `ConverterRule`.  
+
+If there is a Calcite operator in the tree that doesn't have a logical counterpart, then it indicates that there is either an 
+unsupported operation, that we missed, during valdation phase, or that we miss some conversion rule. An exception will be 
+thrown in this case.
+
+*Table 5: Logical Conversion Rules*
+
+| Name | From (Calcite) | To (Hazelcast) |
+|---|---|---|
+| `MapScanLogicalRule` | `LogicalTableScan` | `MapScanLogicalRel` |
+| `FilterLogicalRule` | `LogicalFilter` | `FilterPhysicalRel` |
+| `ProjectLogicalRule` | `LogicalProject` | `ProjectLogicalRel` |
+| `ValuesLogicalRule` | `LogicalValues` | `ValuesLogicalRel` |
+
+Last, we manually add a special `RootLogicalRel` on top of the result. This operator is an abstraction of a user query
+cursor that returns query results on the initiator member. 
 
 ### 3.5 Physical Optimization
 
