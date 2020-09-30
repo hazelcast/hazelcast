@@ -312,6 +312,50 @@ Apache Calcite comes with two built-in traits:
 
 We will use the terms `property` and `trait` interchangeably.
 
+#### 2.2.1 Convention
+
+Convention is a special trait in Apache Calcite, that describes the type of the operator (`RelNode`).  
+
+After the parsing, all operators are assigned the `Convention.NONE` meaning, that they are abstract and cannot be executed. 
+By default, an operator with `NONE` convention has an infinite cost, and hence cannot be part of a valid plan. One of the goals
+of the planning process is to find nodes with non-`NONE` conventions. The method 
+`VolcanoPlanner.setNoneConventionHasInfiniteCost` could be used to assign non-infinite costs to `NONE` nodes. 
+
+Apache Calcite was meant to be able to execute federated queries, such as `SELECT * FROM cassandra.table1 JOIN druid.table2`.
+In addition, Apache Calcite comes with a couple of execution backends, `Enumerable` (interpreter) and `Bindable` (compiler).
+Therefore, the original motivation for the `Convention` trait was to define the execution backend for the operator. For example,
+for the query `SELECT * FROM cassandra.table1 JOIN druid.table2 WHERE table1.field = 1`, the plan after parsing will look like:
+```
+Filter[NONE](table1.field = 1)
+  Join[NONE]
+    Table[NONE](cassandra.table1)
+    Table[NONE](druid.table2)
+```
+
+Then we can delegate table scans to the respective backend databases, and then perform the filter and join locally using one the 
+Calcite backends. Assuming we did a filter-pushdown, the plan could look like:
+```
+Join[BINDABLE]
+  Filter[BINDABLE](table1.field = 1)
+    Table[CASSANDRA](table1)
+  Table[DRUID](table2)
+```
+
+Or we may try to push the filter to the Cassandra database, this reducing the number of rows returned to the local process. To do
+this we set the `CASSANDRA` convention to the filter node, so that the executor understands that it should be passed to the 
+database, rather than be processed locally: 
+```
+Join[BINDABLE]
+  Filter[CASSANDRA](table1.field = 1)
+    Table[CASSANDRA](table1)
+  Table[DRUID](table2)
+```
+
+Note that the `Convention` is merely an opaque marker that is used during the planning process. It is up to the execution
+backend to decide how to deal with the marker.
+
+Many products that integrated Apache Calcite, uses the `Convention` to distinguish between logical and physical operators. 
+
 ### 2.3 Memoization
 
 The search space is organized in a collection of groups of equivalent operators, called `RelSet`. Within the `RelSet`
@@ -401,7 +445,20 @@ RelSet#2: [LogicalScan, AbstractConverter(LogicalScan, a ASC), LogicalSort(Logic
 
 ### 2.5 Metadata
 
-Many rels
+Many optimization rules and operator cost functions require access to external metadata, such as column cardinality,
+column uniqueness, etc. Apache Calcite ships with an extensible framework for metadata management. 
+
+Every type of metadata is represented as a concrete class extending the `MetadataHandler` interface. For every operator
+type, a separate method with a predefined name is created in this class.  
+
+Then the metadata class is wired up into the `RelMetadataQuery` class by means of Janino-based code generation. An 
+instance of the `RelMetadataQuery` class is passed to the rule invocation and operator cost contexts, thus providing
+a centralized access point to all required metadata.
+
+This approach is convenient and extensible, but has several performance problems:
+1. Compilation with Janino may take significant time to complete, increasing planning time to seconds on a fresh JVM
+1. Metadata is not cached on `RelSet`/`RelSubset` levels, and re-calculated on every call. This is not optimal,
+because metadata calculation typically requires recursive dives into inputs of the operator. 
 
 ### 2.6 Execution
 
@@ -410,9 +467,52 @@ doesn't employ the guided top-down search strategy. Instead, the optimizer organ
 The word `Volcano` in the name is a bit misleading, because the optimizer doesn't actually follow the main ideas from the 
 Volcano/Cascades papers.
 
+First, an instance of the `VolcanoPlanner` is created and initialized with:
+1. The operator tree to be optimized (`RelNode`)
+1. The list of rules to use (`RelOptRule`)
+1. The list of property types that will be considered during optimization (`RelTraitDef`)
+1. The desired properties of the result
+
+Then the optimization process is started through a call to the `VolcanoOptimizer.findBestExp` method. The result is the 
+optimized operator tree (`RelNode`) with the desired properties, or an exception if the desired properties cannot be 
+satisfied through the given set of rules.
+
+The optimization process is split into three main phases:
+1. Copy-in
+2. Optimization
+3. Copy-out
+
+#### 2.6.1 Copy-in Phase
+
+The goal of the **copy-in** phase is to prepare the initial MEMO and rule instance queue. For every operator the following steps 
+are performed:
+1. A copy of the operator is created using `RelNode.copy` method, with inputs replaced with the relevant `RelSubset` instances
+1. An operator is added to the relevant `RelSet` and `RelSubset` instances based on an operator's signature (`RelNode.explain`)
+1. A cost of the operator is calculated and assigned set as a `best` cost of the current `RelSubset`
+1. For every rule that matches the given operator a rule instance (`VolcanoRuleMatch`) is added to the rule queue 
+(`VolcanoPlanner.ruleQueue`) 
+
+The copy-in is performed via `VolcanoPlanner.setRoot` method.
+
+#### 2.6.2 Optimization Phase
+
+The optimization phase proceeds as follows:
+1. Pick the next rule instance from the queue and execute it
+1. For all created operators: add to MEMO, calculate the cost, update the cost of the current `RelSubset` and parents if needed,
+schedule new rule instance for the operator and parents if needed
+
+The process continues until the queue is empty.
+
+#### 2.6.3 Copy-out Phase
+
+Once the optimization finished, it is necessary to produce the resulting plan from the MEMO. To do this, a recursive 
+top-bottom dive from the top `RelSubset` is performed. As all `RelSubset` instances already have a winner at this 
+point, it is only necessary to pick the winner of the current `RelSubset`, and copy it, replacing the `RelSubset` inputs, 
+with the concrete winners. 
+
 ## 3 Hazelcast Mustang Optimizer
 
-TODO
+We now discuss how the query optimization is organized in the Hazelcast Mustang. 
 
 [1]: https://dl.acm.org/doi/10.1145/38713.38734 "The EXODUS optimizer generator"
 [2]: https://dl.acm.org/doi/10.5555/645478.757691 "The Volcano Optimizer Generator: Extensibility and Efficient Search"
