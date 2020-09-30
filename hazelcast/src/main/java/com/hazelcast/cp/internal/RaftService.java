@@ -185,6 +185,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     @Override
     public void reset() {
+        missingMembers.clear();
     }
 
     @Override
@@ -570,7 +571,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     void updateMissingMembers() {
         if (config.getMissingCPMemberAutoRemovalSeconds() == 0 || !metadataGroupManager.isDiscoveryCompleted()
-                || !isStartCompleted()) {
+                || (!isStartCompleted() && getCPPersistenceService().getCPMemberMetadataStore().containsLocalMemberFile())) {
             return;
         }
 
@@ -732,8 +733,14 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         createRaftNode(groupId, members, getLocalCPEndpoint());
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     void createRaftNode(CPGroupId groupId, Collection<RaftEndpoint> members, RaftEndpoint localCPMember) {
         if (nodes.containsKey(groupId) || !isStartCompleted() || !hasSameSeed(groupId)) {
+            return;
+        }
+
+        if (getLocalCPMember() == null) {
+            logger.warning("Not creating Raft node for " + groupId + " because local CP member is not initialized yet.");
             return;
         }
 

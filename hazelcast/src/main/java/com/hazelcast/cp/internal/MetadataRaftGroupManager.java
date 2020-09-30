@@ -841,10 +841,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                         + (removedMember != null ? removedMember : "-") + " in "  + group.id()
                         + " with new members commit index: " + newMembersCommitIndex);
             }
-            if (getLocalCPMember().toRaftEndpoint().equals(addedMember)) {
-                // we are the added member to the group, we can try to create the local raft node if not created already
-                raftService.createRaftNode(group.id(), group.members());
-            }
 
             return true;
         }
@@ -904,7 +900,14 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         checkNotNull(newMetadataGroupId);
         RaftGroupId metadataGroupId = getMetadataGroupId();
 
-        if (!raftService.isStartCompleted()) {
+        // During pre-join, CP data restore process won't be started yet.
+        // If persistence enabled and this member has CP data persisted
+        // then it has to wait until CP restore process completes
+        // before processing metadataGroupId update.
+        // So, during pre-join we skip the update.
+        // If this member does not have any persisted CP data,
+        // then it's ok to process the update even though persistence is enabled.
+        if (!raftService.isStartCompleted() && metadataStore.containsLocalMemberFile()) {
             if (!metadataGroupId.equals(newMetadataGroupId)) {
                 logger.severe("Restored METADATA groupId: " + metadataGroupId + " is different than received METADATA groupId: "
                         + newMetadataGroupId + ". There must have been a CP Subsystem reset while this member was down...");
@@ -1270,10 +1273,10 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         private boolean completeDiscoveryIfNotCPMember(List<CPMemberInfo> cpMembers, CPMemberInfo localCPMemberCandidate) {
             if (!cpMembers.contains(localCPMemberCandidate)) {
                 logger.info("I am not a CP member! I'll serve as an AP member.");
-                discoveryCompleted.set(true);
                 try {
                     boolean marked = metadataStore.tryMarkAPMember();
-                    assert marked || !raftService.getCPPersistenceService().isEnabled();
+                    assert marked;
+                    discoveryCompleted.set(true);
                 } catch (IOException e) {
                     throw new HazelcastException(e);
                 }
@@ -1287,6 +1290,14 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             List<CPMemberInfo> metadataMembers = discoveredCPMembers.subList(0, config.getGroupSize());
             RaftGroupId metadataGroupId = getMetadataGroupId();
             try {
+                // By default, we use the same member UUID for both AP and CP members.
+                // But it's not guaranteed to be same. For example;
+                // - During a split-brain merge, AP member UUID is renewed but CP member UUID remains the same.
+                // - While promoting a member to CP when Hot Restart is enabled, CP member doesn't use the AP member's UUID
+                // but instead generates a new UUID.
+                localCPMember.set(localCPMemberCandidate);
+                metadataStore.persistLocalCPMember(localCPMemberCandidate);
+
                 if (metadataMembers.contains(localCPMemberCandidate)) {
                     List<RaftEndpoint> metadataEndpoints = new ArrayList<RaftEndpoint>();
                     for (CPMemberInfo member : metadataMembers) {
@@ -1297,13 +1308,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
                 RaftOp op = new InitMetadataRaftGroupOp(localCPMemberCandidate, discoveredCPMembers, metadataGroupId.seed());
                 raftService.getInvocationManager().invoke(metadataGroupId, op).get();
-                // By default, we use the same member UUID for both AP and CP members.
-                // But it's not guaranteed to be same. For example;
-                // - During a split-brain merge, AP member UUID is renewed but CP member UUID remains the same.
-                // - While promoting a member to CP when Hot Restart is enabled, CP member doesn't use the AP member's UUID
-                // but instead generates a new UUID.
-                localCPMember.set(localCPMemberCandidate);
-                metadataStore.persistLocalCPMember(localCPMemberCandidate);
             } catch (Exception e) {
                 logger.severe("Could not initialize METADATA CP group with CP members: " + metadataMembers, e);
                 raftService.destroyRaftNode(metadataGroupId);
