@@ -31,7 +31,6 @@ import java.util.Queue;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
-import static com.hazelcast.map.impl.record.Record.UNSET;
 
 public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBackupOperation
         implements BackupOperation {
@@ -72,6 +71,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
                 outComes.add(operator.getOldValue());
                 outComes.add(operator.getByPreferringDataNewValue());
                 outComes.add(eventType);
+                outComes.add(operator.getEntry().getNewTtl());
             }
         }, true);
 
@@ -86,9 +86,10 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
             Object oldValue = outComes.poll();
             Object newValue = outComes.poll();
             EntryEventType eventType = (EntryEventType) outComes.poll();
+            long newTtl = (long) outComes.poll();
 
-            operator.init(dataKey, oldValue, newValue, null, eventType, null, UNSET)
-                    .doPostOperateOps();
+            operator.init(dataKey, oldValue, newValue, null, eventType,
+                    null, newTtl).doPostOperateOps();
         }
     }
 

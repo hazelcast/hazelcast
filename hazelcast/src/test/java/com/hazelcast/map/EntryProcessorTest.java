@@ -935,22 +935,30 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIssue16987_customTtls() {
+    public void executeOnKey_sets_custom_ttl() {
         EntryProcessor entryProcessor
                 = new TTLChangingEntryProcessor<>(3, Duration.ofSeconds(1234));
 
-        customTtl_with_entryProcessor(entryProcessor);
+        setCustomTtl(entryProcessor, "executeOnKey");
     }
 
     @Test
-    public void testIssue16987_customTtls_with_offloadable_entry_processor() {
+    public void executeOnEntries_sets_custom_ttl() {
+        EntryProcessor entryProcessor
+                = new TTLChangingEntryProcessor<>(3, Duration.ofSeconds(1234));
+
+        setCustomTtl(entryProcessor, "executeOnEntries");
+    }
+
+    @Test
+    public void executeOnKey_sets_custom_ttl_with_offloadable_entry_processor() {
         EntryProcessor entryProcessor
                 = new TTLChangingEntryProcessorOffloadable(3, Duration.ofSeconds(1234));
 
-        customTtl_with_entryProcessor(entryProcessor);
+        setCustomTtl(entryProcessor, "executeOnKey");
     }
 
-    private void customTtl_with_entryProcessor(EntryProcessor entryProcessor) {
+    private void setCustomTtl(EntryProcessor entryProcessor, String methodName) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = getConfig();
         cfg.getMapConfig(MAP_NAME).setReadBackupData(true);
@@ -966,7 +974,16 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertEquals(1337000L, view.getTtl());
         assertEquals(1, view.getValue().intValue());
 
-        instance1Map.executeOnKey(1, entryProcessor);
+        switch (methodName) {
+            case "executeOnKey":
+                instance1Map.executeOnKey(1, entryProcessor);
+                break;
+            case "executeOnEntries":
+                instance1Map.executeOnEntries(entryProcessor);
+                break;
+            default:
+                throw new UnsupportedOperationException("Test doesn't know this method name: " + methodName);
+        }
 
         view = instance1Map.getEntryView(1);
         assertEquals("ttl was not updated", 1234000L, view.getTtl());
