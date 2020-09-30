@@ -512,8 +512,62 @@ with the concrete winners.
 
 ## 3 Hazelcast Mustang Optimizer
 
-We now discuss how the query optimization is organized in the Hazelcast Mustang. 
+We now discuss how the query optimization is organized in the Hazelcast Mustang. The process is split into the following
+phases:
+
+*Table 2: Optimization Phases*
+
+| # | Name | Input | Output | Description |
+|---|---|---|---|---|
+| 1 | Parsing | `String` | `SqlNode` | Convert the query string into the parse tree |
+| 2 | Validation | `SqlNode` | `RelNode` | Semantic analysis of the parse tree and conversion to operator tree |
+| 3 | Rewrite | `RelNode` | `RelNode` | Remove subqueries and trim unused columns |
+| 4 | Logical Optimization | `RelNode` | `RelNode` | Apply transformation rules |
+| 5 | Physical Optimization | `RelNode` | `RelNode` | Apply implementation rules |
+| 6 | Splitting | `RelNode` | `SqlPlan` | Create an executable query plan |
+
+### 3.1 Parsing
+
+The original query is passed to Calcite's parser and is converted to the parse tree (`SqlNode`). 
+
+IMDG uses the built-in parser, since it is sufficient for the supported feature set. Jet extends the parse with 
+custom commands. 
+
+### 3.2 Validation
+
+The parse tree is validated for semantic correctness. Tables and columns are resolved, return types of every SQL operator is 
+calculated. Since Apache Calcite supports more features than we do, we additionally apply the visitor that attempts to 
+find unsupported operators. When found, an exception is thrown with the precise position in the original query string.
+
+Once the `SqlNode` is validated, it is converted to the tree of abstract relational operators (`RelNode`), all with the
+`Convention.NONE`.
+
+We use Calcite's `SqlValidator` and `SqlToRelConverter` with custom extensions for validation and conversion respectively.   
+
+### 3.3 Simplification
+
+The initial `RelNode` may contain subqueries that are difficult to deal with. Generally, every subquery (correlated or not) 
+could be replaced with a sequence of join and aggregate operations [[4]]. We use Apache Calcite built-in classes to do this
+does this (`SubQueryRemoveRule`, `SqlToRelConverter.decorrelate`). 
+
+After the subqueries are eliminated, some unused fields may remain in the plan. We use `SqlToRelConverter.trimUnusedFields`
+method to find and remove the unused fields, thus making the plan more efficient.
+
+The result of this stage is the optimized operator tree (`RelNode`) without subqueries and unused fields.
+
+### 3.4 Logical Optimization
+
+Further optimization is split into two independent phases - logical and physical. During  
+
+### 3.5 Physical Optimization
+
+TODO
+
+### 3.6 Splitting
+
+TODO
 
 [1]: https://dl.acm.org/doi/10.1145/38713.38734 "The EXODUS optimizer generator"
 [2]: https://dl.acm.org/doi/10.5555/645478.757691 "The Volcano Optimizer Generator: Extensibility and Efficient Search"
 [3]: http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.98.9460 "The Cascades Framework for Query Optimization"
+[4]: https://www.semanticscholar.org/paper/Unnesting-Arbitrary-Queries-Neumann-Kemper/3112928019f64d8c388e8cfbae34b9887c789213 "Unnesting Arbitrary Queries"
