@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.spi.impl.listener;
 
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
@@ -40,10 +41,12 @@ import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.internal.util.executor.StripedExecutor;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -177,7 +180,9 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         ClientConnection connection = (ClientConnection) clientMessage.getConnection();
         EventHandler eventHandler = connection.getEventHandler(correlationId);
         if (eventHandler == null) {
-            logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
+            if (logger.isFineEnabled()) {
+                logger.fine("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
+            }
             return;
         }
 
@@ -327,8 +332,12 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
             ClientInvocation clientInvocation = new ClientInvocation(client, request, null, subscriber);
             clientInvocation.setInvocationTimeoutMillis(Long.MAX_VALUE);
             clientInvocation.invokeUrgent().exceptionally(throwable -> {
-                logger.warning("Deregistration of listener with ID " + userRegistrationId
-                        + " has failed to address " + subscriber.getEndPoint(), throwable);
+                if (!(throwable instanceof HazelcastClientNotActiveException
+                        || throwable instanceof IOException
+                        || throwable instanceof TargetDisconnectedException)) {
+                    logger.warning("Deregistration of listener with ID " + userRegistrationId
+                            + " has failed for address " + subscriber.getEndPoint(), throwable);
+                }
                 return null;
             });
         }
