@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.util.executor.UnblockableThread;
 import com.hazelcast.logging.ILogger;
@@ -1363,10 +1362,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
          * Exception wrapping rules:
          * <ul>
          *     <li>
-         *         {@link CancellationException}s and {@link com.hazelcast.core.OperationTimeoutException}s
-         *         are returned as-is, since they anyway only report the local stack trace.
-         *     </li>
-         *     <li>
          *         if cause is an instance of {@link RuntimeException} then the cause is cloned
          *         The clone throwable has the local stack trace merged into to the original stack trace
          *     </li>
@@ -1904,9 +1899,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     static Throwable wrapOrPeel(Throwable cause) {
-        if (cause instanceof CancellationException || cause instanceof OperationTimeoutException) {
-            return cause;
-        }
         if (cause instanceof RuntimeException) {
             return wrapRuntimeException((RuntimeException) cause);
         }
