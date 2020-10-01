@@ -64,7 +64,8 @@ public class ClientLongRegisterTest extends HazelcastTestSupport {
         assertEquals(7, longRegister.decrementAndGet());
         assertEquals(7, longRegister.getAndIncrement());
         assertEquals(8, longRegister.getAndSet(9));
-        assertEquals(10, longRegister.incrementAndGet());
+        assertEquals(9, longRegister.getAndDecrement());
+        assertEquals(9, longRegister.incrementAndGet());
     }
 
     @Test

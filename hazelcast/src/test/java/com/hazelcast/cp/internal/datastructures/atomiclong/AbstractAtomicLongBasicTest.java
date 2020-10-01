@@ -78,9 +78,21 @@ public abstract class AbstractAtomicLongBasicTest extends HazelcastRaftTestSuppo
     }
 
     @Test
+    public void testGetAndDecrement() {
+        assertEquals(0, atomicLong.getAndDecrement());
+        assertEquals(-1, atomicLong.getAndDecrement());
+    }
+
+    @Test
     public void testIncrementAndGet() {
         assertEquals(1, atomicLong.incrementAndGet());
         assertEquals(2, atomicLong.incrementAndGet());
+    }
+
+    @Test
+    public void testGetAndIncrement() {
+        assertEquals(0, atomicLong.getAndIncrement());
+        assertEquals(1, atomicLong.getAndIncrement());
     }
 
     @Test
