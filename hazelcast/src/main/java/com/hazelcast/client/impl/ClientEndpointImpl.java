@@ -306,7 +306,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                             // since we want to send the client-side metrics only to MC
                             .withExcludedTargets(MetricTarget.ALL_TARGETS)
                             .withIncludedTarget(MANAGEMENT_CENTER)
-                            // we add "client" and "timestamp" tags for MC
+                            // we add "client", "clientname" and "timestamp" tags for MC
                             .withTag(METRICS_TAG_CLIENT, getUuid().toString())
                             .withTag(METRICS_TAG_CLIENTNAME, clientName)
                             .withTag(METRICS_TAG_TIMESTAMP, Long.toString(timestamp));

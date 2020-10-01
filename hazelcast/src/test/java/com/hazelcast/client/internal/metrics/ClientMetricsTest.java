@@ -114,6 +114,7 @@ public class ClientMetricsTest extends HazelcastTestSupport {
                         .withMetric(metric)
                         .withUnit(unit)
                         .withTag("client", clientUuid.toString())
+                        .withTag("clientname", client.getName())
                         .withTag("timestamp", Long.toString(timestamp))
                         .withExcludedTargets(asList(MetricTarget.values()))
                         .withIncludedTarget(MANAGEMENT_CENTER);
