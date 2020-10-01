@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi.impl.listener;
 
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
@@ -36,6 +37,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.EmptyStatement;
@@ -45,6 +47,7 @@ import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -350,9 +353,13 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
                 }
 
                 @Override
-                public void onFailure(Throwable t) {
-                    logger.warning("Deregistration of listener with ID " + userRegistrationId
-                            + " has failed to address " + subscriber.getEndPoint(), t);
+                public void onFailure(Throwable throwable) {
+                    if (!(throwable instanceof HazelcastClientNotActiveException
+                            || throwable instanceof IOException
+                            || throwable instanceof TargetDisconnectedException)) {
+                        logger.warning("Deregistration of listener with ID " + userRegistrationId
+                                + " has failed for address " + subscriber.getEndPoint(), throwable);
+                    }
                 }
             });
         }
@@ -369,9 +376,11 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         @Override
         public void run() {
             long correlationId = clientMessage.getCorrelationId();
-            final EventHandler eventHandler = eventHandlerMap.get(correlationId);
+            EventHandler eventHandler = eventHandlerMap.get(correlationId);
             if (eventHandler == null) {
-                logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
+                if (logger.isFineEnabled()) {
+                    logger.fine("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
+                }
                 return;
             }
 
