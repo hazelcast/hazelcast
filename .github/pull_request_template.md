@@ -1,15 +1,16 @@
-Add description here
+<PR description here>
 
 Fixes #NNNN (point out issues this PR fixes, if any)
 
-Checklist
+Breaking changes:
+* API
+* client protocol format
+* serialized form
+* snapshot format
+
+Checklist:
 - [ ] Labels and Milestone set
-- [ ] Breaking changes documented
+- [ ] Added a line in `hazelcast-jet-distribution/src/root/release_notes.txt` (for any non-trivial fix/enhancement/feature)
 - [ ] New public APIs have `@Nonnull/@Nullable` annotations
 - [ ] New public APIs have `@since` tags in Javadoc
-- [ ] For code samples, code sample main readme is updated
-
-
-Breaking changes:
-
-* ..
+- [ ] Updated `examples/README.md` (when adding a new code sample)
