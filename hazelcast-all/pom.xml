@@ -115,7 +115,6 @@
                                         implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
-                                    <resource>com.hazelcast.org.codehaus.commons.compiler.properties</resource>
                                     <resource>hazelcast-community-license.txt</resource>
                                 </transformer>
                             </transformers>
