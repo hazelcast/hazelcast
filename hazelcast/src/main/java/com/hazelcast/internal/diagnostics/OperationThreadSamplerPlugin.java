@@ -17,13 +17,13 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.spi.impl.operationservice.NamedOperation;
+import com.hazelcast.internal.util.concurrent.ConcurrentItemCounter;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.internal.util.ItemCounter;
 
 import java.util.concurrent.locks.LockSupport;
 
@@ -77,14 +77,14 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
             = new HazelcastProperty("hazelcast.diagnostics.operationthreadsamples.includeName", false);
     public static final float HUNDRED = 100f;
 
+    protected final long samplerPeriodMillis;
+    protected final ConcurrentItemCounter<String> partitionSpecificSamples = new ConcurrentItemCounter<String>();
+    protected final ConcurrentItemCounter<String> genericSamples = new ConcurrentItemCounter<String>();
+    protected final OperationExecutor executor;
+    protected final NodeEngineImpl nodeEngine;
+    protected final boolean includeName;
 
     private final long periodMillis;
-    private final long samplerPeriodMillis;
-    private final ItemCounter<String> partitionSpecificSamples = new ItemCounter<String>();
-    private final ItemCounter<String> genericSamples = new ItemCounter<String>();
-    private final OperationExecutor executor;
-    private final NodeEngineImpl nodeEngine;
-    private final boolean includeName;
 
     public OperationThreadSamplerPlugin(NodeEngineImpl nodeEngine) {
         super(nodeEngine.getLogger(OperationThreadSamplerPlugin.class));
@@ -117,17 +117,18 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
         writer.endSection();
     }
 
-    private void write(DiagnosticsLogWriter writer, String text, ItemCounter<String> samples) {
+    private void write(DiagnosticsLogWriter writer, String text, ConcurrentItemCounter<String> samples) {
         writer.startSection(text);
         long total = samples.total();
-        for (String name : samples.descendingKeys()) {
+        for (String name : samples.keySet()) {
             long s = samples.get(name);
-            writer.writeKeyValueEntry(name, s + " " + (HUNDRED * s / total) + "%");
+            String entryStr = total == 0L ? String.valueOf(s) : (s + " " + (HUNDRED * s / total) + "%");
+            writer.writeKeyValueEntry(name, entryStr);
         }
         writer.endSection();
     }
 
-    private class SampleThread extends Thread {
+    protected class SampleThread extends Thread {
 
         @Override
         public void run() {
@@ -141,7 +142,7 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
             }
         }
 
-        private void sample(OperationRunner[] runners, ItemCounter<String> samples) {
+        private void sample(OperationRunner[] runners, ConcurrentItemCounter<String> samples) {
             for (OperationRunner runner : runners) {
                 Object task = runner.currentTask();
                 if (task != null) {
