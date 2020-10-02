@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.cache.CacheNotExistsException;
-import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.impl.clientside.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.config.ConfigurationException;
@@ -130,16 +129,6 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
 
         if (expected == null || actual == null) {
             return false;
-        }
-
-        if (UndefinedErrorCodeException.class.equals(actual.getClass())) {
-            if (!expected.getClass().getName().equals(((UndefinedErrorCodeException) actual).getOriginClassName())) {
-                return false;
-            }
-        } else {
-            if (!expected.getClass().equals(actual.getClass())) {
-                return false;
-            }
         }
 
         // We compare the message only for known exceptions.

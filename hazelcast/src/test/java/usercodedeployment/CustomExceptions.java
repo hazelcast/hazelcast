@@ -41,4 +41,9 @@ public class CustomExceptions {
             super(cause);
         }
     }
+
+    public static class CustomExceptionNonStandardSignature extends Throwable {
+        public CustomExceptionNonStandardSignature(int i) {
+        }
+    }
 }
