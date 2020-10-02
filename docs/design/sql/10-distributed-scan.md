@@ -37,7 +37,7 @@ First, we split the predicate into conjunctive normal form (CNF). For example, t
 `a=1` and `b=2`, while the predicate `a=1 OR b=2` remains unchanged.
 
 Second, for every sub-predicate we find those that could be used by some index. Assume that `col` is a simple column
-expression, and `exp` is an expression that have only constants or parameters at leaves (i.e. it doesn't refer to other columns). 
+expression, and `exp` is an expression that has only constants or parameters at leaves (i.e. it doesn't refer to other columns). 
 We use the following rules:
 1. `col = exp` can be used with `SORTED` and `HASH` indexes
 1. `col [comparison] exp` can be used with `SORTED` indexes
