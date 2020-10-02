@@ -54,14 +54,15 @@ b -> [>2], [<4]
 Next, we iterate over every index, and try to bind candidates to the index based on the index columns and index type.
 General rules are:
 1. `SORTED` index may use equality and comparison conditions, while `HASH` index may use only equality conditions
-1. Only a continuous prefix of index columns can be used. E.g. for the index `(a, b, c)` and the condition `a=1 AND c=2` we 
-can use only `a=1`
+1. Only a continuous prefix of index columns can be bound. E.g. for the index `(a, b, c)` and the condition `a=1 AND c=2` we 
+can bind only `a=1`, while for `a=1 AND b=2` we may bind both `a=1` and `b=2`
 1. All expressions in the prefix except for the last one must be equality conditions. E.g. for the index `(a, b)` and the 
 condition `a>1 AND b>2`, we can use only `a>1`   
 
 The result of this step is a map from index to the filter that should be used. For example, for the expression 
-`a=1 AND b>2 AND b<4`, and indexes on `(a, c)` and `(b)`, the result would be:
+`a=1 AND b>2 AND b<4`, and indexes on `(a, b)`, `(a, c)` and `(b)`, the result would be:
 ```
+index(a, b) -> [a=1, b>2 AND b<4]
 index(a, c) -> [a=1, NULL]
 index(b) -> [b>2 AND b<4]
 ```
