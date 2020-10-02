@@ -4,9 +4,9 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 1. Fixes
 
-* Fixed behaviour of auto-removal of CP member during split-brain merge.
+* Fixed the behavior of auto-removal of a CP member during a split-brain merge.
 Also applied small fixes for Raft node termination, CP member promotion
-and cases when the CP node IP changes on restart [#17656]
+and cases when the CP node IP changes on restart. [#17656]
 
 ==== 3.12.2 - VISA4 ====
 
