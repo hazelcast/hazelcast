@@ -18,7 +18,7 @@ zero, one or more backups on other members. Every distributed object is split ac
 migrate between members due to topology change events, such as member leave or join.
 
 The `IMap` is a distributed map. It could be accessed either directly, or through a secondary index. The secondary index is 
-a distributed data structure. Every member stores part of the index that is build for the local entries of the member. 
+a distributed data structure. Every member stores part of the index that is built for the local entries of the member. 
 
 The goal of the Hazelcast Mustang engine is to pick the proper access method - direct scan or index scan, start execution of 
 the scan on members, and collect the results. In the above sections we describe how it is implemented.   
