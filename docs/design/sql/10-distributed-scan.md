@@ -157,7 +157,10 @@ long term we would like to avoid, or at least minimize, the number of cases when
 It may happen, that the referenced object (`IMap`, index) that was present during the query planning, no longer exists on the 
 local member. For example, because the map has been destroyed concurrently. Therefore, when the scan operation is about to
 start, the existence of the required objects is checked. If the required object is not found, an exception is thrown, and the
-plan is invalidated.
+plan is invalidated. 
+
+The same check is also performed before the next result batch is returned to the parent operator, to avoid reading stale 
+record stores of a destroyed map.
 
 [1]: https://redis.io/commands/scan "Redis: SCAN command"
 [2]: https://docs.mongodb.com/manual/core/read-isolation-consistency-recency/#read-uncommitted-and-multiple-document-write "MongoDB: Read Isolation, Consistency, and Recency"
