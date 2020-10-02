@@ -143,7 +143,7 @@ assigned, therefore `NULL + NULL` is affected by the same type inference
 problem, which might be solved by making `NULL` type a first-class
 citizen or by choosing some defaults.
 
-After all unknown types are inferred and assigned to nodes, type for
+After all unknown types are inferred and assigned to nodes, a type for
 every tree node can be derived from the node itself potentially
 consulting its child nodes for their types. Most operators have an
 additional round of type refinement called type coercion. For instance,
@@ -156,6 +156,15 @@ The coercion can be customized by providing a custom `TypeCoercion` (see
 rules was identified: the mentioned Type System design document defines
 strings (`VARCHAR` type) as implicitly convertible to any other type,
 that potentially hides bugs in queries including performance ones.
+
+Another flaw was identified in the coercion for built-in and
+user-defined functions provided by Calcite: currently, Calcite performs
+questionable implicit conversions like casting `INT` to `VARCHAR` for
+functions accepting `VARCHAR` (see
+`TypeCoercion.builtinFunctionCoercion/userDefinedFunctionCoercion`).
+Apparently, the behaviour can be aligned with our type conversion rules
+by tuning `AbstractTypeCoercion.canImplicitTypeCast` and/or
+`AbstractTypeCoercion.implicitCast`.
 
 Each operator validates that it has a proper number of operands of
 proper types. The validation process can be customized by overriding
