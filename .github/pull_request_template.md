@@ -2,7 +2,7 @@
 
 Fixes #NNNN (point out issues this PR fixes, if any)
 
-Breaking changes:
+Breaking changes (list specific methods/types/messages):
 * API
 * client protocol format
 * serialized form
