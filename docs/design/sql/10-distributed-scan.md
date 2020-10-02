@@ -111,7 +111,7 @@ member2 -> [3, 4]
 ```  
 
 When the scan operation is started on the member, we first check whether it contains expected partitions. If the expected and 
-actually owned partitions do not match, and exception is thrown. For example, if the member is expected to have partitions 
+actually owned partitions do not match, an exception is thrown. For example, if the member is expected to have partitions 
 `[1, 2]`, then:
 ```
 [1] - error, because we may miss the partition [2]
