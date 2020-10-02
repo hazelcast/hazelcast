@@ -50,6 +50,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientUserCodeDeploymentService;
+import com.hazelcast.client.impl.spi.impl.DefaultAddressProvider;
 import com.hazelcast.client.impl.spi.impl.listener.ClientClusterViewListenerService;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.impl.statistics.ClientStatisticsService;
@@ -313,6 +314,14 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         metricsRegistry.provideMetrics(executionService);
     }
 
+    private void startClusterDiscoveryService() {
+        AddressProvider addressProvider = clusterDiscoveryService.current().getAddressProvider();
+        if (addressProvider instanceof DefaultAddressProvider) {
+            DefaultAddressProvider defaultAddressProvider = (DefaultAddressProvider) addressProvider;
+            defaultAddressProvider.setMembershipUuid(clusterService.addMembershipListener(defaultAddressProvider));
+        }
+    }
+
     private LoadBalancer initLoadBalancer(ClientConfig config) {
         LoadBalancer lb = config.getLoadBalancer();
         if (lb == null) {
@@ -358,6 +367,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         try {
             lifecycleService.start();
             startMetrics();
+            startClusterDiscoveryService();
             invocationService.start();
             ClientContext clientContext = new ClientContext(this);
             userCodeDeploymentService.start();

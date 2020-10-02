@@ -145,7 +145,7 @@ public final class EndpointQualifier
             case MEMBER:
                 return MEMBER;
             case CLIENT:
-                return CLIENT;
+                return new EndpointQualifier(ProtocolType.CLIENT, name);
             case MEMCACHE:
                 return MEMCACHE;
             case REST:

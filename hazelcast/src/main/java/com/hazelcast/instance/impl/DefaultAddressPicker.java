@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -436,7 +437,9 @@ class DefaultAddressPicker
 
     @Override
     public Map<EndpointQualifier, Address> getPublicAddressMap() {
-        return Collections.singletonMap(MEMBER, publicAddress);
+        return new HashMap<EndpointQualifier, Address>() {{
+            put(MEMBER, publicAddress);
+        }};
     }
 
     void setHostnameResolver(HostnameResolver hostnameResolver) {

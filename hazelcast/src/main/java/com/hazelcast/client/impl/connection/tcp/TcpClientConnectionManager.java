@@ -43,6 +43,7 @@ import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
+import com.hazelcast.client.impl.spi.impl.DefaultAddressProvider;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -404,10 +405,12 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
 
     private Boolean destroyCurrentClusterConnectionAndTryNextCluster(CandidateClusterContext currentContext,
                                                                      CandidateClusterContext nextContext) {
+        deleteAddressProviderFromMembershipListeners(currentContext);
         currentContext.destroy();
 
         client.onClusterChange();
 
+        addAddressProviderToMemberListeners(nextContext);
         nextContext.start();
 
         ((ClientLoggingService) client.getLoggingService()).updateClusterName(nextContext.getClusterName());
@@ -420,6 +423,20 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             return true;
         }
         return false;
+    }
+
+    private void deleteAddressProviderFromMembershipListeners(CandidateClusterContext currentContext) {
+        if (currentContext.getAddressProvider() instanceof DefaultAddressProvider) {
+            client.getCluster().removeMembershipListener(
+                    ((DefaultAddressProvider) currentContext.getAddressProvider()).getMembershipUuid());
+        }
+    }
+
+    private void addAddressProviderToMemberListeners(CandidateClusterContext nextContext) {
+        if (nextContext.getAddressProvider() instanceof DefaultAddressProvider) {
+            DefaultAddressProvider defaultAddressProvider = (DefaultAddressProvider) nextContext.getAddressProvider();
+            defaultAddressProvider.setMembershipUuid(client.getCluster().addMembershipListener(defaultAddressProvider));
+        }
     }
 
     private Connection connect(Address address) {

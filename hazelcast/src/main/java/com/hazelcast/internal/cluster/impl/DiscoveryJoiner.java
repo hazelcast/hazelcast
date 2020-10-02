@@ -17,6 +17,8 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
@@ -76,6 +78,11 @@ public class DiscoveryJoiner
         for (DiscoveryNode discoveryNode : discoveredNodes) {
             Address discoveredAddress = usePublicAddress ? discoveryNode.getPublicAddress() : discoveryNode.getPrivateAddress();
             if (localAddress.equals(discoveredAddress)) {
+                if (!usePublicAddress) {
+                    // enrich member with client public address
+                    localMember.getAddressMap().put(EndpointQualifier.resolve(ProtocolType.CLIENT, "public"),
+                            discoveryNode.getPublicAddress());
+                }
                 continue;
             }
             possibleMembers.add(discoveredAddress);
