@@ -107,19 +107,13 @@ Project[name]
 ```
 With the MEMO, the plan is first copied into the search space:
 ```
-G1
-  G2
-
 G1: {Project[name]}
-G2: {TableScan[person]}
+  G2: {TableScan[person]}
 ```
 Then, when an alternative scan path is found, it is added to the group:
 ```
-G1
-  G2
-
 G1: {Project[name]}
-G2: {TableScan[person], IndexScan[person, index]}
+  G2: {TableScan[person], IndexScan[person, index]}
 ```  
 
 ### 1.5 Logical and Physical Operators
@@ -153,7 +147,7 @@ The EXODUS was a research project to design an extensible database system. As a 
 optimizer was developed [[1]].
 
 In the original paper, the logical and physical operators are named **operators** and **methods** respectively. 
-The rules applied to logical operators are named **transformation rules(*, while the rules applied to physical operators
+The rules applied to logical operators are named **transformation rules**, while the rules applied to physical operators
 are named **implementation rules**.
 
 Initially, the optimizer accepts the operator tree, and a set of transformation rules. For every rule, a pattern
