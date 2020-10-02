@@ -87,7 +87,7 @@ the full result set of the scan is never materialized, unlike the legacy predica
 An entry might be changed concurrently during execution of the query. Since the engine doesn't have transactions, it is
 possible that the updated entry will be observed zero, one or several times, due to entry relocation within the underlying
 data structure. To solve this problem, we would need a transactional engine, but we do not have one. Note that the described 
-behavior is possible in many databases, including transactional one. Examples are: Redis [[1]], MongoDB [[2]], Microsoft 
+behavior is possible in many databases, including transactional ones. Examples are: Redis [[1]], MongoDB [[2]], Microsoft 
 SQL Server with `READ_COMMITTED` isolation (the default behavior) [[3]]. 
 
 ## 4 Cluster Reconfiguration
