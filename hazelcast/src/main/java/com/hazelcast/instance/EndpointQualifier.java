@@ -85,10 +85,6 @@ public final class EndpointQualifier
             return false;
         }
 
-        // Single instance types - identifier doesn't matter
-        if (type.getServerSocketCardinality() == 1) {
-            return true;
-        }
         return identifier != null ? identifier.equals(that.identifier) : that.identifier == null;
     }
 
@@ -145,7 +141,7 @@ public final class EndpointQualifier
             case MEMBER:
                 return MEMBER;
             case CLIENT:
-                return CLIENT;
+                return new EndpointQualifier(ProtocolType.CLIENT, name);
             case MEMCACHE:
                 return MEMCACHE;
             case REST:
