@@ -41,12 +41,16 @@ import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_ALLOWED_FUTURE_MILLIS;
 import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_BITS_NODE_ID;
 import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_BITS_SEQUENCE;
 import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_EPOCH_START;
 import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.NODE_ID_UPDATE_INTERVAL_NS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -72,10 +76,10 @@ public class FlakeIdGeneratorProxyTest {
 
     @Before
     public void before() {
-        before(new FlakeIdGeneratorConfig());
+        initialize(new FlakeIdGeneratorConfig());
     }
 
-    public void before(FlakeIdGeneratorConfig config) {
+    public void initialize(FlakeIdGeneratorConfig config) {
         ILogger logger = mock(ILogger.class);
         clusterService = mock(ClusterService.class);
         NodeEngine nodeEngine = mock(NodeEngine.class);
@@ -105,6 +109,32 @@ public class FlakeIdGeneratorProxyTest {
         assertEquals(20, gen.getNodeId(0));
         assertEquals(20, gen.getNodeId(NODE_ID_UPDATE_INTERVAL_NS - 1));
         assertEquals(30, gen.getNodeId(NODE_ID_UPDATE_INTERVAL_NS));
+    }
+
+    @Test
+    public void givenNodeIdUninitialized_whenNodeIdRequestedConcurrently_thenItNeverReturnUninitializedId() throws Exception {
+        when(clusterService.getMemberListJoinVersion()).thenReturn(20);
+        int threadCount = 20;
+        int iterationCount = 5_000;
+
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        AtomicInteger errorCounter = new AtomicInteger();
+        FlakeIdGeneratorConfig genConfig = new FlakeIdGeneratorConfig();
+        for (int i = 0; i < iterationCount; i++) {
+            initialize(genConfig);
+            FlakeIdGeneratorProxy localGen = gen;
+            Runnable getNodeId = () -> {
+                if (localGen.getNodeId(0) == -1) { // see FlakeIdGeneratorProxy#NODE_ID_NOT_YET_SET
+                    errorCounter.incrementAndGet();
+                }
+            };
+            for (int z = 0; z < threadCount; z++) {
+                executorService.submit(getNodeId);
+            }
+        }
+        executorService.shutdown();
+        executorService.awaitTermination(30, SECONDS);
+        assertEquals(0, errorCounter.get());
     }
 
     @Test
@@ -180,7 +210,7 @@ public class FlakeIdGeneratorProxyTest {
     public void test_positiveNodeIdOffset() {
         int nodeIdOffset = 5;
         int memberListJoinVersion = 20;
-        before(new FlakeIdGeneratorConfig().setNodeIdOffset(nodeIdOffset));
+        initialize(new FlakeIdGeneratorConfig().setNodeIdOffset(nodeIdOffset));
 
         when(clusterService.getMemberListJoinVersion()).thenReturn(memberListJoinVersion);
         assertEquals((memberListJoinVersion + nodeIdOffset), gen.getNodeId(0));
@@ -190,7 +220,7 @@ public class FlakeIdGeneratorProxyTest {
     public void when_customBits_then_used() {
         int bitsSequence = 10;
         int bitsNodeId = 11;
-        before(new FlakeIdGeneratorConfig()
+        initialize(new FlakeIdGeneratorConfig()
                 .setBitsSequence(bitsSequence)
                 .setBitsNodeId(bitsNodeId)
                 .setEpochStart(0));
@@ -205,7 +235,7 @@ public class FlakeIdGeneratorProxyTest {
     public void when_epochStart_then_used() {
         int epochStart = 456;
         int timeSinceEpochStart = 1;
-        before(new FlakeIdGeneratorConfig().setEpochStart(epochStart));
+        initialize(new FlakeIdGeneratorConfig().setEpochStart(epochStart));
         long id = gen.newIdBaseLocal(epochStart + timeSinceEpochStart, 1234, 10).idBatch.base();
         assertEquals((timeSinceEpochStart << DEFAULT_BITS_SEQUENCE + DEFAULT_BITS_NODE_ID) + 1234, id);
     }
