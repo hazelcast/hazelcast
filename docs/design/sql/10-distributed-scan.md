@@ -42,7 +42,7 @@ We use the following rules:
 1. `col = exp` can be used with `SORTED` and `HASH` indexes
 1. `col [comparison] exp` can be used with `SORTED` indexes
 1. `col IS NULL/TRUE/FALSE` can be treated as equality expression (with slightly different semantics for `NULL` values)
-1. 'col = exp1 OR col = exp2' can be treated as union of two equality predicates 
+1. `col = exp1 OR col = exp2` can be treated as union of two equality predicates 
 
 The result of this step is a map from column to candidate expressions that could be used with indexes. For example, 
 `a=1 AND b>2 AND b<4` is returned as: 
