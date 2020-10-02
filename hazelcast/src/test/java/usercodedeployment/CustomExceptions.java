@@ -41,4 +41,10 @@ public class CustomExceptions {
             super(cause);
         }
     }
+
+    public static class CustomExceptionNonStandardSignature extends Exception {
+        public CustomExceptionNonStandardSignature(int x) {
+            super();
+        }
+    }
 }
