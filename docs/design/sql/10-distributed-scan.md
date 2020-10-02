@@ -128,9 +128,9 @@ Partition check logic depends on the operator type. For the direct map scan, we 
 (`MapService.validateMigrationStamp`). For the index scans, we use index partition stamps 
 (`InternalIndex.validatePartitionStamp`).
 
-Better solution would hide the partitioning problems from the user completely. This is, however, is difficult to achieve 
-in practice. To avoid duplicates and missed entries, we would have to track which parts of the operator input is processed, and 
-re-schedule scans to other members in runtime. Therefore, the current design ensures that user does not see an inconsistent
+A better solution would hide the partitioning problems from the user completely. This, however, is difficult to achieve 
+in practice. To avoid duplicates and missed entries we would have to track which part of the operator input is processed, and 
+re-schedule scans to other members at runtime. Therefore, the current design ensures that the user does not see an inconsistent
 result, but forces the user to re-run the query manually if the result correctness cannot be guaranteed by the engine. In the
 long term we would like to avoid, or at least minimize, the number of cases when the error is thrown.
 
