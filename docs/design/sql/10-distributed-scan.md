@@ -121,7 +121,7 @@ actually owned partitions do not match, and exception is thrown. For example, if
 
 The check before the query start is not sufficient to guarantee the correctness of the results. The partition may migrate to the 
 member during execution of the query, leading to duplicates. Conversely, the partition may be removed from the member 
-concurrently, leading to missed entries. To avoid inconsistent results we **re-check** the partition distribution, before any
+concurrently, leading to missed entries. To avoid inconsistent results we **re-check** the partition distribution before any
 result is returned from the scan operator. 
 
 Partition check logic depends on the operator type. For the direct map scan, we use the migration stamps 
