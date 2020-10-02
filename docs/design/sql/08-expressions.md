@@ -7,8 +7,9 @@ Expressions can participate in projections (`SELECT a + b FROM t`) and
 filters (`SELECT * FROM t WHERE a + b < 10`). Expressions may be roughly
 subdivided into 4 general categories:
 
-- Terminal expressions not referring to other expressions: column,
-  literal, parameter and type (as seen in `CAST`) expressions.
+- Terminal expressions not referring to other expressions: column
+  references, literals, dynamic parameters and type expressions (i.e.
+  the type argument of the `CAST` expression).
 - Operators, like numeric arithmetic operators: `+`, `-`, etc.
 - Predicates, like comparison predicates: `<`, `>`, etc.
 - Functions, like `ABS`, `SIN`, etc.
