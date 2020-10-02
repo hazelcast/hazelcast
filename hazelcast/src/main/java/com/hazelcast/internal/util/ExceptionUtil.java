@@ -212,7 +212,7 @@ public final class ExceptionUtil {
 
     /**
      * Tries to create the exception with appropriate constructor in the following order.
-     * In all cases the cause is set(via constructor or via initCause)
+     * In all cases the cause is set (via constructor or via {@code initCause})
      * new Throwable(String message, Throwable cause)
      * new Throwable(Throwable cause)
      * new Throwable(String message)
@@ -221,7 +221,7 @@ public final class ExceptionUtil {
      * @param exceptionClass class of the exception
      * @param message        message to be pass to constructor of the exception
      * @param cause          cause to be set to the exception
-     * @return null if can not find a constructor as described above, otherwise return newly constructed expcetion
+     * @return {@code null} if can not find a constructor as described above, otherwise returns newly constructed exception
      */
     public static <T extends Throwable> T tryCreateExceptionWithMessageAndCause(Class<? extends Throwable> exceptionClass,
                                                                                 String message, @Nullable Throwable cause) {

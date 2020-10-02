@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.impl.protocol;
 
+import com.hazelcast.client.UndefinedErrorCodeException;
+import com.hazelcast.client.impl.clientside.ClientExceptionFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -23,6 +25,9 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import testsubjects.CustomExceptions;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -30,5 +35,16 @@ public class ClientProtocolErrorCodesTest extends HazelcastTestSupport {
     @Test
     public void testConstructor() {
         assertUtilityConstructor(ClientProtocolErrorCodes.class);
+    }
+
+    @Test
+    public void testUndefinedException() {
+        ClientExceptions exceptions = new ClientExceptions(false);
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(false, contextClassLoader);
+
+        ClientMessage message = exceptions.createExceptionMessage(new CustomExceptions.CustomExceptionNonStandardSignature(1));
+        Throwable resurrectedThrowable = exceptionFactory.createException(message);
+        assertEquals(UndefinedErrorCodeException.class, resurrectedThrowable.getClass());
     }
 }
