@@ -54,7 +54,7 @@ b -> [>2], [<4]
 Next, we iterate over every index, and try to bind candidates to the index based on the index columns and index type.
 General rules are:
 1. `SORTED` index may use equality and comparison conditions, while `HASH` index may use only equality conditions
-1. Only continuous prefix of index columns could be used. E.g. for the index `(a, b, c)` and the condition `a=1 AND c=2` we 
+1. Only a continuous prefix of index columns can be used. E.g. for the index `(a, b, c)` and the condition `a=1 AND c=2` we 
 can use only `a=1`
 1. All expressions in the prefix except for the last one must be equality conditions. E.g. for the index `(a, b)` and the 
 condition `a>1 AND b>2`, we can use only `a>1`   
