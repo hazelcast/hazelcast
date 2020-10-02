@@ -206,7 +206,7 @@ and Cascades [[3]] optimizers.
 The main difference that is that Volcano/Cascades uses a **guided top-down search** strategy. Operators are optimized only
 if requested explicitly by parents. Therefore, the optimizer is free to define any optimization logic it finds useful - it may 
 prune some nodes completely, perform partial optimization of a node, etc. Since a search is guided, many redundant rule calls
-could be avoided, since reanalyzing/rematching is no longer needed.
+could be avoided, because reanalyzing/rematching is no longer needed.
 
 The guided search could be implemented either as a recursive function calls, or as a queue of tasks. In the EXODUS,
 the task is a rule instance, in the Cascades the queue contains optimization tasks, such as "transform this operator".
@@ -249,13 +249,11 @@ Notice, how we avoid the excessive pattern matching and rule execution due to a 
 
 The Cascades design clearly separates logical optimization (exploration) and physical optimization (implementation).
 When an unoptimized group is reached, matching transformation rules are scheduled. Then the optimization proceeds
-to group inputs before the transformation rules are fired. Finally, the implementation rules are fired. Careful
-guided interleaving of transformation rules, input optimization, and implementation rules ensures that a single
-physical plan is found as early as possible. Once the first (sub)plan is found, the cost of the group could be 
-calculated. Then this cost could be used to prune less efficient alternatives, the technique known as **branch-and-bound** 
-pruning.
+to group inputs, and only after that the implementation rules for the group are fired. A careful guided interleaving of 
+transformation rules, input optimization, and implementation rules ensures that a single physical plan is found as early as
+possible. Once the first (sub)plan is found, the cost of the group could be calculated. Then this cost could be used to prune 
+less efficient alternatives, the technique known as **branch-and-bound** pruning.
   
-
 The Volcano/Cascades top-down guided search is widely considered superior to EXODUS and earlier bottom-up optimization 
 strategies, because it allows for flexible optimization of only parts of the search space. 
 
