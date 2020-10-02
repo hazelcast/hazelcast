@@ -70,9 +70,9 @@ index(b) -> [b>2 AND b<4]
 Once the index filter is built, we calculate the remainder filter, such that `indexFilter AND remainderFilter` is equivalent
 to the original filter. 
 
-For every proposed index, we create a `MapIndexScanPhysicalRel` operator that is added to the planner search space. At the 
-moment we add all viable indexes to the search space. This might become a problem in the future releases, when we have 
-joins and multiple table, because there will be too many alternatives to consider. The solution could be not to add certain
+For every proposed index, we create a `MapIndexScanPhysicalRel` operator that is added to the planner search space. 
+Currently, we add all usable indexes to the search space. This might become a problem in future releases, when we have 
+joins and multiple tables, because there will be too many alternatives to consider. The solution could be to not add certain
 indexes to the search space based on some heuristics. 
 
 The cost model works as follows:
