@@ -1,5 +1,13 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12.x release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.12.2 - VISA3 - 1 ====
+
+1. Fixes
+
+* Fixed behaviour of auto-removal of CP member during split-brain merge.
+Also applied small fixes for Raft node termination, CP member promotion
+and cases when the CP node IP changes on restart [#17645]
+
 ==== 3.12.2 - VISA3 ====
 
 1. Fixes
@@ -212,7 +220,7 @@ The following are the other improvements performed to solve the enhancement issu
 * Fixed an issue where the IP client selector was not working for the local clients. [#14654]
 * Fixed the wording of a misleading error in the first attempt to connect to a wrongly configured cluster. The error message has been changed to “Unable to connect to any cluster”.  https://github.com/hazelcast/hazelcast/issues/14574[[#14574]]
 * Fixed an issue where a connection configured using `AdvancedNetworkConfig` was not denied correctly for some inappropriate endpoints. [#14532]
-* Fixed the REST service which was not working when the REST endpoint is configured for   `AdvancedNetworkConfig`. [#14516]
+* Fixed the REST service which was not working when the REST endpoint is configured for `AdvancedNetworkConfig`. [#14516]
 * Fixed an issue where the `setAsync()` method was throwing `NullPointerException`. [#14445]
 * Fixed an issue where the collection attributes indexed with `[any]` were causing incorrect SQL query results, if the first data inserted to the map has no value for the attribute or the collection is empty. [#14358]
 * Fixed an issue where `mapEvictionPolicy` couldn’t be specified in the JSON configuration file. [#14092]
