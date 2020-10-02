@@ -66,7 +66,20 @@ index(a, c) -> [a=1, NULL]
 index(b) -> [b>2 AND b<4]
 ```
 
-At last, for every proposed index, we create a `MapIndexScanPhysicalRel` operator that is added to the planner search space.
+Once the index filter is built, we calculate the remainder filter, such that `indexFilter AND remainderFilter` is equivalent
+to the original filter. 
+
+For every proposed index, we create a `MapIndexScanPhysicalRel` operator that is added to the planner search space. The 
+cost model works as follows:
+1. Get the expected number of rows to scan (`SCANNED_ROWS`). For the direct scan it equals to the number of rows in the map. For 
+the index scan this is `mapRowCount * selectivity(indexFilter)`.
+1. Get the expected number of returned rows (`RETURNED_ROWS`), that depend on the selectivity of the original filter.
+1. Assign a weight to the scanned rows, based on the access method (`SCAN_MULTIPLIER`). We assume that a direct scan is cheaper 
+than an index scan, because the latter requires indirection. Also, we assume that a scan of the `HASH` index is cheaper that 
+a scan of the `SORTED` index, because it requires less CPU for the lookup.
+1. The final formula is `COST = SCANNED_ROWS * SCAN_MULTIPLIER + RETURNED_ROWS * PROJECTION_COST`. It ensures, that a direct
+scan is picked when the filter has poor selectivity, and that an index scan is picked otherwise, giving a priority to `HASH`
+index.
 
 ## 3 Local Execution
 
