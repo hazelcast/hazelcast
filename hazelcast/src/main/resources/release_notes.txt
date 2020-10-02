@@ -1,5 +1,13 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12.x release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.12.2 - VISA5 ====
+
+1. Fixes
+
+* Fixed behaviour of auto-removal of CP member during split-brain merge.
+Also applied small fixes for Raft node termination, CP member promotion
+and cases when the CP node IP changes on restart [#17656]
+
 ==== 3.12.2 - VISA4 ====
 
 1. Fixes
