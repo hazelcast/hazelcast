@@ -2,13 +2,13 @@
 
 ## Overview
 
-Expressions is one of the core elements of every SQL implementation.
+Expressions are one of the core elements of every SQL implementation.
 Expressions can participate in projections (`SELECT a + b FROM t`) and
 filters (`SELECT * FROM t WHERE a + b < 10`). Expressions may be roughly
 subdivided into 4 general categories:
 
 - Terminal expressions not referring to other expressions: column,
-  literal, parameter and type expressions.
+  literal, parameter and type (as seen in `CAST`) expressions.
 - Operators, like numeric arithmetic operators: `+`, `-`, etc.
 - Predicates, like comparison predicates: `<`, `>`, etc.
 - Functions, like `ABS`, `SIN`, etc.
@@ -47,7 +47,9 @@ not.
 In Calcite, the validation logic is encapsulated and orchestrated by
 implementations of `SqlValidator`. Specifically, `SqlValidatorImpl`
 extended by `HazelcastSqlValidator` is used to customize the validation
-logic to align it with our requirements.
+logic to align it with our requirements: the narrowest integer type is
+assigned to integer literals and to `CAST` operators involving integer
+types.
 
 As a first step of the validation process, `SqlValidatorImpl` may apply
 some transformations to the passed AST which should not affect the
@@ -70,15 +72,22 @@ Usually, semantic validation requires assigning types to every
 expression and its operand expressions, if any. In Calcite, that type
 assignment behavior may be customized in several ways:
 
-- `SqlValidator.deriveType` may customize the behavior globally.
+- `SqlValidator.deriveType` may customize the behavior globally, it's
+  the main source of truth for node types and invoked every time when a
+  node type is needed. Derived types are cached by the validator to
+  avoid constant re-derivation. Usually, if a node in question is an
+  operator the validator just delegates the type derivation to it using
+  `SqlOperator.deriveType`. Which in turn, usually, delegates back to
+  the validator to derive the types of its operands and then calls
+  `SqlOperator.inferReturnType`, which may delegate to
+  `SqlReturnTypeInference` strategy associated with the operator.
 
 - Each `SqlOperator` implementation may customize its operand type
   inference strategy (see `SqlOperandTypeInference` and
   `SqlOperator.getOperandTypeInference`) and its return type inference
   strategy (see `SqlReturnTypeInference`,
   `SqlOperator.getReturnTypeInference` and
-  `SqlOperator.inferReturnType`). The first one is used only if some of
-  the operand types are unknown. Also, operand type validation strategy
+  `SqlOperator.inferReturnType`). Also, operand type validation strategy
   can be customized using an associated `SqlOperandTypeChecker` (see
   `SqlOperator.getOperandTypeChecker`).
 
@@ -93,14 +102,74 @@ The following general rules apply when assigning types:
 
 - Literals: `TRUE` and `FALSE` literals receive `BOOLEAN` type; numeric
   literals containing no decimal point (`1`, `42`, etc.) receive the
-  smallest integer type possible (`TINYINT`, `SMALLINT`, `INTEGER` or
+  narrowest integer type possible (`TINYINT`, `SMALLINT`, `INTEGER` or
   `BIGINT`); numeric literals containing decimal point (`1.1`, `4.2`,
   etc.) receive `DECIMAL` type; scientific notation numeric literals
   (`1e1`, `4.2e2`, etc.) receive `DOUBLE` type; string literals
   (`'foo'`) receive `VARCHAR` type.
 
 - Parameters: parameter types are inferred from the context: `1.0 + ?`,
-  the parameter would receive `DOUBLE` type.
+  the parameter would receive `DECIMAL` type since the type of the
+  left-hand side literal is `DECIMAL`; `1 + ?`, despite the fact that
+  the literal type is `TINYINT` the parameter would receive `BIGINT`
+  type because `TINYINT` is too restrictive; `sin(?)`, the parameter
+  would receive `DOUBLE` type since it's the only type accepted by `sin`
+  function. In certain cases (`SELECT ?`, for instance) it's impossible
+  to infer a concrete type, more on that below.
+  
+In general, the validation process begins with a call to
+`SqlValidator.validate`, which starts a recursive validation of the
+passed node and its children. Typically, during the validation, types
+should be _derived_ for every node starting at the root, that usually
+requires knowing types of all child nodes. Types of certain nodes
+(dynamic parameters, for instance) might be unknown, so as a first step
+every node tries to _infer_ types for its child nodes of unknown types.
+For operators this process can be customized using
+`SqlOperandTypeInference` strategy associated with an operator.
+
+If a node type can't be inferred, the validation fails. Currently, that
+happens if an operator acts only on dynamic parameters and/or `NULL`s.
+This might change in the future, for instance we may assign some default
+type in such cases. Consider `? + ?`, `+` operator can be applied to
+numeric and temporal types, we may choose to assign `DECIMAL` type for
+the parameters in this specific case. Alternatively, we might take into
+account the actual types of the passed parameter arguments and construct
+separate query plans based on that information, that way we would not
+need any one-size-fits-all defaults. `NULL` as a type is not a
+first-class citizen in Calcite: basically, every `NULL` literal
+participating in some operator or function must have a concrete type
+assigned, therefore `NULL + NULL` is affected by the same type inference
+problem, which might be solved by making `NULL` type a first-class
+citizen or by choosing some defaults.
+
+After all unknown types are inferred and assigned to nodes, type for
+every tree node can be derived from the node itself potentially
+consulting its child nodes for their types. Most operators have an
+additional round of type refinement called type coercion. For instance,
+both sides of the binary comparison operators are coerced to the same
+type respecting type precedence and conversion rules defined in [Type
+System design document](01-type-system.md). Another example is the
+binary arithmetic operators coercing their operands to a common type.
+The coercion can be customized by providing a custom `TypeCoercion` (see
+`HazelcastTypeCoercion`). A potential flaw in the type system conversion
+rules was identified: the mentioned Type System design document defines
+strings (`VARCHAR` type) as implicitly convertible to any other type,
+that potentially hides bugs in queries including performance ones.
+
+Each operator validates that it has a proper number of operands of
+proper types. The validation process can be customized by overriding
+`SqlOperator.checkOperandTypes` and `SqlOperator.getOperandCountRange`,
+or by providing a custom `SqlOperandTypeChecker` strategy for an
+operator. For instance, `HazelcastSqlCastFunction` overrides
+`checkOperandTypes` to make sure the casting behaviour is exactly the
+same as defined by Type System conversion rules. Calcite provides a
+collection of `SqlOperandTypeChecker` strategies in `OperandTypes`
+class, we extend that collection with `HazelcastOperandTypes`: `notAny`
+strategy checks that none of the operands is of `OBJECT` type to report
+an error if an operator can't be applied to `OBJECT`s (SQL `OBJECT`
+type is represented internally as Calcite's `ANY` type); `notAllNull`
+checks that at least one of the operands has a type other than `NULL` to
+report an error if it's impossible to infer a type for `NULL` literals.
 
 As an end result, for semantically valid ASTs, the validation process
 produces a potentially transformed AST where every node has a known
@@ -134,11 +203,11 @@ suitable for the runtime evaluation of expressions.
 
 The translation is performed by `RexToExpressionVisitor` with the help
 of `RexToExpression`. Every instance of `RexNode` is translated into a
-corresponding `Expression` instance:
+corresponding `Expression` instance.
 
 The final result of the translation stage is an `Expression` tree ready
-for runtime evaluation. No further changes expected to the tree after
-this point.
+for runtime evaluation. No further changes are expected to the tree
+after this point.
 
 ### Evaluation Stage
 
@@ -156,7 +225,7 @@ public interface Expression<T> ... {
 ```
 
 `eval` is provided with a row and an evaluation context on which the
-expression should be evaluated. The Expression doesn't necessary need to
+expression should be evaluated. The expression doesn't necessary need to
 access the row or the context during the evaluation, for instance
 `ConstantExpression` just returns literal values. Currently,
 `ExpressionEvalContext` provides access only to the actual dynamic
