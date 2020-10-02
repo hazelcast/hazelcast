@@ -308,12 +308,12 @@ We will use the terms `property` and `trait` interchangeably.
 
 Convention is a special trait in Apache Calcite, that describes the type of the operator (`RelNode`).  
 
-After the parsing, all operators are assigned the `Convention.NONE` meaning, that they are abstract and cannot be executed. 
-By default, an operator with `NONE` convention has an infinite cost, and hence cannot be part of a valid plan. One of the goals
-of the planning process is to find nodes with non-`NONE` conventions. The method 
-`VolcanoPlanner.setNoneConventionHasInfiniteCost` could be used to assign non-infinite costs to `NONE` nodes. 
+After the parsing, all operators are assigned the `Convention.NONE`, meaning they are abstract. By default, an operator 
+with `NONE` convention has an infinite cost, and hence cannot be part of a valid plan. One of the goals of the planning process 
+is to find nodes with non-`NONE` conventions. The method `VolcanoPlanner.setNoneConventionHasInfiniteCost` could be used to 
+assign non-infinite costs to `NONE` nodes. 
 
-Apache Calcite was meant to be able to execute federated queries, such as `SELECT * FROM cassandra.table1 JOIN druid.table2`.
+Apache Calcite is meant to execute federated queries, such as `SELECT * FROM cassandra.table1 JOIN druid.table2`.
 In addition, Apache Calcite comes with a couple of execution backends, `Enumerable` (interpreter) and `Bindable` (compiler).
 Therefore, the original motivation for the `Convention` trait was to define the execution backend for the operator. For example,
 for the query `SELECT * FROM cassandra.table1 JOIN druid.table2 WHERE table1.field = 1`, the plan after parsing will look like:
@@ -325,7 +325,7 @@ Filter[NONE](table1.field = 1)
 ```
 
 Then we can delegate table scans to the respective backend databases, and then perform the filter and join locally using one the 
-Calcite backends. Assuming we did a filter-pushdown, the plan could look like:
+Calcite backends. Assuming we did a filter pushdown, the plan could look like:
 ```
 Join[BINDABLE]
   Filter[BINDABLE](table1.field = 1)
@@ -333,9 +333,9 @@ Join[BINDABLE]
   Table[DRUID](table2)
 ```
 
-Or we may try to push the filter to the Cassandra database, this reducing the number of rows returned to the local process. To do
-this we set the `CASSANDRA` convention to the filter node, so that the executor understands that it should be passed to the 
-database, rather than be processed locally: 
+Or we may try to push the filter down to the Cassandra database, this reducing the number of rows returned to the local process. 
+To do this, we set the `CASSANDRA` convention to the filter node, so that the executor understands that it should be passed to 
+the database, rather than be processed locally: 
 ```
 Join[BINDABLE]
   Filter[CASSANDRA](table1.field = 1)
@@ -392,7 +392,7 @@ RelSet#2 {
   
 When a rule is being executed a new operator might be created. This operator is added to the search space through 
 the `RelOptRuleCall.transformTo(RelNode newOperator)` call. The `RelOptRuleCall` knows the original operator it was
-called for, and hence it adds the `newOperator` to the same `RelSet` as the original one. For example, when an index
+called for, and hence it adds the `newOperator` to the same `RelSet` as the original operator. For example, when an index
 scan is applicable for the given table scan, it will be added to the same group:
 ```
 BEFORE:
@@ -449,15 +449,15 @@ a centralized access point to all required metadata.
 
 This approach is convenient and extensible, but has several performance problems:
 1. Compilation with Janino may take significant time to complete, increasing planning time to seconds on a fresh JVM
-1. Metadata is not cached on `RelSet`/`RelSubset` levels, and re-calculated on every call. This is not optimal,
+1. Metadata is not cached at `RelSet`/`RelSubset` levels, and re-calculated on every call. This is not optimal,
 because metadata calculation typically requires recursive dives into inputs of the operator. 
 
 ### 2.6 Execution
 
 The `VolcanoPlanner` employs EXODUS-like approach to query optimization. It uses rules to find alternative plans. However, it 
-doesn't employ the guided top-down search strategy. Instead, the optimizer organizes rule instances in a queue, and  
-The word `Volcano` in the name is a bit misleading, because the optimizer doesn't actually follow the main ideas from the 
-Volcano/Cascades papers.
+doesn't employ the guided top-down search strategy. Instead, the optimizer organizes rule instances in a queue, and fire them
+until the queue is empty. The word `Volcano` in the name is misleading, because the optimizer doesn't actually follow the 
+main ideas from the Volcano/Cascades papers.
 
 First, an instance of the `VolcanoPlanner` is created and initialized with:
 1. The operator tree to be optimized (`RelNode`)
@@ -480,7 +480,7 @@ The goal of the **copy-in** phase is to prepare the initial MEMO and rule instan
 are performed:
 1. A copy of the operator is created using `RelNode.copy` method, with inputs replaced with the relevant `RelSubset` instances
 1. An operator is added to the relevant `RelSet` and `RelSubset` instances based on an operator's signature (`RelNode.explain`)
-1. A cost of the operator is calculated and assigned set as a `best` cost of the current `RelSubset`
+1. A cost of the operator is calculated and set as the `best` cost of the current `RelSubset`
 1. For every rule that matches the given operator a rule instance (`VolcanoRuleMatch`) is added to the rule queue 
 (`VolcanoPlanner.ruleQueue`) 
 
@@ -488,19 +488,19 @@ The copy-in is performed via `VolcanoPlanner.setRoot` method.
 
 #### 2.6.2 Optimization Phase
 
-The optimization phase proceeds as follows:
-1. Pick the next rule instance from the queue and execute it
-1. For all created operators: add to MEMO, calculate the cost, update the cost of the current `RelSubset` and parents if needed,
-schedule new rule instance for the operator and parents if needed
+The optimization phase proceeds as follows. The next rule instance is taken from the queue and executed. For every new 
+operator created during rule invocation:
+1. Add the operator to MEMO
+1. Update the cost of the operator's `RelSubset` and parents, if needed
+1. Schedule new rule instances for the operator and parents, if needed
 
 The process continues until the queue is empty.
 
 #### 2.6.3 Copy-out Phase
 
-Once the optimization finished, it is necessary to produce the resulting plan from the MEMO. To do this, a recursive 
-top-bottom dive from the top `RelSubset` is performed. As all `RelSubset` instances already have a winner at this 
-point, it is only necessary to pick the winner of the current `RelSubset`, and copy it, replacing the `RelSubset` inputs, 
-with the concrete winners. 
+Once the optimization is finished, it is necessary to produce the resulting plan from the MEMO. To do this, a recursive 
+top-bottom dive from the top `RelSubset` is performed. All `RelSubset` instances already have a node with the best cost at 
+this point (aka "winner"). To construct the final plan, the optimizer recursively finds winners bottom-up.
 
 ## 3 Hazelcast Mustang Optimizer
 
@@ -522,7 +522,7 @@ phases:
 
 The original query is passed to Calcite's parser and is converted to the parse tree (`SqlNode`). 
 
-IMDG uses the built-in parser, since it is sufficient for the supported feature set. Jet extends the parse with 
+We use the built-in parser, since it is sufficient for the supported feature set. Jet extends the parser with 
 custom commands. 
 
 ### 3.2 Validation
@@ -536,13 +536,13 @@ Once the `SqlNode` is validated, it is converted to the tree of abstract relatio
 
 We use Calcite's `SqlValidator` and `SqlToRelConverter` with custom extensions for validation and conversion respectively.   
 
-### 3.3 Simplification
+### 3.3 Rewrite
 
 The initial `RelNode` may contain subqueries that are difficult to deal with. Generally, every subquery (correlated or not) 
-could be replaced with a sequence of join and aggregate operations [[4]]. We use Apache Calcite built-in classes to do this
-does this (`SubQueryRemoveRule`, `SqlToRelConverter.decorrelate`). 
+could be replaced with a sequence of join and aggregate operators [[4]]. We use Apache Calcite built-in classes to eliminate
+subqueries (`SubQueryRemoveRule`, `SqlToRelConverter.decorrelate`). 
 
-After the subqueries are eliminated, some unused fields may remain in the plan. We use `SqlToRelConverter.trimUnusedFields`
+After the subqueries are eliminated, unused fields may remain in the plan. We use `SqlToRelConverter.trimUnusedFields`
 method to find and remove the unused fields, thus making the plan more efficient.
 
 The result of this stage is the optimized operator tree (`RelNode`) without subqueries and unused fields.
@@ -556,6 +556,15 @@ considering their physical implementations. Generally, we do the following:
 - Fuse operators together to make the tree smaller
 - Removing operators that have no impact on the final result
 - Removing operators that do not produce any results
+  
+In other optimizers, most of these rules are typically part of the rewrite phase, where the heuristic planning is used instead
+of that cost-based optimization. In Apache Calcite, the `HepPlanner` could be used for this. However, some rules may trigger 
+conflicting actions, causing the heuristic planner to fail. An example is filter "move around" rules: often it is important
+not only to push the filter down, but also to try to push it up, because it may enable further optimizations of the parent node
+(such as transitive predicate push, partition pruning, etc). The heuristic planner may fail to find these alternatives. 
+Therefore, we use the cost-based `VolcanoPlanner` as slower, but safer choice. We may reconsider this in the future, and move 
+some logical rules to separate stages that use heuristic planner, as it is done in other projects (e.g. Apache Flink).
+For now this is not important, because we do not support joins, so our queries have small search spaces. 
   
 We define the following logical operators and rules:
 
@@ -582,7 +591,7 @@ We define the following logical operators and rules:
 
 Execution of these rules might create many hundreds and thousands of alternative plans. If we add physical optimization
 to this step, it could easily blow the search space, because the EXODUS-like search algorithm do not allow for search
-space pruning. 
+space pruning, and requires re-execution of the same rules multiple times to guarantee that the optimal plan is found.
 
 Consider that we produced `N` different logical plans, and have physical rules that may produce `M` alternatives 
 for every logical plan. As a result, we will have to consider `N * M` plans. Instead, we perform the logical 
@@ -590,24 +599,22 @@ optimization in a separate step, extract only one best plan from the search spac
 to on the next stage. This way, we have to consider only `N + M` plans, that alleviates the inefficiency of the core
 search algorithm of `VolcanoPlanner`.
 
-The fundamental observation, is that splitting optimization into several phases `doesn't guarantee the optimal plan` 
+The fundamental observation, is that splitting optimization into several phases doesn't guarantee the optimal plan 
 in the general case. That is, if we generated plans `P1, P2 ... Pm ...`, and picked `Pm` as the best one, it
 doesn't mean that applying additional rules to `Pm` will produce the optimal plan `Pm'`. Another plan `Pn`, 
 such that `cost(Pn) > cost(Pm)`, could yield better plan `Pn'`, such that `cost(Pn') < cost(Pm')`.
 
-Therefore, the logical phase should generally include rules, that will produce the best plan, that will yield
-the best plan after physical optimization with high probability. Operator fusion, removal of unused operators, scan 
+Therefore, the logical phase should generally include rules, that produce plans that are generally the best starting
+points for the subsequent physical optimization with high probability. Operator fusion, removal of unused operators, scan 
 field trimming, and filter pushdowns produces better plans in almost all cases, this is why we execute them at this 
-stage. This is a common sense, we do not have a rigorous proof.
-
-To contrast, join order rules could produce optimal logical plan, that will be not optimal during physical optimization. 
+stage.
 
 As a part of the logical optimization process, we convert the Calcite operators with the convention `Convention.NONE` 
 to our own logical operators with the convention `HazelcastConvention.LOGICAL`. We do this through a special conversion
 rules that extend Calcite's `ConverterRule`.  
 
-If there is a Calcite operator in the tree that doesn't have a logical counterpart, then it indicates that there is either an 
-unsupported operation, that we missed, during validation phase, or that we miss some conversion rule. An exception will be 
+If there is a Calcite operator in the tree that doesn't have a logical counterpart, it indicates that there is either an 
+unsupported operation, that we missed during validation phase, or that we missed some conversion rule. An exception will be 
 thrown in this case.
 
 *Table 5: Logical Conversion Rules*
@@ -620,7 +627,7 @@ thrown in this case.
 | `ValuesLogicalRule` | `LogicalValues` | `ValuesLogicalRel` |
 
 Last, we manually add a special `RootLogicalRel` on top of the result. This operator is an abstraction of a user query
-cursor that returns query results on the initiator member. 
+cursor that returns results on the initiator member. 
 
 The result of the logical optimization is an optimized tree of operators with the `HazelcastConvention.LOGICAL` convention, 
 that has `RootLogicalRel` at the root.
@@ -630,9 +637,6 @@ that has `RootLogicalRel` at the root.
 The goal of the physical optimization is to find the physical implementations of logical operators. Some physical operators
 have 1-to-1 mapping to their logical counterparts (e.g. project), while others may have completely different implementations 
 (e.g. index scan created out of logical table scan). 
-
-We do not perform any logical transformations at this phase. As explained in the previous paragraph, it could lead to non-optimal 
-plans when we add joins. Therefore, the architecture may change in the future.
 
 #### 3.5.1 Distribution Trait
 
@@ -644,11 +648,11 @@ through the `DistributionTrait` property that is assigned to physical operators 
 | Name | Description |
 |---|---|
 | `ROOT` | The result set is located on the initiator member only |
-| `PARTITIONED` | The results set is distributed across member, every row is located on one member only |
-| `REPLICATED` | The copy of the whole result set is located on every member |
+| `PARTITIONED` | The result set is distributed across member, every row is located on one member only |
+| `REPLICATED` | The whole result set is located on every member |
 
-When the planning starts, we explicit request, that the planning result must have `ROOT` distribution, which literally
-means "deliver the final result to the initiator member". 
+When the optimization starts, we request the `ROOT` distribution from the planner. This literally means "deliver the final 
+result to the initiator member". 
 
 The `DistributionTraitDef` defines what should happen if a parent member requests a certain distribution that cannot
 be satisfied by the child. If the data movement is needed, a special `Exchange` operator is injected between the 
@@ -657,7 +661,7 @@ Therefore, the `Exchange` operator is the enforcer operator for the `Distributio
 enforcer operator for the `RelCollation`.
 
 Currently, we support only `RootExchangePhysicalRel` that delivers results to the initiator node. Implementation of joins,
-aggregations, and sorting will require more implementations of the `Exchange` operator. 
+aggregations, and sorting will require specialized implementations of the `Exchange` operator. 
 
 The table below summarizes how the ROOT distribution is enforced.
 
@@ -671,13 +675,13 @@ The table below summarizes how the ROOT distribution is enforced.
 Below is the example of the distribution enforcement for the simple logical plan:
 ```
 LOGICAL:
-RootLogicalRel                     // Return to the user from the initiator
-  MapScanLogicalRel                // Scan an IMap
+RootLogicalRel                      // Return to the user from the initiator
+  MapScanLogicalRel                 // Scan an IMap
 
 PHYSICAL:
-RootLogicalRel[ROOT]               // Return to the user from the initiator
-  RootExchangePhysicalRel[ROOT]    // Send to the initiator
-    MapScanLogicalRel[PARTITIONED] // Scan an IMap on all nodes
+RootPhysicalRel[ROOT]               // Return to the user from the initiator
+  RootExchangePhysicalRel[ROOT]     // Send to the initiator
+    MapScanPhysicalRel[PARTITIONED] // Scan an IMap on all nodes
 ```
 
 #### 3.5.2 Optimization Algorithm
@@ -685,11 +689,11 @@ RootLogicalRel[ROOT]               // Return to the user from the initiator
 The goal of the optimizer is to find the cheapest plan that has the `ROOT` distribution at the top operator.  
 
 Currently, the optimization is performed **bottom-up**. We start with the leaf nodes, because their distribution is
-always known. When physical implementations for the leaf node is found, rules are triggered on the parent nodes, and 
+always known. When physical implementations for the leaf node are found, rules are triggered on the parent nodes, and 
 parent distributions are resolved. The process continues until we reach the root node, that always has `ROOT` distribution. 
 Then the root node enforces the `ROOT` distribution on the input, adding the `RootExchangePhysicalRel` if needed.
 
-*Table 8: Distributions of the Leaf Nodes*
+*Table 8: Initial Distributions of the Leaf Nodes*
 
 | Node | Distribution | Comment |
 |---|---|---|
@@ -700,14 +704,14 @@ The `VolcanoPlanner` is not suitable to work in the bottom-up trait propagation 
 integration with the Apache Calcite as follows:
 1. During the physical optimization, we gradually convert nodes from the `LOGICAL` convention to `PHYSICAL`. For the 
 `PHYSICAL` convention we override a couple of methods (see `HazelcastConventions.PHYSICAL`) that roughly forces the optimizer
-to do the following: "when a new `PHYSICAL` node is created, force re-optimization of the `LOGICAL` parent". This way, whenever a 
+to do the following: when a new `PHYSICAL` node is created, force re-optimization of the `LOGICAL` parent. This way, whenever a 
 new `PHYSICAL` node is added to MEMO, the rules for the `LOGICAL` parent node is added to the execution queue. 
-1. Optimization rules for the intermediate nodes (i.e. not leaves, and not root) follow the same pattern: get the input's 
+1. Optimization rules for the intermediate nodes (i.e. not leaves, and not root) follow the similar pattern: get the input's 
 `RelSet`, extract all `RelSubset`-s with `PHYSICAL` convention, and create one intermediate physical node per `RelSubset`. This
 way we ensure that all possibly interesting properties of the current group is propagated to parent groups.
 
 Note that this algorithm uses the optimistic approach: we create intermediate physical nodes for every possible
-combination of physical properties, assuming it will help parent find better plans. For complex plans, this may
+combination of physical properties, assuming it will help parents find better plans. For complex plans, this may
 create too many operators. A better approach would be to create only those intermediate operators that are really
 required by parents, effectively changing the direction of the optimization: top-down instead of bottom-up. To achieve
 this we may use the solution used in Apache Flink (see `FlinkExpandConversionRule`). It is likely, that we will have
@@ -739,9 +743,9 @@ exchange type)
 
 Consider the following physical plan:
 ```
-RootLogicalRel[ROOT]               // Return to the user from the initiator
-  RootExchangePhysicalRel[ROOT]    // Send to the initiator
-    MapScanLogicalRel[PARTITIONED] // Scan an IMap on all nodes
+RootPhysicalRel[ROOT]               // Return to the user from the initiator
+  RootExchangePhysicalRel[ROOT]     // Send to the initiator
+    MapScanPhysicalRel[PARTITIONED] // Scan an IMap on all nodes
 ```
 
 After the split it is converted into the plan with two fragments:
@@ -756,7 +760,7 @@ RootSendPlanNode[edge=1]           // Send results to the initiator
 ```
 
 The split logic is located in the `PlanCreateVisitor` class. The result is the `Plan` object, that doesn't depend
-on the Apache Calcite, and could be sent to other nodes for execution.
+on the Apache Calcite, and could be sent to other nodes for execution. 
 
 [1]: https://dl.acm.org/doi/10.1145/38713.38734 "The EXODUS optimizer generator"
 [2]: https://dl.acm.org/doi/10.5555/645478.757691 "The Volcano Optimizer Generator: Extensibility and Efficient Search"
