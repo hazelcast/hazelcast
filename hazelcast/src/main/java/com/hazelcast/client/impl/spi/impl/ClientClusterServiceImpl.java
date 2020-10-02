@@ -71,7 +71,6 @@ import static java.util.Collections.unmodifiableSet;
  */
 public class ClientClusterServiceImpl
         implements ClientClusterService {
-
     private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 120;
 
     private static final MemberListSnapshot EMPTY_SNAPSHOT = new MemberListSnapshot(-1, new LinkedHashMap<>());
@@ -85,6 +84,8 @@ public class ClientClusterServiceImpl
     private final Object clusterViewLock = new Object();
     //read and written under clusterViewLock
     private CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
+
+    private TranslateToPublicAddressProvider translateToPublicAddress;
 
     private static final class MemberListSnapshot {
         private final int version;
@@ -101,6 +102,8 @@ public class ClientClusterServiceImpl
         labels = unmodifiableSet(client.getClientConfig().getLabels());
         logger = client.getLoggingService().getLogger(ClientClusterService.class);
         connectionManager = client.getConnectionManager();
+        this.translateToPublicAddress = new TranslateToPublicAddressProvider(client.getClientConfig(),
+                client.getProperties(), logger);
     }
 
     @Override
@@ -138,6 +141,11 @@ public class ClientClusterServiceImpl
     @Override
     public long getClusterTime() {
         return Clock.currentTimeMillis();
+    }
+
+    @Override
+    public boolean translateToPublicAddress() {
+        return translateToPublicAddress.get();
     }
 
     @Override
@@ -225,6 +233,7 @@ public class ClientClusterServiceImpl
 
     private void applyInitialState(int version, Collection<MemberInfo> memberInfos) {
         MemberListSnapshot snapshot = createSnapshot(version, memberInfos);
+        translateToPublicAddress.refresh(client.getClusterDiscoveryService().current().getAddressProvider(), memberInfos);
         memberListSnapshot.set(snapshot);
         logger.info(membersString(snapshot));
         Set<Member> members = toUnmodifiableHasSet(snapshot.members.values());

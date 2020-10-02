@@ -83,6 +83,13 @@ public interface ClientClusterService {
     long getClusterTime();
 
     /**
+     * Returns if member internal address should be translated into its public address.
+     *
+     * @return true if member address should be translated into its public address.
+     */
+    boolean translateToPublicAddress();
+
+    /**
      * @param listener The listener to be registered.
      * @return The registration ID
      */
