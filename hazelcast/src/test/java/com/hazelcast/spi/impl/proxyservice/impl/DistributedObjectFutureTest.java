@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.proxyservice.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.impl.InitializingObject;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,7 +39,8 @@ import static org.mockito.Mockito.verify;
 public class DistributedObjectFutureTest {
 
     private DistributedObject object = mock(InitializingDistributedObject.class);
-    private DistributedObjectFuture future = new DistributedObjectFuture(UuidUtil.newUnsecureUUID());
+    private DistributedObjectFuture future = new DistributedObjectFuture(UuidUtil.newUnsecureUUID(),
+            TenantControl.NOOP_TENANT_CONTROL);
 
     @Test
     public void isSet_returnsFalse_whenNotSet() throws Exception {

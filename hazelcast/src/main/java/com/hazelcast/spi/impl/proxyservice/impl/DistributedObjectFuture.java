@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.proxyservice.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import java.util.UUID;
 
@@ -31,9 +32,11 @@ public class DistributedObjectFuture {
     private volatile DistributedObject rawProxy;
 
     private final UUID source;
+    private final TenantControl tenantControl;
 
-    public DistributedObjectFuture(UUID source) {
+    public DistributedObjectFuture(UUID source, TenantControl tenantControl) {
         this.source = source;
+        this.tenantControl = tenantControl;
     }
 
     boolean isSetAndInitialized() {
@@ -63,6 +66,10 @@ public class DistributedObjectFuture {
 
     public UUID getSource() {
         return source;
+    }
+
+    public TenantControl getTenantControl() {
+        return tenantControl;
     }
 
     public DistributedObject getNow() {

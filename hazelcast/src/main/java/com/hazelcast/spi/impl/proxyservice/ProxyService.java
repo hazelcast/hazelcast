@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.proxyservice;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.internal.services.CoreService;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -47,4 +48,6 @@ public interface ProxyService extends CoreService {
     UUID addProxyListener(DistributedObjectListener distributedObjectListener);
 
     boolean removeProxyListener(UUID registrationId);
+
+    TenantControl getTenantControl(String serviceName, String objectId);
 }

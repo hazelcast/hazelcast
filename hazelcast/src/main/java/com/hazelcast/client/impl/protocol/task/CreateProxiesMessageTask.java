@@ -25,6 +25,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyInfo;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -49,7 +50,8 @@ public class CreateProxiesMessageTask extends AbstractMultiTargetMessageTask<Lis
     public Operation get() {
         List<ProxyInfo> proxyInfos = new ArrayList<ProxyInfo>(parameters.size());
         for (Map.Entry<String, String> proxy : parameters) {
-            proxyInfos.add(new ProxyInfo(proxy.getValue(), proxy.getKey(), endpoint.getUuid()));
+            proxyInfos.add(new ProxyInfo(proxy.getValue(), proxy.getKey(), endpoint.getUuid(),
+                    TenantControl.NOOP_TENANT_CONTROL));
         }
         return new PostJoinProxyOperation(proxyInfos);
     }

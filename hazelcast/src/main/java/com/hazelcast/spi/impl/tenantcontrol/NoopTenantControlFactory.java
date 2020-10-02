@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.tenantcontrol;
 
-import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 
@@ -28,7 +27,12 @@ import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 public class NoopTenantControlFactory implements TenantControlFactory {
 
     @Override
-    public TenantControl saveCurrentTenant(DestroyEventContext event) {
+    public TenantControl saveCurrentTenant() {
         return NOOP_TENANT_CONTROL;
+    }
+
+    @Override
+    public boolean isClassesAlwaysAvailable() {
+        return true;
     }
 }

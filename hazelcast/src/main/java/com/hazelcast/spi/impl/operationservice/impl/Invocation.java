@@ -539,7 +539,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             setCallTimeout(op, callTimeoutMillis);
             setCallerAddress(op, context.thisAddress);
             op.setNodeEngine(context.nodeEngine);
-
+            op.setTenantControlIfNotAlready();
             boolean isAllowed = context.operationExecutor.isInvocationAllowed(op, isAsync);
             if (!isAllowed && !isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);

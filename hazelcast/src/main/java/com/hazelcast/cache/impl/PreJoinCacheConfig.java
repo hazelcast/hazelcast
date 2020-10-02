@@ -18,13 +18,11 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.AbstractCacheConfig;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.CacheConfigAccessor;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
-import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.io.IOException;
@@ -56,7 +54,12 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> {
     }
 
     public PreJoinCacheConfig(CacheConfig cacheConfig, boolean resolved) {
-        cacheConfig.copy(this, resolved);
+        this(cacheConfig, resolved, null);
+    }
+
+    public PreJoinCacheConfig(CacheConfig cacheConfig, boolean resolved,
+            SerializationService backupSerializationService) {
+        cacheConfig.copy(this, resolved, backupSerializationService);
     }
 
     @Override
@@ -71,17 +74,6 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> {
             throws IOException {
         setKeyClassName(in.readUTF());
         setValueClassName(in.readUTF());
-    }
-
-    @Override
-    protected void writeTenant(ObjectDataOutput out) throws IOException {
-        out.writeObject(CacheConfigAccessor.getTenantControl(this));
-    }
-
-    @Override
-    protected void readTenant(ObjectDataInput in) throws IOException {
-        TenantControl tc = in.readObject();
-        CacheConfigAccessor.setTenantControl(this, tc);
     }
 
     @Override
@@ -154,10 +146,14 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> {
     }
 
     public static PreJoinCacheConfig of(CacheConfig cacheConfig) {
+        return of(cacheConfig, null);
+    }
+
+    public static PreJoinCacheConfig of(CacheConfig cacheConfig, SerializationService serializationService) {
         if (cacheConfig instanceof PreJoinCacheConfig) {
             return (PreJoinCacheConfig) cacheConfig;
         } else {
-            return new PreJoinCacheConfig(cacheConfig, false);
+            return new PreJoinCacheConfig(cacheConfig, false, serializationService);
         }
     }
 }

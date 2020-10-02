@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.ClusterClock;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
@@ -45,6 +46,8 @@ import static com.hazelcast.spi.impl.operationservice.CallStatus.VOID;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.RETRY_INVOCATION;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
+import com.hazelcast.spi.tenantcontrol.TenantControl.Closeable;
 
 /**
  * An operation could be compared to a {@link Runnable}. It contains logic that
@@ -67,6 +70,7 @@ public abstract class Operation implements DataSerializable {
     static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
     static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
     static final int BITMASK_CLIENT_CALL_ID_SET = 1 << 7;
+    static final int BITMASK_TENANT_CONTROL_SET = 1 << 8;
 
     private static final AtomicLongFieldUpdater<Operation> CALL_ID =
             AtomicLongFieldUpdater.newUpdater(Operation.class, "callId");
@@ -81,6 +85,7 @@ public abstract class Operation implements DataSerializable {
     private long callTimeout = Long.MAX_VALUE;
     private long waitTimeout = -1;
     private UUID callerUuid;
+    private TenantControl tenantControl = TenantControl.NOOP_TENANT_CONTROL;
 
     // injected
     private transient NodeEngine nodeEngine;
@@ -89,6 +94,7 @@ public abstract class Operation implements DataSerializable {
     private transient ServerConnection connection;
     private transient OperationResponseHandler responseHandler;
     private transient long clientCallId = -1;
+    private transient Closeable tenantContext = () -> { };
 
     protected Operation() {
         setFlag(true, BITMASK_VALIDATE_TARGET);
@@ -701,6 +707,10 @@ public abstract class Operation implements DataSerializable {
             out.writeLong(clientCallId);
         }
 
+        if (isFlagSet(BITMASK_TENANT_CONTROL_SET)) {
+            out.writeObject(tenantControl);
+        }
+
         writeInternal(out);
     }
 
@@ -747,6 +757,10 @@ public abstract class Operation implements DataSerializable {
             clientCallId = in.readLong();
         }
 
+        if (isFlagSet(BITMASK_TENANT_CONTROL_SET)) {
+            tenantControl = in.readObject();
+        }
+
         readInternal(in);
     }
 
@@ -770,6 +784,50 @@ public abstract class Operation implements DataSerializable {
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
+    }
+
+    public TenantControl getTenantControl() {
+        return tenantControl;
+    }
+
+    public void setTenantControlIfNotAlready() {
+        if (tenantControl == TenantControl.NOOP_TENANT_CONTROL
+                && nodeEngine.getClusterService().getClusterVersion()
+                        .isGreaterOrEqual(Versions.V4_1)) {
+            tenantControl = nodeEngine.getTenantControlFactory().saveCurrentTenant();
+            if (tenantControl == null) {
+                getLogger().warning(String.format("TenantControl factory return null: %s - %s)",
+                        this.toString(), nodeEngine.getTenantControlFactory().toString()));
+                tenantControl = TenantControl.NOOP_TENANT_CONTROL;
+            } else {
+                setFlag(true, BITMASK_TENANT_CONTROL_SET);
+            }
+        }
+    }
+
+    /**
+     * checks if operation is ready to execute,
+     * if not, it will be pushed to the back of the queue
+     * Tenant's isAvailable() method is responsible for waiting
+     * so there is no tight loop
+     *
+     * @return true if ready
+     */
+    public boolean isTenantAvailable() {
+        return tenantControl.isAvailable(this.getClass());
+    }
+
+    public void pushThreadContext() {
+        tenantContext = tenantControl.setTenant();
+    }
+
+    public void popThreadContext() {
+        tenantContext.close();
+        tenantContext = () -> { };
+    }
+
+    public void clearThreadContext() {
+        tenantControl.clearThreadContext();
     }
 
     /**
@@ -799,6 +857,7 @@ public abstract class Operation implements DataSerializable {
         sb.append(", invocationTime=").append(invocationTime).append(" (").append(timeToString(invocationTime)).append(")");
         sb.append(", waitTimeout=").append(waitTimeout);
         sb.append(", callTimeout=").append(callTimeout);
+        sb.append(", tenantControl=").append(tenantControl);
         toString(sb);
         sb.append('}');
         return sb.toString();

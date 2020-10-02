@@ -40,7 +40,6 @@ public class AddCacheConfigOperation extends Operation implements IdentifiedData
     @Override
     public void run() {
         ICacheService cacheService = getService();
-        cacheService.setTenantControl(cacheConfig);
         cacheService.putCacheConfigIfAbsent(cacheConfig);
     }
 

@@ -86,8 +86,11 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MEMORY_PR
 import static com.hazelcast.internal.metrics.impl.MetricsConfigHelper.memberMetricsLevel;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import com.hazelcast.internal.util.ServiceLoader;
 import static com.hazelcast.spi.properties.ClusterProperty.BACKPRESSURE_ENABLED;
 import static com.hazelcast.spi.properties.ClusterProperty.CONCURRENT_WINDOW_MS;
+import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
+import static com.hazelcast.spi.tenantcontrol.TenantControlFactory.NOOP_TENANT_CONTROL_FACTORY;
 import static java.lang.System.currentTimeMillis;
 
 /**
@@ -101,6 +104,7 @@ import static java.lang.System.currentTimeMillis;
  */
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public class NodeEngineImpl implements NodeEngine {
+    private static final String TENANT_CONTROL_FACTORY = "com.hazelcast.spi.tenantcontrol.TenantControlFactory";
 
     private final Node node;
     private final SerializationService serializationService;
@@ -122,6 +126,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final Diagnostics diagnostics;
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
+    private final TenantControlFactory tenantControlFactory;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
@@ -164,6 +169,7 @@ public class NodeEngineImpl implements NodeEngine {
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
             serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
             serviceManager.registerService(ClusterWideConfigurationService.SERVICE_NAME, configurationService);
+            this.tenantControlFactory = initTenantControlFactory();
         } catch (Throwable e) {
             try {
                 shutdown(true);
@@ -478,6 +484,27 @@ public class NodeEngineImpl implements NodeEngine {
             }
         }
         return preJoinOps;
+    }
+
+    @Override
+    public TenantControlFactory getTenantControlFactory() {
+        return tenantControlFactory;
+    }
+
+    private TenantControlFactory initTenantControlFactory() {
+        TenantControlFactory factory = null;
+        try {
+            factory = ServiceLoader.load(TenantControlFactory.class,
+                    TENANT_CONTROL_FACTORY, getConfigClassLoader());
+        } catch (Exception e) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Could not load service provider for TenantControl", e);
+            }
+        }
+        if (factory == null) {
+            factory = NOOP_TENANT_CONTROL_FACTORY;
+        }
+        return factory;
     }
 
     public void reset() {

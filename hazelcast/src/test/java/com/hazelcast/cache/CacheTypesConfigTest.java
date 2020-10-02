@@ -46,6 +46,8 @@ import java.util.List;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
+import com.hazelcast.cache.impl.CacheProxy;
+import com.hazelcast.cache.impl.CacheService;
 import static com.hazelcast.config.UserCodeDeploymentConfig.ClassCacheMode.OFF;
 import static org.junit.Assert.assertNotNull;
 
@@ -152,10 +154,19 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
         assertClusterSize(2, hz1, hz2);
 
         ICache<String, Person> cache = hz2.getCacheManager().getCache(cacheName);
-        String key = generateKeyOwnedBy(hz2);
-        expect.expectCause(new RootCauseMatcher(ClassNotFoundException.class, "classloading.domain.PersonCacheLoaderFactory - "
-                + "Package excluded explicitly"));
-        cache.invoke(key, new PersonEntryProcessor());
+        ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(hz2.getConfig().getClassLoader());
+            CacheProxy cacheProxy = (CacheProxy) cache;
+            CacheService cacheService = (CacheService) cacheProxy.getService();
+            expect.expectCause(new RootCauseMatcher(ClassNotFoundException.class, "classloading.domain.PersonCacheLoaderFactory - "
+                    + "Package excluded explicitly"));
+            cacheService.getCacheConfig(cache.getPrefixedName()).getCacheLoaderFactory();
+            String key = generateKeyOwnedBy(hz2);
+            cache.invoke(key, new PersonEntryProcessor());
+        } finally {
+            Thread.currentThread().setContextClassLoader(oldClassLoader);
+        }
     }
 
     // tests deferred resolution of expiry policy factory

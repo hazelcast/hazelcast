@@ -38,6 +38,8 @@ import javax.cache.configuration.Configuration;
 import javax.cache.spi.CachingProvider;
 
 import static com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker.calculateMaxPartitionSize;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.lang.Integer.parseInt;
@@ -156,6 +158,18 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
 
     public static ICacheService getCacheService(HazelcastInstance instance) {
         return getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
+    }
+
+    public static ProxyService getProxyService(HazelcastInstance instance) {
+        return getNodeEngineImpl(instance).getProxyService();
+    }
+
+    public static TenantControl getTenantControl(HazelcastInstance hz, ICache<?, ?> cache) {
+        return getProxyService(hz).getTenantControl(ICacheService.SERVICE_NAME, CacheUtil.getDistributedObjectName(cache.getName()));
+    }
+
+    public static TenantControl getTenantControl(HazelcastInstance hz, CacheConfig cacheConfig) {
+        return getProxyService(hz).getTenantControl(ICacheService.SERVICE_NAME, CacheUtil.getDistributedObjectName(cacheConfig.getName()));
     }
 
     public static HazelcastServerCachingProvider createServerCachingProvider(HazelcastInstance instance) {

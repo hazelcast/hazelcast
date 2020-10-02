@@ -209,11 +209,11 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
     }
 
     @Override
-    public void run(Operation op) {
-        run(op, System.nanoTime());
+    public boolean run(Operation op) {
+        return run(op, System.nanoTime());
     }
 
-    private void run(Operation op, long startNanos) {
+    private boolean run(Operation op, long startNanos) {
         executedOperationsCounter.inc();
 
         boolean publishCurrentTask = publishCurrentTask();
@@ -225,22 +225,27 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
             checkNodeState(op);
 
             if (timeout(op)) {
-                return;
+                return false;
             }
 
             ensureNoPartitionProblems(op);
 
             ensureNoSplitBrain(op);
 
-            op.beforeRun();
-
-            call(op);
+            if (op.isTenantAvailable()) {
+                op.pushThreadContext();
+                op.beforeRun();
+                call(op);
+            } else {
+                return true;
+            }
         } catch (Throwable e) {
             handleOperationError(op, e);
         } finally {
             if (publishCurrentTask) {
                 currentTask = null;
             }
+            op.popThreadContext();
             if (opLatencyDistributions != null) {
                 Class c = op.getClass();
                 if (op instanceof PartitionIteratingOperation) {
@@ -250,6 +255,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
                 distribution.recordNanos(System.nanoTime() - startNanos);
             }
         }
+        return false;
     }
 
     private void call(Operation op) throws Exception {
@@ -423,7 +429,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
     }
 
     @Override
-    public void run(Packet packet) throws Exception {
+    public boolean run(Packet packet) throws Exception {
         long startNanos = System.nanoTime();
         boolean publishCurrentTask = publishCurrentTask();
 
@@ -433,9 +439,10 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
 
         ServerConnection connection = packet.getConn();
         Address caller = connection.getRemoteAddress();
+        Operation op = null;
         try {
             Object object = nodeEngine.toObject(packet);
-            Operation op = (Operation) object;
+            op = (Operation) object;
             op.setNodeEngine(nodeEngine);
             setCallerAddress(op, caller);
             setConnection(op, connection);
@@ -443,13 +450,13 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
             setOperationResponseHandler(op);
 
             if (!ensureValidMember(op)) {
-                return;
+                return false;
             }
 
             if (publishCurrentTask) {
                 currentTask = null;
             }
-            run(op, startNanos);
+            return run(op, startNanos);
         } catch (Throwable throwable) {
             // If exception happens we need to extract the callId from the bytes directly!
             long callId = extractOperationCallId(packet);
@@ -458,6 +465,9 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
             logOperationDeserializationException(throwable, callId);
             throw ExceptionUtil.rethrow(throwable);
         } finally {
+            if (op != null) {
+                op.clearThreadContext();
+            }
             if (publishCurrentTask) {
                 currentTask = null;
             }

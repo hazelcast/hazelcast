@@ -49,11 +49,26 @@ public abstract class OperationRunner {
 
     public abstract long executedOperationsCount();
 
-    public abstract void run(Packet packet) throws Exception;
+    /**
+     * @param packet
+     * @return true if packet needs to be put back onto the queue again, and was not executed,
+     * otherwise false (false is the happy path)
+     * Used with Tenant Control to check if tenant is available,
+     * if tenant is unavailable, the packet needs to be re-scheduled
+     * @throws Exception
+     */
+    public abstract boolean run(Packet packet) throws Exception;
 
     public abstract void run(Runnable task);
 
-    public abstract void run(Operation task);
+    /**
+     * @param task
+     * @return true if task needs to be put back onto the queue again, and was not executed,
+     * otherwise false (false is the happy path)
+     * Used with Tenant Control to check if tenant is available,
+     * if tenant is unavailable, the task needs to be re-scheduled
+     */
+    public abstract boolean run(Operation task);
 
     /**
      * Returns the current task that is executing. This value could be null
@@ -146,8 +161,13 @@ public abstract class OperationRunner {
      * @throws Exception when one of the operation phases fails with an exception
      */
     public static void runDirect(Operation operation) throws Exception {
-        operation.beforeRun();
-        operation.call();
-        operation.afterRun();
+        try {
+            operation.pushThreadContext();
+            operation.beforeRun();
+            operation.call();
+            operation.afterRun();
+        } finally {
+            operation.popThreadContext();
+        }
     }
 }

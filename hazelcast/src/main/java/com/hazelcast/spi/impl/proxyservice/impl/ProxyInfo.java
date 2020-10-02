@@ -16,17 +16,21 @@
 
 package com.hazelcast.spi.impl.proxyservice.impl;
 
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 import java.util.UUID;
 
 public final class ProxyInfo {
     private final String serviceName;
     private final String objectName;
     private final UUID source;
+    private final TenantControl tenantControl;
 
-    public ProxyInfo(String serviceName, String objectName, UUID source) {
+    public ProxyInfo(String serviceName, String objectName, UUID source,
+            TenantControl tenantControl) {
         this.serviceName = serviceName;
         this.objectName = objectName;
         this.source = source;
+        this.tenantControl = tenantControl;
     }
 
     public String getServiceName() {
@@ -41,9 +45,14 @@ public final class ProxyInfo {
         return source;
     }
 
+    public TenantControl getTenantControl() {
+        return tenantControl;
+    }
+
     @Override
     public String toString() {
-        return "ProxyInfo{" + "serviceName='" + serviceName + '\'' + ", objectName='" + objectName + '\'' + ", source=" + source
+        return "ProxyInfo{" + "serviceName='" + serviceName + '\'' + ", objectName='" + objectName + '\''
+                + ", source=" + source + ", tenantControl=" + tenantControl
                 + '}';
     }
 }

@@ -34,6 +34,7 @@ import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -261,4 +262,9 @@ public interface NodeEngine {
      * <b>Note:</b> CoreServices will be placed at the beginning of the list.
      */
     <S> Collection<S> getServices(Class<S> serviceClass);
+
+    /**
+     * @return entry point for creating tenant control objects
+     */
+    TenantControlFactory getTenantControlFactory();
 }
