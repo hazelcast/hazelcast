@@ -66,7 +66,7 @@ index(a, c) -> [a=1, NULL]
 index(b) -> [b>2 AND b<4]
 ```
 
-Last, for every proposed index, we create a `MapIndexScanPhysicalRel` operator, that is added to the planner search space.
+At last, for every proposed index, we create a `MapIndexScanPhysicalRel` operator that is added to the planner search space.
 
 ## 3 Local Execution
 
