@@ -80,7 +80,7 @@ returned record is evaluated against the optional filter. If record is not filte
 based on the column list. The `Row` is added to the internal batch. When the batch reaches a certain size, or there are no
 more records, the batch of rows is returned to the parent operator. 
 
-For the direct map scan (`MapScanExec`), the iterator scan all local partitions one by one. For the index scan 
+For the direct map scan (`MapScanExec`), the iterator scans all local partitions one by one. For the index scan 
 (`MapIndexScanExec`), the iterator is opened against the index, based on the optional index condition. In both cases,
 the full result set of the scan is never materialized, unlike the legacy predicate engine.
 
