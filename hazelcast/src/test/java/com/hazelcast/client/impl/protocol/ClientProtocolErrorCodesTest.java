@@ -25,7 +25,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import testsubjects.CustomExceptions;
+import usercodedeployment.CustomExceptions;
 
 import static org.junit.Assert.assertEquals;
 
