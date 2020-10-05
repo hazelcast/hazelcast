@@ -16,18 +16,17 @@
 
 package com.hazelcast.client.atomiclong;
 
-import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import custom.CustomRuntimeException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -171,8 +170,7 @@ public class ClientAtomicLongTest extends HazelcastTestSupport {
         try {
             ref.apply(new FailingFunction());
             fail();
-        } catch (UndefinedErrorCodeException expected) {
-            assertEquals(expected.getOriginClassName(), ExpectedRuntimeException.class.getName());
+        } catch (CustomRuntimeException expected) {
         }
 
         assertEquals(1, ref.get());
@@ -188,9 +186,7 @@ public class ClientAtomicLongTest extends HazelcastTestSupport {
         } catch (InterruptedException e) {
             fail();
         } catch (ExecutionException e) {
-            assertEquals(e.getCause().getClass(), UndefinedErrorCodeException.class);
-            assertEquals(((UndefinedErrorCodeException) e.getCause()).getOriginClassName(),
-                    ExpectedRuntimeException.class.getName());
+            assertEquals(CustomRuntimeException.class.getName(), e.getCause().getClass().getName());
         }
 
         assertEquals(1, ref.get());
@@ -211,8 +207,7 @@ public class ClientAtomicLongTest extends HazelcastTestSupport {
         try {
             ref.alter(new FailingFunction());
             fail();
-        } catch (UndefinedErrorCodeException expected) {
-            assertEquals(expected.getOriginClassName(), ExpectedRuntimeException.class.getName());
+        } catch (CustomRuntimeException expected) {
         }
 
         assertEquals(10, ref.get());
@@ -229,9 +224,7 @@ public class ClientAtomicLongTest extends HazelcastTestSupport {
         } catch (InterruptedException e) {
             fail();
         } catch (ExecutionException e) {
-            assertEquals(e.getCause().getClass(), UndefinedErrorCodeException.class);
-            assertEquals(((UndefinedErrorCodeException) e.getCause()).getOriginClassName(),
-                    ExpectedRuntimeException.class.getName());
+            assertEquals(CustomRuntimeException.class.getName(), e.getCause().getClass().getName());
         }
 
         assertEquals(10, ref.get());
@@ -274,8 +267,7 @@ public class ClientAtomicLongTest extends HazelcastTestSupport {
         try {
             ref.alterAndGet(new FailingFunction());
             fail();
-        } catch (UndefinedErrorCodeException expected) {
-            assertEquals(expected.getOriginClassName(), ExpectedRuntimeException.class.getName());
+        } catch (CustomRuntimeException expected) {
         }
 
         assertEquals(10, ref.get());
@@ -292,9 +284,7 @@ public class ClientAtomicLongTest extends HazelcastTestSupport {
         } catch (InterruptedException e) {
             fail();
         } catch (ExecutionException e) {
-            assertEquals(e.getCause().getClass(), UndefinedErrorCodeException.class);
-            assertEquals(((UndefinedErrorCodeException) e.getCause()).getOriginClassName(),
-                    ExpectedRuntimeException.class.getName());
+            assertEquals(CustomRuntimeException.class.getName(), e.getCause().getClass().getName());
         }
 
         assertEquals(10, ref.get());
@@ -334,8 +324,7 @@ public class ClientAtomicLongTest extends HazelcastTestSupport {
         try {
             ref.getAndAlter(new FailingFunction());
             fail();
-        } catch (UndefinedErrorCodeException expected) {
-            assertEquals(expected.getOriginClassName(), ExpectedRuntimeException.class.getName());
+        } catch (CustomRuntimeException expected) {
         }
 
         assertEquals(10, ref.get());
@@ -351,11 +340,9 @@ public class ClientAtomicLongTest extends HazelcastTestSupport {
             future.get();
             fail();
         } catch (InterruptedException e) {
-            assertEquals(e.getCause().getClass().getName(), UndefinedErrorCodeException.class.getName());
-            assertEquals(((UndefinedErrorCodeException) e.getCause()).getOriginClassName(), ExpectedRuntimeException.class.getName());
+            fail();
         } catch (ExecutionException e) {
-            assertEquals(e.getCause().getClass().getName(), UndefinedErrorCodeException.class.getName());
-            assertEquals(((UndefinedErrorCodeException) e.getCause()).getOriginClassName(), ExpectedRuntimeException.class.getName());
+            assertEquals(CustomRuntimeException.class.getName(), e.getCause().getClass().getName());
         }
 
         assertEquals(10, ref.get());
@@ -399,7 +386,7 @@ public class ClientAtomicLongTest extends HazelcastTestSupport {
     private static class FailingFunction implements IFunction<Long, Long> {
         @Override
         public Long apply(Long input) {
-            throw new ExpectedRuntimeException();
+            throw new CustomRuntimeException();
         }
     }
 

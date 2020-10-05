@@ -216,6 +216,11 @@ public class ClientExceptions {
         register(ClientProtocolErrorCodes.LEADER_DEMOTED_EXCEPTION, LeaderDemotedException.class);
         register(ClientProtocolErrorCodes.STALE_APPEND_REQUEST_EXCEPTION, StaleAppendRequestException.class);
         register(ClientProtocolErrorCodes.NOT_LEADER_EXCEPTION, NotLeaderException.class);
+        register(ClientProtocolErrorCodes.NO_SUCH_METHOD_ERROR, NoSuchMethodError.class);
+        register(ClientProtocolErrorCodes.NO_SUCH_METHOD_EXCEPTION, NoSuchMethodException.class);
+        register(ClientProtocolErrorCodes.NO_SUCH_FIELD_ERROR, NoSuchFieldError.class);
+        register(ClientProtocolErrorCodes.NO_SUCH_FIELD_EXCEPTION, NoSuchFieldException.class);
+        register(ClientProtocolErrorCodes.NO_CLASS_DEF_FOUND_ERROR, NoClassDefFoundError.class);
     }
 
     public ClientMessage createExceptionMessage(Throwable throwable) {

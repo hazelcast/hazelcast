@@ -53,6 +53,7 @@ import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.mapreduce.RemoteMapReduceException;
 import com.hazelcast.mapreduce.TopologyChangedException;
 import com.hazelcast.memory.NativeOutOfMemoryError;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.query.QueryException;
@@ -76,6 +77,8 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.util.AddressUtil;
+import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WANReplicationQueueFullException;
 
 import javax.cache.CacheException;
@@ -111,6 +114,11 @@ import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.LEADER
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.LOCK_ACQUIRE_LIMIT_REACHED_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.LOCK_OWNERSHIP_LOST_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NOT_LEADER_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_CLASS_DEF_FOUND_ERROR;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_SUCH_FIELD_ERROR;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_SUCH_FIELD_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_SUCH_METHOD_ERROR;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_SUCH_METHOD_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.SESSION_EXPIRED_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.STALE_APPEND_REQUEST_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.WAIT_KEY_CANCELLED_EXCEPTION;
@@ -128,15 +136,15 @@ public class ClientExceptionFactory {
      * This pattern extracts errorCode and exception message from the encoded Caused-by marker.
      * It has the form:
      * <pre>    ###### Caused by: (&lt;errorCode>) &lt;cause.toString()> ------</pre>
-     *
+     * <p>
      * As per {@link Throwable#toString()}, this has the form
      * <pre>&lt;exception class>: &lt;message></pre>
-     *
+     * <p>
      * if message is present, or just {@code &lt;exception class>}, if message is null.
      *
      * <p>Commonly, exceptions with causes are created like this:
      * <pre>new RuntimeException("Additional message: " + e, e);</pre>
-     *
+     * <p>
      * Thus, this pattern matches the marker, error code in parentheses, text up to the semicolon
      * (reluctantly, as to find the first one), and optional semicolon and the rest of message.
      */
@@ -147,8 +155,10 @@ public class ClientExceptionFactory {
     private static final int CAUSED_BY_STACKTRACE_PARSER_MESSAGE_GROUP = 4;
 
     private final Map<Integer, ExceptionFactory> intToFactory = new HashMap<Integer, ExceptionFactory>();
+    private final ClassLoader classLoader;
 
-    public ClientExceptionFactory(boolean jcacheAvailable) {
+    public ClientExceptionFactory(boolean jcacheAvailable, ClassLoader classLoader) {
+        this.classLoader = classLoader;
         if (jcacheAvailable) {
             register(ClientProtocolErrorCodes.CACHE, CacheException.class, new ExceptionFactory() {
                 @Override
@@ -737,6 +747,36 @@ public class ClientExceptionFactory {
                 return new NotLeaderException(null, null, null);
             }
         });
+        register(NO_SUCH_METHOD_ERROR, NoSuchMethodError.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new NoSuchMethodError(message);
+            }
+        });
+        register(NO_SUCH_METHOD_EXCEPTION, NoSuchMethodException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new NoSuchMethodException(message);
+            }
+        });
+        register(NO_SUCH_FIELD_ERROR, NoSuchFieldError.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new NoSuchFieldError(message);
+            }
+        });
+        register(NO_SUCH_FIELD_EXCEPTION, NoSuchFieldException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new NoSuchFieldException(message);
+            }
+        });
+        register(NO_CLASS_DEF_FOUND_ERROR, NoClassDefFoundError.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new NoClassDefFoundError(message);
+            }
+        });
     }
 
     public Throwable createException(ClientMessage clientMessage) {
@@ -744,7 +784,7 @@ public class ClientExceptionFactory {
 
         // first, try to search for the marker to see, if there are any "hidden" causes
         boolean causedByMarkerFound = false;
-        for (int i = 0; ! causedByMarkerFound && i < parameters.stackTrace.length; i++) {
+        for (int i = 0; !causedByMarkerFound && i < parameters.stackTrace.length; i++) {
             causedByMarkerFound = parameters.stackTrace[i].getClassName().startsWith(CAUSED_BY_STACKTRACE_MARKER);
         }
 
@@ -799,13 +839,33 @@ public class ClientExceptionFactory {
 
     private Throwable createException(int errorCode, String className, String message, Throwable cause) {
         ExceptionFactory exceptionFactory = intToFactory.get(errorCode);
-        Throwable throwable;
+        Throwable throwable = null;
         if (exceptionFactory == null) {
-            throwable = new UndefinedErrorCodeException(message, className);
+            try {
+                Class<? extends Throwable> exceptionClass =
+                        (Class<? extends Throwable>) ClassLoaderUtil.loadClass(classLoader, className);
+                throwable = ExceptionUtil.tryCreateExceptionWithMessageAndCause(exceptionClass, message, cause);
+            } catch (Exception e) {
+                EmptyStatement.ignore(e);
+            }
+            if (throwable == null) {
+                throwable = new UndefinedErrorCodeException(message, className);
+            }
         } else {
             throwable = exceptionFactory.createException(message, cause);
         }
         return throwable;
+    }
+
+    /**
+     * hazelcast and jdk exceptions should always be defined
+     * in {@link com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes} and
+     * in {@link com.hazelcast.client.impl.clientside.ClientExceptionFactory}
+     * so that a well defined error code could be delivered to non-java clients.
+     * So we don't try to load them via ClassLoader to be able to catch the missing exceptions
+     */
+    private boolean checkClassNameForValidity(String exceptionClassName) {
+        return !exceptionClassName.startsWith("com.hazelcast") && !exceptionClassName.startsWith("java");
     }
 
     // method is used by Jet

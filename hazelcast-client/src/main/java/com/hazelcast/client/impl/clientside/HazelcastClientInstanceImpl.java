@@ -837,7 +837,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private ClientExceptionFactory initClientExceptionFactory() {
         boolean jCacheAvailable = JCacheDetector.isJCacheAvailable(getClientConfig().getClassLoader());
-        return new ClientExceptionFactory(jCacheAvailable);
+        return new ClientExceptionFactory(jCacheAvailable, config.getClassLoader());
     }
 
     public ClientExceptionFactory getClientExceptionFactory() {

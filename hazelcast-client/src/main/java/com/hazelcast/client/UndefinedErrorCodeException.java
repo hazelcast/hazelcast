@@ -19,8 +19,16 @@ package com.hazelcast.client;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * This exception is thrown when an exception that is coming from server is not recognized by the protocol.
- * Class name of the original exception is included in the exception
+ * This exception is thrown when an exception that is coming from server is not recognized by the protocol and
+ * it can not be constructed by the client via reflection.
+ * For the client to be able to recreate original exception it should be available on the classpath and
+ * it should have one of the following constructors publicly.
+ * new Throwable(String message, Throwable cause)
+ * new Throwable(Throwable cause)
+ * new Throwable(String message)
+ * new Throwable()
+ * <p>
+ * Class name of the original exception is included in the exception.
  */
 public class UndefinedErrorCodeException extends HazelcastException {
 
