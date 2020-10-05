@@ -16,7 +16,9 @@
 
 package com.hazelcast.client.impl.protocol;
 
+import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.UndefinedErrorCodeException;
+import com.hazelcast.client.impl.StubAuthenticationException;
 import com.hazelcast.client.impl.clientside.ClientExceptionFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -45,7 +47,20 @@ public class ClientProtocolErrorCodesTest extends HazelcastTestSupport {
         ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(false, contextClassLoader);
 
         ClientMessage message = exceptions.createExceptionMessage(new CustomExceptions.CustomExceptionNonStandardSignature(1));
-        Throwable resurrectedThrowable = exceptionFactory.createException(message);
+        ClientMessage responseMessage = ClientMessage.createForDecode(message.buffer(), 0);
+        Throwable resurrectedThrowable = exceptionFactory.createException(responseMessage);
         assertEquals(UndefinedErrorCodeException.class, resurrectedThrowable.getClass());
+    }
+
+    @Test
+    public void testAuthenticationException() {
+        ClientExceptions exceptions = new ClientExceptions(false);
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(false, contextClassLoader);
+
+        ClientMessage exceptionMessage = exceptions.createExceptionMessage(new StubAuthenticationException("failed"));
+        ClientMessage responseMessage = ClientMessage.createForDecode(exceptionMessage.buffer(), 0);
+        Throwable resurrectedThrowable = exceptionFactory.createException(responseMessage);
+        assertEquals(AuthenticationException.class, resurrectedThrowable.getClass());
     }
 }

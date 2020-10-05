@@ -77,6 +77,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.util.AddressUtil;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WANReplicationQueueFullException;
 
@@ -838,13 +839,16 @@ public class ClientExceptionFactory {
 
     private Throwable createException(int errorCode, String className, String message, Throwable cause) {
         ExceptionFactory exceptionFactory = intToFactory.get(errorCode);
-        Throwable throwable;
+        Throwable throwable = null;
         if (exceptionFactory == null) {
             try {
                 Class<? extends Throwable> exceptionClass =
                         (Class<? extends Throwable>) ClassLoaderUtil.loadClass(classLoader, className);
                 throwable = ExceptionUtil.tryCreateExceptionWithMessageAndCause(exceptionClass, message, cause);
             } catch (Exception e) {
+                EmptyStatement.ignore(e);
+            }
+            if (throwable == null) {
                 throwable = new UndefinedErrorCodeException(message, className);
             }
         } else {
