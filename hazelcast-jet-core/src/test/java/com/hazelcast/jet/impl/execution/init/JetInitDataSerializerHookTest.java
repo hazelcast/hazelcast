@@ -34,6 +34,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -45,7 +46,6 @@ import static java.lang.reflect.Modifier.TRANSIENT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
-import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
@@ -76,7 +76,7 @@ public class JetInitDataSerializerHookTest {
 
                 new Object[]{
                         "JobExecutionRecord",
-                        populateFields(new JobExecutionRecord(), singletonList("snapshotStats")),
+                        populateFields(new JobExecutionRecord(), Arrays.asList("snapshotStats", "suspensionCause")),
                         emptyList()},
 
                 new Object[]{

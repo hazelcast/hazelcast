@@ -19,16 +19,22 @@ package com.hazelcast.jet.impl.client.protocol.task;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSuspensionCauseCodec;
 import com.hazelcast.jet.impl.operation.GetJobSuspensionCauseOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-public class JetGetJobSuspensionCauseMessageTask extends AbstractJetMessageTask<Long, String> {
+public class JetGetJobSuspensionCauseMessageTask extends AbstractJetMessageTask<Long, Data> {
 
     JetGetJobSuspensionCauseMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
                 JetGetJobSuspensionCauseCodec::decodeRequest,
                 JetGetJobSuspensionCauseCodec::encodeResponse);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object o) {
+        return super.encodeResponse(toData(o));
     }
 
     @Override

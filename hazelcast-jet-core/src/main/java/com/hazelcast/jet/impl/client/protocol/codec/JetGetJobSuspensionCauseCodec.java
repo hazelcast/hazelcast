@@ -18,8 +18,7 @@ package com.hazelcast.jet.impl.client.protocol.codec;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
-import com.hazelcast.client.impl.protocol.codec.builtin.*;
-
+import com.hazelcast.client.impl.protocol.codec.builtin.DataCodec;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -33,12 +32,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("155623312f42ffb1555c21980a791579")
+@Generated("0baf8f79327012f83aa3d481d363bd87")
 public final class JetGetJobSuspensionCauseCodec {
-    //hex: 0x000E00
-    public static final int REQUEST_MESSAGE_TYPE = 3584;
-    //hex: 0x000E01
-    public static final int RESPONSE_MESSAGE_TYPE = 3585;
+    //hex: 0xFE0E00
+    public static final int REQUEST_MESSAGE_TYPE = 16649728;
+    //hex: 0xFE0E01
+    public static final int RESPONSE_MESSAGE_TYPE = 16649729;
     private static final int REQUEST_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
@@ -67,23 +66,23 @@ public final class JetGetJobSuspensionCauseCodec {
         return decodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET);
     }
 
-    public static ClientMessage encodeResponse(java.lang.String response) {
+    public static ClientMessage encodeResponse(com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        StringCodec.encode(clientMessage, response);
+        DataCodec.encode(clientMessage, response);
         return clientMessage;
     }
 
     /**
     */
-    public static java.lang.String decodeResponse(ClientMessage clientMessage) {
+    public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return StringCodec.decode(iterator);
+        return DataCodec.decode(iterator);
     }
 
 }

@@ -17,11 +17,11 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.config.MetricsConfig;
-import com.hazelcast.jet.annotation.EvolvingApi;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.JobSuspensionCause;
 import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.pipeline.Pipeline;
 
@@ -86,21 +86,14 @@ public interface Job {
     JobStatus getStatus();
 
     /**
-     * Return a human-readable description of the cause that led to the
-     * suspension of this job. For example whether the suspension has been
-     * explicitly requested by the user or an error has occurred and the job is
-     * configured to be suspended in such a case (see {@link
-     * JobConfig#setSuspendOnFailure(boolean)}) - in this case the details of
-     * the error are also provided.
-     *
-     * @return cause that led to the job suspension
-     * @throws IllegalStateException if the job is not suspended
+     * Return a {@link JobSuspensionCause description of the cause} that has
+     * led to the suspension of the job. Throws an {@code IllegalStateException}
+     * if the job is not currently suspended.
      *
      * @since 4.3
      */
-    @EvolvingApi
     @Nonnull
-    String getSuspensionCause();
+    JobSuspensionCause getSuspensionCause();
 
     /**
      * Returns a snapshot of the current values of all job-specific metrics.

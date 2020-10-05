@@ -36,6 +36,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.JobSuspensionCause;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
@@ -441,9 +442,9 @@ public class JobCoordinationService {
      * Fails with {@link IllegalStateException} if the requested job is not
      * currently in a suspended state.
      */
-    public CompletableFuture<String> getJobSuspensionCause(long jobId) {
-        FunctionEx<JobExecutionRecord, String> jobExecutionRecordHandler = jobExecutionRecord -> {
-            String cause = jobExecutionRecord.getSuspensionCause();
+    public CompletableFuture<JobSuspensionCause> getJobSuspensionCause(long jobId) {
+        FunctionEx<JobExecutionRecord, JobSuspensionCause> jobExecutionRecordHandler = jobExecutionRecord -> {
+            JobSuspensionCause cause = jobExecutionRecord.getSuspensionCause();
             if (cause == null) {
                 throw new IllegalStateException("Job not suspended");
             }

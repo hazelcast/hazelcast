@@ -24,6 +24,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.JobSuspensionCause;
 import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
@@ -73,9 +74,9 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
 
     @Nonnull
     @Override
-    public String getSuspensionCause() {
+    public JobSuspensionCause getSuspensionCause() {
         try {
-            return this.<String>invokeOp(new GetJobSuspensionCauseOperation(getId())).get();
+            return this.<JobSuspensionCause>invokeOp(new GetJobSuspensionCauseOperation(getId())).get();
         } catch (Throwable t) {
             throw rethrow(t);
         }

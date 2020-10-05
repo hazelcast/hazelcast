@@ -25,6 +25,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.JobSuspensionCause;
 import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.impl.client.protocol.codec.JetExportSnapshotCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobConfigCodec;
@@ -81,11 +82,12 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
 
     @Nonnull
     @Override
-    public String getSuspensionCause() {
+    public JobSuspensionCause getSuspensionCause() {
         return callAndRetryIfTargetNotFound(()  -> {
             ClientMessage request = JetGetJobSuspensionCauseCodec.encodeRequest(getId());
             ClientMessage response = invocation(request, masterUuid()).invoke().get();
-            return JetGetJobSuspensionCauseCodec.decodeResponse(response);
+            Data data = JetGetJobSuspensionCauseCodec.decodeResponse(response);
+            return serializationService().toObject(data);
         });
     }
 

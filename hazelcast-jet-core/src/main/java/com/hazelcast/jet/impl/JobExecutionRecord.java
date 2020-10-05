@@ -17,13 +17,13 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.jet.core.JobSuspensionCause;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Objects;
@@ -51,7 +51,7 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
     private final AtomicInteger quorumSize = new AtomicInteger();
     private long jobId;
     private volatile boolean executed;
-    private volatile String suspensionCause;
+    private volatile JobSuspensionCause suspensionCause;
     private volatile long snapshotId = NO_SNAPSHOT;
     private volatile int dataMapIndex = -1;
     private volatile long ongoingSnapshotId = NO_SNAPSHOT;
@@ -98,7 +98,7 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
      * suspended.
      */
     @Nullable
-    public String getSuspensionCause() {
+    public JobSuspensionCause getSuspensionCause() {
         return suspensionCause;
     }
 
@@ -106,8 +106,8 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
         suspensionCause = null;
     }
 
-    public void setSuspended(@Nonnull String suspensionCause) {
-        this.suspensionCause = Objects.requireNonNull(suspensionCause);
+    public void setSuspended(@Nullable String error) {
+        suspensionCause = JobSuspensionCauseImpl.causedBy(error);
     }
 
     public boolean executed() {
@@ -290,7 +290,7 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
                 "jobId=" + jobId +
                 ", timestamp=" + toLocalTime(timestamp.get()) +
                 ", quorumSize=" + quorumSize +
-                ", suspended=" + (suspensionCause == null ? "false" : "true (" + suspensionCause + ")") +
+                ", suspended=" + (suspensionCause != null) +
                 ", executed=" + executed +
                 ", dataMapIndex=" + dataMapIndex +
                 ", snapshotId=" + snapshotId +

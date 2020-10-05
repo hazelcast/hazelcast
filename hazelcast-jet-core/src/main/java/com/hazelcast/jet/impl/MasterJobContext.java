@@ -635,7 +635,7 @@ public class MasterJobContext {
                         && mc.jobConfig().getProcessingGuarantee() != NONE
                 ) {
                     mc.setJobStatus(SUSPENDED);
-                    mc.jobExecutionRecord().setSuspended("Requested by user");
+                    mc.jobExecutionRecord().setSuspended(null);
                     nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
                 } else if (failure != null && !isCancelled() && mc.jobConfig().isSuspendOnFailure()) {
                     mc.setJobStatus(SUSPENDED);

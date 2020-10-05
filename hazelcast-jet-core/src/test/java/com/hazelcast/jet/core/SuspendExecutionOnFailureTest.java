@@ -29,19 +29,19 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.map.IMap;
-import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.Map;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
-import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
 
@@ -113,7 +113,11 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
         assertJobStatusEventually(job, RUNNING);
         job.suspend();
         assertJobStatusEventually(job, SUSPENDED);
-        assertEquals("Requested by user", job.getSuspensionCause());
+        assertThat(job.getSuspensionCause()).matches(JobSuspensionCause::requestedByUser);
+        assertThat(job.getSuspensionCause().description()).isEqualTo("Requested by user");
+        assertThatThrownBy(job.getSuspensionCause()::errorCause)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Suspension not caused by an error");
 
         cancelAndJoin(job);
     }
@@ -129,9 +133,13 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
 
         // Then
         assertJobStatusEventually(job, JobStatus.SUSPENDED);
-        assertTrue(job.getSuspensionCause().matches("(?s)Execution failure:\n" +
-                "com.hazelcast.jet.JetException: Exception in ProcessorTasklet\\{faulty#[0-9]*}: " +
-                "java.lang.AssertionError: mock error.*"));
+
+        assertThat(job.getSuspensionCause()).matches(JobSuspensionCause::dueToError);
+        assertThat(job.getSuspensionCause().errorCause())
+                .isNotNull()
+                .matches(error -> error.matches("(?s)Execution failure:\n" +
+                        "com.hazelcast.jet.JetException: Exception in ProcessorTasklet\\{faulty#[0-9]*}: " +
+                        "java.lang.AssertionError: mock error.*"));
 
         cancelAndJoin(job);
     }
