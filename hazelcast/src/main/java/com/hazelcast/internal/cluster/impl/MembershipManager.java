@@ -376,7 +376,6 @@ public class MembershipManager {
             } else {
                 member = createMember(newMemberInfo, member.getAttributes());
             }
-            node.partitionService.memberAdded(member);
         } else if (member.getMemberListJoinVersion() != newMemberInfo.getMemberListJoinVersion()) {
             if (member.getMemberListJoinVersion() != NA_MEMBER_LIST_JOIN_VERSION) {
                 if (logger.isFineEnabled()) {
