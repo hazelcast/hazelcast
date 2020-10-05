@@ -49,6 +49,7 @@ import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
@@ -329,7 +330,7 @@ public class ClientExceptionFactory {
         }
         ErrorHolder errorHolder = iterator.next();
         ExceptionFactory exceptionFactory = intToFactory.get(errorHolder.getErrorCode());
-        Throwable throwable;
+        Throwable throwable = null;
         if (exceptionFactory == null) {
             String className = errorHolder.getClassName();
             assert checkClassNameForValidity(className) : "Exception should be defined in the protocol : " + className;
@@ -338,7 +339,10 @@ public class ClientExceptionFactory {
                         (Class<? extends Throwable>) ClassLoaderUtil.loadClass(classLoader, className);
                 throwable = ExceptionUtil.tryCreateExceptionWithMessageAndCause(exceptionClass, errorHolder.getMessage(),
                         createException(iterator));
-            } catch (Exception e) {
+            } catch (ClassNotFoundException e) {
+                EmptyStatement.ignore(e);
+            }
+            if (throwable == null) {
                 throwable = new UndefinedErrorCodeException(errorHolder.getMessage(), className, createException(iterator));
             }
         } else {
