@@ -80,12 +80,17 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-    private void assertNoLeftOver(Collection<Node> nodes, HazelcastInstance client, String id
-            , Collection<ClientEventRegistration> registrations) {
-        for (Node node : nodes) {
-            assertNoLeftOverOnNode(node, registrations);
-        }
-        assertEquals(0, getClientEventRegistrations(client, id).size());
+    private void assertNoLeftOver(final Collection<Node> nodes, final HazelcastInstance client, final String id,
+                                  final Collection<ClientEventRegistration> registrations) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (Node node : nodes) {
+                    assertNoLeftOverOnNode(node, registrations);
+                }
+                assertEquals(0, getClientEventRegistrations(client, id).size());
+            }
+        });
     }
 
     private Collection<Node> createNodes() {
