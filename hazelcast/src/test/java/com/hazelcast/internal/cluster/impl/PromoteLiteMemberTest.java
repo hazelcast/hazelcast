@@ -367,6 +367,45 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         assertTrueEventually(() -> assertEquals(entryCount, thirdHazelcastInstance.getMap(mapName).size()));
     }
 
+    @Test
+    public void lite_member_promotion_data_loss2() throws InterruptedException {
+        int entryCount = 1000;
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        Config config = new Config().setLiteMember(true);
+
+        // start first hazelcast instance as a lite member
+        HazelcastInstance firstHazelcastInstance = factory.newHazelcastInstance(config);
+
+        // start second hazelcast instance as a lite member
+        HazelcastInstance secondHazelcastInstance = factory.newHazelcastInstance(config);
+
+        // promote all instances to data members
+        firstHazelcastInstance.getCluster().promoteLocalLiteMember();
+
+        secondHazelcastInstance.getCluster().promoteLocalLiteMember();
+
+        // check if cluster is in a good shape
+        assertTrueEventually(() -> assertTrue(firstHazelcastInstance.getPartitionService().isClusterSafe()));
+
+        // insert some dummy data into the testing map
+        String mapName = randomMapName();
+        IMap<String, String> testMap = firstHazelcastInstance.getMap(mapName);
+        for (int i = 0; i < entryCount; ++i) {
+            testMap.put("key" + i, "value" + i);
+        }
+
+        // check all data is correctly inserted
+        assertEquals(entryCount, testMap.size());
+
+        // kill second instance
+        secondHazelcastInstance.getLifecycleService().terminate();
+
+        // backup count for the map is set to 1
+        // even with 1 node down, no data loss is expected
+        assertTrueEventually(() -> assertEquals(entryCount, firstHazelcastInstance.getMap(mapName).size()));
+    }
+
     private void assertPromotionInvocationStarted(HazelcastInstance instance) {
         OperationServiceImpl operationService = getNode(instance).getNodeEngine().getOperationService();
         InvocationRegistry invocationRegistry = operationService.getInvocationRegistry();

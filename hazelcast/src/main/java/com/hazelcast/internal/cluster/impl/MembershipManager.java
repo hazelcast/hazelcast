@@ -305,11 +305,15 @@ public class MembershipManager {
 
         MemberImpl[] members = new MemberImpl[membersView.size()];
         int memberIndex = 0;
+        boolean updatedLiteMember = false;
         for (MemberInfo memberInfo : membersView.getMembers()) {
             Address address = memberInfo.getAddress();
             MemberImpl member = currentMemberMap.getMember(address);
 
             if (member != null && member.getUuid().equals(memberInfo.getUuid())) {
+                if (member.isLiteMember()) {
+                    updatedLiteMember = true;
+                }
                 member = createNewMemberImplIfChanged(memberInfo, member);
                 members[memberIndex++] = member;
                 continue;
@@ -342,6 +346,10 @@ public class MembershipManager {
 
         setMembers(MemberMap.createNew(membersView.getVersion(), members));
 
+        if (updatedLiteMember) {
+            updateMembersGroupSize();
+        }
+
         for (MemberImpl member : removedMembers) {
             closeConnection(member.getAddress(), "Member left event received from master");
             handleMemberRemove(memberMapRef.get(), member);
@@ -367,8 +375,8 @@ public class MembershipManager {
                 member = clusterService.promoteAndGetLocalMember();
             } else {
                 member = createMember(newMemberInfo, member.getAttributes());
-                node.partitionService.memberAdded(member);
             }
+            node.partitionService.memberAdded(member);
         } else if (member.getMemberListJoinVersion() != newMemberInfo.getMemberListJoinVersion()) {
             if (member.getMemberListJoinVersion() != NA_MEMBER_LIST_JOIN_VERSION) {
                 if (logger.isFineEnabled()) {
@@ -409,6 +417,10 @@ public class MembershipManager {
                       .memberListJoinVersion(memberInfo.getMemberListJoinVersion())
                       .instance(node.hazelcastInstance)
                       .build();
+    }
+
+    private void updateMembersGroupSize() {
+        node.partitionService.updateMemberGroupSize();
     }
 
     private void repairPartitionTableIfReturningMember(MemberImpl member) {
