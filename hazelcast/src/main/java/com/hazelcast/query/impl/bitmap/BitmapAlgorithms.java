@@ -331,7 +331,7 @@ final class BitmapAlgorithms {
                 do {
                     // We may overflow here to Long.MIN_VALUE, but we will exit
                     // the loop anyway. In this case, after exiting the loop,
-                    // newGapEnd will be equal to BitSetIterator.END.
+                    // newGapEnd will be equal to AscendingLongIterator.END.
                     newGapStart = newGapEnd + 1;
                     newGapEnd = iterator.advance();
                 } while (newGapEnd == newGapStart);
