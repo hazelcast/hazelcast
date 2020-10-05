@@ -735,7 +735,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public boolean tryLock(@Nonnull K key, long time, @Nullable TimeUnit timeunit) throws InterruptedException {
-        return tryLock(key, time, timeunit, Long.MAX_VALUE, null);
+        return tryLock(key, time, timeunit, UNSET, null);
     }
 
     @Override
