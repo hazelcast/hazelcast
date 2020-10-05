@@ -22,6 +22,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.Timer;
@@ -35,7 +36,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -141,19 +141,23 @@ public final class EntryOperator {
     }
 
     public EntryOperator init(Data dataKey, Object oldValue, Object newValue, Data result,
-                              EntryEventType eventType, Boolean locked) {
+                              EntryEventType eventType, Boolean locked, long ttl) {
         this.dataKey = dataKey;
         this.oldValue = oldValue;
         this.eventType = eventType;
         this.result = result;
         this.didMatchPredicate = true;
         this.entry.init(ss, dataKey, newValue != null ? newValue : oldValue,
-                mapContainer.getExtractors(), locked);
+                mapContainer.getExtractors(), locked, ttl);
         return this;
     }
 
+    public LockAwareLazyMapEntry getEntry() {
+        return entry;
+    }
+
     public EntryOperator operateOnKey(Data dataKey) {
-        init(dataKey, null, null, null, null, null);
+        init(dataKey, null, null, null, null, null, UNSET);
 
         if (belongsAnotherPartition(dataKey)) {
             return this;
@@ -176,8 +180,10 @@ public final class EntryOperator {
         return operateOnKeyValueInternal(dataKey, oldValue, null);
     }
 
-    private EntryOperator operateOnKeyValueInternal(Data dataKey, Object oldValue, Boolean locked) {
-        init(dataKey, oldValue, null, null, null, locked);
+    private EntryOperator operateOnKeyValueInternal(Data dataKey,
+                                                    Object oldValue,
+                                                    Boolean locked) {
+        init(dataKey, oldValue, null, null, null, locked, UNSET);
 
         if (outOfPredicateScope(entry)) {
             this.didMatchPredicate = false;
