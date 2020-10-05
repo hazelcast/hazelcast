@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.client.AuthenticationException;
-import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.impl.clientside.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -34,13 +33,13 @@ import com.hazelcast.crdt.MutationDisallowedException;
 import com.hazelcast.crdt.TargetNotReplicaException;
 import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
+import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
@@ -52,6 +51,7 @@ import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -60,7 +60,6 @@ import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionTimedOutException;
-import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.wan.WanQueueFullException;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -69,6 +68,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
+import usercodedeployment.CustomExceptions;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CacheLoaderException;
@@ -104,7 +104,8 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
     public Throwable throwable;
 
     private ClientExceptions exceptions = new ClientExceptions(true);
-    private ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(true);
+    private ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(true,
+            Thread.currentThread().getContextClassLoader());
 
     @Test
     public void testException() {
@@ -125,21 +126,10 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
             return false;
         }
 
-        if (exceptions.isKnownClass(expected.getClass())) {
-            if (!expected.getClass().equals(actual.getClass())) {
-                return false;
-            }
-
-            // We compare the message only for known exceptions.
-            // We also ignore it for URISyntaxException, as it is not possible to restore it without special, probably JVM-version specific logic.
-            if (expected.getClass() != URISyntaxException.class && !equals(expected.getMessage(), actual.getMessage())) {
-                return false;
-            }
-        } else {
-            if (!UndefinedErrorCodeException.class.equals(actual.getClass())
-                    || !expected.getClass().getName().equals(((UndefinedErrorCodeException) actual).getOriginClassName())) {
-                return false;
-            }
+        // We compare the message only for known exceptions.
+        // We also ignore it for URISyntaxException, as it is not possible to restore it without special, probably JVM-version specific logic.
+        if (expected.getClass() != URISyntaxException.class && !equals(expected.getMessage(), actual.getMessage())) {
+            return false;
         }
 
         if (!stackTraceArrayEquals(expected.getStackTrace(), actual.getStackTrace())) {
@@ -261,8 +251,6 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new RuntimeException(new RuntimeException("blabla"))},
                 // exception with message and cause without message
                 new Object[]{new RuntimeException("blabla", new NullPointerException())},
-                // custom exception in causes
-                new Object[]{new RuntimeException("blabla", new DummyUncheckedHazelcastTestException())},
                 new Object[]{new RuntimeException("fun", new RuntimeException("codec \n is \n not \n pwned"))},
                 new Object[]{
                         new RuntimeException("fun",
@@ -272,7 +260,13 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new IndeterminateOperationStateException(randomString())},
                 new Object[]{new TargetNotReplicaException(randomString())},
                 new Object[]{new MutationDisallowedException(randomString())},
-                new Object[]{new ConsistencyLostException(randomString())}
+                new Object[]{new ConsistencyLostException(randomString())},
+                new Object[]{new CustomExceptions.CustomException()},
+                new Object[]{new CustomExceptions.CustomExceptionWithMessage(randomString())},
+                new Object[]{new CustomExceptions.CustomExceptionWithMessageAndCause(randomString(),
+                        new CustomExceptions.CustomExceptionWithMessage(randomString()))},
+                new Object[]{new CustomExceptions.CustomExceptionWithCause(new RuntimeException())},
+                new Object[]{new RuntimeException("blabla", new CustomExceptions.CustomExceptionWithMessage(randomString()))}
         );
     }
 }
