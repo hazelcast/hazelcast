@@ -165,7 +165,6 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                 invocationService.checkInvocationAllowed();
             }
 
-
             if (isBindToSingleConnection()) {
                 boolean invoked = invocationService.invokeOnConnection(this, (ClientConnection) connection);
                 if (!invoked) {
