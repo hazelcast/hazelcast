@@ -233,4 +233,9 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
     public int getClassId() {
         return CacheDataSerializerHook.CACHE_REPLICATION;
     }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }

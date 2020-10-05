@@ -31,6 +31,7 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.SilentException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spi.tenantcontrol.Tenantable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -55,7 +56,7 @@ import com.hazelcast.spi.tenantcontrol.TenantControl.Closeable;
  * {@link Operation#run()} method.
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:magicnumber"})
-public abstract class Operation implements DataSerializable {
+public abstract class Operation implements DataSerializable, Tenantable {
 
     /**
      * Marks an {@link Operation} as non-partition-specific.
@@ -764,6 +765,11 @@ public abstract class Operation implements DataSerializable {
         readInternal(in);
     }
 
+    @Override
+    public boolean requiresTenantContext() {
+        return false;
+    }
+
     /**
      * Returns {@code true} to force the explicit service name serialization
      * for this operation, {@code false} otherwise.
@@ -814,7 +820,7 @@ public abstract class Operation implements DataSerializable {
      * @return true if ready
      */
     public boolean isTenantAvailable() {
-        return tenantControl.isAvailable(this.getClass());
+        return tenantControl.isAvailable(this);
     }
 
     public void pushThreadContext() {

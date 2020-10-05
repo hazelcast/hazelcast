@@ -19,10 +19,13 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -215,5 +218,12 @@ public abstract class CacheOperation extends AbstractNamedOperation
         }
 
         wanEventPublisher.publishWanRemove(name, toHeapData(dataKey));
+    }
+
+    boolean isObjectInMemoryFormat() {
+        CacheService cacheService = getService();
+        CacheConfig cacheConfig = cacheService.getCacheConfig(name);
+        return (cacheConfig != null
+                && cacheConfig.getInMemoryFormat() == InMemoryFormat.OBJECT);
     }
 }

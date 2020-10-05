@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
+import com.hazelcast.spi.tenantcontrol.Tenantable;
 
 import java.io.IOException;
 
@@ -56,7 +57,7 @@ public final class NoopTenantControl implements TenantControl, IdentifiedDataSer
     }
 
     @Override
-    public boolean isAvailable(Class<?> opClass) {
+    public boolean isAvailable(Tenantable tenantable) {
         return true;
     }
 

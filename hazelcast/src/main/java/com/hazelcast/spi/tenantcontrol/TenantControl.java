@@ -65,11 +65,12 @@ public interface TenantControl extends DataSerializable {
 
     /**
      * Checks if tenant app is loaded at the current time and classes are available
+     * for the given {@link Tenantable} object.
      *
-     * @param operationClass passed so the tenant can filter on which operation is calling
-     * @return true if tenant is loaded and classes are available
+     * @param tenantable    passed so the tenant can filter on which object is calling
+     * @return              true if tenant is loaded and classes are available
      */
-    boolean isAvailable(Class<?> operationClass);
+    boolean isAvailable(Tenantable tenantable);
 
     /**
      * Clean up all the thread context to avoid potential class loader leaks

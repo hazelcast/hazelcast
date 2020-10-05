@@ -96,4 +96,9 @@ public class CachePutAllBackupOperation extends CacheOperation implements Backup
     public int getClassId() {
         return CacheDataSerializerHook.PUT_ALL_BACKUP;
     }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }

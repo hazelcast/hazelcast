@@ -24,6 +24,7 @@ import com.hazelcast.internal.util.AdditionalServiceClassLoader;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
+import com.hazelcast.spi.tenantcontrol.Tenantable;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -247,7 +248,7 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean isAvailable(Class<?> opClass) {
+        public boolean isAvailable(Tenantable tenantable) {
             return true;
         }
 
