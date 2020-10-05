@@ -44,8 +44,8 @@ import java.util.UUID;
  * Loads addresses from the Hazelcast configuration.
  */
 public class DefaultAddressProvider implements AddressProvider, MembershipListener, InitialMembershipListener {
-    private static final int REACHABLE_ADDRESS_TIMEOUT = 1;
-    private static final int NON_REACHABLE_ADDRESS_TIMEOUT = 3;
+    private static final int REACHABLE_ADDRESS_TIMEOUT = 1000;
+    private static final int NON_REACHABLE_ADDRESS_TIMEOUT = 3000;
     private static final int REACHABLE_CHECK_NUMBER = 3;
 
     private final ClientNetworkConfig networkConfig;
@@ -55,8 +55,7 @@ public class DefaultAddressProvider implements AddressProvider, MembershipListen
     private ILogger logger;
     private UUID membershipUuid;
 
-    public DefaultAddressProvider(ClientNetworkConfig networkConfig, String usePublicIpProperty,
-                                ILogger logger) {
+    public DefaultAddressProvider(ClientNetworkConfig networkConfig, String usePublicIpProperty, ILogger logger) {
         this.networkConfig = networkConfig;
         this.usePublicIpProperty = usePublicIpProperty;
         this.logger = logger;

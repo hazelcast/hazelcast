@@ -42,7 +42,7 @@ public enum ProtocolType {
      * Note: names of this enum are used for metrics sent to Management Center, do not rename.
      */
     MEMBER(0, 1, Protocols.CLUSTER),
-    CLIENT(1, 1, Protocols.CLIENT_BINARY),
+    CLIENT(1, 2, Protocols.CLIENT_BINARY),
     WAN(2, Integer.MAX_VALUE, Protocols.CLUSTER),
     REST(3, 1, Protocols.REST),
     MEMCACHE(4, 1, Protocols.MEMCACHE);
