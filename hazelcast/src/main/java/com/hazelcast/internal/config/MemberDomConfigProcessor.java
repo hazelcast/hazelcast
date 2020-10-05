@@ -370,22 +370,19 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node n : childElements(dcRoot)) {
             String name = cleanNodeName(n);
             if (matches("class-cache-mode", name)) {
-                String value = getTextContent(n);
-                UserCodeDeploymentConfig.ClassCacheMode classCacheMode = UserCodeDeploymentConfig.ClassCacheMode.valueOf(value);
+                UserCodeDeploymentConfig.ClassCacheMode classCacheMode
+                  = UserCodeDeploymentConfig.ClassCacheMode.valueOf(getTextContent(n));
                 dcConfig.setClassCacheMode(classCacheMode);
             } else if (matches("provider-mode", name)) {
-                String value = getTextContent(n);
-                UserCodeDeploymentConfig.ProviderMode providerMode = UserCodeDeploymentConfig.ProviderMode.valueOf(value);
+                UserCodeDeploymentConfig.ProviderMode providerMode
+                  = UserCodeDeploymentConfig.ProviderMode.valueOf(getTextContent(n));
                 dcConfig.setProviderMode(providerMode);
             } else if (matches("blacklist-prefixes", name)) {
-                String value = getTextContent(n);
-                dcConfig.setBlacklistedPrefixes(value);
+                dcConfig.setBlacklistedPrefixes(getTextContent(n));
             } else if (matches("whitelist-prefixes", name)) {
-                String value = getTextContent(n);
-                dcConfig.setWhitelistedPrefixes(value);
+                dcConfig.setWhitelistedPrefixes(getTextContent(n));
             } else if (matches("provider-filter", name)) {
-                String value = getTextContent(n);
-                dcConfig.setProviderFilter(value);
+                dcConfig.setProviderFilter(getTextContent(n));
             }
         }
         config.setUserCodeDeploymentConfig(dcConfig);
@@ -405,21 +402,21 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if (matches("encryption-at-rest", name)) {
                 handleEncryptionAtRest(n, hrConfig);
             } else {
-                String value = getTextContent(n);
                 if (matches("base-dir", name)) {
-                    hrConfig.setBaseDir(new File(value).getAbsoluteFile());
+                    hrConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
                 } else if (matches("backup-dir", name)) {
-                    hrConfig.setBackupDir(new File(value).getAbsoluteFile());
+                    hrConfig.setBackupDir(new File(getTextContent(n)).getAbsoluteFile());
                 } else if (matches(parallelismName, name)) {
-                    hrConfig.setParallelism(getIntegerValue(parallelismName, value));
+                    hrConfig.setParallelism(getIntegerValue(parallelismName, getTextContent(n)));
                 } else if (matches(validationTimeoutName, name)) {
-                    hrConfig.setValidationTimeoutSeconds(getIntegerValue(validationTimeoutName, value));
+                    hrConfig.setValidationTimeoutSeconds(getIntegerValue(validationTimeoutName, getTextContent(n)));
                 } else if (matches(dataLoadTimeoutName, name)) {
-                    hrConfig.setDataLoadTimeoutSeconds(getIntegerValue(dataLoadTimeoutName, value));
+                    hrConfig.setDataLoadTimeoutSeconds(getIntegerValue(dataLoadTimeoutName, getTextContent(n)));
                 } else if (matches("cluster-data-recovery-policy", name)) {
-                    hrConfig.setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy.valueOf(upperCaseInternal(value)));
+                    hrConfig.setClusterDataRecoveryPolicy(
+                      HotRestartClusterDataRecoveryPolicy.valueOf(upperCaseInternal(getTextContent(n))));
                 } else if (matches("auto-remove-stale-data", name)) {
-                    hrConfig.setAutoRemoveStaleData(getBooleanValue(value));
+                    hrConfig.setAutoRemoveStaleData(getBooleanValue(getTextContent(n)));
                 }
             }
         }
@@ -460,17 +457,16 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         int pollingInterval = JavaKeyStoreSecureStoreConfig.DEFAULT_POLLING_INTERVAL;
         for (Node n : childElements(keyStoreRoot)) {
             String name = cleanNodeName(n);
-            String value = getTextContent(n);
             if (matches("path", name)) {
-                path = new File(value).getAbsoluteFile();
+                path = new File(getTextContent(n)).getAbsoluteFile();
             } else if (matches("type", name)) {
-                type = value;
+                type = getTextContent(n);
             } else if (matches("password", name)) {
-                password = value;
+                password = getTextContent(n);
             } else if (matches("current-key-alias", name)) {
-                currentKeyAlias = value;
+                currentKeyAlias = getTextContent(n);
             } else if (matches("polling-interval", name)) {
-                pollingInterval = parseInt(value);
+                pollingInterval = parseInt(getTextContent(n));
             }
         }
         JavaKeyStoreSecureStoreConfig keyStoreSecureStoreConfig = new JavaKeyStoreSecureStoreConfig(path)
@@ -492,17 +488,16 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         int pollingInterval = VaultSecureStoreConfig.DEFAULT_POLLING_INTERVAL;
         for (Node n : childElements(vaultRoot)) {
             String name = cleanNodeName(n);
-            String value = getTextContent(n);
             if (matches("address", name)) {
-                address = value;
+                address = getTextContent(n);
             } else if (matches("secret-path", name)) {
-                secretPath = value;
+                secretPath = getTextContent(n);
             } else if (matches("token", name)) {
-                token = value;
+                token = getTextContent(n);
             } else if (matches("ssl", name)) {
                 sslConfig = parseSslConfig(n);
             } else if (matches("polling-interval", name)) {
-                pollingInterval = parseInt(value);
+                pollingInterval = parseInt(getTextContent(n));
             }
         }
         VaultSecureStoreConfig vaultSecureStoreConfig = new VaultSecureStoreConfig(address, secretPath, token)
@@ -550,16 +545,15 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         SplitBrainProtectionConfigBuilder splitBrainProtectionConfigBuilder = null;
         splitBrainProtectionConfig.setEnabled(enabled);
         for (Node n : childElements(node)) {
-            String value = getTextContent(n).trim();
             String nodeName = cleanNodeName(n);
             if (matches("minimum-cluster-size", nodeName)) {
-                splitBrainProtectionConfig.setMinimumClusterSize(getIntegerValue("minimum-cluster-size", value));
+                splitBrainProtectionConfig.setMinimumClusterSize(getIntegerValue("minimum-cluster-size", getTextContent(n)));
             } else if (matches("listeners", nodeName)) {
                 handleSplitBrainProtectionListeners(splitBrainProtectionConfig, n);
             } else if (matches("protect-on", nodeName)) {
-                splitBrainProtectionConfig.setProtectOn(SplitBrainProtectionOn.valueOf(upperCaseInternal(value)));
+                splitBrainProtectionConfig.setProtectOn(SplitBrainProtectionOn.valueOf(upperCaseInternal(getTextContent(n))));
             } else if (matches("function-class-name", nodeName)) {
-                splitBrainProtectionConfig.setFunctionClassName(value);
+                splitBrainProtectionConfig.setFunctionClassName(getTextContent(n));
             } else if (matches("recently-active-split-brain-protection", nodeName)) {
                 splitBrainProtectionConfigBuilder =
                         handleRecentlyActiveSplitBrainProtection(name, n, splitBrainProtectionConfig.getMinimumClusterSize());
@@ -772,8 +766,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if (matches("reuse-address", nodeName)) {
-                String value = getTextContent(child).trim();
-                config.getNetworkConfig().setReuseAddress(getBooleanValue(value));
+                config.getNetworkConfig().setReuseAddress(getBooleanValue(getTextContent(child)));
             } else if (matches("port", nodeName)) {
                 handlePort(child, config);
             } else if (matches("outbound-ports", nodeName)) {
@@ -809,8 +802,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
             if (matches("enabled", att.getNodeName())) {
-                String value = att.getNodeValue();
-                config.getAdvancedNetworkConfig().setEnabled(getBooleanValue(value));
+                config.getAdvancedNetworkConfig().setEnabled(getBooleanValue(att.getNodeValue()));
             }
         }
         for (Node child : childElements(node)) {
@@ -911,8 +903,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 String address = getTextContent(child);
                 endpointConfig.setPublicAddress(address);
             } else if (matches("reuse-address", nodeName)) {
-                String value = getTextContent(child).trim();
-                endpointConfig.setReuseAddress(getBooleanValue(value));
+                endpointConfig.setReuseAddress(getBooleanValue(getTextContent(child)));
             } else {
                 handleEndpointConfigCommons(child, nodeName, endpointConfig);
             }
@@ -1075,23 +1066,22 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     void handleFlakeIdGeneratorNode(Node node, FlakeIdGeneratorConfig generatorConfig) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            String value = getTextContent(child).trim();
             if (matches("prefetch-count", nodeName)) {
-                generatorConfig.setPrefetchCount(Integer.parseInt(value));
+                generatorConfig.setPrefetchCount(Integer.parseInt(getTextContent(child)));
             } else if (matches("prefetch-validity-millis", nodeName)) {
-                generatorConfig.setPrefetchValidityMillis(Long.parseLong(value));
+                generatorConfig.setPrefetchValidityMillis(Long.parseLong(getTextContent(child)));
             } else if (matches("epoch-start", nodeName)) {
-                generatorConfig.setEpochStart(Long.parseLong(value));
+                generatorConfig.setEpochStart(Long.parseLong(getTextContent(child)));
             } else if (matches("node-id-offset", nodeName)) {
-                generatorConfig.setNodeIdOffset(Long.parseLong(value));
+                generatorConfig.setNodeIdOffset(Long.parseLong(getTextContent(child)));
             } else if (matches("bits-sequence", nodeName)) {
-                generatorConfig.setBitsSequence(Integer.parseInt(value));
+                generatorConfig.setBitsSequence(Integer.parseInt(getTextContent(child)));
             } else if (matches("bits-node-id", nodeName)) {
-                generatorConfig.setBitsNodeId(Integer.parseInt(value));
+                generatorConfig.setBitsNodeId(Integer.parseInt(getTextContent(child)));
             } else if (matches("allowed-future-millis", nodeName)) {
-                generatorConfig.setAllowedFutureMillis(Long.parseLong(value));
+                generatorConfig.setAllowedFutureMillis(Long.parseLong(getTextContent(child)));
             } else if (matches("statistics-enabled", nodeName)) {
-                generatorConfig.setStatisticsEnabled(getBooleanValue(value));
+                generatorConfig.setStatisticsEnabled(getBooleanValue(getTextContent(child)));
             }
         }
         config.addFlakeIdGeneratorConfig(generatorConfig);
@@ -1103,8 +1093,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
             if (matches("enabled", att.getNodeName())) {
-                String value = att.getNodeValue();
-                interfaces.setEnabled(getBooleanValue(value));
+                interfaces.setEnabled(getBooleanValue(att.getNodeValue()));
             }
         }
         handleInterfacesList(node, interfaces);
@@ -1113,8 +1102,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     protected void handleInterfacesList(Node node, InterfacesConfig interfaces) {
         for (Node n : childElements(node)) {
             if (matches("interface", lowerCaseInternal(cleanNodeName(n)))) {
-                String value = getTextContent(n).trim();
-                interfaces.addInterface(value);
+                interfaces.addInterface(getTextContent(n));
             }
         }
     }
@@ -1125,8 +1113,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
             if (matches("enabled", att.getNodeName())) {
-                String value = att.getNodeValue();
-                interfaces.setEnabled(getBooleanValue(value));
+                interfaces.setEnabled(getBooleanValue(att.getNodeValue()));
             }
         }
         handleInterfacesList(node, interfaces);
@@ -1144,7 +1131,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
         for (Node n : childElements(node)) {
             if (n instanceof Element && !excludeNode(n, nodeExclusions)) {
-                invokeSetter(child, n, getTextContent(n).trim());
+                invokeSetter(child, n, getTextContent(n));
             }
         }
         attachChildConfig(parent, child);
@@ -1292,7 +1279,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     void handleDiscoveryNodeFilter(Node node, DiscoveryConfig discoveryConfig) {
         Node att = getNamedItemNode(node, "class");
         if (att != null) {
-            discoveryConfig.setNodeFilterClass(getTextContent(att).trim());
+            discoveryConfig.setNodeFilterClass(getTextContent(att));
         }
     }
 
@@ -1303,11 +1290,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
-            String value = getTextContent(att).trim();
             if (matches("enabled", lowerCaseInternal(att.getNodeName()))) {
-                enabled = getBooleanValue(value);
+                enabled = getBooleanValue(getTextContent(att));
             } else if (matches("class", att.getNodeName())) {
-                clazz = value;
+                clazz = getTextContent(att);
             }
         }
 
@@ -1342,16 +1328,15 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
-            String value = getTextContent(att).trim();
             if (matches("enabled", att.getNodeName().toLowerCase())) {
-                config.setEnabled(getBooleanValue(value));
+                config.setEnabled(getBooleanValue(getTextContent(att)));
             } else if (matches(att.getNodeName(), "connection-timeout-seconds")) {
-                config.setProperty("connection-timeout-seconds", value);
+                config.setProperty("connection-timeout-seconds", getTextContent(att));
             }
         }
         for (Node n : childElements(node)) {
             String key = cleanNodeName(n, !matches("eureka", n.getParentNode().getLocalName()));
-            String value = getTextContent(n).trim();
+            String value = getTextContent(n);
             config.setProperty(key, value);
         }
     }
@@ -1362,28 +1347,26 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
-            String value = getTextContent(att).trim();
             if (matches("enabled", lowerCaseInternal(att.getNodeName()))) {
-                multicastConfig.setEnabled(getBooleanValue(value));
+                multicastConfig.setEnabled(getBooleanValue(getTextContent(att)));
             } else if (matches("loopbackmodeenabled", lowerCaseInternal(att.getNodeName()))
                     || matches("loopback-mode-enabled", lowerCaseInternal(att.getNodeName()))) {
-                multicastConfig.setLoopbackModeEnabled(getBooleanValue(value));
+                multicastConfig.setLoopbackModeEnabled(getBooleanValue(getTextContent(att)));
             }
         }
         for (Node n : childElements(node)) {
-            String value = getTextContent(n).trim();
             if (matches("multicast-group", cleanNodeName(n))) {
-                multicastConfig.setMulticastGroup(value);
+                multicastConfig.setMulticastGroup(getTextContent(n));
             } else if (matches("multicast-port", cleanNodeName(n))) {
-                multicastConfig.setMulticastPort(parseInt(value));
+                multicastConfig.setMulticastPort(parseInt(getTextContent(n)));
             } else if (matches("multicast-timeout-seconds", cleanNodeName(n))) {
-                multicastConfig.setMulticastTimeoutSeconds(parseInt(value));
+                multicastConfig.setMulticastTimeoutSeconds(parseInt(getTextContent(n)));
             } else if (matches("multicast-time-to-live-seconds", cleanNodeName(n))) {
                 // we need this line for the time being to prevent not reading the multicast-time-to-live-seconds property
                 // for more info see: https://github.com/hazelcast/hazelcast/issues/752
-                multicastConfig.setMulticastTimeToLive(parseInt(value));
+                multicastConfig.setMulticastTimeToLive(parseInt(getTextContent(n)));
             } else if (matches("multicast-time-to-live", cleanNodeName(n))) {
-                multicastConfig.setMulticastTimeToLive(parseInt(value));
+                multicastConfig.setMulticastTimeToLive(parseInt(getTextContent(n)));
             } else if (matches("trusted-interfaces", cleanNodeName(n))) {
                 handleTrustedInterfaces(multicastConfig, n);
             }
@@ -1396,9 +1379,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
-            String value = getTextContent(att).trim();
             if (matches("enabled", lowerCaseInternal(att.getNodeName()))) {
-                autoDetectionConfig.setEnabled(getBooleanValue(value));
+                autoDetectionConfig.setEnabled(getBooleanValue(getTextContent(att)));
             }
         }
     }
@@ -1406,7 +1388,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     protected void handleTrustedInterfaces(TrustedInterfacesConfigurable<?> tiConfig, Node n) {
         for (Node child : childElements(n)) {
             if (matches("interface", lowerCaseInternal(cleanNodeName(child)))) {
-                tiConfig.addTrustedInterface(getTextContent(child).trim());
+                tiConfig.addTrustedInterface(getTextContent(child));
             }
         }
     }
@@ -1417,16 +1399,15 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
-            String value = getTextContent(att).trim();
             if (matches(att.getNodeName(), "enabled")) {
-                tcpIpConfig.setEnabled(getBooleanValue(value));
+                tcpIpConfig.setEnabled(getBooleanValue(getTextContent(att)));
             } else if (matches(att.getNodeName(), "connection-timeout-seconds")) {
-                tcpIpConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value));
+                tcpIpConfig.setConnectionTimeoutSeconds(
+                  getIntegerValue("connection-timeout-seconds", getTextContent(att)));
             }
         }
         Set<String> memberTags = new HashSet<>(Arrays.asList("interface", "member", "members"));
         for (Node n : childElements(node)) {
-            String value = getTextContent(n).trim();
             if (matches(cleanNodeName(n), "member-list")) {
                 handleMemberList(n, advancedNetworkConfig);
             } else if (matches(cleanNodeName(n), "required-member")) {
@@ -1434,9 +1415,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     throw new InvalidConfigurationException("Duplicate required-member"
                             + " definition found in the configuration. ");
                 }
-                tcpIpConfig.setRequiredMember(value);
+                tcpIpConfig.setRequiredMember(getTextContent(n));
             } else if (memberTags.contains(cleanNodeName(n))) {
-                tcpIpConfig.addMember(value);
+                tcpIpConfig.addMember(getTextContent(n));
             }
         }
     }
@@ -1447,14 +1428,13 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             if (matches("member", nodeName)) {
-                String value = getTextContent(n).trim();
-                tcpIpConfig.addMember(value);
+                tcpIpConfig.addMember(getTextContent(n));
             }
         }
     }
 
     protected void handlePort(Node node, Config config) {
-        String portStr = getTextContent(node).trim();
+        String portStr = getTextContent(node);
         NetworkConfig networkConfig = config.getNetworkConfig();
         if (portStr.length() > 0) {
             networkConfig.setPort(parseInt(portStr));
@@ -1462,19 +1442,18 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
-            String value = getTextContent(att).trim();
 
             if (matches("auto-increment", att.getNodeName())) {
-                networkConfig.setPortAutoIncrement(getBooleanValue(value));
+                networkConfig.setPortAutoIncrement(getBooleanValue(getTextContent(att)));
             } else if (matches("port-count", att.getNodeName())) {
-                int portCount = parseInt(value);
+                int portCount = parseInt(getTextContent(att));
                 networkConfig.setPortCount(portCount);
             }
         }
     }
 
     protected void handlePort(Node node, ServerSocketEndpointConfig endpointConfig) {
-        String portStr = getTextContent(node).trim();
+        String portStr = getTextContent(node);
         if (portStr.length() > 0) {
             endpointConfig.setPort(parseInt(portStr));
         }
@@ -1485,12 +1464,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
-            String value = getTextContent(att).trim();
 
             if (matches("auto-increment", att.getNodeName())) {
-                endpointConfig.setPortAutoIncrement(getBooleanValue(value));
+                endpointConfig.setPortAutoIncrement(getBooleanValue(getTextContent(att)));
             } else if (matches("port-count", att.getNodeName())) {
-                int portCount = parseInt(value);
+                int portCount = parseInt(getTextContent(att));
                 endpointConfig.setPortCount(portCount);
             }
         }
@@ -1501,8 +1479,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node n : childElements(child)) {
             String nodeName = cleanNodeName(n);
             if (matches("ports", nodeName)) {
-                String value = getTextContent(n);
-                networkConfig.addOutboundPortDefinition(value);
+                networkConfig.addOutboundPortDefinition(getTextContent(n));
             }
         }
     }
@@ -1511,8 +1488,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node n : childElements(child)) {
             String nodeName = cleanNodeName(n);
             if (matches("ports", nodeName)) {
-                String value = getTextContent(n);
-                endpointConfig.addOutboundPortDefinition(value);
+                endpointConfig.addOutboundPortDefinition(getTextContent(n));
             }
         }
     }
@@ -1528,32 +1504,31 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     void handleQueueNode(Node node, final QueueConfig qConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
             if (matches("max-size", nodeName)) {
-                qConfig.setMaxSize(getIntegerValue("max-size", value));
+                qConfig.setMaxSize(getIntegerValue("max-size", getTextContent(n)));
             } else if (matches("backup-count", nodeName)) {
-                qConfig.setBackupCount(getIntegerValue("backup-count", value));
+                qConfig.setBackupCount(getIntegerValue("backup-count", getTextContent(n)));
             } else if (matches("async-backup-count", nodeName)) {
-                qConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
+                qConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", getTextContent(n)));
             } else if (matches("item-listeners", nodeName)) {
                 handleItemListeners(n, itemListenerConfig -> {
                     qConfig.addItemListenerConfig(itemListenerConfig);
                     return null;
                 });
             } else if (matches("statistics-enabled", nodeName)) {
-                qConfig.setStatisticsEnabled(getBooleanValue(value));
+                qConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
             } else if (matches("queue-store", nodeName)) {
                 QueueStoreConfig queueStoreConfig = createQueueStoreConfig(n);
                 qConfig.setQueueStoreConfig(queueStoreConfig);
             } else if (matches("split-brain-protection-ref", nodeName)) {
-                qConfig.setSplitBrainProtectionName(value);
+                qConfig.setSplitBrainProtectionName(getTextContent(n));
             } else if (matches("empty-queue-ttl", nodeName)) {
-                qConfig.setEmptyQueueTtl(getIntegerValue("empty-queue-ttl", value));
+                qConfig.setEmptyQueueTtl(getIntegerValue("empty-queue-ttl", getTextContent(n)));
             } else if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 qConfig.setMergePolicyConfig(mergePolicyConfig);
             } else if (matches("priority-comparator-class-name", nodeName)) {
-                qConfig.setPriorityComparatorClassName(value);
+                qConfig.setPriorityComparatorClassName(getTextContent(n));
             }
         }
         config.addQueueConfig(qConfig);
@@ -1581,22 +1556,21 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     void handleListNode(Node node, final ListConfig lConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
             if (matches("max-size", nodeName)) {
-                lConfig.setMaxSize(getIntegerValue("max-size", value));
+                lConfig.setMaxSize(getIntegerValue("max-size", getTextContent(n)));
             } else if (matches("backup-count", nodeName)) {
-                lConfig.setBackupCount(getIntegerValue("backup-count", value));
+                lConfig.setBackupCount(getIntegerValue("backup-count", getTextContent(n)));
             } else if (matches("async-backup-count", nodeName)) {
-                lConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
+                lConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", getTextContent(n)));
             } else if (matches("item-listeners", nodeName)) {
                 handleItemListeners(n, itemListenerConfig -> {
                     lConfig.addItemListenerConfig(itemListenerConfig);
                     return null;
                 });
             } else if (matches("statistics-enabled", nodeName)) {
-                lConfig.setStatisticsEnabled(getBooleanValue(value));
+                lConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
             } else if (matches("split-brain-protection-ref", nodeName)) {
-                lConfig.setSplitBrainProtectionName(value);
+                lConfig.setSplitBrainProtectionName(getTextContent(n));
             } else if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 lConfig.setMergePolicyConfig(mergePolicyConfig);
@@ -1617,22 +1591,21 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     void handleSetNode(Node node, final SetConfig sConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
             if (matches("max-size", nodeName)) {
-                sConfig.setMaxSize(getIntegerValue("max-size", value));
+                sConfig.setMaxSize(getIntegerValue("max-size", getTextContent(n)));
             } else if (matches("backup-count", nodeName)) {
-                sConfig.setBackupCount(getIntegerValue("backup-count", value));
+                sConfig.setBackupCount(getIntegerValue("backup-count", getTextContent(n)));
             } else if (matches("async-backup-count", nodeName)) {
-                sConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
+                sConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", getTextContent(n)));
             } else if (matches("item-listeners", nodeName)) {
                 handleItemListeners(n, itemListenerConfig -> {
                     sConfig.addItemListenerConfig(itemListenerConfig);
                     return null;
                 });
             } else if (matches("statistics-enabled", nodeName)) {
-                sConfig.setStatisticsEnabled(getBooleanValue(value));
+                sConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
             } else if (matches("split-brain-protection-ref", nodeName)) {
-                sConfig.setSplitBrainProtectionName(value);
+                sConfig.setSplitBrainProtectionName(getTextContent(n));
             } else if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 sConfig.setMergePolicyConfig(mergePolicyConfig);
@@ -1652,26 +1625,25 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     void handleMultiMapNode(Node node, final MultiMapConfig multiMapConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
             if (matches("value-collection-type", nodeName)) {
-                multiMapConfig.setValueCollectionType(value);
+                multiMapConfig.setValueCollectionType(getTextContent(n));
             } else if (matches("backup-count", nodeName)) {
                 multiMapConfig.setBackupCount(getIntegerValue("backup-count"
-                        , value));
+                        , getTextContent(n)));
             } else if (matches("async-backup-count", nodeName)) {
                 multiMapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count"
-                        , value));
+                        , getTextContent(n)));
             } else if (matches("entry-listeners", nodeName)) {
                 handleEntryListeners(n, entryListenerConfig -> {
                     multiMapConfig.addEntryListenerConfig(entryListenerConfig);
                     return null;
                 });
             } else if (matches("statistics-enabled", nodeName)) {
-                multiMapConfig.setStatisticsEnabled(getBooleanValue(value));
+                multiMapConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
             } else if (matches("binary", nodeName)) {
-                multiMapConfig.setBinary(getBooleanValue(value));
+                multiMapConfig.setBinary(getBooleanValue(getTextContent(n)));
             } else if (matches("split-brain-protection-ref", nodeName)) {
-                multiMapConfig.setSplitBrainProtectionName(value);
+                multiMapConfig.setSplitBrainProtectionName(getTextContent(n));
             } else if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 multiMapConfig.setMergePolicyConfig(mergePolicyConfig);
@@ -1704,13 +1676,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     void handleReplicatedMapNode(Node node, final ReplicatedMapConfig replicatedMapConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
             if (matches("in-memory-format", nodeName)) {
-                replicatedMapConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
+                replicatedMapConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(getTextContent(n))));
             } else if (matches("async-fillup", nodeName)) {
-                replicatedMapConfig.setAsyncFillup(getBooleanValue(value));
+                replicatedMapConfig.setAsyncFillup(getBooleanValue(getTextContent(n)));
             } else if (matches("statistics-enabled", nodeName)) {
-                replicatedMapConfig.setStatisticsEnabled(getBooleanValue(value));
+                replicatedMapConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
             } else if (matches("entry-listeners", nodeName)) {
                 handleEntryListeners(n, entryListenerConfig -> {
                     replicatedMapConfig.addEntryListenerConfig(entryListenerConfig);
@@ -1720,7 +1691,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 replicatedMapConfig.setMergePolicyConfig(mergePolicyConfig);
             } else if (matches("split-brain-protection-ref", nodeName)) {
-                replicatedMapConfig.setSplitBrainProtectionName(value);
+                replicatedMapConfig.setSplitBrainProtectionName(getTextContent(n));
             }
         }
         config.addReplicatedMapConfig(replicatedMapConfig);
@@ -1736,21 +1707,20 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     void handleMapNode(Node parentNode, final MapConfig mapConfig) throws Exception {
         for (Node node : childElements(parentNode)) {
             String nodeName = cleanNodeName(node);
-            String value = getTextContent(node).trim();
             if (matches("backup-count", nodeName)) {
-                mapConfig.setBackupCount(getIntegerValue("backup-count", value));
+                mapConfig.setBackupCount(getIntegerValue("backup-count", getTextContent(node)));
             } else if (matches("metadata-policy", nodeName)) {
-                mapConfig.setMetadataPolicy(MetadataPolicy.valueOf(upperCaseInternal(value)));
+                mapConfig.setMetadataPolicy(MetadataPolicy.valueOf(upperCaseInternal(getTextContent(node))));
             } else if (matches("in-memory-format", nodeName)) {
-                mapConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
+                mapConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(getTextContent(node))));
             } else if (matches("async-backup-count", nodeName)) {
-                mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
+                mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", getTextContent(node)));
             } else if (matches("eviction", nodeName)) {
                 mapConfig.setEvictionConfig(getEvictionConfig(node, false, true));
             } else if (matches("time-to-live-seconds", nodeName)) {
-                mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value));
+                mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", getTextContent(node)));
             } else if (matches("max-idle-seconds", nodeName)) {
-                mapConfig.setMaxIdleSeconds(getIntegerValue("max-idle-seconds", value));
+                mapConfig.setMaxIdleSeconds(getIntegerValue("max-idle-seconds", getTextContent(node)));
             } else if (matches("map-store", nodeName)) {
                 MapStoreConfig mapStoreConfig = createMapStoreConfig(node);
                 mapConfig.setMapStoreConfig(mapStoreConfig);
@@ -1768,11 +1738,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("hot-restart", nodeName)) {
                 mapConfig.setHotRestartConfig(createHotRestartConfig(node));
             } else if (matches("read-backup-data", nodeName)) {
-                mapConfig.setReadBackupData(getBooleanValue(value));
+                mapConfig.setReadBackupData(getBooleanValue(getTextContent(node)));
             } else if (matches("statistics-enabled", nodeName)) {
-                mapConfig.setStatisticsEnabled(getBooleanValue(value));
+                mapConfig.setStatisticsEnabled(getBooleanValue(getTextContent(node)));
             } else if (matches("cache-deserialized-values", nodeName)) {
-                CacheDeserializedValues cacheDeserializedValues = CacheDeserializedValues.parseString(value);
+                CacheDeserializedValues cacheDeserializedValues = CacheDeserializedValues
+                  .parseString(getTextContent(node));
                 mapConfig.setCacheDeserializedValues(cacheDeserializedValues);
             } else if (matches("wan-replication-ref", nodeName)) {
                 mapWanReplicationRefHandle(node, mapConfig);
@@ -1788,9 +1759,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("partition-lost-listeners", nodeName)) {
                 mapPartitionLostListenerHandle(node, mapConfig);
             } else if (matches("partition-strategy", nodeName)) {
-                mapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(value));
+                mapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(getTextContent(node)));
             } else if (matches("split-brain-protection-ref", nodeName)) {
-                mapConfig.setSplitBrainProtectionName(value);
+                mapConfig.setSplitBrainProtectionName(getTextContent(node));
             } else if (matches("query-caches", nodeName)) {
                 mapQueryCacheHandler(node, mapConfig);
             }
@@ -1804,22 +1775,21 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         Boolean serializeKeys = null;
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            String value = getTextContent(child).trim();
             if (matches("time-to-live-seconds", nodeName)) {
-                nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(value));
+                nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(getTextContent(child)));
             } else if (matches("max-idle-seconds", nodeName)) {
-                nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(value));
+                nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(getTextContent(child)));
             } else if (matches("in-memory-format", nodeName)) {
-                nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
+                nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(getTextContent(child))));
             } else if (matches("serialize-keys", nodeName)) {
-                serializeKeys = Boolean.parseBoolean(value);
+                serializeKeys = Boolean.parseBoolean(getTextContent(child));
                 nearCacheConfig.setSerializeKeys(serializeKeys);
             } else if (matches("invalidate-on-change", nodeName)) {
-                nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(value));
+                nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(getTextContent(child)));
             } else if (matches("cache-local-entries", nodeName)) {
-                nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(value));
+                nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(getTextContent(child)));
             } else if (matches("local-update-policy", nodeName)) {
-                NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.valueOf(value);
+                NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.valueOf(getTextContent(child));
                 nearCacheConfig.setLocalUpdatePolicy(policy);
             } else if (matches("eviction", nodeName)) {
                 nearCacheConfig.setEvictionConfig(getEvictionConfig(child, true, false));
@@ -1858,19 +1828,18 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     void handleCacheNode(Node node, CacheSimpleConfig cacheConfig) throws Exception {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
             if (matches("key-type", nodeName)) {
                 cacheConfig.setKeyType(getAttribute(n, "class-name"));
             } else if (matches("value-type", nodeName)) {
                 cacheConfig.setValueType(getAttribute(n, "class-name"));
             } else if (matches("statistics-enabled", nodeName)) {
-                cacheConfig.setStatisticsEnabled(getBooleanValue(value));
+                cacheConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
             } else if (matches("management-enabled", nodeName)) {
-                cacheConfig.setManagementEnabled(getBooleanValue(value));
+                cacheConfig.setManagementEnabled(getBooleanValue(getTextContent(n)));
             } else if (matches("read-through", nodeName)) {
-                cacheConfig.setReadThrough(getBooleanValue(value));
+                cacheConfig.setReadThrough(getBooleanValue(getTextContent(n)));
             } else if (matches("write-through", nodeName)) {
-                cacheConfig.setWriteThrough(getBooleanValue(value));
+                cacheConfig.setWriteThrough(getBooleanValue(getTextContent(n)));
             } else if (matches("cache-loader-factory", nodeName)) {
                 cacheConfig.setCacheLoaderFactory(getAttribute(n, "class-name"));
             } else if (matches("cache-loader", nodeName)) {
@@ -1884,17 +1853,17 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("cache-entry-listeners", nodeName)) {
                 cacheListenerHandle(n, cacheConfig);
             } else if (matches("in-memory-format", nodeName)) {
-                cacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
+                cacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(getTextContent(n))));
             } else if (matches("backup-count", nodeName)) {
-                cacheConfig.setBackupCount(getIntegerValue("backup-count", value));
+                cacheConfig.setBackupCount(getIntegerValue("backup-count", getTextContent(n)));
             } else if (matches("async-backup-count", nodeName)) {
-                cacheConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
+                cacheConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", getTextContent(n)));
             } else if (matches("wan-replication-ref", nodeName)) {
                 cacheWanReplicationRefHandle(n, cacheConfig);
             } else if (matches("eviction", nodeName)) {
                 cacheConfig.setEvictionConfig(getEvictionConfig(n, false, false));
             } else if (matches("split-brain-protection-ref", nodeName)) {
-                cacheConfig.setSplitBrainProtectionName(value);
+                cacheConfig.setSplitBrainProtectionName(getTextContent(n));
             } else if (matches("partition-lost-listeners", nodeName)) {
                 cachePartitionLostListenerHandle(n, cacheConfig);
             } else if (matches("merge-policy", nodeName)) {
@@ -1905,7 +1874,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("hot-restart", nodeName)) {
                 cacheConfig.setHotRestartConfig(createHotRestartConfig(n));
             } else if (matches("disable-per-entry-invalidation-events", nodeName)) {
-                cacheConfig.setDisablePerEntryInvalidationEvents(getBooleanValue(value));
+                cacheConfig.setDisablePerEntryInvalidationEvents(getBooleanValue(getTextContent(n)));
             }
         }
         try {
@@ -2178,27 +2147,25 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     return null;
                 });
             } else {
-                String textContent = getTextContent(childNode);
                 if (matches("include-value", nodeName)) {
-                    boolean includeValue = getBooleanValue(textContent);
+                    boolean includeValue = getBooleanValue(getTextContent(childNode));
                     queryCacheConfig.setIncludeValue(includeValue);
                 } else if (matches("batch-size", nodeName)) {
-                    int batchSize = getIntegerValue("batch-size", textContent.trim());
+                    int batchSize = getIntegerValue("batch-size", getTextContent(childNode));
                     queryCacheConfig.setBatchSize(batchSize);
                 } else if (matches("buffer-size", nodeName)) {
-                    int bufferSize = getIntegerValue("buffer-size", textContent.trim());
+                    int bufferSize = getIntegerValue("buffer-size", getTextContent(childNode));
                     queryCacheConfig.setBufferSize(bufferSize);
                 } else if (matches("delay-seconds", nodeName)) {
-                    int delaySeconds = getIntegerValue("delay-seconds", textContent.trim());
+                    int delaySeconds = getIntegerValue("delay-seconds", getTextContent(childNode));
                     queryCacheConfig.setDelaySeconds(delaySeconds);
                 } else if (matches("in-memory-format", nodeName)) {
-                    String value = textContent.trim();
-                    queryCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
+                    queryCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(getTextContent(childNode))));
                 } else if (matches("coalesce", nodeName)) {
-                    boolean coalesce = getBooleanValue(textContent);
+                    boolean coalesce = getBooleanValue(getTextContent(childNode));
                     queryCacheConfig.setCoalesce(coalesce);
                 } else if (matches("populate", nodeName)) {
-                    boolean populate = getBooleanValue(textContent);
+                    boolean populate = getBooleanValue(getTextContent(childNode));
                     queryCacheConfig.setPopulate(populate);
                 } else if (matches("indexes", nodeName)) {
                     queryCacheIndexesHandle(childNode, queryCacheConfig);
@@ -2229,9 +2196,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
-            String value = getTextContent(att).trim();
             if (matches("enabled", att.getNodeName())) {
-                mapStoreConfig.setEnabled(getBooleanValue(value));
+                mapStoreConfig.setEnabled(getBooleanValue(getTextContent(att)));
             } else if (matches("initial-mode", att.getNodeName())) {
                 MapStoreConfig.InitialLoadMode mode = MapStoreConfig.InitialLoadMode
                         .valueOf(upperCaseInternal(getTextContent(att)));
@@ -2241,17 +2207,17 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             if (matches("class-name", nodeName)) {
-                mapStoreConfig.setClassName(getTextContent(n).trim());
+                mapStoreConfig.setClassName(getTextContent(n));
             } else if (matches("factory-class-name", nodeName)) {
-                mapStoreConfig.setFactoryClassName(getTextContent(n).trim());
+                mapStoreConfig.setFactoryClassName(getTextContent(n));
             } else if (matches("write-delay-seconds", nodeName)) {
-                mapStoreConfig.setWriteDelaySeconds(getIntegerValue("write-delay-seconds", getTextContent(n).trim()
+                mapStoreConfig.setWriteDelaySeconds(getIntegerValue("write-delay-seconds", getTextContent(n)
                 ));
             } else if (matches("write-batch-size", nodeName)) {
-                mapStoreConfig.setWriteBatchSize(getIntegerValue("write-batch-size", getTextContent(n).trim()
+                mapStoreConfig.setWriteBatchSize(getIntegerValue("write-batch-size", getTextContent(n)
                 ));
             } else if (matches("write-coalescing", nodeName)) {
-                String writeCoalescing = getTextContent(n).trim();
+                String writeCoalescing = getTextContent(n);
                 if (isNullOrEmpty(writeCoalescing)) {
                     mapStoreConfig.setWriteCoalescing(MapStoreConfig.DEFAULT_WRITE_COALESCING);
                 } else {
@@ -2269,17 +2235,16 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
-            String value = getTextContent(att).trim();
             if (matches(att.getNodeName(), "enabled")) {
-                config.setEnabled(getBooleanValue(value));
+                config.setEnabled(getBooleanValue(getTextContent(att)));
             }
         }
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             if (matches("class-name", nodeName)) {
-                config.setClassName(getTextContent(n).trim());
+                config.setClassName(getTextContent(n));
             } else if (matches("factory-class-name", nodeName)) {
-                config.setFactoryClassName(getTextContent(n).trim());
+                config.setFactoryClassName(getTextContent(n));
             } else if (matches("properties", nodeName)) {
                 fillProperties(n, config.getProperties());
             }
@@ -2290,7 +2255,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected MergePolicyConfig createMergePolicyConfig(Node node) {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-        String policyString = getTextContent(node).trim();
+        String policyString = getTextContent(node);
         mergePolicyConfig.setPolicy(policyString);
         final String att = getAttribute(node, "batch-size");
         if (att != null) {
@@ -2304,17 +2269,16 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
-            String value = getTextContent(att).trim();
             if (matches(att.getNodeName(), "enabled")) {
-                queueStoreConfig.setEnabled(getBooleanValue(value));
+                queueStoreConfig.setEnabled(getBooleanValue(getTextContent(att)));
             }
         }
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             if (matches("class-name", nodeName)) {
-                queueStoreConfig.setClassName(getTextContent(n).trim());
+                queueStoreConfig.setClassName(getTextContent(n));
             } else if (matches("factory-class-name", nodeName)) {
-                queueStoreConfig.setFactoryClassName(getTextContent(n).trim());
+                queueStoreConfig.setFactoryClassName(getTextContent(n));
             } else if (matches("properties", nodeName)) {
                 fillProperties(n, queueStoreConfig.getProperties());
             }
@@ -2487,27 +2451,26 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     void handleRingBufferNode(Node node, RingbufferConfig rbConfig) {
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
-            String value = getTextContent(n).trim();
             if (matches("capacity", nodeName)) {
-                int capacity = getIntegerValue("capacity", value);
+                int capacity = getIntegerValue("capacity", getTextContent(n));
                 rbConfig.setCapacity(capacity);
             } else if (matches("backup-count", nodeName)) {
-                int backupCount = getIntegerValue("backup-count", value);
+                int backupCount = getIntegerValue("backup-count", getTextContent(n));
                 rbConfig.setBackupCount(backupCount);
             } else if (matches("async-backup-count", nodeName)) {
-                int asyncBackupCount = getIntegerValue("async-backup-count", value);
+                int asyncBackupCount = getIntegerValue("async-backup-count", getTextContent(n));
                 rbConfig.setAsyncBackupCount(asyncBackupCount);
             } else if (matches("time-to-live-seconds", nodeName)) {
-                int timeToLiveSeconds = getIntegerValue("time-to-live-seconds", value);
+                int timeToLiveSeconds = getIntegerValue("time-to-live-seconds", getTextContent(n));
                 rbConfig.setTimeToLiveSeconds(timeToLiveSeconds);
             } else if (matches("in-memory-format", nodeName)) {
-                InMemoryFormat inMemoryFormat = InMemoryFormat.valueOf(upperCaseInternal(value));
+                InMemoryFormat inMemoryFormat = InMemoryFormat.valueOf(upperCaseInternal(getTextContent(n)));
                 rbConfig.setInMemoryFormat(inMemoryFormat);
             } else if (matches("ringbuffer-store", nodeName)) {
                 RingbufferStoreConfig ringbufferStoreConfig = createRingbufferStoreConfig(n);
                 rbConfig.setRingbufferStoreConfig(ringbufferStoreConfig);
             } else if (matches("split-brain-protection-ref", nodeName)) {
-                rbConfig.setSplitBrainProtectionName(value);
+                rbConfig.setSplitBrainProtectionName(getTextContent(n));
             } else if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 rbConfig.setMergePolicyConfig(mergePolicyConfig);
@@ -2545,8 +2508,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         MemberGroupConfig memberGroupConfig = new MemberGroupConfig();
         for (Node child : childElements(node)) {
             if (matches("interface", cleanNodeName(child))) {
-                String value = getTextContent(child);
-                memberGroupConfig.addInterface(value);
+                memberGroupConfig.addInterface(getTextContent(child));
             }
         }
         config.getPartitionGroupConfig().addMemberGroupConfig(memberGroupConfig);
@@ -2566,7 +2528,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
 
         for (Node n : childElements(node)) {
-            String value = getTextContent(n).trim();
             if (matches("trusted-interfaces", cleanNodeName(n))) {
                 handleTrustedInterfaces(managementCenterConfig, n);
             }
@@ -2629,11 +2590,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
             String value = getTextContent(n);
             String attributeName = getTextContent(getNamedItemNode(n, "name"));
-            handleMemberAttributesNode(n, attributeName, value);
+            handleMemberAttributesNode(attributeName, value);
         }
     }
 
-    void handleMemberAttributesNode(Node n, String attributeName, String value) {
+    void handleMemberAttributesNode(String attributeName, String value) {
         config.getMemberAttributeConfig().setAttribute(attributeName, value);
     }
 
@@ -2691,7 +2652,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if (matches("endpoint", nodeName)) {
-                permConfig.addEndpoint(getTextContent(child).trim());
+                permConfig.addEndpoint(getTextContent(child));
             }
         }
     }
@@ -2700,7 +2661,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if (matches("action", nodeName)) {
-                permConfig.addAction(getTextContent(child).trim());
+                permConfig.addAction(getTextContent(child));
             }
         }
     }
@@ -2780,25 +2741,24 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("locks", nodeName)) {
                 handleFencedLocks(cpSubsystemConfig, child);
             } else {
-                String value = getTextContent(child).trim();
                 if (matches("cp-member-count", nodeName)) {
-                    cpSubsystemConfig.setCPMemberCount(Integer.parseInt(value));
+                    cpSubsystemConfig.setCPMemberCount(Integer.parseInt(getTextContent(child)));
                 } else if (matches("group-size", nodeName)) {
-                    cpSubsystemConfig.setGroupSize(Integer.parseInt(value));
+                    cpSubsystemConfig.setGroupSize(Integer.parseInt(getTextContent(child)));
                 } else if (matches("session-time-to-live-seconds", nodeName)) {
-                    cpSubsystemConfig.setSessionTimeToLiveSeconds(Integer.parseInt(value));
+                    cpSubsystemConfig.setSessionTimeToLiveSeconds(Integer.parseInt(getTextContent(child)));
                 } else if (matches("session-heartbeat-interval-seconds", nodeName)) {
-                    cpSubsystemConfig.setSessionHeartbeatIntervalSeconds(Integer.parseInt(value));
+                    cpSubsystemConfig.setSessionHeartbeatIntervalSeconds(Integer.parseInt(getTextContent(child)));
                 } else if (matches("missing-cp-member-auto-removal-seconds", nodeName)) {
-                    cpSubsystemConfig.setMissingCPMemberAutoRemovalSeconds(Integer.parseInt(value));
+                    cpSubsystemConfig.setMissingCPMemberAutoRemovalSeconds(Integer.parseInt(getTextContent(child)));
                 } else if (matches("fail-on-indeterminate-operation-state", nodeName)) {
-                    cpSubsystemConfig.setFailOnIndeterminateOperationState(Boolean.parseBoolean(value));
+                    cpSubsystemConfig.setFailOnIndeterminateOperationState(Boolean.parseBoolean(getTextContent(child)));
                 } else if (matches("persistence-enabled", nodeName)) {
-                    cpSubsystemConfig.setPersistenceEnabled(Boolean.parseBoolean(value));
+                    cpSubsystemConfig.setPersistenceEnabled(Boolean.parseBoolean(getTextContent(child)));
                 } else if (matches("base-dir", nodeName)) {
-                    cpSubsystemConfig.setBaseDir(new File(value).getAbsoluteFile());
+                    cpSubsystemConfig.setBaseDir(new File(getTextContent(child)).getAbsoluteFile());
                 } else if (matches("data-load-timeout-seconds", nodeName)) {
-                    cpSubsystemConfig.setDataLoadTimeoutSeconds(Integer.parseInt(value));
+                    cpSubsystemConfig.setDataLoadTimeoutSeconds(Integer.parseInt(getTextContent(child)));
                 }
             }
         }
@@ -2807,21 +2767,20 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     private void handleRaftAlgorithm(RaftAlgorithmConfig raftAlgorithmConfig, Node node) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            String value = getTextContent(child).trim();
             if (matches("leader-election-timeout-in-millis", nodeName)) {
-                raftAlgorithmConfig.setLeaderElectionTimeoutInMillis(Long.parseLong(value));
+                raftAlgorithmConfig.setLeaderElectionTimeoutInMillis(Long.parseLong(getTextContent(child)));
             } else if (matches("leader-heartbeat-period-in-millis", nodeName)) {
-                raftAlgorithmConfig.setLeaderHeartbeatPeriodInMillis(Long.parseLong(value));
+                raftAlgorithmConfig.setLeaderHeartbeatPeriodInMillis(Long.parseLong(getTextContent(child)));
             } else if (matches("max-missed-leader-heartbeat-count", nodeName)) {
-                raftAlgorithmConfig.setMaxMissedLeaderHeartbeatCount(Integer.parseInt(value));
+                raftAlgorithmConfig.setMaxMissedLeaderHeartbeatCount(Integer.parseInt(getTextContent(child)));
             } else if (matches("append-request-max-entry-count", nodeName)) {
-                raftAlgorithmConfig.setAppendRequestMaxEntryCount(Integer.parseInt(value));
+                raftAlgorithmConfig.setAppendRequestMaxEntryCount(Integer.parseInt(getTextContent(child)));
             } else if (matches("commit-index-advance-count-to-snapshot", nodeName)) {
-                raftAlgorithmConfig.setCommitIndexAdvanceCountToSnapshot(Integer.parseInt(value));
+                raftAlgorithmConfig.setCommitIndexAdvanceCountToSnapshot(Integer.parseInt(getTextContent(child)));
             } else if (matches("uncommitted-entry-count-to-reject-new-appends", nodeName)) {
-                raftAlgorithmConfig.setUncommittedEntryCountToRejectNewAppends(Integer.parseInt(value));
+                raftAlgorithmConfig.setUncommittedEntryCountToRejectNewAppends(Integer.parseInt(getTextContent(child)));
             } else if (matches("append-request-backoff-timeout-in-millis", nodeName)) {
-                raftAlgorithmConfig.setAppendRequestBackoffTimeoutInMillis(Long.parseLong(value));
+                raftAlgorithmConfig.setAppendRequestBackoffTimeoutInMillis(Long.parseLong(getTextContent(child)));
             }
         }
     }
@@ -2831,13 +2790,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
             for (Node subChild : childElements(child)) {
                 String nodeName = cleanNodeName(subChild);
-                String value = getTextContent(subChild).trim();
                 if (matches("name", nodeName)) {
-                    semaphoreConfig.setName(value);
+                    semaphoreConfig.setName(getTextContent(subChild));
                 } else if (matches("jdk-compatible", nodeName)) {
-                    semaphoreConfig.setJDKCompatible(Boolean.parseBoolean(value));
+                    semaphoreConfig.setJDKCompatible(Boolean.parseBoolean(getTextContent(subChild)));
                 } else if (matches("initial-permits", nodeName)) {
-                    semaphoreConfig.setInitialPermits(Integer.parseInt(value));
+                    semaphoreConfig.setInitialPermits(Integer.parseInt(getTextContent(subChild)));
                 }
             }
             cpSubsystemConfig.addSemaphoreConfig(semaphoreConfig);
@@ -2849,11 +2807,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             FencedLockConfig lockConfig = new FencedLockConfig();
             for (Node subChild : childElements(child)) {
                 String nodeName = cleanNodeName(subChild);
-                String value = getTextContent(subChild).trim();
                 if (matches("name", nodeName)) {
-                    lockConfig.setName(value);
+                    lockConfig.setName(getTextContent(subChild));
                 } else if (matches("lock-acquire-limit", nodeName)) {
-                    lockConfig.setLockAcquireLimit(Integer.parseInt(value));
+                    lockConfig.setLockAcquireLimit(Integer.parseInt(getTextContent(subChild)));
                 }
             }
             cpSubsystemConfig.addLockConfig(lockConfig);
@@ -2874,13 +2831,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            String value = getTextContent(child).trim();
             if (matches("management-center", nodeName)) {
                 handleMetricsManagementCenter(child);
             } else if (matches("jmx", nodeName)) {
                 handleMetricsJmx(child);
             } else if (matches("collection-frequency-seconds", nodeName)) {
-                metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(value));
+                metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(getTextContent(child)));
             }
         }
     }
@@ -2898,9 +2854,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
-                String value = getTextContent(child).trim();
                 if (matches("retention-seconds", nodeName)) {
-                    managementCenterConfig.setRetentionSeconds(Integer.parseInt(value));
+                    managementCenterConfig.setRetentionSeconds(Integer.parseInt(getTextContent(child)));
                 }
             }
         }
@@ -2924,13 +2879,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            String value = getTextContent(child).trim();
             if (matches("executor-pool-size", nodeName)) {
-                sqlConfig.setExecutorPoolSize(Integer.parseInt(value));
+                sqlConfig.setExecutorPoolSize(Integer.parseInt(getTextContent(child)));
             } else if (matches("operation-pool-size", nodeName)) {
-                sqlConfig.setOperationPoolSize(Integer.parseInt(value));
+                sqlConfig.setOperationPoolSize(Integer.parseInt(getTextContent(child)));
             } else if (matches("statement-timeout-millis", nodeName)) {
-                sqlConfig.setStatementTimeoutMillis(Long.parseLong(value));
+                sqlConfig.setStatementTimeoutMillis(Long.parseLong(getTextContent(child)));
             }
         }
     }
