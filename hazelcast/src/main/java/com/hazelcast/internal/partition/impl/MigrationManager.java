@@ -1551,7 +1551,7 @@ public class MigrationManager {
                         // timeouts. Still this is safer...
                         int delta = migration.getPartitionVersionIncrement() + 1;
                         migration.setPartitionVersionIncrement(delta);
-                        partition.incrementVersion(delta);
+                        partitionStateManager.incrementPartitionVersion(partition.getPartitionId(), delta);
 
                         if (!migration.getDestination().isIdentical(node.getLocalMember())) {
                             partitionService.sendPartitionRuntimeState(migration.getDestination().address());
