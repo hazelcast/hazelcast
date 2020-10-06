@@ -22,16 +22,19 @@ import com.hazelcast.internal.serialization.Data;
 import java.util.Collection;
 import java.util.List;
 
-public final class ListDataCodec {
+/**
+ * Codec for the list of data which allows optional items
+ */
+public final class ListCNDataCodec {
 
-    private ListDataCodec() {
+    private ListCNDataCodec() {
     }
 
     public static void encode(ClientMessage clientMessage, Collection<Data> collection) {
-        ListMultiFrameCodec.encode(clientMessage, collection, DataCodec::encode);
+        ListMultiFrameCodec.encode(clientMessage, collection, DataCodec::encodeNullable);
     }
 
     public static List<Data> decode(ClientMessage.ForwardFrameIterator iterator) {
-        return ListMultiFrameCodec.decode(iterator, DataCodec::decode);
+        return ListMultiFrameCodec.decode(iterator, DataCodec::decodeNullable);
     }
 }
