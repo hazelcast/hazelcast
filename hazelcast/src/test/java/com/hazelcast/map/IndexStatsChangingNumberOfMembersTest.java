@@ -22,9 +22,14 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.impl.GlobalIndexPartitionTracker;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -37,17 +42,25 @@ import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import static com.hazelcast.test.Accessors.getAllIndexes;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport {
+
+    private static final String INDEX_NAME = "this";
 
     @Parameterized.Parameters(name = "format:{0}")
     public static Collection<Object[]> parameters() {
@@ -81,7 +94,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         addIndex(map1);
         addIndex(map2);
 
-        waitAllForSafeState(instance1, instance2);
+        awaitStable(mapName, instance1, instance2);
 
         for (int i = 0; i < entryCount; ++i) {
             map1.put(i, i);
@@ -125,7 +138,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         IMap<Integer, Integer> map3 = instance3.getMap(mapName);
         addIndex(map3);
 
-        waitAllForSafeState(instance1, instance2, instance3);
+        awaitStable(mapName, instance1, instance2, instance3);
 
         // check that local stats were not affected by adding new member to cluster
         assertEquals(originalMap1QueryCount, stats(map1).getQueryCount());
@@ -177,7 +190,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
 
         // let's remove one member
         instance2.shutdown();
-        waitAllForSafeState(instance1, instance3);
+        awaitStable(mapName, instance1, instance3);
 
         // check that local stats were not affected by removing member from cluster
         assertEquals(originalMap1QueryCount, stats(map1).getQueryCount());
@@ -233,7 +246,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         addIndex(map1);
         addIndex(map2);
 
-        waitAllForSafeState(instance1, instance2);
+        awaitStable(mapName, instance1, instance2);
 
         assertEquals(0, valueStats(map1).getInsertCount());
         assertEquals(0, valueStats(map1).getUpdateCount());
@@ -288,7 +301,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         IMap<Integer, Integer> map3 = instance3.getMap(mapName);
         addIndex(map3);
 
-        waitAllForSafeState(instance1, instance2, instance3);
+        awaitStable(mapName, instance1, instance2, instance3);
 
         assertEquals(originalMap1InsertCount, valueStats(map1).getInsertCount());
         assertEquals(originalMap1UpdateCount, valueStats(map1).getUpdateCount());
@@ -336,7 +349,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
 
         // let's remove one member
         instance2.shutdown();
-        waitAllForSafeState(instance1, instance3);
+        awaitStable(mapName, instance1, instance3);
 
         assertEquals(originalMap1InsertCount, valueStats(map1).getInsertCount());
         assertEquals(originalMap1UpdateCount, valueStats(map1).getUpdateCount());
@@ -409,7 +422,36 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
     }
 
     protected void addIndex(IMap<?, ?> map) {
-        map.addIndex(new IndexConfig(IndexType.HASH, "this").setName("this"));
+        map.addIndex(new IndexConfig(IndexType.HASH, "this").setName(INDEX_NAME));
     }
 
+    protected void awaitStable(String mapName, HazelcastInstance... instances) {
+        // Await for migrations to complete.
+        waitAllForSafeState(instances);
+
+        // Make sure that all indexes contain expected partitions.
+        Map<UUID, PartitionIdSet> memberToPartitions = new HashMap<>();
+
+        Set<Partition> partitions = instances[0].getPartitionService().getPartitions();
+
+        for (Partition partition : partitions) {
+            UUID member = partition.getOwner().getUuid();
+
+            memberToPartitions.computeIfAbsent(member, (key) -> new PartitionIdSet(partitions.size()))
+                .add(partition.getPartitionId());
+        }
+
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : instances) {
+                InternalIndex index = ((MapProxyImpl<?, ?>) instance.getMap(mapName)).getService().getMapServiceContext()
+                    .getMapContainer(mapName).getIndexes().getIndex(INDEX_NAME);
+
+                assertNotNull(index);
+
+                PartitionIdSet expectedPartitions = memberToPartitions.get(instance.getCluster().getLocalMember().getUuid());
+
+                assertNotEquals(GlobalIndexPartitionTracker.STAMP_INVALID, index.getPartitionStamp(expectedPartitions));
+            }
+        });
+    }
 }
