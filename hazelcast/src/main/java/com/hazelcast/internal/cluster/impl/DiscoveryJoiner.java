@@ -78,7 +78,7 @@ public class DiscoveryJoiner
         for (DiscoveryNode discoveryNode : discoveredNodes) {
             Address discoveredAddress = usePublicAddress ? discoveryNode.getPublicAddress() : discoveryNode.getPrivateAddress();
             if (localAddress.equals(discoveredAddress)) {
-                if (!usePublicAddress) {
+                if (!usePublicAddress && discoveryNode.getPublicAddress() != null) {
                     // enrich member with client public address
                     localMember.getAddressMap().put(EndpointQualifier.resolve(ProtocolType.CLIENT, "public"),
                             discoveryNode.getPublicAddress());
