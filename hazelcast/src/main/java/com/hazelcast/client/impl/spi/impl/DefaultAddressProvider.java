@@ -31,6 +31,8 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -171,12 +173,22 @@ public class DefaultAddressProvider implements AddressProvider, MembershipListen
                 return false;
             }
             Address privateAddress = member.getAddress();
-            if (privateAddress.getInetAddress().isReachable(REACHABLE_ADDRESS_TIMEOUT)) {
+            if (isReachable(privateAddress, REACHABLE_ADDRESS_TIMEOUT)) {
                 return false;
             }
-            if (!publicAddress.getInetAddress().isReachable(NON_REACHABLE_ADDRESS_TIMEOUT)) {
+            if (!isReachable(publicAddress, NON_REACHABLE_ADDRESS_TIMEOUT)) {
                 return false;
             }
+        }
+        return true;
+    }
+
+    private boolean isReachable(Address address, int timeoutMs) {
+        try (Socket s = new Socket()) {
+            s.connect(new InetSocketAddress(address.getHost(), address.getPort()), timeoutMs);
+        } catch (Exception e) {
+            logger.fine(e);
+            return false;
         }
         return true;
     }
