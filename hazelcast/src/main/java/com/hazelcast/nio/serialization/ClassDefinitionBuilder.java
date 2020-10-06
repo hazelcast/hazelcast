@@ -70,7 +70,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -82,7 +82,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -94,7 +94,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -106,7 +106,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -118,7 +118,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -130,7 +130,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -142,7 +142,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -154,7 +154,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -166,7 +166,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -178,7 +178,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -190,7 +190,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -202,7 +202,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -214,7 +214,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -226,7 +226,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -238,7 +238,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -250,7 +250,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -262,7 +262,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -274,7 +274,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
@@ -286,7 +286,7 @@ public final class ClassDefinitionBuilder {
     }
 
     /**
-     * @param fieldName name of the field that will be add to this class definition
+     * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
