@@ -33,6 +33,7 @@ import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.management.ManagementCenterService;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.proxy.ClientClusterProxy;

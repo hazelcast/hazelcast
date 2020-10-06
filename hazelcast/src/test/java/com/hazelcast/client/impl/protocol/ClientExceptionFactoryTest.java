@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.client.AuthenticationException;
-import com.hazelcast.client.impl.clientside.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.ConsistencyLostException;
@@ -103,13 +102,12 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
     @Parameter
     public Throwable throwable;
 
-    private ClientExceptions exceptions = new ClientExceptions(true);
     private ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(true,
             Thread.currentThread().getContextClassLoader());
 
     @Test
     public void testException() {
-        ClientMessage exceptionMessage = exceptions.createExceptionMessage(throwable);
+        ClientMessage exceptionMessage = exceptionFactory.createExceptionMessage(throwable);
         Throwable resurrectedThrowable = exceptionFactory.createException(exceptionMessage);
 
         if (!exceptionEquals(throwable, resurrectedThrowable)) {
