@@ -92,7 +92,6 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         IMap<Integer, Integer> map2 = instance2.getMap(mapName);
 
         addIndex(map1);
-        addIndex(map2);
 
         awaitStable(mapName, instance1, instance2);
 
@@ -136,7 +135,6 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         // let's add another member
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
         IMap<Integer, Integer> map3 = instance3.getMap(mapName);
-        addIndex(map3);
 
         awaitStable(mapName, instance1, instance2, instance3);
 
@@ -244,7 +242,6 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         IMap<Integer, Integer> map2 = instance2.getMap(mapName);
 
         addIndex(map1);
-        addIndex(map2);
 
         awaitStable(mapName, instance1, instance2);
 
@@ -299,7 +296,6 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         // let's add another member
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
         IMap<Integer, Integer> map3 = instance3.getMap(mapName);
-        addIndex(map3);
 
         awaitStable(mapName, instance1, instance2, instance3);
 
