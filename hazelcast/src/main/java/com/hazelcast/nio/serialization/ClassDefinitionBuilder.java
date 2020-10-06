@@ -292,10 +292,10 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addPortableField(String fieldName, ClassDefinition def) {
-        check(fieldName);
         if (def.getClassId() == 0) {
             throw new IllegalArgumentException("Portable class ID cannot be zero!");
         }
+        check(fieldName);
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
                 FieldType.PORTABLE, def.getFactoryId(), def.getClassId(), def.getVersion()));
         return this;
@@ -309,10 +309,10 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addPortableArrayField(String fieldName, ClassDefinition classDefinition) {
-        check(fieldName);
         if (classDefinition.getClassId() == 0) {
             throw new IllegalArgumentException("Portable class ID cannot be zero!");
         }
+        check(fieldName);
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE_ARRAY,
                 classDefinition.getFactoryId(), classDefinition.getClassId(), classDefinition.getVersion()));
         return this;
@@ -320,10 +320,10 @@ public final class ClassDefinitionBuilder {
 
     @PrivateApi
     public ClassDefinitionBuilder addField(FieldDefinitionImpl fieldDefinition) {
-        check(fieldDefinition.getName());
         if (index != fieldDefinition.getIndex()) {
             throw new IllegalArgumentException("Invalid field index");
         }
+        check(fieldDefinition.getName());
         index++;
         fieldDefinitions.add(fieldDefinition);
         return this;
