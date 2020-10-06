@@ -126,7 +126,9 @@
                                 </filter>
                                 <filter>
                                     <artifact>com.hazelcast:hazelcast-aws</artifact>
-                                    <excludes>hazelcast-community-license.txt</excludes>
+                                    <excludes>
+                                        <exclude>hazelcast-community-license.txt</exclude>
+                                    </excludes>
                                 </filter>
                             </filters>
                         </configuration>
