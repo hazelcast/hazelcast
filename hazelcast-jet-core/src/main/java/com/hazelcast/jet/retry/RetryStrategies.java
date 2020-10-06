@@ -18,6 +18,8 @@ package com.hazelcast.jet.retry;
 
 import com.hazelcast.jet.retry.impl.RetryStrategyImpl;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  * Collection of factory methods for creating the most frequently used
  * {@link RetryStrategy RetryStrategies}.
@@ -27,7 +29,7 @@ import com.hazelcast.jet.retry.impl.RetryStrategyImpl;
 public final class RetryStrategies {
 
     private static final int DEFAULT_MAX_ATTEMPTS = -1;
-    private static final long DEFAULT_WAIT_DURATION_MS = 500;
+    private static final long DEFAULT_WAIT_DURATION_MS = SECONDS.toMillis(5);
     private static final IntervalFunction DEFAULT_INTERVAL_FUNCTION = IntervalFunction.constant(DEFAULT_WAIT_DURATION_MS);
 
     private RetryStrategies() {
