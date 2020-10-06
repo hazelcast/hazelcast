@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Client;
-import com.hazelcast.client.impl.protocol.ClientExceptions;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.cluster.Address;
@@ -93,7 +93,7 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
-    public ClientExceptions getClientExceptions() {
+    public ClientExceptionFactory getExceptionFactory() {
         return null;
     }
 

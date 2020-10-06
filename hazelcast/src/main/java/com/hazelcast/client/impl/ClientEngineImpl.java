@@ -20,7 +20,7 @@ import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientListener;
 import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
-import com.hazelcast.client.impl.protocol.ClientExceptions;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
@@ -64,9 +64,6 @@ import com.hazelcast.transaction.TransactionManagerService;
 
 import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
-
-import static java.util.Arrays.asList;
-
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.HashMap;
@@ -86,6 +83,7 @@ import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.StringUtil.splitByComma;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.spi.properties.ClusterProperty.MC_TRUSTED_INTERFACES;
+import static java.util.Arrays.asList;
 
 /**
  * Class that requests, listeners from client handled in node side.
@@ -115,7 +113,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
 
     private final MessageTaskFactory messageTaskFactory;
-    private final ClientExceptions clientExceptions;
+    private final ClientExceptionFactory clientExceptionFactory;
     private final ClusterViewListenerService clusterListenerService;
     private final boolean advancedNetworkConfigEnabled;
     private final ClientLifecycleMonitor lifecycleMonitor;
@@ -131,7 +129,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.queryExecutor = newClientQueryExecutor();
         this.blockingExecutor = newBlockingExecutor();
         this.messageTaskFactory = new CompositeMessageTaskFactory(nodeEngine);
-        this.clientExceptions = initClientExceptionFactory();
+        this.clientExceptionFactory = initClientExceptionFactory();
         this.clusterListenerService = new ClusterViewListenerService(nodeEngine);
         this.advancedNetworkConfigEnabled = node.getConfig().getAdvancedNetworkConfig().isEnabled();
         this.lifecycleMonitor = new ClientLifecycleMonitor(endpointManager, this, logger, nodeEngine,
@@ -148,9 +146,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.addressChecker = new AddressCheckerImpl(trustedInterfaces, logger);
     }
 
-    private ClientExceptions initClientExceptionFactory() {
-        boolean jcacheAvailable = JCacheDetector.isJCacheAvailable(nodeEngine.getConfigClassLoader());
-        return new ClientExceptions(jcacheAvailable);
+    private ClientExceptionFactory initClientExceptionFactory() {
+        ClassLoader configClassLoader = nodeEngine.getConfigClassLoader();
+        boolean jcacheAvailable = JCacheDetector.isJCacheAvailable(configClassLoader);
+        return new ClientExceptionFactory(jcacheAvailable, configClassLoader);
     }
 
     private Executor newClientExecutor() {
@@ -293,8 +292,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public ClientExceptions getClientExceptions() {
-        return clientExceptions;
+    public ClientExceptionFactory getExceptionFactory() {
+        return clientExceptionFactory;
     }
 
     @Override
