@@ -113,10 +113,6 @@
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
-                                    <resource>hazelcast-community-license.txt</resource>
-                                </transformer>
                             </transformers>
                             <filters>
                                 <filter>
@@ -127,6 +123,10 @@
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
                                     </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.hazelcast:hazelcast-aws</artifact>
+                                    <excludes>hazelcast-community-license.txt</excludes>
                                 </filter>
                             </filters>
                         </configuration>
