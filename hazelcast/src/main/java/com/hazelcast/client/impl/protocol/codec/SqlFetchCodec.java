@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches the next row page.
  */
-@Generated("d1c884306ac5ed9b3c2952509bbcc7ff")
+@Generated("5cb985b672f036c8ba849a9ed635effd")
 public final class SqlFetchCodec {
     //hex: 0x210200
     public static final int REQUEST_MESSAGE_TYPE = 2163200;
@@ -108,7 +108,7 @@ public final class SqlFetchCodec {
         encodeBoolean(initialFrame.content, RESPONSE_ROW_PAGE_LAST_FIELD_OFFSET, rowPageLast);
         clientMessage.add(initialFrame);
 
-        ListMultiFrameCodec.encodeNullable(clientMessage, rowPage, ListDataCodec::encode);
+        ListMultiFrameCodec.encodeNullable(clientMessage, rowPage, ListCNDataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, error, SqlErrorCodec::encode);
         return clientMessage;
     }
@@ -118,7 +118,7 @@ public final class SqlFetchCodec {
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.rowPageLast = decodeBoolean(initialFrame.content, RESPONSE_ROW_PAGE_LAST_FIELD_OFFSET);
-        response.rowPage = ListMultiFrameCodec.decodeNullable(iterator, ListDataCodec::decode);
+        response.rowPage = ListMultiFrameCodec.decodeNullable(iterator, ListCNDataCodec::decode);
         response.error = CodecUtil.decodeNullable(iterator, SqlErrorCodec::decode);
         return response;
     }
