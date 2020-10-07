@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this executor has been shut down.
  */
-@Generated("976e9721c8286b79d10bda2d8a0487c2")
+@Generated("828d5130afa6aa410ba47c0978dc2a62")
 public final class DurableExecutorIsShutdownCodec {
     //hex: 0x180200
     public static final int REQUEST_MESSAGE_TYPE = 1573376;
@@ -48,12 +48,6 @@ public final class DurableExecutorIsShutdownCodec {
 
     private DurableExecutorIsShutdownCodec() {
     }
-
-    /**
-     * Name of the executor.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -67,6 +61,9 @@ public final class DurableExecutorIsShutdownCodec {
         return clientMessage;
     }
 
+    /**
+     * Name of the executor.
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -85,8 +82,8 @@ public final class DurableExecutorIsShutdownCodec {
     }
 
     /**
-    * true if this executor has been shut down
-    */
+     * true if this executor has been shut down
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

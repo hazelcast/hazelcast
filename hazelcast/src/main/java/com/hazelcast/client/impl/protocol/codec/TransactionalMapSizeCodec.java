@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the number of entries in this map.
  */
-@Generated("92c03c1318b227b53f7ef7dccf0382b3")
+@Generated("c81157d4437d3bfa115978ae0a6b2250")
 public final class TransactionalMapSizeCodec {
     //hex: 0x0E0400
     public static final int REQUEST_MESSAGE_TYPE = 918528;
@@ -105,8 +105,8 @@ public final class TransactionalMapSizeCodec {
     }
 
     /**
-    * The number of entries in this map.
-    */
+     * The number of entries in this map.
+     */
     public static int decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

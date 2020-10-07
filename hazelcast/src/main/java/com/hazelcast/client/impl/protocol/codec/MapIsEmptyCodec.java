@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains no key-value mappings.
  */
-@Generated("3381b4e3066b1eb50b035a5d07226146")
+@Generated("b43607eeb9ae2089309214ad074acfbc")
 public final class MapIsEmptyCodec {
     //hex: 0x012B00
     public static final int REQUEST_MESSAGE_TYPE = 76544;
@@ -48,12 +48,6 @@ public final class MapIsEmptyCodec {
 
     private MapIsEmptyCodec() {
     }
-
-    /**
-     * name of map
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -67,6 +61,9 @@ public final class MapIsEmptyCodec {
         return clientMessage;
     }
 
+    /**
+     * name of map
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -85,8 +82,8 @@ public final class MapIsEmptyCodec {
     }
 
     /**
-    * true if this map contains no key-value mappings
-    */
+     * true if this map contains no key-value mappings
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

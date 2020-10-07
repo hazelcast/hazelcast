@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * possible that the map explicitly mapped the key to null. The map will not contain a mapping for the specified key once the
  * call returns.
  */
-@Generated("4e9fce3ad6fa6fcbab664b902bad3a24")
+@Generated("e1340610cead4ede83e3997b7d134b40")
 public final class MapRemoveCodec {
     //hex: 0x010300
     public static final int REQUEST_MESSAGE_TYPE = 66304;
@@ -107,8 +107,8 @@ public final class MapRemoveCodec {
     }
 
     /**
-    * Clone of the removed value, not the original (identically equal) value previously put into the map.
-    */
+     * Clone of the removed value, not the original (identically equal) value previously put into the map.
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

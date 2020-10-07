@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified entry listener. If there is no such listener added before, this call does no change in the
  * cluster and returns false.
  */
-@Generated("fc7c09e6c9c4e31621ee935d00726a7f")
+@Generated("5dd5779f38cb6b1aa4900d5a0dfa02ec")
 public final class CacheRemoveEntryListenerCodec {
     //hex: 0x131400
     public static final int REQUEST_MESSAGE_TYPE = 1250304;
@@ -98,8 +98,8 @@ public final class CacheRemoveEntryListenerCodec {
     }
 
     /**
-    * true if the listener is de-registered, false otherwise
-    */
+     * true if the listener is de-registered, false otherwise
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

@@ -41,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * very poor performance if called repeatedly (for example, in a loop). If the use case is different from querying
  * the data, please copy the resulting set into a new java.util.HashSet.
  */
-@Generated("0a04f2a14b9a8d2150b8853eff87186c")
+@Generated("2e51d582492bbbcb1c2a6f2c025d30b4")
 public final class ReplicatedMapKeySetCodec {
     //hex: 0x0D0F00
     public static final int REQUEST_MESSAGE_TYPE = 855808;
@@ -52,12 +52,6 @@ public final class ReplicatedMapKeySetCodec {
 
     private ReplicatedMapKeySetCodec() {
     }
-
-    /**
-     * Name of the ReplicatedMap
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -71,6 +65,9 @@ public final class ReplicatedMapKeySetCodec {
         return clientMessage;
     }
 
+    /**
+     * Name of the ReplicatedMap
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -89,8 +86,8 @@ public final class ReplicatedMapKeySetCodec {
     }
 
     /**
-    * A lazy set view of the keys contained in this map.
-    */
+     * A lazy set view of the keys contained in this map.
+     */
     public static java.util.List<com.hazelcast.internal.serialization.Data> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Replaces the entry for a key only if currently mapped to a given value.
  */
-@Generated("25e899458b0b6ae7143349b20b19ee32")
+@Generated("87fa4d72ae62f74e95eadcdaf40bf2e9")
 public final class MapReplaceCodec {
     //hex: 0x010400
     public static final int REQUEST_MESSAGE_TYPE = 66560;
@@ -110,8 +110,8 @@ public final class MapReplaceCodec {
     }
 
     /**
-    * Clone of the previous value, not the original (identically equal) value previously put into the map.
-    */
+     * Clone of the previous value, not the original (identically equal) value previously put into the map.
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

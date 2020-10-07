@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Add a new WAN batch publisher configuration
  */
-@Generated("73ca2bc2716e81b146ada9694101ded4")
+@Generated("ad64dbf4eb12e78cf40ae4777e4e86b8")
 public final class MCAddWanBatchPublisherConfigCodec {
     //hex: 0x201500
     public static final int REQUEST_MESSAGE_TYPE = 2102528;
@@ -158,10 +158,12 @@ public final class MCAddWanBatchPublisherConfigCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
         /**
          * Returns the IDs for the WAN publishers which were added to the configuration
          */
         public java.util.List<java.lang.String> addedPublisherIds;
+
         /**
          * Returns the IDs for the WAN publishers which were ignored and not added to
          * the configuration.

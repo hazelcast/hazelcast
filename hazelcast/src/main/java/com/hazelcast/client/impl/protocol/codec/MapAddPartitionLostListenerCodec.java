@@ -42,7 +42,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * IMPORTANT: Listeners registered from HazelcastClient may miss some of the map partition lost events due
  * to design limitations.
  */
-@Generated("cfec5b15e219adafe6fec3486918d0c2")
+@Generated("885cb522c62e14f9fb97c78acace1a76")
 public final class MapAddPartitionLostListenerCodec {
     //hex: 0x011B00
     public static final int REQUEST_MESSAGE_TYPE = 72448;
@@ -108,8 +108,8 @@ public final class MapAddPartitionLostListenerCodec {
     }
 
     /**
-    * returns the registration id for the MapPartitionLostListener.
-    */
+     * returns the registration id for the MapPartitionLostListener.
+     */
     public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -147,7 +147,7 @@ public final class MapAddPartitionLostListenerCodec {
         /**
          * @param partitionId Id of the lost partition.
          * @param uuid UUID of the member that owns the lost partition.
-        */
+         */
         public abstract void handleMapPartitionLostEvent(int partitionId, java.util.UUID uuid);
     }
 }

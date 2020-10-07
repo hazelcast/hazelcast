@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This method is always executed by a distributed query, so it may throw a QueryResultSizeExceededException
  * if query result size limit is configured.
  */
-@Generated("e1064b256c20fce1779a6297704e7bfc")
+@Generated("8668f4477cab803476d58fa7f0032789")
 public final class MapValuesCodec {
     //hex: 0x012400
     public static final int REQUEST_MESSAGE_TYPE = 74752;
@@ -50,12 +50,6 @@ public final class MapValuesCodec {
 
     private MapValuesCodec() {
     }
-
-    /**
-     * name of map
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -69,6 +63,9 @@ public final class MapValuesCodec {
         return clientMessage;
     }
 
+    /**
+     * name of map
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -87,8 +84,8 @@ public final class MapValuesCodec {
     }
 
     /**
-    * All values in the map
-    */
+     * All values in the map
+     */
     public static java.util.List<com.hazelcast.internal.serialization.Data> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

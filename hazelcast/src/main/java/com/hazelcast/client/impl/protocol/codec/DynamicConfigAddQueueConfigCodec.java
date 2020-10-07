@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a queue configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("faed08d78771f41333205db25009f47e")
+@Generated("45926341df86d1f298812ca675a01e1d")
 public final class DynamicConfigAddQueueConfigCodec {
     //hex: 0x1B0B00
     public static final int REQUEST_MESSAGE_TYPE = 1772288;
@@ -124,7 +124,7 @@ public final class DynamicConfigAddQueueConfigCodec {
         /**
          * True if the priorityComparatorClassName is received from the client, false otherwise.
          * If this is false, priorityComparatorClassName has the default value for its type.
-        */
+         */
         public boolean isPriorityComparatorClassNameExists;
     }
 

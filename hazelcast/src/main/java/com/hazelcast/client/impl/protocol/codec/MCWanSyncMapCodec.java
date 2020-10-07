@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Initiate WAN sync for a specific map or all maps
  */
-@Generated("0938d5f7d7908bae83719c30ff3ecefe")
+@Generated("96ee0180ede91646deb33318ad9a957e")
 public final class MCWanSyncMapCodec {
     //hex: 0x201600
     public static final int REQUEST_MESSAGE_TYPE = 2102784;
@@ -113,8 +113,8 @@ public final class MCWanSyncMapCodec {
     }
 
     /**
-    * UUID of the synchronization
-    */
+     * UUID of the synchronization
+     */
     public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

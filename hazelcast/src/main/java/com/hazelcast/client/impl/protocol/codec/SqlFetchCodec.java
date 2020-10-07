@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches the next row page.
  */
-@Generated("5cb985b672f036c8ba849a9ed635effd")
+@Generated("dc46385cebf6254b28edab4d47aecfeb")
 public final class SqlFetchCodec {
     //hex: 0x210200
     public static final int REQUEST_MESSAGE_TYPE = 2163200;
@@ -88,14 +88,17 @@ public final class SqlFetchCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
         /**
          * Row page.
          */
         public @Nullable java.util.List<java.util.List<com.hazelcast.internal.serialization.Data>> rowPage;
+
         /**
          * Whether the row page is the last.
          */
         public boolean rowPageLast;
+
         /**
          * Error object.
          */

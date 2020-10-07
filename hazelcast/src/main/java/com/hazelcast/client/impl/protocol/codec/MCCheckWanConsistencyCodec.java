@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Initiate WAN consistency check for a specific map
  */
-@Generated("57a9700193357b17b3567c3df6eb5d39")
+@Generated("5f0b019408273eb1e8e18dff7f97d119")
 public final class MCCheckWanConsistencyCodec {
     //hex: 0x201700
     public static final int REQUEST_MESSAGE_TYPE = 2103040;
@@ -104,9 +104,9 @@ public final class MCCheckWanConsistencyCodec {
     }
 
     /**
-    * UUID of the consistency check request or null if consistency
-    * check is ignored because of the configuration
-    */
+     * UUID of the consistency check request or null if consistency
+     * check is ignored because of the configuration
+     */
     public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

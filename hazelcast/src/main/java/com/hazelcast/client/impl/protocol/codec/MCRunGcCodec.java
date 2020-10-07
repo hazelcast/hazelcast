@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Requests garbage collection to be performed on the member it's called on.
  */
-@Generated("8fa374c96b4f71573f09faae908d9429")
+@Generated("4209a4daadc781632e48b296bf71d8e2")
 public final class MCRunGcCodec {
     //hex: 0x200600
     public static final int REQUEST_MESSAGE_TYPE = 2098688;
@@ -47,7 +47,6 @@ public final class MCRunGcCodec {
 
     private MCRunGcCodec() {
     }
-
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
