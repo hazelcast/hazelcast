@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -124,7 +125,7 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
      *
      * @return the {@link MergePolicyConfig} for the cardinality estimator
      */
-    public MergePolicyConfig getMergePolicyConfig() {
+    public @NotNull MergePolicyConfig getMergePolicyConfig() {
         return mergePolicyConfig;
     }
 

@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -299,7 +300,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig {
      *
      * @return the {@link MergePolicyConfig} for this MultiMap
      */
-    public MergePolicyConfig getMergePolicyConfig() {
+    public @Nonnull MergePolicyConfig getMergePolicyConfig() {
         return mergePolicyConfig;
     }
 

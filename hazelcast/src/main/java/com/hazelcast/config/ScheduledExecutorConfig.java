@@ -247,7 +247,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
      *
      * @return the {@link MergePolicyConfig} for the scheduler
      */
-    public MergePolicyConfig getMergePolicyConfig() {
+    public @Nonnull MergePolicyConfig getMergePolicyConfig() {
         return mergePolicyConfig;
     }
 

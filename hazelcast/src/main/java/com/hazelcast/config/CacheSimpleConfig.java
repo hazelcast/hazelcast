@@ -624,7 +624,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
      *
      * @return the {@link MergePolicyConfig} for this map
      */
-    public MergePolicyConfig getMergePolicyConfig() {
+    public @Nonnull MergePolicyConfig getMergePolicyConfig() {
         return mergePolicyConfig;
     }
 

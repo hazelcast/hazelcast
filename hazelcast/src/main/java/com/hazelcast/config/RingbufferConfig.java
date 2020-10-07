@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -323,7 +324,7 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
      *
      * @return the ringbuffer store configuration
      */
-    public RingbufferStoreConfig getRingbufferStoreConfig() {
+    public @Nonnull RingbufferStoreConfig getRingbufferStoreConfig() {
         return ringbufferStoreConfig;
     }
 
@@ -365,7 +366,7 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
      *
      * @return the {@link MergePolicyConfig} for this ringbuffer
      */
-    public MergePolicyConfig getMergePolicyConfig() {
+    public @Nonnull MergePolicyConfig getMergePolicyConfig() {
         return mergePolicyConfig;
     }
 

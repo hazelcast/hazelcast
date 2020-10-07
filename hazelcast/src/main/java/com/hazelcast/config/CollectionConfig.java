@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -251,7 +252,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
      *
      * @return the {@link MergePolicyConfig} for the collection
      */
-    public MergePolicyConfig getMergePolicyConfig() {
+    public @Nonnull MergePolicyConfig getMergePolicyConfig() {
         return mergePolicyConfig;
     }
 

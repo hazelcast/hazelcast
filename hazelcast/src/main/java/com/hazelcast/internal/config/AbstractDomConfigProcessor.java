@@ -137,8 +137,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     }
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
-    protected SerializationConfig parseSerialization(final Node node) {
-        SerializationConfig serializationConfig = new SerializationConfig();
+    protected SerializationConfig parseSerialization(final Node node, SerializationConfig serializationConfig) {
         for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
             if (matches("portable-version", name)) {

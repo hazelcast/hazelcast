@@ -2316,7 +2316,7 @@ public class Config {
      *
      * @return the serialization configuration
      */
-    public SerializationConfig getSerializationConfig() {
+    public @Nonnull SerializationConfig getSerializationConfig() {
         return serializationConfig;
     }
 

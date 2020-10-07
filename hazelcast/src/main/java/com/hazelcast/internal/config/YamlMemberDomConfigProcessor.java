@@ -190,7 +190,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         for (Node wanReplicationNode : childElements(node)) {
             WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
             wanReplicationConfig.setName(wanReplicationNode.getNodeName());
-            handleWanReplicationNode(wanReplicationNode, wanReplicationConfig);
+            for (Node nodeTarget : childElements(wanReplicationNode)) {
+                String nodeName = cleanNodeName(nodeTarget);
+                handleWanReplicationChild(wanReplicationConfig, nodeTarget, nodeName);
+
+            }
+            config.addWanReplicationConfig(wanReplicationConfig);
         }
     }
 
