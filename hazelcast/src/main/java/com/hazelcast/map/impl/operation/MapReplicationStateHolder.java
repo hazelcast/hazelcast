@@ -160,15 +160,19 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
 
                 final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
                 final boolean populateIndexes = indexesMustBePopulated(indexes, operation);
+
+                InternalIndex[] indexesSnapshot = null;
+
                 if (populateIndexes) {
                     // defensively clear possible stale leftovers in non-global indexes from the previous failed promotion attempt
+                    indexesSnapshot = indexes.getIndexes();
+
+                    Indexes.beginPartitionUpdate(indexesSnapshot);
+
                     indexes.clearAll();
                 }
 
                 long nowInMillis = Clock.currentTimeMillis();
-                final InternalIndex[] indexesSnapshot = indexes.getIndexes();
-
-                Indexes.beginPartitionUpdate(indexesSnapshot);
 
                 for (int i = 0; i < keyRecord.size(); i += 2) {
                     Data dataKey = (Data) keyRecord.get(i);

@@ -80,7 +80,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     }
 
     protected String getTextContent(Node node) {
-        return DomConfigHelper.getTextContent(node, domLevel3);
+        return DomConfigHelper.getTextContent(node, domLevel3).trim();
     }
 
     protected String getAttribute(Node node, String attName) {

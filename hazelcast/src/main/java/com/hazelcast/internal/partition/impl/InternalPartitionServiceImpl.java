@@ -457,6 +457,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
             if (node.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
                 long stamp = partitionStateManager.getStamp();
+                assert calculateStamp(partitions) == stamp : "Invalid partition stamp! Expected: "
+                        + calculateStamp(partitions) + ", Actual: " + stamp;
                 state = new PartitionRuntimeState(partitions, completedMigrations, stamp);
             } else {
                 //RU_COMPAT_4_0
@@ -634,6 +636,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         if (!validateSenderIsMaster(sender, "partition table update")) {
             return false;
         }
+
+        assert calculateStamp(partitionState.getPartitions()) == partitionState.getStamp() : "Invalid partition stamp! Expected: "
+                + calculateStamp(partitionState.getPartitions()) + ", Actual: " + partitionState.getStamp();
 
         if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
             return applyNewPartitionTable(partitionState.getPartitions(), partitionState.getCompletedMigrations(), sender);
@@ -917,7 +922,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                     applyMigration(partition, migration);
                 } else {
                     // migration failed...
-                    partition.incrementVersion(migration.getPartitionVersionIncrement());
+                    int increment = migration.getPartitionVersionIncrement();
+                    partitionStateManager.incrementPartitionVersion(partition.getPartitionId(), increment);
                 }
                 migrationManager.scheduleActiveMigrationFinalization(migration);
             }

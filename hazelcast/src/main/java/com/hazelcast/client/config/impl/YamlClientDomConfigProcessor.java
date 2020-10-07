@@ -80,19 +80,16 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
         for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
             if (matches("portable-version", name)) {
-                String value = getTextContent(child);
-                serializationConfig.setPortableVersion(getIntegerValue(name, value));
+                serializationConfig.setPortableVersion(getIntegerValue(name, getTextContent(child)));
             } else if (matches("check-class-def-errors", name)) {
-                String value = getTextContent(child);
-                serializationConfig.setCheckClassDefErrors(getBooleanValue(value));
+                serializationConfig.setCheckClassDefErrors(getBooleanValue(getTextContent(child)));
             } else if (matches("use-native-byte-order", name)) {
                 serializationConfig.setUseNativeByteOrder(getBooleanValue(getTextContent(child)));
             } else if (matches("byte-order", name)) {
-                String value = getTextContent(child);
                 ByteOrder byteOrder = null;
-                if (ByteOrder.BIG_ENDIAN.toString().equals(value)) {
+                if (ByteOrder.BIG_ENDIAN.toString().equals(getTextContent(child))) {
                     byteOrder = ByteOrder.BIG_ENDIAN;
-                } else if (ByteOrder.LITTLE_ENDIAN.toString().equals(value)) {
+                } else if (ByteOrder.LITTLE_ENDIAN.toString().equals(getTextContent(child))) {
                     byteOrder = ByteOrder.LITTLE_ENDIAN;
                 }
                 serializationConfig.setByteOrder(byteOrder != null ? byteOrder : ByteOrder.BIG_ENDIAN);

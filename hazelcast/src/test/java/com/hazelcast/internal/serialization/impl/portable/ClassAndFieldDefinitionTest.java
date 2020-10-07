@@ -19,6 +19,7 @@ package com.hazelcast.internal.serialization.impl.portable;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -194,5 +195,17 @@ public class ClassAndFieldDefinitionTest {
     @Test
     public void testFieldDef_toString() throws Exception {
         assertNotNull(new FieldDefinitionImpl(0, "name", FieldType.BOOLEAN, portableVersion).toString());
+    }
+
+    @Test(expected = HazelcastSerializationException.class)
+    public void testClassDefinitionBuilder_addingSameFieldTwice() {
+        new ClassDefinitionBuilder(1, 2, 1)
+                .addUTFField("name").addUTFField("name");
+    }
+
+    @Test(expected = HazelcastSerializationException.class)
+    public void testClassDefinitionBuilder_addingSameFieldTwice_withDifferentType() {
+        new ClassDefinitionBuilder(1, 2, 1)
+                .addUTFField("name").addIntField("name");
     }
 }
