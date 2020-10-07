@@ -408,7 +408,6 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
         switch (type) {
             case TINYINT:
             case SMALLINT:
-                return SqlTypeName.INTEGER;
             case INTEGER:
             case BIGINT:
                 return SqlTypeName.BIGINT;
