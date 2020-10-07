@@ -9,7 +9,7 @@ In this document, we describe the design of the Hazelcast Mustang query optimize
 
 ## 1 Theory
 
-In this section we describe the theoretical aspects of query optimization that forms the basis of the Hazelcast Mustang query 
+In this section we describe the theoretical aspects of query optimization that form the basis of the Hazelcast Mustang query 
 optimizer.
 
 ### 1.1 Definitions
@@ -18,7 +18,7 @@ First, we define several entities from the relational algebra. The definitions a
 relational algebra standpoint, but are sufficient for the purpose of this document. 
 
 A **tuple** is an ordered collection of triplets `[name, type, value]`. A **relation** is an unordered collection of 
-tuples. A relational **operator** is a function that takes arbitrary arguments (possibly, other operators), and produces a 
+tuples. A relational **operator** is a function that takes arbitrary arguments (possibly, other operators) and produces a 
 relation. 
 
 A **plan** is a tree of relational operators. Two plans are said to be **equivalent** if they produce the same relation for 
@@ -46,7 +46,7 @@ Otherwise, an **enforcer** operator is applied to the original operator to meet 
 In the query optimization literature, the **collation** (aka sort order) is represented as a property. The **Sort** operator is 
 a typical enforcer operator.
 
-Consider the class `Person {id:Long, name:String}` and an `IMap<Long, Person>` with two entries `[{1, "John"}, {2, "Jane}]`.
+Consider the class `Person {id:Integer, name:String}` and an `IMap<Integer, Person>` with two entries `[{1, "John"}, {2, "Jane}]`.
 Then the query below produces a relation with two tuples:
 ```sql
 SELECT id, name FROM person ORDER BY id
@@ -57,8 +57,8 @@ Sort[$0 ASC]
     Scan[person]
 ```
 ```
-{id:BIGINT:1, name:VARCHAR:"John"}
-{id:BIGINT:2, name:VARCHAR:"Jane"}
+{id:INT:1, name:VARCHAR:"John"}
+{id:INT:2, name:VARCHAR:"Jane"}
 ```
 
 Since the relation is defined as an **unordered** collection of tuples, the plan of the query below is **equivalent** to the 
@@ -72,8 +72,8 @@ Sort[$0 DESC]
     Scan[person]
 ```
 ```
-{id:BIGINT:2, name:VARCHAR:"Jane"}
-{id:BIGINT:1, name:VARCHAR:"John"}
+{id:INT:2, name:VARCHAR:"Jane"}
+{id:INT:1, name:VARCHAR:"John"}
 ```
 
 While these two plans are equivalent in the relational theory, they produce different results from the user standpoint. 
@@ -83,7 +83,7 @@ the second query has collation `[a DESC]`.
 ### 1.4 MEMO
 
 During the optimization, quite a few alternative plans could be created (thousands, millions, etc). Therefore, it is important
-to encode the search space efficiently, to prevent out-of-memory conditions. The so-called **MEMO** data structure is often used
+to encode the search space efficiently to prevent out-of-memory conditions. The so-called **MEMO** data structure is often used
 for this purpose. 
 
 A **group** is a collection of equivalent operators. When a plan is submitted for optimization, its operators are copied and 
@@ -150,8 +150,8 @@ In the original paper, the logical and physical operators are named **operators*
 The rules applied to logical operators are named **transformation rules**, while the rules applied to physical operators
 are named **implementation rules**.
 
-Initially, the optimizer accepts the operator tree, and a set of transformation rules. For every rule, a pattern
-matching is performed for the available operators. If a rule matches the given part of the operator tree, an
+Initially, the optimizer accepts an operator tree and a set of transformation rules. For every rule, a pattern
+matching is performed for the available operators. If a rule matches a part of the given operator tree, an
 instance of the rule is placed into a priority queue called **OPEN**. This way the initial queue of rule instances
 is formed.
 
@@ -160,8 +160,8 @@ execution is zero, one or more new logical operators. For every new logical oper
 are executed, possibly producing new physical operators. Newly created operators are stored in a MEMO-like data 
 structure called **MESH**. 
 
-When a new operator is created, it's cost is estimated. Since it may have better cost than previously known operators
-of the same equivalence group, it is necessarily to recalculate costs of parent operators. This step is called **reanalyzing**,
+When a new operator is created, its cost is estimated. Since it may have better cost than previously known operators
+of the same equivalence group, it is necessary to recalculate the costs of parent operators. This step is called **reanalyzing**,
 and is performed by re-execution of the implementation rules on parents. In addition to this, if a new logical operator was 
 created, there might be new possibilities for further transformations. Therefore, the transformation rule instances are 
 scheduled for execution on parent operators (i.e. added to OPEN). This step is called **rematching**.
@@ -170,9 +170,9 @@ The algorithm proceeds until OPEN is empty.
 
 The EXODUS optimizer doesn't have a strict order of rule execution. One may assign weights to rule instance to make them
 fire earlier, but generally the search is not guided - every rule instance fires independently of others. As a result, the
-same rule may fire multiple times during reanalyzing/rematching, what makes the engine inefficient.
+same rule may fire multiple times during reanalyzing/rematching, which makes the engine inefficient.
 
-Consider the following operator initial plan, and two rules - one changes the join order, and the other one attempts 
+Consider the following operator initial plan and two rules - one changes the join order, and the other attempts 
 to remove the sort operator if the input is already sorted:
 ```
 MEMO:
@@ -187,7 +187,7 @@ Once the `JOIN_COMMUTE` rule is fired, a new operator Join_BA operator is create
 ```
 MEMO:
 G1: [Sort]
-G2:   [Join_AB]
+G2:   [Join_AB, Join_BA]
 
 OPEN (pending):
 2. SORT_REMOVE[Sort, Join_AB]
@@ -196,7 +196,7 @@ OPEN (pending):
 OPEN (retired):
 1. JOIN_COMMUTE[Join_AB]
 ```
-Notice how we have to schedule the same rule `SORT_REMOVE` twice not to miss the optimization opportunity.
+Notice how we have to schedule the same rule `SORT_REMOVE` twice to not miss the optimization opportunity.
 
 #### 1.6.2 Volcano/Cascades
 
@@ -205,13 +205,13 @@ and Cascades [[3]] optimizers.
 
 The main difference that is that Volcano/Cascades uses a **guided top-down search** strategy. Operators are optimized only
 if requested explicitly by parents. Therefore, the optimizer is free to define any optimization logic it finds useful - it may 
-prune some nodes completely, perform partial optimization of a node, etc. Since a search is guided, many redundant rule calls
-could be avoided, because reanalyzing/rematching is no longer needed.
+prune some nodes completely, perform partial optimization of a node, etc. Since the search is guided, many redundant rule calls
+can be avoided, because reanalyzing/rematching is no longer needed.
 
-The guided search could be implemented either as a recursive function calls, or as a queue of tasks. In the EXODUS,
+The guided search can be implemented either as a recursive function calls, or as a queue of tasks. In EXODUS,
 the task is a rule instance, in the Cascades the queue contains optimization tasks, such as "transform this operator".
 
-Consider the similar query plan, now optimized with the Cascades approach:
+Consider a similar query plan, now optimized with the Cascades approach:
 
 ```
 MEMO:
@@ -233,7 +233,7 @@ STACK:
 -- OPTIMIZE[G1->SORT_REMOVE]
 ``` 
 
-During join optimization, the join associate rule is fired:
+During join optimization, the join commute rule is fired:
 ```
 MEMO:
 G1: [Sort]
@@ -245,13 +245,13 @@ STACK:
 
 Last, the sort elimination rule is fired on top of the already optimized `G2`.
 
-Notice, how we avoid the excessive pattern matching and rule execution due to a guided search. 
+Notice how we avoid the excessive pattern matching and rule execution due to a guided search. 
 
 The Cascades design clearly separates logical optimization (exploration) and physical optimization (implementation).
 When an unoptimized group is reached, matching transformation rules are scheduled. Then the optimization proceeds
 to group inputs, and only after that the implementation rules for the group are fired. A careful guided interleaving of 
-transformation rules, input optimization, and implementation rules ensures that a single physical plan is found as early as
-possible. Once the first (sub)plan is found, the cost of the group could be calculated. Then this cost could be used to prune 
+transformation rules, input optimizations, and of implementation rules ensures that a single physical plan is found as early as
+possible. Once the first (sub)plan is found, the cost of the group can be calculated. Then this cost can be used to prune 
 less efficient alternatives, the technique known as **branch-and-bound** pruning.
   
 The Volcano/Cascades top-down guided search is widely considered superior to EXODUS and earlier bottom-up optimization 
@@ -276,7 +276,7 @@ optimizer cannot guarantee the optimal plan, we use cost-based `VolcanoPlanner`.
 
 ### 2.1 Operators and Rules
 
-The operator abstraction is defined in the `RelNode` interface. The operator may have zero or more inputs, and a set of 
+The operator abstraction is defined in the `RelNode` interface. The operator may have zero or more inputs and a set of 
 properties encoded in the `RelTraitSet` data structure:
 ```java
 interface RelNode {
@@ -295,8 +295,8 @@ abstract class RelNode {
 ### 2.2 Traits
 
 The operator may have a custom property, defined by the `RelTrait` interface. Example property is collation (sort order).
-Every `RelTrait` has a relevant `RelTraitDef` instance, that defines whether two traits of the same type satisfies one 
-another. For example, `[a ASC, b ASC]` satisfies `[a ASC]`, but not the vice versa.
+Every `RelTrait` has a relevant `RelTraitDef` instance, that defines whether two traits of the same type satisfy one 
+another. For example, `[a ASC, b ASC]` satisfies `[a ASC]`, but not vice versa.
 
 Apache Calcite comes with two built-in traits:
 - `RelCollation` - collation
@@ -316,7 +316,7 @@ assign non-infinite costs to `NONE` nodes.
 Apache Calcite is meant to execute federated queries, such as `SELECT * FROM cassandra.table1 JOIN druid.table2`.
 In addition, Apache Calcite comes with a couple of execution backends, `Enumerable` (interpreter) and `Bindable` (compiler).
 Therefore, the original motivation for the `Convention` trait was to define the execution backend for the operator. For example,
-for the query `SELECT * FROM cassandra.table1 JOIN druid.table2 WHERE table1.field = 1`, the plan after parsing will look like:
+for the query `SELECT * FROM cassandra.table1 JOIN druid.table2 WHERE table1.field = 1`, the plan after parsing will look like
 ```
 Filter[NONE](table1.field = 1)
   Join[NONE]
@@ -333,7 +333,7 @@ Join[BINDABLE]
   Table[DRUID](table2)
 ```
 
-Or we may try to push the filter down to the Cassandra database, this reducing the number of rows returned to the local process. 
+Or we may try to push the filter down to the Cassandra database, thus reducing the number of rows returned to the local process. 
 To do this, we set the `CASSANDRA` convention to the filter node, so that the executor understands that it should be passed to 
 the database, rather than be processed locally: 
 ```
@@ -346,7 +346,7 @@ Join[BINDABLE]
 Note that the `Convention` is merely an opaque marker that is used during the planning process. It is up to the execution
 backend to decide how to deal with the marker.
 
-Many products that integrated Apache Calcite, uses the `Convention` to distinguish between logical and physical operators. 
+Many products that integrated Apache Calcite use the `Convention` to distinguish between logical and physical operators. 
 
 ### 2.3 Memoization
 
@@ -356,9 +356,9 @@ operators are further grouped by their physical properties into one or more `Rel
 For example, the join equivalence group might look like this:
 ```
 RelSet#1 {
-    RelSubset#1: [convention=LOGICAL, collation=NONE] -> LogicalJoin(AXB), LogicalJoin(BxA)
-    RelSubset#2: [convention=PHYSICAL, collation=NONE] -> HashJoin(AXB), HashJoin(BxA)
-    RelSubset#3: [convention=PHYSICAL, collation={A.a ASC}] -> MergeJoin(AXB)
+    RelSubset#1: [convention=LOGICAL, collation=NONE] -> LogicalJoin(AxB), LogicalJoin(BxA)
+    RelSubset#2: [convention=PHYSICAL, collation=NONE] -> HashJoin(AxB), HashJoin(BxA)
+    RelSubset#3: [convention=PHYSICAL, collation={A.a ASC}] -> MergeJoin(AxB)
 }
 ```
   
@@ -672,7 +672,7 @@ The table below summarizes how the ROOT distribution is enforced.
 | `PARTITIONED` | No-op, if there is only one member in the topology. Otherwise, inject `RootExchangePhysicalRel` on top of the child |
 | `REPLICATED` | No-op, the child operator is already located on all members, including the initiator |
 
-Below is the example of the distribution enforcement for the simple logical plan:
+Below is the example of the distribution enforcement for a simple logical plan:
 ```
 LOGICAL:
 RootLogicalRel                      // Return to the user from the initiator
@@ -706,9 +706,9 @@ integration with the Apache Calcite as follows:
 `PHYSICAL` convention we override a couple of methods (see `HazelcastConventions.PHYSICAL`) that roughly forces the optimizer
 to do the following: when a new `PHYSICAL` node is created, force re-optimization of the `LOGICAL` parent. This way, whenever a 
 new `PHYSICAL` node is added to MEMO, the rules for the `LOGICAL` parent node is added to the execution queue. 
-1. Optimization rules for the intermediate nodes (i.e. not leaves, and not root) follow the similar pattern: get the input's 
+1. Optimization rules for intermediate nodes (i.e., not leaves, and not root) follow a similar pattern: get the input's 
 `RelSet`, extract all `RelSubset`-s with `PHYSICAL` convention, and create one intermediate physical node per `RelSubset`. This
-way we ensure that all possibly interesting properties of the current group is propagated to parent groups.
+way we ensure that all possibly interesting properties of the current group are propagated to parent groups.
 
 Note that this algorithm uses the optimistic approach: we create intermediate physical nodes for every possible
 combination of physical properties, assuming it will help parents find better plans. For complex plans, this may
@@ -748,7 +748,7 @@ RootPhysicalRel[ROOT]               // Return to the user from the initiator
     MapScanPhysicalRel[PARTITIONED] // Scan an IMap on all nodes
 ```
 
-After the split it is converted into the plan with two fragments:
+After the split it is converted into a plan with two fragments:
 ```
 FRAGMENT 1:
 RootPlanNode                       // Return to the user from the initiator
@@ -760,7 +760,7 @@ RootSendPlanNode[edge=1]           // Send results to the initiator
 ```
 
 The split logic is located in the `PlanCreateVisitor` class. The result is the `Plan` object, that doesn't depend
-on the Apache Calcite, and could be sent to other nodes for execution. 
+on Apache Calcite, and can be sent to other nodes for execution. 
 
 [1]: https://dl.acm.org/doi/10.1145/38713.38734 "The EXODUS optimizer generator"
 [2]: https://dl.acm.org/doi/10.5555/645478.757691 "The Volcano Optimizer Generator: Extensibility and Efficient Search"
