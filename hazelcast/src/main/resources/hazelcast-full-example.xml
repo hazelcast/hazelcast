@@ -553,8 +553,8 @@
             </properties>
         </ssl>
         * <socket-interceptor>:
-        Lets you add custom hooks to join and perform connection procedures (like identity checking using
-        Kerberos, etc.). This feature is available only in Hazelcast Enterprise. To be able to use it, you
+        Lets you add custom hooks to join and perform connection procedures (like a custom authentication negotiation
+        protocol, etc.). This feature is available only in Hazelcast Enterprise. To be able to use it, you
         should first implement the MemberSocketInterceptor (for members joining to a cluster) or
         SocketInterceptor (for clients connecting to a member) class. Its configuration contains the class you
         implemented and socket interceptor properties. By default, it is disabled. The following is an example:
@@ -563,8 +563,8 @@
                 com.hazelcast.examples.MySocketInterceptor
             </class-name>
             <properties>
-                <property name="kerberos-host">kerb-host-name</property>
-                <property name="kerberos-config-file">kerb.conf</property>
+                <property name="property1">value1</property>
+                <property name="property2">value2</property>
             </properties>
         </socket-interceptor>
         * <symmetric-encryption>:
@@ -2321,6 +2321,21 @@
                     </kerberos>
                 </identity>
             </realm>
+            <realm name="simpleKerberosRealm">
+                <authentication>
+                    <kerberos>
+                        <principal>hz/127.0.0.1@HAZELCAST.COM</principal>
+                        <keytab-file>/opt/localhost.keytab</keytab-file>
+                    </kerberos>
+                </authentication>
+                <identity>
+                    <kerberos>
+                        <realm>HAZELCAST.COM</realm>
+                        <principal>hz/127.0.0.1@HAZELCAST.COM</principal>
+                        <keytab-file>/opt/localhost.keytab</keytab-file>
+                    </kerberos>
+                </identity>
+            </realm>
             <realm name="krb5Acceptor">
                 <authentication>
                     <jaas>
@@ -2958,8 +2973,8 @@
                     </properties>
                 </ssl>
             * <socket-interceptor>:
-                Lets you add custom hooks to join and perform connection procedures (like identity checking using
-                Kerberos, etc.). This feature is available only in Hazelcast Enterprise. To be able to use it, you
+                Lets you add custom hooks to join and perform connection procedures (like a custom authentication negotiation
+                protocol, etc.). This feature is available only in Hazelcast Enterprise. To be able to use it, you
                 should first implement the MemberSocketInterceptor (for members joining to a cluster) or
                 SocketInterceptor (for clients connecting to a member) class. Its configuration contains the class you
                 implemented and socket interceptor properties. By default, it is disabled. The following is an example:
@@ -2968,8 +2983,8 @@
                         com.hazelcast.examples.MySocketInterceptor
                     </class-name>
                     <properties>
-                        <property name="kerberos-host">kerb-host-name</property>
-                        <property name="kerberos-config-file">kerb.conf</property>
+                        <property name="property1">value1</property>
+                        <property name="property2">value2</property>
                     </properties>
                 </socket-interceptor>
             * <symmetric-encryption>:

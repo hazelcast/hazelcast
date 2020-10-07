@@ -290,7 +290,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private void securityRealmGenerator(XmlGenerator gen, String name, RealmConfig c) {
+    protected void securityRealmGenerator(XmlGenerator gen, String name, RealmConfig c) {
         gen.open("realm", "name", name);
         if (c.isAuthenticationConfigured()) {
             gen.open("authentication");
@@ -365,7 +365,9 @@ public class ConfigXmlGenerator {
         addClusterLoginElements(kerberosGen, c)
                 .nodeIfContents("relax-flags-check", c.getRelaxFlagsCheck())
                 .nodeIfContents("use-name-without-realm", c.getUseNameWithoutRealm())
-                .nodeIfContents("security-realm", c.getSecurityRealm());
+                .nodeIfContents("security-realm", c.getSecurityRealm())
+                .nodeIfContents("keytab-file", c.getKeytabFile())
+                .nodeIfContents("principal", c.getPrincipal());
         ldapAuthenticationGenerator(kerberosGen, c.getLdapAuthenticationConfig());
         kerberosGen.close();
     }
@@ -377,6 +379,8 @@ public class ConfigXmlGenerator {
         gen.open("kerberos")
                 .nodeIfContents("realm", c.getRealm())
                 .nodeIfContents("security-realm", c.getSecurityRealm())
+                .nodeIfContents("keytab-file", c.getKeytabFile())
+                .nodeIfContents("principal", c.getPrincipal())
                 .nodeIfContents("service-name-prefix", c.getServiceNamePrefix())
                 .nodeIfContents("spn", c.getSpn())
                 .nodeIfContents("use-canonical-hostname", c.getUseCanonicalHostname())
@@ -1728,7 +1732,7 @@ public class ConfigXmlGenerator {
         gen.node("memcache-protocol", null, "enabled", c.isEnabled());
     }
 
-    private String format(String input, int indent) {
+    protected String format(String input, int indent) {
         if (!formatted) {
             return input;
         }

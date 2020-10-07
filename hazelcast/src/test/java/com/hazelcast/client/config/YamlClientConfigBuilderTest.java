@@ -414,6 +414,8 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "  security:\n"
                 + "    kerberos:\n"
                 + "      realm: HAZELCAST.COM\n"
+                + "      principal: jduke\n"
+                + "      keytab-file: /opt/jduke.keytab\n"
                 + "      security-realm: krb5Initiator\n"
                 + "      service-name-prefix: hz/\n"
                 + "      use-canonical-hostname: true\n"
@@ -423,6 +425,8 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         KerberosIdentityConfig identityConfig = config.getSecurityConfig().getKerberosIdentityConfig();
         assertNotNull(identityConfig);
         assertEquals("HAZELCAST.COM", identityConfig.getRealm());
+        assertEquals("jduke", identityConfig.getPrincipal());
+        assertEquals("/opt/jduke.keytab", identityConfig.getKeytabFile());
         assertEquals("krb5Initiator", identityConfig.getSecurityRealm());
         assertEquals("hz/", identityConfig.getServiceNamePrefix());
         assertTrue(identityConfig.getUseCanonicalHostname());

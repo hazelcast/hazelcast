@@ -64,6 +64,7 @@ import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
@@ -197,6 +198,11 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         hz1.getCluster().promoteLocalLiteMember();
 
         assertPartitionsAssignedEventually(hz1);
+        waitAllForSafeState(hz1, hz2, hz3);
+
+        long partitionStamp = getPartitionService(hz1).getPartitionStateStamp();
+        assertEquals(partitionStamp, getPartitionService(hz2).getPartitionStateStamp());
+        assertEquals(partitionStamp, getPartitionService(hz3).getPartitionStateStamp());
     }
 
     @Test
@@ -213,6 +219,12 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         hz2.getCluster().promoteLocalLiteMember();
 
         assertPartitionsAssignedEventually(hz2);
+
+        waitAllForSafeState(hz1, hz2, hz3);
+
+        long partitionStamp = getPartitionService(hz1).getPartitionStateStamp();
+        assertEquals(partitionStamp, getPartitionService(hz2).getPartitionStateStamp());
+        assertEquals(partitionStamp, getPartitionService(hz3).getPartitionStateStamp());
     }
 
     @Test

@@ -19,14 +19,15 @@ package com.hazelcast.topic.impl;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.MessageListener;
-import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import java.util.UUID;
@@ -37,6 +38,8 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
     private final ClassLoader configClassLoader;
     private final TopicService topicService;
     private final LocalTopicStatsImpl topicStats;
+    private final OperationService operationService;
+    private final int partitionId;
     private boolean multithreaded;
 
     public TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
@@ -45,6 +48,8 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
         this.configClassLoader = nodeEngine.getConfigClassLoader();
         this.topicService = service;
         this.topicStats = topicService.getLocalTopicStats(name);
+        this.operationService = nodeEngine.getOperationService();
+        this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
     @Override
@@ -96,8 +101,8 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
      * @param message the message to be published
      */
     public void publishInternal(@Nonnull Object message) {
-        topicStats.incrementPublishes();
         topicService.publishMessage(name, message, multithreaded);
+        topicStats.incrementPublishes();
     }
 
     public @Nonnull

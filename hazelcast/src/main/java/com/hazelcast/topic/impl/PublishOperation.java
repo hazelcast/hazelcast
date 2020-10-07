@@ -58,7 +58,7 @@ public class PublishOperation extends AbstractNamedOperation
      * @throws Exception
      */
     @Override
-    public void beforeRun() throws Exception {
+    public void afterRun() throws Exception {
         TopicService service = getService();
         service.incrementPublishes(name);
     }
@@ -78,6 +78,7 @@ public class PublishOperation extends AbstractNamedOperation
             lock.unlock();
         }
     }
+
 
     @Override
     public int getFactoryId() {

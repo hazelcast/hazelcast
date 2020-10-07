@@ -457,6 +457,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
             if (node.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
                 long stamp = partitionStateManager.getStamp();
+                assert calculateStamp(partitions) == stamp : "Invalid partition stamp! Expected: "
+                        + calculateStamp(partitions) + ", Actual: " + stamp;
                 state = new PartitionRuntimeState(partitions, completedMigrations, stamp);
             } else {
                 //RU_COMPAT_4_0
@@ -635,6 +637,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             return false;
         }
 
+        assert calculateStamp(partitionState.getPartitions()) == partitionState.getStamp() : "Invalid partition stamp! Expected: "
+                + calculateStamp(partitionState.getPartitions()) + ", Actual: " + partitionState.getStamp();
+
         if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
             return applyNewPartitionTable(partitionState.getPartitions(), partitionState.getCompletedMigrations(), sender);
         } else {
@@ -809,11 +814,19 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                 migrationManager.scheduleActiveMigrationFinalization(migration);
             }
         }
+
+        // Manually trigger partition stamp calculation.
+        // Because partition versions are explicitly set to master's versions
+        // while applying the partition table updates.
+        partitionStateManager.updateStamp();
+
         if (logger.isFineEnabled()) {
             if (applied) {
-                logger.fine("Applied partition state update with stamp: " + calculateStamp(partitions));
+                logger.fine("Applied partition state update with stamp: " + calculateStamp(partitions)
+                        + ", Local stamp is: " + partitionStateManager.getStamp());
             } else {
-                logger.fine("Already applied partition state update with stamp: " + calculateStamp(partitions));
+                logger.fine("Already applied partition state update with stamp: " + calculateStamp(partitions)
+                        + ", Local stamp is: " + partitionStateManager.getStamp());
             }
         }
         migrationManager.retainCompletedMigrations(completedMigrations);
@@ -836,10 +849,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     private void updatePartitionsAndFinalizeMigrationsLegacy(InternalPartition[] partitions,
             int version, Collection<MigrationInfo> completedMigrations) {
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            InternalPartition partition = partitions[partitionId];
-            partitionStateManager.updateReplicas(partitionId, partition);
+            InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
+            partition.setReplicasAndVersion(partitions[partitionId]);
         }
 
+        partitionStateManager.updateStamp();
         partitionStateManager.setVersion(version);
 
         for (MigrationInfo migration : completedMigrations) {
@@ -908,7 +922,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                     applyMigration(partition, migration);
                 } else {
                     // migration failed...
-                    partition.incrementVersion(migration.getPartitionVersionIncrement());
+                    int increment = migration.getPartitionVersionIncrement();
+                    partitionStateManager.incrementPartitionVersion(partition.getPartitionId(), increment);
                 }
                 migrationManager.scheduleActiveMigrationFinalization(migration);
             }

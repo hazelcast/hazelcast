@@ -253,7 +253,7 @@ public class QueryResultSizeLimiterTest {
         MapServiceContext mapServiceContext = mock(MapServiceContext.class);
         when(mapServiceContext.getNodeEngine()).thenReturn(nodeEngine);
         when(mapServiceContext.getRecordStore(anyInt(), anyString())).thenReturn(recordStore);
-        when(mapServiceContext.getOwnedPartitions()).thenReturn(new PartitionIdSet(PARTITION_COUNT, localPartitions.keySet()));
+        when(mapServiceContext.getOrInitCachedMemberPartitions()).thenReturn(new PartitionIdSet(PARTITION_COUNT, localPartitions.keySet()));
 
         limiter = new QueryResultSizeLimiter(mapServiceContext, Logger.getLogger(QueryResultSizeLimiterTest.class));
     }

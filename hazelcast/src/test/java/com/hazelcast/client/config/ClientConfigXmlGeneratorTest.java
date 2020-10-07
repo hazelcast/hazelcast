@@ -335,6 +335,8 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         KerberosIdentityConfig identityConfig = new KerberosIdentityConfig()
                 .setRealm("realm")
                 .setSecurityRealm("security-realm")
+                .setPrincipal("jduke")
+                .setKeytabFile("/opt/keytab")
                 .setServiceNamePrefix("prefix")
                 .setSpn("spn");
         RealmConfig realmConfig = new RealmConfig().setJaasAuthenticationConfig(new JaasAuthenticationConfig()

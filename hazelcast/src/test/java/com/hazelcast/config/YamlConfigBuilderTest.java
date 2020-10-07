@@ -204,12 +204,16 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            relax-flags-check: true\n"
                 + "            use-name-without-realm: true\n"
                 + "            security-realm: krb5Acceptor\n"
+                + "            principal: jduke@HAZELCAST.COM\n"
+                + "            keytab-file: /opt/jduke.keytab\n"
                 + "            ldap:\n"
                 + "              url: ldap://127.0.0.1\n"
                 + "        identity:\n"
                 + "          kerberos:\n"
                 + "            realm: HAZELCAST.COM\n"
                 + "            security-realm: krb5Initializer\n"
+                + "            principal: jduke@HAZELCAST.COM\n"
+                + "            keytab-file: /opt/jduke.keytab\n"
                 + "            use-canonical-hostname: true\n"
                 + "    client-permission-policy:\n"
                 + "      class-name: MyPermissionPolicy\n"
@@ -270,6 +274,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertNotNull(kerbIdentity);
         assertEquals("HAZELCAST.COM", kerbIdentity.getRealm());
         assertEquals("krb5Initializer", kerbIdentity.getSecurityRealm());
+        assertEquals("jduke@HAZELCAST.COM", kerbIdentity.getPrincipal());
+        assertEquals("/opt/jduke.keytab", kerbIdentity.getKeytabFile());
         assertTrue(kerbIdentity.getUseCanonicalHostname());
 
         KerberosAuthenticationConfig kerbAuthentication = kerberosRealm.getKerberosAuthenticationConfig();
@@ -278,6 +284,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(Boolean.FALSE, kerbAuthentication.getSkipRole());
         assertNull(kerbAuthentication.getSkipIdentity());
         assertEquals("krb5Acceptor", kerbAuthentication.getSecurityRealm());
+        assertEquals("jduke@HAZELCAST.COM", kerbAuthentication.getPrincipal());
+        assertEquals("/opt/jduke.keytab", kerbAuthentication.getKeytabFile());
         assertTrue(kerbAuthentication.getUseNameWithoutRealm());
 
         LdapAuthenticationConfig kerbLdapAuthentication = kerbAuthentication.getLdapAuthenticationConfig();

@@ -46,7 +46,9 @@ import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
 import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.hamcrest.Matchers.empty;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
@@ -97,6 +99,9 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(2, instances[2]);
         assertAllPartitionsAreAssigned(instances[2], 1);
+
+        assertEquals(getPartitionService(instances[1]).getPartitionStateStamp(),
+                getPartitionService(instances[2]).getPartitionStateStamp());
     }
 
     @Test
@@ -166,6 +171,11 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
         for (HazelcastInstance instance : newInstances) {
             assertClusterSizeEventually(newInstances.length, instance);
             assertAllPartitionsAreAssigned(instance, newInstances.length);
+        }
+
+        long partitionStamp = getPartitionService(newInstances[0]).getPartitionStateStamp();
+        for (HazelcastInstance instance : newInstances) {
+            assertEquals(partitionStamp, getPartitionService(instance).getPartitionStateStamp());
         }
     }
 

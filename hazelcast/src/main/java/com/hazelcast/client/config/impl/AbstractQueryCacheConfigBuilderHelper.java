@@ -60,32 +60,29 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
     }
 
     protected void populateQueryCacheConfig(QueryCacheConfig queryCacheConfig,
-                                            Node childNode, String textContent, String nodeName) {
+                                            Node childNode, String nodeName) {
+
         if (matches("entry-listeners", nodeName)) {
             handleEntryListeners(queryCacheConfig, childNode);
         } else if (matches("include-value", nodeName)) {
-            boolean includeValue = getBooleanValue(textContent);
+            boolean includeValue = getBooleanValue(getTextContent(childNode));
             queryCacheConfig.setIncludeValue(includeValue);
         } else if (matches("batch-size", nodeName)) {
-            int batchSize = getIntegerValue("batch-size", textContent.trim()
-            );
+            int batchSize = getIntegerValue("batch-size", getTextContent(childNode));
             queryCacheConfig.setBatchSize(batchSize);
         } else if (matches("buffer-size", nodeName)) {
-            int bufferSize = getIntegerValue("buffer-size", textContent.trim()
-            );
+            int bufferSize = getIntegerValue("buffer-size", getTextContent(childNode));
             queryCacheConfig.setBufferSize(bufferSize);
         } else if (matches("delay-seconds", nodeName)) {
-            int delaySeconds = getIntegerValue("delay-seconds", textContent.trim()
-            );
+            int delaySeconds = getIntegerValue("delay-seconds", getTextContent(childNode));
             queryCacheConfig.setDelaySeconds(delaySeconds);
         } else if (matches("in-memory-format", nodeName)) {
-            String value = textContent.trim();
-            queryCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
+            queryCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(getTextContent(childNode))));
         } else if (matches("coalesce", nodeName)) {
-            boolean coalesce = getBooleanValue(textContent);
+            boolean coalesce = getBooleanValue(getTextContent(childNode));
             queryCacheConfig.setCoalesce(coalesce);
         } else if (matches("populate", nodeName)) {
-            boolean populate = getBooleanValue(textContent);
+            boolean populate = getBooleanValue(getTextContent(childNode));
             queryCacheConfig.setPopulate(populate);
         } else if (matches("indexes", nodeName)) {
             queryCacheIndexesHandle(childNode, queryCacheConfig);
@@ -131,9 +128,8 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
         String mapName = getCacheMapName(attrs);
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
         for (Node childNode : childElements(queryCacheNode)) {
-            String textContent = getTextContent(childNode);
             String nodeName = cleanNodeName(childNode);
-            populateQueryCacheConfig(queryCacheConfig, childNode, textContent, nodeName);
+            populateQueryCacheConfig(queryCacheConfig, childNode, nodeName);
         }
         clientConfig.addQueryCacheConfig(mapName, queryCacheConfig);
     }

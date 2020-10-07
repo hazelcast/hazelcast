@@ -26,7 +26,6 @@ import com.hazelcast.logging.Logger;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.config.override.PropertiesToNodeConverter.propsToNode;
 import static java.lang.String.format;
@@ -41,12 +40,12 @@ public class ExternalConfigurationOverride {
     private static final ILogger LOGGER = Logger.getLogger(ExternalConfigurationOverride.class);
 
     public Config overwriteMemberConfig(Config config) {
-        return overwrite(config, (provider, c) -> {
+        return overwrite(config, (provider, rootNode, target) -> {
               try {
-                  new YamlMemberDomConfigProcessor(true, c, false)
-                    .buildConfig(new ConfigOverrideElementAdapter(propsToNode(provider.properties())));
+                  new YamlMemberDomConfigProcessor(true, target, false)
+                    .buildConfig(new ConfigOverrideElementAdapter(rootNode));
               } catch (Exception e) {
-                  throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider.name(), e);
+                  throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider, e);
               }
           },
           new EnvConfigProvider(EnvVariablesConfigParser.member()),
@@ -54,34 +53,51 @@ public class ExternalConfigurationOverride {
     }
 
     public ClientConfig overwriteClientConfig(ClientConfig config) {
-        return overwrite(config, (provider, c) -> {
+        return overwrite(config, (provider, rootNode, target) -> {
               try {
-                  new YamlClientDomConfigProcessor(true, c, false)
-                    .buildConfig(new ConfigOverrideElementAdapter(propsToNode(provider.properties())));
+                  new YamlClientDomConfigProcessor(true, target, false)
+                    .buildConfig(new ConfigOverrideElementAdapter(rootNode));
               } catch (Exception e) {
-                  throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider.name(), e);
+                  throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider, e);
               }
           },
           new EnvConfigProvider(EnvVariablesConfigParser.client()),
           new SystemPropertiesConfigProvider(SystemPropertiesConfigParser.client()));
     }
 
-    private <T> T overwrite(T config, BiConsumer<ConfigProvider, T> configProcessor, ConfigProvider... providers) {
+    private <T> T overwrite(T config, ConfigConsumer<T> configProcessor, ConfigProvider... providers) {
         ConfigOverrideValidator.validate(new HashSet<>(Arrays.asList(providers)));
 
         for (ConfigProvider configProvider : providers) {
             Map<String, String> properties = configProvider.properties();
 
             if (!properties.isEmpty()) {
-                LOGGER.info(format("Detected external configuration overrides in %s: [%s]",
+
+                ConfigNode rootNode = propsToNode(properties);
+                configProcessor.apply(configProvider.name(), rootNode, config);
+
+                Map<String, String> unprocessed = new ConfigNodeStateTracker().unprocessedNodes(rootNode);
+
+                LOGGER.info(format("Detected external configuration entries in %s: [%s]",
                   configProvider.name(),
                   properties.entrySet().stream()
+                    .filter(e -> !unprocessed.containsKey(e.getKey()))
                     .map(e -> e.getKey() + "=" + e.getValue())
                     .collect(joining(","))));
-                configProcessor.accept(configProvider, config);
+
+                if (!unprocessed.isEmpty()) {
+                    LOGGER.warning(format("Unrecognized %s configuration entries: %s",
+                      configProvider.name(),
+                      unprocessed.keySet()));
+                }
             }
         }
 
         return config;
+    }
+
+    @FunctionalInterface
+    interface ConfigConsumer<T> {
+        void apply(String providerName, ConfigNode config, T target);
     }
 }

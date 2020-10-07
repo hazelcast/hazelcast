@@ -17,9 +17,11 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -54,13 +56,21 @@ public class ClientMapLockTest {
 
     @Before
     public void setup() {
-        hazelcastFactory.newHazelcastInstance();
+        Config config = new Config();
+        config.setProperty(ClusterProperty.LOCK_MAX_LEASE_TIME_SECONDS.getName(), String.valueOf(Long.MAX_VALUE / 1000));
+        hazelcastFactory.newHazelcastInstance(config);
         client = hazelcastFactory.newHazelcastClient();
     }
 
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
+    }
+
+    @Test
+    public void testTryLock() {
+        IMap map = client.getMap(randomString());
+        assertTrue(map.tryLock("key"));
     }
 
     @Test(expected = NullPointerException.class)
