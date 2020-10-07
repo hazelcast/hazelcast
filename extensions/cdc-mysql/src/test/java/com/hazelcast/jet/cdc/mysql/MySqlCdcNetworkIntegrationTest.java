@@ -33,6 +33,7 @@ import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -57,7 +58,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -93,6 +93,8 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
     @Parameter(value = 2)
     public String testName;
 
+    private MySQLContainer<?> mysql;
+
     @Parameters(name = "{2}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
@@ -112,11 +114,19 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
         assertEquals("true", System.getenv("TESTCONTAINERS_RYUK_DISABLED"));
     }
 
+    @After
+    public void after() {
+        if (mysql != null) {
+            stopContainer(mysql);
+        }
+    }
+
     @Test
     public void when_noDatabaseToConnectTo() throws Exception {
-        MySQLContainer<?> mysql = initMySql(null, 0);
+        mysql = initMySql(null, 0);
         String containerIpAddress = mysql.getContainerIpAddress();
         stopContainer(mysql);
+        mysql = null;
 
         int port = findRandomOpenPortInRange(MYSQL_PORT + 100, MYSQL_PORT + 1000);
 
@@ -144,7 +154,6 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
                 assertEquals(RUNNING, job.getStatus());
             } finally {
                 abortJob(job);
-                stopContainer(mysql);
             }
         }
     }
@@ -155,46 +164,9 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
                 Network network = initNetwork();
                 ToxiproxyContainer toxiproxy = initToxiproxy(network);
         ) {
-            MySQLContainer<?> mysql = initMySql(network, null);
-            try {
-                ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, mysql);
-                Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
-                // when job starts
-                JetInstance jet = createJetMembers(2)[0];
-                Job job = jet.newJob(pipeline);
-                assertJobStatusEventually(job, RUNNING);
-
-                // and snapshotting is ongoing (we have no exact way of identifying
-                // the moment, but random sleep will catch it at least some of the time)
-                TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(0, 500));
-
-                // and connection is cut
-                proxy.setConnectionCut(true);
-
-                // and some time passes
-                SECONDS.sleep(2 * MILLISECONDS.toSeconds(RECONNECT_INTERVAL_MS));
-
-                // and connection recovers
-                proxy.setConnectionCut(false);
-
-                // then connector manages to reconnect and finish snapshot
-                try {
-                    assertEqualsEventually(() -> jet.getMap("results").size(), 4);
-                } finally {
-                    abortJob(job);
-                }
-            } finally {
-                stopContainer(mysql);
-            }
-        }
-    }
-
-    @Test
-    public void when_databaseShutdownDuringSnapshotting() throws Exception {
-        int port = findRandomOpenPort();
-        MySQLContainer<?> mysql = initMySql(null, port);
-        Pipeline pipeline = initPipeline(mysql.getContainerIpAddress(), port);
-        try {
+            mysql = initMySql(network, null);
+            ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, mysql);
+            Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
             // when job starts
             JetInstance jet = createJetMembers(2)[0];
             Job job = jet.newJob(pipeline);
@@ -202,31 +174,58 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
             // and snapshotting is ongoing (we have no exact way of identifying
             // the moment, but random sleep will catch it at least some of the time)
-            TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(100, 500));
+            MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(0, 500));
 
-            // and DB is stopped
-            stopContainer(mysql);
-            mysql = null;
+            // and connection is cut
+            proxy.setConnectionCut(true);
 
-            boolean neverReconnect = reconnectBehavior.getMaxAttempts() == 0;
-            if (neverReconnect) {
-                // then job fails
-                assertJobFailsWithConnectException(job, true);
-            } else {
-                // and DB is started anew
-                mysql = initMySql(null, port);
+            // and some time passes
+            MILLISECONDS.sleep(2 * RECONNECT_INTERVAL_MS);
 
-                // then snapshotting finishes successfully
-                try {
-                    assertEqualsEventually(() -> jet.getMap("results").size(), 4);
-                    assertEquals(RUNNING, job.getStatus());
-                } finally {
-                    abortJob(job);
-                }
+            // and connection recovers
+            proxy.setConnectionCut(false);
+
+            // then connector manages to reconnect and finish snapshot
+            try {
+                assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+            } finally {
+                abortJob(job);
             }
-        } finally {
-            if (mysql != null) {
-                stopContainer(mysql);
+        }
+    }
+
+    @Test
+    public void when_databaseShutdownDuringSnapshotting() throws Exception {
+        int port = findRandomOpenPort();
+        mysql = initMySql(null, port);
+        Pipeline pipeline = initPipeline(mysql.getContainerIpAddress(), port);
+        // when job starts
+        JetInstance jet = createJetMembers(2)[0];
+        Job job = jet.newJob(pipeline);
+        assertJobStatusEventually(job, RUNNING);
+
+        // and snapshotting is ongoing (we have no exact way of identifying
+        // the moment, but random sleep will catch it at least some of the time)
+        MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(100, 500));
+
+        // and DB is stopped
+        stopContainer(mysql);
+        mysql = null;
+
+        boolean neverReconnect = reconnectBehavior.getMaxAttempts() == 0;
+        if (neverReconnect) {
+            // then job fails
+            assertJobFailsWithConnectException(job, true);
+        } else {
+            // and DB is started anew
+            mysql = initMySql(null, port);
+
+            // then snapshotting finishes successfully
+            try {
+                assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+                assertEquals(RUNNING, job.getStatus());
+            } finally {
+                abortJob(job);
             }
         }
     }
@@ -237,48 +236,9 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
                 Network network = initNetwork();
                 ToxiproxyContainer toxiproxy = initToxiproxy(network);
         ) {
-            MySQLContainer<?> mysql = initMySql(network, null);
-            try {
-                ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, mysql);
-                Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
-                // when connector is up and transitions to binlog reading
-                JetInstance jet = createJetMembers(2)[0];
-                Job job = jet.newJob(pipeline);
-                assertEqualsEventually(() -> jet.getMap("results").size(), 4);
-                SECONDS.sleep(3);
-                insertRecords(mysql, 1005);
-                assertEqualsEventually(() -> jet.getMap("results").size(), 5);
-
-                // and the connection is cut
-                proxy.setConnectionCut(true);
-
-                // and some new events get generated in the DB
-                insertRecords(mysql, 1006, 1007);
-
-                // and some time passes
-                TimeUnit.MILLISECONDS.sleep(2 * RECONNECT_INTERVAL_MS);
-
-                // and the connection is re-established
-                proxy.setConnectionCut(false);
-
-                // then the connector catches up
-                try {
-                    assertEqualsEventually(() -> jet.getMap("results").size(), 7);
-                } finally {
-                    abortJob(job);
-                }
-            } finally {
-                stopContainer(mysql);
-            }
-        }
-    }
-
-    @Test
-    public void when_databaseShutdownDuringBinlogReading() throws Exception {
-        int port = findRandomOpenPort();
-        MySQLContainer<?> mysql = initMySql(null, port);
-        Pipeline pipeline = initPipeline(mysql.getContainerIpAddress(), port);
-        try {
+            mysql = initMySql(network, null);
+            ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, mysql);
+            Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
             // when connector is up and transitions to binlog reading
             JetInstance jet = createJetMembers(2)[0];
             Job job = jet.newJob(pipeline);
@@ -287,39 +247,68 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             insertRecords(mysql, 1005);
             assertEqualsEventually(() -> jet.getMap("results").size(), 5);
 
-            // and DB is stopped
-            stopContainer(mysql);
-            mysql = null;
+            // and the connection is cut
+            proxy.setConnectionCut(true);
 
-            boolean neverReconnect = reconnectBehavior.getMaxAttempts() == 0;
-            if (neverReconnect) {
-                // then job fails
-                assertJobFailsWithConnectException(job, true);
-            } else {
-                // and results are cleared
-                jet.getMap("results").clear();
-                assertEqualsEventually(() -> jet.getMap("results").size(), 0);
+            // and some new events get generated in the DB
+            insertRecords(mysql, 1006, 1007);
 
-                // and DB is started anew
-                mysql = initMySql(null, port);
-                insertRecords(mysql, 1005, 1006, 1007);
+            // and some time passes
+            MILLISECONDS.sleep(2 * RECONNECT_INTERVAL_MS);
 
-                try {
-                    if (resetStateOnReconnect) {
-                        // then job keeps running, connector starts freshly, including snapshotting
-                        assertEqualsEventually(() -> jet.getMap("results").size(), 7);
-                        assertEquals(RUNNING, job.getStatus());
-                    } else {
-                        assertEqualsEventually(() -> jet.getMap("results").size(), 2);
-                        assertEquals(RUNNING, job.getStatus());
-                    }
-                } finally {
-                    abortJob(job);
-                }
+            // and the connection is re-established
+            proxy.setConnectionCut(false);
+
+            // then the connector catches up
+            try {
+                assertEqualsEventually(() -> jet.getMap("results").size(), 7);
+            } finally {
+                abortJob(job);
             }
-        } finally {
-            if (mysql != null) {
-                stopContainer(mysql);
+        }
+    }
+
+    @Test
+    public void when_databaseShutdownDuringBinlogReading() throws Exception {
+        int port = findRandomOpenPort();
+        mysql = initMySql(null, port);
+        Pipeline pipeline = initPipeline(mysql.getContainerIpAddress(), port);
+        // when connector is up and transitions to binlog reading
+        JetInstance jet = createJetMembers(2)[0];
+        Job job = jet.newJob(pipeline);
+        assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+        SECONDS.sleep(3);
+        insertRecords(mysql, 1005);
+        assertEqualsEventually(() -> jet.getMap("results").size(), 5);
+
+        // and DB is stopped
+        stopContainer(mysql);
+        mysql = null;
+
+        boolean neverReconnect = reconnectBehavior.getMaxAttempts() == 0;
+        if (neverReconnect) {
+            // then job fails
+            assertJobFailsWithConnectException(job, true);
+        } else {
+            // and results are cleared
+            jet.getMap("results").clear();
+            assertEqualsEventually(() -> jet.getMap("results").size(), 0);
+
+            // and DB is started anew
+            mysql = initMySql(null, port);
+            insertRecords(mysql, 1005, 1006, 1007);
+
+            try {
+                if (resetStateOnReconnect) {
+                    // then job keeps running, connector starts freshly, including snapshotting
+                    assertEqualsEventually(() -> jet.getMap("results").size(), 7);
+                    assertEquals(RUNNING, job.getStatus());
+                } else {
+                    assertEqualsEventually(() -> jet.getMap("results").size(), 2);
+                    assertEquals(RUNNING, job.getStatus());
+                }
+            } finally {
+                abortJob(job);
             }
         }
     }
@@ -404,8 +393,6 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             return socket.getLocalPort();
         }
     }
-
-
 
     private static int findRandomOpenPortInRange(int fromInclusive, int toExclusive) throws IOException {
         List<Integer> randomizedPortsInRange = IntStream.range(fromInclusive, toExclusive)

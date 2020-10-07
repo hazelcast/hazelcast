@@ -127,7 +127,12 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
     protected static void stopContainer(GenericContainer<?> container) {
         String containerId = container.getContainerId();
         DockerClient dockerClient = DockerClientFactory.instance().client();
-        dockerClient.stopContainerCmd(containerId).exec();
+        dockerClient.stopContainerCmd(containerId)
+                .exec();
+        dockerClient.removeContainerCmd(containerId)
+                .withRemoveVolumes(true)
+                .withForce(true)
+                .exec();
     }
 
 }
