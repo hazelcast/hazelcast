@@ -45,13 +45,13 @@ import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.flakeidgen.impl.NodeIdOutOfRangeException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
+import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.scheduledexecutor.DuplicateTaskException;
@@ -66,11 +66,11 @@ import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionTimedOutException;
-import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.wan.WanQueueFullException;
 
 import javax.cache.CacheException;
@@ -209,6 +209,11 @@ public class ClientExceptions {
         register(ClientProtocolErrorCodes.STALE_APPEND_REQUEST_EXCEPTION, StaleAppendRequestException.class);
         register(ClientProtocolErrorCodes.NOT_LEADER_EXCEPTION, NotLeaderException.class);
         register(ClientProtocolErrorCodes.VERSION_MISMATCH_EXCEPTION, VersionMismatchException.class);
+        register(ClientProtocolErrorCodes.NO_SUCH_METHOD_ERROR, NoSuchMethodError.class);
+        register(ClientProtocolErrorCodes.NO_SUCH_METHOD_EXCEPTION, NoSuchMethodException.class);
+        register(ClientProtocolErrorCodes.NO_SUCH_FIELD_ERROR, NoSuchFieldError.class);
+        register(ClientProtocolErrorCodes.NO_SUCH_FIELD_EXCEPTION, NoSuchFieldException.class);
+        register(ClientProtocolErrorCodes.NO_CLASS_DEF_FOUND_ERROR, NoClassDefFoundError.class);
     }
 
     public ClientMessage createExceptionMessage(Throwable throwable) {

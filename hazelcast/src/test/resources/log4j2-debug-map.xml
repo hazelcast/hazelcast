@@ -18,14 +18,15 @@
 <Configuration status="ERROR">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{ABSOLUTE} %5p |%X{test-name}| - [%c{1}] %t - %m%n"/>
+            <PatternLayout
+                    pattern="%d{ABSOLUTE} %5p |%X{test-name}| - [%c{1}] %t - %m%n"/>
         </Console>
     </Appenders>
     <Loggers>
         <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
-        <Logger name="com.hazelcast.map" level="trace"/>
+        <Logger name="com.hazelcast.map.impl" level="trace"/>
         <Logger name="com.hazelcast.instance" level="debug"/>
         <Logger name="com.hazelcast.cluster" level="debug"/>
         <Logger name="com.hazelcast.internal.cluster" level="debug"/>

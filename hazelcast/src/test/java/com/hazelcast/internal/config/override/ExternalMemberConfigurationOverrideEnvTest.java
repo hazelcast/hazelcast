@@ -21,12 +21,11 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.ClassRule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static com.hazelcast.internal.config.override.ExternalConfigTestUtils.runWithSystemProperty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -35,24 +34,19 @@ import static org.junit.Assert.assertFalse;
 @Category(QuickTest.class)
 public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSupport {
 
-    @ClassRule
-    public static final EnvironmentVariables environmentVariables = new EnvironmentVariables();
-
     @Test
-    public void shouldExtractConfigFromEnv() {
-        environmentVariables
-          .set("HZ_CLUSTERNAME", "test")
-          .set("HZ_METRICS_ENABLED", "false")
-          .set("HZ_NETWORK_JOIN_AUTODETECTION_ENABLED", "false")
-          .set("HZ_CACHE_DEFAULT_KEYTYPE_CLASSNAME", "java.lang.Object2")
-          .set("HZ_EXECUTORSERVICE_CUSTOM_POOLSIZE", "42")
-          .set("HZ_EXECUTORSERVICE_DEFAULT_STATISTICSENABLED", "false")
-          .set("HZ_DURABLEEXECUTORSERVICE_DEFAULT_CAPACITY", "42")
-          .set("HZ_SCHEDULEDEXECUTORSERVICE_DEFAULT_CAPACITY", "40")
-          .set("HZ_QUEUE_DEFAULT_MAXSIZE", "2");
-
+    public void shouldExtractConfigFromEnv() throws Exception {
         Config config = new Config();
-        new ExternalConfigurationOverride().overwriteMemberConfig(config);
+        withEnvironmentVariable("HZ_CLUSTERNAME", "test")
+          .and("HZ_METRICS_ENABLED", "false")
+          .and("HZ_NETWORK_JOIN_AUTODETECTION_ENABLED", "false")
+          .and("HZ_CACHE_DEFAULT_KEYTYPE_CLASSNAME", "java.lang.Object2")
+          .and("HZ_EXECUTORSERVICE_CUSTOM_POOLSIZE", "42")
+          .and("HZ_EXECUTORSERVICE_DEFAULT_STATISTICSENABLED", "false")
+          .and("HZ_DURABLEEXECUTORSERVICE_DEFAULT_CAPACITY", "42")
+          .and("HZ_SCHEDULEDEXECUTORSERVICE_DEFAULT_CAPACITY", "40")
+          .and("HZ_QUEUE_DEFAULT_MAXSIZE", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
 
         assertEquals("test", config.getClusterName());
         assertFalse(config.getMetricsConfig().isEnabled());
@@ -66,13 +60,13 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test(expected = InvalidConfigurationException.class)
-    public void shouldDisallowConflictingEntries() {
-        environmentVariables
-          .set("HZ_CLUSTERNAME", "test");
-
-        runWithSystemProperty("hz.cluster-name", "test2", () -> {
-            Config config = new Config();
-            new ExternalConfigurationOverride().overwriteMemberConfig(config);
-        });
+    public void shouldDisallowConflictingEntries() throws Exception {
+        withEnvironmentVariable("HZ_CLUSTERNAME", "test")
+          .execute(
+              () -> runWithSystemProperty("hz.cluster-name", "test2", () -> {
+                  Config config = new Config();
+                  new ExternalConfigurationOverride().overwriteMemberConfig(config);
+              })
+          );
     }
 }

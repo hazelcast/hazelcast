@@ -260,6 +260,8 @@ public final class ClientConfigXmlGenerator {
         }
         gen.open("kerberos")
             .nodeIfContents("realm", c.getRealm())
+            .nodeIfContents("principal", c.getPrincipal())
+            .nodeIfContents("keytab-file", c.getKeytabFile())
             .nodeIfContents("security-realm", c.getSecurityRealm())
             .nodeIfContents("service-name-prefix", c.getServiceNamePrefix())
             .nodeIfContents("use-canonical-hostname", c.getUseCanonicalHostname())

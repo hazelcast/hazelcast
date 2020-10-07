@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.util.executor.UnblockableThread;
 import com.hazelcast.logging.ILogger;
@@ -486,6 +485,21 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     @Override
+    public InternalCompletableFuture<V> exceptionally(@Nonnull Function<Throwable, ? extends V> fn) {
+        requireNonNull(fn);
+        final InternalCompletableFuture<V> future = newCompletableFuture();
+        if (isDone()) {
+            unblockExceptionally(fn, future);
+        } else {
+            Object result = registerWaiter(new ExceptionallyNode<>(future, fn), null);
+            if (result != UNRESOLVED) {
+                unblockExceptionally(fn, future);
+            }
+        }
+        return future;
+    }
+
+    @Override
     public InternalCompletableFuture<V> toCompletableFuture() {
         return this;
     }
@@ -864,33 +878,19 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
     }
 
-    @Override
-    public InternalCompletableFuture<V> exceptionally(@Nonnull Function<Throwable, ? extends V> fn) {
-        requireNonNull(fn);
+    private void unblockExceptionally(@Nonnull Function<Throwable, ? extends V> fn,
+                                      InternalCompletableFuture<V> future) {
         Object result = resolve(state);
-        final InternalCompletableFuture<V> future = newCompletableFuture();
-        for (; ; ) {
-            if (result != UNRESOLVED && isDone()) {
-                if (result instanceof ExceptionalResult) {
-                    Throwable throwable = ((ExceptionalResult) result).cause;
-                    try {
-                        V value = fn.apply(throwable);
-                        future.complete(value);
-                    } catch (Throwable t) {
-                        future.completeExceptionally(t);
-                    }
-                } else {
-                    future.complete((V) result);
-                }
-                return future;
-            } else {
-                result = registerWaiter(new ExceptionallyNode<>(future, fn), null);
-                if (result == UNRESOLVED) {
-                    return future;
-                } else {
-                    result = resolve(state);
-                }
+        if (result instanceof ExceptionalResult) {
+            Throwable throwable = ((ExceptionalResult) result).cause;
+            try {
+                V value = fn.apply(throwable);
+                future.complete(value);
+            } catch (Throwable t) {
+                future.completeExceptionally(t);
             }
+        } else {
+            future.complete((V) result);
         }
     }
 
@@ -1361,10 +1361,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
          * <p>
          * Exception wrapping rules:
          * <ul>
-         *     <li>
-         *         {@link CancellationException}s and {@link com.hazelcast.core.OperationTimeoutException}s
-         *         are returned as-is, since they anyway only report the local stack trace.
-         *     </li>
          *     <li>
          *         if cause is an instance of {@link RuntimeException} then the cause is cloned
          *         The clone throwable has the local stack trace merged into to the original stack trace
@@ -1903,9 +1899,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     static Throwable wrapOrPeel(Throwable cause) {
-        if (cause instanceof CancellationException || cause instanceof OperationTimeoutException) {
-            return cause;
-        }
         if (cause instanceof RuntimeException) {
             return wrapRuntimeException((RuntimeException) cause);
         }
