@@ -38,6 +38,7 @@
 
         <calcite.version>1.23.0</calcite.version>
         <guava.version>24.1.1-jre</guava.version>
+        <slf4j.version>1.7.25</slf4j.version>
     </properties>
 
     <build>
@@ -411,7 +412,11 @@
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.googlecode.junit-toolbox</groupId>
             <artifactId>junit-toolbox</artifactId>
