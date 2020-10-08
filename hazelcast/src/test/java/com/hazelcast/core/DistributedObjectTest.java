@@ -386,7 +386,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         for (int i = 0; i < instances.length; i++) {
             NodeEngine nodeEngine = getNodeEngineImpl(instances[i]);
             UUID source = nodeEngine.getLocalMember().getUuid();
-            registries[i].createProxy(objectName, source, true, true, null);
+            registries[i].createProxy(objectName, source, true, true);
             for (int j = i + 1; j < instances.length; j++) {
                 Collection<DistributedObject> objects = new ArrayList<>();
                 registries[j].getDistributedObjects(objects);

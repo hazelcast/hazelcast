@@ -56,6 +56,7 @@ public class CacheReplicationOperationTest extends HazelcastTestSupport {
 
         // create operation
         CacheReplicationOperation operation = new CacheReplicationOperation();
+        operation.setNodeEngine(nodeEngineImpl);
         operation.prepare(segment, namespaces, 0);
 
         // serialize & deserialize operation

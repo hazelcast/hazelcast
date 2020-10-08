@@ -141,6 +141,7 @@ public class CacheSerializationTest extends HazelcastTestSupport {
                 }
 
                 CacheReplicationOperation operation = new CacheReplicationOperation();
+                operation.setNodeEngine(nodeEngine);
                 operation.prepare(segment, namespaces, replicaIndex);
                 Data serialized = service.toData(operation);
                 try {

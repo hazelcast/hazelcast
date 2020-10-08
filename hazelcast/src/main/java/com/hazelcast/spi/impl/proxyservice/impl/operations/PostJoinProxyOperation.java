@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.proxyservice.impl.operations;
 
 import com.hazelcast.cache.CacheNotExistsException;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -36,10 +35,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.spi.tenantcontrol.TenantControl;
 
-public class PostJoinProxyOperation extends Operation implements IdentifiedDataSerializable, Versioned {
+public class PostJoinProxyOperation extends Operation implements IdentifiedDataSerializable {
 
     private Collection<ProxyInfo> proxies;
 
@@ -89,9 +86,6 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
                 out.writeUTF(proxy.getServiceName());
                 out.writeUTF(proxy.getObjectName());
                 UUIDSerializationUtil.writeUUID(out, proxy.getSource());
-                if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-                    out.writeObject(proxy.getTenantControl());
-                }
             }
         }
     }
@@ -103,8 +97,7 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
         if (len > 0) {
             proxies = new ArrayList<>(len);
             for (int i = 0; i < len; i++) {
-                ProxyInfo proxy = new ProxyInfo(in.readUTF(), in.readUTF(), UUIDSerializationUtil.readUUID(in),
-                        in.getVersion().isGreaterOrEqual(Versions.V4_1) ? in.readObject() : TenantControl.NOOP_TENANT_CONTROL);
+                ProxyInfo proxy = new ProxyInfo(in.readUTF(), in.readUTF(), UUIDSerializationUtil.readUUID(in));
                 proxies.add(proxy);
             }
         }
@@ -132,8 +125,7 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
         @Override
         public void run() {
             try {
-                registry.createProxy(proxyInfo.getObjectName(), proxyInfo.getSource(), true, true,
-                        proxyInfo.getTenantControl());
+                registry.createProxy(proxyInfo.getObjectName(), proxyInfo.getSource(), true, true);
             } catch (CacheNotExistsException e) {
                 // this can happen when a cache destroy event is received
                 // after the cache config is replicated during join (pre-join)

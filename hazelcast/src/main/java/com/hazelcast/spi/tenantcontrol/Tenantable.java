@@ -27,7 +27,7 @@ public interface Tenantable {
 
     /**
      * @return {@code true} when this object requires a tenant context to be set,
-     *         for example in order to resolve classes, otherwise {@code false}.
+     *         for example in order to resolve user classes, otherwise {@code false}.
      */
     boolean requiresTenantContext();
 }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.spi.impl.tenantcontrol.TenantContextual;
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker;
@@ -60,8 +59,10 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.tenantcontrol.TenantContextual;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.wan.impl.CallerProvenance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -101,7 +102,6 @@ import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
-import com.hazelcast.spi.tenantcontrol.TenantControl;
 import static java.util.Collections.emptySet;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
@@ -187,7 +187,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             statistics = cacheService.createCacheStatIfAbsent(cacheNameWithPrefix);
         }
         injectDependencies(evictionPolicyEvaluator.getEvictionPolicyComparator());
-        TenantControl tenantControl = nodeEngine.getProxyService()
+        TenantControl tenantControl = nodeEngine
+                .getTenantControlService()
                 .getTenantControl(ICacheService.SERVICE_NAME, cacheNameWithPrefix);
         cacheLoader = TenantContextual.create(this::initCacheLoader,
                 () -> cacheConfig.getCacheLoaderFactory() != null, tenantControl);

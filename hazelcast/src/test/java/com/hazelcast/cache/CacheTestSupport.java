@@ -27,7 +27,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.TestUtil;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
@@ -38,8 +40,6 @@ import javax.cache.configuration.Configuration;
 import javax.cache.spi.CachingProvider;
 
 import static com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker.calculateMaxPartitionSize;
-import com.hazelcast.spi.impl.proxyservice.ProxyService;
-import com.hazelcast.spi.tenantcontrol.TenantControl;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.lang.Integer.parseInt;
@@ -165,11 +165,15 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
     }
 
     public static TenantControl getTenantControl(HazelcastInstance hz, ICache<?, ?> cache) {
-        return getProxyService(hz).getTenantControl(ICacheService.SERVICE_NAME, CacheUtil.getDistributedObjectName(cache.getName()));
+        return getNodeEngineImpl(hz)
+                .getTenantControlService()
+                .getTenantControl(ICacheService.SERVICE_NAME, CacheUtil.getDistributedObjectName(cache.getName()));
     }
 
     public static TenantControl getTenantControl(HazelcastInstance hz, CacheConfig cacheConfig) {
-        return getProxyService(hz).getTenantControl(ICacheService.SERVICE_NAME, CacheUtil.getDistributedObjectName(cacheConfig.getName()));
+        return getNodeEngineImpl(hz)
+                .getTenantControlService()
+                .getTenantControl(ICacheService.SERVICE_NAME, CacheUtil.getDistributedObjectName(cacheConfig.getName()));
     }
 
     public static HazelcastServerCachingProvider createServerCachingProvider(HazelcastInstance instance) {

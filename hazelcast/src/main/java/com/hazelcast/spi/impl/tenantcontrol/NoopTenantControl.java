@@ -24,10 +24,11 @@ import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.spi.tenantcontrol.Tenantable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 
 /**
- * Default no-op implementation of TenantControl
+ * Default no-op implementation of {@link TenantControl}
  */
 public final class NoopTenantControl implements TenantControl, IdentifiedDataSerializable {
 
@@ -37,7 +38,7 @@ public final class NoopTenantControl implements TenantControl, IdentifiedDataSer
     }
 
     @Override
-    public void registerObject(DestroyEventContext destroyEventContext) {
+    public void registerObject(@Nonnull DestroyEventContext destroyEventContext) {
     }
 
     @Override
@@ -57,7 +58,7 @@ public final class NoopTenantControl implements TenantControl, IdentifiedDataSer
     }
 
     @Override
-    public boolean isAvailable(Tenantable tenantable) {
+    public boolean isAvailable(@Nonnull Tenantable tenantable) {
         return true;
     }
 

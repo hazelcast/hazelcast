@@ -31,6 +31,7 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.SilentException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 import com.hazelcast.spi.tenantcontrol.Tenantable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -796,14 +797,21 @@ public abstract class Operation implements DataSerializable, Tenantable {
         return tenantControl;
     }
 
+    /**
+     * Creates the tenant control on the invoking thread and sets it for this
+     * operation as the context in which it will run.
+     */
     public void setTenantControlIfNotAlready() {
         if (tenantControl == TenantControl.NOOP_TENANT_CONTROL
                 && nodeEngine.getClusterService().getClusterVersion()
                         .isGreaterOrEqual(Versions.V4_1)) {
-            tenantControl = nodeEngine.getTenantControlFactory().saveCurrentTenant();
+            TenantControlFactory factory = nodeEngine
+                    .getTenantControlService()
+                    .getTenantControlFactory();
+            tenantControl = factory.saveCurrentTenant();
             if (tenantControl == null) {
                 getLogger().warning(String.format("TenantControl factory return null: %s - %s)",
-                        this.toString(), nodeEngine.getTenantControlFactory().toString()));
+                        this.toString(), factory.toString()));
                 tenantControl = TenantControl.NOOP_TENANT_CONTROL;
             } else {
                 setFlag(true, BITMASK_TENANT_CONTROL_SET);

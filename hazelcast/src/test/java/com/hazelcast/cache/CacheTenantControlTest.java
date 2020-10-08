@@ -38,6 +38,7 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import javax.annotation.Nonnull;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
@@ -229,7 +230,7 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void registerObject(DestroyEventContext event) {
+        public void registerObject(@Nonnull DestroyEventContext event) {
             destroyEventContext.set(event);
             registerTenantCount.incrementAndGet();
         }
@@ -248,7 +249,7 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean isAvailable(Tenantable tenantable) {
+        public boolean isAvailable(@Nonnull Tenantable tenantable) {
             return true;
         }
 

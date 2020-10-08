@@ -101,6 +101,7 @@ public class CacheService extends AbstractCacheService {
         CachePartitionSegment segment = segments[event.getPartitionId()];
         CacheReplicationOperation op = newCacheReplicationOperation();
         op.setPartitionId(event.getPartitionId());
+        op.setNodeEngine(nodeEngine);
         op.prepare(segment, namespaces, event.getReplicaIndex());
         return op.isEmpty() ? null : op;
     }

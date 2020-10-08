@@ -38,8 +38,6 @@ import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.core.DistributedObjectEvent.EventType.DESTROYED;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import com.hazelcast.spi.tenantcontrol.TenantControl;
-import java.util.Optional;
 
 /**
  * A ProxyRegistry contains all proxies for a given service. For example, it contains all proxies for the IMap.
@@ -123,8 +121,7 @@ public final class ProxyRegistry {
             DistributedObjectFuture future = entry.getValue();
             if (future.isSetAndInitialized()) {
                 String proxyName = entry.getKey();
-                result.add(new ProxyInfo(serviceName, proxyName, future.getSource(),
-                        future.getTenantControl()));
+                result.add(new ProxyInfo(serviceName, proxyName, future.getSource()));
             }
         }
     }
@@ -180,7 +177,7 @@ public final class ProxyRegistry {
             if (!proxyService.nodeEngine.isRunning()) {
                 throw new HazelcastInstanceNotActiveException();
             }
-            proxyFuture = createProxy(name, source, initialize, !publishEvent, null);
+            proxyFuture = createProxy(name, source, initialize, !publishEvent);
             if (proxyFuture == null) {
                 return getOrCreateProxyFuture(name, source, publishEvent, initialize);
             }
@@ -197,11 +194,9 @@ public final class ProxyRegistry {
      * @param local        {@code true} if the proxy should be only created on the local member,
      *                     otherwise fires {@code DistributedObjectEvent} to trigger cluster-wide
      *                     proxy creation.
-     * @param tenantControl can be null, required if it was transferred via PostOp flow
      * @return The DistributedObject instance if it is created by this method, null otherwise.
      */
-    public DistributedObjectFuture createProxy(String name, UUID source, boolean initialize, boolean local,
-            TenantControl tenantControl) {
+    public DistributedObjectFuture createProxy(String name, UUID source, boolean initialize, boolean local) {
         if (proxies.containsKey(name)) {
             return null;
         }
@@ -210,8 +205,7 @@ public final class ProxyRegistry {
             throw new HazelcastInstanceNotActiveException();
         }
 
-        DistributedObjectFuture proxyFuture = new DistributedObjectFuture(source, Optional.ofNullable(tenantControl)
-                .orElse(proxyService.nodeEngine.getTenantControlFactory().saveCurrentTenant()));
+        DistributedObjectFuture proxyFuture = new DistributedObjectFuture(source);
         if (proxies.putIfAbsent(name, proxyFuture) != null) {
             return null;
         }
@@ -225,7 +219,6 @@ public final class ProxyRegistry {
         DistributedObject proxy;
         try {
             proxy = service.createDistributedObject(name, source, local);
-            proxyFuture.getTenantControl().registerObject(proxy.getDestroyContextForTenant());
             if (initialize && proxy instanceof InitializingObject) {
                 try {
                     ((InitializingObject) proxy).initialize();
@@ -249,7 +242,7 @@ public final class ProxyRegistry {
                 name, proxy, source);
         eventService.executeEventCallback(callback);
         if (publishEvent) {
-            publish(new DistributedObjectEventPacket(CREATED, serviceName, name, source, proxyFuture.getTenantControl()));
+            publish(new DistributedObjectEventPacket(CREATED, serviceName, name, source));
         }
         return proxyFuture;
     }
@@ -290,10 +283,9 @@ public final class ProxyRegistry {
             ProxyEventProcessor callback = new ProxyEventProcessor(proxyService.listeners.values(), DESTROYED, serviceName, name,
                     proxy, source);
             eventService.executeEventCallback(callback);
-            proxyFuture.getTenantControl().unregisterObject();
         }
         if (publishEvent) {
-            publish(new DistributedObjectEventPacket(DESTROYED, serviceName, name, source, proxyFuture.getTenantControl()));
+            publish(new DistributedObjectEventPacket(DESTROYED, serviceName, name, source));
         }
     }
 
@@ -363,7 +355,7 @@ public final class ProxyRegistry {
                     throw rethrow(e);
                 }
                 UUID source = proxyService.nodeEngine.getLocalMember().getUuid();
-                publish(new DistributedObjectEventPacket(CREATED, serviceName, name, source, future.getTenantControl()));
+                publish(new DistributedObjectEventPacket(CREATED, serviceName, name, source));
             }
         }
     }

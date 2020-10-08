@@ -89,8 +89,10 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
 
         configs.addAll(segment.getCacheConfigs());
         nearCacheStateHolder.prepare(segment, namespaces);
-        classesAlwaysAvailable = segment.getCacheService().getNodeEngine()
-                .getTenantControlFactory().isClassesAlwaysAvailable();
+        classesAlwaysAvailable = getNodeEngine()
+                .getTenantControlService()
+                .getTenantControlFactory()
+                .isClassesAlwaysAvailable();
     }
 
     protected void storeRecordsToReplicate(ICacheRecordStore recordStore) {
