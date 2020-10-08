@@ -599,11 +599,11 @@ public class Edge implements IdentifiedDataSerializable {
         out.writeUTF(getDestName());
         out.writeInt(getDestOrdinal());
         out.writeInt(getPriority());
-        out.writeObject(getOrderComparator());
         out.writeObject(getDistributedTo());
         out.writeObject(getRoutingPolicy());
-        CustomClassLoadedObject.write(out, getPartitioner());
         out.writeObject(getConfig());
+        CustomClassLoadedObject.write(out, getPartitioner());
+        CustomClassLoadedObject.write(out, getOrderComparator());
     }
 
     @Override
@@ -613,16 +613,16 @@ public class Edge implements IdentifiedDataSerializable {
         destName = in.readUTF();
         destOrdinal = in.readInt();
         priority = in.readInt();
-        comparator = in.readObject();
         distributedTo = in.readObject();
         routingPolicy = in.readObject();
+        config = in.readObject();
         try {
             partitioner = CustomClassLoadedObject.read(in);
+            comparator = CustomClassLoadedObject.read(in);
         } catch (HazelcastSerializationException e) {
             throw new HazelcastSerializationException("Error deserializing edge '" + sourceName + "' -> '"
                     + destName + "': " + e, e);
         }
-        config = in.readObject();
     }
 
     @Override
