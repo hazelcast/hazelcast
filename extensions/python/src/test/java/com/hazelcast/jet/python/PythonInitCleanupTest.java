@@ -36,7 +36,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import static com.hazelcast.jet.python.PythonTransforms.mapUsingPythonBatch;
-import static com.hazelcast.test.HazelcastTestSupport.assumeThatNoWindowsOS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -160,6 +159,32 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
         } catch (CompletionException ex) {
             // expected
         }
+    }
+
+    @Test
+    public void initRetried() throws IOException {
+        // Given
+        String baseDirStr = baseDir.toString();
+        String outcomeFilename = "init_outcome.txt";
+        installFileToBaseDir(String.format(
+                "THE_FILE=%s/%s%n"
+                + "test -f $THE_FILE && exit 0%n"
+                + "echo 'init.sh' executed once > $THE_FILE%n"
+                + "exit 1%n",
+                baseDirStr, outcomeFilename), "init.sh");
+
+        PythonServiceConfig cfg = new PythonServiceConfig()
+                .setBaseDir(baseDir.toString())
+                .setHandlerModule("echo")
+                .setHandlerFunction("handle");
+
+        Pipeline p = Pipeline.create();
+        // When
+        p.readFrom(TestSources.items("1"))
+                .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
+                .writeTo(Sinks.logger());
+
+        instance().newJob(p).join();
     }
 
     @Test

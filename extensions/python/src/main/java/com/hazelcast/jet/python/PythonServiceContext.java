@@ -15,7 +15,6 @@
  */
 package com.hazelcast.jet.python;
 
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
@@ -75,17 +74,14 @@ class PythonServiceContext {
     private static final Object INIT_LOCK = new Object();
 
     private final ILogger logger;
-
-    private Path runtimeBaseDir;
+    private final Path runtimeBaseDir;
 
     PythonServiceContext(ProcessorSupplier.Context context, PythonServiceConfig cfg) {
         logger = context.jetInstance().getHazelcastInstance().getLoggingService()
                         .getLogger(getClass().getPackage().getName());
         try {
             long start = System.nanoTime();
-            runtimeBaseDir = cfg.baseDir() != null
-                    ? context.attachedDirectory(cfg.baseDir().toString()).toPath()
-                    : context.attachedFile(cfg.handlerFile().toString()).toPath().getParent();
+            runtimeBaseDir = runtimeBaseDir(context, cfg);
             setupBaseDir(cfg);
             synchronized (INIT_LOCK) {
                 // synchronized: the script will run pip which is not concurrency-safe
@@ -115,6 +111,18 @@ class PythonServiceContext {
         }
     }
 
+    Path runtimeBaseDir(ProcessorSupplier.Context context, PythonServiceConfig cfg) {
+        File baseDir = cfg.baseDir();
+        if (baseDir != null) {
+            return context.attachedDirectory(baseDir.toString()).toPath();
+        }
+        File handlerFile = cfg.handlerFile();
+        if (handlerFile != null) {
+            return context.attachedFile(handlerFile.toString()).toPath().getParent();
+        }
+        throw new IllegalArgumentException("Either base directory or handler file should be configured");
+    }
+
     void destroy() {
         File runtimeBaseDirF = runtimeBaseDir.toFile();
         try {
@@ -133,8 +141,6 @@ class PythonServiceContext {
             }
         } catch (Exception e) {
             throw new JetException("PythonService cleanup failed: " + e, e);
-        } finally {
-            IOUtil.delete(runtimeBaseDir);
         }
     }
 

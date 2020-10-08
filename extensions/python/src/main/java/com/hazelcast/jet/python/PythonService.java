@@ -15,7 +15,9 @@
  */
 package com.hazelcast.jet.python;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.grpc.impl.GrpcUtil;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.python.impl.grpc.InputMessage;
@@ -49,6 +51,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 final class PythonService {
 
+    private static final int CREATE_CONTEXT_RETRY_COUNT = 2;
+    private static final int CREATE_CONTEXT_RETRY_SLEEP_TIME_MILLIS = 1000;
     private static final String JET_TO_PYTHON_PREFIX = "jet_to_python_";
     static final String MAIN_SHELL_SCRIPT = JET_TO_PYTHON_PREFIX + "main.sh";
 
@@ -84,8 +88,8 @@ final class PythonService {
     static ServiceFactory<?, PythonService> factory(@Nonnull PythonServiceConfig cfg) {
         cfg.validate();
         ServiceFactory<PythonServiceContext, PythonService> fac = ServiceFactory
-                .withCreateContextFn(ctx -> new PythonServiceContext(ctx, cfg))
-                .withDestroyContextFn(PythonServiceContext::destroy)
+                .withCreateContextFn(ctx -> createContextWithRetry(ctx, cfg))
+                .withDestroyContextFn(PythonService::destroyServiceContext)
                 .withCreateServiceFn((procCtx, serviceCtx) -> new PythonService(serviceCtx))
                 .withDestroyServiceFn(PythonService::destroy);
         if (cfg.baseDir() != null) {
@@ -94,6 +98,38 @@ final class PythonService {
         } else {
             File handlerFile = Objects.requireNonNull(cfg.handlerFile());
             return fac.withAttachedFile(handlerFile.toString(), handlerFile);
+        }
+    }
+
+    private static PythonServiceContext createContextWithRetry(
+            ProcessorSupplier.Context context,
+            PythonServiceConfig cfg
+    ) {
+        JetException jetException = null;
+        for (int i = CREATE_CONTEXT_RETRY_COUNT; i >= 0 ; i--) {
+            try {
+                return new PythonServiceContext(context, cfg);
+            } catch (JetException exception) {
+                jetException = exception;
+                context.logger().warning(
+                        "PythonService context creation failed, " + (i > 0 ? " will retry" : " giving up"),
+                        exception);
+                try {
+                    Thread.sleep(CREATE_CONTEXT_RETRY_SLEEP_TIME_MILLIS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new JetException(e);
+                }
+            }
+        }
+        throw jetException;
+    }
+
+    private static void destroyServiceContext(PythonServiceContext serviceCtx) {
+        try {
+            serviceCtx.destroy();
+        } finally {
+            IOUtil.delete(serviceCtx.runtimeBaseDir());
         }
     }
 
