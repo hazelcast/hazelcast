@@ -28,7 +28,7 @@ public interface QueryStateCallback {
     /**
      * Cancel the query with error.
      *
-     * @param e error that caused the cancel, or {@code null} if cancellation is trigerred by the user request
+     * @param e error that caused the cancel, or {@code null} if cancellation is triggered by the user request
      */
     void cancel(Exception e);
 
