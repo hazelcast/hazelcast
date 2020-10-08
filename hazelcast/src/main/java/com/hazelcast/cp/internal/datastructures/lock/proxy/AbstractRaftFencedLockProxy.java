@@ -100,6 +100,7 @@ public abstract class AbstractRaftFencedLockProxy extends SessionAwareProxy impl
                 releaseSession(sessionId);
                 throw new IllegalMonitorStateException("Lock[" + proxyName + "] not acquired because its wait is cancelled!");
             } catch (Throwable t) {
+                releaseSession(sessionId);
                 if (t instanceof InterruptedException) {
                     throw (InterruptedException) t;
                 } else {
@@ -132,6 +133,9 @@ public abstract class AbstractRaftFencedLockProxy extends SessionAwareProxy impl
             } catch (WaitKeyCancelledException e) {
                 releaseSession(sessionId);
                 throw new IllegalMonitorStateException("Lock[" + proxyName + "] not acquired because its wait is cancelled!");
+            } catch (Throwable t) {
+                releaseSession(sessionId);
+                throw rethrow(t);
             }
         }
     }
@@ -186,6 +190,9 @@ public abstract class AbstractRaftFencedLockProxy extends SessionAwareProxy impl
                 if (timeoutMillis <= 0) {
                     return INVALID_FENCE;
                 }
+            } catch (Throwable t) {
+                releaseSession(sessionId);
+                throw rethrow(t);
             }
         }
     }
