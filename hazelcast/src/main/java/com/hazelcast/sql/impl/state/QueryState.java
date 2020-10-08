@@ -254,13 +254,7 @@ public final class QueryState implements QueryStateCallback {
             QueryException error0 = (QueryException) error;
 
             if (error0.getOriginatingMemberId() == null) {
-                boolean invalidatePlan = error0.isInvalidatePlan();
-
-                error0 = QueryException.error(error0.getCode(), error0.getMessage(), error0.getCause(), localMemberId);
-
-                if (invalidatePlan) {
-                    error0 = error0.withInvalidate();
-                }
+                error0.setOriginatingMemberId(localMemberId);
             }
 
             return error0;
