@@ -128,6 +128,12 @@ class Demos extends React.Component {
                         The Hazelcast Jet pipeline listen for changes on the Kafka topic, logs the events as they
                         arrive to the standard out and puts them to an IMap.
                     </Card>
+                    <Card title="Enabling Full-text Search with Change Data Capture"
+                                link="https://github.com/hazelcast-demos/pet-clinic-index-job">
+                        Stream changes using Change Data Capture, enrich the data, correlate (join) the records with
+                        other records and finally store the data into an Elasticsearch index, so an application can
+                        provide better functionality to the user.
+                    </Card>
 
                 </Container>
             </div>
