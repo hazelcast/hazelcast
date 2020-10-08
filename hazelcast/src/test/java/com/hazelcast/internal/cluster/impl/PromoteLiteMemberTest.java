@@ -327,7 +327,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void lite_member_promotion_data_loss() throws InterruptedException {
+    public void test_lite_member_promotion_causes_no_data_loss_on_three_members() throws InterruptedException {
         int entryCount = 1000;
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
@@ -368,7 +368,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void lite_member_promotion_data_loss2() throws InterruptedException {
+    public void test_lite_member_promotion_causes_no_data_loss_on_two_members() throws InterruptedException {
         int entryCount = 1000;
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();

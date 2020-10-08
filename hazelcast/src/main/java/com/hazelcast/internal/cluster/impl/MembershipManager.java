@@ -305,6 +305,8 @@ public class MembershipManager {
 
         MemberImpl[] members = new MemberImpl[membersView.size()];
         int memberIndex = 0;
+        // Indicates whether we received a notification on lite member membership change
+        // (e.g. its promotion to a data member)
         boolean updatedLiteMember = false;
         for (MemberInfo memberInfo : membersView.getMembers()) {
             Address address = memberInfo.getAddress();
@@ -347,7 +349,7 @@ public class MembershipManager {
         setMembers(MemberMap.createNew(membersView.getVersion(), members));
 
         if (updatedLiteMember) {
-            updateMembersGroupSize();
+            node.partitionService.updateMemberGroupSize();
         }
 
         for (MemberImpl member : removedMembers) {
@@ -416,10 +418,6 @@ public class MembershipManager {
                       .memberListJoinVersion(memberInfo.getMemberListJoinVersion())
                       .instance(node.hazelcastInstance)
                       .build();
-    }
-
-    private void updateMembersGroupSize() {
-        node.partitionService.updateMemberGroupSize();
     }
 
     private void repairPartitionTableIfReturningMember(MemberImpl member) {
