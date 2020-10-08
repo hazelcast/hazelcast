@@ -87,6 +87,9 @@ public class TenantControlServiceImpl
      */
     public TenantControl getTenantControl(@Nonnull String serviceName,
                                           @Nonnull String objectName) {
+        if (!isTenantControlEnabled()) {
+            return TenantControl.NOOP_TENANT_CONTROL;
+        }
         return tenantControlMap.computeIfAbsent(serviceName, name -> new ConcurrentHashMap<>())
                                .get(objectName);
     }
