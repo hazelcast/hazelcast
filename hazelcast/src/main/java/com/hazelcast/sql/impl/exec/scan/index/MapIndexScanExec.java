@@ -95,7 +95,7 @@ public class MapIndexScanExec extends MapScanExec {
                 SqlErrorCode.INDEX_INVALID,
                 "Cannot use the index \"" + indexName + "\" of the IMap \"" + map.getName() + "\" because it is not global "
                     + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED + "\" is set to \"true\")"
-            ).withInvalidate();
+            ).markInvalidate();
         }
 
         index = indexes.getIndex(indexName);
@@ -104,7 +104,7 @@ public class MapIndexScanExec extends MapScanExec {
             throw QueryException.error(
                 SqlErrorCode.INDEX_INVALID,
                 "Cannot use the index \"" + indexName + "\" of the IMap \"" + map.getName() + "\" because it doesn't exist"
-            ).withInvalidate();
+            ).markInvalidate();
         }
 
         // Make sure that required partitions are indexed
@@ -129,7 +129,7 @@ public class MapIndexScanExec extends MapScanExec {
             SqlErrorCode.INDEX_INVALID,
             "Cannot use the index \"" + indexName + "\" of the IMap \"" + mapName + "\" due to concurrent migration, "
                 + "or because index creation is still in progress"
-        ).withInvalidate();
+        ).markInvalidate();
     }
 
     @Override
