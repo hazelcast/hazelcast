@@ -28,6 +28,10 @@ import static java.util.Objects.requireNonNull;
  * Configuration class for persistent memory devices (e.g. Intel Optane).
  */
 public class PersistentMemoryConfig {
+
+    /**
+     * Indicates if the persistent memory is enabled.
+     */
     private boolean enabled;
 
     /**
