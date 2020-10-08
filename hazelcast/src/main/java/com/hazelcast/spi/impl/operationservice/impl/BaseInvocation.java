@@ -94,10 +94,8 @@ public abstract class BaseInvocation {
             // can assume the invocation is complete because there is a response and no backups need to respond
             this.pendingResponse = response;
 
-            if (backupsAcksReceived != expectedBackups) {
-                // we are done since not all backups have completed. Therefor we should not notify the future
-                return;
-            }
+            // we are done since not all backups have completed. Therefor we should not notify the future
+            return;
         }
 
         // we are going to notify the future that a response is available; this can happen when:
