@@ -21,7 +21,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 
@@ -37,8 +36,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @since 4.1
  */
-public class AppendTenantControlOperation extends Operation
-        implements IdentifiedDataSerializable, MutatingOperation {
+public class TenantControlReplicationOperation extends Operation implements IdentifiedDataSerializable {
 
     private ConcurrentMap<String, ConcurrentMap<String, TenantControl>> tenantControlMap;
 
@@ -46,18 +44,18 @@ public class AppendTenantControlOperation extends Operation
     private String distributedObjectName;
     private TenantControl tenantControl;
 
-    public AppendTenantControlOperation() {
+    public TenantControlReplicationOperation() {
     }
 
-    public AppendTenantControlOperation(@Nonnull String distributedObjectServiceName,
-                                        @Nonnull String distributedObjectName,
-                                        @Nonnull TenantControl tenantControl) {
+    public TenantControlReplicationOperation(@Nonnull String distributedObjectServiceName,
+                                             @Nonnull String distributedObjectName,
+                                             @Nonnull TenantControl tenantControl) {
         this.distributedObjectServiceName = distributedObjectServiceName;
         this.distributedObjectName = distributedObjectName;
         this.tenantControl = tenantControl;
     }
 
-    public AppendTenantControlOperation(
+    public TenantControlReplicationOperation(
             @Nonnull ConcurrentMap<String, ConcurrentMap<String, TenantControl>> tenantControlMap) {
         this.tenantControlMap = tenantControlMap;
     }
@@ -65,9 +63,15 @@ public class AppendTenantControlOperation extends Operation
     @Override
     public void run() {
         TenantControlServiceImpl service = getNodeEngine().getTenantControlService();
-        tenantControlMap.forEach((serviceName, objectMap) ->
-                objectMap.forEach((objectName, tenantControl) ->
-                        service.appendTenantControl(serviceName, objectName, tenantControl)));
+        if (tenantControlMap != null) {
+            // remote execution
+            tenantControlMap.forEach((serviceName, objectMap) ->
+                    objectMap.forEach((objectName, tenantControl) ->
+                            service.appendTenantControl(serviceName, objectName, tenantControl)));
+        } else {
+            // local execution
+            service.appendTenantControl(distributedObjectServiceName, distributedObjectName, tenantControl);
+        }
     }
 
     @Override
@@ -91,9 +95,6 @@ public class AppendTenantControlOperation extends Operation
                 objectMap.put(in.readUTF(), in.readObject());
             }
         }
-
-        distributedObjectServiceName = in.readUTF();
-        tenantControl = in.readObject();
     }
 
     @Override
@@ -101,7 +102,6 @@ public class AppendTenantControlOperation extends Operation
         if (tenantControlMap != null) {
             // we are sending multiple tenant controls for
             // different services and objects
-            out.writeObject(tenantControlMap);
             out.writeInt(tenantControlMap.size());
             for (Entry<String, ConcurrentMap<String, TenantControl>> serviceEntry : tenantControlMap.entrySet()) {
                 String serviceName = serviceEntry.getKey();
@@ -119,7 +119,7 @@ public class AppendTenantControlOperation extends Operation
             out.writeInt(1);
             out.writeUTF(distributedObjectServiceName);
             out.writeInt(1);
-            out.writeObject(distributedObjectName);
+            out.writeUTF(distributedObjectName);
             out.writeObject(tenantControl);
         }
     }

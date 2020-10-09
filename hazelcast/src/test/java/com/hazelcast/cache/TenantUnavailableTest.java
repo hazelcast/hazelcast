@@ -16,14 +16,6 @@
 
 package com.hazelcast.cache;
 
-import static com.hazelcast.cache.CachePartitionIteratorMigrationTest.putValuesToPartition;
-import static com.hazelcast.cache.CacheTenantControlTest.destroyEventContext;
-import static com.hazelcast.cache.CacheTenantControlTest.classesAlwaysAvailable;
-import static com.hazelcast.cache.CacheTenantControlTest.initState;
-import static com.hazelcast.cache.CacheTenantControlTest.newConfig;
-import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
-import static com.hazelcast.cache.CacheTestSupport.getCacheService;
-import static com.hazelcast.cache.HazelcastCacheManager.CACHE_MANAGER_PREFIX;
 import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
@@ -34,9 +26,16 @@ import com.hazelcast.partition.MigrationState;
 import com.hazelcast.partition.ReplicaMigrationEvent;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import static com.hazelcast.test.HazelcastTestSupport.randomName;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import javax.cache.Cache;
+import javax.cache.CacheManager;
 import java.io.Serializable;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -44,13 +43,16 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import javax.cache.Cache;
-import javax.cache.CacheManager;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+
+import static com.hazelcast.cache.CachePartitionIteratorMigrationTest.putValuesToPartition;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.getCacheService;
+import static com.hazelcast.cache.HazelcastCacheManager.CACHE_MANAGER_PREFIX;
+import static com.hazelcast.cache.TenantControlTest.classesAlwaysAvailable;
+import static com.hazelcast.cache.TenantControlTest.destroyEventContext;
+import static com.hazelcast.cache.TenantControlTest.initState;
+import static com.hazelcast.cache.TenantControlTest.newConfig;
+import static org.junit.Assert.assertTrue;
 
 /**
  * App Server reload / app not loaded tests
@@ -59,7 +61,7 @@ import org.junit.runner.RunWith;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class CacheTenantUnavailableTest extends HazelcastTestSupport {
+public class TenantUnavailableTest extends HazelcastTestSupport {
     private String cacheName;
     private static final Set<String> disallowClassNames = new HashSet<>();
     private static final CountDownLatch latch = new CountDownLatch(1);
@@ -77,9 +79,11 @@ public class CacheTenantUnavailableTest extends HazelcastTestSupport {
     public void testCacheWithTypesWithoutClassLoader() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = factory.newHazelcastInstance(newConfig());
-        CacheConfig cacheConfig = new CacheConfig();
+        CacheConfig<KeyType, ValueType> cacheConfig = new CacheConfig<>();
         cacheConfig.setTypes(KeyType.class, ValueType.class);
-        Cache cache1 = createServerCachingProvider(hz1).getCacheManager().createCache(cacheName, cacheConfig);
+        Cache<KeyType, ValueType> cache1 = createServerCachingProvider(hz1)
+                .getCacheManager()
+                .createCache(cacheName, cacheConfig);
         cache1.put(new KeyType(), new ValueType());
         assertInstanceOf(ValueType.class, cache1.get(new KeyType()));
 
@@ -88,7 +92,7 @@ public class CacheTenantUnavailableTest extends HazelcastTestSupport {
         disallowClassNames.add(KeyType.class.getName());
         hz1.shutdown(); // force migration
         CacheManager cacheManager = createServerCachingProvider(hz2).getCacheManager();
-        Cache cache2 = cacheManager.getCache(cacheName);
+        Cache<KeyType, ValueType> cache2 = cacheManager.getCache(cacheName);
         disallowClassNames.clear();
         assertInstanceOf(ValueType.class, cache2.get(new KeyType()));
 
@@ -96,7 +100,7 @@ public class CacheTenantUnavailableTest extends HazelcastTestSupport {
         disallowClassNames.add(KeyType.class.getName());
 
         cacheConfig = cacheService.getCacheConfig(CACHE_MANAGER_PREFIX + cacheName);
-        Cache cache3 = cacheManager.getCache(cacheName);
+        Cache<KeyType, ValueType> cache3 = cacheManager.getCache(cacheName);
         assertInstanceOf(ValueType.class, cache3.get(new KeyType()));
         Assert.assertFalse("Class Loading Failed", classLoadingFailed);
     }
@@ -106,10 +110,11 @@ public class CacheTenantUnavailableTest extends HazelcastTestSupport {
         classesAlwaysAvailable = false;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = factory.newHazelcastInstance(newConfig());
-        CacheConfig cacheConfig = new CacheConfig();
+        CacheConfig<String, ValueType> cacheConfig = new CacheConfig<>();
         cacheConfig.setTypes(String.class, ValueType.class);
 
-        CacheProxy<String, ValueType> cache1 = (CacheProxy<String, ValueType>) createServerCachingProvider(hz1)
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        CacheProxy<String, ValueType> cache1 = (CacheProxy) createServerCachingProvider(hz1)
                 .getCacheManager().createCache(cacheName, cacheConfig);
         ValueType value = new ValueType();
         putValuesToPartition(hz1, cache1, value, 0, 1);
@@ -119,15 +124,16 @@ public class CacheTenantUnavailableTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(newConfig().setLiteMember(true));
         hz1.getPartitionService().addMigrationListener(new MigrationListenerImpl());
         CacheManager cacheManager = createServerCachingProvider(hz2).getCacheManager();
-        Cache cache2 = cacheManager.getCache(cacheName);
+        Cache<String, ValueType> cache2 = cacheManager.getCache(cacheName);
         // force migration
         hz2.getCluster().promoteLocalLiteMember();
         latch.await(); // await migration
         disallowClassNames.clear();
-        Iterator it2 = cache2.iterator();
-        Assert.assertNotNull("Iterator should not be empty", it2.hasNext());
+        Iterator<Cache.Entry<String, ValueType>> it2 = cache2.iterator();
+
+        assertTrue("Iterator should not be empty", it2.hasNext());
         while (it2.hasNext()) {
-            Cache.Entry<String, ValueType> entry = (Cache.Entry<String, ValueType>) it2.next();
+            Cache.Entry<String, ValueType> entry = it2.next();
             assertInstanceOf(ValueType.class, entry.getValue());
         }
         Assert.assertFalse("Class Loading Failed", classLoadingFailed);
@@ -135,7 +141,7 @@ public class CacheTenantUnavailableTest extends HazelcastTestSupport {
 
     public static class SimulateNonExistantClassLoader extends URLClassLoader {
         public SimulateNonExistantClassLoader() {
-            super(new URL[0], CacheTenantControlTest.class.getClassLoader());
+            super(new URL[0], TenantControlTest.class.getClassLoader());
         }
 
         @Override

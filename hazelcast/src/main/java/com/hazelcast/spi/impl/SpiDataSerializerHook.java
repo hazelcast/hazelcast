@@ -43,7 +43,7 @@ import com.hazelcast.spi.impl.proxyservice.impl.DistributedObjectEventPacket;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.InitializeDistributedObjectOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
-import com.hazelcast.spi.impl.tenantcontrol.impl.AppendTenantControlOperation;
+import com.hazelcast.spi.impl.tenantcontrol.impl.TenantControlReplicationOperation;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY;
@@ -146,7 +146,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                     case DISTRIBUTED_OBJECT_EVENT_PACKET:
                         return new DistributedObjectEventPacket();
                     case APPEND_TENANT_CONTROL_OPERATION:
-                        return new AppendTenantControlOperation();
+                        return new TenantControlReplicationOperation();
                     default:
                         return null;
                 }

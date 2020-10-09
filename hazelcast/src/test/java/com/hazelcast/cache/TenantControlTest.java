@@ -19,8 +19,14 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.AdditionalServiceClassLoader;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
@@ -28,7 +34,6 @@ import com.hazelcast.spi.tenantcontrol.Tenantable;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,39 +47,35 @@ import javax.annotation.Nonnull;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.cache.CacheTestSupport.getCacheService;
-import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.getCacheService;
 import static com.hazelcast.cache.CacheTestSupport.getTenantControl;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.map.IMap;
-import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.properties.ClusterProperty;
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assume.assumeTrue;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(QuickTest.class)
-public class CacheTenantControlTest extends HazelcastTestSupport {
-    static final ThreadLocal<TenantControl> savedTenant = new ThreadLocal<>();
-    static final AtomicBoolean tenantFactoryInitialized = new AtomicBoolean();
-    static AtomicInteger setTenantCount = new AtomicInteger();
-    static final AtomicInteger closeTenantCount = new AtomicInteger();
-    static final AtomicInteger registerTenantCount = new AtomicInteger();
-    static final AtomicInteger unregisterTenantCount = new AtomicInteger();
-    static final AtomicInteger clearedThreadInfoCount = new AtomicInteger();
-    static final AtomicReference<DestroyEventContext> destroyEventContext = new AtomicReference<DestroyEventContext>(null);
+public class TenantControlTest extends HazelcastTestSupport {
+    private static final ThreadLocal<TenantControl> savedTenant = new ThreadLocal<>();
+    private static final AtomicBoolean tenantFactoryInitialized = new AtomicBoolean();
+    private static final AtomicInteger setTenantCount = new AtomicInteger();
+    private static final AtomicInteger closeTenantCount = new AtomicInteger();
+    private static final AtomicInteger registerTenantCount = new AtomicInteger();
+    private static final AtomicInteger unregisterTenantCount = new AtomicInteger();
+    private static final AtomicInteger clearedThreadInfoCount = new AtomicInteger();
+
+    static final AtomicReference<DestroyEventContext> destroyEventContext = new AtomicReference<>(null);
     static volatile boolean classesAlwaysAvailable;
 
     @Parameter
@@ -84,7 +85,7 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
 
     @Parameters(name = "tenantControl: {0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][] {
+        return Arrays.asList(new Object[][]{
                 {true},
                 {false}
         });
@@ -105,10 +106,10 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
     }
 
     static Config newConfig(boolean hasTenantControl) {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         if (hasTenantControl) {
             ClassLoader configClassLoader = new AdditionalServiceClassLoader(new URL[0],
-                    CacheTenantControlTest.class.getClassLoader());
+                    TenantControlTest.class.getClassLoader());
             config.setClassLoader(configClassLoader);
         }
         config.getCacheConfig("*");
@@ -158,7 +159,7 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
 
     @Test
     public void testTenantControl_executionBeforeAfterOps() {
-        Assume.assumeTrue("Requires CountingTenantControl explicitly configured", hasTenantControl);
+        assumeTrue("Requires CountingTenantControl explicitly configured", hasTenantControl);
         HazelcastInstance hz = createHazelcastInstance(getNewConfig());
         ICache<Integer, Integer> cache = hz.getCacheManager().getCache(cacheName);
 
@@ -169,11 +170,15 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
         cache.destroy();
 
         assertNotNull(savedTenant.get());
-        // expecting tenant context is created & closed 5 times:
-        // 2 times on creation of record store (wrapping initialization of eviction policy)
-        // + 3 times on before/afterRun of put, get & getAndPut operations
-        assertEquals(5, setTenantCount.get());
-        assertEquals(5, closeTenantCount.get());
+        // expecting tenant context is created & closed 6 times:
+        // AddCacheConfigOperation
+        // TenantControlReplicationOperation
+        // CachePutOperation
+        // AbstractCacheRecordStore.getExpiryPolicy
+        // CacheGetOperation
+        // CachePutOperation
+        assertEquals(6, setTenantCount.get());
+        assertEquals(6, closeTenantCount.get());
         assertEquals(1, registerTenantCount.get());
         assertEquals(1, unregisterTenantCount.get());
         assertEquals(3, clearedThreadInfoCount.get());
@@ -181,7 +186,7 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
 
     @Test
     public void testDestroyEventContext_destroyRemovesTenantControl() {
-        Assume.assumeTrue("Requires CountingTenantControl explicitly configured", hasTenantControl);
+        assumeTrue("Requires CountingTenantControl explicitly configured", hasTenantControl);
         HazelcastInstance hz = createHazelcastInstance(getNewConfig());
         ICache<Integer, Integer> cache = hz.getCacheManager().getCache(cacheName);
 
@@ -196,21 +201,22 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
 
     @Test
     public void basicMapTest() {
-        Assume.assumeTrue("Requires CountingTenantControl explicitly configured", hasTenantControl);
+        assumeTrue("Requires CountingTenantControl explicitly configured", hasTenantControl);
         HazelcastInstance hz = createHazelcastInstance(getNewConfig().setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1"));
         IMap<String, Integer> map = hz.getMap("MyMap");
-        map.addEntryListener((EntryAddedListener) (EntryEvent event) -> System.out.format("Added: %s\n", event.getValue()), true);
+        map.addEntryListener((EntryAddedListener<String, Integer>)
+                (EntryEvent<String, Integer> event) -> System.out.format("Added: %s\n", event.getValue()), true);
         map.put("oneKey", 1);
         map.destroy();
         assertNotNull(savedTenant.get());
-        assertEquals(3, setTenantCount.get());
+        assertEquals(4, setTenantCount.get());
         assertEquals(1, registerTenantCount.get());
         assertEquals(1, unregisterTenantCount.get());
     }
 
     private void assertTenantControlCreated(HazelcastInstance instance) {
         ICacheService cacheService = getCacheService(instance);
-        CacheConfig cacheConfig = cacheService.getCacheConfig(CacheUtil.getDistributedObjectName(cacheName));
+        CacheConfig<?, ?> cacheConfig = cacheService.getCacheConfig(CacheUtil.getDistributedObjectName(cacheName));
         assertNotNull("TenantControl should not be null", getTenantControl(instance, cacheConfig));
         if (hasTenantControl) {
             assertInstanceOf(CountingTenantControl.class, getTenantControl(instance, cacheConfig));

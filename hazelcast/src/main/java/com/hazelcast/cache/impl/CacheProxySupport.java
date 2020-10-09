@@ -652,6 +652,6 @@ abstract class CacheProxySupport<K, V>
     @Override
     public void initialize() {
         getNodeEngine().getTenantControlService()
-                       .initializeTenantControl(ICacheService.SERVICE_NAME, nameWithPrefix, getDestroyContextForTenant());
+                       .initializeTenantControl(ICacheService.SERVICE_NAME, nameWithPrefix);
     }
 }

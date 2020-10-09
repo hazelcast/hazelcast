@@ -258,6 +258,8 @@ abstract class MapProxySupport<K, V>
         initializeListeners();
         initializeIndexes();
         initializeMapStoreLoad();
+        getNodeEngine().getTenantControlService()
+                       .initializeTenantControl(MapService.SERVICE_NAME, name);
     }
 
     private void initializeListeners() {
@@ -1228,23 +1230,23 @@ abstract class MapProxySupport<K, V>
 
         final InternalCompletableFuture resultFuture = new InternalCompletableFuture();
         operationService.invokeOnPartitionsAsync(SERVICE_NAME, operationFactory, partitionsForKeys)
-                .whenCompleteAsync((response, throwable) -> {
-                    if (throwable == null) {
-                        Map<K, Object> result = null;
-                        try {
-                            result = createHashMap(response.size());
-                            for (Object object : response.values()) {
-                                MapEntries mapEntries = (MapEntries) object;
-                                mapEntries.putAllToMap(serializationService, result);
+                        .whenCompleteAsync((response, throwable) -> {
+                            if (throwable == null) {
+                                Map<K, Object> result = null;
+                                try {
+                                    result = createHashMap(response.size());
+                                    for (Object object : response.values()) {
+                                        MapEntries mapEntries = (MapEntries) object;
+                                        mapEntries.putAllToMap(serializationService, result);
+                                    }
+                                } catch (Throwable e) {
+                                    resultFuture.completeExceptionally(e);
+                                }
+                                resultFuture.complete(result);
+                            } else {
+                                resultFuture.completeExceptionally(throwable);
                             }
-                        } catch (Throwable e) {
-                            resultFuture.completeExceptionally(e);
-                        }
-                        resultFuture.complete(result);
-                    } else {
-                        resultFuture.completeExceptionally(throwable);
-                    }
-                });
+                        });
         return resultFuture;
     }
 
@@ -1363,12 +1365,12 @@ abstract class MapProxySupport<K, V>
         handleHazelcastInstanceAwareParams(userPredicate);
 
         Query query = Query.of()
-                .mapName(getName())
-                .predicate(userPredicate)
-                .iterationType(iterationType)
-                .aggregator(aggregator)
-                .projection(projection)
-                .build();
+                           .mapName(getName())
+                           .predicate(userPredicate)
+                           .iterationType(iterationType)
+                           .aggregator(aggregator)
+                           .projection(projection)
+                           .build();
         return queryEngine.execute(query, target);
     }
 

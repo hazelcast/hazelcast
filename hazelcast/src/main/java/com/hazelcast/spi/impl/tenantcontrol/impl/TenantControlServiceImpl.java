@@ -16,11 +16,12 @@
 
 package com.hazelcast.spi.impl.tenantcontrol.impl;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.internal.services.PostJoinAwareService;
+import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.ServiceLoader;
@@ -28,12 +29,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -47,7 +48,7 @@ import static com.hazelcast.spi.tenantcontrol.TenantControlFactory.NOOP_TENANT_C
  * Each tenant control instance is bound to a single distributed object.
  */
 public class TenantControlServiceImpl
-        implements ClusterVersionListener, DistributedObjectListener, PostJoinAwareService {
+        implements ClusterVersionListener, DistributedObjectListener, PreJoinAwareService {
     public static final String SERVICE_NAME = "hz:impl:tenantControlService";
     /**
      * The number of retries for invocations replicating {@link TenantControl}
@@ -123,19 +124,15 @@ public class TenantControlServiceImpl
      * This method must be invoked on the application thread to properly capture
      * the appropriate tenant context.
      *
-     * @param serviceName             the distributed service name
-     * @param objectName              the distributed object name
-     * @param destroyContextForTenant hook to decouple Hazelcast object from the tenant
+     * @param serviceName the distributed service name
+     * @param objectName  the distributed object name
      */
-    public void initializeTenantControl(@Nonnull String serviceName,
-                                        @Nonnull String objectName,
-                                        @Nonnull DestroyEventContext destroyContextForTenant) {
+    public void initializeTenantControl(@Nonnull String serviceName, @Nonnull String objectName) {
         if (!isTenantControlEnabled()) {
             return;
         }
 
         TenantControl tenantControl = tenantControlFactory.saveCurrentTenant();
-        tenantControl.registerObject(destroyContextForTenant);
         appendTenantControl(serviceName, objectName, tenantControl);
 
         // RU_COMPAT_4_0
@@ -143,7 +140,7 @@ public class TenantControlServiceImpl
             try {
                 invokeOnStableClusterSerial(
                         nodeEngine,
-                        () -> new AppendTenantControlOperation(serviceName, objectName, tenantControl),
+                        () -> new TenantControlReplicationOperation(serviceName, objectName, tenantControl),
                         MAX_RETRIES).get();
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
@@ -157,7 +154,7 @@ public class TenantControlServiceImpl
         if (isTenantControlEnabled() && newVersion.isEqualTo(Versions.V4_1)) {
             // async, we should not block transaction
             InternalCompletableFuture<Object> future = invokeOnStableClusterSerial(nodeEngine,
-                    () -> new AppendTenantControlOperation(tenantControlMap), MAX_RETRIES);
+                    () -> new TenantControlReplicationOperation(tenantControlMap), MAX_RETRIES);
             future.whenCompleteAsync((v, t) -> {
                 if (t != null) {
                     logger.warning("Failed to propagate tenant control", t);
@@ -169,7 +166,15 @@ public class TenantControlServiceImpl
     @Override
     public void distributedObjectCreated(DistributedObjectEvent event) {
         // this method is called asynchronously to proxy.create();
-        // tenant control initialisation is already done synchronously in initializeTenantControl
+        // tenant control creation is already done synchronously in initializeTenantControl
+        // here we just additionally register the hook to decouple Hazelcast object from the tenant
+        String serviceName = event.getServiceName();
+        String objectName = event.getObjectName().toString();
+        UUID localUUID = nodeEngine.getLocalMember().getUuid();
+        DistributedObject proxy = nodeEngine.getProxyService()
+                                            .getDistributedObject(serviceName, objectName, localUUID);
+        getTenantControl(serviceName, objectName)
+                .registerObject(proxy.getDestroyContextForTenant());
     }
 
     @Override
@@ -215,10 +220,10 @@ public class TenantControlServiceImpl
     }
 
     @Override
-    public Operation getPostJoinOperation() {
+    public Operation getPreJoinOperation() {
         Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
         return isTenantControlEnabled() && clusterVersion.isEqualTo(Versions.V4_1)
-                ? new AppendTenantControlOperation(tenantControlMap)
+                ? new TenantControlReplicationOperation(tenantControlMap)
                 : null;
     }
 }
