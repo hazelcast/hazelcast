@@ -180,7 +180,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
     public <T, E> RingbufferContainer<T, E> getOrCreateContainer(int partitionId, ObjectNamespace namespace,
                                                                  RingbufferConfig config) {
         if (config == null) {
-            throw new NullPointerException("Ringbuffer config should not be null when ringbuffer is being created");
+            throw new NullPointerException("Ringbuffer config must not be null when ringbuffer is being created");
         }
         final Map<ObjectNamespace, RingbufferContainer> partitionContainers = getOrCreateRingbufferContainers(partitionId);
 

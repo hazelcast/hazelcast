@@ -1316,7 +1316,7 @@ public class MigrationManager {
                     && migration.getDestinationCurrentReplicaIndex() > 0
                     && migration.getDestinationNewReplicaIndex() == 0) {
 
-                throw new IllegalStateException("Promotion migrations should be handled by "
+                throw new IllegalStateException("Promotion migrations must be handled by "
                         + RepairPartitionTableTask.class.getSimpleName() + " -> " + migration);
             }
 
@@ -1603,7 +1603,7 @@ public class MigrationManager {
                     && migrationInfo.getDestinationCurrentReplicaIndex() > 0
                     && migrationInfo.getDestinationNewReplicaIndex() == 0) {
 
-                throw new AssertionError("Promotion migrations should be handled by "
+                throw new AssertionError("Promotion migrations must be handled by "
                         + RepairPartitionTableTask.class.getSimpleName() + "! -> " + migrationInfo);
             }
 
