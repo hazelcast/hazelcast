@@ -449,7 +449,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         }
 
         if (classNameNode == null && sqlNode == null) {
-            throw new InvalidConfigurationException("Either class-name and sql should be defined for the predicate of map "
+            throw new InvalidConfigurationException("Either class-name and sql must be defined for the predicate of map "
                     + childNode.getParentNode().getParentNode().getNodeName());
         }
 

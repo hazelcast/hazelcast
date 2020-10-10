@@ -74,7 +74,7 @@ public class PagingPredicateImpl<K, V>
      */
     public PagingPredicateImpl(int pageSize) {
         if (pageSize <= 0) {
-            throw new IllegalArgumentException("pageSize should be greater than 0!");
+            throw new IllegalArgumentException("pageSize must be greater than 0!");
         }
         this.pageSize = pageSize;
         anchorList = new ArrayList<>();

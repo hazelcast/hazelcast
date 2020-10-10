@@ -931,7 +931,7 @@ public class ClusterJoinManager {
         String targetAddressStr = "[" + targetAddress.getHost() + "]:" + targetAddress.getPort();
 
         if (thisAddressStr.equals(targetAddressStr)) {
-            throw new IllegalArgumentException("Addresses should be different! This: "
+            throw new IllegalArgumentException("Addresses must be different! This: "
                     + thisAddress + ", Target: " + targetAddress);
         }
 

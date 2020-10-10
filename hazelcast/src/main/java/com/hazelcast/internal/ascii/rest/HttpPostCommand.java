@@ -152,11 +152,11 @@ public class HttpPostCommand extends HttpCommand {
     }
 
     private void readLF(ByteBuffer cb) {
-        assert cb.hasRemaining() : "'\\n' should follow '\\r'";
+        assert cb.hasRemaining() : "'\\n' must follow '\\r'";
 
         byte b = cb.get();
         if (b != LINE_FEED) {
-            throw new IllegalStateException("'\\n' should follow '\\r', but got '" + (char) b + "'");
+            throw new IllegalStateException("'\\n' must follow '\\r', but got '" + (char) b + "'");
         }
     }
 
