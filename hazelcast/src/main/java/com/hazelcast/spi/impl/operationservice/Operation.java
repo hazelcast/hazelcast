@@ -18,9 +18,8 @@ package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.ClusterClock;
-import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -31,7 +30,8 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.SilentException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
+import com.hazelcast.spi.tenantcontrol.TenantControl.Closeable;
 import com.hazelcast.spi.tenantcontrol.Tenantable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -48,8 +48,6 @@ import static com.hazelcast.spi.impl.operationservice.CallStatus.VOID;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.RETRY_INVOCATION;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
-import com.hazelcast.spi.tenantcontrol.TenantControl;
-import com.hazelcast.spi.tenantcontrol.TenantControl.Closeable;
 
 /**
  * An operation could be compared to a {@link Runnable}. It contains logic that
@@ -72,7 +70,6 @@ public abstract class Operation implements DataSerializable, Tenantable {
     static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
     static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
     static final int BITMASK_CLIENT_CALL_ID_SET = 1 << 7;
-    static final int BITMASK_TENANT_CONTROL_SET = 1 << 8;
 
     private static final AtomicLongFieldUpdater<Operation> CALL_ID =
             AtomicLongFieldUpdater.newUpdater(Operation.class, "callId");
@@ -87,7 +84,6 @@ public abstract class Operation implements DataSerializable, Tenantable {
     private long callTimeout = Long.MAX_VALUE;
     private long waitTimeout = -1;
     private UUID callerUuid;
-    private TenantControl tenantControl = TenantControl.NOOP_TENANT_CONTROL;
 
     // injected
     private transient NodeEngine nodeEngine;
@@ -96,7 +92,8 @@ public abstract class Operation implements DataSerializable, Tenantable {
     private transient ServerConnection connection;
     private transient OperationResponseHandler responseHandler;
     private transient long clientCallId = -1;
-    private transient Closeable tenantContext = () -> { };
+    private transient Closeable tenantContext = () -> {
+    };
 
     protected Operation() {
         setFlag(true, BITMASK_VALIDATE_TARGET);
@@ -709,10 +706,6 @@ public abstract class Operation implements DataSerializable, Tenantable {
             out.writeLong(clientCallId);
         }
 
-        if (isFlagSet(BITMASK_TENANT_CONTROL_SET)) {
-            out.writeObject(tenantControl);
-        }
-
         writeInternal(out);
     }
 
@@ -759,16 +752,7 @@ public abstract class Operation implements DataSerializable, Tenantable {
             clientCallId = in.readLong();
         }
 
-        if (isFlagSet(BITMASK_TENANT_CONTROL_SET)) {
-            tenantControl = in.readObject();
-        }
-
         readInternal(in);
-    }
-
-    @Override
-    public boolean requiresTenantContext() {
-        return false;
     }
 
     /**
@@ -793,30 +777,21 @@ public abstract class Operation implements DataSerializable, Tenantable {
     protected void readInternal(ObjectDataInput in) throws IOException {
     }
 
-    public TenantControl getTenantControl() {
-        return tenantControl;
+    @Override
+    public boolean requiresTenantContext() {
+        return false;
     }
 
-    /**
-     * Creates the tenant control on the invoking thread and sets it for this
-     * operation as the context in which it will run.
-     */
-    public void setTenantControlIfNotAlready() {
-        if (tenantControl == TenantControl.NOOP_TENANT_CONTROL
-                && nodeEngine.getClusterService().getClusterVersion()
-                        .isGreaterOrEqual(Versions.V4_1)) {
-            TenantControlFactory factory = nodeEngine
-                    .getTenantControlService()
-                    .getTenantControlFactory();
-            tenantControl = factory.saveCurrentTenant();
-            if (tenantControl == null) {
-                getLogger().warning(String.format("TenantControl factory return null: %s - %s)",
-                        this.toString(), factory.toString()));
-                tenantControl = TenantControl.NOOP_TENANT_CONTROL;
-            } else {
-                setFlag(true, BITMASK_TENANT_CONTROL_SET);
-            }
-        }
+    @Override
+    public TenantControl getTenantControl() {
+        return TenantControl.NOOP_TENANT_CONTROL;
+    }
+
+    public TenantControl getTenantControlOrNoop() {
+        TenantControl tc = getTenantControl();
+        // tenant control may be null in case the structure
+        // was destroyed while operations are still running
+        return tc != null ? tc : TenantControl.NOOP_TENANT_CONTROL;
     }
 
     /**
@@ -828,20 +803,35 @@ public abstract class Operation implements DataSerializable, Tenantable {
      * @return true if ready
      */
     public boolean isTenantAvailable() {
-        return tenantControl.isAvailable(this);
+        return getTenantControlOrNoop().isAvailable(this);
     }
 
+    /**
+     * Establish this tenant's thread-local context. The tenant control implementation
+     * can control the details of what kind of context to set and how to establish it.
+     */
     public void pushThreadContext() {
-        tenantContext = tenantControl.setTenant();
+        tenantContext = getTenantControlOrNoop().setTenant();
     }
 
+    /**
+     * Cleans up (closes) the thread context which was set up by
+     * {@link #pushThreadContext()}.
+     */
     public void popThreadContext() {
         tenantContext.close();
-        tenantContext = () -> { };
+        tenantContext = () -> {
+        };
     }
 
+    /**
+     * Cleans up all of the thread context. This method should clear all potential
+     * context items, not just the ones set up in {@link #pushThreadContext()}
+     * This acts as a catch-all for any potential class class loader and thread-local
+     * leaks.
+     */
     public void clearThreadContext() {
-        tenantControl.clearThreadContext();
+        getTenantControlOrNoop().clearThreadContext();
     }
 
     /**
@@ -871,7 +861,7 @@ public abstract class Operation implements DataSerializable, Tenantable {
         sb.append(", invocationTime=").append(invocationTime).append(" (").append(timeToString(invocationTime)).append(")");
         sb.append(", waitTimeout=").append(waitTimeout);
         sb.append(", callTimeout=").append(callTimeout);
-        sb.append(", tenantControl=").append(tenantControl);
+        sb.append(", tenantControl=").append(getTenantControlOrNoop());
         toString(sb);
         sb.append('}');
         return sb.toString();

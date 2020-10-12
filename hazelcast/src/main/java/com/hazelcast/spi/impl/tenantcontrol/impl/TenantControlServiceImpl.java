@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.tenantcontrol.impl;
 
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
@@ -34,7 +33,6 @@ import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -91,8 +89,8 @@ public class TenantControlServiceImpl
         if (!isTenantControlEnabled()) {
             return TenantControl.NOOP_TENANT_CONTROL;
         }
-        return tenantControlMap.computeIfAbsent(serviceName, name -> new ConcurrentHashMap<>())
-                               .get(objectName);
+        ConcurrentMap<String, TenantControl> objectTenantControl = tenantControlMap.get(serviceName);
+        return objectTenantControl != null ? objectTenantControl.get(objectName) : null;
     }
 
     /**
@@ -126,10 +124,11 @@ public class TenantControlServiceImpl
      *
      * @param serviceName the distributed service name
      * @param objectName  the distributed object name
+     * @return the created tenant control
      */
-    public void initializeTenantControl(@Nonnull String serviceName, @Nonnull String objectName) {
+    public TenantControl initializeTenantControl(@Nonnull String serviceName, @Nonnull String objectName) {
         if (!isTenantControlEnabled()) {
-            return;
+            return TenantControl.NOOP_TENANT_CONTROL;
         }
 
         TenantControl tenantControl = tenantControlFactory.saveCurrentTenant();
@@ -146,6 +145,7 @@ public class TenantControlServiceImpl
                 throw ExceptionUtil.rethrow(t);
             }
         }
+        return tenantControl;
     }
 
     @Override
@@ -165,16 +165,7 @@ public class TenantControlServiceImpl
 
     @Override
     public void distributedObjectCreated(DistributedObjectEvent event) {
-        // this method is called asynchronously to proxy.create();
-        // tenant control creation is already done synchronously in initializeTenantControl
-        // here we just additionally register the hook to decouple Hazelcast object from the tenant
-        String serviceName = event.getServiceName();
-        String objectName = event.getObjectName().toString();
-        UUID localUUID = nodeEngine.getLocalMember().getUuid();
-        DistributedObject proxy = nodeEngine.getProxyService()
-                                            .getDistributedObject(serviceName, objectName, localUUID);
-        getTenantControl(serviceName, objectName)
-                .registerObject(proxy.getDestroyContextForTenant());
+        // tenant control creation is handled synchronously while creating the proxy
     }
 
     @Override

@@ -100,8 +100,6 @@ public final class InvocationUtil {
         if (operation.validatesTarget()) {
             throw new IllegalArgumentException("Operation must not validate the target");
         }
-        operation.setNodeEngine(nodeEngine);
-        operation.setTenantControlIfNotAlready();
         final LocalRetryableExecution execution = new LocalRetryableExecution(nodeEngine, operation);
         execution.run();
         return execution;

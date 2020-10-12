@@ -170,15 +170,16 @@ public class TenantControlTest extends HazelcastTestSupport {
         cache.destroy();
 
         assertNotNull(savedTenant.get());
-        // expecting tenant context is created & closed 6 times:
-        // AddCacheConfigOperation
-        // TenantControlReplicationOperation
+        // expecting tenant context is created & closed 4 times:
         // CachePutOperation
         // AbstractCacheRecordStore.getExpiryPolicy
         // CacheGetOperation
         // CachePutOperation
-        assertEquals(6, setTenantCount.get());
-        assertEquals(6, closeTenantCount.get());
+        // these operations don't require tenant control:
+        // AddCacheConfigOperation
+        // TenantControlReplicationOperation
+        assertEquals(4, setTenantCount.get());
+        assertEquals(4, closeTenantCount.get());
         assertEquals(1, registerTenantCount.get());
         assertEquals(1, unregisterTenantCount.get());
         assertEquals(3, clearedThreadInfoCount.get());
@@ -209,7 +210,10 @@ public class TenantControlTest extends HazelcastTestSupport {
         map.put("oneKey", 1);
         map.destroy();
         assertNotNull(savedTenant.get());
-        assertEquals(4, setTenantCount.get());
+        // only PutOperation requires and establishes tenant context
+        // event listener registration does not and map destroy
+        // operation does not need tenant context
+        assertEquals(1, setTenantCount.get());
         assertEquals(1, registerTenantCount.get());
         assertEquals(1, unregisterTenantCount.get());
     }

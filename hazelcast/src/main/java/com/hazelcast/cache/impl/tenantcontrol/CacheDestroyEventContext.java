@@ -25,8 +25,9 @@ import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import java.io.IOException;
 
 /**
- * the only reason this is not removed is becasue
- * it will break RU_COMPAT serialization logic
+ * The only reason this is not removed is because it will break RU serialization
+ * logic.
+ *
  * @author lprimak
  * @deprecated
  */

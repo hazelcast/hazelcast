@@ -45,6 +45,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.internal.services.TenantContextAwareService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
@@ -97,7 +98,7 @@ import static java.util.Collections.singleton;
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService, PartitionAwareService,
                                                       SplitBrainProtectionAwareService, SplitBrainHandlerService,
-                                                      ClusterStateListener {
+                                                      ClusterStateListener, TenantContextAwareService {
     /**
      * Map from full prefixed cache name to {@link CacheConfig}
      */

@@ -27,7 +27,17 @@ public interface Tenantable {
 
     /**
      * @return {@code true} when this object requires a tenant context to be set,
-     *         for example in order to resolve user classes, otherwise {@code false}.
+     * for example in order to resolve user classes, otherwise {@code false}.
      */
     boolean requiresTenantContext();
+
+    /**
+     * Retrieves the tenant control relevant for this given object. Tenant control
+     * should already have been set up on this Hazelcast instance somehow, for
+     * instance by calling {@link TenantControlFactory#saveCurrentTenant()} on a
+     * user thread or should have been replicated from another Hazelcast instance.
+     *
+     * @return tenant control responsible for this object
+     */
+    TenantControl getTenantControl();
 }

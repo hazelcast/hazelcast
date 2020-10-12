@@ -258,8 +258,6 @@ abstract class MapProxySupport<K, V>
         initializeListeners();
         initializeIndexes();
         initializeMapStoreLoad();
-        getNodeEngine().getTenantControlService()
-                       .initializeTenantControl(MapService.SERVICE_NAME, name);
     }
 
     private void initializeListeners() {

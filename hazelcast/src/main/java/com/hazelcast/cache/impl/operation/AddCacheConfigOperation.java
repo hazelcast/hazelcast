@@ -70,6 +70,6 @@ public class AddCacheConfigOperation extends Operation implements IdentifiedData
 
     @Override
     public boolean requiresTenantContext() {
-        return true;
+        return false;
     }
 }

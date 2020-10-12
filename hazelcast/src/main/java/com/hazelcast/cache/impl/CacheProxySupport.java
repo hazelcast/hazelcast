@@ -36,7 +36,6 @@ import com.hazelcast.internal.util.executor.CompletableFutureTask;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
-import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -89,7 +88,7 @@ import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 abstract class CacheProxySupport<K, V>
         extends AbstractDistributedObject<ICacheService>
-        implements ICacheInternal<K, V>, CacheSyncListenerCompleter, InitializingObject {
+        implements ICacheInternal<K, V>, CacheSyncListenerCompleter {
 
     private static final int TIMEOUT = 10;
 
@@ -647,11 +646,5 @@ abstract class CacheProxySupport<K, V>
                 listenerCompleter.deregisterCompletionLatch(completionId);
             }
         }
-    }
-
-    @Override
-    public void initialize() {
-        getNodeEngine().getTenantControlService()
-                       .initializeTenantControl(ICacheService.SERVICE_NAME, nameWithPrefix);
     }
 }

@@ -38,6 +38,7 @@ import com.hazelcast.internal.services.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import static com.hazelcast.cache.impl.CacheEntryViews.createDefaultEntryView;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
@@ -225,5 +226,11 @@ public abstract class CacheOperation extends AbstractNamedOperation
         CacheConfig cacheConfig = cacheService.getCacheConfig(name);
         return (cacheConfig != null
                 && cacheConfig.getInMemoryFormat() == InMemoryFormat.OBJECT);
+    }
+
+    @Override
+    public TenantControl getTenantControl() {
+        return getNodeEngine().getTenantControlService()
+                              .getTenantControl(ICacheService.SERVICE_NAME, name);
     }
 }
