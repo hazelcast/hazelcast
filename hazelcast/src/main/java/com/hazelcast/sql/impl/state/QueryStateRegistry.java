@@ -130,14 +130,7 @@ public class QueryStateRegistry {
         states.remove(queryId);
     }
 
-    /**
-     * Clears the registry. The method is called in case of recovery from the split brain.
-     * <p>
-     *  No additional precautions (such as forceful completion of already running queries) are needed, because a new ID
-     *  is assigned to the local member, and a member with the previous ID is declared dead. As a result,
-     *  {@link QueryStateRegistryUpdater} will detect that old queries have missing members, and will cancel them.
-     */
-    public void reset() {
+    public void shutdown() {
         states.clear();
     }
 
