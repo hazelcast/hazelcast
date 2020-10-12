@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of elements in this list.  If this list contains more than Integer.MAX_VALUE elements, returns
  * Integer.MAX_VALUE.
  */
-@Generated("6562a3c9a3480ead3d16c5cc5372421f")
+@Generated("1df8589657aa322a33d25dc719717292")
 public final class ListSizeCodec {
     //hex: 0x050100
     public static final int REQUEST_MESSAGE_TYPE = 327936;
@@ -49,12 +49,6 @@ public final class ListSizeCodec {
 
     private ListSizeCodec() {
     }
-
-    /**
-     * Name of List
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -68,6 +62,9 @@ public final class ListSizeCodec {
         return clientMessage;
     }
 
+    /**
+     * Name of List
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -86,8 +83,8 @@ public final class ListSizeCodec {
     }
 
     /**
-    * The number of elements in this list
-    */
+     * The number of elements in this list
+     */
     public static int decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

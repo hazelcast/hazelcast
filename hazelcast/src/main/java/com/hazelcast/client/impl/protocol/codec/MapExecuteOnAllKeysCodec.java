@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the user defined EntryProcessor to the all entries in the map.Returns the results mapped by each key in the map.
  */
-@Generated("2e2ef76212a274c01f7adbca13d2d6a5")
+@Generated("8f0e42e7ca7f72546512df6aa6cc1cc4")
 public final class MapExecuteOnAllKeysCodec {
     //hex: 0x013000
     public static final int REQUEST_MESSAGE_TYPE = 77824;
@@ -96,8 +96,8 @@ public final class MapExecuteOnAllKeysCodec {
     }
 
     /**
-    * results of entry process on the entries
-    */
+     * results of entry process on the entries
+     */
     public static java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an continuous entry listener for this map. Listener will get notified for map add/remove/update/evict events
  * filtered by the given predicate.
  */
-@Generated("a25f731ef3e2d083f07c13e7ddf90770")
+@Generated("25b77ea7e55d7af952125a0870668ddc")
 public final class MapAddEntryListenerWithPredicateCodec {
     //hex: 0x011700
     public static final int REQUEST_MESSAGE_TYPE = 71424;
@@ -129,8 +129,8 @@ public final class MapAddEntryListenerWithPredicateCodec {
     }
 
     /**
-    * A unique string which is used as a key to remove the listener.
-    */
+     * A unique string which is used as a key to remove the listener.
+     */
     public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -193,7 +193,7 @@ public final class MapAddEntryListenerWithPredicateCodec {
          *                  LOADED(512)
          * @param uuid UUID of the member that dispatches the event.
          * @param numberOfAffectedEntries Number of entries affected by this event.
-        */
+         */
         public abstract void handleEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries);
     }
 }

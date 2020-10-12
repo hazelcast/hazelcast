@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Registers a new CP membership listener.
  */
-@Generated("abce754aa3e8e37d20018507a5740865")
+@Generated("96abf0fde2b5d46955d8c88195ae5f41")
 public final class CPSubsystemAddMembershipListenerCodec {
     //hex: 0x220100
     public static final int REQUEST_MESSAGE_TYPE = 2228480;
@@ -55,12 +55,6 @@ public final class CPSubsystemAddMembershipListenerCodec {
     private CPSubsystemAddMembershipListenerCodec() {
     }
 
-    /**
-     * Denotes whether register a local listener or not.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public boolean local;
-
     public static ClientMessage encodeRequest(boolean local) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
@@ -73,6 +67,9 @@ public final class CPSubsystemAddMembershipListenerCodec {
         return clientMessage;
     }
 
+    /**
+     * Denotes whether register a local listener or not.
+     */
     public static boolean decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -90,8 +87,8 @@ public final class CPSubsystemAddMembershipListenerCodec {
     }
 
     /**
-    * Registration id for the listener.
-    */
+     * Registration id for the listener.
+     */
     public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -129,7 +126,7 @@ public final class CPSubsystemAddMembershipListenerCodec {
         /**
          * @param member Member which is added or removed.
          * @param type Type of the event. It is either ADDED(1) or REMOVED(2).
-        */
+         */
         public abstract void handleMembershipEventEvent(com.hazelcast.cp.CPMember member, byte type);
     }
 }

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Changes the state of a cluster.
  */
-@Generated("757b60b93af3d9e65614d63913ec386e")
+@Generated("891dd9ee41c7352005f7a556fbb97d80")
 public final class MCChangeClusterStateCodec {
     //hex: 0x200200
     public static final int REQUEST_MESSAGE_TYPE = 2097664;
@@ -48,17 +48,6 @@ public final class MCChangeClusterStateCodec {
 
     private MCChangeClusterStateCodec() {
     }
-
-    /**
-     * New state of the cluster:
-     * 0 - ACTIVE
-     * 1 - NO_MIGRATION
-     * 2 - FROZEN
-     * 3 - PASSIVE
-     * 4 - IN_TRANSITION (not allowed)
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public int newState;
 
     public static ClientMessage encodeRequest(int newState) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -72,6 +61,14 @@ public final class MCChangeClusterStateCodec {
         return clientMessage;
     }
 
+    /**
+     * New state of the cluster:
+     * 0 - ACTIVE
+     * 1 - NO_MIGRATION
+     * 2 - FROZEN
+     * 3 - PASSIVE
+     * 4 - IN_TRANSITION (not allowed)
+     */
     public static int decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

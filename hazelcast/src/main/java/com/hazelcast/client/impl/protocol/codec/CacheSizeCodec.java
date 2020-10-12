@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Total entry count
  */
-@Generated("b31fb4c67281efde900e7ec63226a20a")
+@Generated("d8ddcbc8f659c07c37704241ed5b1d55")
 public final class CacheSizeCodec {
     //hex: 0x131800
     public static final int REQUEST_MESSAGE_TYPE = 1251328;
@@ -48,12 +48,6 @@ public final class CacheSizeCodec {
 
     private CacheSizeCodec() {
     }
-
-    /**
-     * Name of the cache.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -67,6 +61,9 @@ public final class CacheSizeCodec {
         return clientMessage;
     }
 
+    /**
+     * Name of the cache.
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -85,8 +82,8 @@ public final class CacheSizeCodec {
     }
 
     /**
-    * total entry count
-    */
+     * total entry count
+     */
     public static int decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

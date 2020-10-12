@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a publisher that includes value for the cache events it sends.
  */
-@Generated("a3172b8a2ac652c35af7d95d91c44755")
+@Generated("cf50cb45c8d0a9065a83279a243355ac")
 public final class ContinuousQueryPublisherCreateWithValueCodec {
     //hex: 0x160100
     public static final int REQUEST_MESSAGE_TYPE = 1442048;
@@ -143,8 +143,8 @@ public final class ContinuousQueryPublisherCreateWithValueCodec {
     }
 
     /**
-    * Array of key-value pairs.
-    */
+     * Array of key-value pairs.
+     */
     public static java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

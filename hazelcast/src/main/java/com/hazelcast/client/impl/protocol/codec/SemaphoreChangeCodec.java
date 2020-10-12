@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Increases or decreases the number of permits by the given value.
  */
-@Generated("a0889cea13a760bce340476f3e500341")
+@Generated("cb3e6aace049d9b0481b231421d11b18")
 public final class SemaphoreChangeCodec {
     //hex: 0x0C0500
     public static final int REQUEST_MESSAGE_TYPE = 787712;
@@ -128,8 +128,8 @@ public final class SemaphoreChangeCodec {
     }
 
     /**
-    * true
-    */
+     * true
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

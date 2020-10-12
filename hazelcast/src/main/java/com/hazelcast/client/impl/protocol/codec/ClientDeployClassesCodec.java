@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Each item is a Map.Entry<String, byte[]> in the list.
  * key of entry is full class name, and byte[] is the class definition.
  */
-@Generated("a90f7a338188dec6bbbda5f884b0d181")
+@Generated("5d92c7c74978297d378eccd15ca0050f")
 public final class ClientDeployClassesCodec {
     //hex: 0x000D00
     public static final int REQUEST_MESSAGE_TYPE = 3328;
@@ -49,12 +49,6 @@ public final class ClientDeployClassesCodec {
 
     private ClientDeployClassesCodec() {
     }
-
-    /**
-     * list of class definitions
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.util.List<java.util.Map.Entry<java.lang.String, byte[]>> classDefinitions;
 
     public static ClientMessage encodeRequest(java.util.Collection<java.util.Map.Entry<java.lang.String, byte[]>> classDefinitions) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -68,6 +62,9 @@ public final class ClientDeployClassesCodec {
         return clientMessage;
     }
 
+    /**
+     * list of class definitions
+     */
     public static java.util.List<java.util.Map.Entry<java.lang.String, byte[]>> decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

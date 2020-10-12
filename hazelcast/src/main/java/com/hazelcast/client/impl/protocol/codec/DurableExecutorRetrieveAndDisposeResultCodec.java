@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Retrieves and disposes the result of the execution with the given sequence
  */
-@Generated("a448d3a3a4ac391b112c82190ffa21b0")
+@Generated("3395c6978f770c0f10e1b3ef4cf6cf59")
 public final class DurableExecutorRetrieveAndDisposeResultCodec {
     //hex: 0x180600
     public static final int REQUEST_MESSAGE_TYPE = 1574400;
@@ -96,8 +96,8 @@ public final class DurableExecutorRetrieveAndDisposeResultCodec {
     }
 
     /**
-    * The result of the callable execution with the given sequence.
-    */
+     * The result of the callable execution with the given sequence.
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

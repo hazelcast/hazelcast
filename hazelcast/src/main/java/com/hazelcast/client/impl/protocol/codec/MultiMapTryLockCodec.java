@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and lies dormant until one of two things happens:the lock is acquired by the current thread, or the specified
  * waiting time elapses.
  */
-@Generated("14a6a36394ed2a84706fb784680835c4")
+@Generated("a60fc7a3b8ed52caa05472b6c8186b92")
 public final class MultiMapTryLockCodec {
     //hex: 0x021100
     public static final int REQUEST_MESSAGE_TYPE = 135424;
@@ -131,8 +131,8 @@ public final class MultiMapTryLockCodec {
     }
 
     /**
-    * True if the lock was acquired and false if the waiting time elapsed before the lock acquired
-    */
+     * True if the lock was acquired and false if the waiting time elapsed before the lock acquired
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

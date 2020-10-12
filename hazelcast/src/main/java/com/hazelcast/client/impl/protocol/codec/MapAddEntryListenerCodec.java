@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a MapListener for this map. To receive an event, you should implement a corresponding MapListener
  * sub-interface for that event.
  */
-@Generated("5c0c5beaa10d4758dd6cf559fa727a6e")
+@Generated("2c03e0d57beb8c223c66545d39a5e1e7")
 public final class MapAddEntryListenerCodec {
     //hex: 0x011900
     public static final int REQUEST_MESSAGE_TYPE = 71936;
@@ -121,8 +121,8 @@ public final class MapAddEntryListenerCodec {
     }
 
     /**
-    * A unique string which is used as a key to remove the listener.
-    */
+     * A unique string which is used as a key to remove the listener.
+     */
     public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -185,7 +185,7 @@ public final class MapAddEntryListenerCodec {
          *                  LOADED(512)
          * @param uuid UUID of the member that dispatches the event.
          * @param numberOfAffectedEntries Number of entries affected by this event.
-        */
+         */
         public abstract void handleEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries);
     }
 }

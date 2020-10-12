@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query.
  */
-@Generated("95508cca638171fab71c5c06d87241af")
+@Generated("48b0f740d0f5747358df04c1c08d38db")
 public final class SqlExecuteCodec {
     //hex: 0x210100
     public static final int REQUEST_MESSAGE_TYPE = 2162944;
@@ -104,26 +104,32 @@ public final class SqlExecuteCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
         /**
          * Query ID.
          */
         public @Nullable com.hazelcast.sql.impl.QueryId queryId;
+
         /**
          * Row metadata.
          */
         public @Nullable java.util.List<com.hazelcast.sql.SqlColumnMetadata> rowMetadata;
+
         /**
          * Row page.
          */
         public @Nullable java.util.List<java.util.List<com.hazelcast.internal.serialization.Data>> rowPage;
+
         /**
          * Whether the row page is the last.
          */
         public boolean rowPageLast;
+
         /**
          * The number of updated rows.
          */
         public long updateCount;
+
         /**
          * Error object.
          */
