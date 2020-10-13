@@ -641,10 +641,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             return false;
         }
 
-        assert calculateStamp(partitionState.getPartitions()) == partitionState.getStamp() : "Invalid partition stamp! Expected: "
-                + calculateStamp(partitionState.getPartitions()) + ", Actual: " + partitionState.getStamp();
-
         if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
+            assert calculateStamp(partitionState.getPartitions()) == partitionState.getStamp()
+                    : "Invalid partition stamp! Expected: " + calculateStamp(partitionState.getPartitions())
+                    + ", Actual: " + partitionState.getStamp();
             return applyNewPartitionTable(partitionState.getPartitions(), partitionState.getCompletedMigrations(), sender);
         } else {
             //RU_COMPAT_4_0
