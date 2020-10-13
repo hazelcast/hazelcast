@@ -353,14 +353,13 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
                 }
 
                 for (Node dirNode : childElements(parent)) {
-                    handlePersistentMemoryDirectory(persistentMemoryConfig, mode, dirNode);
+                    handlePersistentMemoryDirectory(persistentMemoryConfig, dirNode);
                 }
             }
         }
     }
 
-    protected void handlePersistentMemoryDirectory(PersistentMemoryConfig persistentMemoryConfig,
-                                                PersistentMemoryMode mode, Node dirNode) {
+    protected void handlePersistentMemoryDirectory(PersistentMemoryConfig persistentMemoryConfig, Node dirNode) {
         final String childNodeName = cleanNodeName(dirNode);
         if (matches("directory", childNodeName)) {
             Node numaNodeIdNode = getNamedItemNode(dirNode, "numa-node");

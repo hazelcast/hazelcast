@@ -873,8 +873,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handlePersistentMemoryDirectory(PersistentMemoryConfig persistentMemoryConfig,
-                                                   PersistentMemoryMode mode, Node dirNode) {
+    protected void handlePersistentMemoryDirectory(PersistentMemoryConfig persistentMemoryConfig, Node dirNode) {
         String directory = getTextContent(getNamedItemNode(dirNode, "directory"));
         String numaNodeIdStr = getTextContent(getNamedItemNode(dirNode, "numa-node"));
         if (!StringUtil.isNullOrEmptyAfterTrim(numaNodeIdStr)) {
