@@ -49,7 +49,7 @@ public class SqlClientCursorCleanup extends SqlTestSupport {
     private static final String MAP_NAME = "map";
     private static final int KEY_COUNT = 10000;
 
-    private static volatile boolean FAIL;
+    private static volatile boolean fail;
 
     private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
 
@@ -73,7 +73,7 @@ public class SqlClientCursorCleanup extends SqlTestSupport {
 
     @After
     public void after() {
-        FAIL = false;
+        fail = false;
 
         factory.shutdownAll();
 
@@ -83,7 +83,7 @@ public class SqlClientCursorCleanup extends SqlTestSupport {
 
     @Test
     public void testExceptionOnExecute() {
-        FAIL = true;
+        fail = true;
 
         try {
             SqlResult result = client.getSql().execute("SELECT * FROM " + MAP_NAME);
@@ -103,7 +103,7 @@ public class SqlClientCursorCleanup extends SqlTestSupport {
         try {
             SqlResult result = client.getSql().execute("SELECT * FROM " + MAP_NAME);
 
-            FAIL = true;
+            fail = true;
 
             for (SqlRow ignore : result) {
                 // No-op.
@@ -130,7 +130,7 @@ public class SqlClientCursorCleanup extends SqlTestSupport {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            if (FAIL) {
+            if (fail) {
                 throw new IOException();
             }
         }
