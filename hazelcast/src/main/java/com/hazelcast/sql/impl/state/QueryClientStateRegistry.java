@@ -55,6 +55,7 @@ public class QueryClientStateRegistry {
         SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, true);
 
         if (!page.isLast()) {
+            // Register the query only if there is more data to fetch.
             clientCursors.put(result.getQueryId(), clientCursor);
         }
 
@@ -73,13 +74,20 @@ public class QueryClientStateRegistry {
             throw QueryException.error("Query cursor is not found (closed?): " + queryId);
         }
 
-        SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, false);
+        try {
+            SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, false);
 
-        if (page.isLast()) {
+            if (page.isLast()) {
+                deleteClientCursor(clientCursor);
+            }
+
+            return page;
+        } catch (Exception e) {
+            // Clear the cursor in the case of exception.
             deleteClientCursor(clientCursor);
-        }
 
-        return page;
+            throw e;
+        }
     }
 
     private SqlPage fetchInternal(
@@ -90,14 +98,20 @@ public class QueryClientStateRegistry {
     ) {
         ResultIterator<SqlRow> iterator = clientCursor.getIterator();
 
-        List<List<Data>> page = new ArrayList<>(cursorBufferSize);
-        boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService, isFirstPage);
+        try {
+            List<List<Data>> page = new ArrayList<>(cursorBufferSize);
+            boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService, isFirstPage);
 
-        if (last) {
-            deleteClientCursor(clientCursor);
+            return new SqlPage(page, last);
+        } catch (Exception e) {
+            AbstractSqlResult result = clientCursor.getSqlResult();
+
+            QueryException error = QueryException.error("Failed to serialize SQL query result: " + e.getMessage(), e);
+
+            result.close(error);
+
+            throw error;
         }
-
-        return new SqlPage(page, last);
     }
 
     private static boolean fetchPage(
