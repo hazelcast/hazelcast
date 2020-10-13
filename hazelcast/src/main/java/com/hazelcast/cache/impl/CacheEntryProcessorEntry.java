@@ -67,9 +67,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
         this.completionId = completionId;
         this.startNanos = cacheRecordStore.cacheConfig.isStatisticsEnabled() ? Timer.nanos() : 0;
 
-        final Factory<ExpiryPolicy> expiryPolicyFactory =
-                cacheRecordStore.cacheConfig.getExpiryPolicyFactory();
-        this.expiryPolicy = expiryPolicyFactory.create();
+        this.expiryPolicy = cacheRecordStore.getExpiryPolicy(record, null);
     }
 
     @Override
