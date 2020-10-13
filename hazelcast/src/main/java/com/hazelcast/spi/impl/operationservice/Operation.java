@@ -398,7 +398,7 @@ public abstract class Operation implements DataSerializable {
     }
 
     public final Operation setNodeEngine(NodeEngine nodeEngine) {
-        this.nodeEngine = nodeEngine;
+        //this.nodeEngine = nodeEngine;
         return this;
     }
 

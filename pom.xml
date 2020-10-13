@@ -385,6 +385,7 @@
                                     <!-- 1C means 1 process per cpu core -->
                                     <forkCount>0.5C</forkCount>
                                     <reuseForks>true</reuseForks>
+                                    <skipAfterFailureCount>50</skipAfterFailureCount>
                                     <argLine>
                                         ${vmHeapSettings}
                                         ${javaModuleArgs}
