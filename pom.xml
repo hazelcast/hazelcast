@@ -886,6 +886,7 @@
                             <parallel>none</parallel>
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
+                            <skipAfterFailureCount>50</skipAfterFailureCount>
                             <argLine>
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}

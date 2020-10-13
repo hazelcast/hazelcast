@@ -397,6 +397,7 @@ public abstract class Operation implements DataSerializable {
         return nodeEngine;
     }
 
+    @SuppressFBWarnings("SA_FIELD_DOUBLE_ASSIGNMENT")
     public final Operation setNodeEngine(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.nodeEngine = null;
