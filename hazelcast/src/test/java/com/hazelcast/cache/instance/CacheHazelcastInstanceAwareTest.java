@@ -123,7 +123,7 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         Cache<Integer, Integer> cache = cacheManager.createCache(CACHE_NAME, cacheConfig);
 
         cache.put(1, 1);
-//        cache.get(2);
+        cache.get(2);
 
         assertEquals("Hazelcast instance has not been injected into cache loader factory!",
                 Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id1));

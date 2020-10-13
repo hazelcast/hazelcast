@@ -21,7 +21,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 
-import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.MutableEntry;
 
