@@ -89,7 +89,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         );
     }
 
-    public void stop() {
+    public void shutdown() {
         fragmentPool.stop();
         operationPool.stop();
     }

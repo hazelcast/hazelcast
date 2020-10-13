@@ -160,7 +160,7 @@ public class QueryClientStateRegistry {
         }
     }
 
-    public void reset() {
+    public void shutdown() {
         clientCursors.clear();
     }
 

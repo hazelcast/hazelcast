@@ -151,9 +151,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         if (jetSqlCoreBackend != null) {
             jetSqlCoreBackend.reset();
         }
-        if (internalService != null) {
-            internalService.reset();
-        }
     }
 
     public void shutdown() {
