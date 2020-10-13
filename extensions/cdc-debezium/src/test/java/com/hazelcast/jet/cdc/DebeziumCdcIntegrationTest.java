@@ -209,9 +209,11 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
     }
 
     private MySQLContainer<?> mySqlContainer() {
-        return new MySQLContainer<>("debezium/example-mysql")
-                .withUsername("mysqluser")
-                .withPassword("mysqlpw");
+        return namedTestContainer(
+                new MySQLContainer<>("debezium/example-mysql")
+                        .withUsername("mysqluser")
+                        .withPassword("mysqlpw")
+        );
     }
 
     @Test
@@ -363,10 +365,12 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
     }
 
     private PostgreSQLContainer<?> postgresContainer() {
-        return new PostgreSQLContainer<>("debezium/example-postgres:1.2")
-                .withDatabaseName("postgres")
-                .withUsername("postgres")
-                .withPassword("postgres");
+        return namedTestContainer(
+                new PostgreSQLContainer<>("debezium/example-postgres:1.2")
+                        .withDatabaseName("postgres")
+                        .withUsername("postgres")
+                        .withPassword("postgres")
+        );
     }
 
     @Test

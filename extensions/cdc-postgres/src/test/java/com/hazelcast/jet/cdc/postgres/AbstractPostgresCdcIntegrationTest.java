@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hazelcast.jet.cdc.AbstractCdcIntegrationTest;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import org.junit.Rule;
+import org.junit.experimental.categories.Category;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.io.Serializable;
@@ -29,7 +30,6 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import org.junit.experimental.categories.Category;
 
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
@@ -37,10 +37,12 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
     @Rule
-    public PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("debezium/example-postgres:1.2")
-            .withDatabaseName("postgres")
-            .withUsername("postgres")
-            .withPassword("postgres");
+    public PostgreSQLContainer<?> postgres = namedTestContainer(
+            new PostgreSQLContainer<>("debezium/example-postgres:1.2")
+                    .withDatabaseName("postgres")
+                    .withUsername("postgres")
+                    .withPassword("postgres")
+    );
 
     protected PostgresCdcSources.Builder sourceBuilder(String name) {
         return PostgresCdcSources.postgres(name)

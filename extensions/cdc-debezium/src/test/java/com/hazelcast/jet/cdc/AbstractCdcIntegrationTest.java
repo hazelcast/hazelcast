@@ -26,7 +26,9 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.map.IMap;
+import org.junit.Rule;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TestName;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 
@@ -41,6 +43,9 @@ import static org.junit.Assert.assertTrue;
 
 @Category({IgnoreInJenkinsOnWindows.class})
 public class AbstractCdcIntegrationTest extends JetTestSupport {
+
+    @Rule
+    public TestName testName = new TestName();
 
     @Nonnull
     protected static List<String> mapResultsToSortedList(IMap<?, ?> map) {
@@ -133,6 +138,14 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
                 .withRemoveVolumes(true)
                 .withForce(true)
                 .exec();
+    }
+
+    protected <T> T namedTestContainer(GenericContainer<?> container) {
+        return (T) container.withCreateContainerCmdModifier(createContainerCmd -> {
+            String source = AbstractCdcIntegrationTest.this.getClass().getSimpleName() + "." + testName.getMethodName()
+                .replaceAll("\\[|\\]|\\/| ", "_");
+            createContainerCmd.withName(source + "___" + randomName());
+        });
     }
 
 }

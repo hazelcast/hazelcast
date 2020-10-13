@@ -97,10 +97,10 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
     @Parameters(name = "{2}")
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-                { RetryStrategies.never(), false, "fail"},
-                { RetryStrategies.indefinitely(RECONNECT_INTERVAL_MS), false, "reconnect"},
-                { RetryStrategies.indefinitely(RECONNECT_INTERVAL_MS), true, "reconnect w/ state reset"}
+        return Arrays.asList(new Object[][]{
+                {RetryStrategies.never(), false, "fail"},
+                {RetryStrategies.indefinitely(RECONNECT_INTERVAL_MS), false, "reconnect"},
+                {RetryStrategies.indefinitely(RECONNECT_INTERVAL_MS), true, "reconnect w/ state reset"}
         });
     }
 
@@ -344,14 +344,12 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
         }
     }
 
-    private static Network initNetwork() {
-        return Network.newNetwork();
-    }
-
-    private static MySQLContainer<?> initMySql(Network network, Integer fixedExposedPort) {
-        MySQLContainer<?> mysql = new MySQLContainer<>("debezium/example-mysql:1.2")
-                .withUsername("mysqluser")
-                .withPassword("mysqlpw");
+    private MySQLContainer<?> initMySql(Network network, Integer fixedExposedPort) {
+        MySQLContainer<?> mysql = namedTestContainer(
+                new MySQLContainer<>("debezium/example-mysql:1.2")
+                        .withUsername("mysqluser")
+                        .withPassword("mysqlpw")
+        );
         if (fixedExposedPort != null) {
             Consumer<CreateContainerCmd> cmd = e -> e.withPortBindings(
                     new PortBinding(Ports.Binding.bindPort(fixedExposedPort), new ExposedPort(MYSQL_PORT)));
@@ -364,10 +362,14 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
         return mysql;
     }
 
-    private static ToxiproxyContainer initToxiproxy(Network network) {
-        ToxiproxyContainer toxiproxy = new ToxiproxyContainer().withNetwork(network);
+    private ToxiproxyContainer initToxiproxy(Network network) {
+        ToxiproxyContainer toxiproxy = namedTestContainer(new ToxiproxyContainer().withNetwork(network));
         toxiproxy.start();
         return toxiproxy;
+    }
+
+    private static Network initNetwork() {
+        return Network.newNetwork();
     }
 
     private static ToxiproxyContainer.ContainerProxy initProxy(ToxiproxyContainer toxiproxy, MySQLContainer<?> mysql) {
@@ -410,7 +412,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             }
         }
 
-        throw new IOException("No free port in range [" + fromInclusive + ", " +  toExclusive + ")");
+        throw new IOException("No free port in range [" + fromInclusive + ", " + toExclusive + ")");
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
