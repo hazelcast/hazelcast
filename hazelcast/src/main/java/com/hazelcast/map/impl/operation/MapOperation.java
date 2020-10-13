@@ -367,4 +367,9 @@ public abstract class MapOperation extends AbstractNamedOperation
         return getNodeEngine().getTenantControlService()
                               .getTenantControl(MapService.SERVICE_NAME, name);
     }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }

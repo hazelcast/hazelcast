@@ -96,4 +96,9 @@ public class QueueReplicationOperation extends Operation implements IdentifiedDa
             migrationData.put(name, in.readObject());
         }
     }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }

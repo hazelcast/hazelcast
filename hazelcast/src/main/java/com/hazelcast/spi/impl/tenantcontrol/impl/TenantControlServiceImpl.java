@@ -33,6 +33,7 @@ import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -84,8 +85,9 @@ public class TenantControlServiceImpl
      * @param objectName  the distributed object name
      * @return the tenant control for the specific
      */
-    public TenantControl getTenantControl(@Nonnull String serviceName,
-                                          @Nonnull String objectName) {
+    public @Nullable
+    TenantControl getTenantControl(@Nonnull String serviceName,
+                                   @Nonnull String objectName) {
         if (!isTenantControlEnabled()) {
             return TenantControl.NOOP_TENANT_CONTROL;
         }
@@ -213,6 +215,7 @@ public class TenantControlServiceImpl
     @Override
     public Operation getPreJoinOperation() {
         Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
+        // RU_COMPAT_4_0
         return isTenantControlEnabled() && clusterVersion.isEqualTo(Versions.V4_1)
                 ? new TenantControlReplicationOperation(tenantControlMap)
                 : null;

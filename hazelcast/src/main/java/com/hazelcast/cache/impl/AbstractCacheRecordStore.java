@@ -222,7 +222,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         injectDependencies(expiryPolicyFactory);
         ExpiryPolicy expiryPolicy = expiryPolicyFactory.create();
         injectDependencies(expiryPolicy);
-        registerResourceIfItIsClosable(defaultExpiryPolicy);
+        registerResourceIfItIsClosable(expiryPolicy);
         return expiryPolicy;
     }
 
