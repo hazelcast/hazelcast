@@ -39,6 +39,8 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
+import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
@@ -1683,6 +1685,183 @@ public abstract class HazelcastTestSupport {
         Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
         for (DistributedObject object : distributedObjects) {
             object.destroy();
+        }
+    }
+
+    /**
+     * Factory method of a hiccup resilience infrastructure code that helps to
+     * improve the resilience of hiccup sensitive sections (represented as functions)
+     * of tests with retrying if the outcome of the section is not in line with
+     * the test's expectations AND the failure outcome of the section is due to
+     * a hiccup, where hiccup means the execution time of the section exceeds a
+     * preconfigured threshold. The behavior of the returned
+     * {@link HiccupResilientRunner} is configurable, see its methods.
+     * <p>
+     * NOTE: The applicability of this resilience code is limited to test sections that
+     * - are known to be hiccup sensitive
+     * - have concrete failure cases, which can be unquestionably explained with hiccups
+     * - can reset to their initial state before retrying
+     *
+     * @return the runner that makes the protected section of code resilient
+     * against hiccups
+     */
+    public static HiccupResilientRunner hiccupResilience() {
+        return new HiccupResilientRunner();
+    }
+
+    public static class HiccupResilientRunner {
+        private long hiccupThresholdMillis = SECONDS.toMillis(1);
+        private int maxAttempts = 10;
+        private HiccupOutcomeEvaluatingRunner outcomeEvaluator = new DefaultHiccupOutcomeEvaluatingRunner();
+        private Runnable beforeRetryFn = null;
+        private IdleStrategy idleStrategy = new BackoffIdleStrategy(0, 0, MILLISECONDS.toNanos(100),
+                SECONDS.toNanos(5));
+
+        /**
+         * Sets the threshold in milliseconds after the runner considers a failure
+         * caused by a hiccup in the system.
+         *
+         * @param hiccupThresholdMillis The threshold in millis
+         * @return this instance
+         */
+        public HiccupResilientRunner expectFailureIfRunForMillis(long hiccupThresholdMillis) {
+            this.hiccupThresholdMillis = hiccupThresholdMillis;
+            return this;
+        }
+
+        /**
+         * Sets the number of the maximum number of attempts with the protected
+         * section of the test before failing it.
+         *
+         * @param maxAttempts The number of the maximum attempts
+         * @return this instance
+         */
+        public HiccupResilientRunner maxAttempts(int maxAttempts) {
+            this.maxAttempts = maxAttempts;
+            return this;
+        }
+
+        /**
+         * Sets the function that evaluates the outcome of the protected section
+         * after an attempt.
+         *
+         * @param outcomeEvaluator The outcome evaluator function
+         * @return this instance
+         */
+        public HiccupResilientRunner evaluateOutcomeWith(HiccupOutcomeEvaluatingRunner outcomeEvaluator) {
+            this.outcomeEvaluator = outcomeEvaluator;
+            return this;
+        }
+
+        /**
+         * Sets the function that should be run before retrying the function. The
+         * purpose of running this function is to reset the state of the sensitive
+         * section of the test to the initial state as if it was run for the first
+         * time with the next attempt.
+         *
+         * @param beforeRetryFn The function to call before retrying
+         * @return this instance
+         */
+        public HiccupResilientRunner runBeforeRetry(Runnable beforeRetryFn) {
+            this.beforeRetryFn = beforeRetryFn;
+            return this;
+        }
+
+        public HiccupResilientRunner backOffBeforeRetryWith(IdleStrategy idleStrategy) {
+            this.idleStrategy = idleStrategy;
+            return this;
+        }
+
+        /**
+         * Runs the provided hiccup sensitive function with the hiccup resilience
+         * configured in the test.
+         *
+         * @param sensitiveFn The hiccup sensitive function to make resilient*
+         * @throws HiccupResilienceFailure If the function failed and cannot be
+         * retried more
+         */
+        public void runWithResilience(Runnable sensitiveFn) throws HiccupResilienceFailure {
+            int attempts = 0;
+            long enterMillis;
+            HiccupResilientRunResult result;
+            boolean thresholdExceeded;
+            boolean shouldRetry;
+
+            do {
+                enterMillis = System.currentTimeMillis();
+                result = outcomeEvaluator.runAndEvaluateOutcome(sensitiveFn);
+                long duration = System.currentTimeMillis() - enterMillis;
+                thresholdExceeded = duration > hiccupThresholdMillis;
+
+                if (!result.success && thresholdExceeded) {
+                    LOGGER.warning(String.format("The hiccup sensitive function failed with exceeding the hiccup "
+                            + "resilience threshold %dms! Execution time of the sensitive function: %d ms.",
+                            hiccupThresholdMillis, duration));
+                }
+
+                shouldRetry = !result.success && thresholdExceeded && ++attempts < maxAttempts;
+
+                if (shouldRetry && beforeRetryFn != null) {
+                    beforeRetryFn.run();
+
+                    if (idleStrategy != null) {
+                        idleStrategy.idle(attempts - 1);
+                    }
+                }
+
+            } while (shouldRetry);
+
+            if (!result.success) {
+                if (result.throwable != null) {
+                    LOGGER.warning(String.format("The hiccup sensitive function failed! thresholdExceeded: %b, "
+                            + "attempts: %d", thresholdExceeded, attempts));
+                    throw new HiccupResilienceFailure(result.throwable);
+                } else {
+                    fail("Hiccup sensitive function failed with no throwable");
+                }
+            }
+        }
+
+        private boolean hiccupThresholdExceeded(long enterMillis) {
+            return System.currentTimeMillis() - enterMillis > hiccupThresholdMillis;
+        }
+    }
+
+    @FunctionalInterface
+    public interface HiccupOutcomeEvaluatingRunner {
+        HiccupResilientRunResult runAndEvaluateOutcome(Runnable sensitiveFn) throws RuntimeException;
+    }
+
+    public static class DefaultHiccupOutcomeEvaluatingRunner implements HiccupOutcomeEvaluatingRunner {
+
+        @Override
+        public HiccupResilientRunResult runAndEvaluateOutcome(Runnable sensitiveFn) throws RuntimeException {
+            try {
+                sensitiveFn.run();
+                return new HiccupResilientRunResult(true);
+            } catch (AssertionError error) {
+                return new HiccupResilientRunResult(false, error);
+            }
+        }
+    }
+
+    public static class HiccupResilientRunResult {
+        private final boolean success;
+        private final Throwable throwable;
+
+        public HiccupResilientRunResult(boolean success) {
+            this(success, null);
+        }
+
+        public HiccupResilientRunResult(boolean success, Throwable throwable) {
+            this.success = success;
+            this.throwable = throwable;
+        }
+    }
+
+    public static class HiccupResilienceFailure extends RuntimeException {
+        public HiccupResilienceFailure(Throwable cause) {
+            super(cause);
         }
     }
 }
