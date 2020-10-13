@@ -190,7 +190,8 @@ public class PersistentMemoryConfig {
     }
 
     /**
-     * Sets the mode in which the persistent memory should be used.
+     * Sets the mode in which the persistent memory should be used. The default
+     * mode is {@link PersistentMemoryMode#MOUNTED}.
      *
      * @param mode The mode of the persistent memory
      * @throws NullPointerException if {@code mode} is {@code null}
