@@ -250,6 +250,7 @@
                     <useFile>false</useFile>
                     <trimStackTrace>false</trimStackTrace>
                     <runOrder>failedfirst</runOrder>
+                    <skipAfterFailureCount>20</skipAfterFailureCount>
 
                     <!-- 1C means 1 process per cpu core -->
                     <!-- forkCount>1C</forkCount>
@@ -385,7 +386,7 @@
                                     <!-- 1C means 1 process per cpu core -->
                                     <forkCount>0.5C</forkCount>
                                     <reuseForks>true</reuseForks>
-                                    <skipAfterFailureCount>50</skipAfterFailureCount>
+                                    <skipAfterFailureCount>20</skipAfterFailureCount>
                                     <argLine>
                                         ${vmHeapSettings}
                                         ${javaModuleArgs}
@@ -886,7 +887,7 @@
                             <parallel>none</parallel>
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
-                            <skipAfterFailureCount>50</skipAfterFailureCount>
+                            <skipAfterFailureCount>20</skipAfterFailureCount>
                             <argLine>
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
