@@ -172,11 +172,12 @@ public class PersistentMemoryConfig {
         }
     }
 
-    void setDirectoryConfig(@Nonnull PersistentMemoryDirectoryConfig directoryConfig) {
+    PersistentMemoryConfig setDirectoryConfig(@Nonnull PersistentMemoryDirectoryConfig directoryConfig) {
         requireNonNull(directoryConfig);
         // method to support 4.0 API of NativeMemoryConfig
         this.directoryConfigs.clear();
         this.directoryConfigs.add(directoryConfig);
+        return this;
     }
 
     /**
@@ -194,8 +195,9 @@ public class PersistentMemoryConfig {
      * @param mode The mode of the persistent memory
      * @throws NullPointerException if {@code mode} is {@code null}
      */
-    public void setMode(@Nonnull PersistentMemoryMode mode) {
+    public PersistentMemoryConfig setMode(@Nonnull PersistentMemoryMode mode) {
         this.mode = requireNonNull(mode);
+        return this;
     }
 
     @Override
