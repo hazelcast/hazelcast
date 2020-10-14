@@ -27,10 +27,15 @@ import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -44,6 +49,8 @@ import static org.junit.Assert.assertTrue;
 /**
  * Test that ensures that a security callback is invoked as expected.
  */
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlSecurityCallbackTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";
@@ -108,7 +115,7 @@ public class SqlSecurityCallbackTest extends SqlTestSupport {
 
     private static class TestSqlSecurityContext implements SqlSecurityContext {
 
-        private List<Permission> permissions = new ArrayList<>();
+        private final List<Permission> permissions = new ArrayList<>();
 
         @Override
         public boolean isSecurityEnabled() {
