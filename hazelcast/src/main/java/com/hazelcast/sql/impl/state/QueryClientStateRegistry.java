@@ -108,8 +108,7 @@ public class QueryClientStateRegistry {
             // We use public API to extract results from the cursor. The cursor may throw HazelcastSqlException only. When
             // it happens, the cursor is already closed with the error, so we just re-throw.
             throw e;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // Any other exception indicates that something has happened outside of the internal query state. For example,
             // we may fail to serialize a specific column value to Data. We have to close the cursor in this case.
             AbstractSqlResult result = clientCursor.getSqlResult();
