@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.security;
+package com.hazelcast.sql.misc;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
