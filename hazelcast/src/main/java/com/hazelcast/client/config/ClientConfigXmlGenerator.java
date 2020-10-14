@@ -34,6 +34,7 @@ import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.config.PersistentMemoryConfig;
 import com.hazelcast.config.PersistentMemoryDirectoryConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -382,17 +383,19 @@ public final class ClientConfigXmlGenerator {
     private static void nativeMemory(XmlGenerator gen, NativeMemoryConfig nativeMemory) {
         gen.open("native-memory", "enabled", nativeMemory.isEnabled(),
                 "allocator-type", nativeMemory.getAllocatorType())
-           .node("size", null, "value", nativeMemory.getSize().getValue(),
-                   "unit", nativeMemory.getSize().getUnit())
-           .node("min-block-size", nativeMemory.getMinBlockSize())
-           .node("page-size", nativeMemory.getPageSize())
-           .node("metadata-space-percentage", nativeMemory.getMetadataSpacePercentage());
+                .node("size", null, "value", nativeMemory.getSize().getValue(),
+                        "unit", nativeMemory.getSize().getUnit())
+                .node("min-block-size", nativeMemory.getMinBlockSize())
+                .node("page-size", nativeMemory.getPageSize())
+                .node("metadata-space-percentage", nativeMemory.getMetadataSpacePercentage());
 
-        List<PersistentMemoryDirectoryConfig> directoryConfigs = nativeMemory.getPersistentMemoryConfig()
-                                                                             .getDirectoryConfigs();
+        PersistentMemoryConfig pmemConfig = nativeMemory.getPersistentMemoryConfig();
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = pmemConfig.getDirectoryConfigs();
+        gen.open("persistent-memory",
+                "enabled", pmemConfig.isEnabled(),
+                "mode", pmemConfig.getMode().name());
         if (!directoryConfigs.isEmpty()) {
-            gen.open("persistent-memory")
-               .open("directories");
+            gen.open("directories");
             for (PersistentMemoryDirectoryConfig dirConfig : directoryConfigs) {
                 if (dirConfig.isNumaNodeSet()) {
                     gen.node("directory", dirConfig.getDirectory(),
@@ -401,11 +404,9 @@ public final class ClientConfigXmlGenerator {
                     gen.node("directory", dirConfig.getDirectory());
                 }
             }
-            gen.close()
-               .close();
+            gen.close();
         }
-
-        gen.close();
+        gen.close().close();
     }
 
     private static void proxyFactory(XmlGenerator gen, List<ProxyFactoryConfig> proxyFactories) {

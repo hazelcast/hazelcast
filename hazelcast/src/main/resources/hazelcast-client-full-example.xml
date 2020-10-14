@@ -568,7 +568,7 @@
         <!-- Simple configuration for single-socket machines with non-volatile memory -->
         <!-- <persistent-memory-directory>/mnt/optane</persistent-memory-directory> -->
         <!-- Advanced configuration for non-volatile memory -->
-        <persistent-memory>
+        <persistent-memory enabled="true" mode="MOUNTED">
             <directories>
                 <directory numa-node="0">/mnt/pmem0</directory>
                 <directory numa-node="1">/mnt/pmem1</directory>

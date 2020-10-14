@@ -39,6 +39,7 @@ import com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.PersistentMemoryDirectoryConfig;
+import com.hazelcast.config.PersistentMemoryMode;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SSLConfig;
@@ -472,8 +473,26 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setPageSize(randomInt())
                 .setSize(new MemorySize(randomInt(), MemoryUnit.BYTES))
                 .getPersistentMemoryConfig()
+                .setEnabled(true)
                 .addDirectoryConfig(new PersistentMemoryDirectoryConfig("/mnt/pmem0", 0))
                 .addDirectoryConfig(new PersistentMemoryDirectoryConfig("/mnt/pmem1", 1));
+        clientConfig.setNativeMemoryConfig(expected);
+
+        NativeMemoryConfig actual = newConfigViaGenerator().getNativeMemoryConfig();
+        assertEquals(clientConfig.getNativeMemoryConfig(), actual);
+    }
+
+    @Test
+    public void nativeMemoryWithPersistentMemory_SystemMemoryMode() {
+        NativeMemoryConfig expected = new NativeMemoryConfig();
+        expected.setEnabled(true)
+                .setAllocatorType(MemoryAllocatorType.STANDARD)
+                .setMetadataSpacePercentage(70)
+                .setMinBlockSize(randomInt())
+                .setPageSize(randomInt())
+                .setSize(new MemorySize(randomInt(), MemoryUnit.BYTES))
+                .getPersistentMemoryConfig()
+                .setMode(PersistentMemoryMode.SYSTEM_MEMORY);
         clientConfig.setNativeMemoryConfig(expected);
 
         NativeMemoryConfig actual = newConfigViaGenerator().getNativeMemoryConfig();

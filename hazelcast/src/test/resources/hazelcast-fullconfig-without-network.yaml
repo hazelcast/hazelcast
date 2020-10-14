@@ -593,6 +593,8 @@ hazelcast:
     page-size: 123
     metadata-space-percentage: 12.5
     persistent-memory:
+      enabled: true
+      mode: MOUNTED
       directories:
         - directory: /mnt/pmem0
           numa-node: 0

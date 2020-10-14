@@ -1688,11 +1688,14 @@ public class ConfigXmlGenerator {
                 .node("page-size", nativeMemoryConfig.getPageSize())
                 .node("metadata-space-percentage", nativeMemoryConfig.getMetadataSpacePercentage());
 
-        List<PersistentMemoryDirectoryConfig> directoryConfigs = nativeMemoryConfig.getPersistentMemoryConfig()
-                .getDirectoryConfigs();
+        PersistentMemoryConfig pmemConfig = nativeMemoryConfig.getPersistentMemoryConfig();
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = pmemConfig.getDirectoryConfigs();
+        gen.open("persistent-memory",
+                "enabled", pmemConfig.isEnabled(),
+                "mode", pmemConfig.getMode().name()
+        );
         if (!directoryConfigs.isEmpty()) {
-            gen.open("persistent-memory")
-                    .open("directories");
+            gen.open("directories");
             for (PersistentMemoryDirectoryConfig dirConfig : directoryConfigs) {
                 if (dirConfig.isNumaNodeSet()) {
                     gen.node("directory", dirConfig.getDirectory(),
@@ -1701,11 +1704,9 @@ public class ConfigXmlGenerator {
                     gen.node("directory", dirConfig.getDirectory());
                 }
             }
-            gen.close()
-                    .close();
+            gen.close();
         }
-
-        gen.close();
+        gen.close().close();
     }
 
     private static void liteMemberXmlGenerator(XmlGenerator gen, Config config) {

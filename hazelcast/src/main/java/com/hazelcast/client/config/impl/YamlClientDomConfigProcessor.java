@@ -317,21 +317,15 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
     }
 
     @Override
-    protected void handlePersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig, Node n) {
-        for (Node dirsNode : childElements(n)) {
-            String nodeName = cleanNodeName(dirsNode);
-            if (matches("directories", nodeName)) {
-                for (Node dirNode : childElements(dirsNode)) {
-                    String directory = getTextContent(getNamedItemNode(dirNode, "directory"));
-                    String numaNodeIdStr = getTextContent(getNamedItemNode(dirNode, "numa-node"));
-                    if (!StringUtil.isNullOrEmptyAfterTrim(numaNodeIdStr)) {
-                        int numaNodeId = getIntegerValue("numa-node", numaNodeIdStr);
-                        persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory, numaNodeId));
-                    } else {
-                        persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));
-                    }
-                }
-            }
+    protected void handlePersistentMemoryDirectory(PersistentMemoryConfig persistentMemoryConfig, Node dirNode) {
+        String directory = getTextContent(getNamedItemNode(dirNode, "directory"));
+        String numaNodeIdStr = getTextContent(getNamedItemNode(dirNode, "numa-node"));
+        if (!StringUtil.isNullOrEmptyAfterTrim(numaNodeIdStr)) {
+            int numaNodeId = getIntegerValue("numa-node", numaNodeIdStr);
+            persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory, numaNodeId));
+        } else {
+            persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));
         }
     }
+
 }
