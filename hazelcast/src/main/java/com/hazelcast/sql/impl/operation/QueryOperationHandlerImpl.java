@@ -275,7 +275,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             operation.getOriginatingMemberId()
         );
 
-        state.cancel(error);
+        state.cancel(error, false);
     }
 
     private void handleFlowControl(QueryFlowControlExchangeOperation operation) {
@@ -324,7 +324,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             QueryState state = stateRegistry.getState(queryId);
 
             if (state != null) {
-                state.cancel(error);
+                state.cancel(error, false);
             }
         }
     }

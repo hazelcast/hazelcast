@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.ClockProvider;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
@@ -35,6 +36,8 @@ public class QueryStateRegistry {
     private final ConcurrentHashMap<QueryId, QueryState> states = new ConcurrentHashMap<>();
 
     private final ClockProvider clockProvider;
+
+    private volatile boolean shutdown;
 
     public QueryStateRegistry(ClockProvider clockProvider) {
         this.clockProvider = clockProvider;
@@ -67,6 +70,13 @@ public class QueryStateRegistry {
         );
 
         states.put(queryId, state);
+
+        if (shutdown) {
+            // None member or fragment observed the state so far. So we just remove it from map and throw the proper exception.
+            states.remove(queryId);
+
+            throw shutdownException();
+        }
 
         return state;
     }
@@ -115,6 +125,10 @@ public class QueryStateRegistry {
                 if (oldState != null) {
                     state = oldState;
                 }
+
+                if (shutdown) {
+                    cancelOnShutdown(state);
+                }
             }
 
             return state;
@@ -131,7 +145,13 @@ public class QueryStateRegistry {
     }
 
     public void shutdown() {
-        states.clear();
+        // Set shutdown flag.
+        shutdown = true;
+
+        // Cancel active queries.
+        for (QueryState state : states.values()) {
+            cancelOnShutdown(state);
+        }
     }
 
     public QueryState getState(QueryId queryId) {
@@ -140,5 +160,13 @@ public class QueryStateRegistry {
 
     public Collection<QueryState> getStates() {
         return states.values();
+    }
+
+    private static void cancelOnShutdown(QueryState state) {
+        state.cancel(shutdownException(), true);
+    }
+
+    private static QueryException shutdownException() {
+        return QueryException.error("SQL query has been cancelled due to member shutdown");
     }
 }

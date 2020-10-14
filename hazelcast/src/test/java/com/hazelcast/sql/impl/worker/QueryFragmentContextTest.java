@@ -67,7 +67,7 @@ public class QueryFragmentContextTest {
         }
 
         @Override
-        public void cancel(Exception e) {
+        public void cancel(Exception e, boolean local) {
             // No-op.
         }
 
