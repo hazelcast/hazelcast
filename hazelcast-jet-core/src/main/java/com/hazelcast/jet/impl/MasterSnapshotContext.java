@@ -250,7 +250,7 @@ class MasterSnapshotContext {
                         stats.duration(), stats.numBytes(), stats.numKeys(), stats.numChunks(), snapshotMapName));
             }
             if (!isSuccess) {
-                logger.warning(mc.jobIdString() + " snapshot " + snapshotId + " failed on some member(s), " +
+                logger.warning(mc.jobIdString() + " snapshot " + snapshotId + " phase 1 failed on some member(s), " +
                         "one of the failures: " + mergedResult.getError());
                 try {
                     snapshotMap.clear();

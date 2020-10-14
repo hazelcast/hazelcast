@@ -39,6 +39,7 @@ import org.apache.kafka.connect.storage.OffsetStorageReader;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.sql.DriverManager;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -74,6 +75,8 @@ public abstract class CdcSource<T> {
     private SourceTask task;
 
     CdcSource(Processor.Context context, Properties properties) {
+        // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
+        DriverManager.getDrivers();
         this.logger = context.logger();
         this.properties = properties;
         this.reconnectTracker = new RetryTracker(getRetryStrategy(properties));
