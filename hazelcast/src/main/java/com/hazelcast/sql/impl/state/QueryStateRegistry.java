@@ -72,7 +72,7 @@ public class QueryStateRegistry {
         states.put(queryId, state);
 
         if (shutdown) {
-            // None member or fragment observed the state so far. So we just remove it from map and throw the proper exception.
+            // No members or fragments observed the state so far. So we just remove it from map and throw the proper exception.
             states.remove(queryId);
 
             throw shutdownException();
@@ -128,6 +128,8 @@ public class QueryStateRegistry {
 
                 if (shutdown) {
                     cancelOnShutdown(state);
+
+                    return null;
                 }
             }
 

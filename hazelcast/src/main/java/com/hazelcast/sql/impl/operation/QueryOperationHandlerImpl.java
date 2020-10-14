@@ -242,9 +242,6 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         QueryState state = stateRegistry.onDistributedQueryStarted(localMemberId, operation.getQueryId(), this);
 
         if (state == null) {
-            // Received stale batch for the query initiated on a local member, ignore.
-            assert localMemberId.equals(operation.getQueryId().getMemberId());
-
             return;
         }
 
