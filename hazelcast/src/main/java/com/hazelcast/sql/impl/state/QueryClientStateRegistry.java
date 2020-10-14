@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.QueryException;
@@ -103,10 +104,17 @@ public class QueryClientStateRegistry {
             boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService, isFirstPage);
 
             return new SqlPage(page, last);
-        } catch (Exception e) {
+        } catch (HazelcastSqlException e) {
+            // We use public API to extract results from the cursor. The cursor may throw HazelcastSqlException only. When
+            // it happens, the cursor is already closed with the error, so we just re-throw.
+            throw e;
+        }
+        catch (Exception e) {
+            // Any other exception indicates that something has happened outside of the internal query state. For example,
+            // we may fail to serialize a specific column value to Data. We have to close the cursor in this case.
             AbstractSqlResult result = clientCursor.getSqlResult();
 
-            QueryException error = QueryException.error("Failed to serialize SQL query result: " + e.getMessage(), e);
+            QueryException error = QueryException.error(e.getMessage(), e);
 
             result.close(error);
 
