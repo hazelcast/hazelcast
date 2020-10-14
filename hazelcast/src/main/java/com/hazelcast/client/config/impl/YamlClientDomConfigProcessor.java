@@ -26,7 +26,6 @@ import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.PersistentMemoryConfig;
 import com.hazelcast.config.PersistentMemoryDirectoryConfig;
-import com.hazelcast.config.PersistentMemoryMode;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;

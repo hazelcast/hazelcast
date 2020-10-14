@@ -48,7 +48,6 @@ import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PersistentMemoryConfig;
 import com.hazelcast.config.PersistentMemoryDirectoryConfig;
-import com.hazelcast.config.PersistentMemoryMode;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
