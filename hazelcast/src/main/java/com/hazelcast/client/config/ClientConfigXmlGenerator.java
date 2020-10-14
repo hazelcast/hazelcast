@@ -48,27 +48,17 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.Preconditions;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.impl.IndexUtils;
 
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.StringUtil.formatXml;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
@@ -76,8 +66,6 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
  * {@link ClientConfig} to a Hazelcast Client XML string.
  */
 public final class ClientConfigXmlGenerator {
-
-    private static final ILogger LOGGER = Logger.getLogger(ClientConfigXmlGenerator.class);
 
     private ClientConfigXmlGenerator() {
     }
@@ -147,59 +135,7 @@ public final class ClientConfigXmlGenerator {
         //close HazelcastClient
         gen.close();
 
-        return format(xml.toString(), indent);
-    }
-
-    private static String format(String input, int indent) {
-        if (indent < 0) {
-            return input;
-        }
-        if (indent == 0) {
-            throw new IllegalArgumentException("Indent should be greater than 0");
-        }
-        StreamResult xmlOutput = null;
-        try {
-            Source xmlInput = new StreamSource(new StringReader(input));
-            xmlOutput = new StreamResult(new StringWriter());
-            TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            /*
-             * Older versions of Xalan still use this method of setting indent values.
-             * Attempt to make this work but don't completely fail if it's a problem.
-             */
-            try {
-                transformerFactory.setAttribute("indent-number", indent);
-            } catch (IllegalArgumentException e) {
-                logFinest("Failed to set indent-number attribute; cause: " + e.getMessage());
-            }
-            Transformer transformer = transformerFactory.newTransformer();
-            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            /*
-             * Newer versions of Xalan will look for a fully-qualified output property in order to specify amount of
-             * indentation to use. Attempt to make this work as well but again don't completely fail if it's a problem.
-             */
-            try {
-                transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", Integer.toString(indent));
-            } catch (IllegalArgumentException e) {
-                logFinest("Failed to set indent-amount property; cause: " + e.getMessage());
-            }
-            transformer.transform(xmlInput, xmlOutput);
-            return xmlOutput.getWriter().toString();
-        } catch (Exception e) {
-            LOGGER.warning(e);
-            return input;
-        } finally {
-            if (xmlOutput != null) {
-                closeResource(xmlOutput.getWriter());
-            }
-        }
-    }
-
-    private static void logFinest(String message) {
-        if (LOGGER.isFinestEnabled()) {
-            LOGGER.finest(message);
-        }
+        return formatXml(xml.toString(), indent);
     }
 
     private static void network(XmlGenerator gen, ClientNetworkConfig network) {

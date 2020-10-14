@@ -28,9 +28,27 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.annotation.Nullable;
+import javax.xml.XMLConstants;
+import javax.xml.transform.ErrorListener;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
 import static java.lang.Character.toLowerCase;
+
+import java.io.StringReader;
+import java.io.StringWriter;
 
 /**
  * Utility class for Strings.
@@ -56,6 +74,8 @@ public final class StringUtil {
             = Pattern.compile("^(\\d+)\\.(\\d+)(\\.(\\d+))?(-\\w+(?:-\\d+)?)?(-SNAPSHOT)?$");
 
     private static final String GETTER_PREFIX = "get";
+
+    private static final ILogger LOGGER = Logger.getLogger(StringUtil.class);
 
     private StringUtil() {
     }
@@ -444,5 +464,97 @@ public final class StringUtil {
             startIndex = sb.indexOf(placeholderPrefix, endIndex);
         }
         return sb.toString();
+    }
+
+    /**
+     * Formats given XML String with the given indentation used. If the {@code input} XML string is {@code null}, or
+     * {@code indent} parameter is negative, or XML transformation fails, then the original value is returned unchanged. The
+     * {@link IllegalArgumentException} is thrown when {@code indent==0}.
+     *
+     * @param input the XML String
+     * @param indent indentation (number of spaces used for one indentation level)
+     * @return formatted XML String or the original String if the formatting fails.
+     * @throws IllegalArgumentException when indentation is equal to zero
+     */
+    @SuppressWarnings("checkstyle:NPathComplexity")
+    public static String formatXml(@Nullable String input, int indent) throws IllegalArgumentException {
+        if (input == null || indent < 0) {
+            return input;
+        }
+        if (indent == 0) {
+            throw new IllegalArgumentException("Indentation must not be 0.");
+        }
+        StreamResult xmlOutput = null;
+        try {
+            Source xmlInput = new StreamSource(new StringReader(input));
+            xmlOutput = new StreamResult(new StringWriter());
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+            /*
+             * Older versions of Xalan still use this method of setting indent values.
+             * Attempt to make this work but don't completely fail if it's a problem.
+             */
+            try {
+                transformerFactory.setAttribute("indent-number", indent);
+            } catch (IllegalArgumentException e) {
+                if (LOGGER.isFinestEnabled()) {
+                    LOGGER.finest("Failed to set indent-number attribute; cause: " + e.getMessage());
+                }
+            }
+            Transformer transformer = transformerFactory.newTransformer();
+            // workaround IBM Java behavior - the silent ignorance of issues during the transformation.
+            transformer.setErrorListener(ThrowingErrorListener.INSTANCE);
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            /*
+             * Newer versions of Xalan will look for a fully-qualified output property in order to specify amount of
+             * indentation to use. Attempt to make this work as well but again don't completely fail if it's a problem.
+             */
+            try {
+                transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", Integer.toString(indent));
+            } catch (IllegalArgumentException e) {
+                if (LOGGER.isFinestEnabled()) {
+                    LOGGER.finest("Failed to set indent-amount property; cause: " + e.getMessage());
+                }
+            }
+            transformer.transform(xmlInput, xmlOutput);
+            return xmlOutput.getWriter().toString();
+        } catch (Exception e) {
+            LOGGER.warning(e);
+            return input;
+        } finally {
+            if (xmlOutput != null) {
+                closeResource(xmlOutput.getWriter());
+            }
+        }
+    }
+
+    /**
+     * ErrorListener implementation which just throws the error. It workarounds IBM Java default behaviour when
+     * {@link Transformer#transform(Source, javax.xml.transform.Result)} finishes without problems even if an exception is
+     * thrown within the call. If an error happens, we want to know about it and handle it properly.
+     */
+    static final class ThrowingErrorListener implements ErrorListener {
+        public static final ThrowingErrorListener INSTANCE = new ThrowingErrorListener();
+
+        private ThrowingErrorListener() {
+        }
+
+        @Override
+        public void warning(TransformerException exception) throws TransformerException {
+            throw exception;
+        }
+
+        @Override
+        public void fatalError(TransformerException exception) throws TransformerException {
+            throw exception;
+        }
+
+        @Override
+        public void error(TransformerException exception) throws TransformerException {
+            throw exception;
+        }
     }
 }
