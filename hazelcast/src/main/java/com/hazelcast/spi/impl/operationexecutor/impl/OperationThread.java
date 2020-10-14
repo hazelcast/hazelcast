@@ -161,6 +161,14 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         }
     }
 
+    /**
+     * Processes/executes the provided operation.
+     *
+     * @param operation the operation to execute
+     * @return {@code true} if this operation was not executed and should be retried at a later time,
+     * {@code false} if the operation should not be retried, either because it
+     * timed out or has run successfully
+     */
     private boolean process(Operation operation) {
         currentRunner = operationRunner(operation.getPartitionId());
         try {
@@ -175,6 +183,15 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         }
     }
 
+    /**
+     * Processes/executes the provided packet.
+     *
+     * @param packet the packet to execute
+     * @return {@code true} if this packet was not executed and should be retried at a later time,
+     * {@code false} if the packet should not be retried, either because it
+     * timed out or has run successfully
+     * @throws Exception if there was an exception raised while processing the packet
+     */
     private boolean process(Packet packet) throws Exception {
         currentRunner = operationRunner(packet.getPartitionId());
         if (currentRunner.run(packet)) {
@@ -196,6 +213,14 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         completedRunnableCount.inc();
     }
 
+    /**
+     * Runs the provided task batch.
+     *
+     * @param batch the task batch to execute
+     * @return {@code true} if this task batch was not executed and should be retried at a later time,
+     * {@code false} if the task batch should not be retried, either because it
+     * timed out or has run successfully
+     */
     private boolean process(TaskBatch batch) {
         Object task = batch.next();
         if (task == null) {

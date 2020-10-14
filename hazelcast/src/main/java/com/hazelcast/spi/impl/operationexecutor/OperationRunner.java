@@ -50,23 +50,25 @@ public abstract class OperationRunner {
     public abstract long executedOperationsCount();
 
     /**
-     * @param packet
-     * @return true if packet needs to be put back onto the queue again, and was not executed,
-     * otherwise false (false is the happy path)
-     * Used with Tenant Control to check if tenant is available,
-     * if tenant is unavailable, the packet needs to be re-scheduled
-     * @throws Exception
+     * Runs the provided packet.
+     *
+     * @param packet the packet to execute
+     * @return {@code true} if this packet was not executed and should be retried at a later time,
+     * {@code false} if the packet should not be retried, either because it
+     * timed out or has run successfully
+     * @throws Exception if there was an exception raised while processing the packet
      */
     public abstract boolean run(Packet packet) throws Exception;
 
     public abstract void run(Runnable task);
 
     /**
-     * @param task
-     * @return true if task needs to be put back onto the queue again, and was not executed,
-     * otherwise false (false is the happy path)
-     * Used with Tenant Control to check if tenant is available,
-     * if tenant is unavailable, the task needs to be re-scheduled
+     * Runs the provided operation.
+     *
+     * @param task the operation to execute
+     * @return {@code true} if this operation was not executed and should be retried at a later time,
+     * {@code false} if the operation should not be retried, either because it
+     * timed out or has run successfully
      */
     public abstract boolean run(Operation task);
 

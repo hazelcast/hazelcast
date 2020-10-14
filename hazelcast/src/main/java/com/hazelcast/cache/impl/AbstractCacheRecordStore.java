@@ -143,7 +143,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected TenantContextual<CacheWriter> cacheWriter;
     protected CacheContext cacheContext;
     protected CacheStatisticsImpl statistics;
-    protected final TenantContextual<ExpiryPolicy> defaultExpiryPolicy;
+    protected TenantContextual<ExpiryPolicy> defaultExpiryPolicy;
     protected Iterator<Map.Entry<Data, R>> expirationIterator;
     protected InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<ExpiredKey>();
     protected boolean hasEntryWithExpiration;
@@ -201,29 +201,29 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     private CacheLoader initCacheLoader() {
         Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
-        injectDependencies(cacheLoaderFactory);
-        CacheLoader loader = cacheLoaderFactory.create();
-        injectDependencies(loader);
-        registerResourceIfItIsClosable(loader);
-        return loader;
+        cacheLoaderFactory = injectDependencies(cacheLoaderFactory);
+        CacheLoader cacheLoader = cacheLoaderFactory.create();
+        cacheLoader = injectDependencies(cacheLoader);
+        registerResourceIfItIsClosable(cacheLoader);
+        return cacheLoader;
     }
 
     private CacheWriter initCacheWriter() {
         Factory<CacheWriter> cacheWriterFactory = cacheConfig.getCacheWriterFactory();
-        injectDependencies(cacheWriterFactory);
-        CacheWriter writer = cacheWriterFactory.create();
-        injectDependencies(writer);
-        registerResourceIfItIsClosable(writer);
-        return writer;
+        cacheWriterFactory = injectDependencies(cacheWriterFactory);
+        CacheWriter cacheWriter = cacheWriterFactory.create();
+        cacheWriter = injectDependencies(cacheWriter);
+        registerResourceIfItIsClosable(cacheWriter);
+        return cacheWriter;
     }
 
     private ExpiryPolicy initDefaultExpiryPolicy() {
         Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
-        injectDependencies(expiryPolicyFactory);
-        ExpiryPolicy expiryPolicy = expiryPolicyFactory.create();
-        injectDependencies(expiryPolicy);
-        registerResourceIfItIsClosable(expiryPolicy);
-        return expiryPolicy;
+        expiryPolicyFactory = injectDependencies(expiryPolicyFactory);
+        ExpiryPolicy defaultExpiryPolicy = expiryPolicyFactory.create();
+        defaultExpiryPolicy = injectDependencies(defaultExpiryPolicy);
+        registerResourceIfItIsClosable(defaultExpiryPolicy);
+        return defaultExpiryPolicy;
     }
 
     private Boolean defaultExpiryPolicyExists() {

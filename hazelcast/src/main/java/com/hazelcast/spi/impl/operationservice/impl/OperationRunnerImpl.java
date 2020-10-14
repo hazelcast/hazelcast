@@ -213,6 +213,16 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         return run(op, System.nanoTime());
     }
 
+    /**
+     * Runs the provided operation.
+     *
+     * @param op         the operation to execute
+     * @param startNanos the time, as returned by {@link System#nanoTime} when this operation
+     *                   started execution
+     * @return {@code true} if this operation was not executed and should be retried at a later time,
+     * {@code false} if the operation should not be retried, either because it
+     * timed out or has run successfully
+     */
     private boolean run(Operation op, long startNanos) {
         executedOperationsCounter.inc();
 
