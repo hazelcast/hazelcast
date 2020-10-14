@@ -103,11 +103,6 @@ public class SqlCancelOnShutdownTest extends SqlTestSupport {
         }
     }
 
-    @Test
-    public void testShutdown_participant() {
-
-    }
-
     private static void assertStateCount(QueryStateRegistry stateRegistry, int expectedCount) {
         assertTrueEventually(() -> assertEquals(expectedCount, stateRegistry.getStates().size()));
     }
