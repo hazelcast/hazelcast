@@ -97,7 +97,6 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecureStoreConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
-import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
@@ -435,73 +434,54 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         Node n = firstChildElement(secureStoreRoot);
         if (n != null) {
             String name = cleanNodeName(n);
-            SecureStoreConfig secureStoreConfig;
             if (matches("keystore", name)) {
-                secureStoreConfig = handleJavaKeyStore(n);
+                if (!(encryptionAtRestConfig.getSecureStoreConfig() instanceof JavaKeyStoreSecureStoreConfig)) {
+                    encryptionAtRestConfig.setSecureStoreConfig(new JavaKeyStoreSecureStoreConfig(null));
+                }
+                handleJavaKeyStore(n, (JavaKeyStoreSecureStoreConfig) encryptionAtRestConfig.getSecureStoreConfig());
             } else if (matches("vault", name)) {
-                secureStoreConfig = handleVault(n);
+                if (!(encryptionAtRestConfig.getSecureStoreConfig() instanceof VaultSecureStoreConfig)) {
+                    encryptionAtRestConfig.setSecureStoreConfig(new VaultSecureStoreConfig(null, null, null));
+                }
+                handleVault(n, (VaultSecureStoreConfig) encryptionAtRestConfig.getSecureStoreConfig());
             } else {
                 throw new InvalidConfigurationException("Unrecognized Secure Store type: " + name);
             }
-            encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
         }
     }
 
-    private SecureStoreConfig handleJavaKeyStore(Node keyStoreRoot) {
-        File path = null;
-        String password = null;
-        String type = null;
-        String currentKeyAlias = null;
-        int pollingInterval = JavaKeyStoreSecureStoreConfig.DEFAULT_POLLING_INTERVAL;
+    private void handleJavaKeyStore(Node keyStoreRoot, JavaKeyStoreSecureStoreConfig config) {
         for (Node n : childElements(keyStoreRoot)) {
             String name = cleanNodeName(n);
             if (matches("path", name)) {
-                path = new File(getTextContent(n)).getAbsoluteFile();
+                config.setPath(new File(getTextContent(n)).getAbsoluteFile());
             } else if (matches("type", name)) {
-                type = getTextContent(n);
+                config.setType(getTextContent(n));
             } else if (matches("password", name)) {
-                password = getTextContent(n);
+                config.setPassword(getTextContent(n));
             } else if (matches("current-key-alias", name)) {
-                currentKeyAlias = getTextContent(n);
+                config.setCurrentKeyAlias(getTextContent(n));
             } else if (matches("polling-interval", name)) {
-                pollingInterval = parseInt(getTextContent(n));
+                config.setPollingInterval(parseInt(getTextContent(n)));
             }
         }
-        JavaKeyStoreSecureStoreConfig keyStoreSecureStoreConfig = new JavaKeyStoreSecureStoreConfig(path)
-                .setPassword(password)
-                .setPollingInterval(pollingInterval)
-                .setCurrentKeyAlias(currentKeyAlias);
-
-        if (type != null) {
-            keyStoreSecureStoreConfig.setType(type);
-        }
-        return keyStoreSecureStoreConfig;
     }
 
-    private SecureStoreConfig handleVault(Node vaultRoot) {
-        String address = null;
-        String secretPath = null;
-        String token = null;
-        SSLConfig sslConfig = null;
-        int pollingInterval = VaultSecureStoreConfig.DEFAULT_POLLING_INTERVAL;
+    private void handleVault(Node vaultRoot, VaultSecureStoreConfig config) {
         for (Node n : childElements(vaultRoot)) {
             String name = cleanNodeName(n);
             if (matches("address", name)) {
-                address = getTextContent(n);
+                config.setAddress(getTextContent(n));
             } else if (matches("secret-path", name)) {
-                secretPath = getTextContent(n);
+                config.setSecretPath(getTextContent(n));
             } else if (matches("token", name)) {
-                token = getTextContent(n);
+                config.setToken(getTextContent(n));
             } else if (matches("ssl", name)) {
-                sslConfig = parseSslConfig(n);
+                config.setSSLConfig(parseSslConfig(n));
             } else if (matches("polling-interval", name)) {
-                pollingInterval = parseInt(getTextContent(n));
+                config.setPollingInterval(parseInt(getTextContent(n)));
             }
         }
-        VaultSecureStoreConfig vaultSecureStoreConfig = new VaultSecureStoreConfig(address, secretPath, token)
-                .setSSLConfig(sslConfig)
-                .setPollingInterval(pollingInterval);
-        return vaultSecureStoreConfig;
     }
 
     private void handleCRDTReplication(Node root) {
