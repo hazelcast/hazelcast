@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.QueryException;
@@ -55,6 +56,7 @@ public class QueryClientStateRegistry {
         SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, true);
 
         if (!page.isLast()) {
+            // Register the query only if there is more data to fetch.
             clientCursors.put(result.getQueryId(), clientCursor);
         }
 
@@ -73,13 +75,20 @@ public class QueryClientStateRegistry {
             throw QueryException.error("Query cursor is not found (closed?): " + queryId);
         }
 
-        SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, false);
+        try {
+            SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, false);
 
-        if (page.isLast()) {
+            if (page.isLast()) {
+                deleteClientCursor(clientCursor);
+            }
+
+            return page;
+        } catch (Exception e) {
+            // Clear the cursor in the case of exception.
             deleteClientCursor(clientCursor);
-        }
 
-        return page;
+            throw e;
+        }
     }
 
     private SqlPage fetchInternal(
@@ -90,14 +99,26 @@ public class QueryClientStateRegistry {
     ) {
         ResultIterator<SqlRow> iterator = clientCursor.getIterator();
 
-        List<List<Data>> page = new ArrayList<>(cursorBufferSize);
-        boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService, isFirstPage);
+        try {
+            List<List<Data>> page = new ArrayList<>(cursorBufferSize);
+            boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService, isFirstPage);
 
-        if (last) {
-            deleteClientCursor(clientCursor);
+            return new SqlPage(page, last);
+        } catch (HazelcastSqlException e) {
+            // We use public API to extract results from the cursor. The cursor may throw HazelcastSqlException only. When
+            // it happens, the cursor is already closed with the error, so we just re-throw.
+            throw e;
+        } catch (Exception e) {
+            // Any other exception indicates that something has happened outside of the internal query state. For example,
+            // we may fail to serialize a specific column value to Data. We have to close the cursor in this case.
+            AbstractSqlResult result = clientCursor.getSqlResult();
+
+            QueryException error = QueryException.error("Failed to prepare the SQL result for the client: " + e.getMessage(), e);
+
+            result.close(error);
+
+            throw error;
         }
-
-        return new SqlPage(page, last);
     }
 
     private static boolean fetchPage(
