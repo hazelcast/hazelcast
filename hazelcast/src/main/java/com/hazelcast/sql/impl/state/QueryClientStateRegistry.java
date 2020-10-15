@@ -113,7 +113,7 @@ public class QueryClientStateRegistry {
             // we may fail to serialize a specific column value to Data. We have to close the cursor in this case.
             AbstractSqlResult result = clientCursor.getSqlResult();
 
-            QueryException error = QueryException.error(e.getMessage(), e);
+            QueryException error = QueryException.error("Failed to prepare the SQL result for the client: " + e.getMessage(), e);
 
             result.close(error);
 
