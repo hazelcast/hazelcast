@@ -1589,12 +1589,14 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             entry.getValue().get();
         }
 
-        // collect metrics
-        Map<String, List<Long>> metrics = collectMetrics(SCHEDULED_EXECUTOR_PREFIX, instances);
+        assertTrueEventually(() -> {
+            // collect metrics
+            Map<String, List<Long>> metrics = collectMetrics(SCHEDULED_EXECUTOR_PREFIX, instances);
 
-        // check results
-        assertMetricsCollected(metrics, 1000, 0,
+            // check results
+            assertMetricsCollected(metrics, 1000, 0,
                 1, 1, 0, 1, 0);
+        });
     }
 
     @Test
@@ -1612,11 +1614,13 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             entry.getValue().get();
         }
 
-        // collect metrics
-        Map<String, List<Long>> metrics = collectMetrics(SCHEDULED_EXECUTOR_PREFIX, instances);
+        assertTrueAllTheTime(() -> {
+            // collect metrics
+            Map<String, List<Long>> metrics = collectMetrics(SCHEDULED_EXECUTOR_PREFIX, instances);
 
-        // check results
-        assertTrue("No metrics collection expected but " + metrics, metrics.isEmpty());
+            // check results
+            assertTrue("No metrics collection expected but " + metrics, metrics.isEmpty());
+        }, 5);
     }
 
     @Test
@@ -1635,13 +1639,15 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         assertOpenEventually(progress);
 
-        // collect metrics
-        Map<String, List<Long>> metrics = collectMetrics(SCHEDULED_EXECUTOR_PREFIX, instances);
-
-        // check results
         try {
-            assertMetricsCollected(metrics, 0, 0,
+            assertTrueEventually(() -> {
+                // collect metrics
+                Map<String, List<Long>> metrics = collectMetrics(SCHEDULED_EXECUTOR_PREFIX, instances);
+
+                // check results
+                assertMetricsCollected(metrics, 0, 0,
                     3, 2, 0, now, 0);
+            });
         } finally {
             suspend.release();
         }
@@ -1663,11 +1669,13 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         assertOpenEventually(progress);
 
-        // collect metrics
-        Map<String, List<Long>> metrics = collectMetrics(SCHEDULED_EXECUTOR_PREFIX, instances);
+        assertTrueAllTheTime(() -> {
+            // collect metrics
+            Map<String, List<Long>> metrics = collectMetrics(SCHEDULED_EXECUTOR_PREFIX, instances);
 
-        // check results
-        assertTrue("No metrics collection expected but " + metrics, metrics.isEmpty());
+            // check results
+            assertTrue("No metrics collection expected but " + metrics, metrics.isEmpty());
+        }, 5);
     }
 
 
