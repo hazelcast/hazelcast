@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql;
+package com.hazelcast.sql.misc;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -22,6 +22,9 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlTestInstanceFactory;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.SqlTestSupport;
@@ -44,7 +47,7 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("StatementWithEmptyBody")
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlClientCursorCleanup extends SqlTestSupport {
+public class SqlClientCursorCleanupTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";
     private static final int KEY_COUNT = 10000;
