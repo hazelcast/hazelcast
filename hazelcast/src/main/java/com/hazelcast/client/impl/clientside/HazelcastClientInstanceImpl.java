@@ -314,14 +314,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         metricsRegistry.provideMetrics(executionService);
     }
 
-    private void startClusterDiscoveryService() {
-        AddressProvider addressProvider = clusterDiscoveryService.current().getAddressProvider();
-        if (addressProvider instanceof DefaultAddressProvider) {
-            DefaultAddressProvider defaultAddressProvider = (DefaultAddressProvider) addressProvider;
-            defaultAddressProvider.setMembershipUuid(clusterService.addMembershipListener(defaultAddressProvider));
-        }
-    }
-
     private LoadBalancer initLoadBalancer(ClientConfig config) {
         LoadBalancer lb = config.getLoadBalancer();
         if (lb == null) {
@@ -367,7 +359,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         try {
             lifecycleService.start();
             startMetrics();
-            startClusterDiscoveryService();
             invocationService.start();
             ClientContext clientContext = new ClientContext(this);
             userCodeDeploymentService.start();

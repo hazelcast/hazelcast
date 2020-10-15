@@ -143,9 +143,7 @@ class ClusterDiscoveryServiceBuilder {
         } else if (networkConfig.getAddresses().isEmpty() && discoveryService != null) {
             return new RemoteAddressProvider(() -> discoverAddresses(discoveryService), usePublicAddress(clientConfig));
         }
-        return new DefaultAddressProvider(networkConfig,
-                properties.getString(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED),
-                loggingService.getLogger(DefaultAddressProvider.class));
+        return new DefaultAddressProvider(networkConfig);
     }
 
     private Map<Address, Address> discoverAddresses(DiscoveryService discoveryService) {

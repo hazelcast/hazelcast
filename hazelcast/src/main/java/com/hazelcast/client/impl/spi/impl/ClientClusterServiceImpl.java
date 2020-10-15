@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
+import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.InitialMembershipEvent;
@@ -33,6 +34,7 @@ import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.internal.nio.Connection;
@@ -44,6 +46,7 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import javax.annotation.Nonnull;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.Collection;
 import java.util.EventListener;
 import java.util.HashSet;
@@ -71,8 +74,11 @@ import static java.util.Collections.unmodifiableSet;
  */
 public class ClientClusterServiceImpl
         implements ClientClusterService {
-
     private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 120;
+
+    private static final int REACHABLE_ADDRESS_TIMEOUT = 1000;
+    private static final int NON_REACHABLE_ADDRESS_TIMEOUT = 3000;
+    private static final int REACHABLE_CHECK_NUMBER = 3;
 
     private static final MemberListSnapshot EMPTY_SNAPSHOT = new MemberListSnapshot(-1, new LinkedHashMap<>());
     private final HazelcastClientInstanceImpl client;
@@ -85,6 +91,8 @@ public class ClientClusterServiceImpl
     private final Object clusterViewLock = new Object();
     //read and written under clusterViewLock
     private CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
+
+    private boolean translateToPublicAddress;
 
     private static final class MemberListSnapshot {
         private final int version;
@@ -138,6 +146,11 @@ public class ClientClusterServiceImpl
     @Override
     public long getClusterTime() {
         return Clock.currentTimeMillis();
+    }
+
+    @Override
+    public boolean translateToPublicAddress() {
+        return translateToPublicAddress;
     }
 
     @Override
@@ -225,6 +238,7 @@ public class ClientClusterServiceImpl
 
     private void applyInitialState(int version, Collection<MemberInfo> memberInfos) {
         MemberListSnapshot snapshot = createSnapshot(version, memberInfos);
+        translateToPublicAddress = resolveTranslateToPublicAddress(memberInfos);
         memberListSnapshot.set(snapshot);
         logger.info(membersString(snapshot));
         Set<Member> members = toUnmodifiableHasSet(snapshot.members.values());
@@ -255,6 +269,75 @@ public class ClientClusterServiceImpl
             newMembers.put(memberInfo.getUuid(), memberBuilder.build());
         }
         return new MemberListSnapshot(memberListVersion, newMembers);
+    }
+
+    private boolean resolveTranslateToPublicAddress(Collection<MemberInfo> members) {
+        if (!(client.getClusterDiscoveryService().current().getAddressProvider() instanceof DefaultAddressProvider)) {
+            return false;
+        }
+        String publicIpEnabledProperty = client.getProperties().getString(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED);
+        if ("true".equalsIgnoreCase(publicIpEnabledProperty)) {
+            return true;
+        } else if ("false".equalsIgnoreCase(publicIpEnabledProperty)) {
+            return false;
+        }
+
+        if (members.isEmpty() || memberInternalAddressAsDefinedInClientConfig(members)) {
+            return false;
+        }
+
+        return membersReachableOnlyViaInternalAddress(members);
+    }
+
+    /**
+     * Checks if any member has its internal address as configured in ClientConfig.
+     * <p>
+     * If any member has its internal/private address the same as configured in ClientConfig, then it means that tje client is
+     * able to connect to members via configured address. No need to use make any address translation.
+     */
+    private boolean memberInternalAddressAsDefinedInClientConfig(Collection<MemberInfo> members) {
+        List<String> addresses = client.getClientConfig().getNetworkConfig().getAddresses();
+        return members.stream()
+                .map(MemberInfo::getAddress)
+                .anyMatch(a -> addresses.contains(a.getHost())
+                        || addresses.contains(String.format("%s:%s", a.getHost(), a.getPort())));
+    }
+
+    /**
+     * Checks if members are reachable via public addresses, but not reachable via internal addresses.
+     * <p>
+     * We check only limited number of random members to reduce the slowdown of the startup.
+     */
+    private boolean membersReachableOnlyViaInternalAddress(Collection<MemberInfo> members) {
+        Iterator<MemberInfo> iter = members.iterator();
+        for (int i = 0; i < REACHABLE_CHECK_NUMBER; i++) {
+            if (!iter.hasNext()) {
+                iter = members.iterator();
+            }
+            MemberInfo member = iter.next();
+            Address publicAddress = member.getAddressMap().get(EndpointQualifier.resolve(ProtocolType.CLIENT, "public"));
+            if (publicAddress == null) {
+                return false;
+            }
+            Address internalAddress = member.getAddress();
+            if (isReachable(internalAddress, REACHABLE_ADDRESS_TIMEOUT)) {
+                return false;
+            }
+            if (!isReachable(publicAddress, NON_REACHABLE_ADDRESS_TIMEOUT)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isReachable(Address address, int timeoutMs) {
+        try (Socket s = new Socket()) {
+            s.connect(new InetSocketAddress(address.getHost(), address.getPort()), timeoutMs);
+        } catch (Exception e) {
+            logger.fine(e);
+            return false;
+        }
+        return true;
     }
 
     private Set<Member> toUnmodifiableHasSet(Collection<Member> members) {

@@ -43,12 +43,13 @@ import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
-import com.hazelcast.client.impl.spi.impl.DefaultAddressProvider;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.nio.NioNetworking;
@@ -97,6 +98,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
@@ -312,7 +314,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
 
         for (Member member : client.getClientClusterService().getMemberList()) {
             try {
-                getOrConnect(member.getAddress());
+                getOrConnect(member);
             } catch (Exception e) {
                 EmptyStatement.ignore(e);
             }
@@ -405,12 +407,10 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
 
     private Boolean destroyCurrentClusterConnectionAndTryNextCluster(CandidateClusterContext currentContext,
                                                                      CandidateClusterContext nextContext) {
-        deleteAddressProviderFromMembershipListeners(currentContext);
         currentContext.destroy();
 
         client.onClusterChange();
 
-        addAddressProviderToMemberListeners(nextContext);
         nextContext.start();
 
         ((ClientLoggingService) client.getLoggingService()).updateClusterName(nextContext.getClusterName());
@@ -423,20 +423,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             return true;
         }
         return false;
-    }
-
-    private void deleteAddressProviderFromMembershipListeners(CandidateClusterContext currentContext) {
-        if (currentContext.getAddressProvider() instanceof DefaultAddressProvider) {
-            client.getCluster().removeMembershipListener(
-                    ((DefaultAddressProvider) currentContext.getAddressProvider()).getMembershipUuid());
-        }
-    }
-
-    private void addAddressProviderToMemberListeners(CandidateClusterContext nextContext) {
-        if (nextContext.getAddressProvider() instanceof DefaultAddressProvider) {
-            DefaultAddressProvider defaultAddressProvider = (DefaultAddressProvider) nextContext.getAddressProvider();
-            defaultAddressProvider.setMembershipUuid(client.getCluster().addMembershipListener(defaultAddressProvider));
-        }
     }
 
     private Connection connect(Address address) {
@@ -582,7 +568,15 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         return null;
     }
 
+    TcpClientConnection getOrConnect(@Nonnull Member member) {
+        return getOrConnect(member.getAddress(), () -> translate(member));
+    }
+
     TcpClientConnection getOrConnect(@Nonnull Address address) {
+        return getOrConnect(address, () -> translate(address));
+    }
+
+    TcpClientConnection getOrConnect(@Nonnull Address address, Supplier<Address> addressTranslator) {
         checkClientActive();
         TcpClientConnection connection = getConnection(address);
         if (connection != null) {
@@ -597,8 +591,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                 return connection;
             }
 
-            address = translate(address);
-            connection = createSocketConnection(address);
+            connection = createSocketConnection(addressTranslator.get());
             authenticateOnCluster(connection);
             return connection;
         }
@@ -692,6 +685,14 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         }
     }
 
+    private Address translate(Member member) {
+        Address translatedAddress = translate(member.getAddress());
+        if (member.getAddress().equals(translatedAddress)) {
+            return translateToPublicAddress(member);
+        }
+        return translatedAddress;
+    }
+
     private Address translate(Address target) {
         CandidateClusterContext currentContext = clusterDiscoveryService.current();
         AddressProvider addressProvider = currentContext.getAddressProvider();
@@ -707,6 +708,16 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             logger.warning("Failed to translate address " + target + " via address provider " + e.getMessage());
             throw rethrow(e);
         }
+    }
+
+    private Address translateToPublicAddress(Member member) {
+        if (client.getClientClusterService().translateToPublicAddress()) {
+            Address publicAddress = member.getAddressMap().get(EndpointQualifier.resolve(ProtocolType.CLIENT, "public"));
+            if (publicAddress != null) {
+                return publicAddress;
+            }
+        }
+        return member.getAddress();
     }
 
     void onConnectionClose(TcpClientConnection connection) {
@@ -960,10 +971,10 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         }
     }
 
-    private InetSocketAddress resolveAddress(Address target) {
-        return ConcurrencyUtil.getOrPutIfAbsent(inetSocketAddressCache, target, arg -> {
+    private InetSocketAddress resolveAddress(Address address) {
+        return ConcurrencyUtil.getOrPutIfAbsent(inetSocketAddressCache, address, arg -> {
             try {
-                return new InetSocketAddress(target.getInetAddress(), target.getPort());
+                return new InetSocketAddress(address.getInetAddress(), address.getPort());
             } catch (UnknownHostException e) {
                 throw rethrow(e);
             }
@@ -1056,7 +1067,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                                 return;
                             }
                             if (getConnection(member.getUuid()) == null) {
-                                getOrConnect(address);
+                                getOrConnect(member);
                             }
                         } catch (Exception e) {
                             EmptyStatement.ignore(e);
