@@ -270,6 +270,11 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
                 ignore(e);
             }
         }
+
+        @Override
+        public boolean validatesTarget() {
+            return false;
+        }
     }
 
     abstract static class CountDownLatchHolder {
