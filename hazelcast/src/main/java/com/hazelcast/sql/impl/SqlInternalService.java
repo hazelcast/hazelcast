@@ -183,7 +183,7 @@ public class SqlInternalService {
 
             return state;
         } catch (Exception e) {
-            state.cancel(e);
+            state.cancel(e, false);
 
             throw e;
         }

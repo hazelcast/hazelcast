@@ -29,8 +29,9 @@ public interface QueryStateCallback {
      * Cancel the query with error.
      *
      * @param e error that caused the cancel, or {@code null} if cancellation is triggered by the user request
+     * @param local whether the cancellation should be performed locally, without notification of other participants
      */
-    void cancel(Exception e);
+    void cancel(Exception e, boolean local);
 
     /**
      * Check whether the query is cancelled. If the query is not cancelled, the method returns with no side effects.
