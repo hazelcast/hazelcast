@@ -85,7 +85,7 @@ public class AbstractExecTest extends SqlTestSupport {
             }
 
             @Override
-            public void cancel(Exception e) {
+            public void cancel(Exception e, boolean local) {
                 // No-op.
             }
 

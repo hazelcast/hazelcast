@@ -39,7 +39,7 @@ final class DiagnosticsStdout implements DiagnosticsLog {
     DiagnosticsStdout(Diagnostics diagnostics) {
         this.diagnostics = diagnostics;
         this.logger = diagnostics.logger;
-        this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime);
+        this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime, diagnostics.logger);
         this.printWriter = newWriter();
         logWriter.init(printWriter);
         logger.info("Sending diagnostics logs to the stdout");

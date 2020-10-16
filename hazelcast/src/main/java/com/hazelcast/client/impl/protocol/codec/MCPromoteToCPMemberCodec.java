@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Promotes the local member to the CP role.
  */
-@Generated("b8e99e4db3948cadb6982125fb9596dc")
+@Generated("b96a15891898b7e86233db7a8b31122e")
 public final class MCPromoteToCPMemberCodec {
     //hex: 0x201A00
     public static final int REQUEST_MESSAGE_TYPE = 2103808;
@@ -47,7 +47,6 @@ public final class MCPromoteToCPMemberCodec {
 
     private MCPromoteToCPMemberCodec() {
     }
-
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();

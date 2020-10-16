@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * it means that the caller thread could not acquire the lock for the key within the timeout duration,
  * thus the put operation is not successful.
  */
-@Generated("663186eb962944f806f786db6b918f1d")
+@Generated("fa9600fd8c08f58a9fc4df46b51f14e0")
 public final class MapTryPutCodec {
     //hex: 0x010C00
     public static final int REQUEST_MESSAGE_TYPE = 68608;
@@ -121,8 +121,8 @@ public final class MapTryPutCodec {
     }
 
     /**
-    * Returns true if successful, otherwise returns false
-    */
+     * Returns true if successful, otherwise returns false
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

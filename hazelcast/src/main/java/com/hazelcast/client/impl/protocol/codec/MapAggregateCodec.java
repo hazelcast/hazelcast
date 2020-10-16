@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the aggregation logic on all map entries and returns the result
  */
-@Generated("8ab8341a5bdf9295ea075d3cff7df01a")
+@Generated("2ae2bb73e7c01e5665892b761dd8f795")
 public final class MapAggregateCodec {
     //hex: 0x013900
     public static final int REQUEST_MESSAGE_TYPE = 80128;
@@ -96,8 +96,8 @@ public final class MapAggregateCodec {
     }
 
     /**
-    * the aggregation result
-    */
+     * the aggregation result
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

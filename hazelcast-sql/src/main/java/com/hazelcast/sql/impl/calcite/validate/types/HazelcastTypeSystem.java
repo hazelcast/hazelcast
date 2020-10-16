@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -25,10 +25,12 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.rel.type.RelDataTypeSystemImpl;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlLiteral;
+import org.apache.calcite.sql.type.BasicSqlType;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.math.BigDecimal;
@@ -374,4 +376,71 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
         return HazelcastTypeFactory.INSTANCE.createSqlType(literal.getTypeName());
     }
 
+    @Override
+    public RelDataType deriveSumType(RelDataTypeFactory typeFactory, RelDataType argumentType) {
+        if (argumentType instanceof BasicSqlType) {
+            SqlTypeName type = deriveSumType(argumentType.getSqlTypeName());
+
+            if (type.allowsPrec() && argumentType.getPrecision() != RelDataType.PRECISION_NOT_SPECIFIED) {
+                int precision = typeFactory.getTypeSystem().getMaxPrecision(type);
+                if (type.allowsScale()) {
+                    return typeFactory.createTypeWithNullability(
+                            typeFactory.createSqlType(type, precision, argumentType.getScale()),
+                            argumentType.isNullable()
+                    );
+                } else {
+                    return typeFactory.createTypeWithNullability(
+                            typeFactory.createSqlType(type, precision),
+                            argumentType.isNullable()
+                    );
+                }
+            } else {
+                return typeFactory.createTypeWithNullability(
+                        typeFactory.createSqlType(type),
+                        argumentType.isNullable()
+                );
+            }
+        }
+        return argumentType;
+    }
+
+    private static SqlTypeName deriveSumType(SqlTypeName type) {
+        switch (type) {
+            case TINYINT:
+            case SMALLINT:
+            case INTEGER:
+            case BIGINT:
+                return SqlTypeName.BIGINT;
+            case DECIMAL:
+                return SqlTypeName.DECIMAL;
+            case REAL:
+            case DOUBLE:
+                return SqlTypeName.DOUBLE;
+            default:
+                return type;
+        }
+    }
+
+    @Override
+    public RelDataType deriveAvgAggType(RelDataTypeFactory typeFactory, RelDataType argumentType) {
+        switch (argumentType.getSqlTypeName()) {
+            case TINYINT:
+            case SMALLINT:
+            case INTEGER:
+            case BIGINT:
+            case DECIMAL:
+                return typeFactory.createTypeWithNullability(
+                        typeFactory.createSqlType(DECIMAL),
+                        argumentType.isNullable()
+                );
+            case REAL:
+            case DOUBLE:
+                return typeFactory.createTypeWithNullability(
+                        typeFactory.createSqlType(DOUBLE),
+                        argumentType.isNullable()
+                );
+            default:
+                return argumentType;
+        }
+    }
 }

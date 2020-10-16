@@ -2686,7 +2686,6 @@
             <xs:element name="config-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ring-buffer-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="reliable-topic-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="sql-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
         </xs:choice>
         <xs:attribute name="on-join-operation" type="permission-on-join-operation" use="optional" default="RECEIVE"/>
     </xs:complexType>
@@ -3182,11 +3181,12 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="directories">
+            <xs:element name="directories" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         List of directories where the persistent memory
-                        is mounted to.
+                        is mounted to. Requires the mode attribute of persistent-memory
+                        to be MOUNTED (default).
 
                         If the specified directories are not unique either in the directories
                         themselves or in the NUMA nodes specified for them,
@@ -3202,7 +3202,40 @@
                 </xs:complexType>
             </xs:element>
         </xs:all>
+        <xs:attribute name="enabled" default="false" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets if using persistent memory as Hazelcast native memory is enabled.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="mode" default="MOUNTED" type="persistent-memory-mode">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the operational mode of the persistent memory configured
+                    on the machine.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
+    <xs:simpleType name="persistent-memory-mode">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="MOUNTED">
+                <xs:annotation>
+                    <xs:documentation>
+                        The persistent memory is mounted into the file system (also known as FS DAX mode).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="SYSTEM_MEMORY">
+                <xs:annotation>
+                    <xs:documentation>
+                        The persistent memory is onlined as system memory (also known as KMEM DAX mode).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
 
     <xs:complexType name="persistent-memory-directory">
         <xs:annotation>
@@ -5104,6 +5137,8 @@
                     <xs:element name="relax-flags-check" type="xs:boolean" minOccurs="0"/>
                     <xs:element name="use-name-without-realm" type="xs:boolean" minOccurs="0"/>
                     <xs:element name="security-realm" type="xs:string" minOccurs="0"/>
+                    <xs:element name="principal" type="xs:string" minOccurs="0"/>
+                    <xs:element name="keytab-file" type="xs:string" minOccurs="0"/>
                     <xs:element name="ldap" type="ldap-authentication" minOccurs="0"/>
                 </xs:choice>
             </xs:extension>
@@ -5121,6 +5156,8 @@
         <xs:all>
             <xs:element name="realm" type="xs:string" minOccurs="0"/>
             <xs:element name="security-realm" type="xs:string" minOccurs="0"/>
+            <xs:element name="principal" type="xs:string" minOccurs="0"/>
+            <xs:element name="keytab-file" type="xs:string" minOccurs="0"/>
             <xs:element name="service-name-prefix" type="xs:string" minOccurs="0"/>
             <xs:element name="spn" type="xs:string" minOccurs="0"/>
             <xs:element name="use-canonical-hostname" type="xs:boolean" minOccurs="0"/>

@@ -14,23 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.security.permission;
+package com.hazelcast.security;
 
-import java.security.Permission;
+import javax.security.auth.callback.Callback;
 
-public class SqlPermission extends ClusterPermission {
+import com.hazelcast.core.HazelcastInstance;
 
-    public SqlPermission() {
-        super("<sql>");
+/**
+ * This JAAS {@link Callback} is used to retrieve the current {@link HazelcastInstance}.
+ * <p>
+ * This {@link Callback} is only supported on Hazelcast member side.
+ */
+public class HazelcastInstanceCallback implements Callback {
+
+    private HazelcastInstance hazelcastInstance;
+
+    public HazelcastInstance getHazelcastInstance() {
+        return hazelcastInstance;
     }
 
-    @Override
-    public boolean implies(Permission permission) {
-        return getClass() == permission.getClass();
-    }
-
-    @Override
-    public String getActions() {
-        return "sql";
+    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+        this.hazelcastInstance = hazelcastInstance;
     }
 }

@@ -38,6 +38,7 @@
 
         <calcite.version>1.23.0</calcite.version>
         <guava.version>24.1.1-jre</guava.version>
+        <slf4j.version>1.7.25</slf4j.version>
     </properties>
 
     <build>
@@ -102,7 +103,12 @@
                                 </includes>
                             </artifactSet>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
                                     <resource>com.hazelcast.org.codehaus.commons.compiler.properties</resource>
                                 </transformer>
                             </transformers>
@@ -121,6 +127,8 @@
                                     <excludes>
                                         <!-- Avoid automatic discovery of Calcite JDBC. -->
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <exclude>**/package-info.java</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -128,15 +136,39 @@
                                     <excludes>
                                         <!-- Avoid automatic discovery of Avatica JDBC. -->
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Exclude Avatica ProtoBuf definitions, since Avatica is not used. -->
                                         <exclude>*.proto</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
+                                    <artifact>org.codehaus.janino:*</artifact>
                                     <excludes>
-                                        <!-- Jackson Core is already included in hazelcast.jar. -->
-                                        <exclude>**</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>commons-codec:commons-codec</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.google.guava:guava</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.jayway.jsonpath:json-path</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.slf4j:slf4j-api</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
@@ -182,9 +214,12 @@
                                 </relocation>
                             </relocations>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
                             <filters>
                                 <filter>
@@ -201,7 +236,9 @@
                                     <excludes>
                                         <!-- Avoid automatic discovery of Calcite JDBC. -->
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>codegen/**</exclude>
+                                        <exclude>**/package-info.java</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -209,13 +246,15 @@
                                     <excludes>
                                         <!-- Avoid automatic discovery of Avatica JDBC. -->
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Exclude Avatica ProtoBuf definitions, since Avatica is not used. -->
                                         <exclude>*.proto</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.codehaus.janino:janino</artifact>
+                                    <artifact>org.codehaus.janino:*</artifact>
                                     <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Replace with the one from src/main/resources for correct reflection in runtime. -->
                                         <exclude>org.codehaus.commons.compiler.properties</exclude>
                                     </excludes>
@@ -225,6 +264,30 @@
                                     <excludes>
                                         <!-- Jackson Core is already included in hazelcast.jar. -->
                                         <exclude>**</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>commons-codec:commons-codec</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.google.guava:guava</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.jayway.jsonpath:json-path</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.slf4j:slf4j-api</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
@@ -342,7 +405,11 @@
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.googlecode.junit-toolbox</groupId>
             <artifactId>junit-toolbox</artifactId>

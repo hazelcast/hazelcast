@@ -96,6 +96,28 @@ public abstract class AbstractAtomicRefBasicTest extends HazelcastRaftTestSuppor
     }
 
     @Test
+    public void test_get_whenRefIsException() {
+        IAtomicReference atomicRef = createAtomicRef(randomName());
+        RuntimeException value = new RuntimeException("boom");
+        atomicRef.set(value);
+        assertInstanceOf(RuntimeException.class, atomicRef.get());
+        assertEquals(value.getMessage(),
+                ((RuntimeException) atomicRef.get()).getMessage());
+    }
+
+    @Test
+    public void test_getAsync_whenRefIsException()
+            throws ExecutionException, InterruptedException {
+        IAtomicReference atomicRef = createAtomicRef(randomName());
+        RuntimeException value = new RuntimeException("boom");
+        atomicRef.set(value);
+        assertInstanceOf(RuntimeException.class,
+                atomicRef.getAsync().toCompletableFuture().get());
+        assertEquals(value.getMessage(),
+                ((RuntimeException) atomicRef.getAsync().toCompletableFuture().get()).getMessage());
+    }
+
+    @Test
     public void test_getAndSet() {
         assertNull(atomicRef.getAndSet("str1"));
         assertEquals("str1", atomicRef.getAndSet("str2"));

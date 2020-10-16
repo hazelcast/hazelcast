@@ -87,10 +87,6 @@ public class InternalPartitionImpl extends AbstractInternalPartition implements 
         return version;
     }
 
-    void incrementVersion(int delta) {
-        version += delta;
-    }
-
     @Override
     public PartitionReplica getReplica(int replicaIndex) {
         return replicas[replicaIndex];
@@ -115,7 +111,6 @@ public class InternalPartitionImpl extends AbstractInternalPartition implements 
         version = partition.version();
     }
 
-    //RU_COMPAT_4_0
     void setVersion(int version) {
         this.version = version;
     }

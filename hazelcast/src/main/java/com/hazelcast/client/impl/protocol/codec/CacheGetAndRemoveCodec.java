@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically removes the entry for a key only if currently mapped to some value.
  */
-@Generated("4b1b25935ed3db2a38f322b6c90c556d")
+@Generated("7d74638e49efa7a485caf81c7722b0f6")
 public final class CacheGetAndRemoveCodec {
     //hex: 0x130A00
     public static final int REQUEST_MESSAGE_TYPE = 1247744;
@@ -104,8 +104,8 @@ public final class CacheGetAndRemoveCodec {
     }
 
     /**
-    * the value if one existed or null if no mapping existed for this key
-    */
+     * the value if one existed or null if no mapping existed for this key
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

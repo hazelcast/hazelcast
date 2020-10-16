@@ -98,7 +98,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
@@ -149,7 +148,6 @@ class MapServiceContextImpl implements MapServiceContext {
     private final ConstructorFunction<String, MapContainer> mapConstructor;
     private final IndexProvider indexProvider = new DefaultIndexProvider();
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
-    private final AtomicReference<PartitionIdSet> ownedPartitions = new AtomicReference<>();
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
     private final ExecutorStats offloadedExecutorStats = new ExecutorStats();
     /**
@@ -158,6 +156,8 @@ class MapServiceContextImpl implements MapServiceContext {
     private final Semaphore nodeWideLoadedKeyLimiter;
 
     private MapService mapService;
+
+    private volatile PartitionIdSet ownedPartitions;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     MapServiceContextImpl(NodeEngine nodeEngine) {
@@ -484,39 +484,28 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public PartitionIdSet getOwnedPartitions() {
-        PartitionIdSet partitions = ownedPartitions.get();
-        if (partitions == null) {
-            do {
-                reloadOwnedPartitions();
-                partitions = ownedPartitions.get();
-            } while (partitions == null);
+    public PartitionIdSet getOrInitCachedMemberPartitions() {
+        PartitionIdSet ownedPartitionIdSet = ownedPartitions;
+        if (ownedPartitionIdSet != null) {
+            return ownedPartitionIdSet;
         }
-        return partitions;
-    }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The method will set the owned partition set in a CAS loop because
-     * this method can be called concurrently.
-     */
-    @Override
-    public void reloadOwnedPartitions() {
-        IPartitionService partitionService = nodeEngine.getPartitionService();
-        for (; ; ) {
-            PartitionIdSet expected = ownedPartitions.get();
-            Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
-            PartitionIdSet newSet = immutablePartitionIdSet(partitionService.getPartitionCount(), partitions);
-            if (ownedPartitions.compareAndSet(expected, newSet)) {
-                return;
+        synchronized (this) {
+            ownedPartitionIdSet = ownedPartitions;
+            if (ownedPartitionIdSet != null) {
+                return ownedPartitionIdSet;
             }
+            IPartitionService partitionService = nodeEngine.getPartitionService();
+            Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
+            ownedPartitionIdSet = immutablePartitionIdSet(partitionService.getPartitionCount(), partitions);
+            ownedPartitions = ownedPartitionIdSet;
         }
+        return ownedPartitionIdSet;
     }
 
     @Override
     public void nullifyOwnedPartitions() {
-        ownedPartitions.set(null);
+        ownedPartitions = null;
     }
 
     @Override

@@ -59,10 +59,10 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
                 //// joinInternal()
                 // RuntimeException with a constructor accepting a Throwable cause
                 new Object[] {JOIN_INTERNAL, new IllegalStateException("message"), IllegalStateException.class,
-                              new RootCauseMatcher(IllegalStateException.class, "message")},
+                        IsNull.nullValue(Throwable.class)},
                 // RuntimeException with no constructor accepting a Throwable cause
                 new Object[] {JOIN_INTERNAL, new IllegalThreadStateException("message"), IllegalThreadStateException.class,
-                              new RootCauseMatcher(IllegalThreadStateException.class, "message")},
+                        IsNull.nullValue(Throwable.class)},
                 // OperationTimeoutException: OperationTimeoutException is only expected to be
                 // thrown with a local stack trace; this test is about verifying the exception remains unwrapped
                 new Object[] {JOIN_INTERNAL, new OperationTimeoutException("message"), OperationTimeoutException.class,
@@ -74,9 +74,9 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
                 // Checked exception is wrapped in HazelcastException
                 new Object[] {JOIN_INTERNAL, new Exception("message"), HazelcastException.class,
                               new RootCauseMatcher(Exception.class, "message")},
-                // Error subclass is wrapped in instance of same class
+                // Error subclass rethrown as same type without wrapping
                 new Object[] {JOIN_INTERNAL, new ExceptionInInitializerError("message"), ExceptionInInitializerError.class,
-                              new RootCauseMatcher(ExceptionInInitializerError.class, "message")},
+                        IsNull.nullValue(Throwable.class)},
 
                 //// join()
                 // RuntimeException with a constructor accepting a Throwable cause
@@ -116,7 +116,7 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
                               new RootCauseMatcher(Exception.class, "message")},
                 // Error subclass is wrapped in ExecutionException
                 new Object[] {GET, new ExceptionInInitializerError("message"), ExecutionException.class,
-                              new RootCauseMatcher(ExceptionInInitializerError.class, "message")},
+                              new RootCauseMatcher(ExceptionInInitializerError.class, null)},
 
         };
     }

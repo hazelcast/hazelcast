@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Triggers partial start
  */
-@Generated("34a3c9af0f6b45db942ec4d5b59f64a0")
+@Generated("d59a7f2ac2c8a30140929feb6b1e8795")
 public final class MCTriggerPartialStartCodec {
     //hex: 0x201D00
     public static final int REQUEST_MESSAGE_TYPE = 2104576;
@@ -48,7 +48,6 @@ public final class MCTriggerPartialStartCodec {
 
     private MCTriggerPartialStartCodec() {
     }
-
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -73,8 +72,8 @@ public final class MCTriggerPartialStartCodec {
     }
 
     /**
-    * True if the partial restart was successfully initiated, false otherwise
-    */
+     * True if the partial restart was successfully initiated, false otherwise
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

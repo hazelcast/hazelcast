@@ -345,7 +345,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
                 for (Partition partition : partitionService.getPartitions()) {
                     Member owner = partition.getOwner();
 
-                    assertNotNull(partition.getOwner());
+                    assertNotNull(owner);
 
                     assignedMemberIds.add(owner.getUuid());
                 }

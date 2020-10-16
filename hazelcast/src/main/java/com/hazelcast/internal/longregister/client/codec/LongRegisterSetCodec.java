@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically sets the given value.
  */
-@Generated("7b2f85ec4327845874fb1002f23aa63e")
+@Generated("2df89e075f17f86b529aeb6402e8adcc")
 public final class LongRegisterSetCodec {
     //hex: 0xFF0800
     public static final int REQUEST_MESSAGE_TYPE = 16713728;
@@ -69,6 +69,7 @@ public final class LongRegisterSetCodec {
         clientMessage.setOperationName("LongRegister.Set");
         Frame initialFrame = new Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_NEW_VALUE_FIELD_OFFSET, newValue);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
@@ -84,10 +85,6 @@ public final class LongRegisterSetCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-    }
-
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         Frame initialFrame = new Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -97,12 +94,5 @@ public final class LongRegisterSetCodec {
         return clientMessage;
     }
 
-    public static ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

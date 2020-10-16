@@ -174,17 +174,17 @@ public final class MapSampleMetadataResolver {
         if (topType == QueryDataType.OBJECT) {
             // Add public getters.
             for (Method method : clazz.getMethods()) {
-                String methodName = extractAttributeNameFromMethod(clazz, method);
+                String attributeName = extractAttributeNameFromMethod(clazz, method);
 
-                if (methodName == null) {
+                if (attributeName == null) {
                     continue;
                 }
 
                 QueryDataType methodType = QueryDataTypeUtils.resolveTypeForClass(method.getReturnType());
 
                 fields.putIfAbsent(
-                    methodName,
-                    new MapTableField(methodName, methodType, false, new QueryPath(methodName, isKey))
+                    attributeName,
+                    new MapTableField(attributeName, methodType, false, new QueryPath(attributeName, isKey))
                 );
             }
 
@@ -193,7 +193,7 @@ public final class MapSampleMetadataResolver {
 
             while (currentClass != Object.class) {
                 for (Field field : currentClass.getDeclaredFields()) {
-                    if (!Modifier.isPublic(field.getModifiers())) {
+                    if (!Modifier.isPublic(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
                         continue;
                     }
 

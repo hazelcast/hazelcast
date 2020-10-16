@@ -367,16 +367,10 @@ public class PartitionStateManager implements ClusterVersionListener {
         return partitions[partitionId].isMigrating();
     }
 
-    /** Sets the replica members for the {@code partitionId}. */
-    void updateReplicas(int partitionId, InternalPartition replicas) {
-        InternalPartitionImpl partition = partitions[partitionId];
-        partition.setReplicasAndVersion(replicas);
-    }
-
     public void updateStamp() {
         stateStamp = calculateStamp(partitions);
         if (logger.isFinestEnabled()) {
-            logger.finest("New partition state stamp is: " + stateStamp);
+            logger.finest("New calculated partition state stamp is: " + stateStamp);
         }
     }
 
@@ -388,8 +382,13 @@ public class PartitionStateManager implements ClusterVersionListener {
         return partitions[partitionId].version();
     }
 
-    public void incrementPartitionVersion(int partitionId, int delta) {
-        partitions[partitionId].incrementVersion(delta);
+    /**
+     * Increments partition version by delta and updates partition state stamp.
+     */
+    void incrementPartitionVersion(int partitionId, int delta) {
+        InternalPartitionImpl partition = partitions[partitionId];
+        partition.setVersion(partition.version() + delta);
+        updateStamp();
     }
 
     // called under partition service lock
@@ -434,7 +433,7 @@ public class PartitionStateManager implements ClusterVersionListener {
 
     void reset() {
         initialized = false;
-        stateStamp = 0;
+        stateStamp = INITIAL_STAMP;
         stateVersion.set(0);
         // local member uuid changes during ClusterService reset
         PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());

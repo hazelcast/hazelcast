@@ -27,6 +27,7 @@ import com.hazelcast.internal.cluster.impl.operations.PromoteLiteMemberOp;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
@@ -64,9 +65,11 @@ import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -197,6 +200,11 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         hz1.getCluster().promoteLocalLiteMember();
 
         assertPartitionsAssignedEventually(hz1);
+        waitAllForSafeState(hz1, hz2, hz3);
+
+        long partitionStamp = getPartitionService(hz1).getPartitionStateStamp();
+        assertEquals(partitionStamp, getPartitionService(hz2).getPartitionStateStamp());
+        assertEquals(partitionStamp, getPartitionService(hz3).getPartitionStateStamp());
     }
 
     @Test
@@ -213,6 +221,12 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         hz2.getCluster().promoteLocalLiteMember();
 
         assertPartitionsAssignedEventually(hz2);
+
+        waitAllForSafeState(hz1, hz2, hz3);
+
+        long partitionStamp = getPartitionService(hz1).getPartitionStateStamp();
+        assertEquals(partitionStamp, getPartitionService(hz2).getPartitionStateStamp());
+        assertEquals(partitionStamp, getPartitionService(hz3).getPartitionStateStamp());
     }
 
     @Test
@@ -321,6 +335,86 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         } catch (ExecutionException e) {
             assertInstanceOf(IllegalStateException.class, e.getCause());
         }
+    }
+
+    @Test
+    public void test_lite_member_promotion_causes_no_data_loss_on_three_members() throws InterruptedException {
+        int entryCount = 1000;
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        Config config = new Config().setLiteMember(true);
+
+        // start first hazelcast instance as a lite member
+        HazelcastInstance firstHazelcastInstance = factory.newHazelcastInstance(config);
+
+        // start second and third hazelcast instances as a lite member
+        HazelcastInstance secondHazelcastInstance = factory.newHazelcastInstance(config);
+        HazelcastInstance thirdHazelcastInstance = factory.newHazelcastInstance(config);
+
+        // promote all instances to data members
+        firstHazelcastInstance.getCluster().promoteLocalLiteMember();
+        secondHazelcastInstance.getCluster().promoteLocalLiteMember();
+        thirdHazelcastInstance.getCluster().promoteLocalLiteMember();
+
+        // check if cluster is in a good shape
+        assertTrueEventually(() -> assertTrue(firstHazelcastInstance.getPartitionService().isClusterSafe()));
+
+        // insert some dummy data into the testing map
+        String mapName = randomMapName();
+        IMap<String, String> testMap = firstHazelcastInstance.getMap(mapName);
+        for (int i = 0; i < entryCount; ++i) {
+            testMap.put("key" + i, "value" + i);
+        }
+
+        // check all data is correctly inserted
+        assertEquals(entryCount, testMap.size());
+
+        // kill second instance
+        secondHazelcastInstance.getLifecycleService().terminate();
+
+        // backup count for the map is set to 1
+        // even with 1 node down, no data loss is expected
+        assertTrueEventually(() -> assertEquals(entryCount, firstHazelcastInstance.getMap(mapName).size()));
+        assertTrueEventually(() -> assertEquals(entryCount, thirdHazelcastInstance.getMap(mapName).size()));
+    }
+
+    @Test
+    public void test_lite_member_promotion_causes_no_data_loss_on_two_members() throws InterruptedException {
+        int entryCount = 1000;
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        Config config = new Config().setLiteMember(true);
+
+        // start first hazelcast instance as a lite member
+        HazelcastInstance firstHazelcastInstance = factory.newHazelcastInstance(config);
+
+        // start second hazelcast instance as a lite member
+        HazelcastInstance secondHazelcastInstance = factory.newHazelcastInstance(config);
+
+        // promote all instances to data members
+        firstHazelcastInstance.getCluster().promoteLocalLiteMember();
+
+        secondHazelcastInstance.getCluster().promoteLocalLiteMember();
+
+        // check if cluster is in a good shape
+        assertTrueEventually(() -> assertTrue(firstHazelcastInstance.getPartitionService().isClusterSafe()));
+
+        // insert some dummy data into the testing map
+        String mapName = randomMapName();
+        IMap<String, String> testMap = firstHazelcastInstance.getMap(mapName);
+        for (int i = 0; i < entryCount; ++i) {
+            testMap.put("key" + i, "value" + i);
+        }
+
+        // check all data is correctly inserted
+        assertEquals(entryCount, testMap.size());
+
+        // kill second instance
+        secondHazelcastInstance.getLifecycleService().terminate();
+
+        // backup count for the map is set to 1
+        // even with 1 node down, no data loss is expected
+        assertTrueEventually(() -> assertEquals(entryCount, firstHazelcastInstance.getMap(mapName).size()));
     }
 
     private void assertPromotionInvocationStarted(HazelcastInstance instance) {

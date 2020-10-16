@@ -116,7 +116,7 @@ public final class ScheduledFutureProxy<V>
         checkAccessibleHandler();
         checkAccessibleOwner();
 
-        Operation op = new CancelTaskOperation(handler, mayInterruptIfRunning);
+        Operation op = new CancelTaskOperation(handler, false);
         return this.<Boolean>invoke(op).joinInternal();
     }
 
@@ -231,19 +231,22 @@ public final class ScheduledFutureProxy<V>
             op.setPartitionId(handler.getPartitionId());
             return invokeOnPartition(op);
         } else {
-            return invokeOnAddress(op, handler.getUuid());
+            return invokeOnTarget(op, handler.getUuid());
         }
     }
 
     private <T> InvocationFuture<T> invokeOnPartition(Operation op) {
         OperationService opService = ((HazelcastInstanceImpl) instance).node.getNodeEngine().getOperationService();
-
         return opService.invokeOnPartition(op);
     }
 
-    private <T> InvocationFuture<T> invokeOnAddress(Operation op, UUID uuid) {
+    private <T> InvocationFuture<T> invokeOnTarget(Operation op, UUID uuid) {
         NodeEngineImpl nodeEngine = ((HazelcastInstanceImpl) instance).node.getNodeEngine();
         MemberImpl member = nodeEngine.getClusterService().getMember(uuid);
+        if (member == null) {
+            throw new IllegalStateException("Member with address: " + uuid + ",  holding this scheduled task"
+                    + " is not part of this cluster.");
+        }
         OperationService opService = nodeEngine.getOperationService();
         return opService.invokeOnTarget(op.getServiceName(), op, member.getAddress());
     }

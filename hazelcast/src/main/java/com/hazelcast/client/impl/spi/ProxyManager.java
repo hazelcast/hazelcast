@@ -131,12 +131,7 @@ public final class ProxyManager {
         register(ReplicatedMapService.SERVICE_NAME, ClientReplicatedMapProxy.class);
         register(XAService.SERVICE_NAME, XAResourceProxy.class);
         register(RingbufferService.SERVICE_NAME, ClientRingbufferProxy.class);
-        register(ReliableTopicService.SERVICE_NAME, new ClientProxyFactory() {
-            @Override
-            public ClientProxy create(String id, ClientContext context) {
-                return new ClientReliableTopicProxy(id, context, client);
-            }
-        });
+        register(ReliableTopicService.SERVICE_NAME, (id, context) -> new ClientReliableTopicProxy(id, context, client));
         register(FlakeIdGeneratorService.SERVICE_NAME, ClientFlakeIdGeneratorProxy.class);
         register(CardinalityEstimatorService.SERVICE_NAME, ClientCardinalityEstimatorProxy.class);
         register(DistributedScheduledExecutorService.SERVICE_NAME, ClientScheduledExecutorProxy.class);

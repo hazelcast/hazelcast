@@ -24,7 +24,9 @@ import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
 import com.hazelcast.sql.impl.plan.cache.PlanCheckContext;
 import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
+import java.security.Permission;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -59,12 +61,17 @@ public class Plan implements CacheablePlan {
     /** Map from inbound edge ID to number of members which will write into it. */
     private final Map<Integer, Integer> inboundEdgeMemberCountMap;
 
+    /** Result set metadata (columns name and types). */
     private final SqlRowMetadata rowMetadata;
 
+    /** Parameter metadata (number of parameter and their types). */
     private final QueryParameterMetadata parameterMetadata;
 
     /** IDs of objects used in the plan. */
     private final Set<PlanObjectKey> objectIds;
+
+    /** Permissions that are required to execute this plan. */
+    private final List<Permission> permissions;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public Plan(
@@ -77,7 +84,8 @@ public class Plan implements CacheablePlan {
         SqlRowMetadata rowMetadata,
         QueryParameterMetadata parameterMetadata,
         PlanCacheKey planKey,
-        Set<PlanObjectKey> objectIds
+        Set<PlanObjectKey> objectIds,
+        List<Permission> permissions
     ) {
         this.partMap = partMap;
         this.fragments = fragments;
@@ -89,6 +97,7 @@ public class Plan implements CacheablePlan {
         this.parameterMetadata = parameterMetadata;
         this.planKey = planKey;
         this.objectIds = objectIds;
+        this.permissions = permissions;
     }
 
     @Override
@@ -109,6 +118,13 @@ public class Plan implements CacheablePlan {
     @Override
     public boolean isPlanValid(PlanCheckContext context) {
         return context.isValid(objectIds, partMap);
+    }
+
+    @Override
+    public void checkPermissions(SqlSecurityContext context) {
+        for (Permission permission : permissions) {
+            context.checkPermission(permission);
+        }
     }
 
     public Map<UUID, PartitionIdSet> getPartitionMap() {
@@ -151,4 +167,11 @@ public class Plan implements CacheablePlan {
         return parameterMetadata;
     }
 
+    public Set<PlanObjectKey> getObjectIds() {
+        return objectIds;
+    }
+
+    public List<Permission> getPermissions() {
+        return permissions;
+    }
 }

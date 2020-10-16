@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the sequence of the tail. The tail is the side of the ringbuffer where the items are added to.
  * The initial value of the tail is -1.
  */
-@Generated("a1a5bd572743a26c27d6e75f7fff31b3")
+@Generated("d11066d229a0934e0d3035177246ebab")
 public final class RingbufferTailSequenceCodec {
     //hex: 0x170200
     public static final int REQUEST_MESSAGE_TYPE = 1507840;
@@ -49,12 +49,6 @@ public final class RingbufferTailSequenceCodec {
 
     private RingbufferTailSequenceCodec() {
     }
-
-    /**
-     * Name of the Ringbuffer
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -68,6 +62,9 @@ public final class RingbufferTailSequenceCodec {
         return clientMessage;
     }
 
+    /**
+     * Name of the Ringbuffer
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -86,8 +83,8 @@ public final class RingbufferTailSequenceCodec {
     }
 
     /**
-    * the sequence of the tail
-    */
+     * the sequence of the tail
+     */
     public static long decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

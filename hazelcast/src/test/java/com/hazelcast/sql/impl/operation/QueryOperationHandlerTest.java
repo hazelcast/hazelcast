@@ -82,6 +82,7 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
+@Ignore("https://github.com/hazelcast/hazelcast/issues/16929#issuecomment-699819103")
 public class QueryOperationHandlerTest extends SqlTestSupport {
 
     private static final int EDGE_ID = 1;
@@ -506,7 +507,8 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             null,
             QueryParameterMetadata.EMPTY,
             null,
-            Collections.emptySet()
+            Collections.emptySet(),
+            Collections.emptyList()
         );
 
         QueryId queryId = initiatorService.getStateRegistry().onInitiatorQueryStarted(

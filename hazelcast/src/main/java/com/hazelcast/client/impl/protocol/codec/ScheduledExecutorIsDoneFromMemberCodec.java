@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Checks whether a task is done.
  * @see {@link java.util.concurrent.Future#cancel(boolean)}
  */
-@Generated("ae858bed94007d87a4be355d5f2aeb16")
+@Generated("bfac3b3943b139b9e2e516a623441ddd")
 public final class ScheduledExecutorIsDoneFromMemberCodec {
     //hex: 0x1A0E00
     public static final int REQUEST_MESSAGE_TYPE = 1707520;
@@ -105,8 +105,8 @@ public final class ScheduledExecutorIsDoneFromMemberCodec {
     }
 
     /**
-    * True if the task is done
-    */
+     * True if the task is done
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

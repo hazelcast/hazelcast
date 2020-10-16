@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the specified collection is also a set, this operation effectively modifies this set so that its value is the
  * intersection of the two sets.
  */
-@Generated("d1938d90c4246b367e4d958a185f956d")
+@Generated("7fc0b8b41f554b798d12d25bb475e832")
 public final class SetCompareAndRetainAllCodec {
     //hex: 0x060800
     public static final int REQUEST_MESSAGE_TYPE = 395264;
@@ -100,9 +100,9 @@ public final class SetCompareAndRetainAllCodec {
     }
 
     /**
-    * true if at least one item in values existed and it is retained, false otherwise. All items not in valueSet but
-    * in the Set are removed.
-    */
+     * true if at least one item in values existed and it is retained, false otherwise. All items not in valueSet but
+     * in the Set are removed.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

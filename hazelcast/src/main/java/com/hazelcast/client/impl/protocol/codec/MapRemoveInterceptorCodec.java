@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the given interceptor for this map so it will not intercept operations anymore.
  */
-@Generated("c509bb796fffe73f867f36097b05880f")
+@Generated("e16c419a65b19f3097e8a6ce6d9c59a4")
 public final class MapRemoveInterceptorCodec {
     //hex: 0x011500
     public static final int REQUEST_MESSAGE_TYPE = 70912;
@@ -97,8 +97,8 @@ public final class MapRemoveInterceptorCodec {
     }
 
     /**
-    * Returns true if successful, otherwise returns false
-    */
+     * Returns true if successful, otherwise returns false
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

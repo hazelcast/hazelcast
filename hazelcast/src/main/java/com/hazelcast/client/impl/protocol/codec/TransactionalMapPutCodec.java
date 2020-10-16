@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the key, the old value is replaced by the specified value. The object to be put will be accessible only in the
  * current transaction context till transaction is committed.
  */
-@Generated("0ce6ccaffffe975553d9752429f3dd38")
+@Generated("13adb58ca57caf88654ff36166637848")
 public final class TransactionalMapPutCodec {
     //hex: 0x0E0600
     public static final int REQUEST_MESSAGE_TYPE = 919040;
@@ -128,8 +128,8 @@ public final class TransactionalMapPutCodec {
     }
 
     /**
-    * Previous value associated with key or  null if there was no mapping for key
-    */
+     * Previous value associated with key or  null if there was no mapping for key
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

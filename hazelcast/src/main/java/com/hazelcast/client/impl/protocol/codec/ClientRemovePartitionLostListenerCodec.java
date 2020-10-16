@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified partition lost listener. If there is no such listener added before, this call does no change
  * in the cluster and returns false.
  */
-@Generated("6dc759b61a5b8beefc8e8ecf627f2b6a")
+@Generated("2336c4b188c4f37a82a8b757f687dd35")
 public final class ClientRemovePartitionLostListenerCodec {
     //hex: 0x000700
     public static final int REQUEST_MESSAGE_TYPE = 1792;
@@ -51,12 +51,6 @@ public final class ClientRemovePartitionLostListenerCodec {
     private ClientRemovePartitionLostListenerCodec() {
     }
 
-    /**
-     * The id assigned during the listener registration.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.util.UUID registrationId;
-
     public static ClientMessage encodeRequest(java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
@@ -69,6 +63,9 @@ public final class ClientRemovePartitionLostListenerCodec {
         return clientMessage;
     }
 
+    /**
+     * The id assigned during the listener registration.
+     */
     public static java.util.UUID decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -86,8 +83,8 @@ public final class ClientRemovePartitionLostListenerCodec {
     }
 
     /**
-    * true if the listener existed and removed, false otherwise.
-    */
+     * true if the listener existed and removed, false otherwise.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If an addAll is executed concurrently with an add or addAll, no guarantee is given that items are contiguous.
  * The result of the future contains the sequenceId of the last written item
  */
-@Generated("84665da7d0de269ea82d91bfe91eb3d9")
+@Generated("08bd2df6c17485bd58ed34f0d315e630")
 public final class RingbufferAddAllCodec {
     //hex: 0x170800
     public static final int REQUEST_MESSAGE_TYPE = 1509376;
@@ -111,8 +111,8 @@ public final class RingbufferAddAllCodec {
     }
 
     /**
-    * the CompletionStage to synchronize on completion.
-    */
+     * the CompletionStage to synchronize on completion.
+     */
     public static long decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

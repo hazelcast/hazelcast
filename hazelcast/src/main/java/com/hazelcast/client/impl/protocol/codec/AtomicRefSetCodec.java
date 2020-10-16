@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically sets the given value
  */
-@Generated("a38383a91d55b4f5430dd28568d68d4d")
+@Generated("170b4ec8aff644821296faf1b7bee432")
 public final class AtomicRefSetCodec {
     //hex: 0x0A0500
     public static final int REQUEST_MESSAGE_TYPE = 656640;
@@ -110,9 +110,9 @@ public final class AtomicRefSetCodec {
     }
 
     /**
-    * the old value or null, depending on
-    * the {
-    */
+     * the old value or null, depending on
+     * the {
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

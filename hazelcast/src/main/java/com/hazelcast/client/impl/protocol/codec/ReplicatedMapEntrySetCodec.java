@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets a lazy set view of the mappings contained in this map.
  */
-@Generated("6163173f4a23e2abed525518fddf3ca2")
+@Generated("243992e7a3045d83abc3ddd6d0751855")
 public final class ReplicatedMapEntrySetCodec {
     //hex: 0x0D1100
     public static final int REQUEST_MESSAGE_TYPE = 856320;
@@ -47,12 +47,6 @@ public final class ReplicatedMapEntrySetCodec {
 
     private ReplicatedMapEntrySetCodec() {
     }
-
-    /**
-     * Name of the ReplicatedMap
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -66,6 +60,9 @@ public final class ReplicatedMapEntrySetCodec {
         return clientMessage;
     }
 
+    /**
+     * Name of the ReplicatedMap
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -84,8 +81,8 @@ public final class ReplicatedMapEntrySetCodec {
     }
 
     /**
-    * A lazy set view of the mappings contained in this map.
-    */
+     * A lazy set view of the mappings contained in this map.
+     */
     public static java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

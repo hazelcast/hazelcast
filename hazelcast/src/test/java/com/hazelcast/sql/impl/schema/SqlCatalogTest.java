@@ -96,7 +96,7 @@ public class SqlCatalogTest {
 
         @Override
         public List<List<String>> getDefaultSearchPaths() {
-            throw new UnsupportedOperationException();
+            return emptyList();
         }
 
         @Nonnull

@@ -225,7 +225,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
 
         List<Index> result = new ArrayList<>();
-        for (int partitionId : mapServiceContext.getOwnedPartitions()) {
+        for (int partitionId : mapServiceContext.getOrInitCachedMemberPartitions()) {
             Indexes indexes = mapContainer.getIndexes(partitionId);
 
             for (InternalIndex index : indexes.getIndexes()) {

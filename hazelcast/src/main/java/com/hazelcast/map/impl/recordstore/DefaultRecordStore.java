@@ -368,6 +368,31 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return lockStore != null ? lockStore.getOwnerInfo(key) : null;
     }
 
+    /**
+     * Loads value of key. If necessary loads it by
+     * extracting from {@link MetadataAwareValue}
+     *
+     * @return loaded value from map-store,
+     * when no value found returns null
+     */
+    private Object loadValueOf(Data key) {
+        Object value = mapDataStore.load(key);
+        if (value == null) {
+            return null;
+        }
+
+        if (mapDataStore.isWithExpirationTime()) {
+            MetadataAwareValue loaderEntry = (MetadataAwareValue) value;
+            long proposedTtl = expirationTimeToTtl(loaderEntry.getExpirationTime());
+            if (proposedTtl <= 0) {
+                return null;
+            }
+            value = loaderEntry.getValue();
+        }
+
+        return value;
+    }
+
     @Override
     public Record loadRecordOrNull(Data key, boolean backup, Address callerAddress) {
         Object value = mapDataStore.load(key);
@@ -508,7 +533,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record record = getRecordOrNull(key, now, false);
         Object oldValue;
         if (record == null) {
-            oldValue = mapDataStore.load(key);
+            oldValue = loadValueOf(key);
             if (oldValue != null && persistenceEnabledFor(provenance)) {
                 mapDataStore.remove(key, now, transactionId);
             }
@@ -527,7 +552,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Object oldValue;
         boolean removed = false;
         if (record == null) {
-            oldValue = mapDataStore.load(key);
+            oldValue = loadValueOf(key);
             if (oldValue == null) {
                 return false;
             }
@@ -723,7 +748,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public boolean setTtl(Data key, long ttl, boolean backup) {
         long now = getNow();
         Record record = getRecordOrNull(key, now, false);
-        Object existingValue = record == null ? mapDataStore.load(key) : record.getValue();
+        Object existingValue = record == null ? loadValueOf(key) : record.getValue();
         if (existingValue == null) {
             return false;
         }
@@ -763,7 +788,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         Record record = getRecordOrNull(key, now, false);
         Object oldValue = record == null
-                ? (loadFromStore ? mapDataStore.load(key) : null) : record.getValue();
+                ? (loadFromStore ? loadValueOf(key) : null) : record.getValue();
         newValue = mapServiceContext.interceptPut(interceptorRegistry, oldValue, newValue);
         onStore(record);
 
@@ -792,7 +817,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         mergingEntry = (MapMergeTypes<Object, Object>) serializationService.getManagedContext().initialize(mergingEntry);
         mergePolicy = (SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object>)
-            serializationService.getManagedContext().initialize(mergePolicy);
+                serializationService.getManagedContext().initialize(mergePolicy);
 
         Data key = (Data) mergingEntry.getRawKey();
         Record record = getRecordOrNull(key, now, false);
@@ -849,7 +874,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record record = getRecordOrNull(key, now, false);
         Object oldValue;
         if (record == null) {
-            oldValue = mapDataStore.load(key);
+            oldValue = loadValueOf(key);
         } else {
             oldValue = record.getValue();
         }
@@ -875,7 +900,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record record = getRecordOrNull(key, now, false);
         Object current;
         if (record == null) {
-            current = mapDataStore.load(key);
+            current = loadValueOf(key);
         } else {
             current = record.getValue();
         }
@@ -1021,13 +1046,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record record = getRecordOrNull(key, now, false);
         Object oldValue;
         if (record == null) {
-            oldValue = mapDataStore.load(key);
-            if (oldValue != null) {
-                record = createRecord(key, oldValue, UNSET, UNSET, now);
-                storage.put(key, record);
-                mutationObserver.onPutRecord(key, record, null, false);
-                mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.LOADED, key, null, oldValue);
-            }
+            Record loadedRecord = loadRecordOrNull(key, false, callerAddress);
+            oldValue = loadedRecord != null ? loadedRecord.getValue() : null;
         } else {
             accessRecord(record, now);
             oldValue = record.getValue();

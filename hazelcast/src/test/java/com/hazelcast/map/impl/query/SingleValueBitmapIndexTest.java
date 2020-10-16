@@ -22,11 +22,16 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -125,14 +130,22 @@ public class SingleValueBitmapIndexTest extends HazelcastTestSupport {
 
     private IMap<Long, Person> persons;
 
+    private IMap<Long, Person> personsA;
+    private IMap<Long, Person> personsB;
+
+    private TestHazelcastInstanceFactory factory;
+
     @Before
     public void before() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instanceA = factory.newHazelcastInstance(getConfig());
         HazelcastInstance instanceB = factory.newHazelcastInstance(getConfig());
         waitAllForSafeState(instanceA, instanceB);
 
         persons = instanceA.getMap("persons");
+
+        personsA = persons;
+        personsB = instanceB.getMap("persons");
     }
 
     @Test
@@ -190,6 +203,62 @@ public class SingleValueBitmapIndexTest extends HazelcastTestSupport {
 
         clear();
         verifyQueries();
+    }
+
+    @Test
+    public void testClearedIndexes() {
+        // Populate the index and run queries as usual.
+
+        for (int i = BATCH_COUNT - 1; i >= 0; --i) {
+            for (long j = 0; j < BATCH_SIZE; ++j) {
+                long id = i * BATCH_SIZE + j;
+                put(id, (int) id);
+            }
+            verifyQueries();
+        }
+
+        // Clear the index leaving the map populated and marking the index as
+        // valid for queries.
+
+        for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
+            HazelcastInstanceImpl instanceImpl = (HazelcastInstanceImpl) instance;
+            MapService mapService = instanceImpl.node.getNodeEngine().getService(MapService.SERVICE_NAME);
+
+            Indexes indexes = mapService.getMapServiceContext().getMapContainer(persons.getName()).getIndexes();
+            indexes.clearAll();
+
+            for (Partition partition : instanceImpl.getPartitionService().getPartitions()) {
+                if (partition.getOwner().localMember()) {
+                    Indexes.beginPartitionUpdate(indexes.getIndexes());
+                    Indexes.markPartitionAsIndexed(partition.getPartitionId(), indexes.getIndexes());
+                }
+            }
+        }
+
+        // Clear the expected results: we are repopulating indexes.
+
+        for (ExpectedQuery expectedQuery : expectedQueries) {
+            expectedQuery.clear();
+        }
+
+        // Repopulate the index and run queries. Technically, we are doing index
+        // updates here instead of inserts since the map is still populated, but
+        // the index interprets them as inserts.
+
+        persons.getLocalMapStats().getIndexStats();
+
+        for (int i = BATCH_COUNT - 1; i >= 0; --i) {
+            for (long j = 0; j < BATCH_SIZE; ++j) {
+                long id = i * BATCH_SIZE + j;
+                put(id, (int) id);
+            }
+            verifyQueries();
+        }
+
+        LocalIndexStats statsA = personsA.getLocalMapStats().getIndexStats().values().iterator().next();
+        LocalIndexStats statsB = personsB.getLocalMapStats().getIndexStats().values().iterator().next();
+        assertEquals(BATCH_COUNT * BATCH_SIZE, statsA.getUpdateCount() + statsB.getUpdateCount());
+        assertEquals(0, statsA.getInsertCount() + statsB.getInsertCount());
     }
 
     @Override

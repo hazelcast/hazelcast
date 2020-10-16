@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Reads the recorded metrics starting with the smallest sequence number
  * greater or equals to the sequence number set in fromSequence.
  */
-@Generated("bbd89f32976e245156787978f7e74b2c")
+@Generated("cccdf91e24c7a4dfce67d8d02ff99787")
 public final class MCReadMetricsCodec {
     //hex: 0x200100
     public static final int REQUEST_MESSAGE_TYPE = 2097408;
@@ -90,10 +90,12 @@ public final class MCReadMetricsCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
         /**
          * The map of timestamp and compressed metrics data
          */
         public java.util.List<java.util.Map.Entry<java.lang.Long, byte[]>> elements;
+
         /**
          * The sequence number that the next task should start with
          */

@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.util.executor.UnblockableThread;
 import com.hazelcast.logging.ILogger;
@@ -27,10 +26,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -50,6 +45,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR;
+import static com.hazelcast.internal.util.ExceptionUtil.cloneExceptionWithFixedAsyncStackTrace;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
@@ -71,13 +67,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
             return "UNRESOLVED";
         }
     };
-    private static final Lookup LOOKUP = MethodHandles.publicLookup();
-    // new Throwable(String message, Throwable cause)
-    private static final MethodType MT_INIT_STRING_THROWABLE = MethodType.methodType(void.class, String.class, Throwable.class);
-    // new Throwable(Throwable cause)
-    private static final MethodType MT_INIT_THROWABLE = MethodType.methodType(void.class, Throwable.class);
-    // new Throwable(String message)
-    private static final MethodType MT_INIT_STRING = MethodType.methodType(void.class, String.class);
 
     private static final AtomicReferenceFieldUpdater<AbstractInvocationFuture, Object> STATE_UPDATER =
             newUpdater(AbstractInvocationFuture.class, Object.class, "state");
@@ -496,6 +485,21 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     @Override
+    public InternalCompletableFuture<V> exceptionally(@Nonnull Function<Throwable, ? extends V> fn) {
+        requireNonNull(fn);
+        final InternalCompletableFuture<V> future = newCompletableFuture();
+        if (isDone()) {
+            unblockExceptionally(fn, future);
+        } else {
+            Object result = registerWaiter(new ExceptionallyNode<>(future, fn), null);
+            if (result != UNRESOLVED) {
+                unblockExceptionally(fn, future);
+            }
+        }
+        return future;
+    }
+
+    @Override
     public InternalCompletableFuture<V> toCompletableFuture() {
         return this;
     }
@@ -874,33 +878,19 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         }
     }
 
-    @Override
-    public InternalCompletableFuture<V> exceptionally(@Nonnull Function<Throwable, ? extends V> fn) {
-        requireNonNull(fn);
+    private void unblockExceptionally(@Nonnull Function<Throwable, ? extends V> fn,
+                                      InternalCompletableFuture<V> future) {
         Object result = resolve(state);
-        final InternalCompletableFuture<V> future = newCompletableFuture();
-        for (; ; ) {
-            if (result != UNRESOLVED && isDone()) {
-                if (result instanceof ExceptionalResult) {
-                    Throwable throwable = ((ExceptionalResult) result).cause;
-                    try {
-                        V value = fn.apply(throwable);
-                        future.complete(value);
-                    } catch (Throwable t) {
-                        future.completeExceptionally(t);
-                    }
-                } else {
-                    future.complete((V) result);
-                }
-                return future;
-            } else {
-                result = registerWaiter(new ExceptionallyNode<>(future, fn), null);
-                if (result == UNRESOLVED) {
-                    return future;
-                } else {
-                    result = resolve(state);
-                }
+        if (result instanceof ExceptionalResult) {
+            Throwable throwable = ((ExceptionalResult) result).cause;
+            try {
+                V value = fn.apply(throwable);
+                future.complete(value);
+            } catch (Throwable t) {
+                future.completeExceptionally(t);
             }
+        } else {
+            future.complete((V) result);
         }
     }
 
@@ -1368,25 +1358,20 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
          * Wraps the {@link #cause} so that the remote/async throwable is not lost,
          * however is delivered as the cause to an throwable with a local stack trace
          * that makes sense to user code that is synchronizing on {@code joinInternal()}.
-         *
+         * <p>
          * Exception wrapping rules:
          * <ul>
          *     <li>
-         *         {@link CancellationException}s and {@link com.hazelcast.core.OperationTimeoutException}s
-         *         are returned as-is, since they anyway only report the local stack trace.
-         *     </li>
-         *     <li>
-         *         if cause is an instance of {@link RuntimeException} then the cause
-         *         is wrapped in a new throwable of the same class. The resulting throwable has the local
-         *         stack trace and reports the async stack trace as the cause
+         *         if cause is an instance of {@link RuntimeException} then the cause is cloned
+         *         The clone throwable has the local stack trace merged into to the original stack trace
          *     </li>
          *     <li>
          *         if cause is an instance of {@link ExecutionException} or {@link InvocationTargetException}
          *         with a non-null cause, then unwrap and apply the rules for the cause
          *     </li>
          *     <li>
-         *         if cause is an {@link Error}, then it is wrapped in an {@link Error} of the same class
-         *         with a local stack trace.
+         *         if cause is an {@link Error}, then the cause is cloned.
+         *         The clone throwable has the local stack trace merged into to the original stack trace
          *     </li>
          *     <li>
          *         otherwise, wrap cause in a {@link HazelcastException} reporting the local stack trace,
@@ -1914,9 +1899,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     static Throwable wrapOrPeel(Throwable cause) {
-        if (cause instanceof CancellationException || cause instanceof OperationTimeoutException) {
-            return cause;
-        }
         if (cause instanceof RuntimeException) {
             return wrapRuntimeException((RuntimeException) cause);
         }
@@ -1935,37 +1917,14 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
     private static RuntimeException wrapRuntimeException(RuntimeException cause) {
         if (cause instanceof WrappableException) {
-            return  ((WrappableException) cause).wrap();
+            return ((WrappableException) cause).wrap();
         }
-        RuntimeException wrapped = tryWrapInSameClass(cause);
-        return wrapped == null ?  new HazelcastException(cause) : wrapped;
+        RuntimeException wrapped = cloneExceptionWithFixedAsyncStackTrace(cause);
+        return wrapped == null ? new HazelcastException(cause) : wrapped;
     }
 
     private static Error wrapError(Error cause) {
-        Error result = tryWrapInSameClass(cause);
+        Error result = cloneExceptionWithFixedAsyncStackTrace(cause);
         return result == null ? cause : result;
-    }
-
-    private static <T extends Throwable> T tryWrapInSameClass(T cause) {
-        Class<? extends Throwable> exceptionClass = cause.getClass();
-        MethodHandle constructor;
-        try {
-            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING_THROWABLE);
-            return (T) constructor.invokeWithArguments(cause.getMessage(), cause);
-        } catch (Throwable ignored) {
-        }
-        try {
-            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_THROWABLE);
-            return (T) constructor.invokeWithArguments(cause);
-        } catch (Throwable ignored) {
-        }
-        try {
-            constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING);
-            T result = (T) constructor.invokeWithArguments(cause.getMessage());
-            result.initCause(cause);
-            return result;
-        } catch (Throwable ignored) {
-        }
-        return null;
     }
 }

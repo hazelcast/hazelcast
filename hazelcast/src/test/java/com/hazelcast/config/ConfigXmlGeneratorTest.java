@@ -599,11 +599,15 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                         .setRelaxFlagsCheck(TRUE)
                         .setUseNameWithoutRealm(TRUE)
                         .setSecurityRealm("jaasRealm")
+                        .setKeytabFile("/opt/test.keytab")
+                        .setPrincipal("testPrincipal")
                         .setLdapAuthenticationConfig(new LdapAuthenticationConfig()
                                 .setUrl("url")))
                 .setKerberosIdentityConfig(new KerberosIdentityConfig()
                         .setRealm("HAZELCAST.COM")
                         .setSecurityRealm("krb5Init")
+                        .setKeytabFile("/opt/test.keytab")
+                        .setPrincipal("testPrincipal")
                         .setServiceNamePrefix("hz/")
                         .setUseCanonicalHostname(TRUE)
                         .setSpn("spn@HAZELCAST.COM"));
@@ -1338,8 +1342,10 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expectedConfig.setMinBlockSize(50);
         expectedConfig.setPageSize(100);
         expectedConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
-        expectedConfig.getPersistentMemoryConfig().addDirectoryConfig(new PersistentMemoryDirectoryConfig("/mnt/pmem0", 0));
-        expectedConfig.getPersistentMemoryConfig().addDirectoryConfig(new PersistentMemoryDirectoryConfig("/mnt/pmem1", 1));
+        PersistentMemoryConfig origPmemConfig = expectedConfig.getPersistentMemoryConfig();
+        origPmemConfig.setEnabled(true);
+        origPmemConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig("/mnt/pmem0", 0));
+        origPmemConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig("/mnt/pmem1", 1));
 
         Config config = new Config().setNativeMemoryConfig(expectedConfig);
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
@@ -1352,13 +1358,46 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(100, actualConfig.getPageSize());
         assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getSize().getUnit());
         assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getSize().getValue());
-        List<PersistentMemoryDirectoryConfig> directoryConfigs = actualConfig.getPersistentMemoryConfig().getDirectoryConfigs();
+
+        PersistentMemoryConfig pmemConfig = actualConfig.getPersistentMemoryConfig();
+        assertTrue(pmemConfig.isEnabled());
+        assertEquals(PersistentMemoryMode.MOUNTED, pmemConfig.getMode());
+
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = pmemConfig.getDirectoryConfigs();
         assertEquals(2, directoryConfigs.size());
         assertEquals("/mnt/pmem0", directoryConfigs.get(0).getDirectory());
         assertEquals(0, directoryConfigs.get(0).getNumaNode());
         assertEquals("/mnt/pmem1", directoryConfigs.get(1).getDirectory());
         assertEquals(1, directoryConfigs.get(1).getNumaNode());
         assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testNativeMemoryWithPersistentMemory_SystemMemoryMode() {
+        NativeMemoryConfig expectedConfig = new NativeMemoryConfig();
+        expectedConfig.setEnabled(true);
+        expectedConfig.setAllocatorType(NativeMemoryConfig.MemoryAllocatorType.STANDARD);
+        expectedConfig.setMetadataSpacePercentage(12.5f);
+        expectedConfig.setMinBlockSize(50);
+        expectedConfig.setPageSize(100);
+        expectedConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
+        expectedConfig.getPersistentMemoryConfig().setMode(PersistentMemoryMode.SYSTEM_MEMORY);
+
+        Config config = new Config().setNativeMemoryConfig(expectedConfig);
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        NativeMemoryConfig actualConfig = xmlConfig.getNativeMemoryConfig();
+        assertTrue(actualConfig.isEnabled());
+        assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, actualConfig.getAllocatorType());
+        assertEquals(12.5, actualConfig.getMetadataSpacePercentage(), 0.0001);
+        assertEquals(50, actualConfig.getMinBlockSize());
+        assertEquals(100, actualConfig.getPageSize());
+        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getSize().getUnit());
+        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getSize().getValue());
+
+        PersistentMemoryConfig pmemConfig = actualConfig.getPersistentMemoryConfig();
+        assertFalse(pmemConfig.isEnabled());
+        assertEquals(PersistentMemoryMode.SYSTEM_MEMORY, pmemConfig.getMode());
     }
 
     @Test

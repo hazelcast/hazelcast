@@ -62,6 +62,7 @@ import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
+import static com.hazelcast.config.PersistentMemoryMode.MOUNTED;
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
 import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
@@ -224,6 +225,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "          <relax-flags-check>true</relax-flags-check>"
                 + "          <use-name-without-realm>true</use-name-without-realm>"
                 + "          <security-realm>krb5Acceptor</security-realm>"
+                + "          <principal>jduke@HAZELCAST.COM</principal>"
+                + "          <keytab-file>/opt/jduke.keytab</keytab-file>"
                 + "          <ldap>"
                 + "            <url>ldap://127.0.0.1</url>"
                 + "          </ldap>"
@@ -233,6 +236,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <kerberos>"
                 + "          <realm>HAZELCAST.COM</realm>"
                 + "          <security-realm>krb5Initializer</security-realm>"
+                + "          <principal>jduke@HAZELCAST.COM</principal>"
+                + "          <keytab-file>/opt/jduke.keytab</keytab-file>"
                 + "          <use-canonical-hostname>true</use-canonical-hostname>"
                 + "        </kerberos>"
                 + "      </identity>"
@@ -302,6 +307,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertNotNull(kerbIdentity);
         assertEquals("HAZELCAST.COM", kerbIdentity.getRealm());
         assertEquals("krb5Initializer", kerbIdentity.getSecurityRealm());
+        assertEquals("jduke@HAZELCAST.COM", kerbIdentity.getPrincipal());
+        assertEquals("/opt/jduke.keytab", kerbIdentity.getKeytabFile());
         assertTrue(kerbIdentity.getUseCanonicalHostname());
 
         KerberosAuthenticationConfig kerbAuthentication = kerberosRealm.getKerberosAuthenticationConfig();
@@ -310,6 +317,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(Boolean.FALSE, kerbAuthentication.getSkipRole());
         assertNull(kerbAuthentication.getSkipIdentity());
         assertEquals("krb5Acceptor", kerbAuthentication.getSecurityRealm());
+        assertEquals("jduke@HAZELCAST.COM", kerbAuthentication.getPrincipal());
+        assertEquals("/opt/jduke.keytab", kerbAuthentication.getKeytabFile());
         assertTrue(kerbAuthentication.getUseNameWithoutRealm());
 
         LdapAuthenticationConfig kerbLdapAuthentication = kerbAuthentication.getLdapAuthenticationConfig();
@@ -3327,9 +3336,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         Config xmlConfig = new InMemoryXmlConfig(xml);
 
-        List<PersistentMemoryDirectoryConfig> directoryConfigs = xmlConfig.getNativeMemoryConfig()
-                                                                          .getPersistentMemoryConfig()
+        PersistentMemoryConfig pmemConfig = xmlConfig.getNativeMemoryConfig()
+                .getPersistentMemoryConfig();
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = pmemConfig
                                                                           .getDirectoryConfigs();
+        assertFalse(pmemConfig.isEnabled());
+        assertEquals(MOUNTED, pmemConfig.getMode());
         assertEquals(2, directoryConfigs.size());
         PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
         PersistentMemoryDirectoryConfig dir1Config = directoryConfigs.get(1);
@@ -3350,9 +3362,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         Config xmlConfig = new InMemoryXmlConfig(xml);
 
-        List<PersistentMemoryDirectoryConfig> directoryConfigs = xmlConfig.getNativeMemoryConfig()
-                                                                          .getPersistentMemoryConfig()
-                                                                          .getDirectoryConfigs();
+        PersistentMemoryConfig pmemConfig = xmlConfig.getNativeMemoryConfig().getPersistentMemoryConfig();
+        assertTrue(pmemConfig.isEnabled());
+
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = pmemConfig.getDirectoryConfigs();
         assertEquals(1, directoryConfigs.size());
         PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
         assertEquals("/mnt/pmem0", dir0Config.getDirectory());
@@ -3416,7 +3429,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "<native-memory>\n"
                 + "  <persistent-memory-directory>/mnt/optane</persistent-memory-directory>\n"
-                + "  <persistent-memory>\n"
+                + "  <persistent-memory mode=\"MOUNTED\">\n"
                 + "    <directories>\n"
                 + "      <directory>/mnt/pmem0</directory>\n"
                 + "      <directory>/mnt/pmem1</directory>\n"
@@ -3426,9 +3439,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        List<PersistentMemoryDirectoryConfig> directoryConfigs = config.getNativeMemoryConfig()
-                                                                       .getPersistentMemoryConfig()
-                                                                       .getDirectoryConfigs();
+        PersistentMemoryConfig pmemConfig = config.getNativeMemoryConfig().getPersistentMemoryConfig();
+        assertTrue(pmemConfig.isEnabled());
+        assertEquals(MOUNTED, pmemConfig.getMode());
+
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = pmemConfig.getDirectoryConfigs();
         assertEquals(3, directoryConfigs.size());
         PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
         PersistentMemoryDirectoryConfig dir1Config = directoryConfigs.get(1);
@@ -3439,6 +3454,49 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(dir1Config.isNumaNodeSet());
         assertEquals("/mnt/pmem1", dir2Config.getDirectory());
         assertFalse(dir2Config.isNumaNodeSet());
+    }
+
+    @Override
+    @Test
+    public void testPersistentMemoryConfiguration_SystemMemoryMode() {
+        String xml = HAZELCAST_START_TAG
+                + "<native-memory>\n"
+                + "  <persistent-memory enabled=\"true\" mode=\"SYSTEM_MEMORY\" />\n"
+                + "</native-memory>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        PersistentMemoryConfig pmemConfig = config.getNativeMemoryConfig().getPersistentMemoryConfig();
+        assertTrue(pmemConfig.isEnabled());
+        assertEquals(PersistentMemoryMode.SYSTEM_MEMORY, pmemConfig.getMode());
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testPersistentMemoryConfiguration_NotExistingModeThrows() {
+        String xml = HAZELCAST_START_TAG
+                + "<native-memory>\n"
+                + "  <persistent-memory mode=\"NOT_EXISTING_MODE\" />\n"
+                + "</native-memory>\n"
+                + HAZELCAST_END_TAG;
+
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testPersistentMemoryDirectoryConfiguration_SystemMemoryModeThrows() {
+        String xml = HAZELCAST_START_TAG
+                + "<native-memory>\n"
+                + "  <persistent-memory mode=\"SYSTEM_MEMORY\">\n"
+                + "    <directories>\n"
+                + "      <directory>/mnt/pmem0</directory>\n"
+                + "    </directories>\n"
+                + "  </persistent-memory>\n"
+                + "</native-memory>\n"
+                + HAZELCAST_END_TAG;
+
+        buildConfig(xml);
     }
 
     @Override

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Stops receiving messages for the given message listener.If the given listener already removed, this method does nothing.
  */
-@Generated("2703eb1372ab9a41bd563712a0cdea49")
+@Generated("170a20d3d0fd933adbfe62679a46bbb7")
 public final class TopicRemoveMessageListenerCodec {
     //hex: 0x040300
     public static final int REQUEST_MESSAGE_TYPE = 262912;
@@ -97,8 +97,8 @@ public final class TopicRemoveMessageListenerCodec {
     }
 
     /**
-    * True if registration is removed, false otherwise
-    */
+     * True if registration is removed, false otherwise
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

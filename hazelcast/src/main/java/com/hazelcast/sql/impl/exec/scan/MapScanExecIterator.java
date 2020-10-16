@@ -88,13 +88,13 @@ public class MapScanExecIterator implements KeyValueIterator {
                 } else {
                     int nextPart = partsIterator.next();
 
-                    boolean isOwned = map.getMapServiceContext().getOwnedPartitions().contains(nextPart);
+                    boolean isOwned = map.getMapServiceContext().getOrInitCachedMemberPartitions().contains(nextPart);
 
                     if (!isOwned) {
                         throw QueryException.error(
                             SqlErrorCode.PARTITION_DISTRIBUTION,
                             "Partition is not owned by member: " + nextPart
-                        ).withInvalidate();
+                        ).markInvalidate();
                     }
 
                     currentRecordStore = map.getMapServiceContext().getRecordStore(nextPart, map.getName());

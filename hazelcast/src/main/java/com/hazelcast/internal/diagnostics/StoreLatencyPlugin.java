@@ -34,6 +34,9 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Math.max;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import java.util.Iterator;
+import java.util.Map.Entry;
+
 /**
  * A {@link DiagnosticsPlugin} that helps to detect if there are any performance issues with Stores/Loaders like e.g.
  * {@link MapStore}.
@@ -67,15 +70,14 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     public static final HazelcastProperty RESET_PERIOD_SECONDS
             = new HazelcastProperty("hazelcast.diagnostics.storeLatency.reset.period.seconds", 0, SECONDS);
 
+    protected final ConstructorFunction<String, InstanceProbes> instanceProbesConstructorFunction
+            = InstanceProbes::new;
 
     private final ConcurrentMap<String, ServiceProbes> metricsPerServiceMap
             = new ConcurrentHashMap<String, ServiceProbes>();
 
     private final ConstructorFunction<String, ServiceProbes> metricsPerServiceConstructorFunction
             = ServiceProbes::new;
-
-    private final ConstructorFunction<String, InstanceProbes> instanceProbesConstructorFunction
-            = InstanceProbes::new;
 
     private final long periodMillis;
     private final long resetPeriodMillis;
@@ -149,28 +151,37 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
         private final ConcurrentReferenceHashMap<String, InstanceProbes> instanceProbesMap
                 = new ConcurrentReferenceHashMap<String, InstanceProbes>(ReferenceType.STRONG, ReferenceType.WEAK);
 
-        private ServiceProbes(String serviceName) {
+        protected ServiceProbes(String serviceName) {
             this.serviceName = serviceName;
         }
 
-        private LatencyProbe newProbe(String dataStructureName, String methodName) {
+        protected LatencyProbe newProbe(String dataStructureName, String methodName) {
             InstanceProbes instanceProbes = getOrPutIfAbsent(
                     instanceProbesMap, dataStructureName, instanceProbesConstructorFunction);
             return instanceProbes.newProbe(methodName);
         }
 
-        private void render(DiagnosticsLogWriter writer) {
+        protected void render(DiagnosticsLogWriter writer) {
             writer.startSection(serviceName);
-
-            for (InstanceProbes instanceProbes : instanceProbesMap.values()) {
-                instanceProbes.render(writer);
+            for (Iterator<Entry<String, InstanceProbes>> it = instanceProbesMap.entrySet().iterator(); it.hasNext();) {
+                InstanceProbes instanceProbes = it.next().getValue();
+                if (instanceProbes != null) {
+                    instanceProbes.render(writer);
+                } else {
+                    it.remove();
+                }
             }
             writer.endSection();
         }
 
-        private void resetStatistics() {
-            for (InstanceProbes instanceProbes : instanceProbesMap.values()) {
-                instanceProbes.resetStatistics();
+        public void resetStatistics() {
+            for (Iterator<Entry<String, InstanceProbes>> it = instanceProbesMap.entrySet().iterator(); it.hasNext();) {
+                InstanceProbes instanceProbes = it.next().getValue();
+                if (instanceProbes != null) {
+                    instanceProbes.resetStatistics();
+                } else {
+                    it.remove();
+                }
             }
         }
     }
@@ -198,7 +209,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
             return probe;
         }
 
-        private void render(DiagnosticsLogWriter writer) {
+        void render(DiagnosticsLogWriter writer) {
             writer.startSection(dataStructureName);
             for (LatencyProbeImpl probe : probes.values()) {
                 probe.render(writer);
@@ -206,7 +217,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
             writer.endSection();
         }
 
-        private void resetStatistics() {
+        void resetStatistics() {
             for (LatencyProbeImpl probe : probes.values()) {
                 probe.resetStatistics();
             }
@@ -225,7 +236,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
 
         private final String methodName;
 
-        private LatencyProbeImpl(String methodName, InstanceProbes instanceProbes) {
+        protected LatencyProbeImpl(String methodName, InstanceProbes instanceProbes) {
             this.methodName = methodName;
             this.instanceProbes = instanceProbes;
         }
@@ -235,7 +246,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
             distribution.recordNanos(durationNanos);
         }
 
-        private void render(DiagnosticsLogWriter writer) {
+        protected void render(DiagnosticsLogWriter writer) {
             LatencyDistribution stats = this.distribution;
             if (stats.count() == 0) {
                 return;
@@ -259,7 +270,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
             writer.endSection();
         }
 
-        private void resetStatistics() {
+        protected void resetStatistics() {
             distribution = new LatencyDistribution();
         }
     }

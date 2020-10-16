@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.cp.internal.datastructures.semaphore;
 
+import com.hazelcast.client.cp.internal.session.ClientProxySessionManager;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
@@ -27,8 +28,12 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -62,6 +67,22 @@ public class SessionAwareSemaphoreClientBasicTest extends SessionAwareSemaphoreB
     @Override
     protected RaftGroupId getGroupId(ISemaphore semaphore) {
         return (RaftGroupId) ((SessionAwareSemaphoreProxy) semaphore).getGroupId();
+    }
+
+
+    @Test
+    public void testDrain_ReleasesSessionProperly() throws InterruptedException {
+        int permits = 20;
+
+        assertTrue(semaphore.init(permits));
+        final int drainPermits = semaphore.drainPermits();
+
+        HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
+        ClientProxySessionManager proxySessionManager = clientProxy.client.getProxySessionManager();
+        SessionAwareSemaphoreProxy proxy = (SessionAwareSemaphoreProxy) semaphore;
+        RaftGroupId groupId = (RaftGroupId) proxy.getGroupId();
+        final long session = proxySessionManager.getSession(groupId);
+        assertEquals(drainPermits, proxySessionManager.getSessionAcquireCount(groupId, session));
     }
 
 }
