@@ -9,17 +9,24 @@ split-brain merge situation. [#17634]
 * Added the missing validation checks to the client's connection retry
 configuration. [#17570]
 * Upgraded the versions of Hazelcast's snakeyaml-engine and Jackson
-library dependencies to eliminate the denial of service vulnerabilities. [#17425]
+library dependencies to eliminate the denial of service vulnerabilities. [#17425], [#17444]
 * Added timeout values for connect and read operations to the
 Management Center service's task connection method. [#17387]
 
 ## Fixes
 
+* Fixed an issue where Hazelcast was not releasing the acquired lock
+sessions that fail for the reasons other than session expiration and
+wait key cancellation. [#17701]
+* Fixed an issue where the lock requests in clients' maps with
+infinite time lease were returning `Long.MAX_VALUE`; now it returns `-1`. [#17680]
 * Fixed an issue where Hazelcast was returning `false` if a client
 is successfully deregistered from any member, but events are still
 delivered for the non-deregistered ones. [#17648]
 * Fixed the member side user code deployment; it was throwing an exception
 when inner classes are used to be loaded. [#17579]
+* Fixed an issue where the diagnostic plugins were not being rendered
+properly when they fail. [#17500]
 * Fixed an issue where the load balancer for clients
 could not be configured declaratively. [#17228]
 
