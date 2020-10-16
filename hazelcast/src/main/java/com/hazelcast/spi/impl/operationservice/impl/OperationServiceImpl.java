@@ -164,7 +164,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
                 nodeEngine, thisAddress, node.getProperties(), invocationRegistry,
                 node.getLogger(InvocationMonitor.class), serializationService, nodeEngine.getServiceManager());
 
-        this.outboundOperationHandler = new OutboundOperationHandler(node, thisAddress, serializationService);
+        this.outboundOperationHandler = new OutboundOperationHandler(node, serializationService);
 
         this.backupHandler = new OperationBackupHandler(this, outboundOperationHandler);
 

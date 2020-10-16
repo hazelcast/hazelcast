@@ -35,9 +35,9 @@ public class OutboundOperationHandler {
     private final InternalSerializationService serializationService;
     private final Node node;
 
-    public OutboundOperationHandler(Node node, Address thisAddress, InternalSerializationService serializationService) {
+    public OutboundOperationHandler(Node node, InternalSerializationService serializationService) {
         this.node = node;
-        this.thisAddress = thisAddress;
+        this.thisAddress = node.getThisAddress();
         this.serializationService = serializationService;
     }
 
