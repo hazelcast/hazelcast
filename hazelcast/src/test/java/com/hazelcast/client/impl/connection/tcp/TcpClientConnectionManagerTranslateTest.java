@@ -18,7 +18,8 @@ package com.hazelcast.client.impl.connection.tcp;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.HazelcastClientUtil;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.test.ClientTestSupport;
@@ -42,27 +43,21 @@ import static junit.framework.TestCase.assertNotNull;
 @Category(QuickTest.class)
 public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
 
-    private Address privateAddress;
-    private Address publicAddress;
+    private Address privateReachableAddress;
+    private Address publicUnreachableAddress;
     private TcpClientConnectionManager clientConnectionManager;
+    private TestAddressProvider provider;
 
     @Before
     public void setup() throws Exception {
         Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
-        TestAddressProvider provider = new TestAddressProvider();
+        provider = new TestAddressProvider();
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(provider, new ClientConfig());
+        clientConnectionManager = new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
 
-        final HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
-        clientConnectionManager = new TcpClientConnectionManager(clientInstanceImpl);
-        clientConnectionManager.start();
-        clientConnectionManager.reset();
-        clientConnectionManager.getOrConnectCandidate(new Address("127.0.0.1", 5701));
-
-        provider.shouldTranslate = true;
-
-        privateAddress = new Address("127.0.0.1", 5701);
-        publicAddress = new Address("192.168.0.1", 5701);
+        privateReachableAddress = new Address("127.0.0.1", 5701);
+        publicUnreachableAddress = new Address("192.168.0.1", 5701);
     }
 
     @After
@@ -81,8 +76,8 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
                 return address;
             }
 
-            if (address.equals(privateAddress)) {
-                return publicAddress;
+            if (address.equals(privateReachableAddress)) {
+                return publicUnreachableAddress;
             }
             return null;
         }
@@ -97,9 +92,24 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         }
     }
 
+    @Test(expected = Exception.class)
+    public void testTranslatorIsUsed() {
+        provider.shouldTranslate = true;
+
+        clientConnectionManager.start();
+        // throws exception because it can't connect to the cluster using translated public unreachable address
+    }
+
     @Test
     public void testTranslatorIsNotUsedOnGetConnection() {
-        Connection connection = clientConnectionManager.getOrConnectCandidate(privateAddress);
+        clientConnectionManager.start();
+        clientConnectionManager.reset();
+        clientConnectionManager.getOrConnectCandidate(privateReachableAddress);
+        provider.shouldTranslate = true;
+
+        Connection connection = clientConnectionManager.getOrConnectCandidate(privateReachableAddress);
+
         assertNotNull(connection);
     }
+
 }
