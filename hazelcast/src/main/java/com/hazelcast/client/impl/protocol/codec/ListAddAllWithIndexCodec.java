@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The behavior of this operation is undefined if the specified collection is modified while the operation is in progress.
  * (Note that this will occur if the specified collection is this list, and it's nonempty.)
  */
-@Generated("32ba923a2bbcb342460cfce60202b9f7")
+@Generated("66791e5008e52a068905bb0289d3dd18")
 public final class ListAddAllWithIndexCodec {
     //hex: 0x050E00
     public static final int REQUEST_MESSAGE_TYPE = 331264;
@@ -108,8 +108,8 @@ public final class ListAddAllWithIndexCodec {
     }
 
     /**
-    * True if this list changed as a result of the call, false otherwise.
-    */
+     * True if this list changed as a result of the call, false otherwise.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

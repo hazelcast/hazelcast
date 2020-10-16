@@ -2132,6 +2132,8 @@ hazelcast:
     # persistent-memory-directory: /mnt/optane
     # Advanced configuration for non-volatile memory
     persistent-memory:
+      enabled: true
+      mode: MOUNTED
       directories:
         - directory: /mnt/pmem0
           numa-node: 0

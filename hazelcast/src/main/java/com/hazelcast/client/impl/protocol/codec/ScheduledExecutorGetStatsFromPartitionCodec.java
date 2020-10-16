@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns statistics of the task
  */
-@Generated("1c322eaf3dc97a3e2db018b2fa9c5c58")
+@Generated("acbb1a1461057fc1b489f174c36bbb86")
 public final class ScheduledExecutorGetStatsFromPartitionCodec {
     //hex: 0x1A0500
     public static final int REQUEST_MESSAGE_TYPE = 1705216;
@@ -92,22 +92,27 @@ public final class ScheduledExecutorGetStatsFromPartitionCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
         /**
          * Last period of time the task was idle, waiting to get scheduled.
          */
         public long lastIdleTimeNanos;
+
         /**
          * Total amount of time the task was idle, waiting to get scheduled in.
          */
         public long totalIdleTimeNanos;
+
         /**
          * How many times the task was ran/called.
          */
         public long totalRuns;
+
         /**
          * The total amount of time the task spent while scheduled in.
          */
         public long totalRunTimeNanos;
+
         /**
          * The duration of the task's last execution.
          */

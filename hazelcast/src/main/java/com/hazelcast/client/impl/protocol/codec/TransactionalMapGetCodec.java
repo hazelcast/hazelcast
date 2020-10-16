@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the value for the specified key, or null if this map does not contain this key.
  */
-@Generated("e7b5f37a838cfee1dc2e083345660349")
+@Generated("23d154c3e3840cea4a14ab25688f3b4f")
 public final class TransactionalMapGetCodec {
     //hex: 0x0E0200
     public static final int REQUEST_MESSAGE_TYPE = 918016;
@@ -111,8 +111,8 @@ public final class TransactionalMapGetCodec {
     }
 
     /**
-    * The value for the specified key
-    */
+     * The value for the specified key
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

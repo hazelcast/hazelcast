@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this list contains the specified element.
  */
-@Generated("d0ddb673a6d3d6a6659542794fec7dff")
+@Generated("d0307ba77177a7a50e52bf0a100833d0")
 public final class ListContainsCodec {
     //hex: 0x050200
     public static final int REQUEST_MESSAGE_TYPE = 328192;
@@ -97,8 +97,8 @@ public final class ListContainsCodec {
     }
 
     /**
-    * True if this list contains the specified element, false otherwise
-    */
+     * True if this list contains the specified element, false otherwise
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

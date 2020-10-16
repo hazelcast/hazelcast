@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.schema;
 
+import com.hazelcast.sql.impl.QueryUtils;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,7 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Schema that is used for the duration of query.
+ * Schema that is used for the duration of a query.
  */
 public class SqlCatalog {
 
@@ -38,6 +40,12 @@ public class SqlCatalog {
 
         for (TableResolver tableResolver : tableResolvers) {
             Collection<Table> tables = tableResolver.getTables();
+
+            for (List<String> searchPath : tableResolver.getDefaultSearchPaths()) {
+                assert searchPath.size() == 2 && searchPath.get(0).equals(QueryUtils.CATALOG) : searchPath;
+
+                schemas.putIfAbsent(searchPath.get(1), new HashMap<>());
+            }
 
             for (Table table : tables) {
                 String schemaName = table.getSchemaName();

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically adds the given value to the current value.
  */
-@Generated("63ee4c490a92b62aa7097ac021166042")
+@Generated("65ee3f6c4bf38c3a36a556b802c8b818")
 public final class LongRegisterAddAndGetCodec {
     //hex: 0xFF0100
     public static final int REQUEST_MESSAGE_TYPE = 16711936;
@@ -70,6 +70,7 @@ public final class LongRegisterAddAndGetCodec {
         clientMessage.setOperationName("LongRegister.AddAndGet");
         Frame initialFrame = new Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_DELTA_FIELD_OFFSET, delta);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
@@ -85,15 +86,6 @@ public final class LongRegisterAddAndGetCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * the updated value, the given value added to the current value
-         */
-        public long response;
-    }
-
     public static ClientMessage encodeResponse(long response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         Frame initialFrame = new Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -104,12 +96,13 @@ public final class LongRegisterAddAndGetCodec {
         return clientMessage;
     }
 
-    public static ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * the updated value, the given value added to the current value
+     */
+    public static long decodeResponse(ClientMessage clientMessage) {
         ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         Frame initialFrame = iterator.next();
-        response.response = decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

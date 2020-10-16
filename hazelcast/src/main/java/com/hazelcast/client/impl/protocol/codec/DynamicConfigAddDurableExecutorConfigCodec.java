@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a durable executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("26df3ccb0152053eda1d8d384a8699e8")
+@Generated("ab44138a9a02e22bfc22da925227b55b")
 public final class DynamicConfigAddDurableExecutorConfigCodec {
     //hex: 0x1B0900
     public static final int REQUEST_MESSAGE_TYPE = 1771776;
@@ -92,7 +92,7 @@ public final class DynamicConfigAddDurableExecutorConfigCodec {
         /**
          * True if the statisticsEnabled is received from the client, false otherwise.
          * If this is false, statisticsEnabled has the default value for its type.
-        */
+         */
         public boolean isStatisticsEnabledExists;
     }
 

@@ -94,7 +94,7 @@ public class MapScanExecIterator implements KeyValueIterator {
                         throw QueryException.error(
                             SqlErrorCode.PARTITION_DISTRIBUTION,
                             "Partition is not owned by member: " + nextPart
-                        ).withInvalidate();
+                        ).markInvalidate();
                     }
 
                     currentRecordStore = map.getMapServiceContext().getRecordStore(nextPart, map.getName());

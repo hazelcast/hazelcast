@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically removes the mapping for a key only if currently mapped to the given value.
  */
-@Generated("ad27d93098aa756069dec9a4ca3eb965")
+@Generated("5369be15318ee0b74486b571282e0b24")
 public final class CacheRemoveCodec {
     //hex: 0x131600
     public static final int REQUEST_MESSAGE_TYPE = 1250816;
@@ -112,8 +112,8 @@ public final class CacheRemoveCodec {
     }
 
     /**
-    * returns false if there was no matching key
-    */
+     * returns false if there was no matching key
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

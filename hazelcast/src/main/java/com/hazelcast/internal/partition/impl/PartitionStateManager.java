@@ -382,8 +382,13 @@ public class PartitionStateManager implements ClusterVersionListener {
         return partitions[partitionId].version();
     }
 
-    public void incrementPartitionVersion(int partitionId, int delta) {
-        partitions[partitionId].incrementVersion(delta);
+    /**
+     * Increments partition version by delta and updates partition state stamp.
+     */
+    void incrementPartitionVersion(int partitionId, int delta) {
+        InternalPartitionImpl partition = partitions[partitionId];
+        partition.setVersion(partition.version() + delta);
+        updateStamp();
     }
 
     // called under partition service lock

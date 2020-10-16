@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Closes the given session on the given CP group
  */
-@Generated("4279a0c20dc40f09645690994ddf7091")
+@Generated("37e21c792c65c5b65ef4fe75ac198bed")
 public final class CPSessionCloseSessionCodec {
     //hex: 0x1F0200
     public static final int REQUEST_MESSAGE_TYPE = 2032128;
@@ -97,9 +97,9 @@ public final class CPSessionCloseSessionCodec {
     }
 
     /**
-    * true if the session is found & closed,
-    * false otherwise.
-    */
+     * true if the session is found & closed,
+     * false otherwise.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

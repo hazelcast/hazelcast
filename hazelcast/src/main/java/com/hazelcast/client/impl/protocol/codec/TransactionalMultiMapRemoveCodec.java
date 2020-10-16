@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the given key value pair from the multimap.
  */
-@Generated("ca183e3d2ae235bc4fa6054ea24dbb18")
+@Generated("4a47caff86118aa80a73d63ad423dd01")
 public final class TransactionalMultiMapRemoveCodec {
     //hex: 0x0F0300
     public static final int REQUEST_MESSAGE_TYPE = 983808;
@@ -111,8 +111,8 @@ public final class TransactionalMultiMapRemoveCodec {
     }
 
     /**
-    * True if the size of the multimap changed after the remove operation, false otherwise.
-    */
+     * True if the size of the multimap changed after the remove operation, false otherwise.
+     */
     public static java.util.List<com.hazelcast.internal.serialization.Data> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

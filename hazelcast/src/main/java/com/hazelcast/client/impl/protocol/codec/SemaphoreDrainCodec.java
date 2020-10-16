@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Acquires all available permits at once and returns immediately.
  */
-@Generated("b3ea04ff8c99b1320ef4068dc909e5e7")
+@Generated("cc66a531cbe344b2cfb67ff1948ad3ac")
 public final class SemaphoreDrainCodec {
     //hex: 0x0C0400
     public static final int REQUEST_MESSAGE_TYPE = 787456;
@@ -120,8 +120,8 @@ public final class SemaphoreDrainCodec {
     }
 
     /**
-    * number of acquired permits
-    */
+     * number of acquired permits
+     */
     public static int decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

@@ -72,6 +72,11 @@ public class AtomicLongProxy extends ClientProxy implements IAtomicLong {
     }
 
     @Override
+    public long getAndDecrement() {
+        return getAndDecrementAsync().joinInternal();
+    }
+
+    @Override
     public long get() {
         return getAsync().joinInternal();
     }
@@ -138,6 +143,11 @@ public class AtomicLongProxy extends ClientProxy implements IAtomicLong {
     @Override
     public InternalCompletableFuture<Long> decrementAndGetAsync() {
         return addAndGetAsync(-1);
+    }
+
+    @Override
+    public InternalCompletableFuture<Long> getAndDecrementAsync() {
+        return getAndAddAsync(-1);
     }
 
     @Override

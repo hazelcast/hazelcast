@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically decrements the current value by one.
  */
-@Generated("06b1e25505f5eacacafd507a42aef6a7")
+@Generated("6c0bf7488b13c5e0dd4b4965dee02044")
 public final class LongRegisterDecrementAndGetCodec {
     //hex: 0xFF0200
     public static final int REQUEST_MESSAGE_TYPE = 16712192;
@@ -49,42 +49,26 @@ public final class LongRegisterDecrementAndGetCodec {
     private LongRegisterDecrementAndGetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * The name of this IAtomicLong instance.
-         */
-        public String name;
-    }
-
     public static ClientMessage encodeRequest(String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("LongRegister.DecrementAndGet");
         Frame initialFrame = new Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;
     }
 
-    public static RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     * The name of this IAtomicLong instance.
+     */
+    public static String decodeRequest(ClientMessage clientMessage) {
         ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * the updated value, the current value decremented by one
-         */
-        public long response;
+        return StringCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse(long response) {
@@ -97,12 +81,13 @@ public final class LongRegisterDecrementAndGetCodec {
         return clientMessage;
     }
 
-    public static ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     * the updated value, the current value decremented by one
+     */
+    public static long decodeResponse(ClientMessage clientMessage) {
         ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         Frame initialFrame = iterator.next();
-        response.response = decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

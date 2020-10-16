@@ -346,6 +346,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         return max(min(getMemberGroupsSize() - 1, InternalPartition.MAX_BACKUP_COUNT), 0);
     }
 
+    public void updateMemberGroupSize() {
+        partitionStateManager.updateMemberGroupsSize();
+    }
+
     @Override
     public void memberAdded(Member member) {
         logger.fine("Adding " + member);
@@ -457,6 +461,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
             if (node.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
                 long stamp = partitionStateManager.getStamp();
+                assert calculateStamp(partitions) == stamp : "Invalid partition stamp! Expected: "
+                        + calculateStamp(partitions) + ", Actual: " + stamp;
                 state = new PartitionRuntimeState(partitions, completedMigrations, stamp);
             } else {
                 //RU_COMPAT_4_0
@@ -636,6 +642,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         }
 
         if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
+            assert calculateStamp(partitionState.getPartitions()) == partitionState.getStamp()
+                    : "Invalid partition stamp! Expected: " + calculateStamp(partitionState.getPartitions())
+                    + ", Actual: " + partitionState.getStamp();
             return applyNewPartitionTable(partitionState.getPartitions(), partitionState.getCompletedMigrations(), sender);
         } else {
             //RU_COMPAT_4_0
@@ -917,7 +926,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                     applyMigration(partition, migration);
                 } else {
                     // migration failed...
-                    partition.incrementVersion(migration.getPartitionVersionIncrement());
+                    int increment = migration.getPartitionVersionIncrement();
+                    partitionStateManager.incrementPartitionVersion(partition.getPartitionId(), increment);
                 }
                 migrationManager.scheduleActiveMigrationFinalization(migration);
             }

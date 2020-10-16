@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the result of the task ({@link java.util.concurrent.Callable})
  * The call will blocking until the result is ready.
  */
-@Generated("a8c72a5bcf77932c37772e4abb635029")
+@Generated("e1af7a5aa43d9a1df1091745417e2781")
 public final class ScheduledExecutorGetResultFromMemberCodec {
     //hex: 0x1A1000
     public static final int REQUEST_MESSAGE_TYPE = 1708032;
@@ -104,8 +104,8 @@ public final class ScheduledExecutorGetResultFromMemberCodec {
     }
 
     /**
-    * The result of the completed task, in serialized form ({
-    */
+     * The result of the completed task, in serialized form ({
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

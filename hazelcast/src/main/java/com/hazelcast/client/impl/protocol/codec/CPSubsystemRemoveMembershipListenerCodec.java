@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Deregisters CP membership listener.
  */
-@Generated("60ac47bf7e499af73b8b4acff2862cd2")
+@Generated("11dd6f846d2d0490a131fc7cd2d873bb")
 public final class CPSubsystemRemoveMembershipListenerCodec {
     //hex: 0x220200
     public static final int REQUEST_MESSAGE_TYPE = 2228736;
@@ -50,12 +50,6 @@ public final class CPSubsystemRemoveMembershipListenerCodec {
     private CPSubsystemRemoveMembershipListenerCodec() {
     }
 
-    /**
-     * The id of the listener which was provided during registration.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.util.UUID registrationId;
-
     public static ClientMessage encodeRequest(java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
@@ -68,6 +62,9 @@ public final class CPSubsystemRemoveMembershipListenerCodec {
         return clientMessage;
     }
 
+    /**
+     * The id of the listener which was provided during registration.
+     */
     public static java.util.UUID decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -85,8 +82,8 @@ public final class CPSubsystemRemoveMembershipListenerCodec {
     }
 
     /**
-    * True if unregistered, false otherwise.
-    */
+     * True if unregistered, false otherwise.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

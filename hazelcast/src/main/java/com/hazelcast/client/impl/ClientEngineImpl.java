@@ -20,7 +20,7 @@ import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientListener;
 import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
-import com.hazelcast.client.impl.protocol.ClientExceptions;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
@@ -109,7 +109,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
 
     private final MessageTaskFactory messageTaskFactory;
-    private final ClientExceptions clientExceptions;
+    private final ClientExceptionFactory clientExceptionFactory;
     private final ClusterViewListenerService clusterListenerService;
     private final boolean advancedNetworkConfigEnabled;
     private final ClientLifecycleMonitor lifecycleMonitor;
@@ -125,7 +125,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.queryExecutor = newClientQueryExecutor();
         this.blockingExecutor = newBlockingExecutor();
         this.messageTaskFactory = new CompositeMessageTaskFactory(nodeEngine);
-        this.clientExceptions = initClientExceptionFactory();
+        this.clientExceptionFactory = initClientExceptionFactory();
         this.clusterListenerService = new ClusterViewListenerService(nodeEngine);
         this.advancedNetworkConfigEnabled = node.getConfig().getAdvancedNetworkConfig().isEnabled();
         this.lifecycleMonitor = new ClientLifecycleMonitor(endpointManager, this, logger, nodeEngine,
@@ -134,9 +134,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.addressChecker = new AddressCheckerImpl(trustedInterfaces, logger);
     }
 
-    private ClientExceptions initClientExceptionFactory() {
-        boolean jcacheAvailable = JCacheDetector.isJCacheAvailable(nodeEngine.getConfigClassLoader());
-        return new ClientExceptions(jcacheAvailable);
+    private ClientExceptionFactory initClientExceptionFactory() {
+        ClassLoader configClassLoader = nodeEngine.getConfigClassLoader();
+        boolean jcacheAvailable = JCacheDetector.isJCacheAvailable(configClassLoader);
+        return new ClientExceptionFactory(jcacheAvailable, configClassLoader);
     }
 
     private Executor newClientExecutor() {
@@ -236,7 +237,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     private boolean isQuery(MessageTask messageTask) {
         return messageTask instanceof AbstractMapQueryMessageTask
-            || messageTask instanceof SqlAbstractMessageTask;
+                || messageTask instanceof SqlAbstractMessageTask;
     }
 
     @Override
@@ -280,8 +281,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public ClientExceptions getClientExceptions() {
-        return clientExceptions;
+    public ClientExceptionFactory getExceptionFactory() {
+        return clientExceptionFactory;
     }
 
     @Override

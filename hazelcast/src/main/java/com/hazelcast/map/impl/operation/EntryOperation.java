@@ -54,6 +54,7 @@ import static com.hazelcast.core.Offloadable.NO_OFFLOADING;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.OFFLOADABLE_EXECUTOR;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
@@ -394,9 +395,10 @@ EntryOperation extends LockAwareOperation
                         Data result = entryOperator.getResult();
                         EntryEventType modificationType = entryOperator.getEventType();
                         if (modificationType != null) {
+                            long newTtl = entryOperator.getEntry().getNewTtl();
                             Data newValue = serializationService.toData(entryOperator.getByPreferringDataNewValue());
                             updateAndUnlock(serializationService.toData(oldValue),
-                                    newValue, modificationType, finalCaller, finalThreadId, result, finalBegin);
+                                    newValue, modificationType, newTtl, finalCaller, finalThreadId, result, finalBegin);
                         } else {
                             unlockOnly(result, finalCaller, finalThreadId, finalBegin);
                         }
@@ -445,14 +447,17 @@ EntryOperation extends LockAwareOperation
         }
 
         private void unlockOnly(final Object result, UUID caller, long threadId, long now) {
-            updateAndUnlock(null, null, null, caller, threadId, result, now);
+            updateAndUnlock(null, null, null, UNSET, caller, threadId, result, now);
         }
 
         @SuppressWarnings({"unchecked", "checkstyle:methodlength"})
-        private void updateAndUnlock(Data previousValue, Data newValue, EntryEventType modificationType, UUID caller,
+        private void updateAndUnlock(Data previousValue, Data newValue,
+                                     EntryEventType modificationType,
+                                     long newTtl, UUID caller,
                                      long threadId, final Object result, long now) {
             EntryOffloadableSetUnlockOperation updateOperation = new EntryOffloadableSetUnlockOperation(name, modificationType,
-                    dataKey, previousValue, newValue, caller, threadId, now, entryProcessor.getBackupProcessor());
+                    newTtl, dataKey, previousValue, newValue, caller,
+                    threadId, now, entryProcessor.getBackupProcessor());
 
             updateOperation.setPartitionId(getPartitionId());
             updateOperation.setReplicaIndex(0);

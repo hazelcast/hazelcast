@@ -227,17 +227,16 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         String timeoutMillis = "cluster-connect-timeout-millis";
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            String value = getTextContent(child).trim();
             if (matches(initialBackoffMillis, nodeName)) {
-                connectionRetryConfig.setInitialBackoffMillis(getIntegerValue(initialBackoffMillis, value));
+                connectionRetryConfig.setInitialBackoffMillis(getIntegerValue(initialBackoffMillis, getTextContent(child)));
             } else if (matches(maxBackoffMillis, nodeName)) {
-                connectionRetryConfig.setMaxBackoffMillis(getIntegerValue(maxBackoffMillis, value));
+                connectionRetryConfig.setMaxBackoffMillis(getIntegerValue(maxBackoffMillis, getTextContent(child)));
             } else if (matches(multiplier, nodeName)) {
-                connectionRetryConfig.setMultiplier(getDoubleValue(multiplier, value));
+                connectionRetryConfig.setMultiplier(getDoubleValue(multiplier, getTextContent(child)));
             } else if (matches(timeoutMillis, nodeName)) {
-                connectionRetryConfig.setClusterConnectTimeoutMillis(getLongValue(timeoutMillis, value));
+                connectionRetryConfig.setClusterConnectTimeoutMillis(getLongValue(timeoutMillis, getTextContent(child)));
             } else if (matches(jitter, nodeName)) {
-                connectionRetryConfig.setJitter(getDoubleValue(jitter, value));
+                connectionRetryConfig.setJitter(getDoubleValue(jitter, getTextContent(child)));
             }
         }
         strategyConfig.setConnectionRetryConfig(connectionRetryConfig);
@@ -282,20 +281,19 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         Boolean serializeKeys = null;
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            String value = getTextContent(child).trim();
             if (matches("time-to-live-seconds", nodeName)) {
-                nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(value));
+                nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(getTextContent(child)));
             } else if (matches("max-idle-seconds", nodeName)) {
-                nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(value));
+                nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(getTextContent(child)));
             } else if (matches("in-memory-format", nodeName)) {
-                nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
+                nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(getTextContent(child))));
             } else if (matches("serialize-keys", nodeName)) {
-                serializeKeys = Boolean.parseBoolean(value);
+                serializeKeys = Boolean.parseBoolean(getTextContent(child));
                 nearCacheConfig.setSerializeKeys(serializeKeys);
             } else if (matches("invalidate-on-change", nodeName)) {
-                nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(value));
+                nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(getTextContent(child)));
             } else if (matches("local-update-policy", nodeName)) {
-                nearCacheConfig.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.valueOf(value));
+                nearCacheConfig.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.valueOf(getTextContent(child)));
             } else if (matches("eviction", nodeName)) {
                 nearCacheConfig.setEvictionConfig(getEvictionConfig(child));
             } else if (matches("preloader", nodeName)) {
@@ -322,11 +320,10 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         ClientFlakeIdGeneratorConfig config = new ClientFlakeIdGeneratorConfig(name);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            String value = getTextContent(child).trim();
             if (matches("prefetch-count", nodeName)) {
-                config.setPrefetchCount(Integer.parseInt(value));
+                config.setPrefetchCount(Integer.parseInt(getTextContent(child)));
             } else if (matches("prefetch-validity-millis", lowerCaseInternal(nodeName))) {
-                config.setPrefetchValidityMillis(Long.parseLong(value));
+                config.setPrefetchValidityMillis(Long.parseLong(getTextContent(child)));
             }
         }
         clientConfig.addFlakeIdGeneratorConfig(config);
@@ -341,11 +338,10 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         ClientReliableTopicConfig config = new ClientReliableTopicConfig(name);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            String value = getTextContent(child).trim();
             if (matches("topic-overload-policy", nodeName)) {
-                config.setTopicOverloadPolicy(TopicOverloadPolicy.valueOf(value));
+                config.setTopicOverloadPolicy(TopicOverloadPolicy.valueOf(getTextContent(child)));
             } else if (matches("read-batch-size", lowerCaseInternal(nodeName))) {
-                config.setReadBatchSize(Integer.parseInt(value));
+                config.setReadBatchSize(Integer.parseInt(getTextContent(child)));
             }
         }
         clientConfig.addReliableTopicConfig(config);
@@ -504,9 +500,8 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         NamedNodeMap atts = node.getAttributes();
         for (int i = 0; i < atts.getLength(); i++) {
             Node att = atts.item(i);
-            String value = getTextContent(att).trim();
             if (matches("enabled", lowerCaseInternal(att.getNodeName()))) {
-                discoveryConfig.setEnabled(getBooleanValue(value));
+                discoveryConfig.setEnabled(getBooleanValue(getTextContent(att)));
             }
         }
     }
@@ -526,11 +521,10 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
         for (int a = 0; a < atts.getLength(); a++) {
             Node att = atts.item(a);
-            String value = getTextContent(att).trim();
             if (matches("enabled", lowerCaseInternal(att.getNodeName()))) {
-                enabled = getBooleanValue(value);
+                enabled = getBooleanValue(getTextContent(att));
             } else if (matches("class", att.getNodeName())) {
-                clazz = value;
+                clazz = getTextContent(att);
             }
         }
 
@@ -554,16 +548,15 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         NamedNodeMap atts = node.getAttributes();
         for (int i = 0; i < atts.getLength(); i++) {
             Node att = atts.item(i);
-            String value = getTextContent(att).trim();
             if (matches("enabled", lowerCaseInternal(att.getNodeName()))) {
-                config.setEnabled(getBooleanValue(value));
+                config.setEnabled(getBooleanValue(getTextContent(att)));
             } else if (matches(att.getNodeName(), "connection-timeout-seconds")) {
-                config.setProperty("connection-timeout-seconds", value);
+                config.setProperty("connection-timeout-seconds", getTextContent(att));
             }
         }
         for (Node n : childElements(node)) {
             String key = n.getLocalName();
-            String value = getTextContent(n).trim();
+            String value = getTextContent(n);
             config.setProperty(key, value);
         }
     }
@@ -748,8 +741,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node n : childElements(child)) {
             String nodeName = cleanNodeName(n);
             if (matches("ports", nodeName)) {
-                String value = getTextContent(n);
-                clientNetworkConfig.addOutboundPortDefinition(value);
+                clientNetworkConfig.addOutboundPortDefinition(getTextContent(n));
             }
         }
     }
@@ -768,11 +760,10 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            String value = getTextContent(child).trim();
             if (matches("jmx", nodeName)) {
                 handleMetricsJmx(child);
             } else if (matches("collection-frequency-seconds", nodeName)) {
-                metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(value));
+                metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(getTextContent(child)));
             }
         }
     }

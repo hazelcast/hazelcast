@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Obtains a list of prepared transaction from the cluster.
  */
-@Generated("99e777dc5ce62bfa12d0c00f21066b9b")
+@Generated("0c2d80a3df53ca7504b2e0a0ce93e4da")
 public final class XATransactionCollectTransactionsCodec {
     //hex: 0x140200
     public static final int REQUEST_MESSAGE_TYPE = 1311232;
@@ -47,7 +47,6 @@ public final class XATransactionCollectTransactionsCodec {
 
     private XATransactionCollectTransactionsCodec() {
     }
-
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -72,8 +71,8 @@ public final class XATransactionCollectTransactionsCodec {
     }
 
     /**
-    * Array of Xids.
-    */
+     * Array of Xids.
+     */
     public static java.util.List<javax.transaction.xa.Xid> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

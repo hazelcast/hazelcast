@@ -34,6 +34,4 @@ public final class ListDataCodec {
     public static List<Data> decode(ClientMessage.ForwardFrameIterator iterator) {
         return ListMultiFrameCodec.decode(iterator, DataCodec::decode);
     }
-
-
 }

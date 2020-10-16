@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the collection of values associated with the key.
  */
-@Generated("2d600e5f6a9b96d7db5d6ec909be86ad")
+@Generated("deefb21fec075fc3aca97d9f344f57c6")
 public final class TransactionalMultiMapGetCodec {
     //hex: 0x0F0200
     public static final int REQUEST_MESSAGE_TYPE = 983552;
@@ -111,8 +111,8 @@ public final class TransactionalMultiMapGetCodec {
     }
 
     /**
-    * The collection of the values associated with the key
-    */
+     * The collection of the values associated with the key
+     */
     public static java.util.List<com.hazelcast.internal.serialization.Data> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
