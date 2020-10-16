@@ -26,6 +26,7 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -81,12 +82,26 @@ public class DiscoveryJoiner
                 if (!usePublicAddress && discoveryNode.getPublicAddress() != null) {
                     // enrich member with client public address
                     localMember.getAddressMap().put(EndpointQualifier.resolve(ProtocolType.CLIENT, "public"),
-                            discoveryNode.getPublicAddress());
+                            publicAddress(localMember, discoveryNode));
                 }
                 continue;
             }
             possibleMembers.add(discoveredAddress);
         }
         return possibleMembers;
+    }
+
+    private Address publicAddress(MemberImpl localMember, DiscoveryNode discoveryNode) {
+        if (localMember.getAddressMap().containsKey(EndpointQualifier.CLIENT)) {
+            try {
+                String publicHost = discoveryNode.getPublicAddress().getHost();
+                int clientPort = localMember.getAddressMap().get(EndpointQualifier.CLIENT).getPort();
+                return new Address(publicHost, clientPort);
+            } catch (Exception e) {
+                logger.fine(e);
+                // Return default public address since public host with the (advanced network) client port cannot be resolved
+            }
+        }
+        return discoveryNode.getPublicAddress();
     }
 }
