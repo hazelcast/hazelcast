@@ -166,10 +166,6 @@ public abstract class Invocation<T> implements OperationResponseHandler {
     private volatile int invokeCount;
 
     /**
-     * Shows whether this Invocation is targeting a remote member or not.
-     */
-    private boolean remote;
-    /**
      * Shows the address of current target.
      * <p>
      * Target address can belong to an existing member or to a non-member in some cases (join, wan-replication etc.).
@@ -196,7 +192,7 @@ public abstract class Invocation<T> implements OperationResponseHandler {
      */
     private int memberListVersion;
 
-    private EndpointManager endpointManager;
+    private final EndpointManager endpointManager;
 
     /**
      * Shows maximum number of retry counts for this Invocation.
@@ -285,7 +281,6 @@ public abstract class Invocation<T> implements OperationResponseHandler {
         Member previousTargetMember = targetMember;
         T target = getInvocationTarget();
         if (target == null) {
-            remote = false;
             throw newTargetNullException();
         }
 
@@ -311,8 +306,6 @@ public abstract class Invocation<T> implements OperationResponseHandler {
         if (op instanceof TargetAware) {
             ((TargetAware) op).setTarget(targetAddress);
         }
-
-        remote = !context.thisAddress.equals(targetAddress);
     }
 
     /**
@@ -481,7 +474,7 @@ public abstract class Invocation<T> implements OperationResponseHandler {
 
     boolean skipTimeoutDetection() {
         // skip if local and not BackupAwareOperation
-        return !(remote || op instanceof BackupAwareOperation);
+        return isLocal() && !(op instanceof BackupAwareOperation);
     }
 
     HeartbeatTimeout detectTimeout(long heartbeatTimeoutMillis) {
@@ -567,7 +560,6 @@ public abstract class Invocation<T> implements OperationResponseHandler {
         boolean allowed = state == NodeState.PASSIVE && (op instanceof AllowedDuringPassiveState);
         if (!allowed) {
             notifyError(new HazelcastInstanceNotActiveException("State: " + state + " Operation: " + op.getClass()));
-            remote = false;
         }
         return allowed;
     }
@@ -627,11 +619,15 @@ public abstract class Invocation<T> implements OperationResponseHandler {
             return;
         }
 
-        if (remote) {
-            doInvokeRemote();
-        } else {
+        if (isLocal()) {
             doInvokeLocal(isAsync);
+        } else {
+            doInvokeRemote();
         }
+    }
+
+    private boolean isLocal() {
+        return context.thisAddress.equals(targetAddress);
     }
 
     private void doInvokeLocal(boolean isAsync) {
@@ -754,10 +750,6 @@ public abstract class Invocation<T> implements OperationResponseHandler {
         backupsAcksReceived = 0;
         lastHeartbeatMillis = 0;
         doInvoke(false);
-    }
-
-    boolean isRemote() {
-        return remote;
     }
 
     Address getTargetAddress() {
