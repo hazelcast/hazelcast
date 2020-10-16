@@ -22,13 +22,20 @@ import com.hazelcast.client.HazelcastClientUtil;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
+import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.MemberVersion;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,22 +49,19 @@ import static junit.framework.TestCase.assertNotNull;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
+    private static final MemberVersion VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
 
-    private Address privateReachableAddress;
-    private Address publicUnreachableAddress;
-    private TcpClientConnectionManager clientConnectionManager;
-    private TestAddressProvider provider;
+    private Address privateAddress;
+    private Address publicAddress;
 
     @Before
     public void setup() throws Exception {
         Hazelcast.newHazelcastInstance();
 
-        provider = new TestAddressProvider();
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(provider, new ClientConfig());
-        clientConnectionManager = new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
-
-        privateReachableAddress = new Address("127.0.0.1", 5701);
-        publicUnreachableAddress = new Address("192.168.0.1", 5701);
+        // correct private address
+        privateAddress = new Address("127.0.0.1", 5701);
+        // incorrect public address
+        publicAddress = new Address("192.168.0.1", 5701);
     }
 
     @After
@@ -68,7 +72,11 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
 
     private class TestAddressProvider implements AddressProvider {
 
-        volatile boolean shouldTranslate = false;
+        private boolean shouldTranslate;
+
+        private TestAddressProvider(boolean shouldTranslate) {
+            this.shouldTranslate = shouldTranslate;
+        }
 
         @Override
         public Address translate(Address address) {
@@ -76,8 +84,8 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
                 return address;
             }
 
-            if (address.equals(privateReachableAddress)) {
-                return publicUnreachableAddress;
+            if (address.equals(privateAddress)) {
+                return publicAddress;
             }
             return null;
         }
@@ -93,23 +101,109 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
     }
 
     @Test(expected = Exception.class)
-    public void testTranslatorIsUsed() {
-        provider.shouldTranslate = true;
+    public void testTranslateIsUsed() {
+        // given
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(new TestAddressProvider(true), new ClientConfig());
+        TcpClientConnectionManager clientConnectionManager =
+                new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
 
+        // when
         clientConnectionManager.start();
+
+        // then
         // throws exception because it can't connect to the cluster using translated public unreachable address
     }
 
     @Test
-    public void testTranslatorIsNotUsedOnGetConnection() {
+    public void testTranslateIsNotUsedOnGettingExistingConnection() {
+        // given
+        TestAddressProvider provider = new TestAddressProvider(false);
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(provider, new ClientConfig());
+        TcpClientConnectionManager clientConnectionManager =
+                new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
+
         clientConnectionManager.start();
         clientConnectionManager.reset();
-        clientConnectionManager.getOrConnectCandidate(privateReachableAddress);
+        clientConnectionManager.getOrConnectCandidate(privateAddress);
         provider.shouldTranslate = true;
 
-        Connection connection = clientConnectionManager.getOrConnectCandidate(privateReachableAddress);
+        // when
+        Connection connection = clientConnectionManager.getOrConnectCandidate(privateAddress);
 
+        // then
         assertNotNull(connection);
+    }
+
+    @Test
+    public void testTranslateIsUsedWhenMemberHasPublicClientAddress() throws UnknownHostException {
+        // given
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED.getName(), "true");
+
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(null, clientConfig);
+        TcpClientConnectionManager clientConnectionManager =
+                new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
+        clientConnectionManager.start();
+
+        // private member address is unreachable
+        Member member = new MemberImpl(new Address("192.168.0.1", 5701), VERSION, false);
+        // public member address is reachable
+        member.getAddressMap().put(EndpointQualifier.resolve(ProtocolType.CLIENT, "public"), new Address("127.0.0.1", 5701));
+
+        // when
+        Connection connection = clientConnectionManager.getOrConnect(member);
+
+        // then
+        assertNotNull(connection);
+    }
+
+    @Test(expected = Exception.class)
+    public void testTranslateIsNotUsedWhenPublicIpDisabled() throws UnknownHostException {
+        // given
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED.getName(), "false");
+
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(null, clientConfig);
+        TcpClientConnectionManager clientConnectionManager =
+                new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
+        clientConnectionManager.start();
+
+        // private member address is incorrect
+        Member member = new MemberImpl(new Address("192.168.0.1", 5701), VERSION, false);
+        // public member address is correct
+        member.getAddressMap().put(EndpointQualifier.resolve(ProtocolType.CLIENT, "public"), new Address("127.0.0.1", 5701));
+
+        // when
+        clientConnectionManager.getOrConnect(member);
+
+        // then
+        // throws exception because it can't connect to the incorrect member address
+    }
+
+    @Test(expected = Exception.class)
+    public void testTranslateFromMemberIsNotUsedWhenAlreadyTranslatedByAddressProvider() throws UnknownHostException {
+        // given
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED.getName(), "true");
+
+        TestAddressProvider provider = new TestAddressProvider(false);
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(provider, clientConfig);
+        TcpClientConnectionManager clientConnectionManager =
+                new TcpClientConnectionManager(getHazelcastClientInstanceImpl(client));
+        clientConnectionManager.start();
+        provider.shouldTranslate = true;
+        privateAddress = new Address("192.168.0.1", 5702);
+
+        // private member address is correct
+        Member member = new MemberImpl(privateAddress, VERSION, false);
+        // public member address is correct
+        member.getAddressMap().put(EndpointQualifier.resolve(ProtocolType.CLIENT, "public"), new Address("127.0.0.1", 5701));
+
+        // when
+        clientConnectionManager.getOrConnect(member);
+
+        // then
+        // throws exception because it can't connect to the incorrect address
     }
 
 }
