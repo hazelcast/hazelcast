@@ -425,10 +425,10 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         return false;
     }
 
-    private Connection connect(Address address) {
+    private Connection connectToCandidate(Address address) {
         try {
             logger.info("Trying to connect to " + address);
-            return getOrConnect(address);
+            return getOrConnectCandidate(address);
         } catch (InvalidConfigurationException e) {
             logger.warning("Exception during initial connection to " + address + ": " + e);
             throw rethrow(e);
@@ -456,7 +456,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                     checkClientActive();
                     triedAddresses.add(address);
 
-                    Connection connection = connect(address);
+                    Connection connection = connectToCandidate(address);
                     if (connection != null) {
                         return true;
                     }
@@ -572,7 +572,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         return getOrConnect(member.getAddress(), () -> translate(member));
     }
 
-    TcpClientConnection getOrConnect(@Nonnull Address address) {
+    TcpClientConnection getOrConnectCandidate(@Nonnull Address address) {
         return getOrConnect(address, () -> translate(address));
     }
 

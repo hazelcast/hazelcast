@@ -57,7 +57,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         clientConnectionManager = new TcpClientConnectionManager(clientInstanceImpl);
         clientConnectionManager.start();
         clientConnectionManager.reset();
-        clientConnectionManager.getOrConnect(new Address("127.0.0.1", 5701));
+        clientConnectionManager.getOrConnectCandidate(new Address("127.0.0.1", 5701));
 
         provider.shouldTranslate = true;
 
@@ -99,7 +99,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
 
     @Test
     public void testTranslatorIsNotUsedOnGetConnection() {
-        Connection connection = clientConnectionManager.getOrConnect(privateAddress);
+        Connection connection = clientConnectionManager.getOrConnectCandidate(privateAddress);
         assertNotNull(connection);
     }
 }
