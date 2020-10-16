@@ -576,7 +576,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         return getOrConnect(address, () -> translate(address));
     }
 
-    TcpClientConnection getOrConnect(@Nonnull Address address, Supplier<Address> addressTranslator) {
+    TcpClientConnection getOrConnect(@Nonnull Address address, Supplier<Address> translatedAddress) {
         checkClientActive();
         TcpClientConnection connection = getConnection(address);
         if (connection != null) {
@@ -591,7 +591,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                 return connection;
             }
 
-            connection = createSocketConnection(addressTranslator.get());
+            connection = createSocketConnection(translatedAddress.get());
             authenticateOnCluster(connection);
             return connection;
         }
@@ -971,10 +971,10 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         }
     }
 
-    private InetSocketAddress resolveAddress(Address address) {
-        return ConcurrencyUtil.getOrPutIfAbsent(inetSocketAddressCache, address, arg -> {
+    private InetSocketAddress resolveAddress(Address target) {
+        return ConcurrencyUtil.getOrPutIfAbsent(inetSocketAddressCache, target, arg -> {
             try {
-                return new InetSocketAddress(address.getInetAddress(), address.getPort());
+                return new InetSocketAddress(target.getInetAddress(), target.getPort());
             } catch (UnknownHostException e) {
                 throw rethrow(e);
             }

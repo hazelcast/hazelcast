@@ -275,6 +275,7 @@ public class ClientClusterServiceImpl
         if (!(client.getClusterDiscoveryService().current().getAddressProvider() instanceof DefaultAddressProvider)) {
             return false;
         }
+
         String publicIpEnabledProperty = client.getProperties().getString(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED);
         if ("true".equalsIgnoreCase(publicIpEnabledProperty)) {
             return true;
