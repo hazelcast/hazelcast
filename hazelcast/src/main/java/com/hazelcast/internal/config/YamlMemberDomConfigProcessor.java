@@ -488,8 +488,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected MergePolicyConfig createMergePolicyConfig(Node node) {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
+    protected MergePolicyConfig createMergePolicyConfig(Node node, MergePolicyConfig mergePolicyConfig) {
         String policyString = getTextContent(getNamedItemNode(node, "class-name"));
         mergePolicyConfig.setPolicy(policyString);
         final String att = getAttribute(node, "batch-size");
@@ -599,8 +598,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected SerializationConfig parseSerialization(final Node node) {
-        SerializationConfig serializationConfig = new SerializationConfig();
+    protected SerializationConfig parseSerialization(final Node node, SerializationConfig serializationConfig) {
         for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
             if (matches("portable-version", name)) {

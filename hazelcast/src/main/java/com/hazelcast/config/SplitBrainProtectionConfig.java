@@ -79,6 +79,10 @@ public class SplitBrainProtectionConfig implements IdentifiedDataSerializable, N
     public SplitBrainProtectionConfig() {
     }
 
+    public SplitBrainProtectionConfig(String name) {
+        this.name = name;
+    }
+
     public SplitBrainProtectionConfig(String name, boolean enabled) {
         this.name = name;
         this.enabled = enabled;

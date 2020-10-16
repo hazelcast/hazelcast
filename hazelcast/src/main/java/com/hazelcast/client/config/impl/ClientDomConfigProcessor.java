@@ -615,7 +615,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleSerialization(Node node) {
-        SerializationConfig serializationConfig = parseSerialization(node);
+        SerializationConfig serializationConfig = parseSerialization(node, clientConfig.getSerializationConfig());
         clientConfig.setSerializationConfig(serializationConfig);
     }
 

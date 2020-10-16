@@ -250,7 +250,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 throw new InvalidConfigurationException(
                         "Duplicate '" + nodeName + "' definition found in the configuration.");
             }
-            if (handleNode(node, nodeName)) {
+            if (handleNode(node)) {
                 continue;
             }
             if (!canOccurMultipleTimes(nodeName)) {
@@ -261,7 +261,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         validateNetworkConfig();
     }
 
-    private boolean handleNode(Node node, String nodeName) throws Exception {
+    private boolean handleNode(Node node) throws Exception {
+        String nodeName = cleanNodeName(node);
+
         if (matches(INSTANCE_NAME.getName(), nodeName)) {
             config.setInstanceName(getNonEmptyText(node, "Instance name"));
         } else if (matches(NETWORK.getName(), nodeName)) {
@@ -509,9 +511,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleSplitBrainProtection(Node node) {
-        SplitBrainProtectionConfig splitBrainProtectionConfig = new SplitBrainProtectionConfig();
         String name = getAttribute(node, "name");
-        splitBrainProtectionConfig.setName(name);
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig(name);
+        if (splitBrainProtectionConfig == null) {
+            splitBrainProtectionConfig = new SplitBrainProtectionConfig(name);
+        }
         handleSplitBrainProtectionNode(node, splitBrainProtectionConfig, name);
     }
 
@@ -970,13 +974,21 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleExecutor(Node node) throws Exception {
-        ExecutorConfig executorConfig = new ExecutorConfig();
+        ExecutorConfig executorConfig = config.getExecutorConfig(cleanNodeName(node));
+        if (executorConfig == null) {
+            executorConfig = new ExecutorConfig();
+        }
+
         handleViaReflection(node, config, executorConfig);
     }
 
     protected void handleDurableExecutor(Node node) throws Exception {
-        DurableExecutorConfig durableExecutorConfig = new DurableExecutorConfig();
-        handleViaReflection(node, config, durableExecutorConfig);
+        DurableExecutorConfig executorConfig = config.getDurableExecutorConfig(cleanNodeName(node));
+        if (executorConfig == null) {
+            executorConfig = new DurableExecutorConfig();
+        }
+
+        handleViaReflection(node, config, executorConfig);
     }
 
     protected void handleScheduledExecutor(Node node) {
