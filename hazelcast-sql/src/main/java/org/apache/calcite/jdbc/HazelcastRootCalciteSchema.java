@@ -23,7 +23,7 @@ import org.apache.calcite.schema.SchemaVersion;
  * Root Calcite schema.
  * <p>
  * Calcite uses {@link org.apache.calcite.schema.Schema} to store actual objects, and
- * {@link org.apache.calcite.jdbc.CalciteSchema} as a wrapper. This class is a straightforward implementation of the latter.
+ * {@link org.apache.calcite.jdbc.CalciteSchema} as a wrapper. This class is a straightforward implementation of the former.
  * <p>
  * Located in the Calcite package because the required super constructor is package-private.
  */
