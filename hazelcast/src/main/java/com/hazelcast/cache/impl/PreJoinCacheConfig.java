@@ -18,11 +18,14 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.AbstractCacheConfig;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.io.IOException;
@@ -39,7 +42,7 @@ import java.io.IOException;
  * @param <V> the value type
  * @since 3.9
  */
-public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> {
+public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versioned {
     public PreJoinCacheConfig() {
         super();
     }
@@ -74,6 +77,20 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> {
             throws IOException {
         setKeyClassName(in.readUTF());
         setValueClassName(in.readUTF());
+    }
+
+    @Override
+    protected void readTenant(ObjectDataInput in) throws IOException {
+        if (in.getVersion().isLessOrEqual(Versions.V4_1)) {
+            in.readObject();
+        }
+    }
+
+    @Override
+    protected void writeTenant(ObjectDataOutput out) throws IOException {
+        if (out.getVersion().isLessOrEqual(Versions.V4_1)) {
+            out.writeObject(TenantControl.NOOP_TENANT_CONTROL);
+        }
     }
 
     @Override
