@@ -148,13 +148,6 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
-                                    <excludes>
-                                        <!-- Jackson Core is already included in hazelcast.jar. -->
-                                        <exclude>**</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
                                     <artifact>commons-codec:commons-codec</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
