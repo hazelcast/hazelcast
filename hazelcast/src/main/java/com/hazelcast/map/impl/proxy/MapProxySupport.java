@@ -514,15 +514,11 @@ abstract class MapProxySupport<K, V>
         operation.setThreadId(getThreadId());
 
         try {
-            final InvocationFuture<Data> result;
+            final InvocationFuture<Data> result = operationService
+                    .invokeOnPartition(SERVICE_NAME, operation, partitionId);
+
             if (statisticsEnabled) {
-                long startTimeNanos = Timer.nanos();
-                result = operationService
-                        .invokeOnPartition(SERVICE_NAME, operation, partitionId);
-                result.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
-            } else {
-                result = operationService
-                        .invokeOnPartition(SERVICE_NAME, operation, partitionId);
+                result.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, Timer.nanos()), CALLER_RUNS);
             }
             return result;
         } catch (Throwable t) {
@@ -690,6 +686,25 @@ abstract class MapProxySupport<K, V>
         Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(keyData);
         MapOperation operation = operationProvider.createRemoveOperation(name, keyData);
+        operation.setThreadId(getThreadId());
+        try {
+            long startTimeNanos = Timer.nanos();
+            InvocationFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+
+            if (statisticsEnabled) {
+                future.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
+            }
+
+            return future;
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    protected InternalCompletableFuture<Data> deleteAsyncInternal(Object key) {
+        Data keyData = toDataWithStrategy(key);
+        int partitionId = partitionService.getPartitionId(keyData);
+        MapOperation operation = operationProvider.createDeleteOperation(name, keyData, false);
         operation.setThreadId(getThreadId());
         try {
             long startTimeNanos = Timer.nanos();

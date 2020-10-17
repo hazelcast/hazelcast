@@ -358,13 +358,22 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testAsyncDelete() throws Exception {
+        IMap<String, String> map = createMap();
+        fillMap(map);
+        Future<Void> future = map.deleteAsync("key4").toCompletableFuture();
+        future.get();
+        assertEquals(9, map.size());
+    }
+
+    @Test
     public void testPutAllEmpty() {
         IMap<Integer, Integer> map = createMap();
         map.putAll(emptyMap());
     }
 
     @Test
-    public void tstPutAllAsyncEmpty() {
+    public void testPutAllAsyncEmpty() {
         IMap<Integer, Integer> map = createMap();
         ((ClientMapProxy<Integer, Integer>) map).putAllAsync(emptyMap());
     }

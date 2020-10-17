@@ -16,6 +16,20 @@
 
 package com.hazelcast.map;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
@@ -29,19 +43,6 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spi.properties.ClusterProperty;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 /**
  * Concurrent, distributed, observable and queryable map.
@@ -1150,6 +1151,40 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see CompletionStage
      */
     CompletionStage<V> removeAsync(@Nonnull K key);
+
+    /**
+     * Asynchronously removes the given key, returning an {@link CompletionStage}
+     * on which the caller can register further computation stages to be invoked
+     * upon delete operation completion or block waiting for the operation to
+     * complete using one of blocking ways to wait on
+     * {@link CompletionStage#toCompletableFuture()}.
+     * <p>
+     * <b>Warning:</b>
+     * <p>
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
+     *
+     * <p><b>Interactions with the map store</b>
+     * <p>
+     * If write-through persistence mode is configured, before the value
+     * is removed from the the memory, {@link MapStore#delete(Object)}
+     * is called to remove the value from the map store. Exceptions
+     * thrown by delete fail the operation and are propagated to the
+     * caller.
+     * <p>
+     * If write-behind persistence mode is configured with
+     * write-coalescing turned off,
+     * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
+     * if the write-behind queue has reached its per-node maximum
+     * capacity.
+     *
+     * @param key The key of the map entry to remove
+     * @return {@link CompletionStage} from which the value removed from the map can be retrieved
+     * @throws NullPointerException if the specified key is {@code null}
+     * @see CompletionStage
+     */
+    CompletionStage<Void> deleteAsync(@Nonnull K key);
 
     /**
      * Tries to remove the entry with the given key from this map

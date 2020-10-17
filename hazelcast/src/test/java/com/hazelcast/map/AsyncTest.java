@@ -16,26 +16,27 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.listener.EntryExpiredListener;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.listener.EntryExpiredListener;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -130,6 +131,16 @@ public class AsyncTest extends HazelcastTestSupport {
         map.put(key, value1);
         Future<String> f1 = map.removeAsync(key).toCompletableFuture();
         assertEquals(value1, f1.get());
+    }
+
+    @Test
+    public void testDeleteAsync() throws Exception {
+        IMap<String, String> map = instance.getMap(randomString());
+        // populate map
+        map.put(key, value1);
+        Future<Void> f1 = map.deleteAsync(key).toCompletableFuture();
+        f1.get();
+        assertNull(map.get(key));
     }
 
     @Test
