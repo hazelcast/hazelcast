@@ -590,9 +590,9 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
         replicatedMap.remove(key);
 
-        assertEquals(0, ((Key1) key).COUNTER.get());
+        assertEquals(0, Key1.COUNTER.get());
         // expect only 1 deserialization in ClientReplicatedMapProxy#remove method
-        assertEquals(1, ((Value1) value).COUNTER.get());
+        assertEquals(1, Value1.COUNTER.get());
     }
 
     @Test
@@ -615,9 +615,9 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
         replicatedMap.get(key);
 
-        assertEquals(0, ((Key2) key).COUNTER.get());
+        assertEquals(0, Key2.COUNTER.get());
         // expect only 1 deserialization in ClientReplicatedMapProxy#remove method
-        assertEquals(1, ((Value2) value).COUNTER.get());
+        assertEquals(1, Value2.COUNTER.get());
     }
 
     public static class Key1 extends DeserializationCounter {

@@ -265,7 +265,7 @@ public class MemberAddressProviderTest {
         public static Properties properties;
 
         public MemberAddressProviderWithStaticProperties(Properties properties) {
-            this.properties = properties;
+            MemberAddressProviderWithStaticProperties.properties = properties;
         }
 
         @Override
@@ -293,7 +293,7 @@ public class MemberAddressProviderTest {
         public static ILogger logger;
 
         public MemberAddressProviderWithLogger(ILogger logger) {
-            this.logger = logger;
+            MemberAddressProviderWithLogger.logger = logger;
         }
 
         @Override
@@ -323,8 +323,8 @@ public class MemberAddressProviderTest {
 
 
         public MemberAddressProviderWithLoggerAndProperties(ILogger logger, Properties properties) {
-            this.logger = logger;
-            this.properties = properties;
+            MemberAddressProviderWithLoggerAndProperties.logger = logger;
+            MemberAddressProviderWithLoggerAndProperties.properties = properties;
         }
 
         @Override
@@ -354,8 +354,8 @@ public class MemberAddressProviderTest {
 
 
         public MemberAddressProviderWithPropertiesAndLogger(Properties properties, ILogger logger) {
-            this.logger = logger;
-            this.properties = properties;
+            MemberAddressProviderWithPropertiesAndLogger.logger = logger;
+            MemberAddressProviderWithPropertiesAndLogger.properties = properties;
         }
 
         @Override
