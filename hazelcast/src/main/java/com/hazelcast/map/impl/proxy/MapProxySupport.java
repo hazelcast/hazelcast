@@ -514,11 +514,12 @@ abstract class MapProxySupport<K, V>
         operation.setThreadId(getThreadId());
 
         try {
+            long startTimeNanos = Timer.nanos();
             final InvocationFuture<Data> result = operationService
                     .invokeOnPartition(SERVICE_NAME, operation, partitionId);
 
             if (statisticsEnabled) {
-                result.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, Timer.nanos()), CALLER_RUNS);
+                result.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
             }
             return result;
         } catch (Throwable t) {
