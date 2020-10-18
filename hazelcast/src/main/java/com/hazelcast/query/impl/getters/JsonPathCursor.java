@@ -30,7 +30,6 @@ import java.util.List;
  */
 public class JsonPathCursor {
 
-    private static final Charset UTF8_CHARSET = StandardCharsets.UTF_8;
     private static final int DEFAULT_PATH_ELEMENT_COUNT = 5;
 
     private List<Triple> triples;
@@ -89,7 +88,7 @@ public class JsonPathCursor {
             }
             String part = attributePath.substring(start, end);
 
-            Triple triple = new Triple(part, part.getBytes(UTF8_CHARSET), isArray);
+            Triple triple = new Triple(part, part.getBytes(StandardCharsets.UTF_8), isArray);
             triples.add(triple);
             start = end + 1;
         }
