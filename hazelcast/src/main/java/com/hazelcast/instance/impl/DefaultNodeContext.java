@@ -149,7 +149,13 @@ public class DefaultNodeContext implements NodeContext {
         Networking networking = createNetworking(node);
         Config config = node.getConfig();
 
-        NettyServer nettyServer = new NettyServer(node.getThisAddress(), node.nodeEngine.getPacketDispatcher());
+        NettyServer nettyServer = null;
+        if(System.getProperty("netty","true").equals("true")) {
+            System.out.println("Netty enabled!!");
+            nettyServer = new NettyServer(node.getThisAddress(), node.nodeEngine.getPacketDispatcher());
+        }else{
+            System.out.println("Netty disabled!!!");
+        }
         MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
         return new TcpServer(
                 node.getThisAddress(),

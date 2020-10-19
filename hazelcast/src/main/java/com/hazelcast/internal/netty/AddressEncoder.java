@@ -13,13 +13,6 @@ public class AddressEncoder extends MessageToByteEncoder {
     public AddressEncoder(Address thisAddress) {
         this.thisAddress = thisAddress;
     }
-//
-//    @Override
-//    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-//        super.handlerRemoved(ctx);
-//
-//        //System.out.println("AddressEncoder removed");
-//    }
 
     public String debug(ChannelHandlerContext ctx) {
         return thisAddress + "[" + ctx.channel().localAddress() + "->" + ctx.channel().remoteAddress() + "] ";

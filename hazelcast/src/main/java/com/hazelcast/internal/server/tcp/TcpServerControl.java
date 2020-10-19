@@ -94,7 +94,7 @@ public final class TcpServerControl {
         process(connection, handshake);
 
         // we only want 1 side to establish an extra connection to the other side.
-        if(connection.getChannel().isClientMode()) {
+        if(nettyServer!=null && connection.getChannel().isClientMode()) {
            Address remoteAddress = handshake.getLocalAddresses().get(ProtocolType.MEMBER).iterator().next();
             Channel nettyChannel = nettyServer.connect(remoteAddress);
             //System.out.println("is open:"+nettyChannel.isOpen());

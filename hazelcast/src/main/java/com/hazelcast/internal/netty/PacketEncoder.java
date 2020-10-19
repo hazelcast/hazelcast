@@ -11,16 +11,12 @@ public class PacketEncoder extends MessageToByteEncoder<Packet> {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Packet packet, ByteBuf dst) throws Exception {
-       // System.out.println("PacketEncoder encode:"+packet);
-        try {
-            dst.writeByte(VERSION);
-            dst.writeChar(packet.getFlags());
-            dst.writeInt(packet.getPartitionId());
-            int size = packet.totalSize();
-            dst.writeInt(size);
-            dst.writeBytes(packet.toByteArray());
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+        // System.out.println("PacketEncoder encode:"+packet);
+        dst.writeByte(VERSION);
+        dst.writeChar(packet.getFlags());
+        dst.writeInt(packet.getPartitionId());
+        int size = packet.totalSize();
+        dst.writeInt(size);
+        dst.writeBytes(packet.toByteArray());
     }
 }

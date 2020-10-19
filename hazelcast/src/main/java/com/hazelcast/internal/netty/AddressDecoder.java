@@ -21,13 +21,6 @@ public class AddressDecoder extends ByteToMessageDecoder {
         this.serverConnectionManager = serverConnectionManager;
     }
 
-//    @Override
-//    protected void handlerRemoved0(ChannelHandlerContext ctx) throws Exception {
-//        super.handlerRemoved0(ctx);
-//
-//       // System.out.println("AddressEncoder removed");
-//    }
-
     public String debug(ChannelHandlerContext ctx){
         return thisAddress+"["+ctx.channel().localAddress()+"->"+ctx.channel().remoteAddress()+"] ";
     }

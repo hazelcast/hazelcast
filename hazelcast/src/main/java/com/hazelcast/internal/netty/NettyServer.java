@@ -24,7 +24,7 @@ public class NettyServer {
     private NioEventLoopGroup workerGroup;
     private ServerBootstrap serverBootstrap;
     private Bootstrap clientBootstrap;
- //   private NioEventLoopGroup clientEventLoopGroup;
+    //   private NioEventLoopGroup clientEventLoopGroup;
     private ServerConnectionManager serverConnectionManager;
     private int threadCount = 8;
 
@@ -40,7 +40,7 @@ public class NettyServer {
     public void start() {
         System.out.println("Started ");
         int inetPort = thisAddress.getPort() + 10000;
-        System.out.println("Started netty server on "+(thisAddress.getHost()+" "+inetPort));
+        System.out.println("Started netty server on " + (thisAddress.getHost() + " " + inetPort));
 
         bossGroup = new NioEventLoopGroup();
         workerGroup = new NioEventLoopGroup(threadCount);
@@ -59,15 +59,15 @@ public class NettyServer {
                                 new OperationHandler(packetDispatcher));
                     }
                 })
-                .option(ChannelOption.SO_BACKLOG, 128)
-                .option(ChannelOption.SO_RCVBUF, 128 * 1024)
-                .option(ChannelOption.SO_SNDBUF, 128 * 1024)
-                .option(ChannelOption.TCP_NODELAY, true)
+                .childOption(ChannelOption.SO_BACKLOG, 128)
+                .childOption(ChannelOption.SO_RCVBUF, 128 * 1024)
+                .childOption(ChannelOption.SO_SNDBUF, 128 * 1024)
+                .childOption(ChannelOption.TCP_NODELAY, true)
                 .childOption(ChannelOption.SO_KEEPALIVE, true);
         serverBootstrap.bind(inetPort);
 
 
-       // clientEventLoopGroup = new NioEventLoopGroup();
+        // clientEventLoopGroup = new NioEventLoopGroup();
         clientBootstrap = new Bootstrap();
 
         clientBootstrap.group(workerGroup);
@@ -81,7 +81,11 @@ public class NettyServer {
                         new PacketDecoder(thisAddress),
                         new OperationHandler(packetDispatcher));
             }
-        });
+        }).option(ChannelOption.SO_BACKLOG, 128)
+                .option(ChannelOption.SO_RCVBUF, 128 * 1024)
+                .option(ChannelOption.SO_SNDBUF, 128 * 1024)
+                .option(ChannelOption.TCP_NODELAY, true);
+
     }
 
     public Channel connect(Address address) {

@@ -121,7 +121,9 @@ public final class TcpServer implements Server {
         }
         metricsRegistry.registerDynamicMetricsProvider(new MetricsProvider());
 
-        nettyServer.setServerConnectionManager(getConnectionManager(EndpointQualifier.MEMBER));
+        if(nettyServer!=null) {
+            nettyServer.setServerConnectionManager(getConnectionManager(EndpointQualifier.MEMBER));
+        }
     }
 
     @Override
@@ -150,7 +152,9 @@ public final class TcpServer implements Server {
         live = true;
         logger.finest("Starting TcpServer.");
 
-        nettyServer.start();
+        if(nettyServer!=null) {
+            nettyServer.start();
+        }
         networking.restart();
         startAcceptor();
 
