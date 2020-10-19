@@ -109,4 +109,8 @@ public class CacheReplaceOperation extends MutatingCacheOperation {
         return CacheDataSerializerHook.REPLACE;
     }
 
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }

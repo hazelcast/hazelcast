@@ -131,7 +131,7 @@ public class CachePartitionIteratorMigrationTest extends HazelcastTestSupport {
         }
     }
 
-    private void putValuesToPartition(HazelcastInstance instance, CacheProxy<String, String> proxy, String value, int partitionId, int count) {
+    static <T> void putValuesToPartition(HazelcastInstance instance, CacheProxy<String, T> proxy, T value, int partitionId, int count) {
         for (int i = 0; i < count; i++) {
             String key = generateKeyForPartition(instance, partitionId);
             proxy.put(key, value);

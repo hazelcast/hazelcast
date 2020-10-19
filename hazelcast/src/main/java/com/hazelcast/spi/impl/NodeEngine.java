@@ -31,6 +31,7 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
+import com.hazelcast.spi.impl.tenantcontrol.impl.TenantControlServiceImpl;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -65,6 +66,11 @@ public interface NodeEngine {
     SerializationService getSerializationService();
 
     ProxyService getProxyService();
+
+    /**
+     * Returns the tenant control service.
+     */
+    TenantControlServiceImpl getTenantControlService();
 
     WanReplicationService getWanReplicationService();
 

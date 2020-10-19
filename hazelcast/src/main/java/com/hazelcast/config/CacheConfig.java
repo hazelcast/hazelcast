@@ -26,7 +26,6 @@ import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
-import com.hazelcast.spi.tenantcontrol.TenantControl;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -43,7 +42,6 @@ import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.expiry.TouchedExpiryPolicy;
 import javax.cache.integration.CacheWriter;
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,11 +50,11 @@ import java.util.Set;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
+import com.hazelcast.internal.serialization.SerializationService;
 import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
-import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 
 /**
  * Contains all the configuration for the {@link com.hazelcast.cache.ICache}.
@@ -87,8 +85,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      * Full-flush invalidation means the invalidation of events for all entries when clear is called.
      */
     private boolean disablePerEntryInvalidationEvents;
-
-    private TenantControl tenantControl = NOOP_TENANT_CONTROL;
 
     public CacheConfig() {
     }
@@ -553,34 +549,26 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
         String resultInMemoryFormat = in.readUTF();
         inMemoryFormat = InMemoryFormat.valueOf(resultInMemoryFormat);
-        // set the thread-context and class loading context for this cache's tenant application
-        // This way user customizations (loader factories, listeners) and keyType/valueType
-        // can be CDI / EJB / JPA objects
-        Closeable tenantContext = tenantControl.setTenant(false);
-        try {
-            evictionConfig = in.readObject();
-            wanReplicationRef = in.readObject();
+        evictionConfig = in.readObject();
+        wanReplicationRef = in.readObject();
 
-            readKeyValueTypes(in);
-            readTenant(in);
-            readFactories(in);
+        readKeyValueTypes(in);
+        readTenant(in);
+        readFactories(in);
 
-            isReadThrough = in.readBoolean();
-            isWriteThrough = in.readBoolean();
-            isStoreByValue = in.readBoolean();
-            isManagementEnabled = in.readBoolean();
-            isStatisticsEnabled = in.readBoolean();
-            hotRestartConfig = in.readObject();
-            eventJournalConfig = in.readObject();
+        isReadThrough = in.readBoolean();
+        isWriteThrough = in.readBoolean();
+        isStoreByValue = in.readBoolean();
+        isManagementEnabled = in.readBoolean();
+        isStatisticsEnabled = in.readBoolean();
+        hotRestartConfig = in.readObject();
+        eventJournalConfig = in.readObject();
 
-            splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readUTF();
 
-            final boolean listNotEmpty = in.readBoolean();
-            if (listNotEmpty) {
-                readListenerConfigurations(in);
-            }
-        } finally {
-            tenantContext.close();
+        final boolean listNotEmpty = in.readBoolean();
+        if (listNotEmpty) {
+            readListenerConfigurations(in);
         }
 
         mergePolicyConfig = in.readObject();
@@ -648,14 +636,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                 + '}';
     }
 
-    TenantControl getTenantControl() {
-        return tenantControl;
-    }
-
-    void setTenantControl(TenantControl tenantControl) {
-        this.tenantControl = tenantControl;
-    }
-
     protected void writeTenant(ObjectDataOutput out) throws IOException {
     }
 
@@ -708,11 +688,11 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      *                 or will be resolved to loaded classes and the actual {@code keyType} and {@code valueType} will be copied.
      *                 Otherwise, this configuration's {@code keyClassName} and {@code valueClassName} will be copied to the
      *                 target config, to be resolved at a later time.
+     * @param backupSerializationService in case serialization service isn't initialized
      * @param <T>      the target object type
      * @return the target config
      */
-    public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved) {
-        target.setTenantControl(getTenantControl());
+    public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved, SerializationService backupSerializationService) {
         target.setAsyncBackupCount(getAsyncBackupCount());
         target.setBackupCount(getBackupCount());
         target.setDisablePerEntryInvalidationEvents(isDisablePerEntryInvalidationEvents());
@@ -728,13 +708,16 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             target.setValueClassName(getValueClassName());
         }
 
-        target.cacheLoaderFactory = cacheLoaderFactory.shallowCopy();
-        target.cacheWriterFactory = cacheWriterFactory.shallowCopy();
-        target.expiryPolicyFactory = expiryPolicyFactory.shallowCopy();
+        final SerializationService useSerializationService =
+                serializationService != null ? serializationService : backupSerializationService;
+
+        target.cacheLoaderFactory = cacheLoaderFactory.shallowCopy(resolved, useSerializationService);
+        target.cacheWriterFactory = cacheWriterFactory.shallowCopy(resolved, useSerializationService);
+        target.expiryPolicyFactory = expiryPolicyFactory.shallowCopy(resolved, useSerializationService);
 
         target.listenerConfigurations = createConcurrentSet();
         for (DeferredValue<CacheEntryListenerConfiguration<K, V>> lazyEntryListenerConfig : listenerConfigurations) {
-            target.listenerConfigurations.add(lazyEntryListenerConfig.shallowCopy());
+            target.listenerConfigurations.add(lazyEntryListenerConfig.shallowCopy(resolved, useSerializationService));
         }
 
         target.setManagementEnabled(isManagementEnabled());
@@ -750,8 +733,12 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         target.setWanReplicationRef(getWanReplicationRef());
         target.setWriteThrough(isWriteThrough());
         target.setClassLoader(classLoader);
-        target.serializationService = serializationService;
+        target.serializationService = useSerializationService;
         return target;
+    }
+
+    public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved) {
+        return copy(target, resolved, null);
     }
 
     private void copyListeners(CacheSimpleConfig simpleConfig)

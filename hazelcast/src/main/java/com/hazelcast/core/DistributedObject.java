@@ -24,6 +24,7 @@ import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.transaction.TransactionalMultiMap;
 import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 
 /**
  * Base interface for all distributed objects.
@@ -74,4 +75,16 @@ public interface DistributedObject {
      * Clears and releases all resources for this object.
      */
     void destroy();
+
+    /**
+     * If a particular distributed object needs to clear any classes
+     * that are cached, possibly from the destroyed tenant, needs to be cleared
+     * to avoid class loader leaks and ClassNotFound exceptions
+     * when the tenant is destroyed
+     *
+     * @return destroy context, cannot be null
+     */
+    default DestroyEventContext getDestroyContextForTenant() {
+        return () -> { };
+    }
 }

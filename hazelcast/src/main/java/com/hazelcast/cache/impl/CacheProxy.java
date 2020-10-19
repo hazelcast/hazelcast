@@ -664,4 +664,10 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
             throw rethrowAllowedTypeFirst(t, CacheException.class);
         }
     }
+
+    @Override
+    public void reSerializeCacheConfig() {
+        cacheConfig = PreJoinCacheConfig.of(cacheConfig, getNodeEngine()
+                .getSerializationService()).asCacheConfig();
+    }
 }

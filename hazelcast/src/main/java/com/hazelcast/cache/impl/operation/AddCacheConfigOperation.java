@@ -40,7 +40,6 @@ public class AddCacheConfigOperation extends Operation implements IdentifiedData
     @Override
     public void run() {
         ICacheService cacheService = getService();
-        cacheService.setTenantControl(cacheConfig);
         cacheService.putCacheConfigIfAbsent(cacheConfig);
     }
 
@@ -69,5 +68,8 @@ public class AddCacheConfigOperation extends Operation implements IdentifiedData
         return CacheDataSerializerHook.ADD_CACHE_CONFIG_OPERATION;
     }
 
-
+    @Override
+    public boolean requiresTenantContext() {
+        return false;
+    }
 }
