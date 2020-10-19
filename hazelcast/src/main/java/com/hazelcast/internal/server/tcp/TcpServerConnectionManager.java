@@ -23,6 +23,7 @@ import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.netty.NettyServer;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.Networking;
@@ -126,12 +127,13 @@ public class TcpServerConnectionManager
     @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CLOSED_COUNT)
     private final MwCounter closedCount = newMwCounter();
 
-
-    TcpServerConnectionManager(TcpServer server,
+    TcpServerConnectionManager(Address thisAddress,
+                                TcpServer server,
                                EndpointConfig endpointConfig,
                                Function<EndpointQualifier, ChannelInitializer> channelInitializerFn,
                                ServerContext serverContext,
-                               Set<ProtocolType> supportedProtocolTypes) {
+                               Set<ProtocolType> supportedProtocolTypes,
+                               NettyServer nettyServer) {
         this.server = server;
         this.endpointConfig = endpointConfig;
         this.endpointQualifier = endpointConfig != null ? endpointConfig.getQualifier() : null;
@@ -140,7 +142,7 @@ public class TcpServerConnectionManager
         this.serverContext = serverContext;
         this.logger = serverContext.getLoggingService().getLogger(TcpServerConnectionManager.class);
         this.connector = new TcpServerConnector(this);
-        this.serverControl = new TcpServerControl(this, serverContext, logger, supportedProtocolTypes);
+        this.serverControl = new TcpServerControl(this, serverContext, logger, supportedProtocolTypes, nettyServer, thisAddress);
         this.networkStats = endpointQualifier == null ? null : new NetworkStatsImpl();
         this.planes = new Plane[planeCount];
         for (int planeIndex = 0; planeIndex < planes.length; planeIndex++) {
@@ -173,7 +175,8 @@ public class TcpServerConnectionManager
     }
 
     public ServerConnection get(Address address, int streamId) {
-        return getPlane(streamId).connectionMap.get(address);
+        Plane plane = getPlane(streamId);
+        return plane.connectionMap.get(address);
     }
 
     @Override

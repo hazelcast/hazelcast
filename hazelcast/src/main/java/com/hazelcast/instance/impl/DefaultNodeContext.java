@@ -22,6 +22,7 @@ import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.netty.NettyServer;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
@@ -148,12 +149,16 @@ public class DefaultNodeContext implements NodeContext {
         Networking networking = createNetworking(node);
         Config config = node.getConfig();
 
+        NettyServer nettyServer = new NettyServer(node.getThisAddress(), node.nodeEngine.getPacketDispatcher());
         MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
-        return new TcpServer(config,
+        return new TcpServer(
+                node.getThisAddress(),
+                config,
                 context,
                 registry,
                 metricsRegistry,
                 networking,
+                nettyServer,
                 node.getNodeExtension().createChannelInitializerFn(context));
     }
 

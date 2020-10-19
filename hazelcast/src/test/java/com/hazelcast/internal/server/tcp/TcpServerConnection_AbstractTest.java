@@ -133,11 +133,11 @@ public abstract class TcpServerConnection_AbstractTest extends HazelcastTestSupp
 
         ServerSocketRegistry registry = new ServerSocketRegistry(singletonMap(MEMBER, serverContext.serverSocketChannel), true);
         MockServerContext finalServiceContext = serverContext;
-        return new TcpServer(null,
+        return new TcpServer(null, null,
                 serverContext,
                 registry,
                 metricsRegistry,
-                networkingFactory.create(serverContext, metricsRegistry),
+                networkingFactory.create(serverContext, metricsRegistry), null,
                 qualifier -> new UnifiedChannelInitializer(finalServiceContext));
     }
 

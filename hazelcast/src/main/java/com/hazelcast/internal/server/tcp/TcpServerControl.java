@@ -20,12 +20,14 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.impl.MemberHandshake;
+import com.hazelcast.internal.netty.NettyServer;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.netty.channel.Channel;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,11 +51,15 @@ public final class TcpServerControl {
     private final boolean unifiedEndpointManager;
     private final Set<ProtocolType> supportedProtocolTypes;
     private final int expectedPlaneCount;
+    private final NettyServer nettyServer;
+    private final Address thisAddress;
 
     public TcpServerControl(TcpServerConnectionManager connectionManager,
                             ServerContext serverContext,
                             ILogger logger,
-                            Set<ProtocolType> supportedProtocolTypes) {
+                            Set<ProtocolType> supportedProtocolTypes,
+                            NettyServer nettyServer,
+                            Address thisAddress) {
         this.connectionManager = connectionManager;
         this.serverContext = serverContext;
         this.logger = logger;
@@ -61,6 +67,8 @@ public final class TcpServerControl {
         this.supportedProtocolTypes = supportedProtocolTypes;
         this.unifiedEndpointManager = connectionManager.getEndpointQualifier() == null;
         this.expectedPlaneCount = serverContext.properties().getInteger(CHANNEL_COUNT);
+        this.nettyServer= nettyServer;
+        this.thisAddress = thisAddress;
     }
 
     public void process(Packet packet) {
@@ -82,7 +90,20 @@ public final class TcpServerControl {
         // before we register the connection on the plane, we make sure the plane index is set on the connection
         // so that we can safely remove the connection from the plane.
         connection.setPlaneIndex(handshake.getPlaneIndex());
+
         process(connection, handshake);
+
+        // we only want 1 side to establish an extra connection to the other side.
+        if(connection.getChannel().isClientMode()) {
+           Address remoteAddress = handshake.getLocalAddresses().get(ProtocolType.MEMBER).iterator().next();
+            Channel nettyChannel = nettyServer.connect(remoteAddress);
+            //System.out.println("is open:"+nettyChannel.isOpen());
+            //System.out.println("is active:"+nettyChannel.isActive());
+            nettyChannel.attr(TcpServerConnection.CONNECTION).set(connection);
+            nettyChannel.writeAndFlush(thisAddress);
+            //System.out.println("This address send");
+            connection.nettyChannel = nettyChannel;
+        }
     }
 
     private synchronized void process(TcpServerConnection connection, MemberHandshake handshake) {

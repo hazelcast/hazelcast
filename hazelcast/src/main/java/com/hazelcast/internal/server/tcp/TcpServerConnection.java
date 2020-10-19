@@ -25,10 +25,12 @@ import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionType;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
-
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.io.EOFException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -37,10 +39,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
-
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
-
+import io.netty.util.AttributeKey;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_CONNECTION_CONNECTION_TYPE;
 import static com.hazelcast.internal.metrics.ProbeUnit.ENUM;
 import static com.hazelcast.internal.nio.ConnectionType.MEMBER;
@@ -56,6 +55,7 @@ import static com.hazelcast.internal.nio.ConnectionType.NONE;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class TcpServerConnection implements ServerConnection {
+    public static final AttributeKey CONNECTION = AttributeKey.valueOf("theconnection");
 
     private final Channel channel;
     private final ConcurrentMap attributeMap;
@@ -85,6 +85,8 @@ public class TcpServerConnection implements ServerConnection {
 
     private volatile String closeReason;
     private volatile int planeIndex = -1;
+
+    public volatile io.netty.channel.Channel nettyChannel;
 
     public TcpServerConnection(TcpServerConnectionManager connectionManager,
                                ConnectionLifecycleListener<TcpServerConnection> lifecycleListener,
@@ -194,6 +196,15 @@ public class TcpServerConnection implements ServerConnection {
 
     @Override
     public boolean write(OutboundFrame frame) {
+        if (nettyChannel != null && frame instanceof Packet) {
+            Packet packet = (Packet) frame;
+            if (packet.getPacketType() == Packet.Type.OPERATION) {
+                //System.out.println("writing : "+frame);
+                nettyChannel.writeAndFlush(frame);
+                return true;
+            }
+        }
+
         if (channel.write(frame)) {
             return true;
         }
@@ -232,12 +243,12 @@ public class TcpServerConnection implements ServerConnection {
         this.closeReason = reason;
 
         serverContext.getAuditLogService()
-            .eventBuilder(AuditlogTypeIds.NETWORK_DISCONNECT)
-            .message("Closing server connection.")
-            .addParameter("reason", reason)
-            .addParameter("cause", cause)
-            .addParameter("remoteAddress", remoteAddress)
-            .log();
+                .eventBuilder(AuditlogTypeIds.NETWORK_DISCONNECT)
+                .message("Closing server connection.")
+                .addParameter("reason", reason)
+                .addParameter("cause", cause)
+                .addParameter("remoteAddress", remoteAddress)
+                .log();
 
         logClose();
 
@@ -245,6 +256,9 @@ public class TcpServerConnection implements ServerConnection {
             channel.close();
         } catch (Exception e) {
             logger.warning(e);
+        }
+        if (nettyChannel != null) {
+            nettyChannel.close();
         }
 
         lifecycleListener.onConnectionClose(this, null, false);

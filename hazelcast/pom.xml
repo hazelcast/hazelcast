@@ -331,6 +331,14 @@
     </build>
 
     <dependencies>
+        <!-- https://mvnrepository.com/artifact/io.netty/netty-all -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.1.53.Final</version>
+        </dependency>
+
+
         <!-- needed for thread affinity -->
         <dependency>
             <groupId>net.openhft</groupId>

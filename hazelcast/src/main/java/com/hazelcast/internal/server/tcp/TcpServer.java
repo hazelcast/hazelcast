@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.server.tcp;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.EndpointQualifier;
@@ -25,6 +26,7 @@ import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.netty.NettyServer;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.nio.ConnectionListener;
@@ -70,6 +72,7 @@ public final class TcpServer implements Server {
     private final ILogger logger;
     private final Networking networking;
     private final MetricsRegistry metricsRegistry;
+    private final NettyServer nettyServer;
     // accessed only in synchronized methods
     private ScheduledFuture refreshStatsFuture;
     private final RefreshNetworkStatsTask refreshStatsTask;
@@ -84,11 +87,12 @@ public final class TcpServer implements Server {
 
     private volatile boolean live;
 
-    public TcpServer(Config config,
+    public TcpServer(Address thisAddress, Config config,
                      ServerContext context,
                      ServerSocketRegistry registry,
                      MetricsRegistry metricsRegistry,
                      Networking networking,
+                     NettyServer nettyServer,
                      Function<EndpointQualifier, ChannelInitializer> channelInitializerFn) {
         this.context = context;
         this.networking = networking;
@@ -100,20 +104,24 @@ public final class TcpServer implements Server {
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
                 new ThreadFactoryImpl(createThreadPoolName(context.getHazelcastName(), "TcpServer")));
 
+        this.nettyServer = nettyServer;
+
         if (registry.holdsUnifiedSocket()) {
             unifiedConnectionManager = new TcpServerConnectionManager(
-                    this, null, channelInitializerFn, context, ProtocolType.valuesAsSet());
+                    thisAddress, this, null, channelInitializerFn, context, ProtocolType.valuesAsSet(), nettyServer);
         } else {
             unifiedConnectionManager = null;
             for (EndpointConfig endpointConfig : config.getAdvancedNetworkConfig().getEndpointConfigs().values()) {
                 EndpointQualifier qualifier = endpointConfig.getQualifier();
                 TcpServerConnectionManager cm = new TcpServerConnectionManager(
-                        this, endpointConfig, channelInitializerFn, context, singleton(endpointConfig.getProtocolType()));
+                        thisAddress, this, endpointConfig, channelInitializerFn, context, singleton(endpointConfig.getProtocolType()), nettyServer);
                 connectionManagers.put(qualifier, cm);
             }
             refreshStatsTask.registerMetrics(metricsRegistry);
         }
         metricsRegistry.registerDynamicMetricsProvider(new MetricsProvider());
+
+        nettyServer.setServerConnectionManager(getConnectionManager(EndpointQualifier.MEMBER));
     }
 
     @Override
@@ -142,6 +150,7 @@ public final class TcpServer implements Server {
         live = true;
         logger.finest("Starting TcpServer.");
 
+        nettyServer.start();
         networking.restart();
         startAcceptor();
 
@@ -184,6 +193,9 @@ public final class TcpServer implements Server {
             unifiedConnectionManager.reset(true);
         } else {
             connectionManagers.values().forEach(connectionManager -> connectionManager.reset(true));
+        }
+        if(nettyServer!=null) {
+            nettyServer.shutdown();
         }
     }
 
