@@ -207,13 +207,13 @@ public class TcpServerConnection implements ServerConnection {
                 if (nettyChannel != null) {
                     nettyChannel.writeAndFlush(frame);
                     nettyCount++;
-                    if(nettyCount %100000 == 0) {
+                    if (nettyCount % 1000000 == 0) {
                         System.out.println("nettyCount:" + nettyCount);
                     }
                     return true;
-                }else{
+                } else {
                     regularCount++;
-                    if(regularCount %100000 == 0) {
+                    if (regularCount % 1000000 == 0) {
                         System.out.println("regularCount:" + regularCount);
                     }
                 }

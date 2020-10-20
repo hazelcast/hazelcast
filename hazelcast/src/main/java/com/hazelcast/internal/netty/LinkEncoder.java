@@ -7,10 +7,10 @@ import io.netty.handler.codec.MessageToByteEncoder;
 
 import java.nio.charset.StandardCharsets;
 
-public class AddressEncoder extends MessageToByteEncoder {
+public class LinkEncoder extends MessageToByteEncoder {
     private final Address thisAddress;
 
-    public AddressEncoder(Address thisAddress) {
+    public LinkEncoder(Address thisAddress) {
         this.thisAddress = thisAddress;
     }
 
@@ -20,17 +20,19 @@ public class AddressEncoder extends MessageToByteEncoder {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Object a, ByteBuf out) throws Exception {
-        if (!(a instanceof Address)) {
-            System.out.println("Skipping address encoder for: " + a);
+        if (!(a instanceof Link)) {
+            System.out.println("Skipping Link encoder for: " + a);
             return;
         }
 
-        Address address = (Address) a;
+        Link link = (Link)a;
+        Address address = link.address;
         //System.out.println(debug(ctx) + "AddressEncoder: Send address:" + address);
 
         out.writeInt(address.getHost().length());
         out.writeCharSequence(address.getHost(), StandardCharsets.UTF_8);
         out.writeInt(address.getPort());
+        out.writeInt(link.plane);
         ctx.pipeline().remove(this);
     }
 

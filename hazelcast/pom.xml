@@ -335,10 +335,15 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-            <version>4.1.53.Final</version>
+            <version>4.1.54.Final-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
-
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport-native-io_uring</artifactId>
+            <version>4.1.54.Final-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- needed for thread affinity -->
         <dependency>

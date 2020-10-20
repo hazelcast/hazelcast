@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.impl.MemberHandshake;
+import com.hazelcast.internal.netty.Link;
 import com.hazelcast.internal.netty.NettyServer;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
@@ -100,7 +101,7 @@ public final class TcpServerControl {
             //System.out.println("is open:"+nettyChannel.isOpen());
             //System.out.println("is active:"+nettyChannel.isActive());
             nettyChannel.attr(TcpServerConnection.CONNECTION).set(connection);
-            nettyChannel.writeAndFlush(thisAddress);
+            nettyChannel.writeAndFlush(new Link(thisAddress, handshake.getPlaneIndex()));
             //System.out.println("This address send");
             connection.nettyChannel = nettyChannel;
         }

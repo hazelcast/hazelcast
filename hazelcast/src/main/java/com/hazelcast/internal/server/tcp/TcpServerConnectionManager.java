@@ -150,6 +150,10 @@ public class TcpServerConnectionManager
         }
     }
 
+    public TcpServerConnection get(int planeIndex, Address address){
+        return planes[planeIndex].connectionMap.get(address);
+    }
+
     @Override
     public TcpServer getServer() {
         return server;
