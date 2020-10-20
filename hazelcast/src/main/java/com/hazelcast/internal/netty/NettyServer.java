@@ -9,6 +9,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollServerSocketChannel;
+import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -20,8 +23,8 @@ public class NettyServer {
 
     private final Address thisAddress;
     private final Consumer<Packet> packetDispatcher;
-    private NioEventLoopGroup bossGroup;
-    private NioEventLoopGroup workerGroup;
+    private EpollEventLoopGroup bossGroup;
+    private EpollEventLoopGroup workerGroup;
     private ServerBootstrap serverBootstrap;
     private Bootstrap clientBootstrap;
     //   private NioEventLoopGroup clientEventLoopGroup;
@@ -42,17 +45,16 @@ public class NettyServer {
         int inetPort = thisAddress.getPort() + 10000;
         System.out.println("Started netty server on " + (thisAddress.getHost() + " " + inetPort));
 
-        bossGroup = new NioEventLoopGroup();
-        workerGroup = new NioEventLoopGroup(threadCount);
+        bossGroup = new EpollEventLoopGroup();
+        workerGroup = new EpollEventLoopGroup(threadCount);
 
         serverBootstrap = new ServerBootstrap();
         serverBootstrap.group(bossGroup, workerGroup)
-                .channel(NioServerSocketChannel.class)
+                .channel(EpollServerSocketChannel.class)
                 .childHandler(new ChannelInitializer<Channel>() {
                     @Override
                     public void initChannel(Channel ch) {
                         ch.pipeline().addLast(
-                                new AddressEncoder(thisAddress),
                                 new AddressDecoder(thisAddress, serverConnectionManager),
                                 new PacketEncoder(),
                                 new PacketDecoder(thisAddress),
@@ -71,12 +73,11 @@ public class NettyServer {
         clientBootstrap = new Bootstrap();
 
         clientBootstrap.group(workerGroup);
-        clientBootstrap.channel(NioSocketChannel.class);
+        clientBootstrap.channel(EpollSocketChannel.class);
         clientBootstrap.handler(new ChannelInitializer<Channel>() {
-            protected void initChannel(Channel ch) throws Exception {
+            protected void initChannel(Channel ch) {
                 ch.pipeline().addLast(
                         new AddressEncoder(thisAddress),
-                        new AddressDecoder(thisAddress, serverConnectionManager),
                         new PacketEncoder(),
                         new PacketDecoder(thisAddress),
                         new OperationHandler(packetDispatcher));

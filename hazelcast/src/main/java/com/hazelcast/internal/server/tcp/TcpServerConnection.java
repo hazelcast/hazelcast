@@ -29,6 +29,8 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
+import io.netty.util.AttributeKey;
+
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.io.EOFException;
@@ -39,7 +41,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
-import io.netty.util.AttributeKey;
+
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_CONNECTION_CONNECTION_TYPE;
 import static com.hazelcast.internal.metrics.ProbeUnit.ENUM;
 import static com.hazelcast.internal.nio.ConnectionType.MEMBER;
@@ -194,14 +196,27 @@ public class TcpServerConnection implements ServerConnection {
         return !connectionType.equals(MEMBER);
     }
 
+    public volatile long regularCount = 0;
+    public volatile long nettyCount = 0;
+
     @Override
     public boolean write(OutboundFrame frame) {
-        if (nettyChannel != null && frame instanceof Packet) {
+        if (frame instanceof Packet) {
             Packet packet = (Packet) frame;
             if (packet.getPacketType() == Packet.Type.OPERATION) {
-                //System.out.println("writing : "+frame);
-                nettyChannel.writeAndFlush(frame);
-                return true;
+                if (nettyChannel != null) {
+                    nettyChannel.writeAndFlush(frame);
+                    nettyCount++;
+                    if(nettyCount %100000 == 0) {
+                        System.out.println("nettyCount:" + nettyCount);
+                    }
+                    return true;
+                }else{
+                    regularCount++;
+                    if(regularCount %100000 == 0) {
+                        System.out.println("regularCount:" + regularCount);
+                    }
+                }
             }
         }
 

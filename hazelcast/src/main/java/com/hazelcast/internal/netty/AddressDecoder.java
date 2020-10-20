@@ -37,8 +37,11 @@ public class AddressDecoder extends ByteToMessageDecoder {
 //            System.out.println("      "+con);
 //        }
 
-        ServerConnection connection = serverConnectionManager.get(remoteAddress);
-
+        TcpServerConnection connection = (TcpServerConnection)serverConnectionManager.get(remoteAddress);
+        if(connection == null){
+            System.out.println("Connection not found for remote address:"+remoteAddress);
+        }
+        connection.nettyChannel = ctx.channel();
         //System.out.println(debug(ctx)+"found connection:"+connection);
 
         ctx.attr(TcpServerConnection.CONNECTION).set(connection);
