@@ -498,3 +498,7 @@ Community Slack channel](https://hazelcastcommunity.slack.com/).
 [Petclinic Indexing Job](https://github.com/hazelcast-demos/pet-clinic-index-job)
 
 [Rake - rapid keyword extraction algorithm](https://github.com/Linguistic/rake)
+
+_If you enjoyed reading this post, check out Jet at
+[GitHub](https://github.com/hazelcast/hazelcast-jet) and give us a
+star!_
