@@ -1,6 +1,8 @@
 ---
 title: Sources and Sinks
 description: Birds-eye view of all pre-defined sources available in Jet.
+id: version-4.3-sources-sinks
+original_id: sources-sinks
 ---
 
 Hazelcast Jet comes out of the box with many different sources and sinks
@@ -167,7 +169,7 @@ dependency to your application:
 <!--Gradle-->
 
 ```groovy
-compile 'com.hazelcast.jet:hazelcast-jet-avro:{jet-version}'
+compile 'com.hazelcast.jet:hazelcast-jet-avro:4.3'
 ```
 
 <!--Maven-->
@@ -176,7 +178,7 @@ compile 'com.hazelcast.jet:hazelcast-jet-avro:{jet-version}'
 <dependency>
   <groupId>com.hazelcast.jet</groupId>
   <artifactId>hazelcast-jet-avro</artifactId>
-  <version>{jet-version}</version>
+  <version>4.3</version>
 </dependency>
 ```
 
@@ -274,7 +276,7 @@ dependency to your application:
 <!--Gradle-->
 
 ```groovy
-compile 'com.hazelcast.jet:hazelcast-jet-hadoop:{jet-version}'
+compile 'com.hazelcast.jet:hazelcast-jet-hadoop:4.3'
 ```
 
 <!--Maven-->
@@ -283,7 +285,7 @@ compile 'com.hazelcast.jet:hazelcast-jet-hadoop:{jet-version}'
 <dependency>
   <groupId>com.hazelcast.jet</groupId>
   <artifactId>hazelcast-jet-hadoop</artifactId>
-  <version>{jet-version}</version>
+  <version>4.3</version>
 </dependency>
 ```
 
@@ -351,7 +353,7 @@ application:
 <!--Gradle-->
 
 ```groovy
-compile 'com.hazelcast.jet:hazelcast-jet-s3:{jet-version}'
+compile 'com.hazelcast.jet:hazelcast-jet-s3:4.3'
 ```
 
 <!--Maven-->
@@ -360,7 +362,7 @@ compile 'com.hazelcast.jet:hazelcast-jet-s3:{jet-version}'
 <dependency>
   <groupId>com.hazelcast.jet</groupId>
   <artifactId>hazelcast-jet-s3</artifactId>
-  <version>{jet-version}</version>
+  <version>4.3</version>
 </dependency>
 ```
 
@@ -425,7 +427,7 @@ dependency to your application:
 
 ```groovy
 
-compile 'com.hazelcast.jet:hazelcast-jet-kafka:{jet-version}'
+compile 'com.hazelcast.jet:hazelcast-jet-kafka:4.3'
 ```
 
 <!--Maven-->
@@ -434,7 +436,7 @@ compile 'com.hazelcast.jet:hazelcast-jet-kafka:{jet-version}'
 <dependency>
   <groupId>com.hazelcast.jet</groupId>
   <artifactId>hazelcast-jet-kafka</artifactId>
-  <version>{jet-version}</version>
+  <version>4.3</version>
 </dependency>
 ```
 
@@ -1067,15 +1069,15 @@ the [CDC Deployment Guide](../operations/cdc.md).
 
 #### CDC Connectors
 
-As of Jet version {jet-version} we have following types of CDC sources:
+As of Jet version 4.3 we have following types of CDC sources:
 
-* [DebeziumCdcSources](/javadoc/{jet-version}/com/hazelcast/jet/cdc/DebeziumCdcSources.html):
+* [DebeziumCdcSources](/javadoc/4.3/com/hazelcast/jet/cdc/DebeziumCdcSources.html):
   generic source for all databases supported by Debezium
-* [MySqlCdcSources](/javadoc/{jet-version}/com/hazelcast/jet/cdc/mysql/MySqlCdcSources.html):
+* [MySqlCdcSources](/javadoc/4.3/com/hazelcast/jet/cdc/mysql/MySqlCdcSources.html):
   specific, first class Jet CDC source for MySQL databases (also based
   on Debezium, but benefiting the full range of convenience Jet can
   additionally provide)
-* [PostgresCdcSources](/javadoc/{jet-version}/com/hazelcast/jet/cdc/postgres/PostgresCdcSources.html):
+* [PostgresCdcSources](/javadoc/4.3/com/hazelcast/jet/cdc/postgres/PostgresCdcSources.html):
   specific, first class Jet CDC source for PostgreSQL databases (also based
   on Debezium, but benefiting the full range of convenience Jet can
   additionally provide)
@@ -1142,7 +1144,7 @@ To use the Elasticsearch connector, you need to copy the
 <!--Gradle-->
 
 ```groovy
-compile 'com.hazelcast.jet:hazelcast-jet-elasticsearch-7:{jet-version}'
+compile 'com.hazelcast.jet:hazelcast-jet-elasticsearch-7:4.3'
 ```
 
 <!--Maven-->
@@ -1151,7 +1153,7 @@ compile 'com.hazelcast.jet:hazelcast-jet-elasticsearch-7:{jet-version}'
 <dependency>
   <groupId>com.hazelcast.jet</groupId>
   <artifactId>hazelcast-jet-elasticsearch-7</artifactId>
-  <version>{jet-version}</version>
+  <version>4.3</version>
 </dependency>
 ```
 
@@ -1604,9 +1606,9 @@ processing even with at-least-once sinks.
 
 If Jet doesn’t natively support the data source/sink you need, you can
 build a connector for it yourself by using the
-[SourceBuilder](/javadoc/{jet-version}/com/hazelcast/jet/pipeline/SourceBuilder.html)
+[SourceBuilder](/javadoc/4.3/com/hazelcast/jet/pipeline/SourceBuilder.html)
 and
-[SinkBuilder](/javadoc/{jet-version}/com/hazelcast/jet/pipeline/SinkBuilder.html).
+[SinkBuilder](/javadoc/4.3/com/hazelcast/jet/pipeline/SinkBuilder.html).
 
 ### SourceBuilder
 
