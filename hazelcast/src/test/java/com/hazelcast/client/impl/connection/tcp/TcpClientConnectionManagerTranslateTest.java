@@ -70,36 +70,6 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         Hazelcast.shutdownAll();
     }
 
-    private class TestAddressProvider implements AddressProvider {
-
-        private boolean shouldTranslate;
-
-        private TestAddressProvider(boolean shouldTranslate) {
-            this.shouldTranslate = shouldTranslate;
-        }
-
-        @Override
-        public Address translate(Address address) {
-            if (!shouldTranslate) {
-                return address;
-            }
-
-            if (address.equals(privateAddress)) {
-                return publicAddress;
-            }
-            return null;
-        }
-
-        @Override
-        public Addresses loadAddresses() {
-            try {
-                return new Addresses(ImmutableList.of(new Address("127.0.0.1", 5701)));
-            } catch (UnknownHostException e) {
-                return null;
-            }
-        }
-    }
-
     @Test(expected = Exception.class)
     public void testTranslateIsUsed() {
         // given
@@ -206,4 +176,33 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         // throws exception because it can't connect to the incorrect address
     }
 
+    private class TestAddressProvider implements AddressProvider {
+
+        private boolean shouldTranslate;
+
+        private TestAddressProvider(boolean shouldTranslate) {
+            this.shouldTranslate = shouldTranslate;
+        }
+
+        @Override
+        public Address translate(Address address) {
+            if (!shouldTranslate) {
+                return address;
+            }
+
+            if (address.equals(privateAddress)) {
+                return publicAddress;
+            }
+            return null;
+        }
+
+        @Override
+        public Addresses loadAddresses() {
+            try {
+                return new Addresses(ImmutableList.of(new Address("127.0.0.1", 5701)));
+            } catch (UnknownHostException e) {
+                return null;
+            }
+        }
+    }
 }
