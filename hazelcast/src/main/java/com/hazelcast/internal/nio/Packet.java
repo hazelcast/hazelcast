@@ -45,8 +45,6 @@ public final class Packet extends HeapData implements OutboundFrame {
     // 2. Packet type (bits 0, 2, 5)
     // 3. Flags specific to a given packet type (bits 1, 6)
     // 4. 4.x flag (bit 7)
-    // 5. 3.x flag (bit 8)
-
 
     // 1. URGENT flag
 
