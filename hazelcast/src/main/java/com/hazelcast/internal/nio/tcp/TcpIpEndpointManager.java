@@ -106,6 +106,7 @@ public class TcpIpEndpointManager
     private final NetworkingService networkingService;
     private final TcpIpConnector connector;
     private final BindHandler bindHandler;
+    private final CompatibilityBindHandler compatibilityBindHandler;
     private final NetworkStatsImpl networkStats;
 
     @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT)
@@ -144,6 +145,7 @@ public class TcpIpEndpointManager
 
         boolean spoofingChecks = properties != null && properties.getBoolean(ClusterProperty.BIND_SPOOFING_CHECKS);
         this.bindHandler = new BindHandler(this, ioService, logger, spoofingChecks, supportedProtocolTypes);
+        this.compatibilityBindHandler = new CompatibilityBindHandler(this, ioService, logger, supportedProtocolTypes);
 
         if (endpointQualifier == null) {
             networkStats = null;
@@ -176,7 +178,16 @@ public class TcpIpEndpointManager
 
     @Override
     public synchronized void accept(Packet packet) {
-        bindHandler.process(packet);
+        // the packet was sent from 3.12 if the 4_0 flag is missing
+        // 4.0.1 and 4.2 members do not set this flag
+        // so this member should not be a part of a cluster
+        // with those members
+        boolean isCompatibility = !packet.isFlagRaised(Packet.FLAG_4_0);
+        if (isCompatibility) {
+            compatibilityBindHandler.process(packet);
+        } else {
+            bindHandler.process(packet);
+        }
     }
 
     @Override

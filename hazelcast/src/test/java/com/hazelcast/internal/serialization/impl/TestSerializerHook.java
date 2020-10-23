@@ -63,6 +63,11 @@ public class TestSerializerHook implements SerializerHook {
         public SampleIdentifiedDataSerializable read(ObjectDataInput in) throws IOException {
             return null;
         }
+
+        @Override
+        public void destroy() {
+
+        }
     }
 
     public static class TestSerializerWithTypeConstructor implements StreamSerializer {

@@ -175,6 +175,8 @@ public class Node {
 
     private final InternalSerializationService serializationService;
 
+    private final InternalSerializationService compatibilitySerializationService;
+
     private final ClassLoader configClassLoader;
 
     private final NodeExtension nodeExtension;
@@ -250,6 +252,7 @@ public class Node {
             nodeExtension.beforeStart();
 
             serializationService = nodeExtension.createSerializationService();
+            compatibilitySerializationService = nodeExtension.createCompatibilitySerializationService();
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;
             nodeEngine = new NodeEngineImpl(this);
             config.setConfigurationService(nodeEngine.getConfigurationService());
@@ -405,6 +408,10 @@ public class Node {
 
     public InternalSerializationService getSerializationService() {
         return serializationService;
+    }
+
+    public InternalSerializationService getCompatibilitySerializationService() {
+        return compatibilitySerializationService;
     }
 
     public ClusterServiceImpl getClusterService() {
