@@ -66,6 +66,7 @@ final class DiagnosticsStdout implements DiagnosticsLog {
     }
 
     private void renderPlugin(DiagnosticsPlugin plugin) {
+        logWriter.resetSectionLevel();
         plugin.run(logWriter);
     }
 

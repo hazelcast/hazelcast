@@ -124,8 +124,8 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
     }
 
     private void renderPlugin(DiagnosticsPlugin plugin) {
+        logWriter.resetSectionLevel();
         logWriter.init(printWriter);
-
         plugin.run(logWriter);
     }
 
