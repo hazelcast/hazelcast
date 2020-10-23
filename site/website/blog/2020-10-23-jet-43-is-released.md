@@ -20,7 +20,7 @@ Here are the main improvements in this release:
 ## Benchmarking and Tuning for Low Latency
 
 Continuing the story from the previous release, we [benchmarked and
-fine-tuned Jet](/blog/2020/08/05-gc-tuning-for-jet) with a focus on
+fine-tuned Jet](/blog/2020/08/05/gc-tuning-for-jet) with a focus on
 low-latency processing. Jet can now give you a 99.99th percentile
 latency of less than 10 milliseconds at a pipeline throughput of 60M
 items/second! Based on this work we significantly expanded the
