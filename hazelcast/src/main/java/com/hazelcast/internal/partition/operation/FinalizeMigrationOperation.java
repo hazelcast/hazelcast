@@ -97,6 +97,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         }
 
         partitionStateManager.clearMigratingFlag(partitionId);
+        partitionService.getMigrationManager().removeActiveMigration(migrationInfo);
         if (success) {
             nodeEngine.onPartitionMigrate(migrationInfo);
         }
