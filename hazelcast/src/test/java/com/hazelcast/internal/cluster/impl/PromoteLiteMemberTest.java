@@ -378,17 +378,17 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
     @Test
     public void test_lite_member_promotion_causes_no_data_loss_on_three_members() throws InterruptedException {
-        int entryCount = 1000;
+        final int entryCount = 1000;
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         Config config = new Config().setLiteMember(true);
 
         // start first hazelcast instance as a lite member
-        HazelcastInstance firstHazelcastInstance = factory.newHazelcastInstance(config);
+        final HazelcastInstance firstHazelcastInstance = factory.newHazelcastInstance(config);
 
         // start second and third hazelcast instances as a lite member
-        HazelcastInstance secondHazelcastInstance = factory.newHazelcastInstance(config);
-        HazelcastInstance thirdHazelcastInstance = factory.newHazelcastInstance(config);
+        final HazelcastInstance secondHazelcastInstance = factory.newHazelcastInstance(config);
+        final HazelcastInstance thirdHazelcastInstance = factory.newHazelcastInstance(config);
 
         // promote all instances to data members
         firstHazelcastInstance.getCluster().promoteLocalLiteMember();
@@ -404,7 +404,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         });
 
         // insert some dummy data into the testing map
-        String mapName = randomMapName();
+        final String mapName = randomMapName();
         IMap<String, String> testMap = firstHazelcastInstance.getMap(mapName);
         for (int i = 0; i < entryCount; ++i) {
             testMap.put("key" + i, "value" + i);
@@ -434,16 +434,15 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
     @Test
     public void test_lite_member_promotion_causes_no_data_loss_on_two_members() throws InterruptedException {
-        int entryCount = 1000;
+        final int entryCount = 1000;
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         Config config = new Config().setLiteMember(true);
 
         // start first hazelcast instance as a lite member
-        HazelcastInstance firstHazelcastInstance = factory.newHazelcastInstance(config);
-
+        final HazelcastInstance firstHazelcastInstance = factory.newHazelcastInstance(config);
         // start second hazelcast instance as a lite member
-        HazelcastInstance secondHazelcastInstance = factory.newHazelcastInstance(config);
+        final HazelcastInstance secondHazelcastInstance = factory.newHazelcastInstance(config);
 
         // promote all instances to data members
         firstHazelcastInstance.getCluster().promoteLocalLiteMember();
@@ -459,7 +458,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         });
 
         // insert some dummy data into the testing map
-        String mapName = randomMapName();
+        final String mapName = randomMapName();
         IMap<String, String> testMap = firstHazelcastInstance.getMap(mapName);
         for (int i = 0; i < entryCount; ++i) {
             testMap.put("key" + i, "value" + i);
