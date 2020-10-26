@@ -85,7 +85,7 @@ public class ClientClusterServiceImpl
     //read and written under clusterViewLock
     private CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
 
-    private TranslateToPublicAddressProvider translateToPublicAddressProvider;
+    private TranslateToPublicAddressProvider translateToPublicAddress;
 
     private static final class MemberListSnapshot {
         private final int version;
@@ -102,7 +102,7 @@ public class ClientClusterServiceImpl
         labels = unmodifiableSet(client.getClientConfig().getLabels());
         logger = client.getLoggingService().getLogger(ClientClusterService.class);
         connectionManager = client.getConnectionManager();
-        this.translateToPublicAddressProvider = new TranslateToPublicAddressProvider(client.getClientConfig(),
+        this.translateToPublicAddress = new TranslateToPublicAddressProvider(client.getClientConfig(),
                 client.getProperties(), logger);
     }
 
@@ -145,7 +145,7 @@ public class ClientClusterServiceImpl
 
     @Override
     public boolean translateToPublicAddress() {
-        return translateToPublicAddressProvider.get();
+        return translateToPublicAddress.get();
     }
 
     @Override
@@ -233,7 +233,7 @@ public class ClientClusterServiceImpl
 
     private void applyInitialState(int version, Collection<MemberInfo> memberInfos) {
         MemberListSnapshot snapshot = createSnapshot(version, memberInfos);
-        translateToPublicAddressProvider.refresh(client.getClusterDiscoveryService().current().getAddressProvider(), memberInfos);
+        translateToPublicAddress.refresh(client.getClusterDiscoveryService().current().getAddressProvider(), memberInfos);
         memberListSnapshot.set(snapshot);
         logger.info(membersString(snapshot));
         Set<Member> members = toUnmodifiableHasSet(snapshot.members.values());
