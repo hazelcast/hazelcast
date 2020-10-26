@@ -1053,13 +1053,24 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handlePNCounter(Node node) throws Exception {
-        PNCounterConfig pnCounterConfig = new PNCounterConfig();
+        String name = getAttribute(node, "name");
+
+        PNCounterConfig pnCounterConfig = config.getPNCounterConfig(name);
+        if (pnCounterConfig == null) {
+            pnCounterConfig = new PNCounterConfig(name);
+        }
+
         handleViaReflection(node, config, pnCounterConfig);
     }
 
     protected void handleFlakeIdGenerator(Node node) {
         String name = getAttribute(node, "name");
-        FlakeIdGeneratorConfig generatorConfig = new FlakeIdGeneratorConfig(name);
+
+        FlakeIdGeneratorConfig generatorConfig = config.getFlakeIdGeneratorConfig(name);
+        if (generatorConfig == null) {
+            generatorConfig = new FlakeIdGeneratorConfig(name);
+        }
+
         handleFlakeIdGeneratorNode(node, generatorConfig);
     }
 
