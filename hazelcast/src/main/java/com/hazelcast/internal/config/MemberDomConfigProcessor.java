@@ -1037,8 +1037,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleCardinalityEstimator(Node node) {
-        CardinalityEstimatorConfig cardinalityEstimatorConfig = new CardinalityEstimatorConfig();
-        cardinalityEstimatorConfig.setName(getTextContent(getNamedItemNode(node, "name")));
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        CardinalityEstimatorConfig cardinalityEstimatorConfig = config.getCardinalityEstimatorConfig(name);
+        if (cardinalityEstimatorConfig == null) {
+            cardinalityEstimatorConfig = new CardinalityEstimatorConfig(name);
+        }
 
         handleCardinalityEstimatorNode(node, cardinalityEstimatorConfig);
     }
