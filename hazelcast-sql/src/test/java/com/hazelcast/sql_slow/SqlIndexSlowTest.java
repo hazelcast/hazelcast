@@ -14,26 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql;
+package com.hazelcast.sql_slow;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.sql.index.SqlIndexTest;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-/**
- * Test that covers basic column read operations through SQL executed from a client.
- */
+import java.util.Collection;
+
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlBasicClientTest extends SqlBasicTest {
-    @Override
-    protected HazelcastInstance getTarget() {
-        return client;
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({SlowTest.class, ParallelJVMTest.class})
+public class SqlIndexSlowTest extends SqlIndexTest {
+    @Parameterized.Parameters(name = "indexType:{0}, composite:{1}, field1:{2}, field2:{3}")
+    public static Collection<Object[]> parameters() {
+        return parametersSlow();
     }
 }
