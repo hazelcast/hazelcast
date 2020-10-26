@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this map maps one or more keys to the specified value.This operation will probably require time
  * linear in the map size for most implementations of the Map interface.
  */
-@Generated("88e096f93252bd8751bf5c0caf3237f6")
+@Generated("61aacf62b55e8cf42ab957af7c640b5b")
 public final class MapContainsValueCodec {
     //hex: 0x010700
     public static final int REQUEST_MESSAGE_TYPE = 67328;
@@ -98,8 +98,8 @@ public final class MapContainsValueCodec {
     }
 
     /**
-    * Returns true if the value exists, otherwise returns false.
-    */
+     * Returns true if the value exists, otherwise returns false.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

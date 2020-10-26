@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * this id is not the sequence of the item you are about to publish but from a previously published item. So it can't be used
  * to find that item.
  */
-@Generated("ecf7839c5ebbaa3129771704462bbbbf")
+@Generated("15af1ee0dcdb469933d75f1a65c380d3")
 public final class RingbufferAddCodec {
     //hex: 0x170600
     public static final int REQUEST_MESSAGE_TYPE = 1508864;
@@ -114,8 +114,8 @@ public final class RingbufferAddCodec {
     }
 
     /**
-    * the sequence of the added item, or -1 if the add failed.
-    */
+     * the sequence of the added item, or -1 if the add failed.
+     */
     public static long decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

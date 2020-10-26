@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks the lock for the specified key.If the lock is acquired then returns true, else returns false.
  */
-@Generated("cc59b674304d5cdaf820c9a0821cf874")
+@Generated("cd19d425ce93fc01b6c755c70971c3b5")
 public final class MapIsLockedCodec {
     //hex: 0x011200
     public static final int REQUEST_MESSAGE_TYPE = 70144;
@@ -97,8 +97,8 @@ public final class MapIsLockedCodec {
     }
 
     /**
-    * Returns true if the entry is locked, otherwise returns false
-    */
+     * Returns true if the entry is locked, otherwise returns false
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

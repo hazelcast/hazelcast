@@ -141,7 +141,7 @@ public class SqlTestSupport extends HazelcastTestSupport {
             }
 
             @Override
-            public void cancel(Exception e) {
+            public void cancel(Exception e, boolean local) {
                 // No-op.
             }
 

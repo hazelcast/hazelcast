@@ -32,6 +32,7 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 /**
  * Partially implements {@link IAtomicLong}.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class LongRegisterProxy extends AbstractDistributedObject<LongRegisterService> implements IAtomicLong {
 
     private final String name;
@@ -120,8 +121,18 @@ public class LongRegisterProxy extends AbstractDistributedObject<LongRegisterSer
     }
 
     @Override
+    public long getAndDecrement() {
+        return getAndDecrementAsync().joinInternal();
+    }
+
+    @Override
     public InternalCompletableFuture<Long> decrementAndGetAsync() {
         return addAndGetAsync(-1);
+    }
+
+    @Override
+    public InternalCompletableFuture<Long> getAndDecrementAsync() {
+        return getAndAddAsync(-1);
     }
 
     @Override

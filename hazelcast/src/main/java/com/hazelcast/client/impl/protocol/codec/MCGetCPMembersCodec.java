@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the current list of CP members.
  */
-@Generated("a5b78d0ac11e118316c820ddf011ab6f")
+@Generated("527b8f76b3d1cc355fd906c1851f8a0c")
 public final class MCGetCPMembersCodec {
     //hex: 0x201900
     public static final int REQUEST_MESSAGE_TYPE = 2103552;
@@ -47,7 +47,6 @@ public final class MCGetCPMembersCodec {
 
     private MCGetCPMembersCodec() {
     }
-
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -72,9 +71,9 @@ public final class MCGetCPMembersCodec {
     }
 
     /**
-    * List of CP member UUIDs. The mapping is from the UUID of the CP member to UUID of that member on the
-    * member list of the cluster service.
-    */
+     * List of CP member UUIDs. The mapping is from the UUID of the CP member to UUID of that member on the
+     * member list of the cluster service.
+     */
     public static java.util.List<java.util.Map.Entry<java.util.UUID, java.util.UUID>> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

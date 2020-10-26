@@ -40,6 +40,7 @@ public interface TableResolver {
      *
      * @return The list of search paths for object resolution.
      */
+    @Nonnull
     List<List<String>> getDefaultSearchPaths();
 
     /**

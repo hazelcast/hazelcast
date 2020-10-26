@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a distributed object listener to the cluster. This listener will be notified
  * when a distributed object is created or destroyed.
  */
-@Generated("494cd23af1b74c9a0f24877c314a4e98")
+@Generated("c62b84a3e663dddbe4d44db05291506b")
 public final class ClientAddDistributedObjectListenerCodec {
     //hex: 0x000900
     public static final int REQUEST_MESSAGE_TYPE = 2304;
@@ -56,13 +56,6 @@ public final class ClientAddDistributedObjectListenerCodec {
     private ClientAddDistributedObjectListenerCodec() {
     }
 
-    /**
-     * If set to true, the server adds the listener only to itself, otherwise the listener is is added for all
-     * members in the cluster.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public boolean localOnly;
-
     public static ClientMessage encodeRequest(boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
@@ -75,6 +68,10 @@ public final class ClientAddDistributedObjectListenerCodec {
         return clientMessage;
     }
 
+    /**
+     * If set to true, the server adds the listener only to itself, otherwise the listener is is added for all
+     * members in the cluster.
+     */
     public static boolean decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -92,8 +89,8 @@ public final class ClientAddDistributedObjectListenerCodec {
     }
 
     /**
-    * The registration id for the distributed object listener.
-    */
+     * The registration id for the distributed object listener.
+     */
     public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -137,7 +134,7 @@ public final class ClientAddDistributedObjectListenerCodec {
          * @param serviceName Service name of the distributed object.
          * @param eventType Type of the event. It is either CREATED or DESTROYED.
          * @param source The UUID (client or member) of the source of this proxy event.
-        */
+         */
         public abstract void handleDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType, java.util.UUID source);
     }
 }

@@ -98,6 +98,13 @@ public interface IAtomicLong extends DistributedObject {
     long decrementAndGet();
 
     /**
+     * Atomically decrements the current value by one.
+     *
+     * @return the old value
+     */
+    long getAndDecrement();
+
+    /**
      * Gets the current value.
      *
      * @return the current value
@@ -241,6 +248,17 @@ public interface IAtomicLong extends DistributedObject {
      * @since 3.7
      */
     CompletionStage<Long> decrementAndGetAsync();
+
+    /**
+     * Atomically decrements the current value by one.
+     * <p>
+     * This method will dispatch a request and return immediately a
+     * {@link CompletionStage}.
+     *
+     * @return a {@link CompletionStage} with the old value
+     * @since 4.1
+     */
+    CompletionStage<Long> getAndDecrementAsync();
 
     /**
      * Gets the current value. This method will dispatch a request and return

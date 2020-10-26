@@ -346,6 +346,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         return max(min(getMemberGroupsSize() - 1, InternalPartition.MAX_BACKUP_COUNT), 0);
     }
 
+    public void updateMemberGroupSize() {
+        partitionStateManager.updateMemberGroupsSize();
+    }
+
     @Override
     public void memberAdded(Member member) {
         logger.fine("Adding " + member);
@@ -637,10 +641,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             return false;
         }
 
-        assert calculateStamp(partitionState.getPartitions()) == partitionState.getStamp() : "Invalid partition stamp! Expected: "
-                + calculateStamp(partitionState.getPartitions()) + ", Actual: " + partitionState.getStamp();
-
         if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
+            assert calculateStamp(partitionState.getPartitions()) == partitionState.getStamp()
+                    : "Invalid partition stamp! Expected: " + calculateStamp(partitionState.getPartitions())
+                    + ", Actual: " + partitionState.getStamp();
             return applyNewPartitionTable(partitionState.getPartitions(), partitionState.getCompletedMigrations(), sender);
         } else {
             //RU_COMPAT_4_0

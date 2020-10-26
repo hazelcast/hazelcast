@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks if the reference contains the value.
  */
-@Generated("22e366b255c93b6b57600782a1e380ca")
+@Generated("4d73b86a9e64c5fb5c8da1d6d1a1308c")
 public final class AtomicRefContainsCodec {
     //hex: 0x0A0300
     public static final int REQUEST_MESSAGE_TYPE = 656128;
@@ -104,8 +104,8 @@ public final class AtomicRefContainsCodec {
     }
 
     /**
-    * true if the value is found, false otherwise.
-    */
+     * true if the value is found, false otherwise.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

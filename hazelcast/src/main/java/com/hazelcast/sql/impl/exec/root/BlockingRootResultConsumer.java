@@ -101,6 +101,11 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     private List<Row> awaitNextBatch() {
         synchronized (mux) {
             while (true) {
+                // Throw error early.
+                if (doneError != null) {
+                    throw doneError;
+                }
+
                 // Consume the batch if it is available.
                 if (currentBatch != null) {
                     List<Row> res = currentBatch;
@@ -112,10 +117,6 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
 
                 // Handle end of the stream.
                 if (done) {
-                    if (doneError != null) {
-                        throw doneError;
-                    }
-
                     return null;
                 }
 

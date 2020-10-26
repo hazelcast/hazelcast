@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Replaces the entry for a key only if it is currently mapped to some value. The object to be replaced will be
  * accessible only in the current transaction context until the transaction is committed.
  */
-@Generated("0616f142ab1a9fa4791438048e57fb4b")
+@Generated("955f41e21394aff6e0446944afcd92bf")
 public final class TransactionalMapReplaceCodec {
     //hex: 0x0E0900
     public static final int REQUEST_MESSAGE_TYPE = 919808;
@@ -119,8 +119,8 @@ public final class TransactionalMapReplaceCodec {
     }
 
     /**
-    * The previous value associated with key, or null if there was no mapping for key.
-    */
+     * The previous value associated with key, or null if there was no mapping for key.
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

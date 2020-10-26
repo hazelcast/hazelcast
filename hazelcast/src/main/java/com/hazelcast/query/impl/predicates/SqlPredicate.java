@@ -348,7 +348,7 @@ public class SqlPredicate
             compoundPredicate.setPredicates(predicates);
             return compoundPredicate;
         } catch (InstantiationException | IllegalAccessException e) {
-            throw new IllegalArgumentException(String.format("%s should have a public default constructor", klass.getName()));
+            throw new IllegalArgumentException(String.format("%s must have a public default constructor", klass.getName()));
         }
     }
 

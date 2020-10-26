@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the effective config of a member rendered as XML.
  */
-@Generated("a21ad0545aeaed17c65918ac941677ec")
+@Generated("45bfe55c1f2a1019170d97242eba2de4")
 public final class MCGetMemberConfigCodec {
     //hex: 0x200500
     public static final int REQUEST_MESSAGE_TYPE = 2098432;
@@ -47,7 +47,6 @@ public final class MCGetMemberConfigCodec {
 
     private MCGetMemberConfigCodec() {
     }
-
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -72,8 +71,8 @@ public final class MCGetMemberConfigCodec {
     }
 
     /**
-    * Effective config of a member rendered as XML.
-    */
+     * Effective config of a member rendered as XML.
+     */
     public static java.lang.String decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

@@ -41,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This method returns `false` if the event is not in the buffer of event publisher side. That means recovery is not
  * possible.
  */
-@Generated("c821ec8965ffc06282bb4664fe704c71")
+@Generated("62f977f60d3b995a01aa409bbf250fef")
 public final class ContinuousQuerySetReadCursorCodec {
     //hex: 0x160500
     public static final int REQUEST_MESSAGE_TYPE = 1443072;
@@ -109,8 +109,8 @@ public final class ContinuousQuerySetReadCursorCodec {
     }
 
     /**
-    * True if the cursor position could be set, false otherwise.
-    */
+     * True if the cursor position could be set, false otherwise.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

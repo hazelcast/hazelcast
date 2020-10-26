@@ -49,7 +49,7 @@ public class TestTableResolver implements TableResolver {
     @Override
     public List<List<String>> getDefaultSearchPaths() {
         if (searchPath == null) {
-            return null;
+            return Collections.emptyList();
         } else {
             return Collections.singletonList(Arrays.asList(QueryUtils.CATALOG, searchPath));
         }

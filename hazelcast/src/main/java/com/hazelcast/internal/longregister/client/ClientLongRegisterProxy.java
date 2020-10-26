@@ -92,6 +92,11 @@ public class ClientLongRegisterProxy extends ClientProxy implements IAtomicLong 
     }
 
     @Override
+    public long getAndDecrement() {
+        return getAndDecrementAsync().join();
+    }
+
+    @Override
     public long get() {
         return getAsync().join();
     }
@@ -124,7 +129,7 @@ public class ClientLongRegisterProxy extends ClientProxy implements IAtomicLong 
     @Override
     public InternalCompletableFuture<Long> addAndGetAsync(long delta) {
         ClientMessage request = LongRegisterAddAndGetCodec.encodeRequest(name, delta);
-        return invokeOnPartitionAsync(request, message -> LongRegisterAddAndGetCodec.decodeResponse(message).response);
+        return invokeOnPartitionAsync(request, LongRegisterAddAndGetCodec::decodeResponse);
     }
 
     @Override
@@ -135,37 +140,42 @@ public class ClientLongRegisterProxy extends ClientProxy implements IAtomicLong 
     @Override
     public InternalCompletableFuture<Long> decrementAndGetAsync() {
         ClientMessage request = LongRegisterDecrementAndGetCodec.encodeRequest(name);
-        return invokeOnPartitionAsync(request, message -> LongRegisterDecrementAndGetCodec.decodeResponse(message).response);
+        return invokeOnPartitionAsync(request, LongRegisterDecrementAndGetCodec::decodeResponse);
+    }
+
+    @Override
+    public InternalCompletableFuture<Long> getAndDecrementAsync() {
+        return getAndAddAsync(-1);
     }
 
     @Override
     public InternalCompletableFuture<Long> getAsync() {
         ClientMessage request = LongRegisterGetCodec.encodeRequest(name);
-        return invokeOnPartitionAsync(request, message -> LongRegisterGetCodec.decodeResponse(message).response);
+        return invokeOnPartitionAsync(request, LongRegisterGetCodec::decodeResponse);
     }
 
     @Override
     public InternalCompletableFuture<Long> getAndAddAsync(long delta) {
         ClientMessage request = LongRegisterGetAndAddCodec.encodeRequest(name, delta);
-        return invokeOnPartitionAsync(request, message -> LongRegisterGetAndAddCodec.decodeResponse(message).response);
+        return invokeOnPartitionAsync(request, LongRegisterGetAndAddCodec::decodeResponse);
     }
 
     @Override
     public InternalCompletableFuture<Long> getAndSetAsync(long newValue) {
         ClientMessage request = LongRegisterGetAndSetCodec.encodeRequest(name, newValue);
-        return invokeOnPartitionAsync(request, message -> LongRegisterGetAndSetCodec.decodeResponse(message).response);
+        return invokeOnPartitionAsync(request, LongRegisterGetAndSetCodec::decodeResponse);
     }
 
     @Override
     public InternalCompletableFuture<Long> incrementAndGetAsync() {
         ClientMessage request = LongRegisterIncrementAndGetCodec.encodeRequest(name);
-        return invokeOnPartitionAsync(request, message -> LongRegisterIncrementAndGetCodec.decodeResponse(message).response);
+        return invokeOnPartitionAsync(request, LongRegisterIncrementAndGetCodec::decodeResponse);
     }
 
     @Override
     public InternalCompletableFuture<Long> getAndIncrementAsync() {
         ClientMessage request = LongRegisterGetAndIncrementCodec.encodeRequest(name);
-        return invokeOnPartitionAsync(request, message -> LongRegisterGetAndIncrementCodec.decodeResponse(message).response);
+        return invokeOnPartitionAsync(request, LongRegisterGetAndIncrementCodec::decodeResponse);
     }
 
     @Override

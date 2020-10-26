@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Evicts the specified key from this map. If a MapStore is defined for this map, then the entry is not deleted
  * from the underlying MapStore, evict only removes the entry from the memory.
  */
-@Generated("445b3f0f7c91d94510597fe350b86a3b")
+@Generated("d91e9ee8d9b4ab7f3fbbfab6d5d76342")
 public final class MapEvictCodec {
     //hex: 0x011E00
     public static final int REQUEST_MESSAGE_TYPE = 73216;
@@ -105,8 +105,8 @@ public final class MapEvictCodec {
     }
 
     /**
-    * true if the key is evicted, false otherwise.
-    */
+     * true if the key is evicted, false otherwise.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

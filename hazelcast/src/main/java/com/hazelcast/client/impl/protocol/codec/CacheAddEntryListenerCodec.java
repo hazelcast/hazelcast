@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an entry listener for this cache. For the types of events that the listener
  * will be notified for, see the documentation of the type field of the Cache event below.
  */
-@Generated("e5b08e560dc8ad6bcea41c7cda211aca")
+@Generated("cf8cd425693f464d8fa7210e48bb071a")
 public final class CacheAddEntryListenerCodec {
     //hex: 0x130100
     public static final int REQUEST_MESSAGE_TYPE = 1245440;
@@ -104,8 +104,8 @@ public final class CacheAddEntryListenerCodec {
     }
 
     /**
-    * Registration id for the registered listener.
-    */
+     * Registration id for the registered listener.
+     */
     public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -156,7 +156,7 @@ public final class CacheAddEntryListenerCodec {
          * @param keys The keys of the entries in the cache.
          * @param completionId User generated id which shall be received as a field of the cache event upon completion of the
          *                     request in the cluster.
-        */
+         */
         public abstract void handleCacheEvent(int type, java.util.Collection<com.hazelcast.cache.impl.CacheEventData> keys, int completionId);
     }
 }

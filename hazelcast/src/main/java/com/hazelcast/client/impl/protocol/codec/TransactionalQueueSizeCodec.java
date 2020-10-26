@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of elements in this collection.If this collection contains more than Integer.MAX_VALUE
  * elements, returns Integer.MAX_VALUE.
  */
-@Generated("182bf99e7a79f6a3f12a4bb05eff268d")
+@Generated("eed6a85edbfeffc478c44eed18b60b97")
 public final class TransactionalQueueSizeCodec {
     //hex: 0x120500
     public static final int REQUEST_MESSAGE_TYPE = 1180928;
@@ -106,8 +106,8 @@ public final class TransactionalQueueSizeCodec {
     }
 
     /**
-    * The number of elements in this collection
-    */
+     * The number of elements in this collection
+     */
     public static int decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

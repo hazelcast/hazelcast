@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Retrieves, but does not remove, the head of this queue, or returns null if this queue is empty.
  */
-@Generated("c0890a28b74bc669961f9355462804ed")
+@Generated("4570738506214ddee8b726e576318237")
 public final class TransactionalQueuePeekCodec {
     //hex: 0x120400
     public static final int REQUEST_MESSAGE_TYPE = 1180672;
@@ -112,8 +112,8 @@ public final class TransactionalQueuePeekCodec {
     }
 
     /**
-    * The value at the head of the queue.
-    */
+     * The value at the head of the queue.
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

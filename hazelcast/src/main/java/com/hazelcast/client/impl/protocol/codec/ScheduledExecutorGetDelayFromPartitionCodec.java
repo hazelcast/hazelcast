@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the ScheduledFuture's delay in nanoseconds for the task in the scheduler.
  */
-@Generated("52defe833af388308c8cde0b36b70e6c")
+@Generated("e1998dc81771ba44263fdf8ee621f46a")
 public final class ScheduledExecutorGetDelayFromPartitionCodec {
     //hex: 0x1A0700
     public static final int REQUEST_MESSAGE_TYPE = 1705728;
@@ -97,8 +97,8 @@ public final class ScheduledExecutorGetDelayFromPartitionCodec {
     }
 
     /**
-    * The remaining delay of the task formatted in nanoseconds.
-    */
+     * The remaining delay of the task formatted in nanoseconds.
+     */
     public static long decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

@@ -22,6 +22,9 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.internal.util.StringUtil.LOCALE_INTERNAL;
 import static java.util.Calendar.DAY_OF_MONTH;
@@ -46,11 +49,13 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
             LINE_SEPARATOR + "                                  ",
             LINE_SEPARATOR + "                                          ",
             LINE_SEPARATOR + "                                                  ",
-            LINE_SEPARATOR + "                                                            ",
+            LINE_SEPARATOR + "                                                          ",
     };
 
     // 32 chars should be more than enough to encode primitives
     private static final int CHARS_LENGTH = 32;
+
+    private final ILogger logger;
 
     private final StringBuilder tmpSb = new StringBuilder();
     private final boolean includeEpochTime;
@@ -69,11 +74,12 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
     private StringBuilder stringBuilder = new StringBuilder();
 
     public DiagnosticsLogWriterImpl() {
-        this(false);
+        this(false, null);
     }
 
-    public DiagnosticsLogWriterImpl(boolean includeEpochTime) {
+    public DiagnosticsLogWriterImpl(boolean includeEpochTime, ILogger logger) {
         this.includeEpochTime = includeEpochTime;
+        this.logger = logger != null ? logger : Logger.getLogger(getClass());
     }
 
     @Override
@@ -125,14 +131,23 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
 
         write(name);
         write('[');
-        sectionLevel++;
+        if (sectionLevel < INDENTS.length - 1) {
+            sectionLevel++;
+        } else {
+            logger.warning("Diagnostics writer SectionLevel has overflown.", new Exception("Dumping stack trace"));
+            sectionLevel = INDENTS.length - 1;
+        }
     }
 
     @Override
     public void endSection() {
         write(']');
-        sectionLevel--;
-
+        if (sectionLevel > -1) {
+            sectionLevel--;
+        } else {
+            logger.warning("Diagnostics writer SectionLevel has underflown.", new Exception("Dumping stack trace"));
+            sectionLevel = -1;
+        }
         if (sectionLevel == -1) {
             write(LINE_SEPARATOR);
         }
@@ -140,7 +155,9 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
 
     @Override
     public void writeEntry(String s) {
-        write(INDENTS[sectionLevel]);
+        if (sectionLevel >= 0) {
+            write(INDENTS[sectionLevel]);
+        }
         write(s);
     }
 
@@ -208,12 +225,26 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
     }
 
     private void writeKeyValueHead(String key) {
-        write(INDENTS[sectionLevel]);
+        if (sectionLevel >= 0) {
+            write(INDENTS[sectionLevel]);
+        }
         write(key);
         write('=');
     }
 
+    /**
+     * Reset the sectionLevel. A proper rendering of a plugin should always
+     * return this value to -1; but in case of an exception while rendering,
+     * the section level isn't reset and subsequent renderings of plugins
+     * will run into an IndexOutOfBoundsException.
+     * https://github.com/hazelcast/hazelcast/issues/14973
+     */
+    public void resetSectionLevel() {
+        sectionLevel = -1;
+    }
+
     public void init(PrintWriter printWriter) {
+        sectionLevel = -1;
         this.printWriter = printWriter;
     }
 

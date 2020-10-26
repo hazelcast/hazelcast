@@ -91,7 +91,7 @@ public class PNCounterService implements ManagedService, RemoteService, CRDTRepl
     /** Map from PN counter name to counter statistics */
     private final ConcurrentMap<String, LocalPNCounterStatsImpl> statsMap = new ConcurrentHashMap<>();
     /** Unmodifiable statistics map to return from {@link #getStats()} */
-    private Map unmodifiableStatsMap = Collections.unmodifiableMap(statsMap);
+    private final Map<String, LocalPNCounterStats> unmodifiableStatsMap = Collections.unmodifiableMap(statsMap);
 
     /** Constructor function for PN counter statistics */
     private final ConstructorFunction<String, LocalPNCounterStatsImpl> statsConstructorFunction =
@@ -264,7 +264,6 @@ public class PNCounterService implements ManagedService, RemoteService, CRDTRepl
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Map<String, LocalPNCounterStats> getStats() {
         return unmodifiableStatsMap;
     }

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this set contained the element (or equivalently, if this set changed as a result of the call).
  * (This set will not contain the element once the call returns.)
  */
-@Generated("f55daaf4d3c15627e96f381b1ac7dacd")
+@Generated("87ee5c92f920d502e8a8694362b8b996")
 public final class SetRemoveCodec {
     //hex: 0x060500
     public static final int REQUEST_MESSAGE_TYPE = 394496;
@@ -99,8 +99,8 @@ public final class SetRemoveCodec {
     }
 
     /**
-    * True if this set contained the specified element and it is removed successfully
-    */
+     * True if this set contained the specified element and it is removed successfully
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

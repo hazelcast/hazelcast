@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to entry mapped by the key.
  * Returns the result of the processing, if any, defined by the implementation.
  */
-@Generated("c6cdb65b7d796545619588eb2fb40158")
+@Generated("bc8d97eca9a3b60f8f73349579fd1764")
 public final class CacheEntryProcessorCodec {
     //hex: 0x130800
     public static final int REQUEST_MESSAGE_TYPE = 1247232;
@@ -120,8 +120,8 @@ public final class CacheEntryProcessorCodec {
     }
 
     /**
-    * the result of the processing, if any, defined by the EntryProcessor implementation
-    */
+     * the result of the processing, if any, defined by the EntryProcessor implementation
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Cancels further execution and scheduling of the task
  */
-@Generated("1efe4d4733e2583bdf3af06872e1b9b3")
+@Generated("25d140926bc48960417e6f568d3fb681")
 public final class ScheduledExecutorCancelFromMemberCodec {
     //hex: 0x1A0A00
     public static final int REQUEST_MESSAGE_TYPE = 1706496;
@@ -112,8 +112,8 @@ public final class ScheduledExecutorCancelFromMemberCodec {
     }
 
     /**
-    * True if the task was cancelled
-    */
+     * True if the task was cancelled
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

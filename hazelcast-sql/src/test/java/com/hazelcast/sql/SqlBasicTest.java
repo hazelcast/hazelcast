@@ -260,10 +260,12 @@ public class SqlBasicTest extends SqlTestSupport {
                     );
 
                     checkRowValue(SqlColumnType.OBJECT, val.getObjectVal(), row, "objectVal");
+                    checkRowValue(SqlColumnType.OBJECT, null, row, "nullVal");
                 }
 
                 if (portable) {
                     checkRowValue(SqlColumnType.OBJECT, ((PortablePojo) val).getPortableVal(), row, "portableVal");
+                    checkRowValue(SqlColumnType.VARCHAR, null, row, "nullVal");
                 }
 
                 uniqueKeys.add(key0);
@@ -365,7 +367,8 @@ public class SqlBasicTest extends SqlTestSupport {
                 "doubleVal",
                 "charVal",
                 "varcharVal",
-                "portableVal"
+                "portableVal",
+                "nullVal"
             );
         } else {
             return Arrays.asList(
@@ -389,7 +392,8 @@ public class SqlBasicTest extends SqlTestSupport {
                 "tsTzInstantVal",
                 "tsTzOffsetDateTimeVal",
                 "tsTzZonedDateTimeVal",
-                "objectVal"
+                "objectVal",
+                "nullVal"
             );
         }
     }
@@ -407,7 +411,8 @@ public class SqlBasicTest extends SqlTestSupport {
                 SqlColumnType.DOUBLE,
                 SqlColumnType.VARCHAR,
                 SqlColumnType.VARCHAR,
-                SqlColumnType.OBJECT
+                SqlColumnType.OBJECT,
+                SqlColumnType.VARCHAR
             );
         } else {
             return Arrays.asList(
@@ -431,6 +436,7 @@ public class SqlBasicTest extends SqlTestSupport {
                 SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
                 SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
                 SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
+                SqlColumnType.OBJECT,
                 SqlColumnType.OBJECT
             );
         }
@@ -596,6 +602,8 @@ public class SqlBasicTest extends SqlTestSupport {
 
         protected List<Object> objectVal;
 
+        protected Object nullVal;
+
         protected AbstractPojo() {
             // No-op.
         }
@@ -709,6 +717,10 @@ public class SqlBasicTest extends SqlTestSupport {
         public List<Object> getObjectVal() {
             return objectVal;
         }
+
+        public Object getNullVal() {
+            return nullVal;
+        }
     }
 
     public static class SerializablePojoKey extends AbstractPojoKey implements Serializable {
@@ -780,6 +792,7 @@ public class SqlBasicTest extends SqlTestSupport {
             out.writeObject(tsTzZonedDateTimeVal);
 
             out.writeObject(objectVal);
+            out.writeObject(nullVal);
         }
 
         @Override
@@ -810,6 +823,7 @@ public class SqlBasicTest extends SqlTestSupport {
             tsTzZonedDateTimeVal = in.readObject();
 
             objectVal = in.readObject();
+            nullVal = in.readObject();
         }
     }
 
@@ -926,6 +940,8 @@ public class SqlBasicTest extends SqlTestSupport {
             writer.writeUTF(portableFieldName("varcharVal"), varcharVal);
 
             writer.writePortable(portableFieldName("portableVal"), portableVal);
+
+            writer.writeUTF(portableFieldName("nullVal"), null);
         }
 
         @Override
@@ -943,6 +959,7 @@ public class SqlBasicTest extends SqlTestSupport {
             varcharVal = reader.readUTF(portableFieldName("varcharVal"));
 
             portableVal = reader.readPortable(portableFieldName("portableVal"));
+            nullVal = reader.readUTF(portableFieldName("nullVal"));
         }
     }
 

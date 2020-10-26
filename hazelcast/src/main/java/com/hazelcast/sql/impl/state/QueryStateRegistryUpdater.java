@@ -74,7 +74,7 @@ public class QueryStateRegistryUpdater {
         worker.start();
     }
 
-    public void stop() {
+    public void shutdown() {
         worker.stop();
     }
 

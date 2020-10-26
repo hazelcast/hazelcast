@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the element at the specified position in this list (optional operation). Shifts any subsequent elements
  * to the left (subtracts one from their indices). Returns the element that was removed from the list.
  */
-@Generated("417732db1e5ca3b6e888e6c8fddeff06")
+@Generated("d26ff46a4d7c518d1f0dc29099c4a80b")
 public final class ListRemoveWithIndexCodec {
     //hex: 0x051200
     public static final int REQUEST_MESSAGE_TYPE = 332288;
@@ -97,8 +97,8 @@ public final class ListRemoveWithIndexCodec {
     }
 
     /**
-    * The element previously at the specified position
-    */
+     * The element previously at the specified position
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

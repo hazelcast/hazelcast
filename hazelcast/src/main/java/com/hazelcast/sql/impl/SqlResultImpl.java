@@ -91,7 +91,7 @@ public final class SqlResultImpl extends AbstractSqlResult {
     @Override
     public void close(@Nullable QueryException error) {
         if (state != null) {
-            state.cancel(error);
+            state.cancel(error, false);
         }
     }
 
