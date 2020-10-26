@@ -35,7 +35,6 @@ import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Assume;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
@@ -101,16 +100,6 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
                 { RetryStrategies.indefinitely(RECONNECT_INTERVAL_MS), false, "reconnect"},
                 { RetryStrategies.indefinitely(RECONNECT_INTERVAL_MS), true, "reconnect w/ state reset"}
         });
-    }
-
-    @Before
-    public void before() {
-        //disable Testcontainer's automatic resource manager
-        //containers are cleaned up explicitly
-        //automatic resource manager is just an extra thing that can break
-        //(have had problems with it not being cleaned up properly itself)
-        environmentVariables.set("TESTCONTAINERS_RYUK_DISABLED", "true");
-        assertEquals("true", System.getenv("TESTCONTAINERS_RYUK_DISABLED"));
     }
 
     @After
