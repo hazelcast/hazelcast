@@ -103,7 +103,7 @@ public class ClientClusterServiceImpl
         logger = client.getLoggingService().getLogger(ClientClusterService.class);
         connectionManager = client.getConnectionManager();
         this.translateToPublicAddressProvider = new TranslateToPublicAddressProvider(client.getClientConfig(),
-                client.getProperties(), logger);;
+                client.getProperties(), logger);
     }
 
     @Override
