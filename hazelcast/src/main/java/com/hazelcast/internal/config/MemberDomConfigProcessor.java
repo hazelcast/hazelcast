@@ -1504,11 +1504,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleQueue(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        QueueConfig qConfig = new QueueConfig();
-        qConfig.setName(name);
-        handleQueueNode(node, qConfig);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        QueueConfig queueConfig = config.getQueueConfig(name);
+        if (queueConfig == null) {
+            queueConfig = new QueueConfig(name);
+        }
+        handleQueueNode(node, queueConfig);
     }
 
     void handleQueueNode(Node node, final QueueConfig qConfig) {
@@ -1559,10 +1560,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleList(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        ListConfig lConfig = new ListConfig();
-        lConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+
+        ListConfig lConfig = config.getListConfig(name);
+        if (lConfig == null) {
+            lConfig = new ListConfig(name);
+        }
         handleListNode(node, lConfig);
     }
 
