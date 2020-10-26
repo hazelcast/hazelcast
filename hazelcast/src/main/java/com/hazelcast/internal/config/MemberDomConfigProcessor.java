@@ -999,8 +999,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleScheduledExecutor(Node node) {
-        ScheduledExecutorConfig scheduledExecutorConfig = new ScheduledExecutorConfig();
-        scheduledExecutorConfig.setName(getTextContent(getNamedItemNode(node, "name")));
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        ScheduledExecutorConfig scheduledExecutorConfig = config.getScheduledExecutorConfig(name);
+        if (scheduledExecutorConfig == null) {
+            scheduledExecutorConfig = new ScheduledExecutorConfig(name);
+        }
 
         handleScheduledExecutorNode(node, scheduledExecutorConfig);
     }
