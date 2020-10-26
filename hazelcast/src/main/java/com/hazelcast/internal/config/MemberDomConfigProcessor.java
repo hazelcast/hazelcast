@@ -1639,10 +1639,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleMultiMap(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        MultiMapConfig multiMapConfig = new MultiMapConfig();
-        multiMapConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+
+        MultiMapConfig multiMapConfig = config.getMultiMapConfig(name);
+        if (multiMapConfig == null) {
+            multiMapConfig = new MultiMapConfig(name);
+        }
         handleMultiMapNode(node, multiMapConfig);
     }
 
