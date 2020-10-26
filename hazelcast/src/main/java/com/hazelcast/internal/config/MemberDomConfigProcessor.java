@@ -94,7 +94,6 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.SecureStoreConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
@@ -1002,11 +1001,13 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if (matches("merge-policy", nodeName)) {
-                scheduledExecutorConfig.setMergePolicyConfig(createMergePolicyConfig(child, scheduledExecutorConfig.getMergePolicyConfig()));
+                scheduledExecutorConfig.setMergePolicyConfig(
+                  createMergePolicyConfig(child, scheduledExecutorConfig.getMergePolicyConfig()));
             } else if (matches("capacity", nodeName)) {
                 scheduledExecutorConfig.setCapacity(parseInt(getTextContent(child)));
             } else if (matches("capacity-policy", nodeName)) {
-                scheduledExecutorConfig.setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.valueOf(getTextContent(child)));
+                scheduledExecutorConfig.setCapacityPolicy(
+                  ScheduledExecutorConfig.CapacityPolicy.valueOf(getTextContent(child)));
             } else if (matches("durability", nodeName)) {
                 scheduledExecutorConfig.setDurability(parseInt(getTextContent(child)));
             } else if (matches("pool-size", nodeName)) {
@@ -1035,7 +1036,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if (matches("merge-policy", nodeName)) {
-                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(child, cardinalityEstimatorConfig.getMergePolicyConfig());
+                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(
+                  child, cardinalityEstimatorConfig.getMergePolicyConfig());
                 cardinalityEstimatorConfig.setMergePolicyConfig(mergePolicyConfig);
             } else if (matches("backup-count", nodeName)) {
                 cardinalityEstimatorConfig.setBackupCount(parseInt(getTextContent(child)));
@@ -1732,8 +1734,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleMap(Node parentNode) throws Exception {
         String name = getAttribute(parentNode, "name");
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setName(name);
+
+        MapConfig mapConfig = config.getMapConfig(name);
+        if (mapConfig == null) {
+            mapConfig = new MapConfig(name);
+        }
         handleMapNode(parentNode, mapConfig);
     }
 
