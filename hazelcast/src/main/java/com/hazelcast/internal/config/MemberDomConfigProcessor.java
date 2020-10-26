@@ -1600,10 +1600,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleSet(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        SetConfig sConfig = new SetConfig();
-        sConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+
+        SetConfig sConfig = config.getSetConfig(name);
+        if (sConfig == null) {
+            sConfig = new SetConfig(name);
+        }
         handleSetNode(node, sConfig);
     }
 
