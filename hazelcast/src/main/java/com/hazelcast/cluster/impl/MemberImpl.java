@@ -27,7 +27,6 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.version.MemberVersion;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +35,6 @@ import java.util.UUID;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
-@SuppressFBWarnings("SE_BAD_FIELD")
 public final class MemberImpl
         extends AbstractMember
         implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
@@ -221,8 +219,8 @@ public final class MemberImpl
     }
 
     private static Map<EndpointQualifier, Address> newHashMap(EndpointQualifier member, Address address) {
-        return new HashMap<EndpointQualifier, Address>() {{
-            put(member, address);
-        }};
+        Map<EndpointQualifier, Address> result = new HashMap<>();
+        result.put(member, address);
+        return result;
     }
 }
