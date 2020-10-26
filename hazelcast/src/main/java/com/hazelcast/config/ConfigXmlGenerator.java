@@ -32,6 +32,7 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.MapUtil;
@@ -120,7 +121,11 @@ public class ConfigXmlGenerator {
                 .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
-                .append("http://www.hazelcast.com/schema/config/hazelcast-config-4.1.xsd\">");
+                .append("http://www.hazelcast.com/schema/config/hazelcast-config-")
+                .append(Versions.CURRENT_CLUSTER_VERSION.getMajor())
+                .append('.')
+                .append(Versions.CURRENT_CLUSTER_VERSION.getMinor())
+                .append(".xsd\">");
         gen.node("license-key", getOrMaskValue(config.getLicenseKey()))
                 .node("instance-name", config.getInstanceName())
                 .node("cluster-name", config.getClusterName())
