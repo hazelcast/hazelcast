@@ -696,6 +696,21 @@
                             </hz:kerberos>
                         </hz:identity>
                     </hz:realm>
+                    <hz:realm name="simpleKerberosRealm">
+                        <hz:authentication>
+                            <hz:kerberos>
+                                <hz:principal>hz/127.0.0.1@HAZELCAST.COM</hz:principal>
+                                <hz:keytab-file>/opt/localhost.keytab</hz:keytab-file>
+                            </hz:kerberos>
+                        </hz:authentication>
+                        <hz:identity>
+                            <hz:kerberos>
+                                <hz:realm>HAZELCAST.COM</hz:realm>
+                                <hz:principal>hz/127.0.0.1@HAZELCAST.COM</hz:principal>
+                                <hz:keytab-file>/opt/localhost.keytab</hz:keytab-file>
+                            </hz:kerberos>
+                        </hz:identity>
+                    </hz:realm>
                     <hz:realm name="krb5Acceptor">
                         <hz:authentication>
                             <hz:jaas>

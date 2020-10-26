@@ -129,7 +129,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
             throw QueryException.error(
                 SqlErrorCode.PARTITION_DISTRIBUTION, "Map scan failed due to concurrent partition migration "
                 + "(result consistency cannot be guaranteed)"
-            ).withInvalidate();
+            ).markInvalidate();
         }
 
         // Check for concurrent map destroy
@@ -137,7 +137,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
             throw QueryException.error(
                 SqlErrorCode.MAP_DESTROYED,
                 "IMap has been destroyed concurrently: " + mapName
-            ).withInvalidate();
+            ).markInvalidate();
         }
 
         return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;

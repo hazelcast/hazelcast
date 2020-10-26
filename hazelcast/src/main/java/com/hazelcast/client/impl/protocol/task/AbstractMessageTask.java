@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEndpointManager;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.client.SecureRequest;
-import com.hazelcast.client.impl.protocol.ClientExceptions;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -271,7 +271,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     }
 
     private ClientMessage encodeException(Throwable throwable) {
-        ClientExceptions exceptionFactory = clientEngine.getClientExceptions();
+        ClientExceptionFactory exceptionFactory = clientEngine.getExceptionFactory();
         return exceptionFactory.createExceptionMessage(peelIfNeeded(throwable));
     }
 

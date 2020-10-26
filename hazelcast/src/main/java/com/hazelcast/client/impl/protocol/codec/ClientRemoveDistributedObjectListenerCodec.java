@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified distributed object listener. If there is no such listener added before, this call does no
  * change in the cluster and returns false.
  */
-@Generated("9928ba01391fb73ca96122b18a13423f")
+@Generated("aa20bb2ad24ad4018d4d3d946f3d949b")
 public final class ClientRemoveDistributedObjectListenerCodec {
     //hex: 0x000A00
     public static final int REQUEST_MESSAGE_TYPE = 2560;
@@ -51,12 +51,6 @@ public final class ClientRemoveDistributedObjectListenerCodec {
     private ClientRemoveDistributedObjectListenerCodec() {
     }
 
-    /**
-     * The id assigned during the registration.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.util.UUID registrationId;
-
     public static ClientMessage encodeRequest(java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
@@ -69,6 +63,9 @@ public final class ClientRemoveDistributedObjectListenerCodec {
         return clientMessage;
     }
 
+    /**
+     * The id assigned during the registration.
+     */
     public static java.util.UUID decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -86,8 +83,8 @@ public final class ClientRemoveDistributedObjectListenerCodec {
     }
 
     /**
-    * true if the listener existed and removed, false otherwise.
-    */
+     * true if the listener existed and removed, false otherwise.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

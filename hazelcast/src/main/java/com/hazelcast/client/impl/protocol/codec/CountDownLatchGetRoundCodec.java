@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the current round. A round completes when the count value
  * reaches to 0 and a new round starts afterwards.
  */
-@Generated("39143e0efc103ecb741cc867efbf4cb7")
+@Generated("8e8a2318aeafc9e119fb90d46876c0f9")
 public final class CountDownLatchGetRoundCodec {
     //hex: 0x0B0500
     public static final int REQUEST_MESSAGE_TYPE = 722176;
@@ -98,8 +98,8 @@ public final class CountDownLatchGetRoundCodec {
     }
 
     /**
-    * The current round of this CountDownLatch instance
-    */
+     * The current round of this CountDownLatch instance
+     */
     public static int decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

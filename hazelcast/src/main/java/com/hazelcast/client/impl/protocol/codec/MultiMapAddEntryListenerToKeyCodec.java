@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds the specified entry listener for the specified key.The listener will be notified for all
  * add/remove/update/evict events for the specified key only.
  */
-@Generated("bd1a2a5db054fc0961beb9ffb645313a")
+@Generated("7bb1e78d6d524924f31ff5a9993166c8")
 public final class MultiMapAddEntryListenerToKeyCodec {
     //hex: 0x020D00
     public static final int REQUEST_MESSAGE_TYPE = 134400;
@@ -120,8 +120,8 @@ public final class MultiMapAddEntryListenerToKeyCodec {
     }
 
     /**
-    * Returns registration id for the entry listener
-    */
+     * Returns registration id for the entry listener
+     */
     public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -184,7 +184,7 @@ public final class MultiMapAddEntryListenerToKeyCodec {
          *                  LOADED(512)
          * @param uuid UUID of the member that dispatches the event.
          * @param numberOfAffectedEntries Number of entries affected by this event.
-        */
+         */
         public abstract void handleEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries);
     }
 }

@@ -192,11 +192,20 @@ public final class BitmapIndexStore extends BaseIndexStore {
                 if (internalKeys != null) {
                     // long-to-long remapping
 
-                    key = internalKeys.get(key);
-                    assert key != NO_KEY;
+                    long internalKey = internalKeys.get(key);
+                    if (internalKey == NO_KEY) {
+                        // see https://github.com/hazelcast/hazelcast/issues/17342#issuecomment-680840612
+                        internalKey = internalKeyCounter++;
+                        internalKeys.put(key, internalKey);
+                        bitmap.insert(newValues, internalKey, entry);
+                        return;
+                    } else {
+                        key = internalKey;
+                    }
                 } else if (key < 0) {
                     throw makeNegativeKeyException(key);
                 }
+
                 bitmap.update(oldValues, newValues, key, entry);
             } finally {
                 releaseWriteLock();
@@ -213,8 +222,14 @@ public final class BitmapIndexStore extends BaseIndexStore {
                 markIndexStoreExpirableIfNecessary(entry);
 
                 long internalKey = internalObjectKeys.getValue(key);
-                assert internalKey != NO_KEY;
-                bitmap.update(oldValues, newValues, internalKey, entry);
+                if (internalKey == NO_KEY) {
+                    // see https://github.com/hazelcast/hazelcast/issues/17342#issuecomment-680840612
+                    internalKey = internalKeyCounter++;
+                    internalObjectKeys.put(key, internalKey);
+                    bitmap.insert(newValues, internalKey, entry);
+                } else {
+                    bitmap.update(oldValues, newValues, internalKey, entry);
+                }
             } finally {
                 releaseWriteLock();
             }
@@ -241,7 +256,8 @@ public final class BitmapIndexStore extends BaseIndexStore {
 
                     key = internalKeys.remove(key);
                     if (key != NO_KEY) {
-                        // XXX: see https://github.com/hazelcast/hazelcast/issues/15439
+                        // see https://github.com/hazelcast/hazelcast/issues/15439 and
+                        // https://github.com/hazelcast/hazelcast/issues/17342#issuecomment-680840612
                         bitmap.remove(values, key);
                     }
                 } else {
@@ -263,7 +279,8 @@ public final class BitmapIndexStore extends BaseIndexStore {
             try {
                 long internalKey = internalObjectKeys.removeKey(key);
                 if (internalKey != NO_KEY) {
-                    // XXX: see https://github.com/hazelcast/hazelcast/issues/15439
+                    // see https://github.com/hazelcast/hazelcast/issues/15439 and
+                    // https://github.com/hazelcast/hazelcast/issues/17342#issuecomment-680840612
                     bitmap.remove(values, internalKey);
                 }
             } finally {

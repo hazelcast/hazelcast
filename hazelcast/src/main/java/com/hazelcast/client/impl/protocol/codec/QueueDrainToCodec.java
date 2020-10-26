@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * thrown. Attempts to drain a queue to itself result in ILLEGAL_ARGUMENT. Further, the behavior of
  * this operation is undefined if the specified collection is modified while the operation is in progress.
  */
-@Generated("5c35e45290e42cc92b579d51129a2ff9")
+@Generated("26dbb6a444391c5c50d25e1aae13ac84")
 public final class QueueDrainToCodec {
     //hex: 0x030900
     public static final int REQUEST_MESSAGE_TYPE = 198912;
@@ -51,12 +51,6 @@ public final class QueueDrainToCodec {
 
     private QueueDrainToCodec() {
     }
-
-    /**
-     * Name of the Queue
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -70,6 +64,9 @@ public final class QueueDrainToCodec {
         return clientMessage;
     }
 
+    /**
+     * Name of the Queue
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -88,8 +85,8 @@ public final class QueueDrainToCodec {
     }
 
     /**
-    * list of all removed data in queue
-    */
+     * list of all removed data in queue
+     */
     public static java.util.List<com.hazelcast.internal.serialization.Data> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

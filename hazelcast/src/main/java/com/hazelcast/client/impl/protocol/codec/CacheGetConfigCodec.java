@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the cache configuration with the given name from members.
  */
-@Generated("26132e594075044e7897b6853a1a4372")
+@Generated("2bdfe57dca7c785e43d7b8a0eac0cdcf")
 public final class CacheGetConfigCodec {
     //hex: 0x130C00
     public static final int REQUEST_MESSAGE_TYPE = 1248256;
@@ -96,8 +96,8 @@ public final class CacheGetConfigCodec {
     }
 
     /**
-    * The cache configuration.
-    */
+     * The cache configuration.
+     */
     public static com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a partition lost listener to the cluster.
  */
-@Generated("76a490d327a14fb2b849ace32651ab0e")
+@Generated("e5760469d73555b30348b270070505e1")
 public final class ClientAddPartitionLostListenerCodec {
     //hex: 0x000600
     public static final int REQUEST_MESSAGE_TYPE = 1536;
@@ -57,13 +57,6 @@ public final class ClientAddPartitionLostListenerCodec {
     private ClientAddPartitionLostListenerCodec() {
     }
 
-    /**
-     * if true only node that has the partition sends the request, if false
-     * sends all partition lost events.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public boolean localOnly;
-
     public static ClientMessage encodeRequest(boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
@@ -76,6 +69,10 @@ public final class ClientAddPartitionLostListenerCodec {
         return clientMessage;
     }
 
+    /**
+     * if true only node that has the partition sends the request, if false
+     * sends all partition lost events.
+     */
     public static boolean decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -93,8 +90,8 @@ public final class ClientAddPartitionLostListenerCodec {
     }
 
     /**
-    * The listener registration id.
-    */
+     * The listener registration id.
+     */
     public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -135,7 +132,7 @@ public final class ClientAddPartitionLostListenerCodec {
          * @param partitionId Id of the lost partition.
          * @param lostBackupCount The number of lost backups for the partition. 0: the owner, 1: first backup, 2: second backup...
          * @param source UUID of the node that dispatches the event
-        */
+         */
         public abstract void handlePartitionLostEvent(int partitionId, int lostBackupCount, @Nullable java.util.UUID source);
     }
 }

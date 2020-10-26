@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an entry listener for this map. The listener will be notified for all map add/remove/update/evict events.
  */
-@Generated("a4da54cc2b90b31978bcc42335112c7a")
+@Generated("ecb903e05962de3da060485f0b0daacc")
 public final class ReplicatedMapAddEntryListenerCodec {
     //hex: 0x0D0D00
     public static final int REQUEST_MESSAGE_TYPE = 855296;
@@ -104,8 +104,8 @@ public final class ReplicatedMapAddEntryListenerCodec {
     }
 
     /**
-    * A unique string  which is used as a key to remove the listener.
-    */
+     * A unique string  which is used as a key to remove the listener.
+     */
     public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -168,7 +168,7 @@ public final class ReplicatedMapAddEntryListenerCodec {
          *                  LOADED(512)
          * @param uuid UUID of the member that dispatches the event.
          * @param numberOfAffectedEntries Number of entries affected by this event.
-        */
+         */
         public abstract void handleEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries);
     }
 }

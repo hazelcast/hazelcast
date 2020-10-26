@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Retrieves and removes the head of this queue, waiting if necessary until an element becomes available.
  */
-@Generated("c88dd0936761be89f073f3c9b40002fd")
+@Generated("09978346d93d8319468cad5dc2fcb9f4")
 public final class QueueTakeCodec {
     //hex: 0x030600
     public static final int REQUEST_MESSAGE_TYPE = 198144;
@@ -47,12 +47,6 @@ public final class QueueTakeCodec {
 
     private QueueTakeCodec() {
     }
-
-    /**
-     * Name of the Queue
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -66,6 +60,9 @@ public final class QueueTakeCodec {
         return clientMessage;
     }
 
+    /**
+     * Name of the Queue
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -84,8 +81,8 @@ public final class QueueTakeCodec {
     }
 
     /**
-    * The head of this queue
-    */
+     * The head of this queue
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

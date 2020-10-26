@@ -252,7 +252,10 @@ public class MigrationManager {
                 } else {
                     operationService.execute(op);
                 }
-                removeActiveMigration(migrationInfo);
+
+                // We remove active migration in the end of the FinalizeMigrationOperation to make sure
+                // the cluster comes to a SAFE state only when indexes on partitions being populated
+                // completely.
             } else {
                 PartitionReplica partitionOwner = partitionStateManager.getPartitionImpl(partitionId).getOwnerReplicaOrNull();
                 if (localReplica.equals(partitionOwner)) {
@@ -304,7 +307,7 @@ public class MigrationManager {
      * and returns {@code true} if removed.
      * @param migration migration
      */
-    private boolean removeActiveMigration(MigrationInfo migration) {
+    public boolean removeActiveMigration(MigrationInfo migration) {
         MigrationInfo activeMigration =
                 activeMigrations.computeIfPresent(migration.getPartitionId(),
                         (k, currentMigration) -> currentMigration.equals(migration) ? null : currentMigration);
@@ -1316,7 +1319,7 @@ public class MigrationManager {
                     && migration.getDestinationCurrentReplicaIndex() > 0
                     && migration.getDestinationNewReplicaIndex() == 0) {
 
-                throw new IllegalStateException("Promotion migrations should be handled by "
+                throw new IllegalStateException("Promotion migrations must be handled by "
                         + RepairPartitionTableTask.class.getSimpleName() + " -> " + migration);
             }
 
@@ -1551,7 +1554,7 @@ public class MigrationManager {
                         // timeouts. Still this is safer...
                         int delta = migration.getPartitionVersionIncrement() + 1;
                         migration.setPartitionVersionIncrement(delta);
-                        partition.incrementVersion(delta);
+                        partitionStateManager.incrementPartitionVersion(partition.getPartitionId(), delta);
 
                         if (!migration.getDestination().isIdentical(node.getLocalMember())) {
                             partitionService.sendPartitionRuntimeState(migration.getDestination().address());
@@ -1603,7 +1606,7 @@ public class MigrationManager {
                     && migrationInfo.getDestinationCurrentReplicaIndex() > 0
                     && migrationInfo.getDestinationNewReplicaIndex() == 0) {
 
-                throw new AssertionError("Promotion migrations should be handled by "
+                throw new AssertionError("Promotion migrations must be handled by "
                         + RepairPartitionTableTask.class.getSimpleName() + "! -> " + migrationInfo);
             }
 

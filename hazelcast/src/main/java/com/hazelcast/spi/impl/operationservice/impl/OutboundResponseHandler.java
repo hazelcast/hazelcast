@@ -30,6 +30,8 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DATA_SERIALIZABLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_NULL;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
@@ -209,7 +211,12 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
     }
 
     private boolean transmit(Address target, Packet packet, ServerConnectionManager connectionManager) {
-        return connectionManager.transmit(packet, target);
+        // The response is send over an arbitrary stream id. It needs to be arbitrary so that
+        // responses don't end up at stream 0 and the connection this stream belongs to, becomes
+        // a bottleneck.
+        // The order of operations is respected, but the order of responses is not respected, e.g.
+        // for inbound responses we toss responses in an arbitrary response thread.
+        return connectionManager.transmit(packet, target,  ThreadLocalRandom.current().nextInt());
     }
 
     private void checkTarget(Address target) {

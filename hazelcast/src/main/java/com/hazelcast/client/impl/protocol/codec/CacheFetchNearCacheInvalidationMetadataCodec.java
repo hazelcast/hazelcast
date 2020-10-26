@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches invalidation metadata from partitions of map.
  */
-@Generated("34053dbb0678fb82c4341714a441e496")
+@Generated("f8d391b2c4527e23893995af535a88d1")
 public final class CacheFetchNearCacheInvalidationMetadataCodec {
     //hex: 0x131E00
     public static final int REQUEST_MESSAGE_TYPE = 1252864;
@@ -87,10 +87,12 @@ public final class CacheFetchNearCacheInvalidationMetadataCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
         /**
          * Map of partition ids and sequence number of invalidations mapped by the cache name.
          */
         public java.util.List<java.util.Map.Entry<java.lang.String, java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Long>>>> namePartitionSequenceList;
+
         /**
          * Map of member UUIDs mapped by the partition ids of invalidations.
          */

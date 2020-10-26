@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * ListIterator#next next. An initial call to ListIterator#previous previous would return the element with the
  * specified index minus one.
  */
-@Generated("64e8d5ec72a2d90c675f81b46391cb52")
+@Generated("d18c16246a2e66c760d3eb6d938d31b2")
 public final class ListListIteratorCodec {
     //hex: 0x051700
     public static final int REQUEST_MESSAGE_TYPE = 333568;
@@ -99,9 +99,9 @@ public final class ListListIteratorCodec {
     }
 
     /**
-    * a list iterator over the elements in this list (in proper
-    * sequence), starting at the specified position in the list
-    */
+     * a list iterator over the elements in this list (in proper
+     * sequence), starting at the specified position in the list
+     */
     public static java.util.List<com.hazelcast.internal.serialization.Data> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

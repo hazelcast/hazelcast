@@ -20,17 +20,20 @@ import com.hazelcast.config.AbstractFactoryWithPropertiesConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.PersistentMemoryConfig;
 import com.hazelcast.config.PersistentMemoryDirectoryConfig;
+import com.hazelcast.config.PersistentMemoryMode;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import org.w3c.dom.Node;
@@ -80,7 +83,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     }
 
     protected String getTextContent(Node node) {
-        return DomConfigHelper.getTextContent(node, domLevel3);
+        return DomConfigHelper.getTextContent(node, domLevel3).trim();
     }
 
     protected String getAttribute(Node node, String attName) {
@@ -312,30 +315,59 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
                 String value = getTextContent(n);
                 nativeMemoryConfig.setMetadataSpacePercentage(Float.parseFloat(value));
             } else if (matches("persistent-memory-directory", nodeName)) {
-                nativeMemoryConfig.getPersistentMemoryConfig()
-                                  .addDirectoryConfig(new PersistentMemoryDirectoryConfig(getTextContent(n).trim()));
+                PersistentMemoryConfig pmemConfig = nativeMemoryConfig.getPersistentMemoryConfig();
+                pmemConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(getTextContent(n).trim()));
+                // we enable the persistent memory configuration for legacy reasons
+                pmemConfig.setEnabled(true);
             } else if (matches("persistent-memory", nodeName)) {
                 handlePersistentMemoryConfig(nativeMemoryConfig.getPersistentMemoryConfig(), n);
             }
         }
     }
 
-    protected void handlePersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig, Node node) {
+    private void handlePersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig, Node node) {
+        Node enabledNode = getNamedItemNode(node, "enabled");
+            if (enabledNode != null) {
+            boolean enabled = getBooleanValue(getTextContent(enabledNode));
+            persistentMemoryConfig.setEnabled(enabled);
+        }
+
+        final Node modeNode = getNamedItemNode(node, "mode");
+        final String modeStr = getTextContent(modeNode);
+        PersistentMemoryMode mode = PersistentMemoryMode.MOUNTED;
+        if (!StringUtil.isNullOrEmptyAfterTrim(modeStr)) {
+            try {
+                mode = PersistentMemoryMode.valueOf(modeStr);
+                persistentMemoryConfig.setMode(mode);
+            } catch (Exception ex) {
+                throw new InvalidConfigurationException("Invalid 'mode' for 'persistent-memory': " + modeStr);
+            }
+        }
+
         for (Node parent : childElements(node)) {
             final String nodeName = cleanNodeName(parent);
             if (matches("directories", nodeName)) {
+                if (PersistentMemoryMode.SYSTEM_MEMORY == mode) {
+                    throw new InvalidConfigurationException("Directories for 'persistent-memory' should only be"
+                            + " defined if the 'mode' is set to '" + PersistentMemoryMode.MOUNTED.name() + "'");
+                }
+
                 for (Node dirNode : childElements(parent)) {
-                    final String childNodeName = cleanNodeName(dirNode);
-                    if (matches("directory", childNodeName)) {
-                        Node numaNodeIdNode = getNamedItemNode(dirNode, "numa-node");
-                        int numaNodeId = numaNodeIdNode != null
-                                ? getIntegerValue("numa-node", getTextContent(numaNodeIdNode))
-                                : -1;
-                        String directory = getTextContent(dirNode).trim();
-                        persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory, numaNodeId));
-                    }
+                    handlePersistentMemoryDirectory(persistentMemoryConfig, dirNode);
                 }
             }
+        }
+    }
+
+    protected void handlePersistentMemoryDirectory(PersistentMemoryConfig persistentMemoryConfig, Node dirNode) {
+        final String childNodeName = cleanNodeName(dirNode);
+        if (matches("directory", childNodeName)) {
+            Node numaNodeIdNode = getNamedItemNode(dirNode, "numa-node");
+            int numaNodeId = numaNodeIdNode != null
+                    ? getIntegerValue("numa-node", getTextContent(numaNodeIdNode))
+                    : -1;
+            String directory = getTextContent(dirNode).trim();
+            persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory, numaNodeId));
         }
     }
 

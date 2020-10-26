@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener for backup acks
  */
-@Generated("d8500c6600e37904906c7c6f292da356")
+@Generated("7534fdd03b39c6163e7cde02ef0dbae5")
 public final class ClientLocalBackupListenerCodec {
     //hex: 0x000F00
     public static final int REQUEST_MESSAGE_TYPE = 3840;
@@ -53,7 +53,6 @@ public final class ClientLocalBackupListenerCodec {
 
     private ClientLocalBackupListenerCodec() {
     }
-
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -78,8 +77,8 @@ public final class ClientLocalBackupListenerCodec {
     }
 
     /**
-    * Returns the registration id for the listener.
-    */
+     * Returns the registration id for the listener.
+     */
     public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -114,7 +113,7 @@ public final class ClientLocalBackupListenerCodec {
 
         /**
          * @param sourceInvocationCorrelationId correlation id of the invocation that backup acks belong to
-        */
+         */
         public abstract void handleBackupEvent(long sourceInvocationCorrelationId);
     }
 }

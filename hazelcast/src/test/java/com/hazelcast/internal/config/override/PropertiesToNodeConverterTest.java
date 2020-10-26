@@ -41,12 +41,12 @@ public class PropertiesToNodeConverterTest {
         m.put("foo.bar3.bar4", "4");
         ConfigNode configNode = PropertiesToNodeConverter.propsToNode(m);
 
-        assertNull(configNode.getValue().orElse(null));
+        assertNull(configNode.getValue());
         assertEquals("foo", configNode.getName());
         assertEquals(3, configNode.getChildren().size());
-        assertEquals("1", configNode.getChildren().get("bar1").getValue().get());
-        assertEquals("2", configNode.getChildren().get("bar2").getValue().get());
-        assertEquals("4", configNode.getChildren().get("bar3").getChildren().get("bar4").getValue().get());
+        assertEquals("1", configNode.getChildren().get("bar1").getValue());
+        assertEquals("2", configNode.getChildren().get("bar2").getValue());
+        assertEquals("4", configNode.getChildren().get("bar3").getChildren().get("bar4").getValue());
     }
 
     @Test(expected = InvalidConfigurationException.class)

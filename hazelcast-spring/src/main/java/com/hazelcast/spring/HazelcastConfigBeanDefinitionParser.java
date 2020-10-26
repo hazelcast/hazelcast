@@ -586,7 +586,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             BeanDefinitionBuilder mergePolicyConfigBuilder = createBeanBuilder(MergePolicyConfig.class);
             AbstractBeanDefinition beanDefinition = mergePolicyConfigBuilder.getBeanDefinition();
             fillAttributeValues(node, mergePolicyConfigBuilder);
-            mergePolicyConfigBuilder.addPropertyValue("policy", getTextContent(node).trim());
+            mergePolicyConfigBuilder.addPropertyValue("policy", getTextContent(node));
             builder.addPropertyValue("mergePolicyConfig", beanDefinition);
         }
 

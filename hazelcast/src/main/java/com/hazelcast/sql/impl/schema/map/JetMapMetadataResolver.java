@@ -22,8 +22,8 @@ import com.hazelcast.replicatedmap.ReplicatedMap;
 
 /**
  * Plugin mechanism, allowing to perform additional analysis of
- * {@link IMap}/{@link ReplicatedMap} keys & values during sample based schema resolution.
- * <p/>
+ * {@link IMap}/{@link ReplicatedMap} keys & values during sample-based schema resolution.
+ * <p>
  * Resulting metadata is attached to the resolved {@link AbstractMapTable}.
  */
 public interface JetMapMetadataResolver {

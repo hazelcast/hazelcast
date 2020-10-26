@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * elements, and others will impose restrictions on the type of elements that may be added. List classes should
  * clearly specify in their documentation any restrictions on what elements may be added.
  */
-@Generated("2506acf4c186e7eb253fd85e6f88ea5d")
+@Generated("9983424b4fe21f53fd234e164358e29d")
 public final class ListAddCodec {
     //hex: 0x050400
     public static final int REQUEST_MESSAGE_TYPE = 328704;
@@ -100,8 +100,8 @@ public final class ListAddCodec {
     }
 
     /**
-    * true if this list changed as a result of the call, false otherwise
-    */
+     * true if this list changed as a result of the call, false otherwise
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

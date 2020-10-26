@@ -26,7 +26,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>4.1-SNAPSHOT</version>
+        <version>4.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -255,8 +255,23 @@
                                 </relocation>
                             </relocations>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>com.fasterxml.jackson.core:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.snakeyaml:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                         </configuration>
                     </execution>
                 </executions>
@@ -352,8 +367,8 @@
         </dependency>
         <dependency>
             <groupId>com.github.stefanbirkner</groupId>
-            <artifactId>system-rules</artifactId>
-            <version>1.19.0</version>
+            <artifactId>system-lambda</artifactId>
+            <version>1.1.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>

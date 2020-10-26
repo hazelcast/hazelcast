@@ -32,7 +32,7 @@ import static java.util.Collections.sort;
  */
 public final class ItemCounter<T> {
 
-    private final Map<T, MutableLong> map = new HashMap<T, MutableLong>();
+    protected final Map<T, MutableLong> map = new HashMap<T, MutableLong>();
     private long total;
 
     /**
@@ -110,7 +110,7 @@ public final class ItemCounter<T> {
     }
 
     /**
-     * Increases the count by on for the given item.
+     * Increases the count by one for the given item.
      *
      * @param item
      */

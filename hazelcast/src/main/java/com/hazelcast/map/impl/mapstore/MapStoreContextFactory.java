@@ -76,27 +76,27 @@ public final class MapStoreContextFactory {
 
         @Override
         public SerializationService getSerializationService() {
-            throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
+            throw new UnsupportedOperationException("This method must not be called. No defined map store exists.");
         }
 
         @Override
         public ILogger getLogger(Class clazz) {
-            throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
+            throw new UnsupportedOperationException("This method must not be called. No defined map store exists.");
         }
 
         @Override
         public String getMapName() {
-            throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
+            throw new UnsupportedOperationException("This method must not be called. No defined map store exists.");
         }
 
         @Override
         public MapServiceContext getMapServiceContext() {
-            throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
+            throw new UnsupportedOperationException("This method must not be called. No defined map store exists.");
         }
 
         @Override
         public MapStoreConfig getMapStoreConfig() {
-            throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
+            throw new UnsupportedOperationException("This method must not be called. No defined map store exists.");
         }
 
         @Override

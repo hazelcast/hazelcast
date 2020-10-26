@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Closes server-side query cursor.
  */
-@Generated("91a9e9d686272dfa2caf8a619168693e")
+@Generated("7c496263da6091c8172595d56b69c90f")
 public final class SqlCloseCodec {
     //hex: 0x210300
     public static final int REQUEST_MESSAGE_TYPE = 2163456;
@@ -47,12 +47,6 @@ public final class SqlCloseCodec {
 
     private SqlCloseCodec() {
     }
-
-    /**
-     * Query ID.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public com.hazelcast.sql.impl.QueryId queryId;
 
     public static ClientMessage encodeRequest(com.hazelcast.sql.impl.QueryId queryId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -66,6 +60,9 @@ public final class SqlCloseCodec {
         return clientMessage;
     }
 
+    /**
+     * Query ID.
+     */
     public static com.hazelcast.sql.impl.QueryId decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

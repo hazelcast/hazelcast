@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the remaining capacity of the ringbuffer. The returned value could be stale as soon as it is returned.
  * If ttl is not set, the remaining capacity will always be the capacity.
  */
-@Generated("631f7c04484d188464a0b94df27660a5")
+@Generated("ae02525731153cc88bb692fdfa84d5be")
 public final class RingbufferRemainingCapacityCodec {
     //hex: 0x170500
     public static final int REQUEST_MESSAGE_TYPE = 1508608;
@@ -49,12 +49,6 @@ public final class RingbufferRemainingCapacityCodec {
 
     private RingbufferRemainingCapacityCodec() {
     }
-
-    /**
-     * Name of the Ringbuffer
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -68,6 +62,9 @@ public final class RingbufferRemainingCapacityCodec {
         return clientMessage;
     }
 
+    /**
+     * Name of the Ringbuffer
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -86,8 +83,8 @@ public final class RingbufferRemainingCapacityCodec {
     }
 
     /**
-    * the remaining capacity
-    */
+     * the remaining capacity
+     */
     public static long decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

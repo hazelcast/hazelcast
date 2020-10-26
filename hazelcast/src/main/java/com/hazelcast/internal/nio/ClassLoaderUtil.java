@@ -435,7 +435,7 @@ public final class ClassLoaderUtil {
          */
         @SuppressWarnings("checkstyle:RedundantModifier")
         public IrresolvableConstructor() {
-            throw new UnsupportedOperationException("Irresolvable constructor should never be instantiated.");
+            throw new UnsupportedOperationException("Irresolvable constructor must never be instantiated.");
         }
     }
 

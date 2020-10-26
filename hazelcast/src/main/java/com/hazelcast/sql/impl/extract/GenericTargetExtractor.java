@@ -37,7 +37,7 @@ public class GenericTargetExtractor extends AbstractGenericExtractor {
         } catch (QueryDataTypeMismatchException e) {
             throw QueryException.dataException("Failed to extract map entry " + (key ? "key" : "value")
                 + " because of type mismatch [expectedClass=" + e.getExpectedClass().getName()
-                + ", actualClass=" + e.getActualClass().getName() + ']').withInvalidate();
+                + ", actualClass=" + e.getActualClass().getName() + ']').markInvalidate();
         } catch (Exception e) {
             throw QueryException.dataException("Failed to extract map entry " + (key ? "key" : "value") + ": "
                 + e.getMessage(), e);

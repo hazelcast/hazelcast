@@ -27,6 +27,8 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
     private Boolean relaxFlagsCheck;
     private Boolean useNameWithoutRealm;
     private String securityRealm;
+    private String keytabFile;
+    private String principal;
     private LdapAuthenticationConfig ldapAuthenticationConfig;
 
     public Boolean getRelaxFlagsCheck() {
@@ -65,12 +67,32 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
         return this;
     }
 
+    public String getKeytabFile() {
+        return keytabFile;
+    }
+
+    public KerberosAuthenticationConfig setKeytabFile(String keytabFile) {
+        this.keytabFile = keytabFile;
+        return this;
+    }
+
+    public String getPrincipal() {
+        return principal;
+    }
+
+    public KerberosAuthenticationConfig setPrincipal(String principal) {
+        this.principal = principal;
+        return this;
+    }
+
     @Override
     protected Properties initLoginModuleProperties() {
         Properties props = super.initLoginModuleProperties();
         setIfConfigured(props, "relaxFlagsCheck", relaxFlagsCheck);
         setIfConfigured(props, "useNameWithoutRealm", useNameWithoutRealm);
         setIfConfigured(props, "securityRealm", securityRealm);
+        setIfConfigured(props, "keytabFile", keytabFile);
+        setIfConfigured(props, "principal", principal);
         return props;
     }
 
@@ -96,7 +118,8 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
     public int hashCode() {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime * result + Objects.hash(ldapAuthenticationConfig, relaxFlagsCheck, useNameWithoutRealm, securityRealm);
+        result = prime * result + Objects.hash(ldapAuthenticationConfig, relaxFlagsCheck, useNameWithoutRealm, securityRealm,
+                keytabFile, principal);
         return result;
     }
 
@@ -115,6 +138,8 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
         return Objects.equals(ldapAuthenticationConfig, other.ldapAuthenticationConfig)
                 && Objects.equals(relaxFlagsCheck, other.relaxFlagsCheck)
                 && Objects.equals(useNameWithoutRealm, other.useNameWithoutRealm)
+                && Objects.equals(keytabFile, other.keytabFile)
+                && Objects.equals(principal, other.principal)
                 && Objects.equals(securityRealm, other.securityRealm);
     }
 
@@ -123,6 +148,8 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
         return "KerberosAuthenticationConfig [relaxFlagsCheck=" + relaxFlagsCheck + ", securityRealm=" + securityRealm
                 + ", useNameWithoutRealm=" + useNameWithoutRealm
                 + ", ldapAuthenticationConfig=" + ldapAuthenticationConfig
+                + ", keytabFile=" + keytabFile
+                + ", principal=" + principal
                 + ", getSkipIdentity()=" + getSkipIdentity() + ", getSkipEndpoint()=" + getSkipEndpoint() + ", getSkipRole()="
                 + getSkipRole() + "]";
     }

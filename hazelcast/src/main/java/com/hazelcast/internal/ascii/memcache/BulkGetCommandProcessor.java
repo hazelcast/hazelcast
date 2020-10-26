@@ -85,6 +85,6 @@ public class BulkGetCommandProcessor extends MemcacheCommandProcessor<BulkGetCom
 
     @Override
     public void handleRejection(BulkGetCommand request) {
-        throw new UnsupportedOperationException("not used, this method should be removed from the interface");
+        throw new UnsupportedOperationException("not used, remove this method from the interface");
     }
 }

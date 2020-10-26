@@ -32,6 +32,7 @@ import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.proxy.ClientClusterProxy;
@@ -793,7 +794,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private ClientExceptionFactory initClientExceptionFactory() {
         boolean jCacheAvailable = JCacheDetector.isJCacheAvailable(getClientConfig().getClassLoader());
-        return new ClientExceptionFactory(jCacheAvailable);
+        return new ClientExceptionFactory(jCacheAvailable, config.getClassLoader());
     }
 
     public ClientExceptionFactory getClientExceptionFactory() {

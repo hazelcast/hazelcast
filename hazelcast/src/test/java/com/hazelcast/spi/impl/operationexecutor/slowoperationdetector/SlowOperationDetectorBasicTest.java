@@ -266,6 +266,11 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         public void await() {
             entryProcessor.await();
         }
+
+        @Override
+        public boolean validatesTarget() {
+            return false;
+        }
     }
 
     private static class NestedSlowOperationOnPartitionAndGenericOperationThreads extends Operation {

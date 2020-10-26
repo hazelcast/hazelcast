@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the current metadata of a cluster.
  */
-@Generated("449215b6571720704a1879192fe72bf3")
+@Generated("59bce08e0a960b01c77f92312a79f617")
 public final class MCGetClusterMetadataCodec {
     //hex: 0x200E00
     public static final int REQUEST_MESSAGE_TYPE = 2100736;
@@ -49,7 +49,6 @@ public final class MCGetClusterMetadataCodec {
 
     private MCGetClusterMetadataCodec() {
     }
-
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -65,6 +64,7 @@ public final class MCGetClusterMetadataCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
         /**
          * Current state of the cluster:
          * 0 - ACTIVE
@@ -74,14 +74,17 @@ public final class MCGetClusterMetadataCodec {
          * 4 - IN_TRANSITION (not allowed)
          */
         public byte currentState;
+
         /**
          * Current version of the member.
          */
         public java.lang.String memberVersion;
+
         /**
          * Current Jet version of the member.
          */
         public @Nullable java.lang.String jetVersion;
+
         /**
          * Cluster-wide time in milliseconds.
          */
