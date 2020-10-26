@@ -86,6 +86,9 @@
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                         </manifest>
+                        <manifestEntries>
+                            <Premain-Class>com.hazelcast.buildutils.FinalRemovalAgent</Premain-Class>
+                        </manifestEntries>
                     </archive>
                 </configuration>
             </plugin>
@@ -113,6 +116,16 @@
             <scope>test</scope>
             <version>${project.parent.version}</version>
             <classifier>tests</classifier>
+        </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <version>${bytebuddy.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy-agent</artifactId>
+            <version>${bytebuddy.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugins</groupId>

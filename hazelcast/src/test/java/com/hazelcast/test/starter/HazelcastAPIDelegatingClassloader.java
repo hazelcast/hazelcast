@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -50,6 +51,7 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
 
     static final Set<String> DELEGATION_WHITE_LIST;
 
+    private final URL[] urls;
     private ContextMutexFactory mutexFactory = new ContextMutexFactory();
     private ClassLoader parent;
 
@@ -64,6 +66,7 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
     public HazelcastAPIDelegatingClassloader(URL[] urls, ClassLoader parent) {
         super(urls, parent);
         this.parent = parent;
+        this.urls = urls;
     }
 
     @Override
@@ -180,5 +183,10 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
 
     private boolean checkResourceExcluded(String resourceName) {
         return (parent instanceof FilteringClassLoader) && ((FilteringClassLoader) parent).checkResourceExcluded(resourceName);
+    }
+
+    @Override
+    public String toString() {
+        return "HazelcastAPIDelegatingClassloader{urls = \"" + Arrays.toString(urls) + "\"}";
     }
 }
