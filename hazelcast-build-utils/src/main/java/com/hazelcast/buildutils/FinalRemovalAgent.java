@@ -48,7 +48,7 @@ public final class FinalRemovalAgent {
         finalMethods.put("com.hazelcast.cp.internal.session.AbstractProxySessionManager",
                 setOf("getSession", "getSessionAcquireCount"));
         finalMethods.put("com.hazelcast.spi.impl.AbstractInvocationFuture",
-                setOf("get"));
+                setOf("get", "join"));
         finalMethods.put("com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService",
                 setOf("getRegistryOrNull"));
         finalMethods.put("com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry",
