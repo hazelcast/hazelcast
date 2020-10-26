@@ -25,7 +25,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.version.MemberVersion;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -43,7 +42,6 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNu
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableMap;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-@SuppressFBWarnings("SE_BAD_FIELD")
 public abstract class AbstractMember implements Member {
 
     protected final Map<String, String> attributes = new ConcurrentHashMap<>();
