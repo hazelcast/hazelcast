@@ -147,6 +147,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -568,7 +569,15 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node listenerNode : childElements(n)) {
             if (matches("listener", cleanNodeName(listenerNode))) {
                 String listenerClass = getTextContent(listenerNode);
-                splitBrainProtectionConfig.addListenerConfig(new SplitBrainProtectionListenerConfig(listenerClass));
+
+                Optional<SplitBrainProtectionListenerConfig> existingConfig = splitBrainProtectionConfig.getListenerConfigs()
+                  .stream()
+                  .filter(c -> c.getClassName().equals(listenerClass))
+                  .findAny();
+
+                if (!existingConfig.isPresent()) {
+                    splitBrainProtectionConfig.addListenerConfig(new SplitBrainProtectionListenerConfig(listenerClass));
+                }
             }
         }
     }
@@ -587,7 +596,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private SplitBrainProtectionConfigBuilder handleProbabilisticSplitBrainProtection(String name, Node node,
                                                                                       int splitBrainProtectionSize) {
-        SplitBrainProtectionConfigBuilder splitBrainProtectionConfigBuilder;
         long acceptableHeartPause = getLongValue("acceptable-heartbeat-pause-millis",
                 getAttribute(node, "acceptable-heartbeat-pause-millis"),
                 ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_PAUSE_MILLIS);
@@ -603,14 +611,14 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         long heartbeatIntervalMillis = getLongValue("heartbeat-interval-millis",
                 getAttribute(node, "heartbeat-interval-millis"),
                 ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
-        splitBrainProtectionConfigBuilder = SplitBrainProtectionConfig.
+
+        return SplitBrainProtectionConfig.
                 newProbabilisticSplitBrainProtectionConfigBuilder(name, splitBrainProtectionSize)
                 .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
                 .withSuspicionThreshold(threshold)
                 .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
                 .withMinStdDeviationMillis(minStdDeviation)
                 .withMaxSampleSize(maxSampleSize);
-        return splitBrainProtectionConfigBuilder;
     }
 
     protected void handleWanReplication(Node node) {
