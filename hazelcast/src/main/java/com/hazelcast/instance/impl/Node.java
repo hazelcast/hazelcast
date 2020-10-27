@@ -185,7 +185,7 @@ public class Node {
 
     private ManagementCenterService managementCenterService;
 
-    private volatile NodeState state;
+    private volatile NodeState state = NodeState.STARTING;
 
     /**
      * Codebase version of Hazelcast being executed at this Node, as resolved by {@link BuildInfoProvider}.
