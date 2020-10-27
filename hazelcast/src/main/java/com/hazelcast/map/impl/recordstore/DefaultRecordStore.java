@@ -26,7 +26,6 @@ import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ObjectNamespace;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.logging.ILogger;
@@ -72,6 +71,7 @@ import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.LOADED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
@@ -222,7 +222,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public void forEach(BiConsumer<Data, Record> consumer,
                         boolean backup, boolean includeExpiredRecords) {
 
-        long now = Clock.currentTimeMillis();
+        long now = currentTimeMillis();
         Iterator<Map.Entry<Data, Record>> entries = storage.mutationTolerantIterator();
         while (entries.hasNext()) {
             Map.Entry<Data, Record> entry = entries.next();
@@ -429,7 +429,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     protected long expirationTimeToTtl(long definedExpirationTime) {
-        return definedExpirationTime - System.currentTimeMillis();
+        return definedExpirationTime - currentTimeMillis();
     }
 
     protected int removeBulk(ArrayList<Data> dataKeys, ArrayList<Record> records) {
@@ -606,7 +606,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 // set last access time to prevent
                 // premature removal of the entry because
                 // of idleness based expiry
-                record.setLastAccessTime(Clock.currentTimeMillis());
+                record.setLastAccessTime(currentTimeMillis());
             }
         }
 
@@ -1104,7 +1104,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return;
         }
 
-        long now = Clock.currentTimeMillis();
+        long now = currentTimeMillis();
         WriteBehindQueue<DelayedEntry> writeBehindQueue
                 = ((WriteBehindStore) mapDataStore).getWriteBehindQueue();
         List<DelayedEntry> delayedEntries = writeBehindQueue.asList();

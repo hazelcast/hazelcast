@@ -24,6 +24,7 @@ import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheConfigAccessor;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
@@ -47,7 +48,6 @@ import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.UuidUtil;
@@ -74,6 +74,7 @@ import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CacheWriterException;
 import javax.cache.processor.EntryProcessor;
 import java.io.Closeable;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -94,16 +95,15 @@ import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheUpdatedE
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 import static com.hazelcast.cache.impl.record.CacheRecord.TIME_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
-import com.hazelcast.config.CacheConfigAccessor;
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheEvictionConfig;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
-import java.io.IOException;
 import static java.util.Collections.emptySet;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
@@ -669,11 +669,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected R createRecord(long expiryTime) {
-        return createRecord(null, Clock.currentTimeMillis(), expiryTime);
+        return createRecord(null, currentTimeMillis(), expiryTime);
     }
 
     protected R createRecord(Object value, long expiryTime) {
-        return createRecord(value, Clock.currentTimeMillis(), expiryTime);
+        return createRecord(value, currentTimeMillis(), expiryTime);
     }
 
     protected R createRecord(Data keyData, Object value, long expirationTime, int completionId) {
@@ -1165,7 +1165,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public Object get(Data key, ExpiryPolicy expiryPolicy) {
         long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
-        long now = Clock.currentTimeMillis();
+        long now = currentTimeMillis();
         Object value = null;
         R record = records.get(key);
         expiryPolicy = getExpiryPolicy(record, expiryPolicy);
@@ -1202,7 +1202,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     public void evictExpiredEntries(int expirationPercentage) {
-        long now = Clock.currentTimeMillis();
+        long now = currentTimeMillis();
         int maxIterationCount = getMaxIterationCount(size(), expirationPercentage);
         int evictedCount = 0;
         int maxRetry = 3;
@@ -1257,7 +1257,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public boolean contains(Data key) {
-        long now = Clock.currentTimeMillis();
+        long now = currentTimeMillis();
         R record = records.get(key);
         boolean isExpired = processExpiredEntry(key, record, now);
         return record != null && !isExpired;
@@ -1277,7 +1277,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected Object put(Data key, Object value, ExpiryPolicy expiryPolicy, UUID source,
                          boolean getValue, boolean disableWriteThrough, int completionId) {
-        long now = Clock.currentTimeMillis();
+        long now = currentTimeMillis();
         long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
         boolean isOnNewPut = false;
         boolean isSaveSucceed;
@@ -1339,7 +1339,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy, UUID source,
                                   boolean disableWriteThrough, int completionId) {
-        long now = Clock.currentTimeMillis();
+        long now = currentTimeMillis();
         long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
         boolean saved = false;
         R record = records.get(key);
@@ -1392,7 +1392,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public boolean replace(Data key, Object value, ExpiryPolicy expiryPolicy, UUID source, int completionId) {
-        long now = Clock.currentTimeMillis();
+        long now = currentTimeMillis();
         long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
         boolean replaced = false;
         R record = records.get(key);
@@ -1426,7 +1426,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public boolean replace(Data key, Object oldValue, Object newValue, ExpiryPolicy expiryPolicy,
                            UUID source, int completionId) {
-        long now = Clock.currentTimeMillis();
+        long now = currentTimeMillis();
         long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
         boolean isHit = false;
         boolean replaced = false;
@@ -1461,7 +1461,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public Object getAndReplace(Data key, Object value, ExpiryPolicy expiryPolicy, UUID source, int completionId) {
-        long now = Clock.currentTimeMillis();
+        long now = currentTimeMillis();
         long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
         boolean replaced = false;
         R record = records.get(key);
@@ -1502,12 +1502,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             expiryPolicyInstance = (ExpiryPolicy) toValue(expiryPolicy);
         }
         boolean atLeastOneKey = false;
-        long now = System.currentTimeMillis();
+        long now = currentTimeMillis();
         for (Data key : keys) {
             R record = records.get(key);
             if (record != null && !processExpiredEntry(key, record, now)) {
                 updateExpiryPolicyOfRecord(key, record, expiryPolicy);
-                updateRecordWithExpiry(key, record, expiryPolicyInstance, System.currentTimeMillis(), source);
+                updateRecordWithExpiry(key, record, expiryPolicyInstance, currentTimeMillis(), source);
                 atLeastOneKey = true;
             }
         }
@@ -1539,7 +1539,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public boolean remove(Data key, UUID source, UUID origin,
                           int completionId, CallerProvenance provenance) {
-        long now = Clock.currentTimeMillis();
+        long now = currentTimeMillis();
         long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
 
         deleteCacheEntry(key, provenance);
@@ -1574,7 +1574,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public boolean remove(Data key, Object value, UUID source, UUID origin, int completionId) {
-        long now = Clock.currentTimeMillis();
+        long now = currentTimeMillis();
         long startNanos = Timer.nanos();
         R record = records.get(key);
         int hitCount = 0;
@@ -1645,7 +1645,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     public Object getAndRemove(Data key, UUID source, int completionId, UUID origin) {
-        long now = Clock.currentTimeMillis();
+        long now = currentTimeMillis();
         long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
 
         deleteCacheEntry(key);
@@ -1696,7 +1696,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public void removeAll(Set<Data> keys, int completionId) {
-        long now = Clock.currentTimeMillis();
+        long now = currentTimeMillis();
         Set<Data> localKeys = new HashSet<Data>(keys.isEmpty() ? records.keySet() : keys);
         try {
             deleteAllCacheEntry(localKeys);
@@ -1762,7 +1762,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     public CacheRecord merge(CacheMergeTypes<Object, Object> mergingEntry,
                              SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy,
                              CallerProvenance callerProvenance) {
-        final long now = Clock.currentTimeMillis();
+        final long now = currentTimeMillis();
         final long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
 
         mergingEntry = injectDependencies(mergingEntry);
@@ -1829,7 +1829,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public Object invoke(Data key, EntryProcessor entryProcessor, Object[] arguments, int completionId) {
-        long now = Clock.currentTimeMillis();
+        long now = currentTimeMillis();
         long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
         R record = records.get(key);
         boolean isExpired = processExpiredEntry(key, record, now);
