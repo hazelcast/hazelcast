@@ -399,6 +399,7 @@
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
                                         -Dhazelcast.test.multiple.jvm=true
+                                        -Dcom.hazelcast.clock.impl=com.hazelcast.test.TestClock
                                         -Dlog4j.configurationFile=log4j2.xml
                                         -Dlog4j.skipJansi=true
                                         ${extraVmArgs}
@@ -488,6 +489,7 @@
                                 ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.test.use.network=false
+                                -Dcom.hazelcast.clock.impl=com.hazelcast.test.TestClock
                                 -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
                             </argLine>
@@ -977,6 +979,7 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
+                                -Dcom.hazelcast.clock.impl=com.hazelcast.test.TestClock
                                 -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
                             </argLine>
