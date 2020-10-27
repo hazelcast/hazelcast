@@ -214,4 +214,14 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "PNCounterConfig{" +
+          "name='" + name + '\'' +
+          ", replicaCount=" + replicaCount +
+          ", splitBrainProtectionName='" + splitBrainProtectionName + '\'' +
+          ", statisticsEnabled=" + statisticsEnabled +
+          '}';
+    }
 }

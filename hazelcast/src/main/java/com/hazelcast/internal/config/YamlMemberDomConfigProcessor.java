@@ -474,15 +474,25 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handlePNCounter(Node node) throws Exception {
+    protected void handlePNCounter(Node node) {
         for (Node counterNode : childElements(node)) {
             String name = counterNode.getNodeName();
             PNCounterConfig counterConfig = config.getPNCounterConfig(name);
             if (counterConfig == null) {
                 counterConfig = new PNCounterConfig(name);
+                config.addPNCounterConfig(counterConfig);
             }
 
-            handleViaReflection(counterNode, config, counterConfig);
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if (matches("replica-count", nodeName)) {
+                    counterConfig.setReplicaCount(Integer.parseInt(getTextContent(node)));
+                } else if (matches("statistics-enabled", nodeName)) {
+                    counterConfig.setStatisticsEnabled(Boolean.parseBoolean(getTextContent(node)));
+                } else if (matches("split-brain-protection-ref", nodeName)) {
+                    counterConfig.setSplitBrainProtectionName(getTextContent(node));
+                }
+            }
         }
     }
 
