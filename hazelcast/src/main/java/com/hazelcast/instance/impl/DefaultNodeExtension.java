@@ -135,7 +135,7 @@ public class DefaultNodeExtension implements NodeExtension {
     protected final Node node;
     protected final ILogger logger;
     protected final ILogger systemLogger;
-    protected final List<ClusterVersionListener> clusterVersionListeners = new CopyOnWriteArrayList<ClusterVersionListener>();
+    protected final List<ClusterVersionListener> clusterVersionListeners = new CopyOnWriteArrayList<>();
     protected PhoneHome phoneHome;
 
     private final MemoryStats memoryStats = new DefaultMemoryStats();
@@ -281,8 +281,7 @@ public class DefaultNodeExtension implements NodeExtension {
             PartitioningStrategy partitioningStrategy = getPartitioningStrategy(configClassLoader);
 
             SerializationServiceBuilder builder = new DefaultSerializationServiceBuilder();
-            SerializationConfig serializationConfig = config.getSerializationConfig() != null
-                    ? config.getSerializationConfig() : new SerializationConfig();
+            SerializationConfig serializationConfig = config.getSerializationConfig();
 
             byte version = (byte) node.getProperties().getInteger(ClusterProperty.SERIALIZATION_VERSION);
 

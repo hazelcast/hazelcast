@@ -29,12 +29,7 @@ public class RingbufferConfigReadOnly extends RingbufferConfig {
 
     @Override
     public RingbufferStoreConfig getRingbufferStoreConfig() {
-        final RingbufferStoreConfig storeConfig = super.getRingbufferStoreConfig();
-        if (storeConfig != null) {
-            return new RingbufferStoreConfigReadOnly(storeConfig);
-        } else {
-            return null;
-        }
+        return new RingbufferStoreConfigReadOnly(super.getRingbufferStoreConfig());
     }
 
     @Override

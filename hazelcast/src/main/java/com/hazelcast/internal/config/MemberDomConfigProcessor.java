@@ -439,12 +439,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String name = cleanNodeName(n);
             if (matches("keystore", name)) {
                 if (!(encryptionAtRestConfig.getSecureStoreConfig() instanceof JavaKeyStoreSecureStoreConfig)) {
-                    encryptionAtRestConfig.setSecureStoreConfig(new JavaKeyStoreSecureStoreConfig(null));
+                    encryptionAtRestConfig.setSecureStoreConfig(new JavaKeyStoreSecureStoreConfig());
                 }
                 handleJavaKeyStore(n, (JavaKeyStoreSecureStoreConfig) encryptionAtRestConfig.getSecureStoreConfig());
             } else if (matches("vault", name)) {
                 if (!(encryptionAtRestConfig.getSecureStoreConfig() instanceof VaultSecureStoreConfig)) {
-                    encryptionAtRestConfig.setSecureStoreConfig(new VaultSecureStoreConfig(null, null, null));
+                    encryptionAtRestConfig.setSecureStoreConfig(new VaultSecureStoreConfig());
                 }
                 handleVault(n, (VaultSecureStoreConfig) encryptionAtRestConfig.getSecureStoreConfig());
             } else {

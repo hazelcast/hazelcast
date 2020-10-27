@@ -61,6 +61,12 @@ public class VaultSecureStoreConfig extends SecureStoreConfig {
 
     /**
      * Creates a new Vault Secure Store configuration.
+     */
+    public VaultSecureStoreConfig() {
+    }
+
+    /**
+     * Creates a new Vault Secure Store configuration.
      * @param address the Vault server address
      * @param secretPath the secret path
      * @param token the access token

@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -56,7 +57,7 @@ public class EncryptionAtRestConfig extends AbstractSymmetricEncryptionConfig<En
      *
      * @return the Secure Store configuration
      */
-    public SecureStoreConfig getSecureStoreConfig() {
+    public @Nonnull SecureStoreConfig getSecureStoreConfig() {
         return secureStoreConfig;
     }
 
