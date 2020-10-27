@@ -24,6 +24,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.TestClock;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -100,6 +101,7 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     @Override
     protected void onSetup() {
+        TestClock.init();
         factory = createHazelcastInstanceFactory(CLUSTER_SIZE);
         for (int i = 0; i < CLUSTER_SIZE; i++) {
             instances[i] = factory.newHazelcastInstance(getConfig());
@@ -114,6 +116,7 @@ public class CacheExpirationTest extends CacheTestSupport {
     @Override
     protected void onTearDown() {
         factory.shutdownAll();
+        TestClock.remove();
     }
 
     protected <K, V, M extends Serializable & ExpiryPolicy, T extends Serializable & CacheEntryListener<K, V>>
@@ -260,12 +263,13 @@ public class CacheExpirationTest extends CacheTestSupport {
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(THREE_SECONDS, Duration.ETERNAL, THREE_SECONDS));
         Cache<Integer, Integer> cache = createCache(cacheConfig);
 
+        TestClock.stop();
         for (int i = 0; i < KEY_RANGE; i++) {
             cache.put(i, i);
             cache.get(i);
         }
 
-        sleepAtLeastSeconds(3);
+        TestClock.delta(3500);
 
         for (int i = 1; i < CLUSTER_SIZE; i++) {
             BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);
@@ -280,13 +284,14 @@ public class CacheExpirationTest extends CacheTestSupport {
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(THREE_SECONDS, THREE_SECONDS, Duration.ETERNAL));
         Cache<Integer, Integer> cache = createCache(cacheConfig);
 
+        TestClock.stop();
         for (int i = 0; i < KEY_RANGE; i++) {
             cache.put(i, i);
             cache.put(i, i);
         }
 
         cache.put(1, 1);
-        sleepAtLeastSeconds(3);
+        TestClock.delta(3500);
 
         for (int i = 1; i < CLUSTER_SIZE; i++) {
             BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);
@@ -305,13 +310,14 @@ public class CacheExpirationTest extends CacheTestSupport {
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(expiryPolicy, listener);
         Cache<Integer, Integer> cache = createCache(cacheConfig);
 
+        TestClock.stop();
         for (int i = 0; i < KEY_RANGE; i++) {
             cache.put(i, i);
             assertTrue("Expected to remove entry " + i + " but entry was not present. Expired entry count: "
                     + listener.getExpirationCount().get(), cache.remove(i));
         }
 
-        sleepAtLeastSeconds(ttlSeconds);
+        TestClock.delta(ttlSeconds * 1000);
         assertEquals(0, listener.getExpirationCount().get());
         for (int i = 1; i < CLUSTER_SIZE; i++) {
             BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);

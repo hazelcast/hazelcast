@@ -39,9 +39,11 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.impl.NearCacheTestContextBuilder;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestClock;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -132,6 +134,7 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
+        TestClock.init();
         hazelcastFactory = new TestHazelcastFactory();
 
         HazelcastInstance[] allMembers = new HazelcastInstance[MEMBER_COUNT];
@@ -182,6 +185,7 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
     @After
     public void tearDown() {
         hazelcastFactory.shutdownAll();
+        TestClock.remove();
     }
 
     @Test
@@ -277,6 +281,8 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
             assertTrueEventually(() -> assertEquals(value, getFromNearCache(nearCacheTestContext2, key)));
         }
 
+        System.out.println(">>> " + Clock.currentTimeMillis());
+        TestClock.stop();
         // update cache record from client-1
         for (int i = 0; i < INITIAL_POPULATION_COUNT; i++) {
             // update the cache records with new values
@@ -286,7 +292,8 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
         int invalidationEventFlushFreq = Integer.parseInt(CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getDefaultValue());
         // wait some time and if there are invalidation events to be sent in batch
         // (we assume that they should be flushed, received and processed in this time window already)
-        sleepSeconds(2 * invalidationEventFlushFreq);
+        TestClock.delta(2 * invalidationEventFlushFreq * 1000);
+        System.out.println(">>> " + Clock.currentTimeMillis());
 
         // get records from client-2
         for (int i = 0; i < INITIAL_POPULATION_COUNT; i++) {
