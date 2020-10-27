@@ -27,8 +27,6 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface MapServiceContextEventListenerSupport {
 
-    UUID addLocalEventListener(Object mapListener, String mapName);
-
     UUID addLocalEventListener(Object mapListener, EventFilter eventFilter, String mapName);
 
     UUID addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName);

@@ -17,9 +17,9 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.query.Predicates;
+import com.hazelcast.map.impl.MapListenerAdapter;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -33,6 +33,7 @@ import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.impl.event.MapEventPublisherImpl.PROP_LISTENER_WITH_PREDICATE_PRODUCES_NATURAL_EVENT_TYPES;
+import static com.hazelcast.query.Predicates.greaterEqual;
 import static junit.framework.TestCase.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -68,10 +69,17 @@ public class MapQueryEventFilterTest extends HazelcastTestSupport {
 
         IMap<Integer, Employee> map = node.getMap("test");
 
-        map.addLocalEntryListener(null, Predicates.alwaysTrue(),true);
+        map.addEntryListener(new MapListenerAdapter<Integer, Employee>() {
+            @Override
+            public void entryAdded(EntryEvent<Integer, Employee> event) {
+                addedEntryCount.incrementAndGet();
+            }
 
-        map.addLocalEntryListener((EntryAddedListener) event
-                -> addedEntryCount.incrementAndGet());
+            @Override
+            public void entryUpdated(EntryEvent<Integer, Employee> event) {
+                updatedEntryCount.incrementAndGet();
+            }
+        }, greaterEqual("age", 3), true);
 
         // update same key, multiple times.
         int key = 1;
@@ -86,7 +94,7 @@ public class MapQueryEventFilterTest extends HazelcastTestSupport {
                 assertEquals(numOfAddEventExpected, addedEntryCount.get());
                 assertEquals(numOfUpdateEventExpected, updatedEntryCount.get());
             }
-        },3);
+        });
     }
 
     static final class Employee implements Serializable {
