@@ -38,7 +38,7 @@ public class MapAddEntryListenerWithPredicateMessageTask
     @Override
     protected EventFilter getEventFilter() {
         Predicate predicate = serializationService.toObject(parameters.predicate);
-        QueryEventFilter eventFilter = new QueryEventFilter(parameters.includeValue, null, predicate);
+        QueryEventFilter eventFilter = new QueryEventFilter(null, predicate, parameters.includeValue);
         return new EventListenerFilter(parameters.listenerFlags, eventFilter);
     }
 

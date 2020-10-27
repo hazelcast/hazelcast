@@ -1154,12 +1154,12 @@ abstract class MapProxySupport<K, V>
     }
 
     public UUID addLocalEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
-        EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
+        EventFilter eventFilter = new QueryEventFilter(key, predicate, includeValue);
         return mapServiceContext.addLocalEventListener(listener, eventFilter, name);
     }
 
     protected UUID addEntryListenerInternal(Object listener, Data key, boolean includeValue) {
-        EventFilter eventFilter = new EntryEventFilter(includeValue, key);
+        EventFilter eventFilter = new EntryEventFilter(key, includeValue);
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
 
@@ -1167,7 +1167,7 @@ abstract class MapProxySupport<K, V>
                                             Predicate predicate,
                                             @Nullable Data key,
                                             boolean includeValue) {
-        EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
+        EventFilter eventFilter = new QueryEventFilter(key, predicate, includeValue);
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
 

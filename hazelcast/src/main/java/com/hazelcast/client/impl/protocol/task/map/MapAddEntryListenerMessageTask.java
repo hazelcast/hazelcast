@@ -36,7 +36,7 @@ public class MapAddEntryListenerMessageTask
 
     @Override
     protected EventFilter getEventFilter() {
-        EntryEventFilter eventFilter = new EntryEventFilter(parameters.includeValue, null);
+        EntryEventFilter eventFilter = new EntryEventFilter(null, parameters.includeValue);
         return new EventListenerFilter(parameters.listenerFlags, eventFilter);
     }
 

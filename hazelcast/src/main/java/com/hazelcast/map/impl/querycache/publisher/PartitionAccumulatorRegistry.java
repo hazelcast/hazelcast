@@ -59,7 +59,7 @@ public class PartitionAccumulatorRegistry implements Registry<Integer, Accumulat
     private EventFilter createEventFilter() {
         boolean includeValue = info.isIncludeValue();
         Predicate predicate = info.getPredicate();
-        return new QueryEventFilter(includeValue, null, predicate);
+        return new QueryEventFilter(null, predicate, includeValue);
     }
 
     @Override
