@@ -100,23 +100,6 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     private Class<? extends ExpressionBiValue> valueClass;
     private int runIdGen;
 
-    @Parameterized.Parameters(name = "indexType:{0}, composite:{1}, field1:{2}, field2:{3}")
-    public static Collection<Object[]> parameters() {
-        List<Object[]> res = new ArrayList<>();
-
-        for (IndexType indexType : Arrays.asList(IndexType.SORTED, IndexType.HASH)) {
-            for (boolean composite : Arrays.asList(true, false)) {
-                for (ExpressionType<?> firstType : allTypes()) {
-                    for (ExpressionType<?> secondType : allTypes()) {
-                        res.add(new Object[] { indexType, composite, firstType, secondType });
-                    }
-                }
-            }
-        }
-
-        return res;
-    }
-
     @BeforeClass
     public static void beforeClass() {
          factory = new TestHazelcastInstanceFactory(2);
@@ -618,6 +601,38 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
 
     protected MapConfig getMapConfig() {
         return new MapConfig().setName(mapName).setBackupCount(0).addIndexConfig(getIndexConfig());
+    }
+
+    public static Collection<Object[]> parametersQuick() {
+        List<Object[]> res = new ArrayList<>();
+
+        for (IndexType indexType : Arrays.asList(IndexType.SORTED, IndexType.HASH)) {
+            for (boolean composite : Arrays.asList(true, false)) {
+                for (ExpressionType<?> firstType : baseTypes()) {
+                    for (ExpressionType<?> secondType : baseTypes()) {
+                        res.add(new Object[] { indexType, composite, firstType, secondType });
+                    }
+                }
+            }
+        }
+
+        return res;
+    }
+
+    public static Collection<Object[]> parametersSlow() {
+        List<Object[]> res = new ArrayList<>();
+
+        for (IndexType indexType : Arrays.asList(IndexType.SORTED, IndexType.HASH)) {
+            for (boolean composite : Arrays.asList(true, false)) {
+                for (ExpressionType<?> firstType : allTypes()) {
+                    for (ExpressionType<?> secondType : allTypes()) {
+                        res.add(new Object[] { indexType, composite, firstType, secondType });
+                    }
+                }
+            }
+        }
+
+        return res;
     }
 
     private static class Query {

@@ -43,7 +43,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -77,7 +76,7 @@ import static org.junit.Assert.assertNotNull;
  * Test that covers basic column read operations through SQL.
  */
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("checkstyle:RedundantModifier")
 public class SqlBasicTest extends SqlTestSupport {
@@ -93,8 +92,8 @@ public class SqlBasicTest extends SqlTestSupport {
     private static final String MAP_OBJECT = "map_object";
     private static final String MAP_BINARY = "map_binary";
 
-    private static final int[] PAGE_SIZES = { 1, 16, 256, 4096 };
-    private static final int[] DATA_SET_SIZES = { 1, 256, 4096 };
+    private static final int[] PAGE_SIZES = { 256 };
+    private static final int[] DATA_SET_SIZES = { 4096 };
     private static final SqlTestInstanceFactory FACTORY = SqlTestInstanceFactory.create();
 
     private static HazelcastInstance member1;
@@ -1015,7 +1014,7 @@ public class SqlBasicTest extends SqlTestSupport {
         }
     }
 
-    private enum SerializationMode {
+    protected enum SerializationMode {
         SERIALIZABLE,
         DATA_SERIALIZABLE,
         IDENTIFIED_DATA_SERIALIZABLE,
