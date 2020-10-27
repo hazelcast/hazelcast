@@ -78,6 +78,7 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexUtils;
+import com.hazelcast.query.impl.predicates.TruePredicate;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -1150,7 +1151,8 @@ abstract class MapProxySupport<K, V>
     }
 
     public UUID addLocalEntryListenerInternal(Object listener) {
-        return mapServiceContext.addLocalEventListener(listener, name);
+        EventFilter eventFilter = new QueryEventFilter(null, TruePredicate.INSTANCE, true);
+        return mapServiceContext.addLocalEventListener(listener, eventFilter, name);
     }
 
     public UUID addLocalEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
