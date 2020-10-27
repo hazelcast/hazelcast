@@ -2121,11 +2121,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     void handleMapWanReplicationRefNode(Node n, MapConfig mapConfig, WanReplicationRef wanReplicationRef) {
         for (Node wanChild : childElements(n)) {
             String wanChildName = cleanNodeName(wanChild);
-            String wanChildValue = getTextContent(wanChild);
             if (matches("merge-policy-class-name", wanChildName)) {
-                wanReplicationRef.setMergePolicyClassName(wanChildValue);
+                wanReplicationRef.setMergePolicyClassName(getTextContent(wanChild));
             } else if (matches("republishing-enabled", wanChildName)) {
-                wanReplicationRef.setRepublishingEnabled(getBooleanValue(wanChildValue));
+                wanReplicationRef.setRepublishingEnabled(getBooleanValue(getTextContent(wanChild)));
             } else if (matches("filters", wanChildName)) {
                 handleWanFilters(wanChild, wanReplicationRef);
             }

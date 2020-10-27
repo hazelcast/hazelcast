@@ -377,15 +377,27 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleExecutor(Node node) throws Exception {
+    protected void handleExecutor(Node node) {
         for (Node executorNode : childElements(node)) {
             String name = executorNode.getNodeName();
             ExecutorConfig executorConfig = config.getExecutorConfig(name);
             if (executorConfig == null) {
                 executorConfig = new ExecutorConfig(name);
+                config.addExecutorConfig(executorConfig);
             }
 
-            handleViaReflection(executorNode, config, executorConfig);
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if (matches("queue-capacity", nodeName)) {
+                    executorConfig.setQueueCapacity(Integer.parseInt(getTextContent(node)));
+                } else if (matches("pool-size", nodeName)) {
+                    executorConfig.setPoolSize(Integer.parseInt(getTextContent(node)));
+                } else if (matches("statistics-enabled", nodeName)) {
+                    executorConfig.setStatisticsEnabled(Boolean.parseBoolean(getTextContent(node)));
+                } else if (matches("split-brain-protection-ref", nodeName)) {
+                    executorConfig.setSplitBrainProtectionName(getTextContent(node));
+                }
+            }
         }
     }
 
@@ -396,9 +408,21 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             DurableExecutorConfig executorConfig = config.getDurableExecutorConfig(name);
             if (executorConfig == null) {
                 executorConfig = new DurableExecutorConfig(name);
+                config.addDurableExecutorConfig(executorConfig);
             }
 
-            handleViaReflection(executorNode, config, executorConfig);
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if (matches("durability", nodeName)) {
+                    executorConfig.setDurability(Integer.parseInt(getTextContent(node)));
+                } else if (matches("pool-size", nodeName)) {
+                    executorConfig.setPoolSize(Integer.parseInt(getTextContent(node)));
+                } else if (matches("statistics-enabled", nodeName)) {
+                    executorConfig.setStatisticsEnabled(Boolean.parseBoolean(getTextContent(node)));
+                } else if (matches("split-brain-protection-ref", nodeName)) {
+                    executorConfig.setSplitBrainProtectionName(getTextContent(node));
+                }
+            }
         }
     }
 
@@ -409,6 +433,27 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             ScheduledExecutorConfig executorConfig = config.getScheduledExecutorConfig(name);
             if (executorConfig == null) {
                 executorConfig = new ScheduledExecutorConfig(name);
+                config.addScheduledExecutorConfig(executorConfig);
+            }
+
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if (matches("durability", nodeName)) {
+                    executorConfig.setDurability(Integer.parseInt(getTextContent(node)));
+                } else if (matches("pool-size", nodeName)) {
+                    executorConfig.setPoolSize(Integer.parseInt(getTextContent(node)));
+                } else if (matches("capacity", nodeName)) {
+                    executorConfig.setCapacity(Integer.parseInt(getTextContent(node)));
+                } else if (matches("capacity-policy", nodeName)) {
+                    executorConfig.setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.valueOf(getTextContent(node)));
+                } else if (matches("statistics-enabled", nodeName)) {
+                    executorConfig.setStatisticsEnabled(Boolean.parseBoolean(getTextContent(node)));
+                } else if (matches("split-brain-protection-ref", nodeName)) {
+                    executorConfig.setSplitBrainProtectionName(getTextContent(node));
+                } else if (matches("merge-policy", nodeName)) {
+                    MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(child, executorConfig.getMergePolicyConfig());
+                    executorConfig.setMergePolicyConfig(mergePolicyConfig);
+                }
             }
 
             handleScheduledExecutorNode(executorNode, executorConfig);
