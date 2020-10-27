@@ -217,11 +217,11 @@ public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig 
 
     @Override
     public String toString() {
-        return "PNCounterConfig{" +
-          "name='" + name + '\'' +
-          ", replicaCount=" + replicaCount +
-          ", splitBrainProtectionName='" + splitBrainProtectionName + '\'' +
-          ", statisticsEnabled=" + statisticsEnabled +
-          '}';
+        return "PNCounterConfig{"
+          + "name='" + name + '\''
+          + ", replicaCount=" + replicaCount
+          + ", splitBrainProtectionName='" + splitBrainProtectionName + '\''
+          + ", statisticsEnabled=" + statisticsEnabled
+          + '}';
     }
 }
