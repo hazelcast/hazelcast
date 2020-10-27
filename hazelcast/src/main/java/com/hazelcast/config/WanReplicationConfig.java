@@ -63,6 +63,13 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
     private List<WanCustomPublisherConfig> customPublisherConfigs = new ArrayList<>(0);
     private List<WanBatchPublisherConfig> batchPublisherConfigs = new ArrayList<>(1);
 
+    public WanReplicationConfig() {
+    }
+
+    public WanReplicationConfig(String name) {
+        this.name = name;
+    }
+
     public String getName() {
         return name;
     }
