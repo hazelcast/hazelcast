@@ -1289,7 +1289,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         mapDataStore.removeAll(keys);
         mapDataStore.reset();
         int removedKeyCount = removeBulk(keys, records);
-        if(removedKeyCount > 0) {
+        if (removedKeyCount > 0) {
             updateStatsOnRemove(Clock.currentTimeMillis());
         }
         return removedKeyCount;
