@@ -1,23 +1,6 @@
-This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 4.0.3 release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
+This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 4.0.3-migration release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
 ## Enhancements
 
-* Added the declarative configuration support for the client load balancer. [#17482]
-* Added public classes to expose the member and client side caching
-provider implementations without referring to internal classes. [#17421]
-* Updated the Hazelcast Kubernetes dependency to 2.0.2. [#17255]
-* Added the ability to set the expiration times for entries when
-using entry processors. [#17175]
+* Added the support for processing WAN replication messages from Hazelcast IMDG 3.x cluster members. [#17702]
 
-## Fixes
-
-* Fixed `NullPointerException` when using IMap with `HASH` indexes. [#17527]
-* Fixed the rendering of diagnostics in case there is an exception inside a diagnostics plugin. [#17502]
-* Increased the dependency versions for Jackson and SnakeYAML to mitigate the security vulnerabilities. [#17510]
-* Fixed the propagation of exception from a function registered on a not-yet completed `CompletionStage`. [#17520]
-* Fixed a race condition when overwriting `CacheManager` during JCache creation. [#17292]
-* Fixed the `NATIVE` memory leak when using `IMap.executeOnKeys()` from an IMDG client. [#17274]
-* Resolved a performance issue when using `PagingPredicate` in combination with JDK8. [#17211]
-* Fixed the client behavior when cluster encounters a split-brain.
-In some cases, the client was unable to reconnect to the cluster, even after the cluster is healed. [#17148]
-* Improved disposing of off-heap memory when metrics are being used. [#17145]
