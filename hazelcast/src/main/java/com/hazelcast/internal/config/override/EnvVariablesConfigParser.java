@@ -26,7 +26,7 @@ import static java.util.stream.Collectors.toMap;
  */
 class EnvVariablesConfigParser {
     private static final List<String> EXCLUDED_ENTRIES = Arrays.asList(
-      "HZ_HOME", "HZ_LICENSE_KEY", "HZ_PHONE_HOME_ENABLED");
+      "HZ_HOME", "HZ_LICENSE_KEY", "HZ_PHONE_HOME_ENABLED", "HZ_CP_MOUNT");
 
     private final String prefix;
     private final String rootNode;
