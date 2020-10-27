@@ -2114,8 +2114,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef() == null
           ? new WanReplicationRef()
           : mapConfig.getWanReplicationRef();
-        String wanName = getAttribute(n, "name");
-        wanReplicationRef.setName(wanName);
+        wanReplicationRef.setName(getAttribute(n, "name"));
         handleMapWanReplicationRefNode(n, mapConfig, wanReplicationRef);
     }
 

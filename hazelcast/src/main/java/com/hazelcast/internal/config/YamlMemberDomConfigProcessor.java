@@ -366,8 +366,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleFlakeIdGenerator(Node node) {
         for (Node genNode : childElements(node)) {
-            FlakeIdGeneratorConfig genConfig = new FlakeIdGeneratorConfig();
-            genConfig.setName(genNode.getNodeName());
+            String name = genNode.getNodeName();
+            FlakeIdGeneratorConfig genConfig = config.getFlakeIdGeneratorConfig(name);
+            if (genConfig == null) {
+                genConfig = new FlakeIdGeneratorConfig(name);
+            }
+
             handleFlakeIdGeneratorNode(genNode, genConfig);
         }
     }
@@ -375,8 +379,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleExecutor(Node node) throws Exception {
         for (Node executorNode : childElements(node)) {
-            ExecutorConfig executorConfig = new ExecutorConfig();
-            executorConfig.setName(executorNode.getNodeName());
+            String name = executorNode.getNodeName();
+            ExecutorConfig executorConfig = config.getExecutorConfig(name);
+            if (executorConfig == null) {
+                executorConfig = new ExecutorConfig(name);
+            }
+
             handleViaReflection(executorNode, config, executorConfig);
         }
     }
@@ -384,8 +392,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleDurableExecutor(Node node) throws Exception {
         for (Node executorNode : childElements(node)) {
-            DurableExecutorConfig executorConfig = new DurableExecutorConfig();
-            executorConfig.setName(executorNode.getNodeName());
+            String name = executorNode.getNodeName();
+            DurableExecutorConfig executorConfig = config.getDurableExecutorConfig(name);
+            if (executorConfig == null) {
+                executorConfig = new DurableExecutorConfig(name);
+            }
+
             handleViaReflection(executorNode, config, executorConfig);
         }
     }
@@ -393,8 +405,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleScheduledExecutor(Node node) {
         for (Node executorNode : childElements(node)) {
-            ScheduledExecutorConfig executorConfig = new ScheduledExecutorConfig();
-            executorConfig.setName(executorNode.getNodeName());
+            String name = executorNode.getNodeName();
+            ScheduledExecutorConfig executorConfig = config.getScheduledExecutorConfig(name);
+            if (executorConfig == null) {
+                executorConfig = new ScheduledExecutorConfig(name);
+            }
+
             handleScheduledExecutorNode(executorNode, executorConfig);
         }
     }
@@ -402,8 +418,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleCardinalityEstimator(Node node) {
         for (Node estimatorNode : childElements(node)) {
-            CardinalityEstimatorConfig estimatorConfig = new CardinalityEstimatorConfig();
-            estimatorConfig.setName(estimatorNode.getNodeName());
+            String name = estimatorNode.getNodeName();
+            CardinalityEstimatorConfig estimatorConfig = config.getCardinalityEstimatorConfig(name);
+            if (estimatorConfig == null) {
+                estimatorConfig = new CardinalityEstimatorConfig(name);
+            }
+
             handleCardinalityEstimatorNode(estimatorNode, estimatorConfig);
         }
     }
@@ -411,8 +431,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handlePNCounter(Node node) throws Exception {
         for (Node counterNode : childElements(node)) {
-            PNCounterConfig counterConfig = new PNCounterConfig();
-            counterConfig.setName(counterNode.getNodeName());
+            String name = counterNode.getNodeName();
+            PNCounterConfig counterConfig = config.getPNCounterConfig(name);
+            if (counterConfig == null) {
+                counterConfig = new PNCounterConfig(name);
+            }
+
             handleViaReflection(counterNode, config, counterConfig);
         }
     }
@@ -420,8 +444,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleMultiMap(Node node) {
         for (Node multiMapNode : childElements(node)) {
-            MultiMapConfig multiMapConfig = new MultiMapConfig();
-            multiMapConfig.setName(multiMapNode.getNodeName());
+            String name = multiMapNode.getNodeName();
+            MultiMapConfig multiMapConfig = config.getMultiMapConfig(name);
+            if (multiMapConfig == null) {
+                multiMapConfig = new MultiMapConfig(name);
+            }
+
             handleMultiMapNode(multiMapNode, multiMapConfig);
         }
     }
@@ -429,8 +457,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleReplicatedMap(Node node) {
         for (Node replicatedMapNode : childElements(node)) {
-            ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig();
-            replicatedMapConfig.setName(replicatedMapNode.getNodeName());
+            String name = replicatedMapNode.getNodeName();
+            ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(name);
+            if (replicatedMapConfig == null) {
+                replicatedMapConfig = new ReplicatedMapConfig(name);
+            }
+
             handleReplicatedMapNode(replicatedMapNode, replicatedMapConfig);
         }
     }
@@ -438,8 +470,13 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void mapWanReplicationRefHandle(Node n, MapConfig mapConfig) {
         for (Node mapNode : childElements(n)) {
-            WanReplicationRef wanReplicationRef = new WanReplicationRef();
-            wanReplicationRef.setName(mapNode.getNodeName());
+            String name = mapNode.getNodeName();
+            WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
+            if (wanReplicationRef == null) {
+                wanReplicationRef = new WanReplicationRef();
+                wanReplicationRef.setName(name);
+            }
+
             handleMapWanReplicationRefNode(mapNode, mapConfig, wanReplicationRef);
         }
     }
