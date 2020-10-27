@@ -51,7 +51,6 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
 
     static final Set<String> DELEGATION_WHITE_LIST;
 
-    private final URL[] urls;
     private ContextMutexFactory mutexFactory = new ContextMutexFactory();
     private ClassLoader parent;
 
@@ -66,7 +65,6 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
     public HazelcastAPIDelegatingClassloader(URL[] urls, ClassLoader parent) {
         super(urls, parent);
         this.parent = parent;
-        this.urls = urls;
     }
 
     @Override
@@ -187,6 +185,6 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
 
     @Override
     public String toString() {
-        return "HazelcastAPIDelegatingClassloader{urls = \"" + Arrays.toString(urls) + "\"}";
+        return "HazelcastAPIDelegatingClassloader{urls = \"" + Arrays.toString(getURLs()) + "\"}";
     }
 }
