@@ -29,7 +29,8 @@ import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.TestClock;
+import com.hazelcast.test.ManageableClock;
+import com.hazelcast.test.ManageableClock.ManagedClock;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -64,11 +65,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMapBasicTest extends AbstractClientMapTest {
-
-    @Before
-    public void setup() {
-        TestClock.start();
-    }
 
     @Test
     public void testClientGetMap() {
@@ -125,9 +121,9 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     @Test
     public void testSetTtlReturnsFalse_whenKeyIsAlreadyExpired() {
         final IMap<String, String> map = client.getMap(randomString());
-        TestClock.stop();
+        ManagedClock managedClock = clockOf(client).manage();
         map.put("key", "value", 1, TimeUnit.SECONDS);
-        TestClock.deltaSeconds(5);
+        managedClock.advanceMillis(5000);
         assertFalse(map.setTtl("key", 10, TimeUnit.SECONDS));
     }
 
@@ -136,10 +132,9 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         final IMap<String, String> map = client.getMap(randomString());
 
         map.put("key", "value");
-        TestClock.stop();
+        ManagedClock managedClock = clockOf(client).manage();
         map.setTtl("key", 1000, TimeUnit.MILLISECONDS);
-
-        TestClock.delta(1000);
+        managedClock.advanceMillis(1000);
 
         assertNull(map.get("key"));
     }
@@ -147,14 +142,14 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     @Test
     public void testExtendTTLOfAKeyBeforeItExpires() {
         final IMap<String, String> map = client.getMap("testSetTTLExtend");
-        TestClock.stop();
+        ManagedClock managedClock = clockOf(client).manage();
         map.put("key", "value", 10, TimeUnit.SECONDS);
 
-        TestClock.deltaSeconds(1);
+        managedClock.advanceMillis(1000);
         //Make the entry eternal
         map.setTtl("key", 0, TimeUnit.DAYS);
 
-        TestClock.deltaSeconds(15);
+        managedClock.advanceMillis(15000);
 
         assertEquals("value", map.get("key"));
     }
@@ -162,10 +157,10 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     @Test
     public void testSetTtlConfiguresMapPolicyIfTTLIsNegative() {
         final IMap<String, String> map = client.getMap("mapWithTTL");
-        TestClock.stop();
+        ManagedClock managedClock = clockOf(client).manage();
         map.put("tempKey", "tempValue", 10, TimeUnit.SECONDS);
         map.setTtl("tempKey", -1, TimeUnit.SECONDS);
-        TestClock.delta(1000);
+        managedClock.advanceMillis(1000);
         assertNull(map.get("tempKey"));
     }
 
@@ -259,10 +254,10 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String key = "Key";
         String value = "Value";
 
-        TestClock.stop();
+        ManagedClock managedClock = clockOf(client).manage();
         String result = map.put(key, value, 1, TimeUnit.SECONDS);
         assertNull(result);
-        TestClock.deltaSeconds(2);
+        managedClock.advanceMillis(2000);
         assertNull(map.get(key));
     }
 
@@ -274,10 +269,10 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String newValue = "Val";
 
         map.put(key, oldValue);
-        TestClock.stop();
+        ManagedClock managedClock = clockOf(client).manage();
         String result = map.put(key, newValue, 1, TimeUnit.SECONDS);
         assertEquals(oldValue, result);
-        TestClock.deltaSeconds(2);
+        managedClock.advanceMillis(2000);
         assertNull(map.get(key));
     }
 
@@ -356,9 +351,9 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String value = "Val";
 
         Future result = map.putAsync(key, value, 1, TimeUnit.SECONDS).toCompletableFuture();
-        TestClock.stop();
+        ManagedClock managedClock = clockOf(client).manage();
         assertNull(result.get());
-        TestClock.deltaSeconds(2);
+        managedClock.advanceMillis(2000);
         assertNull(map.get(key));
     }
 
@@ -371,9 +366,9 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
 
         map.put(key, oldValue);
         Future result = map.putAsync(key, newValue, 1, TimeUnit.SECONDS).toCompletableFuture();
-        TestClock.stop();
+        ManagedClock managedClock = clockOf(client).manage();
         assertEquals(oldValue, result.get());
-        TestClock.deltaSeconds(2);
+        managedClock.advanceMillis(2000);
         assertNull(map.get(key));
     }
 
@@ -598,9 +593,9 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String key = "Key";
         String value = "Value";
 
-        TestClock.stop();
+        ManagedClock managedClock = clockOf(client).manage();
         String result = map.putIfAbsent(key, value, 1, TimeUnit.SECONDS);
-        TestClock.deltaSeconds(2);
+        managedClock.advanceMillis(2000);
 
         assertNull(result);
         assertNull(map.get(key));
@@ -800,9 +795,9 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String key = "Key";
         String val = "Val";
 
-        TestClock.stop();
+        ManagedClock managedClock = clockOf(client).manage();
         map.set(key, val, 1, TimeUnit.SECONDS);
-        TestClock.deltaSeconds(2);
+        managedClock.advanceMillis(2000);
         assertNull(map.get(key));
     }
 
@@ -814,9 +809,9 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String oldValue = "oldvalue";
 
         map.set(key, oldValue);
-        TestClock.stop();
+        ManagedClock managedClock = clockOf(client).manage();
         map.set(key, newValue, 1, TimeUnit.SECONDS);
-        TestClock.deltaSeconds(2);
+        managedClock.advanceMillis(2000);
         assertNull(map.get(key));
     }
 
@@ -1101,9 +1096,9 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String key = "Key";
         String value = "value";
 
-        TestClock.stop();
+        ManagedClock managedClock = clockOf(client).manage();
         map.putTransient(key, value, 1, TimeUnit.SECONDS);
-        TestClock.deltaSeconds(2);
+        managedClock.advanceMillis(2000);
         assertNull(map.get(key));
     }
 
@@ -1127,9 +1122,9 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         String newValue = "newValue";
 
         map.put(key, oldValue);
-        TestClock.stop();
+        ManagedClock managedClock = clockOf(client).manage();
         map.putTransient(key, newValue, 1, TimeUnit.SECONDS);
-        TestClock.deltaSeconds(2);
+        managedClock.advanceMillis(2000);
         assertNull(map.get(key));
     }
 

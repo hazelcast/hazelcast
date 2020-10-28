@@ -30,6 +30,7 @@ import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.ManageableClockRule.HazelcastInstanceFactoryFunction;
 import com.hazelcast.test.metrics.MetricsRule;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 
@@ -65,6 +66,7 @@ public class TestHazelcastInstanceFactory {
     private final int count;
 
     private MetricsRule metricsRule;
+    private ManageableClockRule clockRule;
 
     public TestHazelcastInstanceFactory() {
         this(0);
@@ -88,6 +90,11 @@ public class TestHazelcastInstanceFactory {
 
     public TestHazelcastInstanceFactory withMetricsRule(MetricsRule metricsRule) {
         this.metricsRule = metricsRule;
+        return this;
+    }
+
+    public TestHazelcastInstanceFactory withClockRule(ManageableClockRule clockRule) {
+        this.clockRule = clockRule;
         return this;
     }
 
@@ -138,10 +145,10 @@ public class TestHazelcastInstanceFactory {
     public HazelcastInstance newHazelcastInstance(Address address, Config config) {
         final String instanceName = config != null ? config.getInstanceName() : null;
         if (isMockNetwork) {
-            config = initOrCreateConfig(config);
+            Config initializedConfig = initOrCreateConfig(config);
             NodeContext nodeContext = registry.createNodeContext(address);
-            HazelcastInstance hazelcastInstance =
-                HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+            HazelcastInstance hazelcastInstance = createHazelcastInstanceWithClock(
+                    () -> HazelcastInstanceFactory.newHazelcastInstance(initializedConfig, instanceName, nodeContext));
             registerTestMetricsPublisher(hazelcastInstance);
 
             return hazelcastInstance;
@@ -181,14 +188,14 @@ public class TestHazelcastInstanceFactory {
     public HazelcastInstance newHazelcastInstance(Address address, Config config, Address[] blockedAddresses) {
         final String instanceName = config != null ? config.getInstanceName() : null;
         if (isMockNetwork) {
-            config = initOrCreateConfig(config);
-            Address thisAddress = address != null ? address : nextAddress(config.getNetworkConfig().getPort());
+            Config initializedConfig = initOrCreateConfig(config);
+            Address thisAddress = address != null ? address : nextAddress(initializedConfig.getNetworkConfig().getPort());
             NodeContext nodeContext = registry.createNodeContext(thisAddress,
                     blockedAddresses == null
                             ? Collections.emptySet()
                             : new HashSet<>(asList(blockedAddresses)));
-            HazelcastInstance hazelcastInstance =
-                HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+            HazelcastInstance hazelcastInstance = createHazelcastInstanceWithClock(
+                    () -> HazelcastInstanceFactory.newHazelcastInstance(initializedConfig, instanceName, nodeContext));
             registerTestMetricsPublisher(hazelcastInstance);
 
             return hazelcastInstance;
@@ -218,16 +225,24 @@ public class TestHazelcastInstanceFactory {
     public HazelcastInstance newHazelcastInstance(Config config) {
         String instanceName = config != null ? config.getInstanceName() : null;
         if (isMockNetwork) {
-            config = initOrCreateConfig(config);
-            NodeContext nodeContext = registry.createNodeContext(nextAddress(config.getNetworkConfig().getPort()));
-            HazelcastInstance hazelcastInstance = HazelcastInstanceFactory
-                    .newHazelcastInstance(config, instanceName, nodeContext);
+            Config initializedConfig = initOrCreateConfig(config);
+            NodeContext nodeContext = registry.createNodeContext(nextAddress(initializedConfig.getNetworkConfig().getPort()));
+            HazelcastInstance hazelcastInstance = createHazelcastInstanceWithClock(
+                    () -> HazelcastInstanceFactory.newHazelcastInstance(initializedConfig, instanceName, nodeContext));
             registerTestMetricsPublisher(hazelcastInstance);
             return hazelcastInstance;
         }
-        HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config);
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceWithClock(
+                () -> HazelcastInstanceFactory.newHazelcastInstance(config));
         registerTestMetricsPublisher(hazelcastInstance);
         return hazelcastInstance;
+    }
+
+    protected HazelcastInstance createHazelcastInstanceWithClock(HazelcastInstanceFactoryFunction factoryFn) {
+        if (clockRule != null){
+            return clockRule.createHazelcastInstanceWithClock(factoryFn);
+        }
+        return factoryFn.create();
     }
 
     private void registerTestMetricsPublisher(HazelcastInstance hazelcastInstance) {

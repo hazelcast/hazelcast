@@ -133,6 +133,9 @@ public abstract class HazelcastTestSupport {
     public MetricsRule metricsRule = new MetricsRule();
 
     @Rule
+    public ManageableClockRule clockRule = new ManageableClockRule();
+
+    @Rule
     public DumpBuildInfoOnFailureRule dumpInfoRule = new DumpBuildInfoOnFailureRule();
 
     private TestHazelcastInstanceFactory factory;
@@ -229,7 +232,9 @@ public abstract class HazelcastTestSupport {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");
         }
-        return factory = createHazelcastInstanceFactory0(nodeCount).withMetricsRule(metricsRule);
+        return factory = createHazelcastInstanceFactory0(nodeCount)
+                .withMetricsRule(metricsRule)
+                .withClockRule(clockRule);
     }
 
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(String... addresses) {
@@ -1684,5 +1689,19 @@ public abstract class HazelcastTestSupport {
         for (DistributedObject object : distributedObjects) {
             object.destroy();
         }
+    }
+
+    public ManageableClock clockOf(HazelcastInstance instance) {
+        if (instance == null) {
+            return null;
+        }
+
+        ManageableClock clock = clockRule.clockOf(instance);
+        if (clock == null) {
+            throw new IllegalStateException("No clock is set for the instance " + instance + ". Did the instance " +
+                    "creation happen through an instance factory with the clock rule set?");
+        }
+
+        return clock;
     }
 }

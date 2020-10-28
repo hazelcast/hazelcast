@@ -22,7 +22,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestClock;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -38,7 +37,6 @@ public abstract class AbstractClientMapTest extends HazelcastTestSupport {
 
     @BeforeClass
     public static final void startHazelcastInstances() {
-        TestClock.init();
         Config config = regularInstanceConfig();
         MapConfig mapConfig = new MapConfig("mapWithTTL");
         mapConfig.setTimeToLiveSeconds(1);
@@ -58,7 +56,6 @@ public abstract class AbstractClientMapTest extends HazelcastTestSupport {
     @AfterClass
     public static final void stopHazelcastInstances() {
         hazelcastFactory.terminateAll();
-        TestClock.remove();
     }
 
     protected static ClientConfig getClientConfig() {
