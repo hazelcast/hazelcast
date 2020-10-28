@@ -42,7 +42,6 @@ import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class HazelcastInferTypesTest extends InferTypesTestSupport {
-
     @Test
     public void testFirstKnown() {
         //@formatter:off
