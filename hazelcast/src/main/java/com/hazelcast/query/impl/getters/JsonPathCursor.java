@@ -18,7 +18,6 @@ package com.hazelcast.query.impl.getters;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
