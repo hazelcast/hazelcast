@@ -220,9 +220,9 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
 
         // Check serializable maps. They all should have the same schema.
         MapTableField[] expectedFields = new MapTableField[] {
-            hiddenField(KEY, QueryDataType.OBJECT, true),
             field("field1", QueryDataType.INT, true),
             field("field2", QueryDataType.INT, true),
+            hiddenField(KEY, QueryDataType.OBJECT, true),
             field("field3", QueryDataType.INT, false),
             hiddenField(VALUE, QueryDataType.OBJECT, false)
         };
@@ -234,9 +234,9 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         // Check portable in the OBJECT mode.
         checkFields(
             getExistingTable(tables, MAP_PORTABLE_OBJECT),
-            hiddenField(KEY, QueryDataType.OBJECT, true),
             field("portableField1", QueryDataType.INT, true),
             field("portableField2", QueryDataType.INT, true),
+            hiddenField(KEY, QueryDataType.OBJECT, true),
             field("portableField3", QueryDataType.INT, false),
             hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
@@ -244,9 +244,9 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         // Check portable in the BINARY mode.
         checkFields(
             getExistingTable(tables, MAP_PORTABLE_BINARY),
-            hiddenField(KEY, QueryDataType.OBJECT, true),
             field("portableField1", QueryDataType.INT, true),
             field("portableField2", QueryDataType.INT, true),
+            hiddenField(KEY, QueryDataType.OBJECT, true),
             field("portableField3", QueryDataType.INT, false),
             hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
@@ -264,14 +264,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
             expectedFields = new MapTableField[0];
         }
 
-        assertEquals(expectedFields.length, table.getFieldCount());
-
-        for (int i = 0; i < expectedFields.length; i++) {
-            MapTableField field = table.getField(i);
-            MapTableField expectedField = expectedFields[i];
-
-            assertEquals(expectedField, field);
-        }
+        assertEquals(Arrays.asList(expectedFields), table.getFields());
     }
 
     @Test
