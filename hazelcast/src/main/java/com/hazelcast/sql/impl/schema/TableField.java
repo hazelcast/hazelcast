@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.schema;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
- * Base class for all table field. Different backends may have additional
+ * Base class for all table fields. Different backends may have additional
  * metadata associated with the field.
  */
 public class TableField {
