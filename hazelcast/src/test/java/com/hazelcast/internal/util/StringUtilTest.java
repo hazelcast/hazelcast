@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import java.util.Locale;
 
 import static com.hazelcast.internal.util.StringUtil.VERSION_PATTERN;
+import static com.hazelcast.internal.util.StringUtil.formatXml;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -153,6 +154,26 @@ public class StringUtilTest extends HazelcastTestSupport {
         } finally {
             Locale.setDefault(defaultLocale);
         }
+    }
+
+    @Test
+    public void testFormatXml() throws Exception {
+        assertEquals("<a> <b>c</b></a>", formatXml("<a><b>c</b></a>", 1).replaceAll("[\r\n]", ""));
+        assertEquals("<a>   <b>c</b></a>", formatXml("<a><b>c</b></a>", 3).replaceAll("[\r\n]", ""));
+        assertEquals("<a><b>c</b></a>", formatXml("<a><b>c</b></a>", -21));
+
+        assertThrows(IllegalArgumentException.class, () -> formatXml("<a><b>c</b></a>", 0));
+
+        // check if the XXE protection is enabled
+        String xxeAttack = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "  <!DOCTYPE test [\n"
+                + "    <!ENTITY xxe SYSTEM \"file:///etc/passwd\">\n"
+                + "  ]>"
+                + "<a><b>&xxe;</b></a>";
+        assertEquals(xxeAttack, formatXml(xxeAttack, 1));
+
+        // wrongly formatted XML
+        assertEquals("<a><b>c</b><a>", formatXml("<a><b>c</b><a>", 1));
     }
 
     private String[] arr(String... strings) {
