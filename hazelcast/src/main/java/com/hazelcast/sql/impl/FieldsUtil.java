@@ -34,12 +34,14 @@ import java.util.TreeMap;
  * Utilities to extract a list of properties from a {@link Class} object
  * using reflection or from {@link ClassDefinition} of a Portable.
  */
-public class FieldsUtil {
+public final class FieldsUtil {
 
     private static final String METHOD_PREFIX_GET = "get";
     private static final String METHOD_PREFIX_IS = "is";
     private static final String METHOD_GET_FACTORY_ID = "getFactoryId";
     private static final String METHOD_GET_CLASS_ID = "getClassId";
+
+    private FieldsUtil() { }
 
     /**
      * Return a list of fields and their types from a {@link Class}.

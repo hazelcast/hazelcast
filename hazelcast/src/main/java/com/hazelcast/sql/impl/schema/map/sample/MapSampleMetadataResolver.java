@@ -108,7 +108,8 @@ public final class MapSampleMetadataResolver {
         // Add top-level object.
         String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
         QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
-        fields.remove(topName); // explicitly remove to have the newly-inserted topName at the end
+        // explicitly remove to have the newly-inserted topName at the end
+        fields.remove(topName);
         fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
 
         return new MapSampleMetadata(
@@ -143,7 +144,8 @@ public final class MapSampleMetadataResolver {
         // Add top-level object.
         String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
         QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
-        fields.remove(topName); // explicitly remove to have the newly-inserted topName at the end
+        // explicitly remove to have the newly-inserted topName at the end
+        fields.remove(topName);
         fields.put(topName, new MapTableField(topName, topType, !fields.isEmpty(), topPath));
 
         return new MapSampleMetadata(
