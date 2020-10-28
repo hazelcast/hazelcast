@@ -19,9 +19,8 @@ package com.hazelcast.sql.impl.schema.map.sample;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.sql.impl.FieldsUtil;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -31,22 +30,14 @@ import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.Map.Entry;
 
 /**
  * Helper class that resolves a map-backed table from a key/value sample.
  */
 public final class MapSampleMetadataResolver {
-
-    private static final String METHOD_PREFIX_GET = "get";
-    private static final String METHOD_PREFIX_IS = "is";
-    private static final String METHOD_GET_FACTORY_ID = "getFactoryId";
-    private static final String METHOD_GET_CLASS_ID = "getClassId";
 
     private MapSampleMetadataResolver() {
         // No-op.
@@ -68,7 +59,7 @@ public final class MapSampleMetadataResolver {
         boolean key
     ) {
         try {
-            // Convert Portable object to Data to have a consistent on object fields irrespectively of map's InMemoryFormat.
+            // Convert Portable object to Data to have consistent object fields irrespectively of map's InMemoryFormat.
             if (target instanceof Portable) {
                 target = ss.toData(target);
             }
@@ -103,20 +94,21 @@ public final class MapSampleMetadataResolver {
         boolean isKey,
         JetMapMetadataResolver jetMapMetadataResolver
     ) {
-        Map<String, TableField> fields = new TreeMap<>();
+        LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
 
-        // Add regular fields.
-        for (String name : clazz.getFieldNames()) {
-            FieldType portableType = clazz.getFieldType(name);
+        Map<String, QueryDataType> simpleFields = FieldsUtil.resolvePortable(clazz);
 
-            QueryDataType type = resolvePortableType(portableType);
-
-            fields.putIfAbsent(name, new MapTableField(name, type, false, new QueryPath(name, isKey)));
+        for (Entry<String, QueryDataType> fieldEntry : simpleFields.entrySet()) {
+            String name = fieldEntry.getKey();
+            TableField oldValue = fields.put(name,
+                    new MapTableField(name, fieldEntry.getValue(), false, new QueryPath(name, isKey)));
+            assert oldValue == null;
         }
 
         // Add top-level object.
         String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
         QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
+        fields.remove(topName); // explicitly remove to have the newly-inserted topName at the end
         fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
 
         return new MapSampleMetadata(
@@ -126,163 +118,38 @@ public final class MapSampleMetadataResolver {
         );
     }
 
-    @SuppressWarnings("checkstyle:ReturnCount")
-    private static QueryDataType resolvePortableType(FieldType portableType) {
-        switch (portableType) {
-            case BOOLEAN:
-                return QueryDataType.BOOLEAN;
-
-            case BYTE:
-                return QueryDataType.TINYINT;
-
-            case SHORT:
-                return QueryDataType.SMALLINT;
-
-            case CHAR:
-                return QueryDataType.VARCHAR_CHARACTER;
-
-            case UTF:
-                return QueryDataType.VARCHAR;
-
-            case INT:
-                return QueryDataType.INT;
-
-            case LONG:
-                return QueryDataType.BIGINT;
-
-            case FLOAT:
-                return QueryDataType.REAL;
-
-            case DOUBLE:
-                return QueryDataType.DOUBLE;
-
-            default:
-                return QueryDataType.OBJECT;
-        }
-    }
-
     private static MapSampleMetadata resolveClass(
         Class<?> clazz,
         boolean isKey,
         JetMapMetadataResolver jetMapMetadataResolver
     ) {
-        Map<String, TableField> fields = new TreeMap<>();
+        LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
 
         // Extract fields from non-primitive type.
         QueryDataType topType = QueryDataTypeUtils.resolveTypeForClass(clazz);
 
         if (topType == QueryDataType.OBJECT) {
-            // Add public getters.
-            for (Method method : clazz.getMethods()) {
-                String attributeName = extractAttributeNameFromMethod(clazz, method);
+            Map<String, Class<?>> simpleFields = FieldsUtil.resolveClass(clazz);
 
-                if (attributeName == null) {
-                    continue;
-                }
-
-                QueryDataType methodType = QueryDataTypeUtils.resolveTypeForClass(method.getReturnType());
-
-                fields.putIfAbsent(
-                    attributeName,
-                    new MapTableField(attributeName, methodType, false, new QueryPath(attributeName, isKey))
-                );
-            }
-
-            // Add public fields.
-            Class<?> currentClass = clazz;
-
-            while (currentClass != Object.class) {
-                for (Field field : currentClass.getDeclaredFields()) {
-                    if (!Modifier.isPublic(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
-                        continue;
-                    }
-
-                    String fieldName = field.getName();
-                    QueryDataType fieldType = QueryDataTypeUtils.resolveTypeForClass(field.getType());
-
-                    fields.putIfAbsent(
-                        fieldName,
-                        new MapTableField(fieldName, fieldType, false, new QueryPath(fieldName, isKey))
-                    );
-                }
-
-                currentClass = currentClass.getSuperclass();
+            for (Entry<String, Class<?>> fieldEntry : simpleFields.entrySet()) {
+                String fieldName = fieldEntry.getKey();
+                QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(fieldEntry.getValue());
+                TableField oldValue = fields.put(fieldName,
+                        new MapTableField(fieldName, type, false, new QueryPath(fieldName, isKey)));
+                assert oldValue == null;
             }
         }
 
         // Add top-level object.
         String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
         QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
+        fields.remove(topName); // explicitly remove to have the newly-inserted topName at the end
         fields.put(topName, new MapTableField(topName, topType, !fields.isEmpty(), topPath));
 
         return new MapSampleMetadata(
             GenericQueryTargetDescriptor.DEFAULT,
             jetMapMetadataResolver.resolveClass(clazz, isKey),
-            new LinkedHashMap<>(fields)
+            fields
         );
-    }
-
-    private static String extractAttributeNameFromMethod(Class<?> clazz, Method method) {
-        if (skipMethod(clazz, method)) {
-            return null;
-        }
-
-        String methodName = method.getName();
-
-        String fieldNameWithWrongCase;
-
-        if (methodName.startsWith(METHOD_PREFIX_GET) && methodName.length() > METHOD_PREFIX_GET.length()) {
-            fieldNameWithWrongCase = methodName.substring(METHOD_PREFIX_GET.length());
-        } else if (methodName.startsWith(METHOD_PREFIX_IS) && methodName.length() > METHOD_PREFIX_IS.length()) {
-            // Skip getters that do not return primitive boolean.
-            if (method.getReturnType() != boolean.class) {
-                return null;
-            }
-
-            fieldNameWithWrongCase = methodName.substring(METHOD_PREFIX_IS.length());
-        } else {
-            return null;
-        }
-
-        return Character.toLowerCase(fieldNameWithWrongCase.charAt(0)) + fieldNameWithWrongCase.substring(1);
-    }
-
-    @SuppressWarnings("RedundantIfStatement")
-    private static boolean skipMethod(Class<?> clazz, Method method) {
-        // Exclude non-public getters.
-        if (!Modifier.isPublic(method.getModifiers())) {
-            return true;
-        }
-
-        // Exclude static getters.
-        if (Modifier.isStatic(method.getModifiers())) {
-            return true;
-        }
-
-        // Exclude void return type.
-        Class<?> returnType = method.getReturnType();
-        if (returnType == void.class || returnType == Void.class) {
-            return true;
-        }
-
-        // Skip methods with parameters.
-        if (method.getParameterCount() != 0) {
-            return true;
-        }
-
-        // Skip "getClass"
-        if (method.getDeclaringClass() == Object.class) {
-            return true;
-        }
-
-        // Skip getFactoryId() and getClassId() from Portable and IdentifiedDataSerializable.
-        String methodName = method.getName();
-        if (methodName.equals(METHOD_GET_FACTORY_ID) || methodName.equals(METHOD_GET_CLASS_ID)) {
-            if (IdentifiedDataSerializable.class.isAssignableFrom(clazz) || Portable.class.isAssignableFrom(clazz)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }
