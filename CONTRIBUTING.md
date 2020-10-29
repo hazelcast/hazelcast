@@ -19,7 +19,7 @@ Thanks for reporting your issue.
 To help us resolve your issue quickly and efficiently, we need as much data for diagnostics as possible.
 Please share with us the following information:
 
-1.	Exact Hazelcast version that you use (_e.g._ 4.0.1, also whether it is a minor release, or the latest snapshot).
+1.	Exact Hazelcast version that you use (_e.g._ `4.0.1`, also whether it is a minor release, or the latest snapshot).
 2.	Cluster size, _i.e._ the number of Hazelcast cluster members.
 3.	Number of clients.
 4.	Java version.

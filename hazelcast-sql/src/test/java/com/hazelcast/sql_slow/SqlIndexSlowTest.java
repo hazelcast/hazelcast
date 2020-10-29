@@ -14,35 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.partition;
+package com.hazelcast.sql_slow;
 
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.sql.index.SqlIndexTest;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
-import static java.util.Arrays.asList;
-
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-// related issue https://github.com/hazelcast/hazelcast/issues/5444
-public class MigrationCorrectnessTest extends AbstractMigrationCorrectnessTest {
-
-    @Parameters(name = "backups:{0},nodes:{1},fragmented:{2}")
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({SlowTest.class, ParallelJVMTest.class})
+public class SqlIndexSlowTest extends SqlIndexTest {
+    @Parameterized.Parameters(name = "indexType:{0}, composite:{1}, field1:{2}, field2:{3}")
     public static Collection<Object[]> parameters() {
-        return asList(new Object[][]{
-                {1, 2, true},
-                {1, 2, false},
-                {2, 3, true},
-                {3, 4, true},
-                {3, 4, false},
-        });
+        return parametersSlow();
     }
 }

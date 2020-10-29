@@ -47,6 +47,7 @@ import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -94,7 +95,10 @@ public final class ClientConfigXmlGenerator {
         gen.open("hazelcast-client", "xmlns", "http://www.hazelcast.com/schema/client-config",
                 "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance",
                 "xsi:schemaLocation", "http://www.hazelcast.com/schema/client-config "
-                        + "http://www.hazelcast.com/schema/client-config/hazelcast-client-config-4.1.xsd");
+                        + "http://www.hazelcast.com/schema/client-config/hazelcast-client-config-"
+                        + Versions.CURRENT_CLUSTER_VERSION.getMajor() + '.'
+                        + Versions.CURRENT_CLUSTER_VERSION.getMinor()
+                        + ".xsd");
 
         //InstanceName
         gen.node("instance-name", clientConfig.getInstanceName());

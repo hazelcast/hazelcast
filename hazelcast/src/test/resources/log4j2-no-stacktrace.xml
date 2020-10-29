@@ -15,13 +15,15 @@
   ~ limitations under the License.
   -->
 
-<hazelcast-client-failover xmlns="http://www.hazelcast.com/schema/client-config"
-                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                           xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
-                           http://www.hazelcast.com/schema/client-config/hazelcast-client-failover-config-4.2.xsd">
-    <try-count>4</try-count>
-    <clients>
-        <client>hazelcast-client-c1.xml</client>
-        <client>hazelcast-client-c2.xml</client>
-    </clients>
-</hazelcast-client-failover>
+<Configuration status="ERROR">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{ABSOLUTE} %5p |%X{test-name}| - [%c{1}] %t - %m%ex{0}%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>

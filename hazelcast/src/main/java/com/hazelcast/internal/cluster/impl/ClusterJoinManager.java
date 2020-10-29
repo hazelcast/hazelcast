@@ -836,7 +836,7 @@ public class ClusterJoinManager {
             return LOCAL_NODE_SHOULD_MERGE;
         }
 
-        logger.info(joinMessage.getAddress() + " should merge to us "
+        logger.info(joinMessage.getAddress() + " should merge to us"
                 + ", both have the same data member count: " + currentDataMemberCount);
         return REMOTE_NODE_SHOULD_MERGE;
     }
