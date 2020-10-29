@@ -1698,8 +1698,8 @@ public abstract class HazelcastTestSupport {
 
         ManageableClock clock = clockRule.clockOf(instance);
         if (clock == null) {
-            throw new IllegalStateException("No clock is set for the instance " + instance + ". Did the instance " +
-                    "creation happen through an instance factory with the clock rule set?");
+            throw new IllegalStateException("No clock is set for the instance " + instance + ". Did the instance "
+                    + "creation happen through an instance factory with the clock rule set?");
         }
 
         return clock;

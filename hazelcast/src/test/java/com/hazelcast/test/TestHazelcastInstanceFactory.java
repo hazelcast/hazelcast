@@ -239,7 +239,7 @@ public class TestHazelcastInstanceFactory {
     }
 
     protected HazelcastInstance createHazelcastInstanceWithClock(HazelcastInstanceFactoryFunction factoryFn) {
-        if (clockRule != null){
+        if (clockRule != null) {
             return clockRule.createHazelcastInstanceWithClock(factoryFn);
         }
         return factoryFn.create();
