@@ -17,6 +17,7 @@
 package com.hazelcast.test;
 
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ClockTestAccessor;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,7 +27,13 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>
  * Supports 3 clock modes:
  * <ul>
- * <li>SYSTEM: Using {@link System#currentTimeMillis()} as the time source.
+ * <li>SYSTEM: Using the default {@link Clock.ClockImpl} that would be created by
+ * {@link Clock} static initialization without interfering with the {@link ManageableClock}
+ * and its test infrastructure. The default clock is created through
+ * {@link ClockTestAccessor#createProdClock()}, which actually calls the responsive
+ * method in {@link Clock}. With this, the {@link ManageableClock} infrastructure
+ * comes with zero behavior change until the clock is not changed to any of the other
+ * modes described below.
  *
  * <li>MANAGED: The clock can be managed programmatically by advancing (or rewinding)
  * the time from a timestamp taken on switching to managed mode. After switching to
@@ -40,7 +47,9 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ManageableClock extends Clock.ClockImpl {
 
-    private final AtomicReference<ClockSource> clockSourceRef = new AtomicReference<>(SystemClockSource.INSTANCE);
+    private static final SyncedClockSource SYSTEM_CLOCKSOURCE = new SyncedClockSource(ClockTestAccessor.createProdClock());
+
+    private final AtomicReference<ClockSource> clockSourceRef = new AtomicReference<>(SYSTEM_CLOCKSOURCE);
 
     /**
      * Sets this clock instance for the current thread. All child threads created
@@ -73,7 +82,7 @@ public class ManageableClock extends Clock.ClockImpl {
     public ManageableClock unmanage() {
         assert clockSourceRef.get() instanceof ManagedClockSource;
 
-        clockSourceRef.set(SystemClockSource.INSTANCE);
+        clockSourceRef.set(SYSTEM_CLOCKSOURCE);
         return this;
     }
 
@@ -86,7 +95,7 @@ public class ManageableClock extends Clock.ClockImpl {
      * @param masterClock The master clock to use
      * @return The synchronized clock instance
      */
-    public SyncedClock syncTo(ManageableClock masterClock) {
+    public SyncedClock syncTo(Clock.ClockImpl masterClock) {
         SyncedClock syncedClock = new SyncedClock();
         clockSourceRef.set(new SyncedClockSource(masterClock));
         return syncedClock;
@@ -101,7 +110,7 @@ public class ManageableClock extends Clock.ClockImpl {
     public ManageableClock unsync() {
         assert clockSourceRef.get() instanceof SyncedClockSource;
 
-        clockSourceRef.set(SystemClockSource.INSTANCE);
+        clockSourceRef.set(SYSTEM_CLOCKSOURCE);
         return this;
     }
 
@@ -111,7 +120,7 @@ public class ManageableClock extends Clock.ClockImpl {
      * @return the clock instance
      */
     ManageableClock reset() {
-        clockSourceRef.set(SystemClockSource.INSTANCE);
+        clockSourceRef.set(SYSTEM_CLOCKSOURCE);
         return this;
     }
 
@@ -122,16 +131,6 @@ public class ManageableClock extends Clock.ClockImpl {
 
     private interface ClockSource {
         long currentTimeMillis();
-    }
-
-    private static final class SystemClockSource implements ClockSource {
-
-        private static final SystemClockSource INSTANCE = new SystemClockSource();
-
-        @Override
-        public long currentTimeMillis() {
-            return System.currentTimeMillis();
-        }
     }
 
     private static final class ManagedClockSource implements ClockSource {
@@ -145,15 +144,15 @@ public class ManageableClock extends Clock.ClockImpl {
     }
 
     private static final class SyncedClockSource implements ClockSource {
-        private final ManageableClock masterClock;
+        private final Clock.ClockImpl masterClock;
 
-        private SyncedClockSource(ManageableClock masterClock) {
+        private SyncedClockSource(Clock.ClockImpl masterClock) {
             this.masterClock = masterClock;
         }
 
         @Override
         public long currentTimeMillis() {
-            return masterClock.currentTimeMillis();
+            return ClockTestAccessor.currentTimeMillis(masterClock);
         }
     }
 

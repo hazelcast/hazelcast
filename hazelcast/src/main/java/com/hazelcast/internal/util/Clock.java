@@ -58,7 +58,12 @@ public final class Clock {
     }
 
     static ClockImpl createClock() {
-        String clockImplClassName = System.getProperty(ClockProperties.HAZELCAST_CLOCK_IMPL);
+        String clockImpl = System.getProperty(ClockProperties.HAZELCAST_CLOCK_IMPL);
+        String clockOffset = System.getProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET);
+        return createClockInternal(clockImpl, clockOffset);
+    }
+
+    static ClockImpl createClockInternal(String clockImplClassName, String clockOffset) {
         if (clockImplClassName != null) {
             try {
                 return ClassLoaderUtil.newInstance(null, clockImplClassName);
@@ -67,7 +72,6 @@ public final class Clock {
             }
         }
 
-        String clockOffset = System.getProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET);
         long offset = 0L;
         if (clockOffset != null) {
             try {
