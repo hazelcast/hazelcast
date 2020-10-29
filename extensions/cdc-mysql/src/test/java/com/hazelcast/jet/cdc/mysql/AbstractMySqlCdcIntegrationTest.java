@@ -18,6 +18,8 @@ package com.hazelcast.jet.cdc.mysql;
 
 import com.hazelcast.jet.cdc.AbstractCdcIntegrationTest;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
+import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.testcontainers.containers.MySQLContainer;
@@ -38,6 +40,12 @@ public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegra
                     .withUsername("mysqluser")
                     .withPassword("mysqlpw")
     );
+
+    @Before
+    public void ignoreOnJdk15() throws SQLException {
+        Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623",
+                System.getProperty("java.version").startsWith("15"));
+    }
 
     protected MySqlCdcSources.Builder sourceBuilder(String name) {
         return MySqlCdcSources.mysql(name)

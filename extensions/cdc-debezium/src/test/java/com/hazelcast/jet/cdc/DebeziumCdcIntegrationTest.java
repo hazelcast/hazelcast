@@ -27,6 +27,7 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.testcontainers.containers.MySQLContainer;
@@ -50,6 +51,9 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
     @Test
     public void mysql() throws Exception {
+        Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623",
+                System.getProperty("java.version").startsWith("15"));
+
         MySQLContainer<?> container = mySqlContainer();
 
         try {
@@ -133,6 +137,9 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
     @Test
     public void mysql_simpleJson() {
+        Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623",
+                System.getProperty("java.version").startsWith("15"));
+
         MySQLContainer<?> container = mySqlContainer();
 
         try {

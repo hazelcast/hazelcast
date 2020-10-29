@@ -34,6 +34,8 @@ import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
+import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
@@ -101,6 +103,12 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
                 {RetryStrategies.indefinitely(RECONNECT_INTERVAL_MS), false, "reconnect"},
                 {RetryStrategies.indefinitely(RECONNECT_INTERVAL_MS), true, "reconnect w/ state reset"}
         });
+    }
+
+    @Before
+    public void ignoreOnJdk15() throws SQLException {
+        Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623",
+                System.getProperty("java.version").startsWith("15"));
     }
 
     @After
