@@ -55,7 +55,7 @@ public class CompletableFutureTestUtil {
             public void run() {
                 throw new ExpectedRuntimeException();
             }
-        }) : invokeAsync(instance, new SlowOperation(3000));
+        }) : invokeAsync(instance, new SlowOperation(1000));
     }
 
     public static <R> InternalCompletableFuture<R> invokeSync(HazelcastInstance instance, Operation operation) {
