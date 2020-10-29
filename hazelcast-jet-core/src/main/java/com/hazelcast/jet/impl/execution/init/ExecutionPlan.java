@@ -89,7 +89,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * An object sent from a master to the members
+ * An object sent from a master to members.
  */
 public class ExecutionPlan implements IdentifiedDataSerializable {
 
@@ -147,6 +147,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         this.memberCount = memberCount;
     }
 
+    /**
+     * A method called on the members as part of the InitExecutionOperation.
+     * Creates tasklets, inboxes/outboxes and connects these to make them ready
+     * for a later StartExecutionOperation.
+     */
     public void initialize(NodeEngine nodeEngine,
                            long jobId,
                            long executionId,

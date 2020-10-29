@@ -72,7 +72,7 @@ public class MemberReconnectionStressTest extends JetTestSupport {
         JetInstance inst1 = Jet.newJetInstance(config);
         JetInstance inst2 = Jet.newJetInstance(config);
 
-        logger.info("Starting ");
+        logger.info("Instances started");
 
         new Thread(() -> {
             while (!terminated.get()) {

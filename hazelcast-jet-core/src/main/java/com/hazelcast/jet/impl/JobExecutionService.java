@@ -58,6 +58,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;
 import static java.util.stream.Collectors.toMap;
@@ -233,19 +234,19 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
 
         Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-        ExecutionContext created = new ExecutionContext(nodeEngine, taskletExecutionService,
+        ExecutionContext execCtx = new ExecutionContext(nodeEngine, taskletExecutionService,
                 jobId, executionId, coordinator, addresses);
         try {
             ClassLoader jobCl = getClassLoader(plan.getJobConfig(), jobId);
-            com.hazelcast.jet.impl.util.Util.doWithClassLoader(jobCl, () -> created.initialize(plan));
+            doWithClassLoader(jobCl, () -> execCtx.initialize(plan));
         } finally {
-            ExecutionContext oldContext = executionContexts.put(executionId, created);
+            ExecutionContext oldContext = executionContexts.put(executionId, execCtx);
             assert oldContext == null : "Duplicate ExecutionContext for execution " + Util.idToString(executionId);
         }
 
         // initial log entry with all of jobId, jobName, executionId
         logger.info("Execution plan for jobId=" + idToString(jobId)
-                + ", jobName=" + (created.jobName() != null ? '\'' + created.jobName() + '\'' : "null")
+                + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
                 + ", executionId=" + idToString(executionId) + " initialized");
     }
 
@@ -350,7 +351,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         if (executionContext != null) {
             JetClassLoader removedClassLoader = classLoaders.remove(executionContext.jobId());
             try {
-                com.hazelcast.jet.impl.util.Util.doWithClassLoader(removedClassLoader, () ->
+                doWithClassLoader(removedClassLoader, () ->
                     executionContext.completeExecution(error));
             } finally {
                 executionCompleted.inc();
@@ -396,9 +397,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         try {
             descriptor.withTag(MetricTags.MODULE, "jet");
-            executionContexts.forEach((id, ctx) -> {
-                ctx.provideDynamicMetrics(descriptor.copy(), context);
-            });
+            executionContexts.forEach((id, ctx) ->
+                ctx.provideDynamicMetrics(descriptor.copy(), context));
         } catch (Throwable t) {
             logger.warning("Dynamic metric collection failed", t);
             throw t;
