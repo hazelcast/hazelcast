@@ -339,7 +339,7 @@ public class ClientExceptionFactory {
         Throwable throwable = null;
         if (exceptionFactory == null) {
             String className = errorHolder.getClassName();
-            assert checkClassNameForValidity(className) : "Exception must be defined in the protocol : " + className;
+            assert checkClassNameForValidity(className) : "Exception must be defined in the protocol: " + className;
             try {
                 Class<? extends Throwable> exceptionClass =
                         (Class<? extends Throwable>) ClassLoaderUtil.loadClass(classLoader, className);
@@ -359,14 +359,14 @@ public class ClientExceptionFactory {
     }
 
     /**
-     * hazelcast and jdk exceptions should always be defined
+     * Hazelcast exceptions should always be defined
      * in {@link com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes} and
      * in {@link ClientExceptionFactory}
-     * so that a well defined error code could be delivered to non-java clients.
-     * So we don't try to load them via ClassLoader to be able to catch the missing exceptions
+     * so that a well-defined error code can be delivered to non-java clients.
+     * Therefore we don't try to load them via ClassLoader to be able to catch the missing exceptions.
      */
     private boolean checkClassNameForValidity(String exceptionClassName) {
-        return !exceptionClassName.startsWith("com.hazelcast") && !exceptionClassName.startsWith("java");
+        return !exceptionClassName.startsWith("com.hazelcast.");
     }
 
     // method is used by Jet
