@@ -31,7 +31,7 @@ import org.junit.runner.RunWith;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import static java.nio.ByteOrder.BIG_ENDIAN;
@@ -52,7 +52,7 @@ public class StringSerializationTest {
             TEST_DATA_TURKISH + TEST_DATA_JAPANESE + TEST_DATA_ASCII + TEST_DATA_UTF_4_BYTE_EMOJIS;
     private static final int TEST_STR_SIZE = 1 << 20;
 
-    private static final byte[] TEST_DATA_BYTES_ALL = TEST_DATA_ALL.getBytes(Charset.forName("utf8"));
+    private static final byte[] TEST_DATA_BYTES_ALL = TEST_DATA_ALL.getBytes(StandardCharsets.UTF_8);
 
     private static final char[] allChars;
 
@@ -95,7 +95,7 @@ public class StringSerializationTest {
     @Test
     public void testStringAllCharLetterEncode() {
         String allStr = new String(allChars);
-        byte[] expected = allStr.getBytes(Charset.forName("utf8"));
+        byte[] expected = allStr.getBytes(StandardCharsets.UTF_8);
         byte[] bytes = serializationService.toBytes(allStr);
         byte[] actual = Arrays.copyOfRange(bytes, HeapData.DATA_OFFSET + Bits.INT_SIZE_IN_BYTES, bytes.length);
         assertArrayEquals(expected, actual);
@@ -114,7 +114,7 @@ public class StringSerializationTest {
             }
         }
         String actualStr = sb.toString();
-        byte[] strBytes = actualStr.getBytes(Charset.forName("utf8"));
+        byte[] strBytes = actualStr.getBytes(StandardCharsets.UTF_8);
         byte[] actualDataBytes = serializationService.toBytes(actualStr);
         byte[] expectedDataByte = toDataByte(strBytes);
         String decodedStr = serializationService.toObject(new HeapData(expectedDataByte));
@@ -147,7 +147,7 @@ public class StringSerializationTest {
     @Test
     public void testStringAllCharLetterDecode() {
         String allStr = new String(allChars);
-        byte[] expected = allStr.getBytes(Charset.forName("utf8"));
+        byte[] expected = allStr.getBytes(StandardCharsets.UTF_8);
         Data data = new HeapData(toDataByte(expected));
         String actualStr = serializationService.toObject(data);
         assertEquals(allStr, actualStr);
