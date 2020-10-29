@@ -25,7 +25,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
@@ -98,13 +97,13 @@ public class AllTest {
 
             public void run() {
                 while (true) {
-                        //noinspection BusyWait
-                        sleepSeconds(STATS_SECONDS);
-                        System.out.println("cluster SIZE:"
-                                + allTest.hazelcast.getCluster().getMembers().size());
-                        allTest.mapStats();
-                        allTest.qStats();
-                        allTest.topicStats();
+                    //noinspection BusyWait
+                    sleepSeconds(STATS_SECONDS);
+                    System.out.println("cluster SIZE:"
+                            + allTest.hazelcast.getCluster().getMembers().size());
+                    allTest.mapStats();
+                    allTest.qStats();
+                    allTest.topicStats();
                 }
             }
         });

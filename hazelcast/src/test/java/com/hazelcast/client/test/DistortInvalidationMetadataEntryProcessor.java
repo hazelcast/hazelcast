@@ -23,6 +23,7 @@ import com.hazelcast.core.Offloadable;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -31,16 +32,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.util.UuidUtil;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.internal.util.RandomPicker.getInt;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
-import static com.hazelcast.internal.util.RandomPicker.getInt;
 import static java.lang.Integer.MAX_VALUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -139,7 +138,7 @@ public class DistortInvalidationMetadataEntryProcessor
     }
 
     private void sleepSeconds(int seconds) {
-            sleepSeconds(seconds);
+        sleepSeconds(seconds);
     }
 
     private void sleepAtLeastMillis(int sleepFor) {

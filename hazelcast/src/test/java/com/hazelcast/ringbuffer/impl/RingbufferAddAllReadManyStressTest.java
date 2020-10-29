@@ -44,7 +44,6 @@ import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 

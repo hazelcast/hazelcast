@@ -36,7 +36,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.Accessors.getHazelcastInstanceImpl;
 import static com.hazelcast.test.Accessors.getOperationService;
@@ -238,7 +237,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         @Override
         public Object process(Map.Entry<String, String> entry) {
             // not using sleepSeconds() here to have some variants in the stack traces
-                sleepSeconds(sleepSeconds);
+            sleepSeconds(sleepSeconds);
             done();
             return null;
         }
