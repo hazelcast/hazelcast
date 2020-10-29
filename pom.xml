@@ -399,7 +399,7 @@
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
                                         -Dhazelcast.test.multiple.jvm=true
-                                        -Dcom.hazelcast.clock.impl=com.hazelcast.test.ManageableClock
+<!--                                        -Dcom.hazelcast.clock.impl=com.hazelcast.test.ManageableClock-->
                                         -Dlog4j.configurationFile=log4j2.xml
                                         -Dlog4j.skipJansi=true
                                         ${extraVmArgs}
