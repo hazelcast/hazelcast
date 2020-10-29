@@ -136,6 +136,11 @@ public final class WriteFileP<T> implements Processor {
     }
 
     @Override
+    public boolean isCooperative() {
+        return false;
+    }
+
+    @Override
     public boolean tryProcess() {
         return utility.tryProcess();
     }
