@@ -108,11 +108,7 @@ public class StoreLatencyPluginRingbufferIntegrationTest extends HazelcastTestSu
 
             private void randomSleep() {
                 long delay = 1 + random.nextInt(100);
-                try {
-                    Thread.sleep(delay);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                    HazelcastTestSupport.sleepMillis((int) delay);
             }
         };
 

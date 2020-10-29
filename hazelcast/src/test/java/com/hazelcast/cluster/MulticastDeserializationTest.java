@@ -30,6 +30,7 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.nio.ByteBuffer;
 
+import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Rule;
@@ -90,7 +91,7 @@ public class MulticastDeserializationTest {
         Hazelcast.newHazelcastInstance(config);
 
         sendJoinDatagram(new TestDeserialized());
-        Thread.sleep(500L);
+        HazelcastTestSupport.sleepMillis(500);
         assertFalse("Untrusted deserialization is possible", TestDeserialized.isDeserialized);
     }
 

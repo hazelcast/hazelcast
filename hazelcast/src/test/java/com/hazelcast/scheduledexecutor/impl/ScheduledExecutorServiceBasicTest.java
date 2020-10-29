@@ -1560,7 +1560,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         assertOpenEventually(latch);
         instances[1].getLifecycleService().shutdown();
-        Thread.sleep(2000);
+        sleepMillis(2000);
 
         expected.expect(ExecutionException.class);
         expected.expectCause(new RootCauseMatcher(IllegalStateException.class, "Erroneous task"));

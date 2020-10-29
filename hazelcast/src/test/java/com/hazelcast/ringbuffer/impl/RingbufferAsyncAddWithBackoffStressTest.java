@@ -126,7 +126,7 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
                     if (result != -1) {
                         break;
                     }
-                    TimeUnit.MILLISECONDS.sleep(sleepMs);
+                    sleepMillis((int) sleepMs);
                     sleepMs = sleepMs * 2;
                     if (sleepMs > 1000) {
                         sleepMs = 1000;

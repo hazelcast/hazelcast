@@ -129,11 +129,7 @@ public class MultiMapLockTest extends HazelcastTestSupport {
 
         new Thread() {
             public void run() {
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                    HazelcastTestSupport.sleepMillis(3000);
                 instances[0].shutdown();
             }
         }.start();

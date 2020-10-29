@@ -32,6 +32,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.test.HazelcastTestSupport;
 
 import java.io.IOException;
 import java.util.Comparator;
@@ -194,11 +195,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
 
         @Override
         public Integer process(Map.Entry<Integer, Employee> entry) {
-            try {
-                Thread.sleep(waiTimeInMillis);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                HazelcastTestSupport.sleepMillis(waiTimeInMillis);
             if (null == entry.getValue()) {
                 return -1;
             }
@@ -499,11 +496,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         @Override
         public Object call() {
             hazelcastInstance.getCPSubsystem().getCountDownLatch("callableStartedLatch").countDown();
-            try {
-                Thread.sleep(Long.MAX_VALUE);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                HazelcastTestSupport.sleepMillis(Integer.MAX_VALUE);
             return null;
         }
 

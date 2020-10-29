@@ -104,7 +104,7 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
 
         @Override
         public void run() throws Exception {
-            Thread.sleep(5000);
+            HazelcastTestSupport.sleepMillis(5000);
         }
     }
 }

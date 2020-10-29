@@ -308,7 +308,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
 
         @Override
         public void run() throws Exception {
-            Thread.sleep(runDelayMs);
+            sleepMillis(runDelayMs);
         }
 
         @Override
@@ -380,7 +380,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
 
         @Override
         public void run() throws Exception {
-            Thread.sleep(runDelayMs);
+            sleepMillis(runDelayMs);
         }
 
         @Override

@@ -89,7 +89,7 @@ public class PipeliningTest extends HazelcastTestSupport {
         t.start();
 
         for (int k = 0; k < 100; k++) {
-            Thread.sleep(5);
+            HazelcastTestSupport.sleepMillis(5);
             LockSupport.unpark(t);
         }
 

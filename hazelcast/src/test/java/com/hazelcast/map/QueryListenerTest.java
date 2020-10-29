@@ -93,7 +93,7 @@ public class QueryListenerTest extends HazelcastTestSupport {
         map.put("key2", "bcd");
         map.put("key2", "axyz");
         map.remove("key1");
-        Thread.sleep(1000);
+        HazelcastTestSupport.sleepMillis(1000);
 
         assertEquals(addedKey[0], "key1");
         assertEquals(addedValue[0], "abc");
@@ -129,7 +129,7 @@ public class QueryListenerTest extends HazelcastTestSupport {
             Person person = new Person("name", i);
             map.put(i, person);
         }
-        Thread.sleep(1000);
+        HazelcastTestSupport.sleepMillis(1000);
         assertEquals(50, addCount.get());
     }
 

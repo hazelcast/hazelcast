@@ -178,7 +178,7 @@ public class MapLockTest extends HazelcastTestSupport {
 
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(config);
-        Thread.sleep(3000);
+        HazelcastTestSupport.sleepMillis(3000);
         final CountDownLatch latch = new CountDownLatch(1000);
         Thread t = new Thread(new Runnable() {
             public void run() {

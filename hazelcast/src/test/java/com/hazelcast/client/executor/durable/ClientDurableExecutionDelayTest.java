@@ -128,7 +128,7 @@ public class ClientDurableExecutionDelayTest extends HazelcastTestSupport {
         for (int i = 0; i < executions; i++) {
             Future future = executor.submitToKeyOwner(task, i);
             future.get();
-            Thread.sleep(100);
+            sleepMillis(100);
         }
     }
 

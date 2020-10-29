@@ -117,7 +117,7 @@ public class SystemOperationPrecedenseTest extends HazelcastTestSupport {
 
         @Override
         public void run() throws Exception {
-            Thread.sleep(1000);
+            HazelcastTestSupport.sleepMillis(1000);
         }
     }
 
@@ -138,7 +138,7 @@ public class SystemOperationPrecedenseTest extends HazelcastTestSupport {
     public static class NormalPartitionUnawareOperation extends Operation {
         @Override
         public void run() throws Exception {
-            Thread.sleep(1000);
+            HazelcastTestSupport.sleepMillis(1000);
         }
     }
 }

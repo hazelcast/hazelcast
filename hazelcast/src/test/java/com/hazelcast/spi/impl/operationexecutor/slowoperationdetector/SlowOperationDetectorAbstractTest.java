@@ -238,10 +238,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         @Override
         public Object process(Map.Entry<String, String> entry) {
             // not using sleepSeconds() here to have some variants in the stack traces
-            try {
-                TimeUnit.SECONDS.sleep(sleepSeconds);
-            } catch (InterruptedException ignored) {
-            }
+                sleepSeconds(sleepSeconds);
             done();
             return null;
         }

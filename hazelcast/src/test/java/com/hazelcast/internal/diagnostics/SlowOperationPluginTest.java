@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.operation.EntryOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -79,11 +80,7 @@ public class SlowOperationPluginTest extends AbstractDiagnosticsPluginTest {
     static class SlowEntryProcessor implements EntryProcessor {
         @Override
         public Object process(Map.Entry entry) {
-            try {
-                Thread.sleep(100000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                HazelcastTestSupport.sleepMillis(100000);
             return null;
         }
 

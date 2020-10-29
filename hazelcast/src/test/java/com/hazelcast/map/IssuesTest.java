@@ -102,7 +102,7 @@ public class IssuesTest extends HazelcastTestSupport {
                 events1.add(event);
             }
         }, true);
-        Thread.sleep(50L);
+        HazelcastTestSupport.sleepMillis(50);
         imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
             public void entryAdded(com.hazelcast.core.EntryEvent<Integer, Integer> event) {
@@ -138,7 +138,7 @@ public class IssuesTest extends HazelcastTestSupport {
             }
         };
         imap.addEntryListener(listener, true);
-        Thread.sleep(50L);
+        HazelcastTestSupport.sleepMillis(50);
         imap.addEntryListener(listener, false);
         imap.put(1, 1);
         assertEqualsEventually(new Callable<Integer>() {

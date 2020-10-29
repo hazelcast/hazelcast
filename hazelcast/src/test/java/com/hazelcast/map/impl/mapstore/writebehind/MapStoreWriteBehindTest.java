@@ -37,6 +37,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -233,7 +234,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         nodeFactory.newHazelcastInstance(config);
         IMap<Object, Object> map = instance.getMap("map");
         map.put("key", "value");
-        Thread.sleep(2000);
+        HazelcastTestSupport.sleepMillis(2000);
         map.put("key", "value2");
         assertTrueEventually(new AssertTask() {
             @Override

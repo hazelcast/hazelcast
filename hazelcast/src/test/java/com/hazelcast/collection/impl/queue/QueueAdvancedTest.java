@@ -121,7 +121,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         new Thread(() -> {
             try {
                 assertTrue("Expected startLatch.await() to succeed within 10 seconds", startLatch.await(10, SECONDS));
-                Thread.sleep(5000);
+                sleepMillis(5000);
                 h2.getLifecycleService().terminate();
             } catch (InterruptedException e) {
                 LOG.info(e);
@@ -195,8 +195,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
 
         CountDownLatch offerLatch = new CountDownLatch(2 * 100);
         new Thread(() -> {
-            try {
-                Thread.sleep(3000);
+                sleepMillis(3000);
                 for (int i = 0; i < 100; i++) {
                     if (q1.offer(new VersionedObject<>("item"))) {
                         offerLatch.countDown();
@@ -205,9 +204,6 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
                         offerLatch.countDown();
                     }
                 }
-            } catch (InterruptedException e) {
-                LOG.info(e);
-            }
         }).start();
 
         assertOpenEventually(offerLatch);
@@ -249,7 +245,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         IQueue<VersionedObject<String>> q2 = h2.getQueue("default");
 
         CountDownLatch offerLatch = new CountDownLatch(2 * 100);
-        Thread.sleep(1000);
+        sleepMillis(1000);
         new Thread(() -> {
             for (int i = 0; i < 100; i++) {
                 if (q1.offer(new VersionedObject<>("item"))) {
@@ -264,7 +260,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
 
         ExecutorService es = Executors.newFixedThreadPool(50);
         CountDownLatch latch = new CountDownLatch(200);
-        Thread.sleep(3000);
+        sleepMillis(3000);
         for (int i = 0; i < 100; i++) {
             es.execute(() -> {
                 try {
@@ -312,7 +308,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         CountDownLatch pollLatch = new CountDownLatch(200);
         new Thread(() -> {
             try {
-                Thread.sleep(3000);
+                sleepMillis(3000);
                 for (int i = 0; i < 100; i++) {
                     if (new VersionedObject<>("item" + i, i).equals(q1.poll(2, SECONDS))) {
                         pollLatch.countDown();

@@ -172,11 +172,7 @@ public class LocalStatsDelegateTest extends HazelcastTestSupport {
                 previous = current;
                 localMapStats = (LocalMapStats) localStatsDelegate.getLocalStats();
                 current = localMapStats.getOwnedEntryCount();
-                try {
-                    TimeUnit.MILLISECONDS.sleep(sleepMs);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                    sleepMillis(sleepMs);
             }
         }
     }

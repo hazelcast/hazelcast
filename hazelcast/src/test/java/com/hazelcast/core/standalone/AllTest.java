@@ -25,6 +25,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
@@ -46,6 +47,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
+
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 
 /**
  * A test of queues, topics, Maps, AtomicInteger etc.
@@ -95,17 +98,13 @@ public class AllTest {
 
             public void run() {
                 while (true) {
-                    try {
                         //noinspection BusyWait
-                        Thread.sleep(STATS_SECONDS * ONE_SECOND);
+                        sleepSeconds(STATS_SECONDS);
                         System.out.println("cluster SIZE:"
                                 + allTest.hazelcast.getCluster().getMembers().size());
                         allTest.mapStats();
                         allTest.qStats();
                         allTest.topicStats();
-                    } catch (InterruptedException ignored) {
-                        return;
-                    }
                 }
             }
         });

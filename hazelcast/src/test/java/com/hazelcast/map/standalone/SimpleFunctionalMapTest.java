@@ -19,6 +19,7 @@ package com.hazelcast.map.standalone;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.Collection;
 import java.util.Map;
@@ -110,7 +111,7 @@ public final class SimpleFunctionalMapTest {
                 while (true) {
                     try {
                         //noinspection BusyWait
-                        Thread.sleep(STATS_SECONDS * 1000);
+                        HazelcastTestSupport.sleepMillis(STATS_SECONDS * 1000);
                         System.out.println("cluster size:"
                                 + hazelcast.getCluster().getMembers().size());
                         Stats currentStats = stats.getAndReset();

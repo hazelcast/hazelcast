@@ -348,12 +348,8 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
         @Override
         public Object process(Map.Entry entry) {
-            try {
 
-                Thread.sleep(millis);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                HazelcastTestSupport.sleepMillis((int) millis);
             return entry.getValue();
         }
 

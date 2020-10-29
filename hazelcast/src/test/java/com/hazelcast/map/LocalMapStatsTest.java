@@ -342,7 +342,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         long lastAccessTime = getMapStats().getLastAccessTime();
         assertTrue(lastAccessTime >= startTime);
 
-        Thread.sleep(5);
+        HazelcastTestSupport.sleepMillis(5);
         map.put(key, "value2");
         long lastAccessTime2 = getMapStats().getLastAccessTime();
         assertTrue(lastAccessTime2 > lastAccessTime);

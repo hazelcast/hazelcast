@@ -45,6 +45,7 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -578,7 +579,7 @@ public class MapScanExecTest extends SqlTestSupport {
 
         map.put(new TestKey(localKeyTuple.element1()), new TestValue(1L, true), 1, TimeUnit.MILLISECONDS);
 
-        Thread.sleep(1500);
+        HazelcastTestSupport.sleepMillis(1500);
 
         PartitionIdSet partitionIdSet = new PartitionIdSet(PARTITION_COUNT);
         partitionIdSet.add(localKeyTuple.element2());

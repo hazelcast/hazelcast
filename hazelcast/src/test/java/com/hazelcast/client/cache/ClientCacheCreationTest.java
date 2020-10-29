@@ -101,7 +101,7 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         }).start();
 
         //leave some gap to let create cache to start and retry
-        Thread.sleep(2000);
+        sleepMillis(2000);
         Hazelcast.newHazelcastInstance();
         assertOpenEventually(cacheCreated);
     }

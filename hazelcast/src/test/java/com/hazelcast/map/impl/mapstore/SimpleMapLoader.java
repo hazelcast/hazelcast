@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.map.MapLoader;
+import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -43,11 +44,7 @@ class SimpleMapLoader implements MapLoader<Integer, Integer> {
     public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
 
         if (slow) {
-            try {
-                Thread.sleep(150);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                HazelcastTestSupport.sleepMillis(150);
         }
         Map<Integer, Integer> result = new HashMap<Integer, Integer>();
         for (Integer key : keys) {

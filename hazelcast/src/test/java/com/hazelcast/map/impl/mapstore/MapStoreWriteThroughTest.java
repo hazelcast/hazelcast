@@ -30,6 +30,7 @@ import com.hazelcast.map.impl.mapstore.writebehind.MapStoreWriteBehindTest.FailA
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -151,7 +152,7 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         map.remove("1");
         map.put("1", employee, 1, TimeUnit.SECONDS);
         map.put("1", employee);
-        Thread.sleep(2000);
+        HazelcastTestSupport.sleepMillis(2000);
         assertEquals(employee, testMapStore.getStore().get("1"));
         assertEquals(employee, map.get("1"));
 

@@ -186,7 +186,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
                     break;
                 }
                 logger.info("Backoff");
-                MILLISECONDS.sleep(sleepMs);
+                sleepMillis((int) sleepMs);
                 sleepMs = sleepMs * 2;
                 if (sleepMs > 1000) {
                     sleepMs = 1000;

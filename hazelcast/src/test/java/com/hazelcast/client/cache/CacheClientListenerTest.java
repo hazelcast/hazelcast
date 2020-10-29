@@ -100,11 +100,7 @@ public class CacheClientListenerTest extends CacheListenerTest {
         client.shutdown();
 
         // sleep enough so that the put entry is expired
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+            sleepMillis(2000);
 
         // Trigger expiry event
         cache2.get("foo");

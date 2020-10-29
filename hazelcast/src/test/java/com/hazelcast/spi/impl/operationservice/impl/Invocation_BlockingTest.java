@@ -420,7 +420,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         };
         thread.start();
 
-        Thread.sleep(5000);
+        HazelcastTestSupport.sleepMillis(5000);
         thread.interrupt();
         q.offer("new item!");
 
@@ -502,7 +502,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         };
         thread.start();
 
-        Thread.sleep(5000);
+        HazelcastTestSupport.sleepMillis(5000);
         thread.interrupt();
         queue.offer("item");
 

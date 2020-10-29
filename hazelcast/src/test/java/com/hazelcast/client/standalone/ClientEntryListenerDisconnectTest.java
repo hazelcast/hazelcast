@@ -25,6 +25,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Ignore;
 
 import java.io.Serializable;
@@ -79,19 +80,19 @@ public class ClientEntryListenerDisconnectTest {
         IMap<Integer, GenericEvent> mapClient2 = client2.getMap("test");
 
         map.put(1, new GenericEvent(1), 5, TimeUnit.SECONDS);
-        Thread.sleep(20);
+        HazelcastTestSupport.sleepMillis(20);
         mapClient.remove(1);
 
         hazelcastInstance.getLifecycleService().terminate();
 
-        Thread.sleep(15000);
+        HazelcastTestSupport.sleepMillis(15000);
 
         mapClient2.put(2, new GenericEvent(2), 1, TimeUnit.SECONDS);
-        Thread.sleep(20);
+        HazelcastTestSupport.sleepMillis(20);
         mapClient2.remove(2);
         mapClient2.put(3, new GenericEvent(3), 1, TimeUnit.SECONDS);
 
-        Thread.sleep(15000);
+        HazelcastTestSupport.sleepMillis(15000);
 
         hazelcastInstance = Hazelcast.newHazelcastInstance(config);
         map = hazelcastInstance.getMap("test");
@@ -101,7 +102,7 @@ public class ClientEntryListenerDisconnectTest {
         map.put(6, new GenericEvent(6), 1, TimeUnit.SECONDS);
         map.put(7, new GenericEvent(7), 1, TimeUnit.SECONDS);
 
-        Thread.sleep(10000);
+        HazelcastTestSupport.sleepMillis(10000);
 
         if (evictionsNull != 0) {
             System.out.println("ERROR: got " + evictionsNull + " evictions with null values");
@@ -111,7 +112,7 @@ public class ClientEntryListenerDisconnectTest {
 
         mapClient.put(8, new GenericEvent(8), 1, TimeUnit.SECONDS);
 
-        Thread.sleep(5000);
+        HazelcastTestSupport.sleepMillis(5000);
 
         if (adds != 8) {
             System.out.println("ERROR: got " + adds + " instead of 8");

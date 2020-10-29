@@ -155,11 +155,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
 
         @Override
         public void run() throws Exception {
-            try {
-                Thread.sleep(durationMs);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+                HazelcastTestSupport.sleepMillis(durationMs);
         }
 
         @Override

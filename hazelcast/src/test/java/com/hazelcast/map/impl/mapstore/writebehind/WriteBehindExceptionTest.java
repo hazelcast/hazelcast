@@ -23,6 +23,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.mapstore.AbstractMapStoreTest;
 import com.hazelcast.map.impl.mapstore.MapStoreTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -69,14 +70,14 @@ public class WriteBehindExceptionTest extends AbstractMapStoreTest {
         }
 
         assertOpenEventually(latch1);
-        Thread.sleep(2000);
+        HazelcastTestSupport.sleepMillis(2000);
         assertSizeEventually(29, mapStore.store);
 
         for (int i = 0; i < 30; i++) {
             map.delete(i);
         }
         assertOpenEventually(latch2);
-        Thread.sleep(2000);
+        HazelcastTestSupport.sleepMillis(2000);
         assertSizeEventually(1, mapStore.store);
 
     }

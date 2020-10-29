@@ -226,7 +226,7 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
         long lastAccessTime = getMultiMapStats().getLastAccessTime();
         assertTrue(lastAccessTime >= startTime);
 
-        Thread.sleep(5);
+        HazelcastTestSupport.sleepMillis(5);
         map.put(key, "value2");
         long lastAccessTime2 = getMultiMapStats().getLastAccessTime();
         assertTrue(lastAccessTime2 > lastAccessTime);

@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.flakeidgen.impl.FlakeIdConcurrencyTestUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -78,7 +79,7 @@ public class FlakeIdGenerator_ClientIntegrationTest {
         long increment = 1 << DEFAULT_BITS_NODE_ID;
         assertEquals(id1 + increment, id2);
 
-        Thread.sleep(3000);
+        HazelcastTestSupport.sleepMillis(3000);
         // this ID should be from a new batch, because the validity elapsed
         long id3 = generator.newId();
         assertTrue(id1 + increment * myBatchSize < id3);

@@ -40,6 +40,7 @@ import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -675,7 +676,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         map.get("key");
         assertNull(map.get("key"));
         map.put("key", "value");
-        Thread.sleep(2000);
+        HazelcastTestSupport.sleepMillis(2000);
         assertEquals("value", map.get("key"));
     }
 
@@ -1052,11 +1053,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         public void storeAll(Map map) {
             if (count.get() == 0) {
                 count.incrementAndGet();
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                    HazelcastTestSupport.sleepMillis(10000);
             }
             super.storeAll(map);
         }
@@ -1378,11 +1375,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         @Override
         public void storeAll(Map<Object, Object> map) {
             if (sleepStoreAllSeconds > 0) {
-                try {
-                    Thread.sleep(sleepStoreAllSeconds * 1000);
-                } catch (InterruptedException e) {
-                    ignore(e);
-                }
+                    HazelcastTestSupport.sleepMillis(sleepStoreAllSeconds * 1000);
             }
             for (Object ignored : map.keySet()) {
                 latch.countDown();

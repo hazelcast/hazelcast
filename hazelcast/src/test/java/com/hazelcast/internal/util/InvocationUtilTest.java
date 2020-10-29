@@ -100,11 +100,7 @@ public class InvocationUtilTest extends HazelcastTestSupport {
         spawn(new Runnable() {
             @Override
             public void run() {
-                try {
-                    TimeUnit.SECONDS.sleep(10);
-                } catch (InterruptedException e) {
-
-                }
+                    sleepSeconds(10);
                 partition.resetMigrating();
             }
         });

@@ -28,6 +28,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -102,14 +103,9 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
         @Override
         public Object call() throws Exception {
             ILogger logger = Logger.getLogger(getClass());
-            try {
                 logger.info("SleepyProcessor(" + this + ") sleeping for " + millis + " milliseconds");
-                Thread.sleep(millis);
+                HazelcastTestSupport.sleepMillis((int) millis);
                 logger.info("SleepyProcessor(" + this + ") woke up.");
-            } catch (InterruptedException e) {
-                //ignored
-                logger.info("SleepyProcessor(" + this + ") is interrupted.");
-            }
             return null;
         }
     }

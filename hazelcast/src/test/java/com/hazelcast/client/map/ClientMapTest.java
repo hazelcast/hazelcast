@@ -504,7 +504,7 @@ public class ClientMapTest extends HazelcastTestSupport {
                 e.printStackTrace();
             }
         }).start();
-        Thread.sleep(1000);
+        HazelcastTestSupport.sleepMillis(1000);
         map.unlock("key1");
         assertOpenEventually(latch2);
         assertTrue(map.isLocked("key1"));

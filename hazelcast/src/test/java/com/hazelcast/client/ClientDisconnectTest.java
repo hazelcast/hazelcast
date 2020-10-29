@@ -96,7 +96,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
             }
         }).start();
 
-        SECONDS.sleep(2);
+        sleepSeconds(2);
 
         clientInstance.shutdown();
         assertOpenEventually(clientDisconnectedFromNode);
@@ -152,7 +152,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
             }
         }).start();
 
-        SECONDS.sleep(2);
+        sleepSeconds(2);
 
         clientInstance.shutdown();
         assertOpenEventually(clientDisconnectedFromNode);

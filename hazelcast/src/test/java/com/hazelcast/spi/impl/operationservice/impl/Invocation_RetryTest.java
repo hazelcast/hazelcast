@@ -237,7 +237,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
 
         @Override
         public void run() throws InterruptedException {
-            Thread.sleep(10000);
+            HazelcastTestSupport.sleepMillis(10000);
         }
     }
 
@@ -248,7 +248,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
 
         @Override
         public void run() throws InterruptedException {
-            Thread.sleep(5000);
+            HazelcastTestSupport.sleepMillis(5000);
         }
     }
 
@@ -273,7 +273,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
 
         @Override
         public void run() throws Exception {
-            Thread.sleep(sleepMillis);
+            HazelcastTestSupport.sleepMillis((int) sleepMillis);
         }
     }
 }

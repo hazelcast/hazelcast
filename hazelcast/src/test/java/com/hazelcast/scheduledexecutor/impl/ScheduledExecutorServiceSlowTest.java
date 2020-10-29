@@ -106,7 +106,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         // wait for task to get scheduled and start
         latch.await(11, SECONDS);
 
-        Thread.sleep(waitStateSyncPeriodToAvoidPassiveState);
+        sleepMillis(waitStateSyncPeriodToAvoidPassiveState);
 
         instances[1].getLifecycleService().shutdown();
 

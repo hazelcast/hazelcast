@@ -195,10 +195,7 @@ public class TopicStressTest extends HazelcastTestSupport {
         }
 
         private void randomSleep() {
-            try {
-                Thread.sleep(random.nextInt(MAX_PUBLISH_DELAY_MILLIS));
-            } catch (InterruptedException ignored) {
-            }
+                HazelcastTestSupport.sleepMillis(random.nextInt(MAX_PUBLISH_DELAY_MILLIS));
         }
 
         private ITopic<Integer> randomTopic(HazelcastInstance instance) {

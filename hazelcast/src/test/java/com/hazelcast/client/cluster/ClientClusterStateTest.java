@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
+import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static com.hazelcast.test.HazelcastTestSupport.waitAllForSafeState;
 import static com.hazelcast.test.HazelcastTestSupport.warmUpPartitions;
 import static org.junit.Assert.assertTrue;
@@ -175,15 +176,13 @@ public class ClientClusterStateTest {
                     while (true) {
                         try {
                             map.putAll(values);
-                            Thread.sleep(100);
+                            sleepMillis(100);
                         } catch (IllegalStateException e) {
                             logger.warning("Expected exception for Map putAll during cluster shutdown:", e);
                             break;
                         } catch (TargetDisconnectedException e) {
                             logger.warning("Expected exception for Map putAll during cluster shutdown:", e);
                             break;
-                        } catch (InterruptedException e) {
-                            // do nothing
                         }
 
                     }

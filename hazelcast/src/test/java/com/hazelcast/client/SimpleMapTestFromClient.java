@@ -21,6 +21,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Ignore;
 
 import java.util.concurrent.ExecutorService;
@@ -104,7 +105,7 @@ public class SimpleMapTestFromClient {
             public void run() {
                 while (true) {
                     try {
-                        Thread.sleep(statsSeconds * 1000);
+                        HazelcastTestSupport.sleepMillis(statsSeconds * 1000);
                         System.out.println("cluster size:"
                                 + client.getCluster().getMembers().size());
                         Stats currentStats = stats.getAndReset();

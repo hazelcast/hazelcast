@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.test.HazelcastTestSupport;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -43,7 +44,7 @@ public class DummyOperation extends Operation {
     @Override
     public void run() throws Exception {
         if (delayMillis > 0) {
-            Thread.sleep(delayMillis);
+            HazelcastTestSupport.sleepMillis(delayMillis);
         }
 
         if (value instanceof Runnable) {

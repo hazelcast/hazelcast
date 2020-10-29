@@ -20,6 +20,7 @@ import com.hazelcast.client.test.IdentifiedFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.test.HazelcastTestSupport;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -43,7 +44,7 @@ public class CancellationAwareTask
     @Override
     public Boolean call()
             throws InterruptedException {
-        Thread.sleep(sleepTime);
+        HazelcastTestSupport.sleepMillis((int) sleepTime);
         return Boolean.TRUE;
     }
 

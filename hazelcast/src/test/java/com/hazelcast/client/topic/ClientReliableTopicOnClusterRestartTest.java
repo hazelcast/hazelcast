@@ -41,6 +41,7 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -103,7 +104,7 @@ public class ClientReliableTopicOnClusterRestartTest {
 
         member.shutdown();
         // wait for the topic operation to timeout
-        Thread.sleep(TimeUnit.SECONDS.toMillis(invocationTimeoutSeconds));
+        sleepSeconds(invocationTimeoutSeconds);
 
         member = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
         member.getReliableTopic(topicName).publish("message");
@@ -142,7 +143,7 @@ public class ClientReliableTopicOnClusterRestartTest {
         final HazelcastInstance restartedMember = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
 
         // wait some time for subscription
-        Thread.sleep(TimeUnit.SECONDS.toMillis(invocationTimeoutSeconds));
+        sleepSeconds(invocationTimeoutSeconds);
 
         assertTrueEventually(() -> {
             String item = "newItem " + UUID.randomUUID();

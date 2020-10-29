@@ -77,7 +77,7 @@ public class DurableLongRunningTaskTest extends HazelcastTestSupport {
         @Override
         public String call() throws Exception {
             logger.info("SleepingCallable task started");
-            Thread.sleep(delayMs);
+            HazelcastTestSupport.sleepMillis(delayMs);
             return response;
         }
 

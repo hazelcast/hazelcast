@@ -45,6 +45,7 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -552,11 +553,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             );
         }
 
-        try {
-            Thread.sleep(50L);
-        } catch (InterruptedException e) {
-            // No-op.
-        }
+            HazelcastTestSupport.sleepMillis(50);
     }
 
     private void checkNoQueryOnInitiator() {

@@ -34,6 +34,7 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -1008,7 +1009,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         assertOpenEventually(latch);
 
         Future<Boolean> f = executorService.submit(new SleepingTask(10));
-        Thread.sleep(1000);
+        HazelcastTestSupport.sleepMillis(1000);
         f.cancel(true);
         try {
             f.get();

@@ -17,6 +17,7 @@
 package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -61,7 +62,7 @@ public class AutoBatcherTest {
     @Test
     public void when_notValid_then_fetchNew() throws Exception {
         assertEquals(0, batcher.newId());
-        Thread.sleep(VALIDITY);
+        HazelcastTestSupport.sleepMillis(VALIDITY);
         assertEquals(3, batcher.newId());
     }
 

@@ -100,11 +100,7 @@ public class StoreLatencyPlugin_MapIntegrationTest extends HazelcastTestSupport 
 
                     private void randomSleep() {
                         long delay = random.nextInt(100);
-                        try {
-                            Thread.sleep(delay);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                            HazelcastTestSupport.sleepMillis((int) delay);
                     }
 
                     @Override

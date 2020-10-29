@@ -132,7 +132,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
                     HazelcastParallelClassRunner.super.childrenInvoker(notifier).evaluate();
                     // wait for all child threads (tests) to complete
                     while (numThreads.get() > 0) {
-                        Thread.sleep(25);
+                        HazelcastTestSupport.sleepMillis(25);
                     }
                 } finally {
                     // restore the system properties

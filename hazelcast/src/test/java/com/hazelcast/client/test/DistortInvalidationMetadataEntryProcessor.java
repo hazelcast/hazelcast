@@ -139,11 +139,7 @@ public class DistortInvalidationMetadataEntryProcessor
     }
 
     private void sleepSeconds(int seconds) {
-        try {
-            TimeUnit.SECONDS.sleep(seconds);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+            sleepSeconds(seconds);
     }
 
     private void sleepAtLeastMillis(int sleepFor) {

@@ -92,7 +92,7 @@ public class InternalPartitionServiceStackOverflowTest extends HazelcastTestSupp
 
         @Override
         public void run() throws Exception {
-            Thread.sleep(10);
+            HazelcastTestSupport.sleepMillis(10);
             latch.countDown();
         }
     }
@@ -108,7 +108,7 @@ public class InternalPartitionServiceStackOverflowTest extends HazelcastTestSupp
 
         @Override
         public void run() throws Exception {
-            Thread.sleep(10);
+            HazelcastTestSupport.sleepMillis(10);
             latch.countDown();
         }
     }

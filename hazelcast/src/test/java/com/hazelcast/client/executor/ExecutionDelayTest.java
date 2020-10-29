@@ -137,7 +137,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
         for (int i = 0; i < executions; i++) {
             Future future = executor.submitToKeyOwner(task, i);
             future.get();
-            Thread.sleep(100);
+            HazelcastTestSupport.sleepMillis(100);
         }
     }
 

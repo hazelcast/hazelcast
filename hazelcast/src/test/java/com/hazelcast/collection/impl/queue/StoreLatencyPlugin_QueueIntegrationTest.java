@@ -149,11 +149,7 @@ public class StoreLatencyPlugin_QueueIntegrationTest extends HazelcastTestSuppor
 
                     private void randomSleep() {
                         long delay = random.nextInt(100);
-                        try {
-                            Thread.sleep(delay);
-                        } catch (InterruptedException e) {
-                            LOG.info(e);
-                        }
+                            HazelcastTestSupport.sleepMillis((int) delay);
                     }
                 });
 

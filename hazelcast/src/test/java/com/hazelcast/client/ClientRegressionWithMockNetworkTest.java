@@ -105,11 +105,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         Thread thread = new Thread(() -> {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                HazelcastTestSupport.sleepMillis(100);
             hz1.getLifecycleService().shutdown();
         });
 
@@ -134,11 +130,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         Thread thread = new Thread(() -> {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                HazelcastTestSupport.sleepMillis(10);
             hz1.getLifecycleService().shutdown();
         });
 
@@ -408,10 +400,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
             public void run() {
                 while (!isInterrupted()) {
                     m.put("key2", "value2");
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException ignored) {
-                    }
+                        HazelcastTestSupport.sleepMillis(100);
                 }
             }
         };

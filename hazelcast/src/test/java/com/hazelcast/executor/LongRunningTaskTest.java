@@ -77,7 +77,7 @@ public class LongRunningTaskTest extends HazelcastTestSupport {
 
         @Override
         public String call() throws Exception {
-            Thread.sleep(delayMs);
+            HazelcastTestSupport.sleepMillis(delayMs);
             return response;
         }
     }

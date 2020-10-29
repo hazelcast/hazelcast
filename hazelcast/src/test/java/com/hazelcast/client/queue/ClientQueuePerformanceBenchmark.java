@@ -75,7 +75,6 @@ public class ClientQueuePerformanceBenchmark extends HazelcastTestSupport {
             @Override
             public void run() {
                 while (true) {
-                    try {
                         int size = queue.size();
                         if (size > 50000) {
                             System.err.println("cleaning a little");
@@ -83,13 +82,10 @@ public class ClientQueuePerformanceBenchmark extends HazelcastTestSupport {
                                 queue.poll();
                                 TOTAL_POLL.incrementAndGet();
                             }
-                            Thread.sleep(2 * 1000);
+                            HazelcastTestSupport.sleepMillis(2 * 1000);
                         } else {
-                            Thread.sleep(10 * 1000);
+                            HazelcastTestSupport.sleepMillis(10 * 1000);
                         }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
                 }
             }
         }.start();

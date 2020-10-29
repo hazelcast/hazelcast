@@ -255,11 +255,7 @@ public class ClientCacheNearCacheStaleReadTest extends HazelcastTestSupport {
                     LOGGER.warning("Assertion violated! (valueMap = " + valueMap + ", i = " + i + ")");
 
                     // sleep to ensure Near Cache invalidation is really lost
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        LOGGER.warning("Interrupted: " + e.getMessage());
-                    }
+                        sleepMillis(100);
 
                     // test again and stop if really lost
                     valueMapStr = cache.get(KEY);
