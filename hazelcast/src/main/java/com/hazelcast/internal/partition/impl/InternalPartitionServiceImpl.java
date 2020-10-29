@@ -1229,6 +1229,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     @Override
+    public CompletableFuture<UUID> addMigrationListenerAsync(MigrationListener migrationListener) {
+        return partitionEventManager.addMigrationListenerAsync(migrationListener);
+    }
+
+    @Override
     public UUID addLocalMigrationListener(MigrationListener migrationListener) {
         return partitionEventManager.addLocalMigrationListener(migrationListener);
     }
@@ -1236,11 +1241,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     @Override
     public boolean removeMigrationListener(UUID registrationId) {
         return partitionEventManager.removeMigrationListener(registrationId);
-    }
-
-    @Override
-    public CompletableFuture<UUID> addMigrationListenerAsync(MigrationListener migrationListener) {
-        return partitionEventManager.addMigrationListenerAsync(migrationListener);
     }
 
     @Override

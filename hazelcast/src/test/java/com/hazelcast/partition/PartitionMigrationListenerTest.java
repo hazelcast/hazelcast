@@ -362,20 +362,21 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         verify(listener, never()).replicaMigrationCompleted(any(ReplicaMigrationEvent.class));
     }
 
+    @SuppressWarnings("SameParameterValue")
     private void assertAllLessThanOrEqual(AtomicInteger[] integers, int expected) {
         for (AtomicInteger integer : integers) {
             assertThat(integer.get(), Matchers.lessThanOrEqualTo(expected));
         }
     }
 
-    public static final class CountingMigrationListener implements MigrationListener {
+    private static class CountingMigrationListener implements MigrationListener {
 
-        public final AtomicInteger migrationStarted;
-        public final AtomicInteger migrationCompleted;
-        public final AtomicInteger[] replicaMigrationCompleted;
-        public final AtomicInteger[] replicaMigrationFailed;
+        final AtomicInteger migrationStarted;
+        final AtomicInteger migrationCompleted;
+        final AtomicInteger[] replicaMigrationCompleted;
+        final AtomicInteger[] replicaMigrationFailed;
 
-        public CountingMigrationListener(int partitionCount) {
+        CountingMigrationListener(int partitionCount) {
             migrationStarted = new AtomicInteger();
             migrationCompleted = new AtomicInteger();
             replicaMigrationCompleted = new AtomicInteger[partitionCount];
@@ -411,7 +412,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
     // Migration events are published and processed in order in a single event thread.
     // So we can rely on that here...
-    public static final class EventCollectingMigrationListener implements MigrationListener {
+    public static class EventCollectingMigrationListener implements MigrationListener {
         final List<MigrationEventsPack> allEventPacks = Collections.synchronizedList(new ArrayList<>());
         volatile MigrationEventsPack currentEvents;
 
@@ -459,7 +460,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         }
     }
 
-    public static final class MigrationEventsPack {
+    public static class MigrationEventsPack {
         public volatile MigrationState migrationProcessStarted;
         public volatile MigrationState migrationProcessCompleted;
         public final List<ReplicaMigrationEvent> migrationsCompleted = Collections.synchronizedList(new ArrayList<>());

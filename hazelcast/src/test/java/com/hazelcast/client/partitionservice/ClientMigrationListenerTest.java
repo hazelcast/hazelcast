@@ -19,22 +19,19 @@ package com.hazelcast.client.partitionservice;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.partition.MigrationListener;
-import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.partition.PartitionMigrationListenerTest;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.ReplicaMigrationEvent;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,7 +39,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
@@ -57,7 +54,6 @@ import static com.hazelcast.test.HazelcastTestSupport.warmUpPartitions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -129,7 +125,7 @@ public class ClientMigrationListenerTest {
     }
 
     @Test
-    public void testRemoveMigrationListener() {
+    public void testRemoveMigrationListener_whenExistingRegistrationId() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         PartitionService clientPartitionService = client.getPartitionService();
@@ -140,77 +136,75 @@ public class ClientMigrationListenerTest {
 
         boolean removed = clientPartitionService.removeMigrationListener(registrationId);
         assertRegistrationsSizeEventually(instance, 0);
-
         assertTrue(removed);
 
         HazelcastInstance hz2 = hazelcastFactory.newHazelcastInstance();
         warmUpPartitions(instance, hz2);
 
-        verify(listener, never()).migrationStarted(any(MigrationStateImpl.class));
-        verify(listener, never()).replicaMigrationCompleted(any(ReplicaMigrationEvent.class));
+        verifyMigrationListenerNeverInvoked(listener);
     }
 
     @Test
-    public void testMigrationListenerCalledOnlyOnceWhenMigrationHappens() {
-        Config config = new Config();
-        // even partition count to make migration count deterministic
-        int partitionCount = 10;
-        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
+    public void testMigrationListenerInvoked_whenRegisteredByConfig() {
+        PartitionMigrationListenerTest.EventCollectingMigrationListener clientListener = eventCollectingMigrationListener();
 
-        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance(config);
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
-        warmUpPartitions(instance1);
+        Function<MigrationListener, HazelcastInstance> clientSupplier = listener -> {
+            ClientConfig clientConfig = new ClientConfig().addListenerConfig(new ListenerConfig(listener));
+            return hazelcastFactory.newHazelcastClient(clientConfig);
+        };
+
+        testMigrationListenerInvoked(clientListener, clientSupplier);
+    }
+
+    @Test
+    public void testMigrationListenerInvoked_whenRegisteredByPartitionService() {
+        PartitionMigrationListenerTest.EventCollectingMigrationListener clientListener = eventCollectingMigrationListener();
+
+        Function<MigrationListener, HazelcastInstance> clientSupplier = listener -> {
+            HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+            client.getPartitionService().addMigrationListener(listener);
+            return client;
+        };
+
+        testMigrationListenerInvoked(clientListener, clientSupplier);
+    }
+
+    private void testMigrationListenerInvoked(PartitionMigrationListenerTest.EventCollectingMigrationListener clientListener,
+                                              Function<MigrationListener, HazelcastInstance> clientFactory) {
+
+        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = clientFactory.apply(clientListener);
+        warmUpPartitions(instance1, client);
 
         // Change to NO_MIGRATION to prevent repartitioning
         // before 2nd member started and ready.
         instance1.getCluster().changeClusterState(ClusterState.NO_MIGRATION);
 
-        PartitionMigrationListenerTest.CountingMigrationListener migrationListener = new PartitionMigrationListenerTest.CountingMigrationListener(partitionCount);
-        client.getPartitionService().addMigrationListener(migrationListener);
-
-        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 
         changeClusterStateEventually(instance2, ClusterState.ACTIVE);
+        waitAllForSafeState(instance2, instance1, client);
 
-        waitAllForSafeState(instance2, instance1);
-
-        assertTrueEventually(() -> {
-            assertEquals(1, migrationListener.migrationStarted.get());
-            assertEquals(1, migrationListener.migrationCompleted.get());
-
-            int completed = getTotal(migrationListener.replicaMigrationCompleted);
-            int failed = getTotal(migrationListener.replicaMigrationFailed);
-
-            assertEquals(partitionCount, completed);
-            assertEquals(0, failed);
-        });
-
-        for (AtomicInteger integer : migrationListener.replicaMigrationCompleted) {
-            assertThat(integer.get(), Matchers.lessThanOrEqualTo(1));
-        }
+        assertRegistrationsSizeEventually(instance1, 1);
+        assertMigrationProcess(clientListener);
     }
 
-    @Test
-    public void testMigrationStats_whenMigrationProcessCompletes() {
-        HazelcastInstance hz1 = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
-        warmUpPartitions(hz1);
+    private void verifyMigrationListenerNeverInvoked(MigrationListener listener) {
+        verify(listener, never()).migrationStarted(any(MigrationStateImpl.class));
+        verify(listener, never()).migrationFinished(any(MigrationStateImpl.class));
+        verify(listener, never()).replicaMigrationCompleted(any(ReplicaMigrationEvent.class));
+        verify(listener, never()).replicaMigrationFailed(any(ReplicaMigrationEvent.class));
+    }
 
-        // Change to NO_MIGRATION to prevent repartitioning
-        // before 2nd member started and ready.
-        hz1.getCluster().changeClusterState(ClusterState.NO_MIGRATION);
-
-        PartitionMigrationListenerTest.EventCollectingMigrationListener listener = new PartitionMigrationListenerTest.EventCollectingMigrationListener();
-        client.getPartitionService().addMigrationListener(listener);
-
-        HazelcastInstance hz2 = hazelcastFactory.newHazelcastInstance();
-        // Back to ACTIVE
-        changeClusterStateEventually(hz2, ClusterState.ACTIVE);
-
+    private void assertMigrationProcess(PartitionMigrationListenerTest.EventCollectingMigrationListener listener) {
         PartitionMigrationListenerTest.MigrationEventsPack eventsPack = listener.ensureAndGetSingleEventPack();
         assertMigrationProcessCompleted(eventsPack);
         assertMigrationProcessEventsConsistent(eventsPack);
         assertMigrationEventsConsistentWithResult(eventsPack);
+    }
+
+    private PartitionMigrationListenerTest.EventCollectingMigrationListener eventCollectingMigrationListener() {
+        return new PartitionMigrationListenerTest.EventCollectingMigrationListener();
     }
 
     private void assertRegistrationsSizeEventually(HazelcastInstance instance, int size) {
@@ -220,13 +214,5 @@ public class ClientMigrationListenerTest {
                     .getRegistrations(SERVICE_NAME, MIGRATION_EVENT_TOPIC);
             assertEquals(size, registrations.size());
         });
-    }
-
-    private int getTotal(AtomicInteger[] integers) {
-        int total = 0;
-        for (AtomicInteger count : integers) {
-            total += count.get();
-        }
-        return total;
     }
 }

@@ -56,7 +56,8 @@ public final class PartitionServiceProxy implements PartitionService {
     private final ClientClusterService clusterService;
 
     public PartitionServiceProxy(ClientPartitionService partitionService,
-                                 ClientListenerService listenerService, ClientClusterService clusterService) {
+                                 ClientListenerService listenerService,
+                                 ClientClusterService clusterService) {
         this.partitionService = partitionService;
         this.listenerService = listenerService;
         this.clusterService = clusterService;
@@ -81,20 +82,49 @@ public final class PartitionServiceProxy implements PartitionService {
     }
 
     @Override
-    public UUID addMigrationListener(MigrationListener migrationListener) {
+    public UUID addMigrationListener(@Nonnull MigrationListener migrationListener) {
+        checkNotNull(migrationListener, "migrationListener can't be null");
         EventHandler<ClientMessage> handler = new ClientMigrationEventHandler(migrationListener);
         return listenerService.registerListener(createMigrationListenerCodec(), handler);
     }
 
     @Override
     public boolean removeMigrationListener(UUID registrationId) {
+        checkNotNull(registrationId, "registrationId can't be null");
         return listenerService.deregisterListener(registrationId);
     }
 
     @Override
-    public UUID addPartitionLostListener(PartitionLostListener partitionLostListener) {
+    public UUID addPartitionLostListener(@Nonnull PartitionLostListener partitionLostListener) {
+        checkNotNull(partitionLostListener, "migrationListener can't be null");
         EventHandler<ClientMessage> handler = new ClientPartitionLostEventHandler(partitionLostListener);
         return listenerService.registerListener(createPartitionLostListenerCodec(), handler);
+    }
+
+    @Override
+    public boolean removePartitionLostListener(UUID registrationId) {
+        checkNotNull(registrationId, "registrationId can't be null");
+        return listenerService.deregisterListener(registrationId);
+    }
+
+    @Override
+    public boolean isClusterSafe() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isMemberSafe(Member member) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isLocalMemberSafe() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean forceLocalMemberToBeSafe(long timeout, TimeUnit unit) {
+        throw new UnsupportedOperationException();
     }
 
     private ListenerMessageCodec createPartitionLostListenerCodec() {
@@ -145,31 +175,6 @@ public final class PartitionServiceProxy implements PartitionService {
         };
     }
 
-    @Override
-    public boolean removePartitionLostListener(UUID registrationId) {
-        return listenerService.deregisterListener(registrationId);
-    }
-
-    @Override
-    public boolean isClusterSafe() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean isMemberSafe(Member member) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean isLocalMemberSafe() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean forceLocalMemberToBeSafe(long timeout, TimeUnit unit) {
-        throw new UnsupportedOperationException();
-    }
-
     private class ClientPartitionLostEventHandler extends ClientAddPartitionLostListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
@@ -195,7 +200,6 @@ public final class PartitionServiceProxy implements PartitionService {
             this.migrationEventHandler = new MigrationEventHandler(listener);
         }
 
-
         @Override
         public void handleMigrationEvent(MigrationState migrationState, int partitionId) {
             migrationEventHandler.handleMigrationState(migrationState, partitionId);
@@ -210,13 +214,17 @@ public final class PartitionServiceProxy implements PartitionService {
                                                 boolean success,
                                                 long elapsedTime) {
 
-            Member source = sourceUuid != null ? clusterService.getMember(sourceUuid) : null;
-            Member destination = destUuid != null ? clusterService.getMember(destUuid) : null;
+            @Nullable Member source = findMember(sourceUuid);
+            @Nullable Member destination = findMember(destUuid);
 
             ReplicaMigrationEvent event = new ReplicaMigrationEventImpl(migrationState, partitionId,
                     replicaIndex, source, destination, success, elapsedTime);
 
             migrationEventHandler.handleReplicaMigration(event);
+        }
+
+        private Member findMember(@Nullable UUID memberUuid) {
+            return memberUuid != null ? clusterService.getMember(memberUuid) : null;
         }
     }
 }

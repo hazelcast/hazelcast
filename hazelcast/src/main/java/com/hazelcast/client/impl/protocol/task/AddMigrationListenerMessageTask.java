@@ -31,6 +31,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC;
+import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC_ORDER_KEY;
 import static com.hazelcast.internal.partition.MigrationEventHandler.MIGRATION_FINISHED;
 import static com.hazelcast.internal.partition.MigrationEventHandler.MIGRATION_STARTED;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
@@ -44,31 +45,9 @@ public class AddMigrationListenerMessageTask
 
     @Override
     protected CompletableFuture<UUID> processInternal() {
-        final IPartitionService partitionService = getService(getServiceName());
+        IPartitionService partitionService = getService(getServiceName());
 
-
-        final MigrationListener listener = new MigrationListener() {
-
-            @Override
-            public void migrationStarted(MigrationState state) {
-                sendIfAlive(encodeMigrationEvent(state, MIGRATION_STARTED));
-            }
-
-            @Override
-            public void migrationFinished(MigrationState state) {
-                sendIfAlive(encodeMigrationEvent(state, MIGRATION_FINISHED));
-            }
-
-            @Override
-            public void replicaMigrationCompleted(ReplicaMigrationEvent event) {
-                sendIfAlive(encodeReplicaMigrationEvent(event));
-            }
-
-            @Override
-            public void replicaMigrationFailed(ReplicaMigrationEvent event) {
-                sendIfAlive(encodeReplicaMigrationEvent(event));
-            }
-        };
+        MigrationListener listener = createMigrationListener();
 
         if (parameters) {
             return newCompletedFuture(partitionService.addLocalMigrationListener(listener));
@@ -77,9 +56,34 @@ public class AddMigrationListenerMessageTask
         return partitionService.addMigrationListenerAsync(listener);
     }
 
+    private MigrationListener createMigrationListener() {
+        return new MigrationListener() {
+
+                @Override
+                public void migrationStarted(MigrationState state) {
+                    sendIfAlive(encodeMigrationEvent(state, MIGRATION_STARTED));
+                }
+
+                @Override
+                public void migrationFinished(MigrationState state) {
+                    sendIfAlive(encodeMigrationEvent(state, MIGRATION_FINISHED));
+                }
+
+                @Override
+                public void replicaMigrationCompleted(ReplicaMigrationEvent event) {
+                    sendIfAlive(encodeReplicaMigrationEvent(event));
+                }
+
+                @Override
+                public void replicaMigrationFailed(ReplicaMigrationEvent event) {
+                    sendIfAlive(encodeReplicaMigrationEvent(event));
+                }
+            };
+    }
+
     private void sendIfAlive(ClientMessage eventMessage) {
         if (endpoint.isAlive()) {
-            sendClientMessage(null, eventMessage);
+            sendClientMessage(MIGRATION_EVENT_TOPIC_ORDER_KEY, eventMessage);
         }
     }
 

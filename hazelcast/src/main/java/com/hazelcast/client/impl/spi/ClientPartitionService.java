@@ -55,4 +55,5 @@ public interface ClientPartitionService {
     int getPartitionCount();
 
     Partition getPartition(int partitionId);
+
 }

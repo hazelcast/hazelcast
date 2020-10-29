@@ -35,7 +35,7 @@ public class RemoveMigrationListenerMessageTask
 
     @Override
     protected Future<Boolean> deRegisterListener() {
-        final InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
+        InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
         return service.removeMigrationListenerAsync(parameters);
     }
 
