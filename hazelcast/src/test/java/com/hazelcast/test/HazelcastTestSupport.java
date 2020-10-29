@@ -93,7 +93,6 @@ import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1665,7 +1664,7 @@ public abstract class HazelcastTestSupport {
     /**
      * Walk the stack trace and execute the provided {@code BiConsumer} on each {@code StackTraceElement}
      * encountered while walking the stack trace.
-     *
+     * <p>
      * The {@code BiConsumer} expects {@code StackTraceElement, List<V>} arguments; any
      * result from the {@code BiConsumer} should be added to the {@code results} list which is
      * returned as the result of this method.
