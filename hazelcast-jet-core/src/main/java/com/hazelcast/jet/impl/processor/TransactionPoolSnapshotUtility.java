@@ -244,7 +244,11 @@ public class TransactionPoolSnapshotUtility<TXN_ID extends TransactionId, RES ex
 
     @Override
     public void close() {
-        doRelease();
+        try {
+            doRelease();
+        } catch (Exception e) {
+            procContext().logger().warning("Exception when releasing, ignoring it: " + e, e);
+        }
     }
 
     private void ensureTransactions() {

@@ -53,6 +53,7 @@ import org.junit.rules.ExpectedException;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.NotSerializableException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -76,6 +77,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.util.Collections.nCopies;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -510,13 +512,43 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         when_deserializationOnMasterFails_then_jobSubmissionFails(client());
     }
 
+    private void when_deserializationOnMasterFails_then_jobSubmissionFails(JetInstance instance) throws Throwable {
+        // Given
+        DAG dag = new DAG();
+        // this is designed to fail when the master member deserializes the DAG
+        dag.newVertex("faulty", new NotDeserializableProcessorMetaSupplier());
+
+        // Then
+        expectedException.expect(HazelcastSerializationException.class);
+        expectedException.expectMessage("fake.Class");
+
+        // When
+        try {
+            instance.newJob(dag).join();
+        } catch (Throwable e) {
+            throw peel(e);
+        }
+    }
+
+    @Test
+    public void when_serializationOnMasterFails_then_jobFails() {
+        DAG dag = new DAG();
+        // When
+        dag.newVertex("v", new PmsProducingNonSerializablePs());
+        Job job = instance().newJob(dag);
+
+        // Then
+        assertThatThrownBy(() -> job.join())
+                .hasMessageContaining("\"ProcessorSupplier in vertex 'v'\" must be serializable");
+    }
+
     @Test
     public void when_clientJoinBeforeAndAfterComplete_then_exceptionEquals() {
         DAG dag = new DAG();
         Vertex noop = dag.newVertex("noop", (SupplierEx<Processor>) NoOutputSourceP::new)
-                .localParallelism(1);
+                         .localParallelism(1);
         Vertex faulty = dag.newVertex("faulty", () -> new MockP().setCompleteError(MOCK_ERROR))
-                .localParallelism(1);
+                           .localParallelism(1);
         dag.edge(between(noop, faulty));
 
         Job job = client().newJob(dag);
@@ -553,24 +585,6 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         assertEquals(causeBefore.getClass(), causeAfter.getClass());
         assertContains(causeAfter.getMessage(), causeBefore.getMessage());
-    }
-
-    private void when_deserializationOnMasterFails_then_jobSubmissionFails(JetInstance instance) throws Throwable {
-        // Given
-        DAG dag = new DAG();
-        // this is designed to fail when the master member deserializes the DAG
-        dag.newVertex("faulty", new NotDeserializableProcessorMetaSupplier());
-
-        // Then
-        expectedException.expect(HazelcastSerializationException.class);
-        expectedException.expectMessage("fake.Class");
-
-        // When
-        try {
-            instance.newJob(dag).join();
-        } catch (Throwable e) {
-            throw peel(e);
-        }
     }
 
     @Test
@@ -738,6 +752,26 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         private void readObject(java.io.ObjectInputStream stream) throws ClassNotFoundException {
             // simulate deserialization failure
             throw new ClassNotFoundException("fake.Class");
+        }
+    }
+
+    private static class PmsProducingNonSerializablePs implements ProcessorMetaSupplier {
+        @Nonnull
+        @Override
+        public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            return count -> new ProcessorSupplier() {
+
+                @Nonnull
+                @Override
+                public Collection<? extends Processor> get(int count) {
+                    throw new UnsupportedOperationException("should not get here");
+                }
+
+                private void writeObject(java.io.ObjectOutputStream stream) throws Exception {
+                    // simulate serialization failure
+                    throw new NotSerializableException(getClass().getName());
+                }
+            };
         }
     }
 }

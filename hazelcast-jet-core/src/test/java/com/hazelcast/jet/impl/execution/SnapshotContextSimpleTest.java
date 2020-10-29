@@ -39,7 +39,7 @@ public class SnapshotContextSimpleTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private SnapshotContext ssContext =
+    private final SnapshotContext ssContext =
             new SnapshotContext(mock(ILogger.class), "test job", 9, ProcessingGuarantee.EXACTLY_ONCE);
 
     @Test
@@ -138,6 +138,15 @@ public class SnapshotContextSimpleTest {
         assertEquals(9, ssContext.activeSnapshotIdPhase1());
         ssContext.storeSnapshotTaskletDone(9, true);
         assertEquals(10, ssContext.activeSnapshotIdPhase1());
+        assertTrue(future.isDone());
+    }
+
+    @Test
+    public void test_taskletDoneWhileInPhase1() {
+        ssContext.initTaskletCount(1, 1, 0);
+        CompletableFuture<SnapshotPhase1Result> future = ssContext.startNewSnapshotPhase1(10, null, 0);
+        ssContext.storeSnapshotTaskletDone(9, false);
+        ssContext.processorTaskletDone();
         assertTrue(future.isDone());
     }
 }

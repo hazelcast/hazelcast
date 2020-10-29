@@ -913,26 +913,34 @@ public final class Sinks {
      * <p>
      * The sink writes the items it receives to files. Each processor will
      * write to its own files whose names contain the processor's global index
-     * (an integer unique to each processor of the vertex), but a single
+     * (an integer unique to each processor of the vertex), but the same
      * directory is used for all files, on all cluster members. That directory
-     * can be a shared in a network - the global processor index is different
-     * on each member and the members won't overwrite each other's files.
+     * can be a shared in a network - each processor creates globally unique
+     * file names.
      *
      * <h3>Fault tolerance</h3>
+     *
      * If the job is running in <i>exactly-once</i> mode, Jet writes the items
      * to temporary files (ending with a {@value
      * FileSinkBuilder#TEMP_FILE_SUFFIX} suffix). When Jet commits a snapshot,
      * it atomically renames the file to remove this suffix. Thanks to the
      * two-phase commit of the snapshot the sink provides exactly-once
-     * guarantee. Because Jet starts a new file each time it snapshots the
-     * state, the sink will likely produce many more small files, depending on
-     * the snapshot interval.
+     * guarantee.
      * <p>
+     * Because Jet starts a new file each time it snapshots the state, the sink
+     * will produce many more small files, depending on the snapshot interval.
      * If you want to avoid the temporary files or the high number of files but
      * need to have exactly-once for other processors in the job, call {@link
      * FileSinkBuilder#exactlyOnce(boolean) exactlyOnce(false)} on the returned
      * builder. This will give you <i>at-least-once</i> guarantee for the
      * source and unchanged guarantee for other processors.
+     * <p>
+     * For the fault-tolerance to work, the target file system must be a
+     * network file system. If you lose a member with its files, you'll
+     * obviously lose data. Even if that member rejoins later with the lost
+     * files, the job might have processed more transactions on the remaining
+     * members and will not commit the temporary files on the resurrected
+     * member.
      *
      * <h3>File name structure</h3>
      * <pre>{@code
