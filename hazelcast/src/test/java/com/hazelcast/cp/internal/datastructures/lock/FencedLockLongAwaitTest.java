@@ -24,7 +24,7 @@ import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class FencedLockLongAwaitTest extends HazelcastRaftTestSupport {
 
     private HazelcastInstance[] instances;
