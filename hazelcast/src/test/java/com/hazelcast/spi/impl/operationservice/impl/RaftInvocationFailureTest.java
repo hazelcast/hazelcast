@@ -118,7 +118,7 @@ public class RaftInvocationFailureTest extends HazelcastRaftTestSupport {
 
         Future f = new RaftInvocation(getOperationService(leader).invocationContext,
                 getRaftInvocationManager(leader).getRaftInvocationContext(), groupId,
-                new DefaultRaftReplicateOp(groupId, new CustomResponseOp3()), 100, 500, 60000).invoke();
+                new DefaultRaftReplicateOp(groupId, new CustomResponseOp3()), 10, 500, 60000).invoke();
 
         try {
             f.get(60, TimeUnit.SECONDS);
