@@ -47,9 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ManageableClock extends Clock.ClockImpl {
 
-    private static final SyncedClockSource SYSTEM_CLOCKSOURCE = new SyncedClockSource(ClockTestAccessor.createProdClock());
-
-    private final AtomicReference<ClockSource> clockSourceRef = new AtomicReference<>(SYSTEM_CLOCKSOURCE);
+    private final AtomicReference<ClockSource> clockSourceRef = new AtomicReference<>(SystemClockSource.INSTANCE);
 
     /**
      * Sets this clock instance for the current thread. All child threads created
@@ -82,7 +80,7 @@ public class ManageableClock extends Clock.ClockImpl {
     public ManageableClock unmanage() {
         assert clockSourceRef.get() instanceof ManagedClockSource;
 
-        clockSourceRef.set(SYSTEM_CLOCKSOURCE);
+        clockSourceRef.set(SystemClockSource.INSTANCE);
         return this;
     }
 
@@ -110,7 +108,7 @@ public class ManageableClock extends Clock.ClockImpl {
     public ManageableClock unsync() {
         assert clockSourceRef.get() instanceof SyncedClockSource;
 
-        clockSourceRef.set(SYSTEM_CLOCKSOURCE);
+        clockSourceRef.set(SystemClockSource.INSTANCE);
         return this;
     }
 
@@ -120,7 +118,7 @@ public class ManageableClock extends Clock.ClockImpl {
      * @return the clock instance
      */
     ManageableClock reset() {
-        clockSourceRef.set(SYSTEM_CLOCKSOURCE);
+        clockSourceRef.set(SystemClockSource.INSTANCE);
         return this;
     }
 
@@ -131,6 +129,18 @@ public class ManageableClock extends Clock.ClockImpl {
 
     private interface ClockSource {
         long currentTimeMillis();
+    }
+
+    private static final class SystemClockSource implements ClockSource {
+
+        private static final SystemClockSource INSTANCE = new SystemClockSource();
+
+        private final Clock.ClockImpl clock = ClockTestAccessor.createProdClock();
+
+        @Override
+        public long currentTimeMillis() {
+            return ClockTestAccessor.currentTimeMillis(clock);
+        }
     }
 
     private static final class ManagedClockSource implements ClockSource {
@@ -191,7 +201,6 @@ public class ManageableClock extends Clock.ClockImpl {
     }
 
     public final class SyncedClock extends Clock.ClockImpl {
-
 
         /**
          * Convenience method for {@link #unsync()}.

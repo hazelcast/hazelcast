@@ -123,7 +123,6 @@ public class ManageableClockTest {
         assertThrows(AssertionError.class, () -> managedClock.advanceMillis(1));
     }
 
-
     @Test
     public void testCallingUnsyncThrowsInSystemMode() {
         ManageableClock clock = new ManageableClock();
