@@ -45,6 +45,7 @@ import javax.cache.event.CacheEntryRemovedListener;
 import javax.cache.event.CacheEntryUpdatedListener;
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -241,32 +242,36 @@ public class CacheFromDifferentNodesTest
         @Override
         public void onCreated(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
                 throws CacheEntryListenerException {
-            for (CacheEntryEvent<? extends K, ? extends V> cacheEntryEvent : cacheEntryEvents) {
-                created.incrementAndGet();
-            }
+            incrementCounter(cacheEntryEvents, created);
         }
 
         @Override
         public void onExpired(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
                 throws CacheEntryListenerException {
-            for (CacheEntryEvent<? extends K, ? extends V> cacheEntryEvent : cacheEntryEvents) {
-                expired.incrementAndGet();
-            }
+            incrementCounter(cacheEntryEvents, expired);
         }
 
         @Override
         public void onRemoved(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
                 throws CacheEntryListenerException {
-            for (CacheEntryEvent<? extends K, ? extends V> cacheEntryEvent : cacheEntryEvents) {
-                removed.incrementAndGet();
-            }
+            incrementCounter(cacheEntryEvents, removed);
         }
 
         @Override
         public void onUpdated(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
                 throws CacheEntryListenerException {
-            for (CacheEntryEvent<? extends K, ? extends V> cacheEntryEvent : cacheEntryEvents) {
-                updated.incrementAndGet();
+            incrementCounter(cacheEntryEvents, updated);
+        }
+
+        private void incrementCounter(Iterable iterable, AtomicInteger counter) {
+            // actual CacheEntryEvents don't matter
+            // so we avoid referencing each event for the sake
+            // of compatibility tests which have trouble
+            // delegating to event classes across classloaders
+            Iterator iter = iterable.iterator();
+            while (iter.hasNext()) {
+                counter.incrementAndGet();
+                iter.next();
             }
         }
     }

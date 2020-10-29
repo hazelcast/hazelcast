@@ -21,7 +21,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.bounce.BounceMemberRule;
-import com.hazelcast.test.compatibility.CompatibilityTestUtils;
 import com.hazelcast.test.starter.ReflectionUtils;
 import org.junit.After;
 import org.junit.AssumptionViolatedException;
@@ -110,7 +109,6 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         JsrTestUtil.setSystemProperties();
 
         if (isRunningCompatibilityTest()) {
-            CompatibilityTestUtils.attachFinalRemovalAgent();
             System.out.println("Running compatibility tests.");
             // Mock network cannot be used for compatibility testing
             System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "true");
