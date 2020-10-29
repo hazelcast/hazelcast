@@ -348,19 +348,19 @@ public abstract class HazelcastTestSupport {
     // ###########################
 
     public static void sleepMillis(int millis) {
-        try {
-            MILLISECONDS.sleep(millis);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+//        try {
+//            MILLISECONDS.sleep(millis);
+//        } catch (InterruptedException e) {
+//            Thread.currentThread().interrupt();
+//        }
     }
 
     public static void sleepSeconds(int seconds) {
-        try {
-            SECONDS.sleep(seconds);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+//        try {
+//            SECONDS.sleep(seconds);
+//        } catch (InterruptedException e) {
+//            Thread.currentThread().interrupt();
+//        }
     }
 
     /**
@@ -427,24 +427,24 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void sleepAtLeastMillis(long sleepFor) {
-        boolean interrupted = false;
-        try {
-            long remainingNanos = MILLISECONDS.toNanos(sleepFor);
-            long sleepUntil = System.nanoTime() + remainingNanos;
-            while (remainingNanos > 0) {
-                try {
-                    NANOSECONDS.sleep(remainingNanos);
-                } catch (InterruptedException e) {
-                    interrupted = true;
-                } finally {
-                    remainingNanos = sleepUntil - System.nanoTime();
-                }
-            }
-        } finally {
-            if (interrupted) {
-                Thread.currentThread().interrupt();
-            }
-        }
+//        boolean interrupted = false;
+//        try {
+//            long remainingNanos = MILLISECONDS.toNanos(sleepFor);
+//            long sleepUntil = System.nanoTime() + remainingNanos;
+//            while (remainingNanos > 0) {
+//                try {
+//                    NANOSECONDS.sleep(remainingNanos);
+//                } catch (InterruptedException e) {
+//                    interrupted = true;
+//                } finally {
+//                    remainingNanos = sleepUntil - System.nanoTime();
+//                }
+//            }
+//        } finally {
+//            if (interrupted) {
+//                Thread.currentThread().interrupt();
+//            }
+//        }
     }
 
     public static void sleepAtLeastSeconds(long seconds) {
