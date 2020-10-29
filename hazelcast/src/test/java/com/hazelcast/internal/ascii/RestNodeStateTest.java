@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -47,6 +46,7 @@ import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 
 /**
@@ -62,6 +62,14 @@ public class RestNodeStateTest {
         HazelcastInstanceFactory.terminateAll();
     }
 
+    /**
+     * This test does a node-state REST call before the Node is switched to the {@link NodeState#ACTIVE}. A custom discovery
+     * strategy is used to block the processing in a point when REST is already running, but the node is not yet active. During
+     * the blocked discovery initialization the HTTP call is done.
+     * <p>
+     * See
+     * <a href="https://github.com/hazelcast/hazelcast/issues/17773">https://github.com/hazelcast/hazelcast/issues/17773</a>.
+     */
     @Test
     public void testStartingNodeState_regression() throws Exception {
         Config config = smallInstanceConfig().setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
@@ -73,7 +81,7 @@ public class RestNodeStateTest {
         StrategyFactory discoveryStrategyFactory = new StrategyFactory();
         networkConfig.getJoin().getDiscoveryConfig()
                 .addDiscoveryStrategyConfig(new DiscoveryStrategyConfig(discoveryStrategyFactory));
-        Executors.newSingleThreadExecutor().execute(() -> Hazelcast.newHazelcastInstance(config));
+        HazelcastTestSupport.spawn(() -> Hazelcast.newHazelcastInstance(config));
         discoveryStrategyFactory.getNodeStartingLatch().await();
         HTTPCommunicator communicator = new HTTPCommunicator(5000);
         assertEquals("\"STARTING\"", communicator.getClusterHealth("/node-state"));
