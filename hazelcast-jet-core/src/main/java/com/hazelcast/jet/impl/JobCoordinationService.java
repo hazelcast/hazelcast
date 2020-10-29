@@ -422,8 +422,12 @@ public class JobCoordinationService {
     public CompletableFuture<JobStatus> getJobStatus(long jobId) {
         return callWithJob(jobId,
                 mc -> {
+                    // When the job finishes running, we write NOT_RUNNING to jobStatus first and then
+                    // write null to requestedTerminationMode (see MasterJobContext.finalizeJob()). We
+                    // have to read them in the opposite order.
+                    TerminationMode terminationMode = mc.jobContext().requestedTerminationMode();
                     JobStatus jobStatus = mc.jobStatus();
-                    return jobStatus == RUNNING && mc.jobContext().requestedTerminationMode() != null
+                    return jobStatus == RUNNING && terminationMode != null
                             ? COMPLETING
                             : jobStatus;
                 },
