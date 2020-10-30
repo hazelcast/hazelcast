@@ -253,6 +253,30 @@ Maven snippet:
 </dependencies>
 ```
 
+## Trigger phrases in the Pull Request Conversation
+
+When you create a pull request (PR), it must pass a build-and-test
+procedure. Maintainers will be notified about your PR, and they can
+trigger the build using special comments. These are the phrases you may
+see used in the comments on your PR:
+
+* `verify` - run the default PR builder, equivalent to `mvn clean
+  install`
+* `run-nightly-tests` - use the settings for the nightly build (`mvn
+  clean install -Pnightly`). This includes slower tests in the run,
+  which we don't normally run on every PR
+* `run-windows` - run the tests on a Windows machine (HighFive is not
+  supported here)
+* `run-cdc-debezium-tests` - run all tests in the 
+  `extensions/cdc-debezium` module
+* `run-cdc-mysql-tests` - run all tests in the `extensions/cdc-mysql`
+  module
+* `run-cdc-postgres-tests` - run all tests in the
+  `extensions/cdc-postgres` module
+
+Where not indicated, the builds run on a Linux machine with Oracle JDK
+8.
+
 ## License
 
 Source code in this repository is covered by one of two licenses:
