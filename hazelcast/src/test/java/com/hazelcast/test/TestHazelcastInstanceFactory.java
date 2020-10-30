@@ -43,6 +43,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
@@ -247,9 +249,18 @@ public class TestHazelcastInstanceFactory {
     }
 
     public HazelcastInstance[] newInstances(Config config, int nodeCount) {
+        Future[] futures = new Future[nodeCount];
         HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
+
         for (int i = 0; i < nodeCount; i++) {
-            instances[i] = newHazelcastInstance(config);
+            futures[i] = HazelcastTestSupport.spawn(() -> newHazelcastInstance(config));
+        }
+        for (int i = 0; i < nodeCount; i++) {
+            try {
+                instances[i] = (HazelcastInstance) futures[i].get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
         }
         return instances;
     }
