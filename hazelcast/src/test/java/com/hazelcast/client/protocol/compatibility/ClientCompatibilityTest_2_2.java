@@ -401,9 +401,9 @@ public class ClientCompatibilityTest_2_2 {
 
     private static class ClientAddMigrationListenerCodecHandler extends ClientAddMigrationListenerCodec.AbstractEventHandler {
         @Override
-        public void handleMigrationEvent(com.hazelcast.partition.MigrationState migrationState, int partitionId) {
+        public void handleMigrationEvent(com.hazelcast.partition.MigrationState migrationState, int type) {
             assertTrue(isEqual(aMigrationState, migrationState));
-            assertTrue(isEqual(anInt, partitionId));
+            assertTrue(isEqual(anInt, type));
         }
         @Override
         public void handleReplicaMigrationEvent(com.hazelcast.partition.MigrationState migrationState, int partitionId, int replicaIndex, java.util.UUID sourceUuid, java.util.UUID destUuid, boolean success, long elapsedTime) {

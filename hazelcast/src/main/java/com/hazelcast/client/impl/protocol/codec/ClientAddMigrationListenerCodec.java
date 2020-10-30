@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a Migration listener to the cluster.
  */
-@Generated("45dae5149998b823955b8efceacb9dcf")
+@Generated("c1de358a5eeb994a93d1c9d264dcca29")
 public final class ClientAddMigrationListenerCodec {
     //hex: 0x001100
     public static final int REQUEST_MESSAGE_TYPE = 4352;
@@ -47,8 +47,8 @@ public final class ClientAddMigrationListenerCodec {
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int EVENT_MIGRATION_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int EVENT_MIGRATION_INITIAL_FRAME_SIZE = EVENT_MIGRATION_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_MIGRATION_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int EVENT_MIGRATION_INITIAL_FRAME_SIZE = EVENT_MIGRATION_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     //hex: 0x001102
     private static final int EVENT_MIGRATION_MESSAGE_TYPE = 4354;
     private static final int EVENT_REPLICA_MIGRATION_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -105,13 +105,13 @@ public final class ClientAddMigrationListenerCodec {
         return decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
-    public static ClientMessage encodeMigrationEvent(com.hazelcast.partition.MigrationState migrationState, int partitionId) {
+    public static ClientMessage encodeMigrationEvent(com.hazelcast.partition.MigrationState migrationState, int type) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_MIGRATION_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_MIGRATION_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
-        encodeInt(initialFrame.content, EVENT_MIGRATION_PARTITION_ID_FIELD_OFFSET, partitionId);
+        encodeInt(initialFrame.content, EVENT_MIGRATION_TYPE_FIELD_OFFSET, type);
         clientMessage.add(initialFrame);
 
         MigrationStateCodec.encode(clientMessage, migrationState);
@@ -142,9 +142,9 @@ public final class ClientAddMigrationListenerCodec {
             ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
             if (messageType == EVENT_MIGRATION_MESSAGE_TYPE) {
                 ClientMessage.Frame initialFrame = iterator.next();
-                int partitionId = decodeInt(initialFrame.content, EVENT_MIGRATION_PARTITION_ID_FIELD_OFFSET);
+                int type = decodeInt(initialFrame.content, EVENT_MIGRATION_TYPE_FIELD_OFFSET);
                 com.hazelcast.partition.MigrationState migrationState = MigrationStateCodec.decode(iterator);
-                handleMigrationEvent(migrationState, partitionId);
+                handleMigrationEvent(migrationState, type);
                 return;
             }
             if (messageType == EVENT_REPLICA_MIGRATION_MESSAGE_TYPE) {
@@ -164,9 +164,9 @@ public final class ClientAddMigrationListenerCodec {
 
         /**
          * @param migrationState Migration state.
-         * @param partitionId The id assigned during the listener registration.
+         * @param type Type of the event. It is either MIGRATION_STARTED(0) or MIGRATION_FINISHED(1).
          */
-        public abstract void handleMigrationEvent(com.hazelcast.partition.MigrationState migrationState, int partitionId);
+        public abstract void handleMigrationEvent(com.hazelcast.partition.MigrationState migrationState, int type);
 
         /**
          * @param migrationState The progress information of the overall migration.

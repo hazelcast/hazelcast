@@ -34,7 +34,7 @@ class MigrationListenerAdapter implements PartitionEventListener<ReplicaMigratio
 
     @Override
     public void onEvent(ReplicaMigrationEvent event) {
-        migrationEventHandler.handleReplicaMigration(event);
+        migrationEventHandler.handleReplicaMigrationEvent(event);
     }
 
 }

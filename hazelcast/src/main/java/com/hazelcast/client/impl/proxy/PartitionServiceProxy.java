@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.partition.MigrationEventType;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.internal.partition.MigrationEventHandler;
 import com.hazelcast.internal.partition.ReplicaMigrationEventImpl;
@@ -201,8 +202,9 @@ public final class PartitionServiceProxy implements PartitionService {
         }
 
         @Override
-        public void handleMigrationEvent(MigrationState migrationState, int partitionId) {
-            migrationEventHandler.handleMigrationState(migrationState, partitionId);
+        public void handleMigrationEvent(MigrationState migrationState, int type) {
+            MigrationEventType eventType = MigrationEventType.getByType(type);
+            migrationEventHandler.handleMigrationEvent(migrationState, eventType);
         }
 
         @Override
@@ -220,7 +222,7 @@ public final class PartitionServiceProxy implements PartitionService {
             ReplicaMigrationEvent event = new ReplicaMigrationEventImpl(migrationState, partitionId,
                     replicaIndex, source, destination, success, elapsedTime);
 
-            migrationEventHandler.handleReplicaMigration(event);
+            migrationEventHandler.handleReplicaMigrationEvent(event);
         }
 
         private Member findMember(@Nullable UUID memberUuid) {

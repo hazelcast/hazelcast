@@ -46,8 +46,8 @@ import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
 import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC_ORDER_KEY;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
-import static com.hazelcast.internal.partition.MigrationEventHandler.MIGRATION_FINISHED;
-import static com.hazelcast.internal.partition.MigrationEventHandler.MIGRATION_STARTED;
+import static com.hazelcast.internal.partition.MigrationEventHandler.MIGRATION_FINISHED_PARTITION_ID;
+import static com.hazelcast.internal.partition.MigrationEventHandler.MIGRATION_STARTED_PARTITION_ID;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.SYSTEM_EXECUTOR;
@@ -83,12 +83,14 @@ public class PartitionEventManager {
     }
 
     public void sendMigrationProcessStartedEvent(MigrationState state) {
-        ReplicaMigrationEvent event = new ReplicaMigrationEventImpl(state, MIGRATION_STARTED, 0, null, null, false, 0L);
+        ReplicaMigrationEvent event =
+                new ReplicaMigrationEventImpl(state, MIGRATION_STARTED_PARTITION_ID, 0, null, null, false, 0L);
         sendMigrationEvent(event);
     }
 
     public void sendMigrationProcessCompletedEvent(MigrationState state) {
-        ReplicaMigrationEvent event = new ReplicaMigrationEventImpl(state, MIGRATION_FINISHED, 0, null, null, false, 0L);
+        ReplicaMigrationEvent event =
+                new ReplicaMigrationEventImpl(state, MIGRATION_FINISHED_PARTITION_ID, 0, null, null, false, 0L);
         sendMigrationEvent(event);
     }
 

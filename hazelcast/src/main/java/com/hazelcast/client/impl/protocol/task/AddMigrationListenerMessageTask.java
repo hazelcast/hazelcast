@@ -22,6 +22,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.partition.MigrationEventType;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.MigrationState;
 import com.hazelcast.partition.ReplicaMigrationEvent;
@@ -33,8 +34,6 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC_ORDER_KEY;
-import static com.hazelcast.internal.partition.MigrationEventHandler.MIGRATION_FINISHED;
-import static com.hazelcast.internal.partition.MigrationEventHandler.MIGRATION_STARTED;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 public class AddMigrationListenerMessageTask
@@ -62,12 +61,12 @@ public class AddMigrationListenerMessageTask
 
                 @Override
                 public void migrationStarted(MigrationState state) {
-                    sendIfAlive(encodeMigrationEvent(state, MIGRATION_STARTED));
+                    sendIfAlive(encodeMigrationEvent(state, MigrationEventType.MIGRATION_STARTED));
                 }
 
                 @Override
                 public void migrationFinished(MigrationState state) {
-                    sendIfAlive(encodeMigrationEvent(state, MIGRATION_FINISHED));
+                    sendIfAlive(encodeMigrationEvent(state, MigrationEventType.MIGRATION_FINISHED));
                 }
 
                 @Override
@@ -105,8 +104,8 @@ public class AddMigrationListenerMessageTask
         return source != null ? source.getUuid() : null;
     }
 
-    private ClientMessage encodeMigrationEvent(MigrationState migrationState, int partitionId) {
-        return ClientAddMigrationListenerCodec.encodeMigrationEvent(migrationState, partitionId);
+    private ClientMessage encodeMigrationEvent(MigrationState migrationState, MigrationEventType type) {
+        return ClientAddMigrationListenerCodec.encodeMigrationEvent(migrationState, type.getType());
     }
 
     @Override

@@ -22,8 +22,8 @@ import com.hazelcast.partition.ReplicaMigrationEvent;
 
 public final class MigrationEventHandler {
 
-    public static final int MIGRATION_STARTED = -1;
-    public static final int MIGRATION_FINISHED = -2;
+    public static final int MIGRATION_STARTED_PARTITION_ID = -1;
+    public static final int MIGRATION_FINISHED_PARTITION_ID = -2;
 
     private final MigrationListener migrationListener;
 
@@ -31,8 +31,8 @@ public final class MigrationEventHandler {
         this.migrationListener = migrationListener;
     }
 
-    public void handleMigrationState(MigrationState state, int partitionId) {
-        switch (partitionId) {
+    public void handleMigrationEvent(MigrationState state, MigrationEventType type) {
+        switch (type) {
             case MIGRATION_STARTED:
                 migrationListener.migrationStarted(state);
                 break;
@@ -40,15 +40,17 @@ public final class MigrationEventHandler {
                 migrationListener.migrationFinished(state);
                 break;
             default:
-                break;
+                throw new IllegalArgumentException("Invalid event type: " + type);
         }
     }
 
-    public void handleReplicaMigration(ReplicaMigrationEvent event) {
+    public void handleReplicaMigrationEvent(ReplicaMigrationEvent event) {
         switch (event.getPartitionId()) {
-            case MIGRATION_STARTED:
-            case MIGRATION_FINISHED:
-                handleMigrationState(event.getMigrationState(), event.getPartitionId());
+            case MIGRATION_STARTED_PARTITION_ID:
+                handleMigrationEvent(event.getMigrationState(), MigrationEventType.MIGRATION_STARTED);
+                break;
+            case MIGRATION_FINISHED_PARTITION_ID:
+                handleMigrationEvent(event.getMigrationState(), MigrationEventType.MIGRATION_FINISHED);
                 break;
             default:
                 if (event.isSuccess()) {
