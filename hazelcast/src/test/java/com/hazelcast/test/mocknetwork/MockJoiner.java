@@ -83,12 +83,12 @@ class MockJoiner extends AbstractJoiner {
                 break;
             }
 
-//            try {
-//                Thread.sleep(500);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//                break;
-//            }
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                break;
+            }
         }
     }
 
