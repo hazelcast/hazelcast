@@ -401,6 +401,7 @@
                                         -Dhazelcast.test.multiple.jvm=true
                                         -Dlog4j.configurationFile=log4j2.xml
                                         -Dlog4j.skipJansi=true
+                                        -Dhazelcast.wait.seconds.before.join=0
                                         ${extraVmArgs}
                                         ${jacocoArgLine}
                                     </argLine>
