@@ -84,12 +84,22 @@ public class TestProcessorSupplierContext
     }
 
     @Nonnull @Override
+    public File recreateAttachedDirectory(@Nonnull String id) {
+        return attachedDirectory(id);
+    }
+
+    @Nonnull @Override
     public File attachedFile(@Nonnull String id) {
         File file = attached.get(id);
         if (file == null) {
             throw new IllegalArgumentException("File '" + id + "' was not found");
         }
         return file;
+    }
+
+    @Nonnull @Override
+    public File recreateAttachedFile(@Nonnull String id) {
+        return attachedFile(id);
     }
 
     @Nonnull @Override

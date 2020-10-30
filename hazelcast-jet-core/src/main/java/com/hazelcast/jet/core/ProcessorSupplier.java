@@ -120,6 +120,15 @@ public interface ProcessorSupplier extends Serializable {
         File attachedDirectory(@Nonnull String id);
 
         /**
+         * Behaves like {@link #attachedDirectory}, but if the directory already
+         * exists, it deletes and recreates all its contents.
+         *
+         * @since 4.3
+         */
+        @Nonnull
+        File recreateAttachedDirectory(@Nonnull String id);
+
+        /**
          * Uses the supplied ID to look up a file you attached to the current Jet
          * job. Creates a temporary file with the same contents on the local
          * cluster member and returns the location of the created file. If the
@@ -130,6 +139,15 @@ public interface ProcessorSupplier extends Serializable {
          */
         @Nonnull
         File attachedFile(@Nonnull String id);
+
+        /**
+         * Behaves like {@link #attachedFile}, but if the file already exists, it
+         * deletes and recreates it.
+         *
+         * @since 4.3
+         */
+        @Nonnull
+        File recreateAttachedFile(@Nonnull String id);
 
         /**
          * Returns {@link ManagedContext} associated with this job.

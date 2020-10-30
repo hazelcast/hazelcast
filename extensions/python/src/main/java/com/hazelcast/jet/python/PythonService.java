@@ -15,7 +15,6 @@
  */
 package com.hazelcast.jet.python;
 
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.grpc.impl.GrpcUtil;
@@ -89,7 +88,7 @@ final class PythonService {
         cfg.validate();
         ServiceFactory<PythonServiceContext, PythonService> fac = ServiceFactory
                 .withCreateContextFn(ctx -> createContextWithRetry(ctx, cfg))
-                .withDestroyContextFn(PythonService::destroyServiceContext)
+                .withDestroyContextFn(PythonServiceContext::destroy)
                 .withCreateServiceFn((procCtx, serviceCtx) -> new PythonService(serviceCtx))
                 .withDestroyServiceFn(PythonService::destroy);
         if (cfg.baseDir() != null) {
@@ -112,7 +111,7 @@ final class PythonService {
             } catch (JetException exception) {
                 jetException = exception;
                 context.logger().warning(
-                        "PythonService context creation failed, " + (i > 0 ? " will retry" : " giving up"),
+                        "PythonService context creation failed, " + (i > 0 ? "will retry" : "giving up"),
                         exception);
                 try {
                     Thread.sleep(CREATE_CONTEXT_RETRY_SLEEP_TIME_MILLIS);
@@ -123,14 +122,6 @@ final class PythonService {
             }
         }
         throw jetException;
-    }
-
-    private static void destroyServiceContext(PythonServiceContext serviceCtx) {
-        try {
-            serviceCtx.destroy();
-        } finally {
-            IOUtil.delete(serviceCtx.runtimeBaseDir());
-        }
     }
 
     CompletableFuture<List<String>> sendRequest(List<String> inputBatch) {

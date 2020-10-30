@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.JetException;
@@ -29,15 +30,17 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.deployment.IMapInputStream;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
-import com.hazelcast.jet.impl.util.IOUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.jet.Util.idToString;
@@ -45,8 +48,11 @@ import static com.hazelcast.jet.config.ResourceType.DIRECTORY;
 import static com.hazelcast.jet.config.ResourceType.FILE;
 import static com.hazelcast.jet.impl.JobRepository.fileKeyName;
 import static com.hazelcast.jet.impl.JobRepository.jobResourcesMapName;
+import static com.hazelcast.jet.impl.util.IOUtil.fileNameFromUrl;
 import static com.hazelcast.jet.impl.util.IOUtil.unzip;
+import static com.hazelcast.jet.impl.util.Util.editPermissionsRecursively;
 import static java.lang.Math.min;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 import static java.util.Objects.requireNonNull;
 
 public final class Contexts {
@@ -91,8 +97,7 @@ public final class Contexts {
             this.processingGuarantee = processingGuarantee;
         }
 
-        @Nonnull
-        @Override
+        @Nonnull @Override
         public JetInstance jetInstance() {
             return jetInstance;
         }
@@ -107,7 +112,7 @@ public final class Contexts {
             return executionId;
         }
 
-        @Override @Nonnull
+        @Nonnull @Override
         public JobConfig jobConfig() {
             return jobConfig;
         }
@@ -189,7 +194,13 @@ public final class Contexts {
                     "The resource with ID '%s' is not a directory, its type is %s", id, resourceConfig.getResourceType()
                 ));
             }
-            return tempDirectories.computeIfAbsent(id, x -> extractFileToDisk(id));
+            return tempDirectories.computeIfAbsent(id, x -> extractFileToDisk(id, null));
+        }
+
+        @Nonnull @Override
+        public File recreateAttachedDirectory(@Nonnull String id) {
+            recreateIfExists(id);
+            return attachedDirectory(id);
         }
 
         @Nonnull @Override
@@ -204,21 +215,50 @@ public final class Contexts {
                     "The resource with ID '%s' is not a file, its type is %s", id, resourceConfig.getResourceType()
                 ));
             }
-            String fnamePath = requireNonNull(IOUtil.fileNameFromUrl(resourceConfig.getUrl()));
-            return new File(tempDirectories.computeIfAbsent(id, x -> extractFileToDisk(id)), fnamePath);
+            String fnamePath = requireNonNull(fileNameFromUrl(resourceConfig.getUrl()));
+            return new File(tempDirectories.computeIfAbsent(id, x -> extractFileToDisk(id, null)), fnamePath);
+        }
+
+        @Nonnull @Override
+        public File recreateAttachedFile(@Nonnull String id) {
+            recreateIfExists(id);
+            return attachedFile(id);
         }
 
         public ConcurrentHashMap<String, File> tempDirectories() {
             return tempDirectories;
         }
 
-        private File extractFileToDisk(String id) {
+        private File extractFileToDisk(@Nonnull String id, @Nullable File destFile) {
             IMap<String, byte[]> map = jetInstance().getMap(jobResourcesMapName(jobId()));
             try (IMapInputStream inputStream = new IMapInputStream(map, fileKeyName(id))) {
-                Path directory = Files.createTempDirectory(tempDirPrefix(
-                        jetInstance().getName(), idToString(jobId()), id));
-                unzip(inputStream, directory);
-                return directory.toFile();
+                Path destPath = (destFile == null)
+                    ? Files.createTempDirectory(tempDirPrefix(jetInstance().getName(), idToString(jobId()), id))
+                    : destFile.toPath();
+                unzip(inputStream, destPath);
+                return destPath.toFile();
+            } catch (IOException e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        }
+
+        @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
+            justification = "SpotBugs bug, ignores requireNonNull() https://github.com/spotbugs/spotbugs/issues/651")
+        private void recreateIfExists(@Nonnull String id) {
+            File dirFile = tempDirectories.get(id);
+            if (dirFile == null) {
+                return;
+            }
+            try {
+                List<String> filesNotMarked =
+                        editPermissionsRecursively(dirFile.toPath(), perms -> perms.add(OWNER_WRITE));
+                if (!filesNotMarked.isEmpty()) {
+                    logger().info("Couldn't 'chmod u+w' these files: " + filesNotMarked);
+                }
+                for (File file : requireNonNull(dirFile.listFiles())) {
+                    IOUtil.delete(file);
+                }
+                extractFileToDisk(id, dirFile);
             } catch (IOException e) {
                 throw ExceptionUtil.rethrow(e);
             }

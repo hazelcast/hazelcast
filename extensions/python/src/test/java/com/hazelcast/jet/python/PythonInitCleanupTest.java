@@ -21,6 +21,12 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -29,11 +35,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.CompletionException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import static com.hazelcast.jet.python.PythonTransforms.mapUsingPythonBatch;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -73,7 +74,7 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void initIsRunBeforeJob() throws IOException {
+    public void initRunsBeforeJob() throws IOException {
         // Given
         String baseDirStr = baseDir.toString();
         String outcomeFilename = "init_outcome.txt";
@@ -91,21 +92,21 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
         // When
         p.readFrom(TestSources.items("1"))
-                .map(t -> {
-                    Path expectedInitFile = Paths.get(baseDirStr, outcomeFilename);
-                    // Then
-                    assertTrue("file which should be created by init.sh does not exist",
-                            Files.exists(expectedInitFile));
-                    return t;
-                })
-                .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
-                .writeTo(Sinks.logger());
+         .map(t -> {
+             Path expectedInitFile = Paths.get(baseDirStr, outcomeFilename);
+             // Then
+             assertTrue("The file that init.sh should have created does not exist",
+                     Files.exists(expectedInitFile));
+             return t;
+         })
+         .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
+         .writeTo(Sinks.logger());
 
         instance().newJob(p).join();
     }
 
     @Test
-    public void cleanupIsRunAfterJob() throws IOException {
+    public void cleanupRunsAfterJob() throws IOException {
         // Given
         String baseDirStr = baseDir.toString();
         String outcomeFilename = "cleanup_outcome.txt";
@@ -121,16 +122,16 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
         // When
         p.readFrom(TestSources.items("1"))
-                .map(t -> {
-                    Thread.sleep(5_000);
-                    Path expectedInitFile = Paths.get(baseDirStr, outcomeFilename);
-                    // Then
-                    assertFalse("file which should be created by cleanup.sh exists during job execution",
-                            Files.exists(expectedInitFile));
-                    return t;
-                })
-                .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
-                .writeTo(Sinks.logger());
+         .map(t -> {
+             Thread.sleep(5_000);
+             Path expectedInitFile = Paths.get(baseDirStr, outcomeFilename);
+             // Then
+             assertFalse("file which should be created by cleanup.sh exists during job execution",
+                     Files.exists(expectedInitFile));
+             return t;
+         })
+         .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
+         .writeTo(Sinks.logger());
 
         instance().newJob(p).join();
 
@@ -138,7 +139,7 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void initFailureCausesJobFailure() throws IOException {
+    public void when_initFailsRepeatedly_then_jobFails() throws IOException {
         // Given
         installFileToBaseDir("exit 1", "init.sh");
         PythonServiceConfig cfg = new PythonServiceConfig()
@@ -149,8 +150,8 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
         // When
         p.readFrom(TestSources.items("1"))
-                .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
-                .writeTo(Sinks.logger());
+         .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
+         .writeTo(Sinks.logger());
 
         // Then
         try {
@@ -162,15 +163,16 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void initRetried() throws IOException {
+    public void when_initFailsFirstTime_then_retried() throws IOException {
         // Given
         String baseDirStr = baseDir.toString();
         String outcomeFilename = "init_outcome.txt";
         installFileToBaseDir(String.format(
-                "THE_FILE=%s/%s%n"
-                + "test -f $THE_FILE && exit 0%n"
-                + "echo 'init.sh' executed once > $THE_FILE%n"
-                + "exit 1%n",
+                "RETRY_MARKER=%s/%s%n" +
+                // Then
+                "test -f $RETRY_MARKER && exit 0%n" +
+                "echo 'init.sh' executed first time > $RETRY_MARKER%n" +
+                "exit 1%n",
                 baseDirStr, outcomeFilename), "init.sh");
 
         PythonServiceConfig cfg = new PythonServiceConfig()
@@ -181,14 +183,47 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
         // When
         p.readFrom(TestSources.items("1"))
-                .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
-                .writeTo(Sinks.logger());
+         .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
+         .writeTo(Sinks.logger());
 
         instance().newJob(p).join();
     }
 
     @Test
-    public void cleanupExecutedIfInitFailed() throws IOException {
+    public void when_initRetried_then_directoryRecreated() throws IOException {
+        // Given
+        String baseDirStr = baseDir.toString();
+        String outcomeFilename = "init_outcome.txt";
+        installFileToBaseDir(String.format(
+            "RETRY_MARKER=%s/%s%n" +
+            "TEMP_FILE=tmpfile.txt%n" +
+            "if [[ -f $RETRY_MARKER ]]; then%n" +
+            // Then
+            "    test -f $TEMP_FILE || exit 0%n" +
+            "    echo 'ERROR: temp file is still there'%n" +
+            "    exit 1%n" +
+            "fi%n" +
+            "echo 'This temp file should be gone after retry' > $TEMP_FILE%n" +
+            "echo 'init.sh executed the first time' > $RETRY_MARKER%n" +
+            "exit 1%n",
+                baseDirStr, outcomeFilename), "init.sh");
+
+        PythonServiceConfig cfg = new PythonServiceConfig()
+                .setBaseDir(baseDir.toString())
+                .setHandlerModule("echo")
+                .setHandlerFunction("handle");
+
+        Pipeline p = Pipeline.create();
+        // When
+        p.readFrom(TestSources.items("1"))
+         .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
+         .writeTo(Sinks.logger());
+
+        instance().newJob(p).join();
+    }
+
+    @Test
+    public void when_initFails_then_cleanupExecutes() throws IOException {
         // Given
         installFileToBaseDir("exit 1", "init.sh");
         String baseDirStr = baseDir.toString();
@@ -203,8 +238,8 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items("1"))
-                .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
-                .writeTo(Sinks.logger());
+         .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
+         .writeTo(Sinks.logger());
 
         // When
         try {
@@ -219,7 +254,7 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void cleanupExecutedIfPythonFailed() throws IOException {
+    public void when_pythonFails_then_cleanupExecutes() throws IOException {
         // Given
         installFileToBaseDir(FAILING_FUNCTION, "failing.py");
         String baseDirStr = baseDir.toString();
@@ -234,8 +269,8 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items("1"))
-                .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
-                .writeTo(Sinks.logger());
+         .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
+         .writeTo(Sinks.logger());
 
         // When
         try {
@@ -250,7 +285,7 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void cleanupExecutedIfJobFailed() throws IOException {
+    public void when_jobFails_then_cleanupExecutes() throws IOException {
         // Given
         String baseDirStr = baseDir.toString();
         String outcomeFilename = "cleanup_outcome.txt";
@@ -264,12 +299,11 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items("1"))
-                .map(t -> {
-                    assertTrue("expected failure", false);
-                    return t;
-                })
-                .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
-                .writeTo(Sinks.logger());
+         .<String>map(t -> {
+             throw new Exception("expected failure");
+         })
+         .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
+         .writeTo(Sinks.logger());
 
         // When
         try {
@@ -284,7 +318,7 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void initAndCleanupNotExecutedIfHandlerFileIsUsed() throws IOException {
+    public void when_handlerFileConfigured_then_initAndCleanupDontExecute() throws IOException {
         // Given
         String baseDirStr = baseDir.toString();
         String outcomeInitFilename = "init_outcome.txt";
@@ -301,15 +335,15 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items("1"))
-                .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
-                .writeTo(Sinks.logger());
+         .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
+         .writeTo(Sinks.logger());
 
         // When
         instance().newJob(p).join();
 
         // Then
         assertFalse("init script ran", new File(baseDir, outcomeCleanupFilename).exists());
-        assertFalse("Cleanup script ran", new File(baseDir, outcomeCleanupFilename).exists());
+        assertFalse("cleanup script ran", new File(baseDir, outcomeCleanupFilename).exists());
     }
 
     private String prepareSimpleInitSh(String baseDirStr, String outcomeFilename) {
@@ -329,5 +363,4 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
             Files.copy(in, new File(baseDir, filename).toPath());
         }
     }
-
 }
