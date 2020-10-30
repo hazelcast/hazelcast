@@ -26,7 +26,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.hamcrest.Matcher;
 import org.hamcrest.core.IsNull;
 import org.junit.Rule;
@@ -44,7 +44,7 @@ import static com.hazelcast.test.Accessors.getOperationService;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class Invocation_ExceptionTest extends HazelcastTestSupport {
 
     private static final int GET = 0;
