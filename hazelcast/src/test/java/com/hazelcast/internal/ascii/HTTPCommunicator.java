@@ -141,6 +141,12 @@ public class HTTPCommunicator {
         this.address = protocol + this.baseRestAddress + "/hazelcast/rest/";
     }
 
+    public HTTPCommunicator(int port) {
+        this.baseRestAddress = "/127.0.0.1:" + port;
+        this.address = "http:/" + this.baseRestAddress + "/hazelcast/rest/";
+        this.sslEnabled = false;
+    }
+
     public String getUrl(String suffix) {
         return address + suffix;
     }
