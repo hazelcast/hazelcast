@@ -18,14 +18,15 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMigrationListenerCodec;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.MigrationState;
-import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.partition.ReplicaMigrationEvent;
 
+import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -89,31 +90,23 @@ public class AddMigrationListenerMessageTask
 
     private ClientMessage encodeReplicaMigrationEvent(ReplicaMigrationEvent event) {
         return ClientAddMigrationListenerCodec.encodeReplicaMigrationEvent(
-                new MigrationStateImpl(
-                        event.getMigrationState().getStartTime(),
-                        event.getMigrationState().getPlannedMigrations(),
-                        event.getMigrationState().getCompletedMigrations(),
-                        event.getMigrationState().getTotalElapsedTime()
-                ),
+                event.getMigrationState(),
                 event.getPartitionId(),
                 event.getReplicaIndex(),
-                event.getSource() != null ? event.getSource().getUuid() : null,
-                event.getDestination() != null ? event.getDestination().getUuid() : null,
+                getMemberUuid(event.getSource()),
+                getMemberUuid(event.getDestination()),
                 event.isSuccess(),
                 event.getElapsedTime()
         );
     }
 
-    private ClientMessage encodeMigrationEvent(MigrationState event, int partitionId) {
-        return ClientAddMigrationListenerCodec.encodeMigrationEvent(
-                new MigrationStateImpl(
-                        event.getStartTime(),
-                        event.getPlannedMigrations(),
-                        event.getCompletedMigrations(),
-                        event.getTotalElapsedTime()
-                ),
-                partitionId
-        );
+    @Nullable
+    private UUID getMemberUuid(@Nullable Member source) {
+        return source != null ? source.getUuid() : null;
+    }
+
+    private ClientMessage encodeMigrationEvent(MigrationState migrationState, int partitionId) {
+        return ClientAddMigrationListenerCodec.encodeMigrationEvent(migrationState, partitionId);
     }
 
     @Override
