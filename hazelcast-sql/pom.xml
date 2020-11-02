@@ -79,7 +79,7 @@
                 <version>${maven.shade.plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>thin-original-jar</id>
+                        <id>slim-original-jar</id>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
