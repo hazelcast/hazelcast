@@ -28,7 +28,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -40,7 +40,7 @@ import static com.hazelcast.test.OverridePropertyRule.clear;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class MulticastJoinTest extends AbstractJoinTest {
 
     @Rule
