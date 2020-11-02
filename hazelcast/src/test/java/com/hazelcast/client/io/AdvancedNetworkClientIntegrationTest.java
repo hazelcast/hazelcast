@@ -33,6 +33,7 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -60,7 +61,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class AdvancedNetworkClientIntegrationTest {
 
     private static final int CLUSTER_SIZE = 3;
@@ -86,6 +87,7 @@ public class AdvancedNetworkClientIntegrationTest {
     }
 
     @Test
+    @Category(QuickTest.class)
     public void clientSmokeTest() {
         client = HazelcastClient.newHazelcastClient(getClientConfig());
         IMap<Integer, Integer> map = client.getMap("test");
