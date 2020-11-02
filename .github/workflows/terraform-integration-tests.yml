@@ -65,7 +65,7 @@ jobs:
 
       #BUILD TERRAFORM
       - name : Set-up Terraform
-        uses: hashicorp/setup-terraform@v1
+        uses: hashicorp/setup-terraform@v1.2.1
         with:
           terraform_version: 0.13.0
 
