@@ -79,97 +79,30 @@
                 <version>${maven.shade.plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>fat-jar</id>
+                        <id>thin-original-jar</id>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
                         <configuration>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>jar-with-dependencies</shadedClassifierName>
+                            <shadedClassifierName>original</shadedClassifierName>
                             <createSourcesJar>true</createSourcesJar>
                             <artifactSet>
                                 <includes>
-                                    <include>com.fasterxml.jackson.core:jackson-core</include>
-                                    <include>com.google.guava:guava</include>
-                                    <include>com.jayway.jsonpath:json-path</include>
-                                    <include>org.apache.calcite.avatica:avatica-core</include>
                                     <include>org.apache.calcite:calcite-core</include>
-                                    <include>org.apache.calcite:calcite-linq4j</include>
-                                    <include>org.codehaus.janino:commons-compiler</include>
-                                    <include>org.codehaus.janino:janino</include>
-                                    <include>org.slf4j:slf4j-api</include>
-                                    <include>commons-codec:commons-codec</include>
                                 </includes>
                             </artifactSet>
                             <transformers>
                                 <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
+                                    implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
                                     <resource>com.hazelcast.org.codehaus.commons.compiler.properties</resource>
                                 </transformer>
                             </transformers>
                             <filters>
                                 <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <!-- Exclude signatures -->
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.apache.calcite:*</artifact>
-                                    <excludes>
-                                        <!-- Avoid automatic discovery of Calcite JDBC. -->
-                                        <exclude>META-INF/services/java.sql.Driver</exclude>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                        <exclude>**/package-info.java</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.apache.calcite.avatica:*</artifact>
-                                    <excludes>
-                                        <!-- Avoid automatic discovery of Avatica JDBC. -->
-                                        <exclude>META-INF/services/java.sql.Driver</exclude>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                        <!-- Exclude Avatica ProtoBuf definitions, since Avatica is not used. -->
-                                        <exclude>*.proto</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.codehaus.janino:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>commons-codec:commons-codec</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.google.guava:guava</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.jayway.jsonpath:json-path</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.slf4j:slf4j-api</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
+                                    <artifact>org.apache.calcite:calcite-core</artifact>
+                                    <includes>**/Parser.jj</includes>
                                 </filter>
                             </filters>
                         </configuration>
@@ -185,6 +118,7 @@
                             <finalName>${project.build.finalName}</finalName>
                             <createSourcesJar>true</createSourcesJar>
                             <shadeSourcesContent>true</shadeSourcesContent>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
                             <shadeTestJar>false</shadeTestJar>
                             <artifactSet>
                                 <includes>
