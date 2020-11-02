@@ -94,6 +94,7 @@ public class SqlCatalogTest {
             this.tables = asList(tables);
         }
 
+        @Nonnull
         @Override
         public List<List<String>> getDefaultSearchPaths() {
             return emptyList();
