@@ -98,7 +98,7 @@ public class HazelcastKubernetesDiscoveryStrategyFactoryTest {
         HazelcastKubernetesDiscoveryStrategyFactory factory = new HazelcastKubernetesDiscoveryStrategyFactory();
 
         // when & then
-        assertTrue(factory.isAutoDetectionApplicable());
+        assertTrue(factory.tokenFileExists());
         assertEquals(DiscoveryStrategyLevel.PLATFORM, factory.discoveryStrategyLevel());
     }
 }
