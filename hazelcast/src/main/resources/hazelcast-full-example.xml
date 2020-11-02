@@ -2490,6 +2490,11 @@
                     <action>all</action>
                 </actions>
             </pn-counter-permission>
+            <replicatedmap-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </replicatedmap-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
         <security-interceptors>
