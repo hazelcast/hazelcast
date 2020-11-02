@@ -17,7 +17,6 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.partition.PartitionEventListener;
-import com.hazelcast.internal.partition.MigrationEventHandler;
 import com.hazelcast.partition.ReplicaMigrationEvent;
 import com.hazelcast.partition.MigrationListener;
 
@@ -26,15 +25,31 @@ import com.hazelcast.partition.MigrationListener;
  */
 class MigrationListenerAdapter implements PartitionEventListener<ReplicaMigrationEvent> {
 
-    private final MigrationEventHandler migrationEventHandler;
+    static final int MIGRATION_STARTED_PARTITION_ID = -1;
+    static final int MIGRATION_FINISHED_PARTITION_ID = -2;
+
+    private final MigrationListener migrationListener;
 
     MigrationListenerAdapter(MigrationListener migrationListener) {
-        this.migrationEventHandler = new MigrationEventHandler(migrationListener);
+        this.migrationListener = migrationListener;
     }
 
     @Override
     public void onEvent(ReplicaMigrationEvent event) {
-        migrationEventHandler.handleReplicaMigrationEvent(event);
+        switch (event.getPartitionId()) {
+            case MIGRATION_STARTED_PARTITION_ID:
+                migrationListener.migrationStarted(event.getMigrationState());
+                break;
+            case MIGRATION_FINISHED_PARTITION_ID:
+                migrationListener.migrationFinished(event.getMigrationState());
+                break;
+            default:
+                if (event.isSuccess()) {
+                    migrationListener.replicaMigrationCompleted(event);
+                } else {
+                    migrationListener.replicaMigrationFailed(event);
+                }
+        }
     }
 
 }

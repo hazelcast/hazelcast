@@ -18,11 +18,11 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMigrationListenerCodec;
+import com.hazelcast.client.impl.proxy.PartitionServiceProxy;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.internal.partition.MigrationEventType;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.MigrationState;
 import com.hazelcast.partition.ReplicaMigrationEvent;
@@ -61,12 +61,12 @@ public class AddMigrationListenerMessageTask
 
                 @Override
                 public void migrationStarted(MigrationState state) {
-                    sendIfAlive(encodeMigrationEvent(state, MigrationEventType.MIGRATION_STARTED));
+                    sendIfAlive(encodeMigrationEvent(state, PartitionServiceProxy.MIGRATION_STARTED));
                 }
 
                 @Override
                 public void migrationFinished(MigrationState state) {
-                    sendIfAlive(encodeMigrationEvent(state, MigrationEventType.MIGRATION_FINISHED));
+                    sendIfAlive(encodeMigrationEvent(state, PartitionServiceProxy.MIGRATION_FINISHED));
                 }
 
                 @Override
@@ -104,8 +104,8 @@ public class AddMigrationListenerMessageTask
         return source != null ? source.getUuid() : null;
     }
 
-    private ClientMessage encodeMigrationEvent(MigrationState migrationState, MigrationEventType type) {
-        return ClientAddMigrationListenerCodec.encodeMigrationEvent(migrationState, type.getType());
+    private ClientMessage encodeMigrationEvent(MigrationState migrationState, int type) {
+        return ClientAddMigrationListenerCodec.encodeMigrationEvent(migrationState, type);
     }
 
     @Override

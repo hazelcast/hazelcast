@@ -30,8 +30,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import static com.hazelcast.internal.partition.MigrationEventHandler.MIGRATION_FINISHED_PARTITION_ID;
-import static com.hazelcast.internal.partition.MigrationEventHandler.MIGRATION_STARTED_PARTITION_ID;
+import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_FINISHED_PARTITION_ID;
+import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_STARTED_PARTITION_ID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;

@@ -27,9 +27,7 @@ import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.internal.partition.MigrationEventType;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
-import com.hazelcast.internal.partition.MigrationEventHandler;
 import com.hazelcast.internal.partition.ReplicaMigrationEventImpl;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.MigrationState;
@@ -51,6 +49,9 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @author mdogan 5/16/13
  */
 public final class PartitionServiceProxy implements PartitionService {
+
+    public static final int MIGRATION_STARTED = 0;
+    public static final int MIGRATION_FINISHED = 1;
 
     private final ClientPartitionService partitionService;
     private final ClientListenerService listenerService;
@@ -195,16 +196,23 @@ public final class PartitionServiceProxy implements PartitionService {
     private class ClientMigrationEventHandler extends ClientAddMigrationListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
-        private final MigrationEventHandler migrationEventHandler;
+        private final MigrationListener listener;
 
         ClientMigrationEventHandler(MigrationListener listener) {
-            this.migrationEventHandler = new MigrationEventHandler(listener);
+            this.listener = listener;
         }
 
         @Override
         public void handleMigrationEvent(MigrationState migrationState, int type) {
-            MigrationEventType eventType = MigrationEventType.getByType(type);
-            migrationEventHandler.handleMigrationEvent(migrationState, eventType);
+            switch (type) {
+                case MIGRATION_STARTED:
+                    listener.migrationStarted(migrationState);
+                    break;
+                case MIGRATION_FINISHED:
+                    listener.migrationFinished(migrationState);
+                    break;
+                default:
+            }
         }
 
         @Override
@@ -222,7 +230,11 @@ public final class PartitionServiceProxy implements PartitionService {
             ReplicaMigrationEvent event = new ReplicaMigrationEventImpl(migrationState, partitionId,
                     replicaIndex, source, destination, success, elapsedTime);
 
-            migrationEventHandler.handleReplicaMigrationEvent(event);
+            if (event.isSuccess()) {
+                listener.replicaMigrationCompleted(event);
+            } else {
+                listener.replicaMigrationFailed(event);
+            }
         }
 
         private Member findMember(@Nullable UUID memberUuid) {
