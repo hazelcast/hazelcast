@@ -153,6 +153,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_CONNECT_TIMEOUT_SECONDS;
@@ -500,10 +501,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 pollingInterval = parseInt(getTextContent(n));
             }
         }
-        VaultSecureStoreConfig vaultSecureStoreConfig = new VaultSecureStoreConfig(address, secretPath, token)
+        return new VaultSecureStoreConfig(address, secretPath, token)
                 .setSSLConfig(sslConfig)
                 .setPollingInterval(pollingInterval);
-        return vaultSecureStoreConfig;
     }
 
     private void handleCRDTReplication(Node root) {
@@ -1511,10 +1511,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("async-backup-count", nodeName)) {
                 qConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", getTextContent(n)));
             } else if (matches("item-listeners", nodeName)) {
-                handleItemListeners(n, itemListenerConfig -> {
-                    qConfig.addItemListenerConfig(itemListenerConfig);
-                    return null;
-                });
+                handleItemListeners(n, qConfig::addItemListenerConfig);
             } else if (matches("statistics-enabled", nodeName)) {
                 qConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
             } else if (matches("queue-store", nodeName)) {
@@ -1534,13 +1531,13 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addQueueConfig(qConfig);
     }
 
-    protected void handleItemListeners(Node n, Function<ItemListenerConfig, Void> configAddFunction) {
+    protected void handleItemListeners(Node n, Consumer<ItemListenerConfig> configAddFunction) {
         for (Node listenerNode : childElements(n)) {
             if (matches("item-listener", cleanNodeName(listenerNode))) {
                 boolean incValue = getBooleanValue(getTextContent(
                   getNamedItemNode(listenerNode, "include-value")));
                 String listenerClass = getTextContent(listenerNode);
-                configAddFunction.apply(new ItemListenerConfig(listenerClass, incValue));
+                configAddFunction.accept(new ItemListenerConfig(listenerClass, incValue));
             }
         }
     }
@@ -1563,10 +1560,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("async-backup-count", nodeName)) {
                 lConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", getTextContent(n)));
             } else if (matches("item-listeners", nodeName)) {
-                handleItemListeners(n, itemListenerConfig -> {
-                    lConfig.addItemListenerConfig(itemListenerConfig);
-                    return null;
-                });
+                handleItemListeners(n, lConfig::addItemListenerConfig);
             } else if (matches("statistics-enabled", nodeName)) {
                 lConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
             } else if (matches("split-brain-protection-ref", nodeName)) {
@@ -1598,10 +1592,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("async-backup-count", nodeName)) {
                 sConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", getTextContent(n)));
             } else if (matches("item-listeners", nodeName)) {
-                handleItemListeners(n, itemListenerConfig -> {
-                    sConfig.addItemListenerConfig(itemListenerConfig);
-                    return null;
-                });
+                handleItemListeners(n, sConfig::addItemListenerConfig);
             } else if (matches("statistics-enabled", nodeName)) {
                 sConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
             } else if (matches("split-brain-protection-ref", nodeName)) {
@@ -1634,10 +1625,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 multiMapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count"
                         , getTextContent(n)));
             } else if (matches("entry-listeners", nodeName)) {
-                handleEntryListeners(n, entryListenerConfig -> {
-                    multiMapConfig.addEntryListenerConfig(entryListenerConfig);
-                    return null;
-                });
+                handleEntryListeners(n, multiMapConfig::addEntryListenerConfig);
             } else if (matches("statistics-enabled", nodeName)) {
                 multiMapConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
             } else if (matches("binary", nodeName)) {
@@ -1652,7 +1640,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addMultiMapConfig(multiMapConfig);
     }
 
-    protected void handleEntryListeners(Node n, Function<EntryListenerConfig, Void> configAddFunction) {
+    protected void handleEntryListeners(Node n, Consumer<EntryListenerConfig> configAddFunction) {
         for (Node listenerNode : childElements(n)) {
             if (matches("entry-listener", cleanNodeName(listenerNode))) {
                 boolean incValue = getBooleanValue(getTextContent(
@@ -1660,7 +1648,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 boolean local = getBooleanValue(getTextContent(
                   getNamedItemNode(listenerNode, "local")));
                 String listenerClass = getTextContent(listenerNode);
-                configAddFunction.apply(new EntryListenerConfig(listenerClass, local, incValue));
+                configAddFunction.accept(new EntryListenerConfig(listenerClass, local, incValue));
             }
         }
     }
@@ -1683,10 +1671,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("statistics-enabled", nodeName)) {
                 replicatedMapConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
             } else if (matches("entry-listeners", nodeName)) {
-                handleEntryListeners(n, entryListenerConfig -> {
-                    replicatedMapConfig.addEntryListenerConfig(entryListenerConfig);
-                    return null;
-                });
+                handleEntryListeners(n, replicatedMapConfig::addEntryListenerConfig);
             } else if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 replicatedMapConfig.setMergePolicyConfig(mergePolicyConfig);
@@ -1752,10 +1737,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("attributes", nodeName)) {
                 attributesHandle(node, mapConfig);
             } else if (matches("entry-listeners", nodeName)) {
-                handleEntryListeners(node, entryListenerConfig -> {
-                    mapConfig.addEntryListenerConfig(entryListenerConfig);
-                    return null;
-                });
+                handleEntryListeners(node, mapConfig::addEntryListenerConfig);
             } else if (matches("partition-lost-listeners", nodeName)) {
                 mapPartitionLostListenerHandle(node, mapConfig);
             } else if (matches("partition-strategy", nodeName)) {
@@ -2142,10 +2124,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node childNode : childElements(queryCacheNode)) {
             String nodeName = cleanNodeName(childNode);
             if (matches("entry-listeners", nodeName)) {
-                handleEntryListeners(childNode, entryListenerConfig -> {
-                    queryCacheConfig.addEntryListenerConfig(entryListenerConfig);
-                    return null;
-                });
+                handleEntryListeners(childNode, queryCacheConfig::addEntryListenerConfig);
             } else {
                 if (matches("include-value", nodeName)) {
                     boolean includeValue = getBooleanValue(getTextContent(childNode));

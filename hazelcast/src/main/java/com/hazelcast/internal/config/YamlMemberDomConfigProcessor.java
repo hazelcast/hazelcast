@@ -91,6 +91,7 @@ import org.w3c.dom.NodeList;
 import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
@@ -518,18 +519,18 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleItemListeners(Node n, Function<ItemListenerConfig, Void> configAddFunction) {
+    protected void handleItemListeners(Node n, Consumer<ItemListenerConfig> configAddFunction) {
         for (Node listenerNode : childElements(n)) {
             boolean incValue = getBooleanValue(getTextContent(
               getNamedItemNode(listenerNode, "include-value")));
             String listenerClass = getTextContent(
               getNamedItemNode(listenerNode, "class-name"));
-            configAddFunction.apply(new ItemListenerConfig(listenerClass, incValue));
+            configAddFunction.accept(new ItemListenerConfig(listenerClass, incValue));
         }
     }
 
     @Override
-    protected void handleEntryListeners(Node n, Function<EntryListenerConfig, Void> configAddFunction) {
+    protected void handleEntryListeners(Node n, Consumer<EntryListenerConfig> configAddFunction) {
         for (Node listenerNode : childElements(n)) {
             boolean incValue = getBooleanValue(getTextContent(
               getNamedItemNode(listenerNode, "include-value")));
@@ -537,7 +538,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
               getNamedItemNode(listenerNode, "local")));
             String listenerClass = getTextContent(
               getNamedItemNode(listenerNode, "class-name"));
-            configAddFunction.apply(new EntryListenerConfig(listenerClass, local, incValue));
+            configAddFunction.accept(new EntryListenerConfig(listenerClass, local, incValue));
         }
     }
 
