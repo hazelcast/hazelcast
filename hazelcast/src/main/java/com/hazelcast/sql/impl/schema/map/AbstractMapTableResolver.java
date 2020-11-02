@@ -20,6 +20,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableResolver;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,15 +36,16 @@ public abstract class AbstractMapTableResolver implements TableResolver {
     private final List<List<String>> defaultSearchPaths;
 
     protected AbstractMapTableResolver(
-        NodeEngine nodeEngine,
-        JetMapMetadataResolver jetMapMetadataResolver,
-        List<List<String>> defaultSearchPaths
+        @Nonnull NodeEngine nodeEngine,
+        @Nonnull JetMapMetadataResolver jetMapMetadataResolver,
+        @Nonnull List<List<String>> defaultSearchPaths
     ) {
         this.nodeEngine = nodeEngine;
         this.jetMapMetadataResolver = jetMapMetadataResolver;
         this.defaultSearchPaths = defaultSearchPaths;
     }
 
+    @Nonnull
     @Override
     public List<List<String>> getDefaultSearchPaths() {
         return defaultSearchPaths;

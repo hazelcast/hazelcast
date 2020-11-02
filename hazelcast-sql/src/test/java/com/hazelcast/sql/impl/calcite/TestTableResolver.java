@@ -46,6 +46,7 @@ public class TestTableResolver implements TableResolver {
         this.tables = tables;
     }
 
+    @Nonnull
     @Override
     public List<List<String>> getDefaultSearchPaths() {
         if (searchPath == null) {
