@@ -537,13 +537,19 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                                         .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
                         .setUsernamePasswordIdentityConfig("username", "password"))
                 .setMemberRealmConfig("mr", memberRealm)
-                .setClientPermissionConfigs(new HashSet<>(singletonList(
+                .setClientPermissionConfigs(new HashSet<>(asList(
                         new PermissionConfig()
                                 .setActions(newHashSet("read", "remove"))
                                 .setEndpoints(newHashSet("127.0.0.1", "127.0.0.2"))
                                 .setType(PermissionConfig.PermissionType.ATOMIC_LONG)
                                 .setName("mycounter")
-                                .setPrincipal("devos"))));
+                                .setPrincipal("devos"),
+                        new PermissionConfig()
+                                .setActions(newHashSet("read", "create"))
+                                .setType(PermissionConfig.PermissionType.REPLICATEDMAP)
+                                .setName("rmap")
+                                .setPrincipal("monitor")
+                        )));
 
         cfg.setSecurityConfig(expectedConfig);
 
