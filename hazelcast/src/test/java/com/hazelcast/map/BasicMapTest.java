@@ -95,6 +95,7 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class BasicMapTest extends HazelcastTestSupport {
 
+
     /**
      * This rule is here artificially just to test that ChangeLoggingRule is working (meaning not broken).
      */
