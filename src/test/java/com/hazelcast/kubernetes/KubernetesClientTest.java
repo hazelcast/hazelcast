@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *  
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -60,7 +60,7 @@ public class KubernetesClientTest {
     public void setUp() {
         kubernetesClient = newKubernetesClient(false);
         stubFor(get(urlMatching("/api/.*")).atPriority(5)
-                                           .willReturn(aResponse().withStatus(401).withBody("\"reason\":\"Forbidden\"")));
+                .willReturn(aResponse().withStatus(401).withBody("\"reason\":\"Forbidden\"")));
     }
 
     @Test
@@ -329,7 +329,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void zone() {
+    public void zoneFailureDomain() {
         // given
         String podName = "pod-name";
 
@@ -351,6 +351,41 @@ public class KubernetesClientTest {
                 + "      \"failure-domain.beta.kubernetes.io/zone\": \"deprecated-zone\",\n"
                 + "      \"failure-domain.kubernetes.io/region\": \"us-central1\",\n"
                 + "      \"failure-domain.kubernetes.io/zone\": \"us-central1-a\"\n"
+                + "    }\n"
+                + "  }\n"
+                + "}";
+        stub("/api/v1/nodes/node-name", nodeResponse);
+
+        // when
+        String zone = kubernetesClient.zone(podName);
+
+        // then
+        assertEquals("us-central1-a", zone);
+    }
+
+    @Test
+    public void zone() {
+        // given
+        String podName = "pod-name";
+
+        //language=JSON
+        String podResponse = "{\n"
+                + "  \"kind\": \"Pod\",\n"
+                + "  \"spec\": {\n"
+                + "    \"nodeName\": \"node-name\"\n"
+                + "  }\n"
+                + "}";
+        stub(String.format("/api/v1/namespaces/%s/pods/%s", NAMESPACE, podName), podResponse);
+
+        //language=JSON
+        String nodeResponse = "{\n"
+                + "  \"kind\": \"Node\",\n"
+                + "  \"metadata\": {\n"
+                + "    \"labels\": {\n"
+                + "      \"failure-domain.beta.kubernetes.io/region\": \"deprecated-region\",\n"
+                + "      \"failure-domain.beta.kubernetes.io/zone\": \"deprecated-zone\",\n"
+                + "      \"topology.kubernetes.io/region\": \"us-central1\",\n"
+                + "      \"topology.kubernetes.io/zone\": \"us-central1-a\"\n"
                 + "    }\n"
                 + "  }\n"
                 + "}";
@@ -628,33 +663,33 @@ public class KubernetesClientTest {
     private static String nodePortService1Response() {
         //language=JSON
         return "{\n"
-        + "  \"kind\": \"Service\",\n"
-        + "  \"spec\": {\n"
-        + "    \"ports\": [\n"
-        + "      {\n"
-        + "        \"port\": 32123,\n"
-        + "        \"targetPort\": 5701,\n"
-        + "        \"nodePort\": 31916\n"
-        + "      }\n"
-        + "    ]\n"
-        + "  }\n"
-        + "}\n";
+                + "  \"kind\": \"Service\",\n"
+                + "  \"spec\": {\n"
+                + "    \"ports\": [\n"
+                + "      {\n"
+                + "        \"port\": 32123,\n"
+                + "        \"targetPort\": 5701,\n"
+                + "        \"nodePort\": 31916\n"
+                + "      }\n"
+                + "    ]\n"
+                + "  }\n"
+                + "}\n";
     }
 
     private static String nodePortService2Response() {
         //language=JSON
         return "{\n"
-        + "  \"kind\": \"Service\",\n"
-        + "  \"spec\": {\n"
-        + "    \"ports\": [\n"
-        + "      {\n"
-        + "        \"port\": 32124,\n"
-        + "        \"targetPort\": 5701,\n"
-        + "        \"nodePort\": 31917\n"
-        + "      }\n"
-        + "    ]\n"
-        + "  }\n"
-        + "}";
+                + "  \"kind\": \"Service\",\n"
+                + "  \"spec\": {\n"
+                + "    \"ports\": [\n"
+                + "      {\n"
+                + "        \"port\": 32124,\n"
+                + "        \"targetPort\": 5701,\n"
+                + "        \"nodePort\": 31917\n"
+                + "      }\n"
+                + "    ]\n"
+                + "  }\n"
+                + "}";
     }
 
     @Test

@@ -265,11 +265,15 @@ class KubernetesClient {
 
     private static String extractZone(JsonObject nodeJson) {
         JsonObject labels = nodeJson.get("metadata").asObject().get("labels").asObject();
-        JsonValue zone = labels.get("failure-domain.kubernetes.io/zone");
-        if (zone != null) {
-            return toString(zone);
+        List<String> zoneLabels = asList("topology.kubernetes.io/zone", "failure-domain.kubernetes.io/zone",
+                "failure-domain.beta.kubernetes.io/zone");
+        for (String zoneLabel : zoneLabels) {
+            JsonValue zone = labels.get(zoneLabel);
+            if (zone != null) {
+                return toString(zone);
+            }
         }
-        return toString(labels.get("failure-domain.beta.kubernetes.io/zone"));
+        return null;
     }
 
     /**
