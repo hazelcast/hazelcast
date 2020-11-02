@@ -35,6 +35,7 @@ import static java.util.Arrays.asList;
 // related issue https://github.com/hazelcast/hazelcast/issues/5444
 public class MigrationCorrectnessTest extends AbstractMigrationCorrectnessTest {
 
+
     @Parameters(name = "backups:{0},nodes:{1},fragmented:{2}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
