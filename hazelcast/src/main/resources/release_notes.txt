@@ -27,8 +27,22 @@ See the Instance Tracking section.
 * **Improvements in Partial Network Disconnections:** Introduced properties
 to be configured to detect and resolve the partial network issues among the
 Hazelcast IMDG members. See [#16680] and the Partial Network Partitions section.
-* **CP Subsystem Listeners:** Added membership and group availability
-listeners for CP Subsystem. See the CP Subsystem Listeners section.
+* **Parallel Independent Migrations:** Parallelized the partition replica migrations so that
+the time needed for rebalancing the partitions after adding
+or removing a member to/from a cluster is reduced. See the `hazelcast.partition.max.parallel.migrations` property explanation in the
+System Properties appendix.
+* **Multiple Persistent Directories:** Added support for multiple mounting
+directories in the persistent memory configuration and also thread affinity for NVMs
+(Non-Volatile Main Memories).
+See the Using Persistent Memory section.
+* **CP Subsystem Listeners and Metrics:** Added membership and group availability
+listeners for CP Subsystem. Also, added support for publishing CP Subsystem and CP data structure
+statistics via Metrics. See the CP Subsystem Listeners section.
+* **GenericRecord:** Added support for accessing domain objects without domain classes.
+See the GenericRecord section.
+* **Thread Affinity:** Introduced the CPU thread affinity; threads can have affinity for
+particular CPUs and using this you have a better control on the latency and a better throughput.
+See the CPU Thread Affinity section.
 * **Trusted Interfaces:** It is now possible to restrict the source IP addresses
 from which the Management Center operations are allowed. See the Limiting Source Addresses section.
 * **Out-of-the-Box Kerberos Support:** Introduced support for Kerberos
@@ -50,6 +64,10 @@ See the Priority Queue section.
 * Implemented a new concurrent High-Density Memory Store index
 for the queries, based on B+ tree that is enabled by default;
 brings better performance for lookup queries and enables SQL queries.
+* **Statistics for Durable and Scheduled Executor Services:** Added the statistics for scheduled and
+durable executor services, and for the executor of offloaded entry
+processors to be monitored by Management Center.
+
 
 The following are the other improvements performed to solve the enhancement
 issues opened by the Hazelcast customers/team.
@@ -81,28 +99,21 @@ environment variables or system properties are now logged. [#17559]
 * Updated the `jackson.version` to 2.11.2 and
 `SnakeYAML` to 2.1. [#17484], [#17446]
 * Added support for the merge operation in IMap. [#17419]
-* Added support for publishing CP Subsystem and CP data structure
-statistics via Metrics. [#17369]
 * Added public classes to expose the member- and
 client-side caching provider implementations (in the JCache implementation)
 without referring to internal classes. [#17320]
 * Improved the entry processing mechanism so that the read-only processors on backups
 are not executed anymore. [#17318]
 * Improved `CacheSimpleConfig` so that it now accepts cache name in its constructors. [#17287]
-* Added support for advanced persistent memory configuration. [#17282]
 * Added the statistics for schedule and durable executor services,
 and for the executor of offloaded entry processors to be
 monitored by Management Center. [#17253]
 * Cleaned up the noisy initial log messages on Hazelcast startups. [#17243]
 * Introduced auto-disposable tasks for the scheduled executor service. [#17215]
-* Parallelized the partition replica migrations so that
-the time needed for rebalancing the partitions after adding
-or removing a member to/from a cluster is reduced. [#17197]
 * Added client labels to `ClientEndpointImpl.toString()`
 to simplify the client identification (in addition to client uuid)
 on the Hazelcast member side. [#17178]
 * Added exception handling when creating caches with tenant control. [#17122]
-* Added support for accessing domain objects without domain classes (`GenericRecord`). [#17105]
 * Added support for `IMap.compute()`. [#17030]
 * Added support to allow submitting and executing operations while a member
 is shutting down to increase the availability of a cluster more that keeps
@@ -110,7 +121,6 @@ large data. [#17028]
 * Added `ExtendedMapEntry` in order to create a mechanism for setting TTLs in
 entry processors. [#16991]
 * Added `hazelcast-azure` discovery plugin to the `hazelcast-all` module. [#16982]
-* Introduced CPU thread affinity; threads can have affinity for particular CPUs. [#16971]
 * Introduced the `ConfigRecognition` API that determines if a
 provided declarative configuration is recognized by the rules defined in a given
 implementation. Along with the API the following three implementations are added:
@@ -184,8 +194,6 @@ delivered for the non-deregistered ones. [#17646]
 to a data member. [#17621]
 * Fixed an issue where the configuration was not updating entries' time-to-live
 values if the entry processor implements the `Offloadable` interface. [#17606]
-* Fixed an issue where the scheduled executor service's `pending` count
-metric was returning negative values. [#17558]
 * Fixed an issue where the caller stacktrace was missing on the
 rethrown async runtime exceptions. [#17546]
 * Fixed the rendering of diagnostics in case there is an exception
@@ -226,7 +234,7 @@ were not handled properly. [#16831]
 * Fixed an issue where the client XML configuration could not
 properly handle the empty Near Cache name. [#16768]
 * Fixed an issue where the client permissions for Reliable Topic and Ringbuffer
-we're missing. [#16755]
+were missing. [#16755]
 * Fixed an issue where the type information was missing the Metrics MBeans. [#16747]
 * Fixed an issue where the REST API was always requiring the call URLs
 to end with a slash character. [#16688]
