@@ -52,8 +52,8 @@ public class AcquirePermitsOp extends AbstractSemaphoreOp implements CallerAware
     public AcquirePermitsOp() {
     }
 
-    public AcquirePermitsOp(String name, long sessionId, long threadId, UUID invocationUid, int permits, long timeoutMs) {
-        super(name, sessionId, threadId, invocationUid);
+    public AcquirePermitsOp(String name, long sessionId, UUID invocationUid, int permits, long timeoutMs) {
+        super(name, sessionId, invocationUid);
         this.permits = permits;
         this.timeoutMs = timeoutMs;
     }

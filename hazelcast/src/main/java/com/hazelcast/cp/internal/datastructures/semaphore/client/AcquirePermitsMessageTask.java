@@ -41,7 +41,7 @@ public class AcquirePermitsMessageTask extends AbstractCPMessageTask<SemaphoreAc
 
     @Override
     protected void processMessage() {
-        RaftOp op = new AcquirePermitsOp(parameters.name, parameters.sessionId, parameters.threadId, parameters.invocationUid,
+        RaftOp op = new AcquirePermitsOp(parameters.name, parameters.sessionId, parameters.invocationUid,
                 parameters.permits, parameters.timeoutMs);
         invoke(parameters.groupId, op);
     }

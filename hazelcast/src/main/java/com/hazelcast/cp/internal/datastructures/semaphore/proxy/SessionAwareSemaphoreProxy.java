@@ -91,7 +91,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
         UUID invocationUid = newUnsecureUUID();
         for (; ; ) {
             long sessionId = acquireSession(permits);
-            RaftOp op = new AcquirePermitsOp(objectName, sessionId, threadId, invocationUid, permits, -1L);
+            RaftOp op = new AcquirePermitsOp(objectName, sessionId, invocationUid, permits, -1L);
             try {
                 invocationManager.invoke(groupId, op).joinInternal();
                 return;
@@ -130,7 +130,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
         for (; ; ) {
             start = Clock.currentTimeMillis();
             long sessionId = acquireSession(permits);
-            RaftOp op = new AcquirePermitsOp(objectName, sessionId, threadId, invocationUid, permits, timeoutMs);
+            RaftOp op = new AcquirePermitsOp(objectName, sessionId, invocationUid, permits, timeoutMs);
             try {
                 InternalCompletableFuture<Boolean> f = invocationManager.invoke(groupId, op);
                 boolean acquired = f.joinInternal();
@@ -166,7 +166,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
 
         long threadId = getThreadId();
         UUID invocationUid = newUnsecureUUID();
-        RaftOp op = new ReleasePermitsOp(objectName, sessionId, threadId, invocationUid, permits);
+        RaftOp op = new ReleasePermitsOp(objectName, sessionId, invocationUid, permits);
         try {
             invocationManager.invoke(groupId, op).joinInternal();
         } catch (SessionExpiredException e) {
@@ -188,7 +188,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
         UUID invocationUid = newUnsecureUUID();
         for (; ; ) {
             long sessionId = acquireSession(DRAIN_SESSION_ACQ_COUNT);
-            RaftOp op = new DrainPermitsOp(objectName, sessionId, threadId, invocationUid);
+            RaftOp op = new DrainPermitsOp(objectName, sessionId, invocationUid);
             try {
                 InternalCompletableFuture<Integer> future = invocationManager.invoke(groupId, op);
                 int count = future.joinInternal();
@@ -223,7 +223,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
         long threadId = getThreadId();
         UUID invocationUid = newUnsecureUUID();
         try {
-            RaftOp op = new ChangePermitsOp(objectName, sessionId, threadId, invocationUid, delta);
+            RaftOp op = new ChangePermitsOp(objectName, sessionId, invocationUid, delta);
             invocationManager.invoke(groupId, op).joinInternal();
         } catch (SessionExpiredException e) {
             invalidateSession(sessionId);

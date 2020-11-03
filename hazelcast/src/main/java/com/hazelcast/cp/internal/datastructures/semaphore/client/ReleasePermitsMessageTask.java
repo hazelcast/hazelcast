@@ -40,7 +40,7 @@ public class ReleasePermitsMessageTask extends AbstractCPMessageTask<SemaphoreRe
 
     @Override
     protected void processMessage() {
-        RaftOp op = new ReleasePermitsOp(parameters.name, parameters.sessionId, parameters.threadId, parameters.invocationUid,
+        RaftOp op = new ReleasePermitsOp(parameters.name, parameters.sessionId, parameters.invocationUid,
                 parameters.permits);
         invoke(parameters.groupId, op);
     }

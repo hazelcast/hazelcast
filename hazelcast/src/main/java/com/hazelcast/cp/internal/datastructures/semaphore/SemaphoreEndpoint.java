@@ -32,22 +32,16 @@ import java.io.IOException;
  */
 public class SemaphoreEndpoint implements IdentifiedDataSerializable {
     private long sessionId;
-    private long threadId;
 
     public SemaphoreEndpoint() {
     }
 
-    public SemaphoreEndpoint(long sessionId, long threadId) {
+    public SemaphoreEndpoint(long sessionId) {
         this.sessionId = sessionId;
-        this.threadId = threadId;
     }
 
     public long sessionId() {
         return sessionId;
-    }
-
-    public long threadId() {
-        return threadId;
     }
 
     @Override
@@ -64,14 +58,14 @@ public class SemaphoreEndpoint implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out)
             throws IOException {
         out.writeLong(sessionId);
-        out.writeLong(threadId);
+        out.writeLong(0L);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
         sessionId = in.readLong();
-        threadId = in.readLong();
+        in.readLong();
     }
 
     @Override
@@ -85,22 +79,17 @@ public class SemaphoreEndpoint implements IdentifiedDataSerializable {
 
         SemaphoreEndpoint that = (SemaphoreEndpoint) o;
 
-        if (sessionId != that.sessionId) {
-            return false;
-        }
-        return threadId == that.threadId;
+        return sessionId == that.sessionId;
     }
 
     @Override
     public int hashCode() {
-        int result = (int) (sessionId ^ (sessionId >>> 32));
-        result = 31 * result + (int) (threadId ^ (threadId >>> 32));
-        return result;
+        return (int) (sessionId ^ (sessionId >>> 32));
     }
 
     @Override
     public String toString() {
-        return "SemaphoreEndpoint{" + "sessionId=" + sessionId + ", threadId=" + threadId + '}';
+        return "SemaphoreEndpoint{" + "sessionId=" + sessionId + '}';
     }
 }
 

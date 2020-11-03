@@ -95,7 +95,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         UUID invUid = newUnsecureUUID();
         RaftInvocationManager invocationManager = getRaftInvocationManager(proxyInstance);
 
-        invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 1, MINUTES.toMillis(5)));
+        invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid, 1, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
             SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
@@ -104,7 +104,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
             assertEquals(1, registry.getWaitTimeouts().size());
         });
 
-        invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 1, -1));
+        invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid, 1, -1));
 
         assertTrueAllTheTime(() -> {
             SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
@@ -126,7 +126,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         RaftInvocationManager invocationManager = getRaftInvocationManager(proxyInstance);
 
         InternalCompletableFuture<Object> f = invocationManager
-                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid1, 1, MINUTES.toMillis(5)));
+                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid1, 1, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
             SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
@@ -135,7 +135,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
             assertEquals(1, registry.getWaitTimeouts().size());
         });
 
-        invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid2, 1, -1));
+        invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid2, 1, -1));
 
         try {
             f.joinInternal();
@@ -159,7 +159,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         RaftInvocationManager invocationManager = getRaftInvocationManager(proxyInstance);
 
         InternalCompletableFuture<Object> f = invocationManager
-                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid1, 2, MINUTES.toMillis(5)));
+                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid1, 2, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
             SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
@@ -168,7 +168,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
             assertEquals(1, registry.getWaitTimeouts().size());
         });
 
-        invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid2, 1, -1));
+        invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid2, 1, -1));
 
         try {
             f.joinInternal();
@@ -190,7 +190,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         RaftInvocationManager invocationManager = getRaftInvocationManager(proxyInstance);
 
         InternalCompletableFuture<Object> f = invocationManager
-                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid1, 1, MINUTES.toMillis(5)));
+                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid1, 1, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
             SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
@@ -199,7 +199,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
             assertEquals(1, registry.getWaitTimeouts().size());
         });
 
-        invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid2, 1, 100));
+        invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid2, 1, 100));
 
         try {
             f.joinInternal();
@@ -223,7 +223,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         RaftInvocationManager invocationManager = getRaftInvocationManager(proxyInstance);
 
         InternalCompletableFuture<Object> f = invocationManager
-                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid1, 2, MINUTES.toMillis(5)));
+                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid1, 2, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
             SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
@@ -232,7 +232,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
             assertEquals(1, registry.getWaitTimeouts().size());
         });
 
-        invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid2, 1, 100));
+        invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid2, 1, 100));
 
         try {
             f.joinInternal();
@@ -254,7 +254,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         RaftInvocationManager invocationManager = getRaftInvocationManager(proxyInstance);
 
         InternalCompletableFuture<Object> f = invocationManager
-                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid1, 1, MINUTES.toMillis(5)));
+                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid1, 1, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
             SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
@@ -263,7 +263,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
             assertEquals(1, registry.getWaitTimeouts().size());
         });
 
-        invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid2, 1, 0));
+        invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid2, 1, 0));
 
         try {
             f.joinInternal();
@@ -287,7 +287,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         RaftInvocationManager invocationManager = getRaftInvocationManager(proxyInstance);
 
         InternalCompletableFuture<Object> f = invocationManager
-                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid1, 2, MINUTES.toMillis(5)));
+                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid1, 2, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
             SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
@@ -296,7 +296,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
             assertEquals(1, registry.getWaitTimeouts().size());
         });
 
-        invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid2, 1, 0));
+        invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid2, 1, 0));
 
         try {
             f.joinInternal();
@@ -317,7 +317,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         RaftInvocationManager invocationManager = getRaftInvocationManager(proxyInstance);
 
         InternalCompletableFuture<Object> f = invocationManager
-                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 1, MINUTES.toMillis(5)));
+                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid, 1, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
             SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
@@ -352,7 +352,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         RaftInvocationManager invocationManager = getRaftInvocationManager(proxyInstance);
 
         InternalCompletableFuture<Object> f = invocationManager
-                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 2, MINUTES.toMillis(5)));
+                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid, 2, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
             SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
@@ -387,7 +387,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         RaftInvocationManager invocationManager = getRaftInvocationManager(proxyInstance);
 
         InternalCompletableFuture<Object> f = invocationManager
-                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 2, MINUTES.toMillis(5)));
+                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid, 2, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
             SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
@@ -419,7 +419,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         RaftInvocationManager invocationManager = getRaftInvocationManager(proxyInstance);
 
         InternalCompletableFuture<Object> f1 = invocationManager
-                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid1, 2, MINUTES.toMillis(5)));
+                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid1, 2, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
             SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
@@ -443,7 +443,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         });
 
         InternalCompletableFuture<Object> f2 = invocationManager
-                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid1, 2, MINUTES.toMillis(5)));
+                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, invUid1, 2, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
             SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
@@ -474,14 +474,14 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         RaftInvocationManager invocationManager = getRaftInvocationManager(proxyInstance);
 
         InternalCompletableFuture<Boolean> f1 = invocationManager.invoke(groupId,
-                new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 1, SECONDS.toMillis(5)));
+                new AcquirePermitsOp(objectName, sessionId, invUid, 1, SECONDS.toMillis(5)));
 
         assertFalse(f1.joinInternal());
 
         spawn(() -> semaphore.release()).get();
 
         InternalCompletableFuture<Boolean> f2 = invocationManager.invoke(groupId,
-                new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 1, SECONDS.toMillis(5)));
+                new AcquirePermitsOp(objectName, sessionId, invUid, 1, SECONDS.toMillis(5)));
 
         assertFalse(f2.joinInternal());
     }
@@ -500,14 +500,14 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         RaftInvocationManager invocationManager = getRaftInvocationManager(proxyInstance);
 
         InternalCompletableFuture<Integer> f1 = invocationManager
-                .invoke(groupId, new DrainPermitsOp(objectName, sessionId, threadId, invUid));
+                .invoke(groupId, new DrainPermitsOp(objectName, sessionId, invUid));
 
         assertEquals(0, (int) f1.joinInternal());
 
         spawn(() -> semaphore.release()).get();
 
         InternalCompletableFuture<Integer> f2 = invocationManager
-                .invoke(groupId, new DrainPermitsOp(objectName, sessionId, threadId, invUid));
+                .invoke(groupId, new DrainPermitsOp(objectName, sessionId, invUid));
 
         assertEquals(0, (int) f2.joinInternal());
     }

@@ -37,21 +37,19 @@ abstract class AbstractSemaphoreOp extends RaftOp implements IdentifiedDataSeria
 
     protected String name;
     protected long sessionId;
-    protected long threadId;
     protected UUID invocationUid;
 
     AbstractSemaphoreOp() {
     }
 
-    AbstractSemaphoreOp(String name, long sessionId, long threadId, UUID invocationUid) {
+    AbstractSemaphoreOp(String name, long sessionId, UUID invocationUid) {
         this.name = name;
         this.sessionId = sessionId;
-        this.threadId = threadId;
         this.invocationUid = invocationUid;
     }
 
     SemaphoreEndpoint getSemaphoreEndpoint() {
-        return new SemaphoreEndpoint(sessionId, threadId);
+        return new SemaphoreEndpoint(sessionId);
     }
 
     @Override
@@ -68,7 +66,7 @@ abstract class AbstractSemaphoreOp extends RaftOp implements IdentifiedDataSeria
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeLong(sessionId);
-        out.writeLong(threadId);
+        out.writeLong(0L);
         writeUUID(out, invocationUid);
     }
 
@@ -76,14 +74,13 @@ abstract class AbstractSemaphoreOp extends RaftOp implements IdentifiedDataSeria
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         sessionId = in.readLong();
-        threadId = in.readLong();
+        in.readLong();
         invocationUid = readUUID(in);
     }
 
     @Override
     protected void toString(StringBuilder sb) {
         sb.append(", name=").append(name)
-          .append(", threadId=").append(threadId)
           .append(", sessionId=").append(sessionId)
           .append(", invocationUid=").append(invocationUid);
     }

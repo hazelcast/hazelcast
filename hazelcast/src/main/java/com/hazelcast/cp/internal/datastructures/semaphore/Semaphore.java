@@ -20,7 +20,6 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.BlockingResource;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.WaitKeyContainer;
-import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -30,6 +29,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -42,10 +42,10 @@ import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.A
 import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus.SUCCESSFUL;
 import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus.WAIT_KEY_ADDED;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
-import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
-import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 
 /**
@@ -113,7 +113,7 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
         SemaphoreEndpoint endpoint = key.endpoint();
         SessionSemaphoreState state = sessionStates.get(key.sessionId());
         if (state != null) {
-            Integer acquired = state.getInvocationResponse(endpoint.threadId(), key.invocationUid());
+            Integer acquired = state.getInvocationResponse(key.invocationUid());
             if (acquired != null) {
                 AcquireStatus status = acquired > 0 ? SUCCESSFUL : FAILED;
                 return new AcquireResult(status, acquired, Collections.emptyList());
@@ -154,8 +154,8 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
             sessionStates.put(sessionId, state);
         }
 
-        BiTuple<UUID, Integer> prev = state.invocationRefUids.put(endpoint.threadId(), BiTuple.of(invocationUid, permits));
-        if (prev == null || !prev.element1.equals(invocationUid)) {
+        Integer prev = state.invocationRefUids.put(invocationUid, permits);
+        if (prev == null) {
             state.acquiredPermits += permits;
             available -= permits;
         }
@@ -184,7 +184,7 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
                 return ReleaseResult.failed(cancelWaitKeys(endpoint, invocationUid));
             }
 
-            Integer response = state.getInvocationResponse(endpoint.threadId(), invocationUid);
+            Integer response = state.getInvocationResponse(invocationUid);
             if (response != null) {
                 if (response > 0) {
                     return ReleaseResult.successful(Collections.emptyList(), Collections.emptyList());
@@ -194,12 +194,12 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
             }
 
             if (state.acquiredPermits < permits) {
-                state.invocationRefUids.put(endpoint.threadId(), BiTuple.of(invocationUid, 0));
+                state.invocationRefUids.put(invocationUid, 0);
                 return ReleaseResult.failed(cancelWaitKeys(endpoint, invocationUid));
             }
 
             state.acquiredPermits -= permits;
-            state.invocationRefUids.put(endpoint.threadId(), BiTuple.of(invocationUid, permits));
+            state.invocationRefUids.put(invocationUid, permits);
         }
 
         available += permits;
@@ -264,7 +264,7 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
     AcquireResult drain(SemaphoreEndpoint endpoint, UUID invocationUid) {
         SessionSemaphoreState state = sessionStates.get(endpoint.sessionId());
         if (state != null) {
-            Integer permits = state.getInvocationResponse(endpoint.threadId(), invocationUid);
+            Integer permits = state.getInvocationResponse(invocationUid);
             if (permits != null) {
                 return new AcquireResult(SUCCESSFUL, permits, Collections.emptyList());
             }
@@ -303,14 +303,13 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
                 sessionStates.put(sessionId, state);
             }
 
-            long threadId = endpoint.threadId();
-            Integer response = state.getInvocationResponse(threadId, invocationUid);
+            Integer response = state.getInvocationResponse(invocationUid);
             if (response != null) {
                 Collection<AcquireInvocationKey> c = Collections.emptyList();
                 return ReleaseResult.successful(c, c);
             }
 
-            state.invocationRefUids.put(threadId, BiTuple.of(invocationUid, permits));
+            state.invocationRefUids.put(invocationUid, permits);
         }
 
         available += permits;
@@ -329,7 +328,7 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
         if (state != null) {
             // remove the session after release() because release() checks existence of the session
             if (state.acquiredPermits > 0) {
-                SemaphoreEndpoint endpoint = new SemaphoreEndpoint(sessionId, 0);
+                SemaphoreEndpoint endpoint = new SemaphoreEndpoint(sessionId);
                 ReleaseResult result = release(endpoint, newUnsecureUUID(), state.acquiredPermits);
                 assert result.cancelledWaitKeys().isEmpty();
                 for (AcquireInvocationKey key : result.acquiredWaitKeys()) {
@@ -378,11 +377,11 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
             out.writeLong(e1.getKey());
             SessionSemaphoreState state = e1.getValue();
             out.writeInt(state.invocationRefUids.size());
-            for (Entry<Long, BiTuple<UUID, Integer>> e2 : state.invocationRefUids.entrySet()) {
-                out.writeLong(e2.getKey());
-                BiTuple<UUID, Integer> t = e2.getValue();
-                writeUUID(out, t.element1);
-                out.writeInt(t.element2);
+            for (Entry<UUID, Integer> e2 : state.invocationRefUids.entrySet()) {
+                out.writeLong(-1L);
+                Integer t = e2.getValue();
+                writeUUID(out, e2.getKey());
+                out.writeInt(t);
             }
             out.writeInt(state.acquiredPermits);
         }
@@ -399,10 +398,10 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
             SessionSemaphoreState state = new SessionSemaphoreState();
             int refUidCount = in.readInt();
             for (int j = 0; j < refUidCount; j++) {
-                long threadId = in.readLong();
+                in.readLong();
                 UUID invocationUid = readUUID(in);
                 int permits = in.readInt();
-                state.invocationRefUids.put(threadId, BiTuple.of(invocationUid, permits));
+                state.invocationRefUids.put(invocationUid, permits);
             }
 
             state.acquiredPermits = in.readInt();
@@ -420,15 +419,14 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
     private static class SessionSemaphoreState {
 
         /**
-         * map of threadId -> <invocationUid, permits> to track last operation of each endpoint
+         * map of invocationUid ->  permits to track last operation of each endpoint
          */
-        private final Long2ObjectHashMap<BiTuple<UUID, Integer>> invocationRefUids = new Long2ObjectHashMap<>();
+        private final HashMap<UUID, Integer> invocationRefUids = new HashMap<>();
 
         private int acquiredPermits;
 
-        Integer getInvocationResponse(long threadId, UUID invocationUid) {
-            BiTuple<UUID, Integer> t = invocationRefUids.get(threadId);
-            return (t != null && t.element1.equals(invocationUid)) ? t.element2 : null;
+        Integer getInvocationResponse(UUID invocationUid) {
+            return invocationRefUids.get(invocationUid);
         }
 
         @Override

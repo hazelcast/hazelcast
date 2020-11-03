@@ -44,8 +44,8 @@ public class ChangePermitsOp extends AbstractSemaphoreOp implements Indeterminat
     public ChangePermitsOp() {
     }
 
-    public ChangePermitsOp(String name, long sessionId, long threadId, UUID invocationUid, int permits) {
-        super(name, sessionId, threadId, invocationUid);
+    public ChangePermitsOp(String name, long sessionId, UUID invocationUid, int permits) {
+        super(name, sessionId, invocationUid);
         this.permits = permits;
     }
 

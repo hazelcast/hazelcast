@@ -37,8 +37,8 @@ public class DrainPermitsOp extends AbstractSemaphoreOp implements Indeterminate
     public DrainPermitsOp() {
     }
 
-    public DrainPermitsOp(String name, long sessionId, long threadId, UUID invocationUid) {
-        super(name, sessionId, threadId, invocationUid);
+    public DrainPermitsOp(String name, long sessionId, UUID invocationUid) {
+        super(name, sessionId, invocationUid);
     }
 
     @Override

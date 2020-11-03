@@ -75,7 +75,7 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
     public void acquire(int permits) {
         checkPositive(permits, "Permits must be positive!");
         long clusterWideThreadId = getOrCreateUniqueThreadId();
-        RaftOp op = new AcquirePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), permits, -1L);
+        RaftOp op = new AcquirePermitsOp(objectName, NO_SESSION_ID, newUnsecureUUID(), permits, -1L);
         try {
             invocationManager.invoke(groupId, op).joinInternal();
         } catch (WaitKeyCancelledException e) {
@@ -104,7 +104,7 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
         checkPositive("permits", permits);
         long clusterWideThreadId = getOrCreateUniqueThreadId();
         long timeoutMs = max(0, unit.toMillis(timeout));
-        RaftOp op = new AcquirePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), permits, timeoutMs);
+        RaftOp op = new AcquirePermitsOp(objectName, NO_SESSION_ID, newUnsecureUUID(), permits, timeoutMs);
         try {
             return invocationManager.<Boolean>invoke(groupId, op).joinInternal();
         } catch (WaitKeyCancelledException e) {
@@ -122,7 +122,7 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
     public void release(int permits) {
         checkPositive(permits, "Permits must be positive!");
         long clusterWideThreadId = getOrCreateUniqueThreadId();
-        RaftOp op = new ReleasePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), permits);
+        RaftOp op = new ReleasePermitsOp(objectName, NO_SESSION_ID, newUnsecureUUID(), permits);
         invocationManager.invoke(groupId, op).joinInternal();
     }
 
@@ -134,7 +134,7 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
     @Override
     public int drainPermits() {
         long clusterWideThreadId = getOrCreateUniqueThreadId();
-        RaftOp op = new DrainPermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID());
+        RaftOp op = new DrainPermitsOp(objectName, NO_SESSION_ID, newUnsecureUUID());
         return invocationManager.<Integer>invoke(groupId, op).joinInternal();
     }
 
@@ -145,7 +145,7 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
             return;
         }
         long clusterWideThreadId = getOrCreateUniqueThreadId();
-        RaftOp op = new ChangePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), -reduction);
+        RaftOp op = new ChangePermitsOp(objectName, NO_SESSION_ID, newUnsecureUUID(), -reduction);
         invocationManager.invoke(groupId, op).joinInternal();
     }
 
@@ -156,7 +156,7 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
             return;
         }
         long clusterWideThreadId = getOrCreateUniqueThreadId();
-        RaftOp op = new ChangePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), increase);
+        RaftOp op = new ChangePermitsOp(objectName, NO_SESSION_ID, newUnsecureUUID(), increase);
         invocationManager.invoke(groupId, op).joinInternal();
     }
 

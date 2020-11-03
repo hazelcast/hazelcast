@@ -40,7 +40,7 @@ public class DrainPermitsMessageTask extends AbstractCPMessageTask<SemaphoreDrai
 
     @Override
     protected void processMessage() {
-        RaftOp op = new DrainPermitsOp(parameters.name, parameters.sessionId, parameters.threadId, parameters.invocationUid);
+        RaftOp op = new DrainPermitsOp(parameters.name, parameters.sessionId, parameters.invocationUid);
         invoke(parameters.groupId, op);
     }
 

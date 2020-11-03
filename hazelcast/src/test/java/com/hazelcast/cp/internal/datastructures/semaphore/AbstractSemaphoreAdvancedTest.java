@@ -242,7 +242,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
         assertNotEquals(NO_SESSION_ID, sessionId);
 
         // Not using semaphore.release(), because we want to keep sending session HBs.
-        RaftOp op = new ReleasePermitsOp(objectName, sessionId, getThreadId(), newUnsecureUUID(), 1);
+        RaftOp op = new ReleasePermitsOp(objectName, sessionId, newUnsecureUUID(), 1);
         invokeRaftOp(groupId, op).get();
 
         assertTrueEventually(() -> {
@@ -309,7 +309,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
         long sessionId = getSessionManager().getSession(groupId);
         UUID invUid = newUnsecureUUID();
 
-        invokeRaftOp(groupId, new ReleasePermitsOp(objectName, sessionId, getThreadId(), invUid, 1)).joinInternal();
+        invokeRaftOp(groupId, new ReleasePermitsOp(objectName, sessionId, invUid, 1)).joinInternal();
 
         spawn(() -> {
             try {
@@ -319,7 +319,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
             }
         });
 
-        invokeRaftOp(groupId, new ReleasePermitsOp(objectName, sessionId, getThreadId(), invUid, 1)).joinInternal();
+        invokeRaftOp(groupId, new ReleasePermitsOp(objectName, sessionId, invUid, 1)).joinInternal();
     }
 
     @Test
@@ -334,8 +334,8 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
         assertNotEquals(NO_SESSION_ID, sessionId);
         UUID invUid = newUnsecureUUID();
 
-        invokeRaftOp(groupId, new ChangePermitsOp(objectName, sessionId, getThreadId(), invUid, 1)).joinInternal();
-        invokeRaftOp(groupId, new ChangePermitsOp(objectName, sessionId, getThreadId(), invUid, 1)).joinInternal();
+        invokeRaftOp(groupId, new ChangePermitsOp(objectName, sessionId, invUid, 1)).joinInternal();
+        invokeRaftOp(groupId, new ChangePermitsOp(objectName, sessionId, invUid, 1)).joinInternal();
 
         assertEquals(2, semaphore.availablePermits());
     }
@@ -352,8 +352,8 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
         assertNotEquals(NO_SESSION_ID, sessionId);
         UUID invUid = newUnsecureUUID();
 
-        invokeRaftOp(groupId, new ChangePermitsOp(objectName, sessionId, getThreadId(), invUid, -1)).joinInternal();
-        invokeRaftOp(groupId, new ChangePermitsOp(objectName, sessionId, getThreadId(), invUid, -1)).joinInternal();
+        invokeRaftOp(groupId, new ChangePermitsOp(objectName, sessionId, invUid, -1)).joinInternal();
+        invokeRaftOp(groupId, new ChangePermitsOp(objectName, sessionId, invUid, -1)).joinInternal();
 
         assertEquals(1, semaphore.availablePermits());
     }
@@ -367,14 +367,14 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
         assertNotEquals(NO_SESSION_ID, sessionId);
         UUID invUid = newUnsecureUUID();
 
-        int drained1 = this.<Integer>invokeRaftOp(groupId, new DrainPermitsOp(objectName, sessionId, getThreadId(), invUid)).joinInternal();
+        int drained1 = this.<Integer>invokeRaftOp(groupId, new DrainPermitsOp(objectName, sessionId, invUid)).joinInternal();
 
         assertEquals(3, drained1);
         assertEquals(0, semaphore.availablePermits());
 
         spawn(() -> semaphore.increasePermits(1)).get();
 
-        int drained2 = this.<Integer>invokeRaftOp(groupId, new DrainPermitsOp(objectName, sessionId, getThreadId(), invUid)).joinInternal();
+        int drained2 = this.<Integer>invokeRaftOp(groupId, new DrainPermitsOp(objectName, sessionId, invUid)).joinInternal();
 
         assertEquals(3, drained2);
         assertEquals(1, semaphore.availablePermits());
@@ -409,7 +409,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
         BiTuple[] acquireWaitTimeoutKeyRef = new BiTuple[1];
 
         InternalCompletableFuture<Boolean> f1 =
-                invokeRaftOp(groupId, new AcquirePermitsOp(objectName, sessionId, getThreadId(), invUid, 1, SECONDS.toMillis(300)));
+                invokeRaftOp(groupId, new AcquirePermitsOp(objectName, sessionId, invUid, 1, SECONDS.toMillis(300)));
 
         assertTrueEventually(() -> {
             NodeEngineImpl nodeEngine = getNodeEngineImpl(primaryInstance);
@@ -422,7 +422,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
         });
 
         InternalCompletableFuture<Boolean> f2 =
-                invokeRaftOp(groupId, new AcquirePermitsOp(objectName, sessionId, getThreadId(), invUid, 1, SECONDS.toMillis(300)));
+                invokeRaftOp(groupId, new AcquirePermitsOp(objectName, sessionId, invUid, 1, SECONDS.toMillis(300)));
 
         assertTrueEventually(() -> {
             NodeEngineImpl nodeEngine = getNodeEngineImpl(primaryInstance);

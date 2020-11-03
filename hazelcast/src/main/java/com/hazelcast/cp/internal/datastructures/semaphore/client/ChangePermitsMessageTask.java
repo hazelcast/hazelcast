@@ -42,7 +42,7 @@ public class ChangePermitsMessageTask extends AbstractCPMessageTask<SemaphoreCha
 
     @Override
     protected void processMessage() {
-        RaftOp op = new ChangePermitsOp(parameters.name, parameters.sessionId, parameters.threadId, parameters.invocationUid,
+        RaftOp op = new ChangePermitsOp(parameters.name, parameters.sessionId, parameters.invocationUid,
                 parameters.permits);
         invoke(parameters.groupId, op);
     }
