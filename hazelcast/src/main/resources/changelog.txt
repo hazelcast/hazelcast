@@ -6,10 +6,15 @@ Release 4.1
 - Introduced the `hazelcast-sql` module to handle the SQL engine's dependencies on Apache Calcite.
 - Introduced automatic discovery strategy detection.
 - Introduced security audit logging.
+- Added support for parallel independent migrations.
+- Added support for accessing domain objects without domain classes.
+- Added statistics for durable and scheduled executor services.
+- Introduced CPU thread affinity.
+- Added support for multiple mounting directories in the persistent memory configuration.
 - Added support of overriding the configuration entries of your cluster without changing the declarative configuration files (XML/YAML).
 - Added support for tracking the Hazelcast instances.
 - Introduced properties to be configured to detect and resolve the partial network issues among the Hazelcast IMDG members.
-- Added membership and group availability listeners for CP Subsystem.
+- Added membership and group availability listeners and metrics for CP Subsystem.
 - Added support of restricting the source IP addresses from which the Management Center operations are allowed.
 - Introduced support for Kerberos authentication protocol.
 - Introduced the WAN throttling mechanism to prevent the WAN consumers from  getting overloaded.
