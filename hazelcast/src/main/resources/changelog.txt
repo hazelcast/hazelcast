@@ -1,5 +1,20 @@
 You can also see the Release Notes document at http://docs.hazelcast.org/docs/release-notes/.
 
+Release 4.1
+
+- Implemented the SQL engine that supports map scans, index scans, projections and filters.
+- Introduced the `hazelcast-sql` module to handle the SQL engine's dependencies on Apache Calcite.
+- Introduced automatic discovery strategy detection.
+- Introduced security audit logging.
+- Added support of overriding the configuration entries of your cluster without changing the declarative configuration files (XML/YAML).
+- Added support for tracking the Hazelcast instances.
+- Introduced properties to be configured to detect and resolve the partial network issues among the Hazelcast IMDG members.
+- Added membership and group availability listeners for CP Subsystem.
+- Added support of restricting the source IP addresses from which the Management Center operations are allowed.
+- Introduced support for Kerberos authentication protocol.
+- Introduced the WAN throttling mechanism to prevent the WAN consumers from  getting overloaded.
+- Added support of priority queues.
+
 Release 4.0
 
 - Added support for persistent memory, such as Intel® Optane™ DC.
