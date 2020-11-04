@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
@@ -101,6 +102,9 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
                 releaseSession(sessionId, permits);
                 throw new IllegalStateException("Semaphore[" + objectName + "] not acquired because the acquire call "
                         + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
+            } catch (Throwable t) {
+                releaseSession(sessionId, permits);
+                throw rethrow(t);
             }
         }
     }
@@ -147,6 +151,9 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
             } catch (WaitKeyCancelledException e) {
                 releaseSession(sessionId, permits);
                 return false;
+            } catch (Throwable t) {
+                releaseSession(sessionId, permits);
+                throw rethrow(t);
             }
         }
     }
@@ -196,6 +203,9 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
                 return count;
             } catch (SessionExpiredException e) {
                 invalidateSession(sessionId);
+            } catch (Throwable t) {
+                releaseSession(sessionId, DRAIN_SESSION_ACQ_COUNT);
+                throw rethrow(t);
             }
         }
     }

@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cp.internal.datastructures.semaphore.proxy.SessionAwareSemaphoreProxy.DRAIN_SESSION_ACQ_COUNT;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
@@ -99,6 +100,9 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
                 sessionManager.releaseSession(this.groupId, sessionId, permits);
                 throw new IllegalStateException("Semaphore[" + objectName + "] not acquired because the acquire call "
                         + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
+            } catch (Throwable t) {
+                sessionManager.releaseSession(this.groupId, sessionId, permits);
+                throw rethrow(t);
             }
         }
     }
@@ -147,6 +151,9 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
             } catch (WaitKeyCancelledException e) {
                 sessionManager.releaseSession(this.groupId, sessionId, permits);
                 return false;
+            } catch (Throwable t) {
+                sessionManager.releaseSession(this.groupId, sessionId, permits);
+                throw rethrow(t);
             }
         }
     }
@@ -204,6 +211,9 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
                 return count;
             } catch (SessionExpiredException e) {
                 sessionManager.invalidateSession(this.groupId, sessionId);
+            } catch (Throwable t) {
+                sessionManager.releaseSession(this.groupId, sessionId, DRAIN_SESSION_ACQ_COUNT);
+                throw rethrow(t);
             }
         }
     }
