@@ -16,16 +16,13 @@
 
 package com.hazelcast.test;
 
-/**
- * Marker thread subclass for threads created by {@link HazelcastParallelClassRunner}.
- */
-class MultithreadedTestRunnerThread extends Thread {
+import org.junit.runners.Parameterized;
 
-    MultithreadedTestRunnerThread(Runnable target) {
-        super(target);
-    }
+public class ParallelParameterized extends Parameterized {
 
-    MultithreadedTestRunnerThread(Runnable target, String name) {
-        super(target, name);
+    public ParallelParameterized(Class<?> klass) throws Throwable {
+        super(klass);
+
+        setScheduler(new HzRunnerScheduler());
     }
 }

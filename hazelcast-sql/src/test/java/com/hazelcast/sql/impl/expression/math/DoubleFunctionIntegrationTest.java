@@ -20,7 +20,8 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.ParallelParameterized;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -33,8 +34,8 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collection;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(ParallelParameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DoubleFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
 

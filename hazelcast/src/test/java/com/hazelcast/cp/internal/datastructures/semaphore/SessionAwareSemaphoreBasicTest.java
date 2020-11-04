@@ -21,11 +21,11 @@ import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftOp;
+import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RandomPicker;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 

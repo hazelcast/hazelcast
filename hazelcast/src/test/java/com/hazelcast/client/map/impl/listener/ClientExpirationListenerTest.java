@@ -60,7 +60,7 @@ public class ClientExpirationListenerTest extends HazelcastTestSupport {
 
     @Test
     public void testExpirationListener_notified_afterExpirationOfEntries() throws Exception {
-        int numberOfPutOperations = 1000;
+        int numberOfPutOperations = 10;
         CountDownLatch expirationEventArrivalCount = new CountDownLatch(numberOfPutOperations);
 
         map.addEntryListener(new ExpirationListener(expirationEventArrivalCount), true);
@@ -99,7 +99,7 @@ public class ClientExpirationListenerTest extends HazelcastTestSupport {
      */
     @Test
     public void expiration_and_eviction_listener_are_not_both_notified_after_expiration() {
-        int numberOfPutOperations = 1000;
+        int numberOfPutOperations = 10;
 
         ExpirationAndEvictionListener listener = new ExpirationAndEvictionListener();
         map.addEntryListener(listener, true);

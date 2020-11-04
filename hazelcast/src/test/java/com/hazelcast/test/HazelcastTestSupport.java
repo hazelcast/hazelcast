@@ -88,6 +88,7 @@ import java.util.function.BiConsumer;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.OsHelper.isLinux;
+import static com.hazelcast.test.FailOnTimeoutStatement.PARALLEL_PREFIX;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
@@ -1458,7 +1459,8 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertThatIsNotMultithreadedTest() {
-        assertFalse("Test cannot run with parallel runner", Thread.currentThread() instanceof MultithreadedTestRunnerThread);
+        assertFalse("Test cannot run with parallel runner",
+                Thread.currentThread().getName().contains(PARALLEL_PREFIX));
     }
 
     // ###################################

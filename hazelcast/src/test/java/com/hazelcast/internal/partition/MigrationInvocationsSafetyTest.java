@@ -25,7 +25,7 @@ import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -63,7 +63,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupport {
 

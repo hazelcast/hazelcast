@@ -26,7 +26,7 @@ import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -61,21 +61,8 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-/*
- * When executed with HazelcastParallelClassRunner, this test creates a massive amount of threads (peaks of 1000 threads
- * and 800 daemon threads). As comparison the BasicMapTest creates about 700 threads and 25 daemon threads.
- * This regularly results in test failures when multiple PR builders run in parallel due to a resource starvation.
- *
- * Countermeasures are to remove the ParallelJVMTest annotation or to use the HazelcastSerialClassRunner.
- *
- * Without ParallelJVMTest we'll add the whole test duration to the PR builder time (about 25 seconds) and still create the
- * resource usage peak, which may have a negative impact on parallel PR builder runs on the same host machine.
- *
- * With HazelcastSerialClassRunner the test takes over 3 minutes, but with a maximum of 200 threads and 160 daemon threads.
- * This should have less impact on other tests and the total duration of the PR build (since the test will still be executed
- * in parallel to others).
- */
-@RunWith(HazelcastSerialClassRunner.class)
+
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class GracefulShutdownTest extends HazelcastTestSupport {
 
@@ -84,6 +71,11 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         factory = createHazelcastInstanceFactory();
+    }
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
     }
 
     @Test
@@ -101,7 +93,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
     @Test
     public void shutdownSingleLiteMember() {
-        HazelcastInstance hz = factory.newHazelcastInstance(new Config().setLiteMember(true));
+        HazelcastInstance hz = factory.newHazelcastInstance(getConfig().setLiteMember(true));
         hz.shutdown();
     }
 
@@ -129,7 +121,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
     @Test
     @SuppressWarnings("unused")
     public void shutdownSlaveMember_whilePartitionsMigrating() {
-        Config config = new Config()
+        Config config = getConfig()
                 .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "12")
                 .setProperty(ClusterProperty.PARTITION_MIGRATION_INTERVAL.getName(), "1");
 
@@ -146,9 +138,9 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
     @Test
     public void shutdownSlaveLiteMember() {
-        HazelcastInstance hz1 = factory.newHazelcastInstance();
-        HazelcastInstance hz2 = factory.newHazelcastInstance(new Config().setLiteMember(true));
-        HazelcastInstance hz3 = factory.newHazelcastInstance();
+        HazelcastInstance hz1 = factory.newHazelcastInstance(getConfig());
+        HazelcastInstance hz2 = factory.newHazelcastInstance(getConfig().setLiteMember(true));
+        HazelcastInstance hz3 = factory.newHazelcastInstance(getConfig());
 
         warmUpPartitions(hz1, hz2, hz3);
         hz2.shutdown();
@@ -196,9 +188,9 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
     @Test
     public void shutdownMasterLiteMember() {
-        HazelcastInstance hz1 = factory.newHazelcastInstance(new Config().setLiteMember(true));
-        HazelcastInstance hz2 = factory.newHazelcastInstance();
-        HazelcastInstance hz3 = factory.newHazelcastInstance();
+        HazelcastInstance hz1 = factory.newHazelcastInstance(getConfig().setLiteMember(true));
+        HazelcastInstance hz2 = factory.newHazelcastInstance(getConfig());
+        HazelcastInstance hz3 = factory.newHazelcastInstance(getConfig());
 
         warmUpPartitions(hz1, hz2, hz3);
         hz1.shutdown();
@@ -217,7 +209,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
     }
 
     private void shutdownAllMembers(boolean initializePartitions) {
-        final HazelcastInstance[] instances = factory.newInstances(new Config(), 4);
+        final HazelcastInstance[] instances = factory.newInstances(getConfig(), 4);
 
         if (initializePartitions) {
             warmUpPartitions(instances);
@@ -257,7 +249,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
     }
 
     private void shutdownMultipleMembers(boolean includeMaster, boolean initializePartitions) {
-        final HazelcastInstance[] instances = factory.newInstances(new Config(), 6);
+        final HazelcastInstance[] instances = factory.newInstances(getConfig(), 6);
 
         if (initializePartitions) {
             warmUpPartitions(instances);
@@ -315,7 +307,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
     @Test
     public void shutdownAndTerminateSlaveMembers_concurrently() {
-        HazelcastInstance[] instances = factory.newInstances(new Config(), 5);
+        HazelcastInstance[] instances = factory.newInstances(getConfig(), 5);
         int shutdownIndex = RandomPicker.getInt(1, instances.length);
         int terminateIndex;
         do {
@@ -327,7 +319,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
     @Test
     public void shutdownMasterAndTerminateSlaveMember_concurrently() {
-        HazelcastInstance[] instances = factory.newInstances(new Config(), 5);
+        HazelcastInstance[] instances = factory.newInstances(getConfig(), 5);
         int shutdownIndex = 0;
         int terminateIndex = RandomPicker.getInt(1, instances.length);
 
@@ -336,7 +328,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
     @Test
     public void shutdownSlaveAndTerminateMasterMember_concurrently() {
-        HazelcastInstance[] instances = factory.newInstances(new Config(), 5);
+        HazelcastInstance[] instances = factory.newInstances(getConfig(), 5);
         int shutdownIndex = RandomPicker.getInt(1, instances.length);
         int terminateIndex = 0;
 
@@ -408,7 +400,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
     }
 
     private void shutdownMember_whenClusterNotActive(boolean shutdownMaster, boolean initializePartitions, ClusterState state) {
-        Config config = new Config();
+        Config config = getConfig();
         HazelcastInstance master = factory.newHazelcastInstance(config);
         HazelcastInstance[] slaves = factory.newInstances(config, 3);
 
@@ -441,7 +433,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
     }
 
     private void shutdownMemberAndCluster(boolean initializePartitions) {
-        Config config = new Config();
+        Config config = getConfig();
         HazelcastInstance master = factory.newHazelcastInstance(config);
         HazelcastInstance[] slaves = factory.newInstances(config, 3);
 
@@ -466,7 +458,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
     }
 
     private void shutdownMemberAndCluster_concurrently(boolean initializePartitions) throws Exception {
-        Config config = new Config();
+        Config config = getConfig();
 
         final HazelcastInstance master = factory.newHazelcastInstance(config);
         final HazelcastInstance[] slaves = factory.newInstances(config, 3);
@@ -496,7 +488,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
     @Test
     public void shutdownMasterCandidate_whileMastershipClaimIsInProgress() throws Exception {
-        Config config = new Config();
+        Config config = getConfig();
         // setting a very graceful shutdown high timeout value
         // to guarantee instance.shutdown() not to timeout
         config.setProperty(ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), "99999999999");
@@ -582,8 +574,8 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         return partitionService.getPartitionStateManager().getPartitionsCopy(true);
     }
 
-    private static Config newConfig() {
-        return new Config()
+    private Config newConfig() {
+        return getConfig()
                 .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "6")
                 .setProperty(ClusterProperty.PARTITION_MIGRATION_INTERVAL.getName(), "1");
     }

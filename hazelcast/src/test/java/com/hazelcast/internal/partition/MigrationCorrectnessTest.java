@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.ParallelParameterized;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
@@ -29,8 +29,8 @@ import java.util.Collection;
 
 import static java.util.Arrays.asList;
 
-@RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(ParallelParameterized.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 // related issue https://github.com/hazelcast/hazelcast/issues/5444
 public class MigrationCorrectnessTest extends AbstractMigrationCorrectnessTest {

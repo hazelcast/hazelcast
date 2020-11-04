@@ -27,12 +27,14 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.ParallelParameterized;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -47,13 +49,13 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(ParallelParameterized.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapPredicateJsonTest extends HazelcastTestSupport {
 
-    TestHazelcastInstanceFactory factory;
-    HazelcastInstance instance;
+    static TestHazelcastInstanceFactory factory;
+    static HazelcastInstance instance;
 
     @Parameter(0)
     public InMemoryFormat inMemoryFormat;
@@ -71,16 +73,22 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         });
     }
 
-    @Before
-    public void setup() {
-        factory = createHazelcastInstanceFactory(3);
-        factory.newInstances(getConfig(), 3);
+    @BeforeClass
+    public static void setup() {
+        factory = new TestHazelcastInstanceFactory(3);
+        factory.newInstances(smallInstanceConfig());
+
         instance = factory.getAllHazelcastInstances().iterator().next();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        factory.terminateAll();
     }
 
     @Override
     protected Config getConfig() {
-        Config config = super.getConfig();
+        Config config = smallInstanceConfig();
         config.getMapConfig("default")
                 .setInMemoryFormat(inMemoryFormat)
                 .setMetadataPolicy(metadataPolicy);

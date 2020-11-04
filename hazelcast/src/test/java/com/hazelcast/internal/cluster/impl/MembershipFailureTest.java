@@ -25,11 +25,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.ParallelParameterized;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -76,8 +76,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(ParallelParameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class MembershipFailureTest extends HazelcastTestSupport {
 
@@ -650,9 +650,9 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     @Test
     public void test_twoSlavesDisconnected() {
         Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), "15")
-                                             .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
-                                             .setProperty(PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT.getName(), "5")
-                                             .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+                .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT.getName(), "5")
+                .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
         HazelcastInstance instance1 = newHazelcastInstance(config);
         HazelcastInstance instance2 = newHazelcastInstance(config);
         HazelcastInstance instance3 = newHazelcastInstance(config);
@@ -674,9 +674,9 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     @Test
     public void test_twoSlavesDisconnectedFromOneSlave() {
         Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), "15")
-                                             .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
-                                             .setProperty(PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT.getName(), "5")
-                                             .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+                .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT.getName(), "5")
+                .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
         HazelcastInstance instance1 = newHazelcastInstance(config);
         HazelcastInstance instance2 = newHazelcastInstance(config);
         HazelcastInstance instance3 = newHazelcastInstance(config);
@@ -703,9 +703,9 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     @Test
     public void test_oneSlaveDisconnectedFromTwoSlaves() {
         Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), "15")
-                                             .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
-                                             .setProperty(PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT.getName(), "5")
-                                             .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+                .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT.getName(), "5")
+                .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
         HazelcastInstance instance1 = newHazelcastInstance(config);
         HazelcastInstance instance2 = newHazelcastInstance(config);
         HazelcastInstance instance3 = newHazelcastInstance(config);
@@ -731,9 +731,9 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     @Test
     public void test_threeSlavesDisconnectedFromTwoSlaves() {
         Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), "15")
-                                             .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
-                                             .setProperty(PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT.getName(), "5")
-                                             .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+                .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT.getName(), "5")
+                .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
         HazelcastInstance instance1 = newHazelcastInstance(config);
         HazelcastInstance instance2 = newHazelcastInstance(config);
         HazelcastInstance instance3 = newHazelcastInstance(config);
@@ -762,9 +762,9 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     @Test
     public void test_twoSlavesDisconnectedFromThreeSlaves() {
         Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), "15")
-                                             .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
-                                             .setProperty(PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT.getName(), "5")
-                                             .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+                .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT.getName(), "5")
+                .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
         HazelcastInstance instance1 = newHazelcastInstance(config);
         HazelcastInstance instance2 = newHazelcastInstance(config);
         HazelcastInstance instance3 = newHazelcastInstance(config);
@@ -792,9 +792,9 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     @Test
     public void test_multipleDisconnections() {
         Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), "15")
-                                             .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
-                                             .setProperty(PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT.getName(), "5")
-                                             .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+                .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT.getName(), "5")
+                .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
         HazelcastInstance instance1 = newHazelcastInstance(config);
         HazelcastInstance instance2 = newHazelcastInstance(config);
         HazelcastInstance instance3 = newHazelcastInstance(config);
@@ -832,9 +832,9 @@ public class MembershipFailureTest extends HazelcastTestSupport {
 
     private void test_twoSlavesDisconnectedFromOneSlave(ClusterState clusterState) {
         Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), "15")
-                                             .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
-                                             .setProperty(PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT.getName(), "5")
-                                             .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+                .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT.getName(), "5")
+                .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
         HazelcastInstance instance1 = newHazelcastInstance(config);
         HazelcastInstance instance2 = newHazelcastInstance(config);
         HazelcastInstance instance3 = newHazelcastInstance(config);

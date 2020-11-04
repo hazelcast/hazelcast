@@ -125,7 +125,7 @@
 
         <!-- Additional JVM system arguments -->
         <extraVmArgs/>
-        <vmHeapSettings>-Xms512m -Xmx2G</vmHeapSettings>
+        <vmHeapSettings>-Xms2G -Xmx2G</vmHeapSettings>
         <!-- Java 9+ module system args to be appended during surefire/failsafe executions. -->
         <javaModuleArgs/>
     </properties>

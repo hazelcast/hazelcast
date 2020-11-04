@@ -22,11 +22,14 @@ import org.junit.runners.model.TestTimedOutException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class FailOnTimeoutStatement extends Statement {
+
+    static final String PARALLEL_PREFIX = "Parallel::";
 
     private final Statement originalStatement;
     private final TimeUnit timeUnit;
@@ -62,11 +65,10 @@ public class FailOnTimeoutStatement extends Statement {
     }
 
     Thread newThread(FutureTask<Throwable> task, String name) {
-        if (Thread.currentThread() instanceof MultithreadedTestRunnerThread) {
-            return new MultithreadedTestRunnerThread(task, name);
-        } else {
-            return new Thread(task, name);
+        if (Thread.currentThread() instanceof ForkJoinWorkerThread) {
+            name += PARALLEL_PREFIX;
         }
+        return new Thread(task, name);
     }
 
     /**

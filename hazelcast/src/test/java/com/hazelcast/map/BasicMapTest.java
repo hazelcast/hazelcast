@@ -36,12 +36,11 @@ import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
-import com.hazelcast.test.annotation.HeavilyMultiThreadedTestLimiter;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -91,7 +90,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@ConfigureParallelRunnerWith(HeavilyMultiThreadedTestLimiter.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class BasicMapTest extends HazelcastTestSupport {
 
@@ -104,21 +102,23 @@ public class BasicMapTest extends HazelcastTestSupport {
     static final int INSTANCE_COUNT = 3;
     static final Random RANDOM = new Random();
 
-    HazelcastInstance[] instances;
+    static HazelcastInstance[] instances;
+    static TestHazelcastInstanceFactory factory;
 
-    @Before
-    public void init() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
-        Config config = getConfig();
+    @BeforeClass
+    public static void beforeClass() {
+        Config config = smallInstanceConfig();
+        MapConfig mapConfig = new MapConfig("mapWithTTL*");
+        mapConfig.setTimeToLiveSeconds(1);
+        config.addMapConfig(mapConfig);
+
+        factory = new TestHazelcastInstanceFactory(INSTANCE_COUNT);
         instances = factory.newInstances(config);
     }
 
-    protected Config getConfig() {
-        Config cfg = smallInstanceConfig();
-        MapConfig mapConfig = new MapConfig("mapWithTTL*");
-        mapConfig.setTimeToLiveSeconds(1);
-        cfg.addMapConfig(mapConfig);
-        return cfg;
+    @AfterClass
+    public static void afterClass() {
+        factory.terminateAll();
     }
 
     HazelcastInstance getInstance() {
@@ -377,7 +377,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testMapRemove() {
-        IMap<String, String> map = getInstance().getMap("testMapRemove");
+        IMap<String, String> map = getInstance().getMap(randomName());
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
@@ -435,7 +435,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testMapEvict() {
-        IMap<String, String> map = getInstance().getMap("testMapEvict");
+        IMap<String, String> map = getInstance().getMap(randomName());
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
@@ -905,7 +905,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testGetPutRemoveAsync() {
-        IMap<Integer, Object> map = getInstance().getMap("testGetPutRemoveAsync");
+        IMap<Integer, Object> map = getInstance().getMap(randomName());
         try {
             assertNull(map.putAsync(1, 1).toCompletableFuture().get());
             assertEquals(1, map.putAsync(1, 2).toCompletableFuture().get());
@@ -923,7 +923,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     public void testAsyncMethodChaining() {
         IMap<Integer, Integer> map = getInstance().getMap("testGetPutRemoveAsync");
         CompletionStage<Integer> setThenGet = map.setAsync(1, 1)
-                                              .thenCompose(v -> map.getAsync(1));
+                .thenCompose(v -> map.getAsync(1));
         assertEquals(1L, (long) setThenGet.toCompletableFuture().join());
     }
 
@@ -981,63 +981,6 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutAllBackup() {
-        int size = 100;
-
-        HazelcastInstance instance1 = instances[0];
-        HazelcastInstance instance2 = instances[1];
-
-        IMap<Integer, Integer> map1 = instance1.getMap("testPutAllBackup");
-        IMap<Integer, Integer> map2 = instance2.getMap("testPutAllBackup");
-        warmUpPartitions(instances);
-
-        Map<Integer, Integer> mm = new HashMap<Integer, Integer>();
-        for (int i = 0; i < size; i++) {
-            mm.put(i, i);
-        }
-
-        map2.putAll(mm);
-        assertEquals(size, map2.size());
-        for (int i = 0; i < size; i++) {
-            assertEquals(i, map2.get(i).intValue());
-        }
-
-        instance2.shutdown();
-        assertEquals(size, map1.size());
-        for (int i = 0; i < size; i++) {
-            assertEquals(i, map1.get(i).intValue());
-        }
-    }
-
-    @Test
-    public void testPutAllTooManyEntriesWithBackup() {
-        int size = 10000;
-
-        HazelcastInstance instance1 = instances[0];
-        HazelcastInstance instance2 = instances[1];
-        IMap<Integer, Integer> map1 = instance1.getMap("testPutAllTooManyEntries");
-        IMap<Integer, Integer> map2 = instance2.getMap("testPutAllTooManyEntries");
-        warmUpPartitions(instances);
-
-        Map<Integer, Integer> mm = new HashMap<Integer, Integer>();
-        for (int i = 0; i < size; i++) {
-            mm.put(i, i);
-        }
-
-        map2.putAll(mm);
-        assertEquals(size, map2.size());
-        for (int i = 0; i < size; i++) {
-            assertEquals(i, map2.get(i).intValue());
-        }
-
-        instance2.shutdown();
-        assertEquals(size, map1.size());
-        for (int i = 0; i < size; i++) {
-            assertEquals(i, map1.get(i).intValue());
-        }
-    }
-
-    @Test
     public void testPutAllAsync() {
         int size = 10000;
 
@@ -1063,7 +1006,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
 
         final Map<Integer, Integer> expected = IntStream.range(0, max).boxed()
-            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+                .collect(Collectors.toMap(Function.identity(), Function.identity()));
         map.setAll(expected);
 
         assertEquals(max, map.size());
@@ -1082,7 +1025,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
 
         final Map<Integer, Integer> expected = IntStream.range(0, max).boxed()
-            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+                .collect(Collectors.toMap(Function.identity(), Function.identity()));
         map.setAll(expected);
 
         assertEquals(max, map.size());
@@ -1099,7 +1042,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
 
         final Map<Integer, Integer> expected = IntStream.range(0, max).boxed()
-            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+                .collect(Collectors.toMap(Function.identity(), Function.identity()));
         final Future<Void> future = map.setAllAsync(expected).toCompletableFuture();
 
         assertEqualsEventually(future::isDone, true);
@@ -1482,33 +1425,6 @@ public class BasicMapTest extends HazelcastTestSupport {
         SampleEntryProcessor<Integer> entryProcessor = new SampleEntryProcessor<>();
         map.executeOnKey(1, entryProcessor);
         assertEquals(map.get(1), (Object) 2);
-    }
-
-    @Test
-    public void testIfWeCarryRecordVersionInfoToReplicas() {
-        String mapName = randomMapName();
-        int mapSize = 1000;
-        int expectedRecordVersion = 3;
-
-        HazelcastInstance node1 = instances[1];
-
-        IMap<Integer, Integer> map1 = node1.getMap(mapName);
-        for (int i = 0; i < mapSize; i++) {
-            map1.put(i, 0); // version 0
-            map1.put(i, 1); // version 1
-            map1.put(i, 2); // version 2
-            map1.put(i, 3); // version 3
-        }
-        HazelcastInstance node2 = instances[2];
-
-        node1.shutdown();
-
-        IMap<Integer, Integer> map3 = node2.getMap(mapName);
-
-        for (int i = 0; i < mapSize; i++) {
-            EntryView<Integer, Integer> entryView = map3.getEntryView(i);
-            assertEquals(expectedRecordVersion, entryView.getVersion());
-        }
     }
 
     @Test
