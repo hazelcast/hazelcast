@@ -21,20 +21,22 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.ParallelParameterized;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,8 +48,8 @@ import java.util.Collection;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(ParallelParameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
 
@@ -62,19 +64,25 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
     @Parameterized.Parameter
     public InMemoryFormat inMemoryFormat;
 
-    TestHazelcastInstanceFactory factory;
-    HazelcastInstance instance;
+    static TestHazelcastInstanceFactory factory;
+    static HazelcastInstance instance;
 
-    @Before
-    public void setup() {
-        factory = createHazelcastInstanceFactory(3);
-        factory.newInstances(getConfig(), 3);
+    @BeforeClass
+    public static void setup() {
+        factory = new TestHazelcastInstanceFactory(3);
+        factory.newInstances(smallInstanceConfig());
+
         instance = factory.getAllHazelcastInstances().iterator().next();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        factory.terminateAll();
     }
 
     @Override
     protected Config getConfig() {
-        Config config = super.getConfig();
+        Config config = smallInstanceConfig();
         config.getMapConfig("default").setInMemoryFormat(inMemoryFormat);
         config.getSerializationConfig().addPortableFactory(1, new PortableFactory() {
             @Override
@@ -83,7 +91,9 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
                     return new Person();
                 }
                 return null;
-            };
+            }
+
+            ;
         });
         return config;
     }

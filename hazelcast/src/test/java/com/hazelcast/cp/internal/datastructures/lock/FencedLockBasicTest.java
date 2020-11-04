@@ -19,10 +19,10 @@ package com.hazelcast.cp.internal.datastructures.lock;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.lock.FencedLock;
+import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RandomPicker;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -90,10 +90,10 @@ public class FencedLockBasicTest extends AbstractFencedLockBasicTest {
     @Test
     public void test_lockFailsAfterCPGroupDestroyed() throws ExecutionException, InterruptedException {
         instances[0].getCPSubsystem()
-                    .getCPSubsystemManagementService()
-                    .forceDestroyCPGroup(lock.getGroupId().getName())
-                    .toCompletableFuture()
-                    .get();
+                .getCPSubsystemManagementService()
+                .forceDestroyCPGroup(lock.getGroupId().getName())
+                .toCompletableFuture()
+                .get();
 
         try {
             lock.lock();

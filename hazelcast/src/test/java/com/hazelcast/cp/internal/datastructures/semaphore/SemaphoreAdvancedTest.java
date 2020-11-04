@@ -119,7 +119,7 @@ public class SemaphoreAdvancedTest extends AbstractSemaphoreAdvancedTest {
 
         HazelcastInstance newInstance = factory.newHazelcastInstance(createConfig(groupSize, groupSize));
         newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember()
-                   .toCompletableFuture().get();
+                .toCompletableFuture().get();
 
         assertTrueEventually(() -> {
             SemaphoreService service = getNodeEngineImpl(newInstance).getService(SemaphoreService.SERVICE_NAME);

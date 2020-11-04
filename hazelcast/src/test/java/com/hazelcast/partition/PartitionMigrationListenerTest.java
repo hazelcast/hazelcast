@@ -147,7 +147,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         MigrationEventsPack secondEventsPack = eventsPackList.get(1);
 
         if (secondEventsPack.migrationProcessCompleted.getCompletedMigrations() == 1
-            && !secondEventsPack.migrationsCompleted.get(0).isSuccess()) {
+                && !secondEventsPack.migrationsCompleted.get(0).isSuccess()) {
             // There is a failed migration process
             // because migrations restarted before 3rd member is ready.
             // This migration process is failed immediately

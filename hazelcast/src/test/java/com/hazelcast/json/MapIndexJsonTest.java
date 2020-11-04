@@ -95,9 +95,9 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        Config config = super.getConfig();
-        MapConfig mapConfig = new MapConfig("default")
-                .setInMemoryFormat(inMemoryFormat)
+        Config config = smallInstanceConfig();
+        MapConfig mapConfig = config.getMapConfig("default");
+        mapConfig.setInMemoryFormat(inMemoryFormat)
                 .setMetadataPolicy(metadataPolicy)
                 .addIndexConfig(sortedIndexConfig("longValue"))
                 .addIndexConfig(sortedIndexConfig("doubleValue"))

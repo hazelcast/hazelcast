@@ -812,7 +812,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
         group.split(leader.getLocalMember());
 
-        assertTrueEventually(() -> assertEquals(RaftRole.FOLLOWER,  getRole(leader)));
+        assertTrueEventually(() -> assertEquals(RaftRole.FOLLOWER, getRole(leader)));
 
         assertEquals(leader.getLocalMember(), getVotedFor(leader));
     }
