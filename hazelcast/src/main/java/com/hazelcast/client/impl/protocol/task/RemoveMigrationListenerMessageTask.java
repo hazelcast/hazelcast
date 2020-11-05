@@ -57,7 +57,7 @@ public class RemoveMigrationListenerMessageTask
 
     @Override
     public String getServiceName() {
-        return InternalPartitionService.SERVICE_NAME;
+        return IPartitionService.SERVICE_NAME;
     }
 
     @Override
