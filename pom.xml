@@ -126,6 +126,7 @@
         <classgraph.version>4.8.66</classgraph.version>
         <jackson.jr.version>2.11.2</jackson.jr.version>
         <snakeyaml.engine.version>1.0</snakeyaml.engine.version>
+        <affinity.version>3.2.3</affinity.version>
 
         <!-- test dependencies -->
         <activemq.version>5.15.11</activemq.version>
