@@ -60,11 +60,12 @@ public final class LogicalRules {
                 ValuesReduceRule.PROJECT_FILTER_INSTANCE,
                 ValuesUnionLogicalRule.INSTANCE,
 
-                PruneEmptyRules.PROJECT_INSTANCE,
-                PruneEmptyRules.FILTER_INSTANCE,
-
                 // Insert rules
-                InsertLogicalRule.INSTANCE
+                InsertLogicalRule.INSTANCE,
+
+                // Miscellaneous
+                PruneEmptyRules.PROJECT_INSTANCE,
+                PruneEmptyRules.FILTER_INSTANCE
         );
     }
 }

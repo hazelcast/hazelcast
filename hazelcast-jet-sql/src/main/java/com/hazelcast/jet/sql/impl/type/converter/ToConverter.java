@@ -24,7 +24,7 @@ import com.hazelcast.sql.impl.type.converter.Converter;
  * Complementary interface to {@link Converter} that converts values back to
  * the class returned by {@link Converter#getValueClass()}.
  */
-public abstract class   ToConverter {
+public abstract class ToConverter {
 
     private final Class<?> normalizedValueClass;
 

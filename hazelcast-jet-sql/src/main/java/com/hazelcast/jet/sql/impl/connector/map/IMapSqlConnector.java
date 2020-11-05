@@ -144,7 +144,7 @@ public class IMapSqlConnector implements SqlConnector {
         QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
 
         Vertex vStart = dag.newVertex(
-                "Project(IMap" + "[" + table.getSchemaName() + "." + table.getSqlName() + "])",
+                "Project(" + toString(table) + ")",
                 KvProcessors.entryProjector(
                         paths,
                         types,
@@ -154,11 +154,15 @@ public class IMapSqlConnector implements SqlConnector {
         );
 
         Vertex vEnd = dag.newVertex(
-                "IMap[" + table.getSchemaName() + "." + table.getSqlName() + ']',
+                toString(table),
                 SinkProcessors.writeMapP(table.getMapName())
         );
 
         dag.edge(between(vStart, vEnd));
         return vStart;
+    }
+
+    private static String toString(PartitionedMapTable table) {
+        return "IMap" + "[" + table.getSchemaName() + "." + table.getSqlName() + "]";
     }
 }
