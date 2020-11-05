@@ -103,6 +103,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
+import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -342,7 +343,7 @@ public class MasterJobContext {
 
         if (localStatus == SUSPENDED || localStatus == SUSPENDED_EXPORTING_SNAPSHOT) {
             try {
-                mc.coordinationService().completeJob(mc, new CancellationException()).get();
+                mc.coordinationService().completeJob(mc, new CancellationException(), System.currentTimeMillis()).get();
             } catch (Exception e) {
                 throw rethrow(e);
             }
@@ -643,14 +644,16 @@ public class MasterJobContext {
                             ExceptionUtil.stackTraceToString(failure));
                     nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
                 } else {
-                    mc.setJobStatus(isSuccess(failure) ? COMPLETED : FAILED);
+                    long completionTime = System.currentTimeMillis();
+                    boolean isSuccess = logExecutionSummary(failure, completionTime);
+                    mc.setJobStatus(isSuccess ? COMPLETED : FAILED);
                     if (failure instanceof LocalMemberResetException) {
                         logger.fine("Cancelling job " + mc.jobIdString() + " locally: member (local or remote) reset. " +
                                 "We don't delete job metadata: job will restart on majority cluster");
                         setFinalResult(new CancellationException());
                     } else {
                         mc.coordinationService()
-                          .completeJob(mc, failure)
+                          .completeJob(mc, failure, completionTime)
                           .whenComplete(withTryCatch(logger, (r, f) -> {
                               if (f != null) {
                                   logger.warning("Completion of " + mc.jobIdString() + " failed", f);
@@ -672,25 +675,27 @@ public class MasterJobContext {
         });
     }
 
-    private boolean isSuccess(@Nullable Throwable failure) {
+    /**
+     * @return True, if the job completed successfully.
+     */
+    private boolean logExecutionSummary(@Nullable Throwable failure, long completionTime) {
         if (failure == null) {
-            logger.info(formatExecutionSummary("completed successfully"));
+            logger.info(formatExecutionSummary("completed successfully", completionTime));
             return true;
         }
         if (failure instanceof CancellationException || failure instanceof JobTerminateRequestedException) {
-            logger.info(formatExecutionSummary("got terminated, reason=" + failure));
+            logger.info(formatExecutionSummary("got terminated, reason=" + failure, completionTime));
             return false;
         }
-        logger.severe(formatExecutionSummary("failed"), failure);
+        logger.severe(formatExecutionSummary("failed", completionTime), failure);
         return false;
     }
 
-    private String formatExecutionSummary(String conclusion) {
-        long executionEndTime = System.currentTimeMillis();
+    private String formatExecutionSummary(String conclusion, long completionTime) {
         StringBuilder sb = new StringBuilder();
         sb.append("Execution of ").append(mc.jobIdString()).append(' ').append(conclusion);
         sb.append("\n\t").append("Start time: ").append(Util.toLocalDateTime(executionStartTime));
-        sb.append("\n\t").append("Duration: ").append(String.format("%,d ms", executionEndTime - executionStartTime));
+        sb.append("\n\t").append("Duration: ").append(formatJobDuration(completionTime - executionStartTime));
         if (jobMetrics.stream().noneMatch(rjm -> rjm.getBlob() != null)) {
             sb.append("\n\tTo see additional job metrics enable JobConfig.storeMetricsAfterJobCompletion");
         } else {

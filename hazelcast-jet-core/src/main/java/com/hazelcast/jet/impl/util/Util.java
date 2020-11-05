@@ -498,7 +498,7 @@ public final class Util {
      *
      * @param basePath the directory where to edit the file permissions
      * @param editFn the permission-editing function, described above
-     * @return the list of all relative pathnames of files for which editing
+     * @return the list of all relative path names of files for which editing
      *         permissions failed
      * @throws IOException if the directory's contents cannot be traversed
      */
@@ -516,9 +516,36 @@ public final class Util {
                 }
             });
         }
-        if (!filesNotMarked.isEmpty()) {
-            System.err.println("Couldn't 'chmod " + "chmodOp" + "' these files: " + filesNotMarked);
-        }
         return filesNotMarked;
+    }
+
+    /**
+     * Formats a duration given im milliseconds to the form of:
+     * <ul>
+     *     <li>{@code HH:MM:SS.sss}, if <24 hours
+     *     <li>{@code Nd HH:MM:SS.sss} otherwise
+     * </ul>
+     */
+    @Nonnull
+    @SuppressWarnings("checkstyle:MagicNumber") // number of hours per day isn't magic :)
+    public static String formatJobDuration(long durationMs) {
+        if (durationMs == Long.MIN_VALUE) {
+            return "" + Long.MIN_VALUE;
+        }
+        String sign = "";
+        if (durationMs < 0) {
+            sign = "-";
+            durationMs = -durationMs;
+        }
+        long millis = durationMs % 1000;
+        durationMs /= 1000;
+        long seconds = durationMs % 60;
+        durationMs /= 60;
+        long minutes = durationMs % 60;
+        durationMs /= 60;
+        long hours = durationMs % 24;
+        durationMs /= 24;
+        String textUpToHours = String.format("%02d:%02d:%02d.%03d", hours, minutes, seconds, millis);
+        return sign + (durationMs > 0 ? durationMs + "d " : "") + textUpToHours;
     }
 }

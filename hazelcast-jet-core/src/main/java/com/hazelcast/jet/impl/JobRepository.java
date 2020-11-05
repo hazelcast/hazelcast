@@ -368,14 +368,14 @@ public class JobRepository {
     void completeJob(
             @Nonnull MasterContext masterContext,
             @Nullable List<RawJobMetrics> terminalMetrics,
-            @Nullable Throwable error
+            @Nullable Throwable error,
+            long completionTime
     ) {
         long jobId = masterContext.jobId();
 
         JobConfig config = masterContext.jobRecord().getConfig();
         long creationTime = masterContext.jobRecord().getCreationTime();
-        JobResult jobResult = new JobResult(jobId, config, creationTime, System.currentTimeMillis(),
-                toErrorMsg(error));
+        JobResult jobResult = new JobResult(jobId, config, creationTime, completionTime, toErrorMsg(error));
 
         if (terminalMetrics != null) {
             try {

@@ -50,7 +50,8 @@ public class JobResult implements IdentifiedDataSerializable {
 
     JobResult(long jobId,
               @Nonnull JobConfig jobConfig,
-              long creationTime, long completionTime,
+              long creationTime,
+              long completionTime,
               @Nullable String failureText
     ) {
         this.jobId = jobId;

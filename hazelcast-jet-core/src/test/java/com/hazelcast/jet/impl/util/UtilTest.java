@@ -33,6 +33,7 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.impl.util.Util.addClamped;
 import static com.hazelcast.jet.impl.util.Util.addOrIncrementIndexInName;
+import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.gcd;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.jet.impl.util.Util.roundRobinPart;
@@ -211,5 +212,17 @@ public class UtilTest {
         String s = "s";
         String returned = Util.checkNonNullAndSerializable(s, "s");
         assertThat(returned).isSameAs(s);
+    }
+
+    @Test
+    public void test_formatJobDuration() {
+        assertEquals("20:19:02.855", formatJobDuration(73_142_855));
+        assertEquals("00:00:00.120", formatJobDuration(120));
+        assertEquals("00:00:05.120", formatJobDuration(5120));
+        assertEquals("13d 13:52:22.855", formatJobDuration(1173_142_855));
+        assertEquals("2d 00:05:42.855", formatJobDuration(173_142_855));
+        assertEquals("00:12:22.855", formatJobDuration(742_855));
+        assertEquals("106751991167d 07:12:55.807", formatJobDuration(Long.MAX_VALUE));
+        assertEquals("-9223372036854775808", formatJobDuration(Long.MIN_VALUE));
     }
 }
