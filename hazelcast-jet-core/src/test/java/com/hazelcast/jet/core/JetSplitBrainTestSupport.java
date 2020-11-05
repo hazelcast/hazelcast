@@ -19,16 +19,19 @@ package com.hazelcast.jet.core;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
-import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService.FirewallingEndpointManager;
+import com.hazelcast.internal.server.FirewallingServer.FirewallingServerConnectionManager;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -157,11 +160,9 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         List<Address> addressesToBlock = new ArrayList<>(instancesToBlock.length);
         for (JetInstance anInstancesToBlock : instancesToBlock) {
             if (isInstanceActive(anInstancesToBlock)) {
-                addressesToBlock.add(getAddress(anInstancesToBlock.getHazelcastInstance()));
+                addressesToBlock.add(getAddress(anInstancesToBlock));
                 // block communication from these instances to the new address
-
-                FirewallingEndpointManager connectionManager = getFireWalledEndpointManager(
-                        anInstancesToBlock.getHazelcastInstance());
+                FirewallingServerConnectionManager connectionManager = getFireWalledEndpointManager(anInstancesToBlock);
                 connectionManager.blockNewConnection(newMemberAddress);
                 connectionManager.closeActiveConnection(newMemberAddress);
             }
@@ -200,8 +201,9 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         waitAllForSafeState(Stream.of(instances).map(JetInstance::getHazelcastInstance).collect(toList()));
     }
 
-    private static FirewallingEndpointManager getFireWalledEndpointManager(HazelcastInstance hz) {
-        return (FirewallingEndpointManager) getNode(hz).getEndpointManager();
+    private static FirewallingServerConnectionManager getFireWalledEndpointManager(JetInstance hz) {
+        ServerConnectionManager cm = getNode(hz).getServer().getConnectionManager(EndpointQualifier.MEMBER);
+        return (FirewallingServerConnectionManager) cm;
     }
 
     private Brains getBrains(JetInstance[] instances, int firstSubClusterSize, int secondSubClusterSize) {
@@ -244,15 +246,15 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
                 return false;
             }
         } else if (instance.getHazelcastInstance() instanceof HazelcastInstanceImpl) {
-            return getNode(instance.getHazelcastInstance()).getState() == NodeState.ACTIVE;
+            return getNode(instance).getState() == NodeState.ACTIVE;
         } else {
             throw new AssertionError("Unsupported HazelcastInstance type");
         }
     }
 
     private static void unblacklistJoinerBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        Node h1Node = getNode(h1);
-        Node h2Node = getNode(h2);
+        Node h1Node = Accessors.getNode(h1);
+        Node h2Node = Accessors.getNode(h2);
         h1Node.getJoiner().unblacklist(h2Node.getThisAddress());
         h2Node.getJoiner().unblacklist(h1Node.getThisAddress());
     }

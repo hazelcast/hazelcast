@@ -20,13 +20,14 @@ import com.hazelcast.jet.annotation.EvolvingApi;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
+import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamSourceStage;
-import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -46,7 +47,7 @@ public final class TestSources {
 
     /**
      * Returns a batch source which iterates through the supplied iterable and
-     * then terminates.
+     * then terminates. The source is non-distributed.
      *
      * @since 3.2
      */
@@ -62,7 +63,7 @@ public final class TestSources {
 
     /**
      * Returns a batch source which iterates through the supplied items and
-     * then terminates.
+     * then terminates. The source is non-distributed.
      *
      * @since 3.2
      */
@@ -70,6 +71,44 @@ public final class TestSources {
     public static <T> BatchSource<T> items(@Nonnull T... items) {
         Objects.requireNonNull(items, "items");
         return items(Arrays.asList(items));
+    }
+
+    /**
+     * Returns a batch source which iterates through the supplied iterable and
+     * then terminates. The source is distributed - a slice of the items is
+     * emitted on each member with local parallelism of 1.
+     *
+     * @since 4.4
+     */
+    @Nonnull
+    public static <T> BatchSource<T> itemsDistributed(@Nonnull Iterable<? extends T> items) {
+        Objects.requireNonNull(items, "items");
+        return SourceBuilder.batch("items", ctx -> ctx)
+                .<T>fillBufferFn((ctx, buf) -> {
+                    Iterator<? extends T> iterator = items.iterator();
+                    for (int i = 0; iterator.hasNext(); i++) {
+                        T item = iterator.next();
+                        if (i % ctx.totalParallelism() == ctx.globalProcessorIndex()) {
+                            buf.add(item);
+                        }
+                    }
+                    buf.close();
+                })
+                .distributed(1)
+                .build();
+    }
+
+    /**
+     * Returns a batch source which iterates through the supplied items and
+     * then terminates. The source is distributed - a slice of the items is
+     * emitted on each member with local parallelism of 1.
+     *
+     * @since 4.4
+     */
+    @Nonnull
+    public static <T> BatchSource<T> itemsDistributed(@Nonnull T... items) {
+        Objects.requireNonNull(items, "items");
+        return itemsDistributed(Arrays.asList(items));
     }
 
     /**

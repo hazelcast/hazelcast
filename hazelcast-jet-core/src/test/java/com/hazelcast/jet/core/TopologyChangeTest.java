@@ -36,6 +36,7 @@ import com.hazelcast.jet.impl.MasterContext;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -500,18 +501,18 @@ public class TopologyChangeTest extends JetTestSupport {
         final long jobId = 1;
         final long executionId = 1;
         HazelcastInstance master = instances[0].getHazelcastInstance();
-        int memberListVersion = getClusterService(master).getMemberListVersion();
+        int memberListVersion = Accessors.getClusterService(master).getMemberListVersion();
         Set<MemberInfo> memberInfos = new HashSet<>();
         for (int i = 1; i < instances.length; i++) {
-            memberInfos.add(new MemberInfo(getNode(instances[i].getHazelcastInstance()).getLocalMember()));
+            memberInfos.add(new MemberInfo(getNode(instances[i]).getLocalMember()));
         }
 
         JobRecord jobRecord = new JobRecord(jobId, null, "", new JobConfig(), Collections.emptySet());
         instances[0].getMap(JOB_RECORDS_MAP_NAME).put(jobId, jobRecord);
 
         InitExecutionOperation op = new InitExecutionOperation(jobId, executionId, memberListVersion, memberInfos, null);
-        Future<Object> future = getOperationService(master)
-                .createInvocationBuilder(JetService.SERVICE_NAME, op, getAddress(master))
+        Future<Object> future = Accessors.getOperationService(master)
+                .createInvocationBuilder(JetService.SERVICE_NAME, op, Accessors.getAddress(master))
                 .invoke();
 
         try {

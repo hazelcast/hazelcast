@@ -16,9 +16,8 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.client.impl.clientside.ClientExceptionFactory;
-import com.hazelcast.client.impl.clientside.ClientExceptionFactory.ExceptionFactory;
-import com.hazelcast.client.impl.protocol.ClientExceptions;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory.ExceptionFactory;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
@@ -85,15 +84,6 @@ public final class ExceptionUtil {
                 || t instanceof OperationTimeoutException
                     && (t.getMessage().contains(InitExecutionOperation.class.getSimpleName())
                         || t.getMessage().contains(StartExecutionOperation.class.getSimpleName()));
-    }
-
-    /**
-     * Called during startup to make our exceptions known to Hazelcast serialization
-     */
-    public static void registerJetExceptions(@Nonnull ClientExceptions factory) {
-        for (Tuple3<Integer, Class<? extends Throwable>, ExceptionFactory> exception : EXCEPTIONS) {
-            factory.register(exception.f0(), exception.f1());
-        }
     }
 
     /**

@@ -40,6 +40,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -51,14 +52,12 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
 import static com.hazelcast.jet.Util.entry;
 import static java.util.Collections.singletonMap;
 import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -69,10 +68,10 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
 
     private static KafkaTestSupport kafkaTestSupport;
 
-    private String sourceImapName = randomMapName();
+    private String sourceIMapName = randomMapName();
     private Properties properties;
     private String topic;
-    private IMap<String, String> sourceIMap;
+    private IMap<Integer, String> sourceIMap;
 
     @BeforeClass
     public static void beforeClass() throws IOException {
@@ -85,15 +84,15 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
     public void before() {
         properties = new Properties();
         properties.setProperty("bootstrap.servers", kafkaTestSupport.getBrokerConnectionString());
-        properties.setProperty("key.serializer", StringSerializer.class.getName());
+        properties.setProperty("key.serializer", IntegerSerializer.class.getName());
         properties.setProperty("value.serializer", StringSerializer.class.getName());
 
         topic = randomName();
         kafkaTestSupport.createTopic(topic, PARTITION_COUNT);
 
-        sourceIMap = instance().getMap(sourceImapName);
+        sourceIMap = instance().getMap(sourceIMapName);
         for (int i = 0; i < 20; i++) {
-            sourceIMap.put(String.valueOf(i), String.valueOf(i));
+            sourceIMap.put(i, String.valueOf(i));
         }
     }
 
@@ -106,11 +105,11 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
     @Test
     public void testWriteToTopic() {
         Pipeline p = Pipeline.create();
-        p.readFrom(Sources.map(sourceImapName))
+        p.readFrom(Sources.map(sourceIMap))
          .writeTo(KafkaSinks.kafka(properties, topic));
         instance().newJob(p).join();
 
-        assertTopicContentsEventually(sourceIMap, false);
+        kafkaTestSupport.assertTopicContentsEventually(topic, sourceIMap, false);
     }
 
     @Test
@@ -118,13 +117,13 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
         String localTopic = topic;
 
         Pipeline p = Pipeline.create();
-        p.readFrom(Sources.<String, String>map(sourceImapName))
+        p.readFrom(Sources.map(sourceIMap))
          .writeTo(KafkaSinks.kafka(properties, e ->
-                 new ProducerRecord<>(localTopic, Integer.valueOf(e.getKey()), e.getKey(), e.getValue()))
+                 new ProducerRecord<>(localTopic, e.getKey(), e.getKey(), e.getValue()))
          );
         instance().newJob(p).join();
 
-        assertTopicContentsEventually(sourceIMap, true);
+        kafkaTestSupport.assertTopicContentsEventually(topic, sourceIMap, true);
     }
 
     @Test
@@ -141,7 +140,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
         Job job = instance().newJob(p);
 
         // the event should not appear in the topic due to linger.ms
-        try (KafkaConsumer<String, String> consumer = kafkaTestSupport.createConsumer(topic)) {
+        try (KafkaConsumer<Integer, String> consumer = kafkaTestSupport.createConsumer(topic)) {
             assertTrueAllTheTime(() -> assertEquals(0, consumer.poll(Duration.ofMillis(100)).count()), 2);
         }
 
@@ -149,7 +148,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
         ProcessorWithEntryAndLatch.isDone = true;
         job.join();
         logger.info("Job finished");
-        assertTopicContentsEventually(singletonMap("k", "v"), false);
+        kafkaTestSupport.assertTopicContentsEventually(topic, singletonMap(0, "v"), false);
     }
 
     @Test
@@ -182,13 +181,13 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
                 .setSnapshotIntervalMillis(4000));
 
         // the event should not appear in the topic due to linger.ms
-        try (KafkaConsumer<String, String> consumer = kafkaTestSupport.createConsumer(topic)) {
+        try (KafkaConsumer<Integer, String> consumer = kafkaTestSupport.createConsumer(topic)) {
             assertTrueAllTheTime(() -> assertEquals(0, consumer.poll(Duration.ofMillis(100)).count()), 2);
         }
 
         // Then
         ProcessorWithEntryAndLatch.allowSnapshot = true;
-        assertTopicContentsEventually(singletonMap("k", "v"), false);
+        kafkaTestSupport.assertTopicContentsEventually(topic, singletonMap(0, "v"), false);
 
         ProcessorWithEntryAndLatch.isDone = true;
         job.join();
@@ -221,13 +220,13 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
                 .exactlyOnce(exactlyOnce)
                 .build();
 
-        try (KafkaConsumer<String, String> consumer = kafkaTestSupport.createConsumer(topic)) {
+        try (KafkaConsumer<Integer, String> consumer = kafkaTestSupport.createConsumer(topic)) {
             List<Integer> actualSinkContents = new ArrayList<>();
             SinkStressTestUtil.test_withRestarts(instance(), logger, sink, graceful, exactlyOnce, () -> {
-                for (ConsumerRecords<String, String> records;
+                for (ConsumerRecords<Integer, String> records;
                      !(records = consumer.poll(Duration.ofMillis(10))).isEmpty();
                 ) {
-                    for (ConsumerRecord<String, String> record : records) {
+                    for (ConsumerRecord<Integer, String> record : records) {
                         actualSinkContents.add(Integer.parseInt(record.value()));
                     }
                 }
@@ -253,8 +252,8 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
         producer.close();
 
         // verify items are not visible
-        KafkaConsumer<String, String> consumer = kafkaTestSupport.createConsumer(topic);
-        ConsumerRecords<String, String> polledRecords = consumer.poll(Duration.ofSeconds(2));
+        KafkaConsumer<Integer, String> consumer = kafkaTestSupport.createConsumer(topic);
+        ConsumerRecords<Integer, String> polledRecords = consumer.poll(Duration.ofSeconds(2));
         assertEquals(0, polledRecords.count());
 
         // recover and commit
@@ -267,7 +266,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
         StringBuilder actualContents = new StringBuilder();
         for (int receivedCount = 0; receivedCount < 2; ) {
             polledRecords = consumer.poll(Duration.ofSeconds(2));
-            for (ConsumerRecord<String, String> record : polledRecords) {
+            for (ConsumerRecord<Integer, String> record : polledRecords) {
                 actualContents.append(record.value()).append('\n');
                 receivedCount++;
             }
@@ -314,27 +313,11 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
         processor.finishSnapshotRestore();
     }
 
-    private void assertTopicContentsEventually(Map<String, String> expectedMap, boolean assertPartitionEqualsKey) {
-        try (KafkaConsumer<String, String> consumer = kafkaTestSupport.createConsumer(topic)) {
-            long timeLimit = System.nanoTime() + SECONDS.toNanos(10);
-            for (int totalRecords = 0; totalRecords < expectedMap.size() && System.nanoTime() < timeLimit; ) {
-                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
-                for (ConsumerRecord<String, String> record : records) {
-                    assertEquals("key=" + record.key(), expectedMap.get(record.key()), record.value());
-                    if (assertPartitionEqualsKey) {
-                        assertEquals(Integer.parseInt(record.key()), record.partition());
-                    }
-                    totalRecords++;
-                }
-            }
-        }
-    }
-
     private static final class ProcessorWithEntryAndLatch extends AbstractProcessor {
         static volatile boolean isDone;
         static volatile boolean allowSnapshot;
 
-        private Traverser<Entry<String, String>> t = Traversers.singleton(entry("k", "v"));
+        private Traverser<Entry<Integer, String>> t = Traversers.singleton(entry(0, "v"));
 
         private ProcessorWithEntryAndLatch() {
             // reset so that values from previous run don't remain

@@ -891,7 +891,7 @@ public final class Processors {
      * @param serviceFactory the service factory
      * @param maxConcurrentOps maximum number of concurrent async operations per processor
      * @param preserveOrder whether the async responses are ordered or not
-     * @param extractKeyFn a function to extract snapshot keys
+     * @param extractKeyFn a function to extract snapshot keys. Used only if preserveOrder==false
      * @param mapAsyncFn a stateless mapping function
      * @param <C> type of context object
      * @param <S> type of service object

@@ -302,6 +302,12 @@
             <classifier>jar-with-dependencies</classifier>
         </dependency>
         <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-sql</artifactId>
+            <version>${project.version}</version>
+            <classifier>jar-with-dependencies</classifier>
+        </dependency>
+        <dependency>
             <groupId>com.hazelcast.jet.examples</groupId>
             <artifactId>hazelcast-jet-examples-hello-world</artifactId>
             <version>${project.version}</version>
@@ -337,7 +343,7 @@
             <version>${jackson.jr.version}</version>
             <optional>true</optional>
         </dependency>
-        <!-- shaded in hazelcast.jar, still needs to mentioned -->
+        <!-- shaded in hazelcast.jar, still needs to be mentioned -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>

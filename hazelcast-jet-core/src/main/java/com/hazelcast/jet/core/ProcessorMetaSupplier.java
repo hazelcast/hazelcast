@@ -19,15 +19,22 @@ package com.hazelcast.jet.core;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.impl.processor.ExpectNothingP;
 import com.hazelcast.jet.impl.processor.MetaSupplierFromProcessorSupplier;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
@@ -35,7 +42,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
-import static java.util.Collections.nCopies;
+import static java.util.Collections.singletonList;
 
 /**
  * Factory of {@link ProcessorSupplier} instances. The starting point of
@@ -290,7 +297,7 @@ public interface ProcessorMetaSupplier extends Serializable {
                 if (context.localParallelism() != 1) {
                     throw new IllegalArgumentException(
                             "Local parallelism of " + context.localParallelism() + " was requested for a vertex that "
-                                    + "supports only total parallelism of 1. Local parallelism should be 1.");
+                                    + "supports only total parallelism of 1. Local parallelism must be 1.");
                 }
                 String key = StringPartitioningStrategy.getPartitionKey(partitionKey);
                 ownerAddress = context.jetInstance().getHazelcastInstance().getPartitionService()
@@ -299,25 +306,7 @@ public interface ProcessorMetaSupplier extends Serializable {
 
             @Nonnull @Override
             public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-                return addr -> addr.equals(ownerAddress) ?
-                        supplier
-                        :
-                        count -> nCopies(count, new AbstractProcessor() {
-                            @Override
-                            protected boolean tryProcess(int ordinal, @Nonnull Object item) {
-                                throw new IllegalStateException(
-                                        "This vertex has a total parallelism of one and as such only"
-                                                + " expects input on a specific node. Edge configuration must be adjusted"
-                                                + " to make sure that only the expected node receives any input."
-                                                + " Unexpected input received from ordinal " + ordinal + ": " + item
-                                );
-                            }
-
-                            @Override
-                            protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
-                                // state might be broadcast to all instances - ignore it in the no-op instances
-                            }
-                        });
+                return addr -> addr.equals(ownerAddress) ? supplier : count -> singletonList(new ExpectNothingP());
             }
 
             @Override
@@ -325,6 +314,87 @@ public interface ProcessorMetaSupplier extends Serializable {
                 return 1;
             }
         };
+    }
+
+    /**
+     * Wraps the provided {@code ProcessorSupplier} into a meta-supplier that
+     * will only use the given {@code ProcessorSupplier} on a node with the
+     * given {@link Address}. This is mainly provided as a convenience for
+     * implementing non-distributed sources where data can't be read in
+     * parallel by multiple consumers. When used as a sink or intermediate
+     * vertex, the DAG should ensure that only the processor instance on the
+     * designated node receives any data, otherwise an {@code
+     * IllegalStateException} will be thrown.
+     * <p>
+     * The vertex containing the {@code ProcessorMetaSupplier} must have a
+     * local parallelism setting of 1, otherwise {code
+     * IllegalArgumentException} is thrown.
+     *
+     * @param supplier      the supplier that will be wrapped
+     * @param memberAddress the supplier will only be created on the node with given {@link Address}
+     * @return the wrapped {@code ProcessorMetaSupplier}
+     * @throws IllegalArgumentException if vertex has local parallelism setting of greater than 1
+     */
+    @Nonnull
+    static ProcessorMetaSupplier forceTotalParallelismOne(
+            @Nonnull ProcessorSupplier supplier,
+            @Nonnull Address memberAddress
+    ) {
+        /**
+         * A meta-supplier that will only use the given {@code ProcessorSupplier}
+         * on a node with given {@link Address}.
+         */
+        @SuppressFBWarnings(value = "SE_BAD_FIELD", justification = "the class is never java-serialized")
+        class SpecificMemberPms implements ProcessorMetaSupplier, DataSerializable {
+
+            private ProcessorSupplier supplier;
+            private Address memberAddress;
+
+            @SuppressWarnings("unused")
+            private SpecificMemberPms() {
+            }
+
+            private SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress) {
+                this.supplier = supplier;
+                this.memberAddress = memberAddress;
+            }
+
+            @Override
+            public void init(@Nonnull Context context) throws Exception {
+                if (context.localParallelism() != 1) {
+                    throw new IllegalArgumentException(
+                            "Local parallelism of " + context.localParallelism() + " was requested for a vertex that "
+                                    + "supports only total parallelism of 1. Local parallelism must be 1.");
+                }
+            }
+
+            @Nonnull @Override
+            public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+                if (!addresses.contains(memberAddress)) {
+                    throw new JetException("Cluster does not contain the required member: " + memberAddress);
+                }
+                return addr -> addr.equals(memberAddress) ? supplier : count -> singletonList(new ExpectNothingP());
+            }
+
+            @Override
+            public int preferredLocalParallelism() {
+                return 1;
+            }
+
+            @Override
+            public void writeData(ObjectDataOutput out) throws IOException {
+                out.writeObject(supplier);
+                out.writeObject(memberAddress);
+            }
+
+            @Override
+            public void readData(ObjectDataInput in) throws IOException {
+                supplier = in.readObject();
+                memberAddress = in.readObject();
+            }
+        }
+
+        return new SpecificMemberPms(supplier, memberAddress);
     }
 
     /**

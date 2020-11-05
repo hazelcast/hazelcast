@@ -35,6 +35,7 @@
         <module>hazelcast-jet-distribution</module>
         <module>hazelcast-jet-core</module>
         <module>hazelcast-jet-spring</module>
+        <module>hazelcast-jet-sql</module>
     </modules>
 
     <repositories>
@@ -72,7 +73,7 @@
         <timestamp>${maven.build.timestamp}</timestamp>
 
         <!-- Main IMDG dependency -->
-        <hazelcast.version>4.0.3</hazelcast.version>
+        <hazelcast.version>4.1.1-SNAPSHOT</hazelcast.version>
         <!-- Dependencies on IMDG modules: must be the same versions IMDG depends on! -->
         <hazelcast.aws.version>3.1</hazelcast.aws.version>
         <hazelcast.kubernetes.version>2.0.1</hazelcast.kubernetes.version>
@@ -91,6 +92,7 @@
         <maven.dependency.plugin.version>2.6</maven.dependency.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
         <maven.antrun.plugin.version>1.8</maven.antrun.plugin.version>
+        <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
 
         <maven.enforcer.plugin.version>3.0.0-M1</maven.enforcer.plugin.version>
         <maven.surefire.plugin.version>3.0.0-M3</maven.surefire.plugin.version>
@@ -521,6 +523,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>${maven.jar.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>${maven.resources.plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>

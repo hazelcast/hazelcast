@@ -36,4 +36,8 @@
         <Class name="com.hazelcast.jet.impl.connector.StreamFilesP" />
         <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
     </Match>
+
+    <Match>
+        <Class name="~com\.hazelcast\.jet\.sql\.impl\.calcite\.parser\..+" />
+    </Match>
 </FindBugsFilter>

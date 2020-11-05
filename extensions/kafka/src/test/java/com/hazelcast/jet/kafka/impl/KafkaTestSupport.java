@@ -27,11 +27,15 @@ import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
 import kafka.zk.EmbeddedZookeeper;
 import org.I0Itec.zkclient.ZkClient;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -41,17 +45,25 @@ import scala.collection.Seq;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static kafka.admin.RackAwareMode.Disabled$.MODULE$;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static scala.collection.JavaConversions.asScalaSet;
 import static scala.collection.JavaConversions.mapAsJavaMap;
 import static scala.collection.JavaConversions.mapAsScalaMap;
@@ -60,11 +72,13 @@ public class KafkaTestSupport {
 
     private static final String ZK_HOST = "127.0.0.1";
     private static final String BROKER_HOST = "127.0.0.1";
-    private static final int SESSION_TIMEOUT = 30000;
-    private static final int CONNECTION_TIMEOUT = 30000;
+    private static final int SESSION_TIMEOUT = 30_000;
+    private static final int CONNECTION_TIMEOUT = 30_000;
 
     private EmbeddedZookeeper zkServer;
+    private String zkConnect;
     private ZkUtils zkUtils;
+
     private KafkaServer kafkaServer;
     private KafkaProducer<Integer, String> producer;
     private int brokerPort = -1;
@@ -73,7 +87,7 @@ public class KafkaTestSupport {
     public void createKafkaCluster() throws IOException {
         System.setProperty("zookeeper.preAllocSize", Integer.toString(128));
         zkServer = new EmbeddedZookeeper();
-        String zkConnect = ZK_HOST + ':' + zkServer.port();
+        zkConnect = ZK_HOST + ':' + zkServer.port();
         ZkClient zkClient = new ZkClient(zkConnect, SESSION_TIMEOUT, CONNECTION_TIMEOUT, ZKStringSerializer$.MODULE$);
         zkUtils = ZkUtils.apply(zkClient, false);
 
@@ -90,6 +104,7 @@ public class KafkaTestSupport {
         brokerProps.setProperty("transaction.state.log.num.partitions", "1");
         brokerProps.setProperty("transaction.state.log.min.isr", "1");
         brokerProps.setProperty("transaction.abort.timed.out.transaction.cleanup.interval.ms", "200");
+        brokerProps.setProperty("group.initial.rebalance.delay.ms", "10");
         KafkaConfig config = new KafkaConfig(brokerProps);
         Time mock = new MockTime();
         kafkaServer = TestUtils.createServer(config, mock);
@@ -119,6 +134,10 @@ public class KafkaTestSupport {
             zkUtils = null;
             zkServer = null;
         }
+    }
+
+    public String getZookeeperConnectionString() {
+        return zkConnect;
     }
 
     public String getBrokerConnectionString() {
@@ -152,16 +171,12 @@ public class KafkaTestSupport {
         );
     }
 
-    Future<RecordMetadata> produce(String topic, Integer key, String value) {
+    public Future<RecordMetadata> produce(String topic, Integer key, String value) {
         return getProducer().send(new ProducerRecord<>(topic, key, value));
     }
 
-    Future<RecordMetadata> produce(String topic, int partition, Long timestamp, Integer key, String value) {
-        return getProducer().send(new ProducerRecord<>(topic, partition, timestamp, key, value));
-    }
-
-    void resetProducer() {
-        this.producer = null;
+    void produce(String topic, int partition, Long timestamp, Integer key, String value) {
+        getProducer().send(new ProducerRecord<>(topic, partition, timestamp, key, value));
     }
 
     private KafkaProducer<Integer, String> getProducer() {
@@ -175,18 +190,89 @@ public class KafkaTestSupport {
         return producer;
     }
 
-    public KafkaConsumer<String, String> createConsumer(String... topicIds) {
+    public void resetProducer() {
+        this.producer = null;
+    }
+
+    public KafkaConsumer<Integer, String> createConsumer(String... topicIds) {
+        return createConsumer(IntegerDeserializer.class, StringDeserializer.class, emptyMap(), topicIds);
+    }
+
+    public <K, V> KafkaConsumer<K, V> createConsumer(
+            Class<? extends Deserializer<K>> keyDeserializerClass,
+            Class<? extends Deserializer<V>> valueDeserializerClass,
+            Map<String, String> properties,
+            String... topicIds
+    ) {
         Properties consumerProps = new Properties();
         consumerProps.setProperty("bootstrap.servers", brokerConnectionString);
         consumerProps.setProperty("group.id", randomString());
         consumerProps.setProperty("client.id", "consumer0");
-        consumerProps.setProperty("key.deserializer", StringDeserializer.class.getCanonicalName());
-        consumerProps.setProperty("value.deserializer", StringDeserializer.class.getCanonicalName());
+        consumerProps.setProperty("key.deserializer", keyDeserializerClass.getCanonicalName());
+        consumerProps.setProperty("value.deserializer", valueDeserializerClass.getCanonicalName());
         consumerProps.setProperty("isolation.level", "read_committed");
         // to make sure the consumer starts from the beginning of the topic
         consumerProps.setProperty("auto.offset.reset", "earliest");
-        KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps);
+        consumerProps.putAll(properties);
+        KafkaConsumer<K, V> consumer = new KafkaConsumer<>(consumerProps);
         consumer.subscribe(Arrays.asList(topicIds));
         return consumer;
+    }
+
+    public void assertTopicContentsEventually(
+            String topic,
+            Map<Integer, String> expected,
+            boolean assertPartitionEqualsKey
+    ) {
+        try (KafkaConsumer<Integer, String> consumer = createConsumer(topic)) {
+            long timeLimit = System.nanoTime() + SECONDS.toNanos(10);
+            for (int totalRecords = 0; totalRecords < expected.size() && System.nanoTime() < timeLimit; ) {
+                ConsumerRecords<Integer, String> records = consumer.poll(Duration.ofMillis(100));
+                for (ConsumerRecord<Integer, String> record : records) {
+                    assertEquals("key=" + record.key(), expected.get(record.key()), record.value());
+                    if (assertPartitionEqualsKey) {
+                        assertEquals(record.key().intValue(), record.partition());
+                    }
+                    totalRecords++;
+                }
+            }
+        }
+    }
+
+    public <K, V> void assertTopicContentsEventually(
+            String topic,
+            Map<K, V> expected,
+            Class<? extends Deserializer<K>> keyDeserializerClass,
+            Class<? extends Deserializer<V>> valueDeserializerClass
+    ) {
+        assertTopicContentsEventually(topic, expected, keyDeserializerClass, valueDeserializerClass, emptyMap());
+    }
+
+    public <K, V> void assertTopicContentsEventually(
+            String topic,
+            Map<K, V> expected,
+            Class<? extends Deserializer<K>> keyDeserializerClass,
+            Class<? extends Deserializer<V>> valueDeserializerClass,
+            Map<String, String> consumerProperties
+    ) {
+        try (KafkaConsumer<K, V> consumer = createConsumer(
+                keyDeserializerClass,
+                valueDeserializerClass,
+                consumerProperties,
+                topic
+        )) {
+            long timeLimit = System.nanoTime() + SECONDS.toNanos(10);
+            Set<K> seenKeys = new HashSet<>();
+            for (int totalRecords = 0; totalRecords < expected.size() && System.nanoTime() < timeLimit; ) {
+                ConsumerRecords<K, V> records = consumer.poll(Duration.ofMillis(100));
+                for (ConsumerRecord<K, V> record : records) {
+                    assertTrue("key=" + record.key() + " already seen", seenKeys.add(record.key()));
+                    V expectedValue = expected.get(record.key());
+                    assertNotNull("key=" + record.key() + " received, but not expected", expectedValue);
+                    assertEquals("key=" + record.key(), expectedValue, record.value());
+                    totalRecords++;
+                }
+            }
+        }
     }
 }

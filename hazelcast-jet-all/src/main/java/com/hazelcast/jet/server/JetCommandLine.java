@@ -19,10 +19,15 @@ package com.hazelcast.jet.server;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.config.YamlClientConfigBuilder;
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.management.MCClusterMetadata;
+import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.spi.ClientClusterService;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.jet.Jet;
@@ -63,6 +68,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
@@ -71,6 +77,7 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 
 import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
@@ -426,14 +433,15 @@ public class JetCommandLine implements Runnable {
     public void cluster(
             @Mixin(name = "verbosity") Verbosity verbosity,
             @Mixin(name = "targets") TargetsMixin targets
-    ) throws IOException {
+    ) {
         targetsMixin.replace(targets);
         runWithJet(verbosity, jet -> {
             JetClientInstanceImpl client = (JetClientInstanceImpl) jet;
             HazelcastClientInstanceImpl hazelcastClient = client.getHazelcastClient();
             ClientClusterService clientClusterService = hazelcastClient.getClientClusterService();
-            MCClusterMetadata clusterMetadata = FutureUtil.getValue(hazelcastClient.getManagementCenterService()
-                    .getClusterMetadata(clientClusterService.getMasterMember()));
+            MCClusterMetadata clusterMetadata =
+                    FutureUtil.getValue(getClusterMetadata(hazelcastClient, clientClusterService.getMasterMember()));
+
             Cluster cluster = client.getCluster();
 
             println("State: " + clusterMetadata.getCurrentState());
@@ -448,7 +456,34 @@ public class JetCommandLine implements Runnable {
         });
     }
 
-    private void runWithJet(Verbosity verbosity, Consumer<JetInstance> consumer) throws IOException {
+    private CompletableFuture<MCClusterMetadata> getClusterMetadata(HazelcastClientInstanceImpl client, Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCGetClusterMetadataCodec.encodeRequest(),
+                null,
+                member.getUuid()
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                client.getSerializationService(),
+                clientMessage -> {
+                    MCGetClusterMetadataCodec.ResponseParameters response =
+                            MCGetClusterMetadataCodec.decodeResponse(clientMessage);
+
+                    MCClusterMetadata metadata = new MCClusterMetadata();
+                    metadata.setCurrentState(ClusterState.getById(response.currentState));
+                    metadata.setClusterTime(response.clusterTime);
+                    metadata.setMemberVersion(response.memberVersion);
+                    metadata.setJetVersion(response.jetVersion);
+                    return metadata;
+                }
+        );
+    }
+
+    private void runWithJet(Verbosity verbosity, Consumer<JetInstance> consumer) {
         this.verbosity.merge(verbosity);
         configureLogging();
         JetInstance jet = getJetClient();

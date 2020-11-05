@@ -117,7 +117,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
         BatchSource<String> errorSource = SourceBuilder
                 .batch("error-source", x -> null)
                 .<String>fillBufferFn((in, Void) -> {
-                    throw new Exception("Intentionally thrown!");
+                    throw new RuntimeException("Intentionally thrown!");
                 })
                 .destroyFn(ConsumerEx.noop())
                 .build();
@@ -316,7 +316,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
         BatchSource<String> errorSource = SourceBuilder
                 .batch("error-source", x -> null)
                 .<String>fillBufferFn((in, Void) -> {
-                    throw new Exception("Intentionally thrown!");
+                    throw new RuntimeException("Intentionally thrown!");
                 })
                 .destroyFn(ConsumerEx.noop())
                 .build();

@@ -64,6 +64,14 @@ public enum JobStatus {
     /**
      * The job has completed successfully.
      */
-    COMPLETED
+    COMPLETED;
 
+    /**
+     * Returns {@code true} if this state is terminal - a job in this state
+     * will never have any other state and will not execute again. It's {@link
+     * #COMPLETED} or {@link #FAILED}.
+     */
+    public boolean isTerminal() {
+        return this == COMPLETED || this == FAILED;
+    }
 }

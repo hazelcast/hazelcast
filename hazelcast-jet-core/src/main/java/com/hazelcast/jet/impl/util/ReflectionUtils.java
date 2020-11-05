@@ -23,7 +23,10 @@ import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Objects;
@@ -32,6 +35,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static java.lang.Character.toUpperCase;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -42,9 +46,45 @@ public final class ReflectionUtils {
     private ReflectionUtils() {
     }
 
-    public static <T> T readStaticFieldOrNull(String classname, String fieldName) {
+    /**
+     * Load a class using the current thread's context class loader as a
+     * classLoaderHint. Exceptions are sneakily thrown.
+     */
+    public static Class<?> loadClass(String name) {
+        return loadClass(Thread.currentThread().getContextClassLoader(), name);
+    }
+
+    /**
+     * See {@link ClassLoaderUtil#loadClass(ClassLoader, String)}. Exceptions
+     * are sneakily thrown.
+     */
+    public static Class<?> loadClass(ClassLoader classLoaderHint, String name) {
         try {
-            Class<?> clazz = Class.forName(classname);
+            return ClassLoaderUtil.loadClass(classLoaderHint, name);
+        } catch (ClassNotFoundException e) {
+            throw sneakyThrow(e);
+        }
+    }
+
+    /**
+     * See {@link ClassLoaderUtil#newInstance(ClassLoader, String)}. Exceptions
+     * are sneakily thrown.
+     */
+    public static <T> T newInstance(ClassLoader classLoader, String name) {
+        try {
+            return ClassLoaderUtil.newInstance(classLoader, name);
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
+    }
+
+    /**
+     * Reads a value of a static field. In case of any exceptions it returns
+     * null.
+     */
+    public static <T> T readStaticFieldOrNull(String className, String fieldName) {
+        try {
+            Class<?> clazz = Class.forName(className);
             return readStaticField(clazz, fieldName);
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException | SecurityException e) {
             return null;
@@ -59,6 +99,73 @@ public final class ReflectionUtils {
             field.setAccessible(true);
         }
         return (T) field.get(null);
+    }
+
+    /**
+     * Return a set-method for a class and a property. The setter must start
+     * with "set", must be public, non-static, must return void or the
+     * containing class type (a builder-style setter) and take one argument of
+     * {@code propertyType}.
+     *
+     * @param clazz The containing class
+     * @param propertyName Name of the property
+     * @param propertyType The propertyType of the property
+     *
+     * @return The found setter or null if one matching the criteria doesn't exist
+     */
+    @Nullable
+    public static Method findPropertySetter(
+            @Nonnull Class<?> clazz,
+            @Nonnull String propertyName,
+            @Nonnull Class<?> propertyType
+    ) {
+        String setterName = "set" + toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
+
+        Method method;
+        try {
+            method = clazz.getMethod(setterName, propertyType);
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
+
+        if (!Modifier.isPublic(method.getModifiers())) {
+            return null;
+        }
+
+        if (Modifier.isStatic(method.getModifiers())) {
+            return null;
+        }
+
+        Class<?> returnType = method.getReturnType();
+        if (returnType != void.class && returnType != Void.class && returnType != clazz) {
+            return null;
+        }
+
+        return method;
+    }
+
+    /**
+     * Return a {@link Field} object for the given {@code fieldName}. The field
+     * must be public and non-static.
+     *
+     * @param clazz The containing class
+     * @param fieldName The field
+     * @return The field object or null, if not found or doesn't match the criteria.
+     */
+    @Nullable
+    public static Field findPropertyField(Class<?> clazz, String fieldName) {
+        Field field;
+        try {
+            field = clazz.getField(fieldName);
+        } catch (NoSuchFieldException e) {
+            return null;
+        }
+
+        if (!Modifier.isPublic(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
+            return null;
+        }
+
+        return field;
     }
 
     @Nonnull
@@ -109,22 +216,6 @@ public final class ReflectionUtils {
 
     public static String toClassResourceId(String name) {
         return toPath(name) + ".class";
-    }
-
-    public static Class<?> loadClass(ClassLoader classLoader, String name) {
-        try {
-            return ClassLoaderUtil.loadClass(classLoader, name);
-        } catch (ClassNotFoundException e) {
-            throw sneakyThrow(e);
-        }
-    }
-
-    public static <T> T newInstance(ClassLoader classLoader, String name) {
-        try {
-            return ClassLoaderUtil.newInstance(classLoader, name);
-        } catch (Exception e) {
-            throw sneakyThrow(e);
-        }
     }
 
     public static final class Resources {

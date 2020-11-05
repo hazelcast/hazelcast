@@ -41,6 +41,7 @@ Apache License, Version 2.0
   Guava: Google Core Libraries for Java:28.1-android
   Guava ListenableFuture only:9999.0-empty-to-avoid-conflict-with-guava
   J2ObjC Annotations:1.3
+  project ':json-path':2.4.0
   T-Digest:3.2
   Netty Reactive Streams Implementation:2.0.3
   Netty Reactive Streams HTTP support:2.0.3
@@ -73,6 +74,9 @@ Apache License, Version 2.0
   jmx_prometheus_javaagent:0.13.0
   Joda-Time:2.10.1
   Apache Avro:1.8.2
+  Calcite Core:1.23.0
+  Calcite Linq4j:1.23.0
+  Apache Calcite Avatica:1.16.0
   Apache Commons Compress:1.8.1
   Apache HttpAsyncClient:4.1.4
   Apache HttpClient:4.5.7
@@ -140,6 +144,8 @@ BSD 3-Clause License
   Protocol Buffers [Core]:3.13.0
   ParaNamer Core:2.7
   ANTLR 4 Runtime:4.7.2
+  commons-compiler:3.0.11
+  janino:3.0.11
 CC0
   reactive-streams:1.0.2
 EPL 2.0

@@ -36,6 +36,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
@@ -52,15 +53,17 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.toList;
 
 public abstract class AbstractJetInstance implements JetInstance {
+
     private final HazelcastInstance hazelcastInstance;
     private final JetCacheManagerImpl cacheManager;
     private final Supplier<JobRepository> jobRepository;
-    private final Map<String, Observable> observables = new ConcurrentHashMap<>();
+    private final Map<String, Observable> observables;
 
     public AbstractJetInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
         this.cacheManager = new JetCacheManagerImpl(this);
         this.jobRepository = Util.memoizeConcurrent(() -> new JobRepository(this));
+        this.observables = new ConcurrentHashMap<>();
     }
 
     @Nonnull @Override
@@ -137,12 +140,17 @@ public abstract class AbstractJetInstance implements JetInstance {
 
     @Nonnull @Override
     public Cluster getCluster() {
-        return getHazelcastInstance().getCluster();
+        return hazelcastInstance.getCluster();
     }
 
     @Nonnull @Override
     public String getName() {
         return hazelcastInstance.getName();
+    }
+
+    @Nonnull @Override
+    public SqlService getSql() {
+        return hazelcastInstance.getSql();
     }
 
     @Nonnull @Override

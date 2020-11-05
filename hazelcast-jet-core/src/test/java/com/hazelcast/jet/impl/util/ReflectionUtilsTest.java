@@ -26,6 +26,8 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 
+import static com.hazelcast.jet.impl.util.ReflectionUtils.findPropertyField;
+import static com.hazelcast.jet.impl.util.ReflectionUtils.findPropertySetter;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -36,11 +38,30 @@ import static org.hamcrest.Matchers.hasToString;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class ReflectionUtilsTest {
+
+    @Test
+    public void when_loadClass_then_returnsClass() {
+        // When
+        Class<?> clazz = ReflectionUtils.loadClass(getClass().getClassLoader(), getClass().getName());
+
+        // Then
+        assertThat(clazz, equalTo(getClass()));
+    }
+
+    @Test
+    public void when_newInstance_then_returnsInstance() {
+        // When
+        OuterClass instance = ReflectionUtils.newInstance(OuterClass.class.getClassLoader(), OuterClass.class.getName());
+
+        // Then
+        assertThat(instance, notNullValue());
+    }
 
     @Test
     public void readStaticFieldOrNull_whenClassDoesNotExist_thenReturnNull() {
@@ -64,6 +85,81 @@ public class ReflectionUtilsTest {
     public void readStaticFieldOrNull_readFromPublicField() {
         String field = ReflectionUtils.readStaticFieldOrNull(MyClass.class.getName(), "staticPublicField");
         assertEquals("staticPublicFieldContent", field);
+    }
+
+    @Test
+    public void when_findPropertySetter_public_then_returnsIt() {
+        assertNotNull(findPropertySetter(JavaProperties.class, "publicField", int.class));
+    }
+
+    @Test
+    public void when_findPropertySetter_public_wrongType_then_returnsNull() {
+        assertNull(findPropertySetter(JavaProperties.class, "publicField", long.class));
+    }
+
+    @Test
+    public void when_findPropertySetter_public_wrongReturnType_then_returnsNull() {
+        assertNull(findPropertySetter(JavaProperties.class, "intWithParameter", int.class));
+    }
+
+    @Test
+    public void when_findPropertySetter_public_builderStyleReturnType_then_returnsIt() {
+        assertNotNull(findPropertySetter(JavaProperties.class, "builderStyleSetter", int.class));
+    }
+
+    @Test
+    public void when_findPropertySetter_publicStatic_then_returnsNull() {
+        assertNull(findPropertySetter(JavaProperties.class, "publicStaticField", int.class));
+    }
+
+    @Test
+    public void when_findPropertySetter_publicDefault_then_returnsNull() {
+        assertNull(findPropertySetter(JavaProperties.class, "defaultField", int.class));
+    }
+
+    @Test
+    public void when_findPropertySetter_protected_then_returnsNull() {
+        assertNull(findPropertySetter(JavaProperties.class, "protectedField", int.class));
+    }
+
+    @Test
+    public void when_findPropertySetter_private_then_returnsNull() {
+        assertNull(findPropertySetter(JavaProperties.class, "privateField", int.class));
+    }
+
+    @Test
+    public void when_findPropertySetter_nonExistent_then_returnsNull() {
+        assertNull(findPropertySetter(JavaProperties.class, "nonExistentField", int.class));
+    }
+
+    @Test
+    public void when_findPropertyField_public_then_returnsIt() {
+        assertNotNull(findPropertyField(JavaFields.class, "publicField"));
+    }
+
+    @Test
+    public void when_findPropertyField_default_then_returnsNull() {
+        assertNull(findPropertyField(JavaFields.class, "defaultField"));
+    }
+
+    @Test
+    public void when_findPropertyField_protected_then_returnsNull() {
+        assertNull(findPropertyField(JavaFields.class, "protectedField"));
+    }
+
+    @Test
+    public void when_findPropertyField_private_then_returnsNull() {
+        assertNull(findPropertyField(JavaFields.class, "privateField"));
+    }
+
+    @Test
+    public void when_findPropertyField_publicStatic_then_returnsNull() {
+        assertNull(findPropertyField(JavaFields.class, "publicStaticField"));
+    }
+
+    @Test
+    public void when_findPropertyField_nonExistent_then_returnsNull() {
+        assertNull(findPropertyField(JavaFields.class, "nonExistentField"));
     }
 
     @Test
@@ -111,23 +207,111 @@ public class ReflectionUtilsTest {
         return new ClassResource(clazz.getName(), url);
     }
 
+    @SuppressWarnings("unused")
+    private static class JavaProperties {
 
-    @Test
-    public void when_loadClass_then_returnsClass() {
-        // When
-        Class<?> clazz = ReflectionUtils.loadClass(getClass().getClassLoader(), getClass().getName());
+        public static int getPublicStaticField() {
+            return 0;
+        }
 
-        // Then
-        assertThat(clazz, equalTo(getClass()));
+        public static void setPublicStaticField() {
+        }
+
+        public int getField() {
+            return 0;
+        }
+
+        public int getPublicField() {
+            return 0;
+        }
+
+        public void setPublicField(int i) {
+        }
+
+        int getDefaultField() {
+            return 0;
+        }
+
+        void setDefaultField(int i) {
+        }
+
+        protected int getProtectedField() {
+            return 0;
+        }
+
+        protected void setProtectedField(int i) {
+        }
+
+        private int getPrivateField() {
+            return 0;
+        }
+
+        private void setPrivateField(int i) {
+        }
+
+        public boolean isBooleanIsField() {
+            return true;
+        }
+
+        public void setBooleanIsField(boolean b) {
+        }
+
+        public boolean getBooleanGetField() {
+            return true;
+        }
+
+        public void setBooleanGetField(boolean b) {
+        }
+
+        public Boolean isBooleanNonPrimitiveField() {
+            return true;
+        }
+
+        public void setBooleanNonPrimitiveField(Boolean b) {
+        }
+
+        public void getVoidField() {
+        }
+
+        public Void getVoid() {
+            return null;
+        }
+
+        public void isVoidIntegerPrimitive() {
+        }
+
+        public Void isVoidInteger() {
+            return null;
+        }
+
+        public void isVoidPrimitive() {
+        }
+
+        public Void isVoid() {
+            return null;
+        }
+
+        public int getIntWithParameter(int parameter) {
+            return 0;
+        }
+
+        public int setIntWithParameter(int parameter) {
+            return 0;
+        }
+
+        public JavaProperties setBuilderStyleSetter(int parameter) {
+            return this;
+        }
     }
 
-    @Test
-    public void when_newInstance_then_returnsInstance() {
-        // When
-        OuterClass instance = ReflectionUtils.newInstance(OuterClass.class.getClassLoader(), OuterClass.class.getName());
+    @SuppressWarnings("unused")
+    private static class JavaFields {
 
-        // Then
-        assertThat(instance, notNullValue());
+        public static int publicStaticField;
+        public int publicField;
+        protected int protectedField;
+        int defaultField;
+        private int privateField;
     }
 
     @SuppressWarnings("unused")

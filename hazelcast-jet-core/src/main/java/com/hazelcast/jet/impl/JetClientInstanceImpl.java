@@ -96,7 +96,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     public List<DistributedObjectInfo> getDistributedObjects() {
         return invokeRequestOnAnyMemberAndDecodeResponse(
                 ClientGetDistributedObjectsCodec.encodeRequest(),
-                response -> ClientGetDistributedObjectsCodec.decodeResponse(response).response
+                response -> ClientGetDistributedObjectsCodec.decodeResponse(response)
         );
     }
 

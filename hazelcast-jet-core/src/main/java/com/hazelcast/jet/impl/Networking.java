@@ -79,7 +79,7 @@ public class Networking {
 
     void handle(Packet packet) throws IOException {
         if (packet.isFlagRaised(FLAG_JET_FLOW_CONTROL)) {
-            handleFlowControlPacket(packet.getConn().getEndPoint(), packet.toByteArray());
+            handleFlowControlPacket(packet.getConn().getRemoteAddress(), packet.toByteArray());
         } else {
             handleStreamPacket(packet);
         }
@@ -97,7 +97,7 @@ public class Networking {
         offset += Integer.BYTES;
 
         ExecutionContext executionContext = jobExecutionService.getExecutionContext(executionId);
-        executionContext.handlePacket(vertexId, ordinal, packet.getConn().getEndPoint(), payload, offset);
+        executionContext.handlePacket(vertexId, ordinal, packet.getConn().getRemoteAddress(), payload, offset);
     }
 
     public static byte[] createStreamPacketHeader(NodeEngine nodeEngine,

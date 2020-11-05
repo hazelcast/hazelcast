@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Connection;
@@ -120,7 +121,10 @@ public final class ImdgUtil {
     }
 
     public static Connection getMemberConnection(@Nonnull NodeEngine engine, @Nonnull Address memberAddr) {
-        return ((NodeEngineImpl) engine).getNode().getEndpointManager().getConnection(memberAddr);
+        return ((NodeEngineImpl) engine).getNode()
+                                        .getServer()
+                                        .getConnectionManager(EndpointQualifier.MEMBER)
+                                        .get(memberAddr);
     }
 
     @Nonnull

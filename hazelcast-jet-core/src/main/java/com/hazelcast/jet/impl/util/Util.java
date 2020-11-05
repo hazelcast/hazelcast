@@ -469,7 +469,7 @@ public final class Util {
      * using the given {@code mapFn}.
      */
     @Nonnull
-    public static <T, R> List<R> toList(@Nonnull Collection<T> coll, Function<? super T, ? extends R> mapFn) {
+    public static <T, R> List<R> toList(@Nonnull Collection<T> coll, @Nonnull Function<? super T, ? extends R> mapFn) {
         return coll.stream().map(mapFn).collect(Collectors.toList());
     }
 

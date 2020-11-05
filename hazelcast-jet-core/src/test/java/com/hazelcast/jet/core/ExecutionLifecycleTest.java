@@ -416,7 +416,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPS(NoOutputSourceP::new, MEMBER_COUNT)));
 
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance().getHazelcastInstance());
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance());
         Address localAddress = nodeEngineImpl.getThisAddress();
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngineImpl.getClusterService();
         MembersView membersView = clusterService.getMembershipManager().getMembersView();

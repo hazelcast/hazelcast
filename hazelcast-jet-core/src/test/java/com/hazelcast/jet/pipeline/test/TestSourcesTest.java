@@ -50,6 +50,18 @@ public class TestSourcesTest extends PipelineTestSupport {
     }
 
     @Test
+    public void test_itemsDistributed() {
+        Object[] input = IntStream.range(0, 10_000).boxed().toArray();
+
+        List<Object> expected = Arrays.asList(input);
+
+        p.readFrom(TestSources.itemsDistributed(input))
+                .apply(Assertions.assertAnyOrder(expected));
+
+        jet().newJob(p).join();
+    }
+
+    @Test
     public void test_longStream() throws Throwable {
         int itemsPerSecond = 20;
 

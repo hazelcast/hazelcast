@@ -46,7 +46,7 @@ public class DetermineLocalParallelismTest extends SimpleTestInClusterSupport {
         JetConfig cfg = new JetConfig();
         cfg.getInstanceConfig().setCooperativeThreadCount(DEFAULT_PARALLELISM);
         initialize(1, cfg);
-        nodeEngine = getNode(instance().getHazelcastInstance()).getNodeEngine();
+        nodeEngine = getNode(instance()).getNodeEngine();
     }
 
     @Test
