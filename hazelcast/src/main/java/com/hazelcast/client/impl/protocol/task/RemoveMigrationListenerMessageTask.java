@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveMigrationListenerCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 
 import java.security.Permission;
@@ -35,7 +36,7 @@ public class RemoveMigrationListenerMessageTask
 
     @Override
     protected Future<Boolean> deRegisterListener() {
-        InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
+        IPartitionService service = getService(IPartitionService.SERVICE_NAME);
         return service.removeMigrationListenerAsync(parameters);
     }
 
