@@ -44,7 +44,6 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
 import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC;
-import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC_ORDER_KEY;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_FINISHED_PARTITION_ID;
 import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_STARTED_PARTITION_ID;
@@ -97,7 +96,7 @@ public class PartitionEventManager {
     private void sendMigrationEvent(ReplicaMigrationEvent event) {
         EventService eventService = nodeEngine.getEventService();
         // All migration events are sent in order.
-        eventService.publishEvent(SERVICE_NAME, MIGRATION_EVENT_TOPIC, event, MIGRATION_EVENT_TOPIC_ORDER_KEY);
+        eventService.publishEvent(SERVICE_NAME, MIGRATION_EVENT_TOPIC, event, MIGRATION_EVENT_TOPIC.hashCode());
     }
 
     public UUID addMigrationListener(@Nonnull MigrationListener listener) {

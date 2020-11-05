@@ -91,7 +91,7 @@ public final class PartitionServiceProxy implements PartitionService {
     }
 
     @Override
-    public boolean removeMigrationListener(UUID registrationId) {
+    public boolean removeMigrationListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "registrationId can't be null");
         return listenerService.deregisterListener(registrationId);
     }
@@ -104,7 +104,7 @@ public final class PartitionServiceProxy implements PartitionService {
     }
 
     @Override
-    public boolean removePartitionLostListener(UUID registrationId) {
+    public boolean removePartitionLostListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "registrationId can't be null");
         return listenerService.deregisterListener(registrationId);
     }
@@ -212,6 +212,7 @@ public final class PartitionServiceProxy implements PartitionService {
                     listener.migrationFinished(migrationState);
                     break;
                 default:
+                    // left empty for future type extensions instead of throwing an exception
             }
         }
 

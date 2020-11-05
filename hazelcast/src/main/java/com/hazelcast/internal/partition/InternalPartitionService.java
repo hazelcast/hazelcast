@@ -35,7 +35,6 @@ public interface InternalPartitionService extends IPartitionService, ManagedServ
      * Static constant for dispatching and listening migration events
      */
     String MIGRATION_EVENT_TOPIC = ".migration";
-    int MIGRATION_EVENT_TOPIC_ORDER_KEY = MIGRATION_EVENT_TOPIC.hashCode();
 
     /**
      * Static constant for dispatching and listening internal partition lost events

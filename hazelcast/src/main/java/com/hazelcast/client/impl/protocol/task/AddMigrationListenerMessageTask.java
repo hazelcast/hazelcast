@@ -33,7 +33,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC;
-import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC_ORDER_KEY;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 public class AddMigrationListenerMessageTask
@@ -83,7 +82,7 @@ public class AddMigrationListenerMessageTask
 
     private void sendIfAlive(ClientMessage eventMessage) {
         if (endpoint.isAlive()) {
-            sendClientMessage(MIGRATION_EVENT_TOPIC_ORDER_KEY, eventMessage);
+            sendClientMessage(null, eventMessage);
         }
     }
 
