@@ -102,7 +102,9 @@
                             <filters>
                                 <filter>
                                     <artifact>org.apache.calcite:calcite-core</artifact>
-                                    <includes>**/Parser.jj</includes>
+                                    <includes>
+                                        <include>**/Parser.jj</include>
+                                    </includes>
                                 </filter>
                             </filters>
                         </configuration>
