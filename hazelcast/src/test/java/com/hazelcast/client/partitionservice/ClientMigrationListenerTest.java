@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.partition.MigrationState;
 import com.hazelcast.partition.PartitionMigrationListenerTest;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.ReplicaMigrationEvent;
@@ -39,6 +40,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
@@ -54,6 +56,8 @@ import static com.hazelcast.test.HazelcastTestSupport.warmUpPartitions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -147,30 +151,41 @@ public class ClientMigrationListenerTest {
     @Test
     public void testMigrationListenerInvoked_whenRegisteredByConfig() {
         PartitionMigrationListenerTest.EventCollectingMigrationListener clientListener = eventCollectingMigrationListener();
-
         Function<MigrationListener, HazelcastInstance> clientSupplier = listener -> {
             ClientConfig clientConfig = new ClientConfig().addListenerConfig(new ListenerConfig(listener));
             return hazelcastFactory.newHazelcastClient(clientConfig);
         };
 
-        testMigrationListenerInvoked(clientListener, clientSupplier);
+        testMigrationListenerInvoked(clientListener, clientSupplier, this::assertMigrationProcess);
     }
 
     @Test
     public void testMigrationListenerInvoked_whenRegisteredByPartitionService() {
         PartitionMigrationListenerTest.EventCollectingMigrationListener clientListener = eventCollectingMigrationListener();
-
         Function<MigrationListener, HazelcastInstance> clientSupplier = listener -> {
             HazelcastInstance client = hazelcastFactory.newHazelcastClient();
             client.getPartitionService().addMigrationListener(listener);
             return client;
         };
 
-        testMigrationListenerInvoked(clientListener, clientSupplier);
+        testMigrationListenerInvoked(clientListener, clientSupplier, this::assertMigrationProcess);
     }
 
-    private void testMigrationListenerInvoked(PartitionMigrationListenerTest.EventCollectingMigrationListener clientListener,
-                                              Function<MigrationListener, HazelcastInstance> clientFactory) {
+    @Test
+    public void testAllMigrationListenerMethodsInvokedOnTheSameThread() {
+        SingleThreadMigrationListener clientListener = new SingleThreadMigrationListener();
+        Function<MigrationListener, HazelcastInstance> clientSupplier = listener -> {
+            HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+            client.getPartitionService().addMigrationListener(listener);
+            return client;
+        };
+
+        testMigrationListenerInvoked(clientListener, clientSupplier, SingleThreadMigrationListener::assertAllMethodsInvokedOnTheSameThread);
+    }
+
+    private <T extends MigrationListener> void testMigrationListenerInvoked(T clientListener,
+                                              Function<MigrationListener, HazelcastInstance> clientFactory,
+                                              Consumer<T> assertFunction) {
 
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = clientFactory.apply(clientListener);
@@ -186,7 +201,7 @@ public class ClientMigrationListenerTest {
         waitAllForSafeState(instance2, instance1, client);
 
         assertRegistrationsSizeEventually(instance1, 1);
-        assertMigrationProcess(clientListener);
+        assertFunction.accept(clientListener);
     }
 
     private void verifyMigrationListenerNeverInvoked(MigrationListener listener) {
@@ -215,4 +230,40 @@ public class ClientMigrationListenerTest {
             assertEquals(size, registrations.size());
         });
     }
+
+    static class SingleThreadMigrationListener implements MigrationListener {
+
+        private String threadName;
+        private boolean finished = false;
+
+        @Override
+        public void migrationStarted(MigrationState state) {
+            assertNull(threadName);
+            threadName = Thread.currentThread().getName();
+        }
+
+        @Override
+        public void migrationFinished(MigrationState state) {
+            assertNotNull(threadName);
+            assertEquals(threadName, Thread.currentThread().getName());
+            finished = true;
+        }
+
+        @Override
+        public void replicaMigrationCompleted(ReplicaMigrationEvent event) {
+            assertNotNull(threadName);
+            assertEquals(threadName, Thread.currentThread().getName());
+
+        }
+
+        @Override
+        public void replicaMigrationFailed(ReplicaMigrationEvent event) {
+            assertNotNull(threadName);
+            assertEquals(threadName, Thread.currentThread().getName());
+        }
+
+        public void assertAllMethodsInvokedOnTheSameThread() {
+            assertTrueEventually(() -> assertTrue(finished));
+        }
+    };
 }

@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.codec.ClientRemoveMigrationListenerCod
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.internal.partition.InternalPartitionService;
 
 import java.security.Permission;
 import java.util.UUID;

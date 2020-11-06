@@ -82,7 +82,7 @@ public class AddMigrationListenerMessageTask
 
     private void sendIfAlive(ClientMessage eventMessage) {
         if (endpoint.isAlive()) {
-            sendClientMessage(null, eventMessage);
+            sendClientMessage(MIGRATION_EVENT_TOPIC.hashCode(), eventMessage);
         }
     }
 
