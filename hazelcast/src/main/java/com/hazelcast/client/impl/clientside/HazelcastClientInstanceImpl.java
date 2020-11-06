@@ -107,6 +107,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -880,6 +881,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private void addClientConfigAddedListeners(Collection<EventListener> configuredListeners) {
         configuredListeners.stream().filter(listener -> listener instanceof DistributedObjectListener)
                 .forEach(listener -> proxyManager.addDistributedObjectListener((DistributedObjectListener) listener));
+
+        configuredListeners.stream().filter(listener -> listener instanceof MigrationListener)
+                .forEach(listener -> getPartitionService().addMigrationListener((MigrationListener) listener));
 
         configuredListeners.stream().filter(listener -> listener instanceof PartitionLostListener)
                 .forEach(listener -> getPartitionService().addPartitionLostListener((PartitionLostListener) listener));
