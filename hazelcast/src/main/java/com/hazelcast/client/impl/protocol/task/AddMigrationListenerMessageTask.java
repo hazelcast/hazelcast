@@ -82,6 +82,7 @@ public class AddMigrationListenerMessageTask
 
     private void sendIfAlive(ClientMessage eventMessage) {
         if (endpoint.isAlive()) {
+            // use a constant "key" to enforce migration event handling order
             sendClientMessage(MIGRATION_EVENT_TOPIC.hashCode(), eventMessage);
         }
     }

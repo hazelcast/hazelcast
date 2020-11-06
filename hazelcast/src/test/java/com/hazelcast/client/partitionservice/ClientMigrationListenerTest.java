@@ -56,8 +56,6 @@ import static com.hazelcast.test.HazelcastTestSupport.warmUpPartitions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -180,12 +178,14 @@ public class ClientMigrationListenerTest {
             return client;
         };
 
-        testMigrationListenerInvoked(clientListener, clientSupplier, SingleThreadMigrationListener::assertAllMethodsInvokedOnTheSameThread);
+        testMigrationListenerInvoked(clientListener, clientSupplier,
+                SingleThreadMigrationListener::assertAllMethodsInvokedOnTheSameThread);
     }
 
-    private <T extends MigrationListener> void testMigrationListenerInvoked(T clientListener,
-                                              Function<MigrationListener, HazelcastInstance> clientFactory,
-                                              Consumer<T> assertFunction) {
+    private <T extends MigrationListener> void testMigrationListenerInvoked(
+            T clientListener,
+            Function<MigrationListener, HazelcastInstance> clientFactory,
+            Consumer<T> assertFunction) {
 
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = clientFactory.apply(clientListener);
@@ -234,36 +234,45 @@ public class ClientMigrationListenerTest {
     static class SingleThreadMigrationListener implements MigrationListener {
 
         private String threadName;
-        private boolean finished = false;
+        private volatile boolean finished = false;
+        private volatile boolean invokedOnSingleThread = true;
 
         @Override
         public void migrationStarted(MigrationState state) {
-            assertNull(threadName);
             threadName = Thread.currentThread().getName();
         }
 
         @Override
         public void migrationFinished(MigrationState state) {
-            assertNotNull(threadName);
-            assertEquals(threadName, Thread.currentThread().getName());
+            if (isInvokedFromAnotherThread()) {
+                invokedOnSingleThread = false;
+            }
             finished = true;
         }
 
         @Override
         public void replicaMigrationCompleted(ReplicaMigrationEvent event) {
-            assertNotNull(threadName);
-            assertEquals(threadName, Thread.currentThread().getName());
-
+            if (isInvokedFromAnotherThread()) {
+                invokedOnSingleThread = false;
+            }
         }
 
         @Override
         public void replicaMigrationFailed(ReplicaMigrationEvent event) {
-            assertNotNull(threadName);
-            assertEquals(threadName, Thread.currentThread().getName());
+            if (isInvokedFromAnotherThread()) {
+                invokedOnSingleThread = false;
+            }
         }
 
         public void assertAllMethodsInvokedOnTheSameThread() {
-            assertTrueEventually(() -> assertTrue(finished));
+            assertTrueEventually(() -> {
+                assertTrue(finished);
+                assertTrue(invokedOnSingleThread);
+            });
         }
-    };
+
+        private boolean isInvokedFromAnotherThread() {
+            return !Thread.currentThread().getName().equals(threadName);
+        }
+    }
 }
