@@ -52,7 +52,7 @@ public class InferTypesTestSupport {
         SqlCall call = new SqlBasicCall(new HazelcastSqlTrimFunction(), new SqlNode[0], parserPos);
 
         HazelcastSqlValidator validator = new HazelcastSqlValidator(
-            new CatalogReader(),
+            new MockCatalogReader(),
             HazelcastTypeFactory.INSTANCE,
             HazelcastSqlConformance.INSTANCE
         );
@@ -60,7 +60,7 @@ public class InferTypesTestSupport {
         return new SqlCallBinding(validator, null, call);
     }
 
-    private static class CatalogReader implements SqlValidatorCatalogReader {
+    private static class MockCatalogReader implements SqlValidatorCatalogReader {
         @Override
         public SqlValidatorTable getTable(List<String> names) {
             return null;
