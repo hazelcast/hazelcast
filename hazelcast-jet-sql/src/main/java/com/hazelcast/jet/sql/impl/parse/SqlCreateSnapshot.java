@@ -32,6 +32,7 @@ import org.apache.calcite.util.ImmutableNullableList;
 import javax.annotation.Nonnull;
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static java.util.Objects.requireNonNull;
 
 public class SqlCreateSnapshot extends SqlCreate {
@@ -45,9 +46,10 @@ public class SqlCreateSnapshot extends SqlCreate {
     public SqlCreateSnapshot(
             SqlIdentifier snapshotName,
             SqlIdentifier jobName,
+            boolean replace,
             SqlParserPos pos
     ) {
-        super(OPERATOR, pos, true, false);
+        super(OPERATOR, pos, replace, false);
 
         this.snapshotName = requireNonNull(snapshotName, "Snapshot name must not be null");
         this.jobName = requireNonNull(jobName, "Job name must not be null");
@@ -76,7 +78,12 @@ public class SqlCreateSnapshot extends SqlCreate {
 
     @Override
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
-        writer.keyword("CREATE SNAPSHOT");
+        writer.keyword("CREATE");
+        if (getReplace()) {
+            writer.keyword("OR REPLACE");
+        }
+        writer.keyword("SNAPSHOT");
+
         snapshotName.unparse(writer, leftPrec, rightPrec);
         writer.keyword("FOR JOB");
         jobName.unparse(writer, leftPrec, rightPrec);
@@ -84,5 +91,8 @@ public class SqlCreateSnapshot extends SqlCreate {
 
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
+        if (!getReplace()) {
+            throw validator.newValidationError(this, RESOURCE.createSnapshotWithoutReplace());
+        }
     }
 }

@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.sql.impl.QueryException;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -38,6 +37,7 @@ import java.util.List;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
+import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static java.util.Objects.requireNonNull;
 
 public class SqlCreateJob extends SqlCreate {
@@ -68,55 +68,6 @@ public class SqlCreateJob extends SqlCreate {
         Preconditions.checkTrue(name.names.size() == 1, name.toString());
 
         jobConfig.setName(name.toString());
-
-        for (SqlNode option : options.getList()) {
-            String key = ((SqlOption) option).key();
-            String value = ((SqlOption) option).value();
-            switch (key) {
-                case "processingGuarantee":
-                    switch (value) {
-                        case "exactlyOnce":
-                            jobConfig.setProcessingGuarantee(EXACTLY_ONCE);
-                            break;
-
-                        case "atLeastOnce":
-                            jobConfig.setProcessingGuarantee(AT_LEAST_ONCE);
-                            break;
-
-                        case "none":
-                            jobConfig.setProcessingGuarantee(NONE);
-                            break;
-
-                        default:
-                            throw QueryException.error("Unsupported value for " + key + ": " + value);
-                    }
-                    break;
-                case "snapshotIntervalMillis":
-                    try {
-                        jobConfig.setSnapshotIntervalMillis(Long.parseLong(value));
-                    } catch (NumberFormatException e) {
-                        throw QueryException.error("Incorrect number for " + key + ": " + value);
-                    }
-                    break;
-                case "autoScaling":
-                    jobConfig.setAutoScaling(Boolean.parseBoolean(value));
-                    break;
-                case "splitBrainProtectionEnabled":
-                    jobConfig.setSplitBrainProtection(Boolean.parseBoolean(value));
-                    break;
-                case "metricsEnabled":
-                    jobConfig.setMetricsEnabled(Boolean.parseBoolean(value));
-                    break;
-                case "storeMetricsAfterJobCompletion":
-                    jobConfig.setStoreMetricsAfterJobCompletion(Boolean.parseBoolean(value));
-                    break;
-                case "initialSnapshotName":
-                    jobConfig.setInitialSnapshotName(value);
-                    break;
-                default:
-                    throw QueryException.error("Unknown job option: " + key);
-            }
-        }
     }
 
     public String name() {
@@ -178,6 +129,57 @@ public class SqlCreateJob extends SqlCreate {
 
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
+        for (SqlNode option0 : options.getList()) {
+            SqlOption option = (SqlOption) option0;
+            String key = option.keyString();
+            String value = option.valueString();
+            switch (key) {
+                case "processingGuarantee":
+                    switch (value) {
+                        case "exactlyOnce":
+                            jobConfig.setProcessingGuarantee(EXACTLY_ONCE);
+                            break;
+
+                        case "atLeastOnce":
+                            jobConfig.setProcessingGuarantee(AT_LEAST_ONCE);
+                            break;
+
+                        case "none":
+                            jobConfig.setProcessingGuarantee(NONE);
+                            break;
+
+                        default:
+                            throw validator.newValidationError(option.value(),
+                                    RESOURCE.processingGuaranteeBadValue(key, value));
+                    }
+                    break;
+                case "snapshotIntervalMillis":
+                    try {
+                        jobConfig.setSnapshotIntervalMillis(Long.parseLong(value));
+                    } catch (NumberFormatException e) {
+                        throw validator.newValidationError(option.value(), RESOURCE.jobOptionIncorrectNumber(key, value));
+                    }
+                    break;
+                case "autoScaling":
+                    jobConfig.setAutoScaling(Boolean.parseBoolean(value));
+                    break;
+                case "splitBrainProtectionEnabled":
+                    jobConfig.setSplitBrainProtection(Boolean.parseBoolean(value));
+                    break;
+                case "metricsEnabled":
+                    jobConfig.setMetricsEnabled(Boolean.parseBoolean(value));
+                    break;
+                case "storeMetricsAfterJobCompletion":
+                    jobConfig.setStoreMetricsAfterJobCompletion(Boolean.parseBoolean(value));
+                    break;
+                case "initialSnapshotName":
+                    jobConfig.setInitialSnapshotName(value);
+                    break;
+                default:
+                    throw validator.newValidationError(option.key(), RESOURCE.unknownJobOption(key));
+            }
+        }
+
         validator.validate(sqlInsert);
     }
 }

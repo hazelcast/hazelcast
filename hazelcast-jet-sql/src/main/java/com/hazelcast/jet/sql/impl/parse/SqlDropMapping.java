@@ -31,6 +31,7 @@ import org.apache.calcite.util.ImmutableNullableList;
 import javax.annotation.Nonnull;
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static java.util.Objects.requireNonNull;
 
 public class SqlDropMapping extends SqlDrop {
@@ -50,8 +51,8 @@ public class SqlDropMapping extends SqlDrop {
         this.name = requireNonNull(name, "Name should not be null");
     }
 
-    public String name() {
-        return name.toString();
+    public String nameWithoutSchema() {
+        return name.names.get(name.names.size() - 1);
     }
 
     public boolean ifExists() {
@@ -81,5 +82,8 @@ public class SqlDropMapping extends SqlDrop {
 
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
+        if (!SqlCreateMapping.isMappingNameValid(name)) {
+            throw validator.newValidationError(name, RESOURCE.droppedMappingDoesNotExist(name.toString()));
+        }
     }
 }

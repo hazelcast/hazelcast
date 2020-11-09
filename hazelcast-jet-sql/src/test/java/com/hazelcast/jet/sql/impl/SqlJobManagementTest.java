@@ -80,6 +80,27 @@ public class SqlJobManagementTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void when_createJobUnknownOption_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS (badOption 'value') AS "
+                        + "INSERT INTO t1 VALUES(1)"))
+                .hasMessage("From line 1, column 25 to line 1, column 33: Unknown job option: badOption");
+    }
+
+    @Test
+    public void when_snapshotIntervalNotNumber_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS (snapshotIntervalMillis 'foo') AS "
+                        + "INSERT INTO t1 VALUES(1)"))
+               .hasMessage("From line 1, column 48 to line 1, column 52: Invalid number for snapshotIntervalMillis: foo");
+    }
+
+    @Test
+    public void when_badProcessingGuarantee_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS (processingGuarantee 'foo') AS "
+                        + "INSERT INTO t1 VALUES(1)"))
+               .hasMessage("From line 1, column 45 to line 1, column 49: Unsupported value for processingGuarantee: foo");
+    }
+
+    @Test
     public void testJobSubmitAndCancel() {
         sqlService.execute("CREATE MAPPING src TYPE TestStream");
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
@@ -140,7 +161,8 @@ public class SqlJobManagementTest extends SimpleTestInClusterSupport {
                 "autoScaling 'false'," +
                 "splitBrainProtectionEnabled 'true'," +
                 "metricsEnabled 'false'," +
-                "initialSnapshotName 'fooSnapshot')" +
+                "initialSnapshotName 'fooSnapshot'," +
+                "storeMetricsAfterJobCompletion 'true')" +
                 "AS SINK INTO dest SELECT v, v FROM src");
 
         JobConfig config = instance().getJob("testJob").getConfig();
@@ -207,19 +229,30 @@ public class SqlJobManagementTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_snapshotExport_then_failNotEnterprise() {
+    public void when_snapshotExportWithoutOrReplace_then_orReplaceRequired() {
         sqlService.execute("CREATE MAPPING src TYPE TestStream");
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM src");
 
         assertThatThrownBy(() -> sqlService.execute("CREATE SNAPSHOT mySnapshot FOR JOB testJob"))
+                .hasMessageContaining("The OR REPLACE option is required for CREATE SNAPSHOT");
+    }
+
+    @Test
+    public void when_snapshotExport_then_failNotEnterprise() {
+        sqlService.execute("CREATE MAPPING src TYPE TestStream");
+        sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
+
+        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM src");
+
+        assertThatThrownBy(() -> sqlService.execute("CREATE OR REPLACE SNAPSHOT mySnapshot FOR JOB testJob"))
                 .hasMessageContaining("You need Hazelcast Jet Enterprise to use this feature");
     }
 
     @Test
     public void when_snapshotExport_jobDoesNotExist_then_fail() {
-        assertThatThrownBy(() -> sqlService.execute("CREATE SNAPSHOT mySnapshot FOR JOB nonExistentJob"))
+        assertThatThrownBy(() -> sqlService.execute("CREATE OR REPLACE SNAPSHOT mySnapshot FOR JOB nonExistentJob"))
                 .hasMessageContaining("The job 'nonExistentJob' doesn't exist");
     }
 

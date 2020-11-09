@@ -70,7 +70,7 @@ public class JetSqlParserTest {
         SqlCreateMapping node = (SqlCreateMapping) parse(sql);
 
         // then
-        assertThat(node.name()).isEqualTo("mapping_name");
+        assertThat(node.nameWithoutSchema()).isEqualTo("mapping_name");
         assertThat(node.type()).isEqualTo("mapping_type");
         assertThat(node.columns().findFirst())
                 .isNotEmpty().get()
@@ -106,19 +106,7 @@ public class JetSqlParserTest {
         SqlCreateMapping node = (SqlCreateMapping) parse(sql);
 
         // then
-        assertThat(node.name()).isEqualTo("public.mapping_name");
-    }
-
-    @Test
-    public void test_createMappingRequiresPublicSchema() {
-        // given
-        String sql = "CREATE MAPPING "
-                + "some_schema.mapping_name "
-                + "TYPE mapping_type";
-
-        // when
-        assertThatThrownBy(() -> parse(sql))
-                .hasMessageContaining("The mapping must be created in the \"public\" (the default) schema");
+        assertThat(node.nameWithoutSchema()).isEqualTo("mapping_name");
     }
 
     @Test
@@ -232,7 +220,7 @@ public class JetSqlParserTest {
         SqlDropMapping node = (SqlDropMapping) parse(sql);
 
         // then
-        assertThat(node.name()).isEqualTo("mapping_name");
+        assertThat(node.nameWithoutSchema()).isEqualTo("mapping_name");
         assertThat(node.ifExists()).isEqualTo(ifExists);
     }
 
@@ -257,7 +245,7 @@ public class JetSqlParserTest {
         SqlDropMapping node = (SqlDropMapping) parse(sql);
 
         // then
-        assertThat(node.name()).isEqualTo("some_schema.mapping_name");
+        assertThat(node.nameWithoutSchema()).isEqualTo("mapping_name");
     }
 
     @Test

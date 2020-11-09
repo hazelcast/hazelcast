@@ -1250,7 +1250,7 @@ public final class Sinks {
      *
      * <pre>{@code
      * stage.writeTo(Sinks.<Entry<Integer, String>>jdbcBuilder()
-     *     .updateQuery("INSET INTO table (key, value) VALUES(?, ?)")
+     *     .updateQuery("INSERT INTO table (key, value) VALUES(?, ?)")
      *     .bindFn((stmt, item) -> {
      *         stmt.setInt(1, item.getKey());
      *         stmt.setString(2, item.getValue());

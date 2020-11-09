@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.parse;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -123,7 +122,7 @@ public class SqlExtendedInsert extends SqlInsert {
                 QueryPath path = ((MapTableField) field).getPath();
                 if (path.getPath() == null
                         && field.getType().getTypeFamily() == QueryDataTypeFamily.OBJECT) {
-                    throw QueryException.error("Writing to top-level fields of type OBJECT not supported");
+                    throw validator.newValidationError(fieldNode, RESOURCE.insertToTopLevelObject());
                 }
             }
         }

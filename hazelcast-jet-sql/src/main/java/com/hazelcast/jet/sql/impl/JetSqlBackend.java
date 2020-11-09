@@ -166,7 +166,7 @@ class JetSqlBackend implements SqlBackend {
                 .map(field -> new MappingField(field.name(), field.type(), field.externalName()))
                 .collect(toList());
         Mapping mapping = new Mapping(
-                sqlCreateMapping.name(),
+                sqlCreateMapping.nameWithoutSchema(),
                 sqlCreateMapping.type(),
                 mappingFields,
                 sqlCreateMapping.options()
@@ -181,7 +181,7 @@ class JetSqlBackend implements SqlBackend {
     }
 
     private SqlPlan toDropMappingPlan(SqlDropMapping sqlDropMapping) {
-        return new DropMappingPlan(sqlDropMapping.name(), sqlDropMapping.ifExists(), planExecutor);
+        return new DropMappingPlan(sqlDropMapping.nameWithoutSchema(), sqlDropMapping.ifExists(), planExecutor);
     }
 
     private SqlPlan toCreateJobPlan(QueryParseResult parseResult, OptimizerContext context) {

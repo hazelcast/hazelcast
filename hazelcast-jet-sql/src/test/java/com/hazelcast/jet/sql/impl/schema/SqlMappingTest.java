@@ -27,8 +27,10 @@ import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -170,7 +172,42 @@ public class SqlMappingTest extends SqlTestSupport {
         // check that we can query that table
         assertRowsEventuallyInAnyOrder("SELECT * FROM partitioned.my_map", singletonList(new Row(42, 43)));
         assertThatThrownBy(() -> sqlService.execute("DROP MAPPING partitioned.my_map"))
-                // TODO a better message would be "You can't delete from 'partitioned' schema", but this is good enough
                 .hasMessageContaining("Mapping does not exist: partitioned.my_map");
+    }
+
+    @Test
+    public void test_createDropMappingUsingSchema_public() {
+        test_createDropMappingUsingSchema("public");
+    }
+
+    @Test
+    public void test_createDropMappingUsingSchema_hazelcastPublic() {
+        test_createDropMappingUsingSchema("hazelcast.public");
+    }
+
+    private void test_createDropMappingUsingSchema(String schemaName) {
+        String name = randomName();
+        sqlService.execute(javaSerializableMapDdl(schemaName + "." + name, Integer.class, Integer.class));
+        sqlService.execute("sink into " + name + " values(1, 1)");
+        sqlService.execute("sink into public." + name + " values(2, 2)");
+        sqlService.execute("sink into hazelcast.public." + name + " values(3, 3)");
+        List<Row> expectedRows = asList(new Row(1, 1), new Row(2, 2), new Row(3, 3));
+        assertRowsAnyOrder("select * from " + name, expectedRows);
+        assertRowsAnyOrder("select * from public." + name, expectedRows);
+        assertRowsAnyOrder("select * from hazelcast.public." + name, expectedRows);
+        sqlService.execute("drop mapping " + schemaName + "." + name);
+    }
+
+    @Test
+    public void when_createMappingInWrongSchema_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING badSchema.mapping TYPE TestBatch"))
+                .hasMessage("From line 1, column 16 to line 1, column 32: " +
+                        "The mapping must be created in the \"public\" schema");
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING badSchema.public.mapping TYPE TestBatch"))
+                .hasMessage("From line 1, column 16 to line 1, column 39: " +
+                        "The mapping must be created in the \"public\" schema");
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING hazelcast.badSchema.mapping TYPE TestBatch"))
+                .hasMessage("From line 1, column 16 to line 1, column 42: " +
+                        "The mapping must be created in the \"public\" schema");
     }
 }

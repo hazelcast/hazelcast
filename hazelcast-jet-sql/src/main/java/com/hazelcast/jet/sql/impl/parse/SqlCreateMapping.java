@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -36,7 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static com.hazelcast.jet.sql.impl.schema.MappingCatalog.SCHEMA_NAME_PUBLIC;
+import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
 
@@ -65,15 +65,10 @@ public class SqlCreateMapping extends SqlCreate {
         this.columns = requireNonNull(columns, "Columns should not be null");
         this.type = requireNonNull(type, "Type should not be null");
         this.options = requireNonNull(options, "Options should not be null");
-
-        if (name.names.size() == 2 && !SCHEMA_NAME_PUBLIC.equals(name.names.get(0)) || name.names.size() > 2) {
-            throw QueryException.error(SqlErrorCode.PARSING,
-                    "The mapping must be created in the \"public\" (the default) schema");
-        }
     }
 
-    public String name() {
-        return name.toString();
+    public String nameWithoutSchema() {
+        return name.names.get(name.names.size() - 1);
     }
 
     public Stream<SqlMappingColumn> columns() {
@@ -85,7 +80,9 @@ public class SqlCreateMapping extends SqlCreate {
     }
 
     public Map<String, String> options() {
-        return options.getList().stream().map(node -> (SqlOption) node).collect(toMap(SqlOption::key, SqlOption::value));
+        return options.getList().stream()
+                      .map(node -> (SqlOption) node)
+                      .collect(toMap(SqlOption::keyString, SqlOption::valueString));
     }
 
     public boolean ifNotExists() {
@@ -155,5 +152,25 @@ public class SqlCreateMapping extends SqlCreate {
 
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
+        if (!isMappingNameValid(name)) {
+            throw validator.newValidationError(name, RESOURCE.mappingIncorrectSchema());
+        }
+    }
+
+    /**
+     * Returns true if the mapping name is in a valid schema, that is it must
+     * be either:
+     * <ul>
+     *     <li>a simple name
+     *     <li>a name in schema "public"
+     *     <li>a name in schema "hazelcast.public"
+     * </ul>
+     */
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
+    public static boolean isMappingNameValid(SqlIdentifier name) {
+        return name.names.size() == 1
+                || name.names.size() == 2 && SCHEMA_NAME_PUBLIC.equals(name.names.get(0))
+                || name.names.size() == 3 && CATALOG.equals(name.names.get(0))
+                        && SCHEMA_NAME_PUBLIC.equals(name.names.get(1));
     }
 }
