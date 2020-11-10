@@ -19,13 +19,13 @@ package com.hazelcast.config;
 import com.hazelcast.config.AbstractXmlConfigBuilder.ConfigType;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.util.XmlUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.StringUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
-import javax.xml.XMLConstants;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerFactory;
@@ -102,16 +102,12 @@ public abstract class AbstractXmlConfigHelper {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Source xmlSource = new DOMSource(doc);
         Result outputTarget = new StreamResult(outputStream);
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+        TransformerFactory transformerFactory = XmlUtil.getTransformerFactory();
         transformerFactory.newTransformer().transform(xmlSource, outputTarget);
         InputStream is = new ByteArrayInputStream(outputStream.toByteArray());
 
         // schema validation
-        SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        schemaFactory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
-        schemaFactory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        SchemaFactory schemaFactory = XmlUtil.getSchemaFactory();
         Schema schema = schemaFactory.newSchema(schemas.toArray(new Source[0]));
         Validator validator = schema.newValidator();
         try {
