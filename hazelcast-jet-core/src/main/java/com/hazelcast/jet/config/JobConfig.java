@@ -68,6 +68,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     private boolean splitBrainProtectionEnabled;
     private boolean enableMetrics = true;
     private boolean storeMetricsAfterJobCompletion;
+    // Note: new options in JobConfig must also be added to `SqlCreateJob`
 
     private Map<String, ResourceConfig> resourceConfigs = new LinkedHashMap<>();
     private Map<String, String> serializerConfigs = new HashMap<>();
