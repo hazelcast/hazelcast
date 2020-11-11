@@ -143,7 +143,7 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         checkValueInternal(sql("'abcde'", "field1"), SqlColumnType.VARCHAR, null);
 
         put(true);
-        checkFailureInternal(sql("'abcde'", "this"), SqlErrorCode.PARSING, "No function matches 'SUBSTRING(<VARCHAR> FROM <BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
+        checkFailureInternal(sql("'abcde'", "this"), SqlErrorCode.PARSING, "No function matches 'SUBSTRING(<VARCHAR> FROM <BOOLEAN>)' name and argument types (you might need to add an explicit CAST)");
 
         put((byte) 2);
         checkValueInternal(sql("'abcde'", "this"), SqlColumnType.VARCHAR, "bcde");
@@ -191,7 +191,7 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         checkValueInternal(sql("this", "2"), SqlColumnType.VARCHAR, "bcde");
         checkValueInternal(sql("this", "'2'"), SqlColumnType.VARCHAR, "bcde");
         checkValueInternal(sql("this", "null"), SqlColumnType.VARCHAR, null);
-        checkFailureInternal(sql("this", "true"), SqlErrorCode.PARSING, "No function matches 'SUBSTRING(<VARCHAR> FROM <BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
+        checkFailureInternal(sql("this", "true"), SqlErrorCode.PARSING, "No function matches 'SUBSTRING(<VARCHAR> FROM <BOOLEAN>)' name and argument types (you might need to add an explicit CAST)");
     }
 
     @Test
@@ -209,7 +209,7 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         checkValueInternal(sql("'abcde'", "2", "field1"), SqlColumnType.VARCHAR, null);
 
         put(true);
-        checkFailureInternal(sql("'abcde'", "2", "this"), SqlErrorCode.PARSING, "No function matches 'SUBSTRING(<VARCHAR> FROM <TINYINT> FOR <BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
+        checkFailureInternal(sql("'abcde'", "2", "this"), SqlErrorCode.PARSING, "No function matches 'SUBSTRING(<VARCHAR> FROM <TINYINT> FOR <BOOLEAN>)' name and argument types (you might need to add an explicit CAST)");
 
         put((byte) 2);
         checkValueInternal(sql("'abcde'", "2", "this"), SqlColumnType.VARCHAR, "bc");
@@ -252,7 +252,7 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         checkValueInternal(sql("'abcde'", "2", "2"), SqlColumnType.VARCHAR, "bc");
         checkValueInternal(sql("'abcde'", "2", "'2'"), SqlColumnType.VARCHAR, "bc");
         checkValueInternal(sql("'abcde'", "2", "null"), SqlColumnType.VARCHAR, null);
-        checkFailureInternal(sql("'abcde'", "2", "true"), SqlErrorCode.PARSING, "No function matches 'SUBSTRING(<VARCHAR> FROM <TINYINT> FOR <BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
+        checkFailureInternal(sql("'abcde'", "2", "true"), SqlErrorCode.PARSING, "No function matches 'SUBSTRING(<VARCHAR> FROM <TINYINT> FOR <BOOLEAN>)' name and argument types (you might need to add an explicit CAST)");
     }
 
     @Test

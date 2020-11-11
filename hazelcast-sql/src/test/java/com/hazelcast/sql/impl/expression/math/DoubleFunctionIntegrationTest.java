@@ -79,12 +79,12 @@ public class DoubleFunctionIntegrationTest extends SqlExpressionIntegrationTestS
         checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
         checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
 
-        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<DATE>)' name and argument types (you might need to an explicit CAST)");
-        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<TIME>)' name and argument types (you might need to an explicit CAST)");
-        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<TIMESTAMP>)' name and argument types (you might need to an explicit CAST)");
-        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<TIMESTAMP_WITH_TIME_ZONE>)' name and argument types (you might need to an explicit CAST)");
-        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<OBJECT>)' name and argument types (you might need to an explicit CAST)");
-        checkColumnFailure(true, SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<DATE>)' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<TIME>)' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<TIMESTAMP>)' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<TIMESTAMP_WITH_TIME_ZONE>)' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<OBJECT>)' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure(true, SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<BOOLEAN>)' name and argument types (you might need to add an explicit CAST)");
     }
 
     private void checkColumn(Object value, double expectedArgument) {

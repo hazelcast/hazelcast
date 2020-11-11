@@ -202,21 +202,21 @@ public class RoundFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
 
     @Test
     public void test_boolean() {
-        checkColumnFailure_2(new ExpressionBiValue.BooleanIntegerVal().fields(true, 127), SqlErrorCode.PARSING, "No function matches 'ROUND(<BOOLEAN>, <INTEGER>)' name and argument types (you might need to an explicit CAST)");
-        checkColumnFailure_2(new ExpressionBiValue.IntegerBooleanVal().fields(127, true), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure_2(new ExpressionBiValue.BooleanIntegerVal().fields(true, 127), SqlErrorCode.PARSING, "No function matches 'ROUND(<BOOLEAN>, <INTEGER>)' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure_2(new ExpressionBiValue.IntegerBooleanVal().fields(127, true), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <BOOLEAN>)' name and argument types (you might need to add an explicit CAST)");
     }
 
     @Test
     public void test_temporal() {
-        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalDateVal().fields(127, LOCAL_DATE_VAL), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <DATE>)' name and argument types (you might need to an explicit CAST)");
-        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalTimeVal().fields(127, LOCAL_TIME_VAL), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <TIME>)' name and argument types (you might need to an explicit CAST)");
-        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalDateTimeVal().fields(127, LOCAL_DATE_TIME_VAL), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <TIMESTAMP>)' name and argument types (you might need to an explicit CAST)");
-        checkColumnFailure_2(new ExpressionBiValue.IntegerOffsetDateTimeVal().fields(127, OFFSET_DATE_TIME_VAL), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <TIMESTAMP_WITH_TIME_ZONE>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalDateVal().fields(127, LOCAL_DATE_VAL), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <DATE>)' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalTimeVal().fields(127, LOCAL_TIME_VAL), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <TIME>)' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalDateTimeVal().fields(127, LOCAL_DATE_TIME_VAL), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <TIMESTAMP>)' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure_2(new ExpressionBiValue.IntegerOffsetDateTimeVal().fields(127, OFFSET_DATE_TIME_VAL), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <TIMESTAMP_WITH_TIME_ZONE>)' name and argument types (you might need to add an explicit CAST)");
     }
 
     @Test
     public void test_object() {
-        checkColumnFailure_2(new IntegerObjectVal().fields(127, "bad"), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <OBJECT>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure_2(new IntegerObjectVal().fields(127, "bad"), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <OBJECT>)' name and argument types (you might need to add an explicit CAST)");
     }
 
     @Test
@@ -302,14 +302,14 @@ public class RoundFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         check_2("15.1", "field1", SqlColumnType.DECIMAL, new BigDecimal("20"));
         check_2("'15.1'", "field1", SqlColumnType.DECIMAL, new BigDecimal("20"));
         checkFailure_2("'bad'", "field1", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure_2("true", "field1", SqlErrorCode.PARSING, "No function matches 'ROUND(<BOOLEAN>, <INTEGER>)' name and argument types (you might need to an explicit CAST)");
+        checkFailure_2("true", "field1", SqlErrorCode.PARSING, "No function matches 'ROUND(<BOOLEAN>, <INTEGER>)' name and argument types (you might need to add an explicit CAST)");
 
         // Second operand
         put(new IntegerVal().field1(15));
         check_2("field1", "-1", SqlColumnType.INTEGER, 20);
         check_2("field1", "'-1'", SqlColumnType.INTEGER, 20);
         checkFailure_2("field1", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure_2("field1", "true", SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
+        checkFailure_2("field1", "true", SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <BOOLEAN>)' name and argument types (you might need to add an explicit CAST)");
     }
 
     private void checkColumn_1(ExpressionValue value, SqlColumnType expectedType, Object expectedValue) {

@@ -40,7 +40,7 @@ public class UnaryPlusIntegrationTest extends ExpressionIntegrationTestBase {
 
     @Test
     public void testBoolean() {
-        assertParsingError("+booleanTrue", "No operator matches '+<BOOLEAN>' name and argument types (you might need to an explicit CAST)");
+        assertParsingError("+booleanTrue", "No operator matches '+<BOOLEAN>' name and argument types (you might need to add an explicit CAST)");
     }
 
     @Test
@@ -119,10 +119,10 @@ public class UnaryPlusIntegrationTest extends ExpressionIntegrationTestBase {
 
     @Test
     public void testUnsupported() {
-        assertParsingError("+dateCol", "No operator matches '+<DATE>' name and argument types (you might need to an explicit CAST)");
-        assertParsingError("+timeCol", "No operator matches '+<TIME>' name and argument types (you might need to an explicit CAST)");
-        assertParsingError("+dateTimeCol", "No operator matches '+<TIMESTAMP>' name and argument types (you might need to an explicit CAST)");
-        assertParsingError("+offsetDateTimeCol", "No operator matches '+<TIMESTAMP_WITH_TIME_ZONE>' name and argument types (you might need to an explicit CAST)");
-        assertParsingError("+object", "No operator matches '+<OBJECT>' name and argument types (you might need to an explicit CAST)");
+        assertParsingError("+dateCol", "No operator matches '+<DATE>' name and argument types (you might need to add an explicit CAST)");
+        assertParsingError("+timeCol", "No operator matches '+<TIME>' name and argument types (you might need to add an explicit CAST)");
+        assertParsingError("+dateTimeCol", "No operator matches '+<TIMESTAMP>' name and argument types (you might need to add an explicit CAST)");
+        assertParsingError("+offsetDateTimeCol", "No operator matches '+<TIMESTAMP_WITH_TIME_ZONE>' name and argument types (you might need to add an explicit CAST)");
+        assertParsingError("+object", "No operator matches '+<OBJECT>' name and argument types (you might need to add an explicit CAST)");
     }
 }
