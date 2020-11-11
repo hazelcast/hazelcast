@@ -76,11 +76,10 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         check("field1", null);
 
         // Check string
-        checkColumn("true", false);
-        checkColumn("false", true);
-
-        checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BOOLEAN");
-        checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BOOLEAN");
+        checkColumnFailure("true", SqlErrorCode.PARSING, "No operator matches 'NOT<VARCHAR>' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure("false", SqlErrorCode.PARSING, "No operator matches 'NOT<VARCHAR>' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure("bad", SqlErrorCode.PARSING, "No operator matches 'NOT<VARCHAR>' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure('b', SqlErrorCode.PARSING, "No operator matches 'NOT<VARCHAR>' name and argument types (you might need to add an explicit CAST)");
 
         // Check unsupported values
         checkColumnFailure((byte) 1, SqlErrorCode.PARSING, "No operator matches 'NOT<TINYINT>' name and argument types (you might need to add an explicit CAST)");
@@ -91,7 +90,6 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumnFailure(BigDecimal.ONE, SqlErrorCode.PARSING, "No operator matches 'NOT<DECIMAL(38, 38)>' name and argument types (you might need to add an explicit CAST)");
         checkColumnFailure(1f, SqlErrorCode.PARSING, "No operator matches 'NOT<REAL>' name and argument types (you might need to add an explicit CAST)");
         checkColumnFailure(1d, SqlErrorCode.PARSING, "No operator matches 'NOT<DOUBLE>' name and argument types (you might need to add an explicit CAST)");
-
         checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "No operator matches 'NOT<DATE>' name and argument types (you might need to add an explicit CAST)");
         checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "No operator matches 'NOT<TIME>' name and argument types (you might need to add an explicit CAST)");
         checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "No operator matches 'NOT<TIMESTAMP>' name and argument types (you might need to add an explicit CAST)");
@@ -110,6 +108,7 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         check("?", false, true);
         check("?", true, false);
 
+        // TODO: Set inference strategy for parameters!
         check("?", true, "false");
         check("?", false, "true");
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to BOOLEAN", "bad");
@@ -140,8 +139,7 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
 
         check("'true'", false);
         check("'false'", true);
-        checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'BOOLEAN'");
-
+        checkFailure("'bad'", SqlErrorCode.PARSING, "No operator matches 'NOT<VARCHAR>' name and argument types (you might need to add an explicit CAST)");
         checkFailure("1", SqlErrorCode.PARSING, "No operator matches 'NOT<TINYINT>' name and argument types (you might need to add an explicit CAST)");
         checkFailure("1E0", SqlErrorCode.PARSING, "No operator matches 'NOT<DOUBLE>' name and argument types (you might need to add an explicit CAST)");
     }

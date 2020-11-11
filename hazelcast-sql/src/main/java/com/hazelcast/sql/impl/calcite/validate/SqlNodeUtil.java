@@ -16,9 +16,12 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
-import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
@@ -28,6 +31,7 @@ import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.math.BigDecimal;
+import java.util.Locale;
 
 import static org.apache.calcite.sql.type.SqlTypeName.APPROX_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
@@ -58,6 +62,37 @@ public final class SqlNodeUtil {
      */
     public static boolean isLiteral(SqlNode node) {
         return node.getKind() == SqlKind.LITERAL;
+    }
+
+    public static BiTuple<Boolean, Boolean> booleanValue(SqlLiteral literal) {
+        switch (literal.getTypeName()) {
+            case BOOLEAN:
+                return BiTuple.of(true, literal.booleanValue());
+
+            case NULL:
+                return BiTuple.of(true, null);
+
+            case CHAR:
+            case VARCHAR:
+                String value = literal.getValueAs(String.class);
+
+                if (value == null) {
+                    return BiTuple.of(true, null);
+                } else {
+                    value = value.toLowerCase(Locale.ROOT);
+
+                    if (Boolean.TRUE.toString().equals(value)) {
+                        return BiTuple.of(true, true);
+                    } else if (Boolean.FALSE.toString().equals(value)) {
+                        return BiTuple.of(true, false);
+                    } else {
+                        return BiTuple.of(false, false);
+                    }
+                }
+
+            default:
+                return BiTuple.of(false, false);
+        }
     }
 
     /**
@@ -116,4 +151,13 @@ public final class SqlNodeUtil {
         }
     }
 
+    public static RelDataType createType(RelDataTypeFactory typeFactory, SqlTypeName typeName, boolean nullable) {
+        RelDataType res = typeFactory.createSqlType(typeName);
+
+        if (nullable) {
+            res = typeFactory.createTypeWithNullability(res, true);
+        }
+
+        return res;
+    }
 }

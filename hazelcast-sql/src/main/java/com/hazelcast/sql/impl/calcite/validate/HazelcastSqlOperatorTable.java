@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.validate;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDoubleFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastNotPrefixOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlFloorFunction;
@@ -104,14 +105,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         wrap(notAny(OperandTypes.BOOLEAN_BOOLEAN))
     );
 
-    public static final SqlPrefixOperator NOT = new SqlPrefixOperator(
-        "NOT",
-        SqlKind.NOT,
-        SqlStdOperatorTable.NOT.getLeftPrec(),
-        ReturnTypes.ARG0,
-        InferTypes.BOOLEAN,
-        wrap(notAny(OperandTypes.BOOLEAN))
-    );
+    public static final SqlPrefixOperator NOT = new HazelcastNotPrefixOperator();
 
     //#endregion
 
