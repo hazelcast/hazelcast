@@ -488,4 +488,12 @@ public class PlusIntegrationTest extends ExpressionIntegrationTestBase {
 
         assertParsingError("object + object", "Cannot apply '+' to arguments of type '<OBJECT> + <OBJECT>'");
     }
+
+    // TODO: Remove
+    @Test
+    public void testInteger2() {
+//        assertParsingError("int1 + stringFoo", "Cannot apply '+' to arguments of type '<INTEGER> + <BOOLEAN>'");
+        assertParsingError("? + ?", "Cannot convert VARCHAR to BIGINT");
+//        assertDataError("int1 + stringFoo", "Cannot convert VARCHAR to BIGINT");
+    }
 }

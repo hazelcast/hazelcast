@@ -79,6 +79,9 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             return super.binaryArithmeticCoercion(binding);
         }
 
+        // TODO: Integrate properly
+        CoercionUtils.coercePlus(binding);
+
         // Infer types.
 
         RelDataType[] types = inferTypes(binding.getScope(), binding.operands(), true);

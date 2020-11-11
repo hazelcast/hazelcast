@@ -79,6 +79,9 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
      */
     private final Map<SqlNode, RelDataType> knownNodeTypes = new IdentityHashMap<>();
 
+    /** Visitor to rewrite Calcite operators to Hazelcast operators. */
+    private final HazelcastSqlOperatorTable.RewriteVisitor rewriteVisitor;
+
     public HazelcastSqlValidator(
         SqlValidatorCatalogReader catalogReader,
         HazelcastTypeFactory typeFactory,
@@ -95,6 +98,8 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
     ) {
         super(operatorTable(extensionOperatorTable), catalogReader, typeFactory, CONFIG.withSqlConformance(conformance));
         setTypeCoercion(new HazelcastTypeCoercion(this));
+
+        rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
     }
 
     private static SqlOperatorTable operatorTable(SqlOperatorTable extensionOperatorTable) {
@@ -189,7 +194,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
             // the first '+' refers to the standard Calcite SqlStdOperatorTable.PLUS
             // operator and the second '+' refers to HazelcastSqlOperatorTable.PLUS
             // operator.
-            rewritten.accept(HazelcastOperatorTableVisitor.INSTANCE);
+            rewritten.accept(rewriteVisitor);
         }
 
         return rewritten;

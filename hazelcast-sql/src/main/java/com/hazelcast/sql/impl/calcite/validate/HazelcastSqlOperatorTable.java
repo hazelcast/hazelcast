@@ -29,19 +29,28 @@ import com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
+import org.apache.calcite.runtime.CalciteException;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlBinaryOperator;
+import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlPostfixOperator;
 import org.apache.calcite.sql.SqlPrefixOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
+import org.apache.calcite.sql.fun.SqlCase;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
+import org.apache.calcite.sql.util.SqlBasicVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes.NULLABLE_OBJECT;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAllNull;
@@ -427,5 +436,61 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     public static HazelcastSqlOperatorTable instance() {
         return INSTANCE;
+    }
+
+    /**
+     * Visitor that rewrites Calcite operators with operators from this table.
+     */
+    public static class RewriteVisitor extends SqlBasicVisitor<Void> {
+
+        private final HazelcastSqlValidator validator;
+
+        public RewriteVisitor(HazelcastSqlValidator validator) {
+            this.validator = validator;
+        }
+
+        @Override
+        public Void visit(SqlCall call) {
+            rewriteCall(call);
+
+            return super.visit(call);
+        }
+
+        private void rewriteCall(SqlCall call) {
+            if (call instanceof SqlBasicCall) {
+                // An slias is declared as a SqlBasicCall with "SqlKind.AS". We do not need to rewrite aliases, so skip it.
+                if (call.getKind() == SqlKind.AS) {
+                    return;
+                }
+
+                SqlBasicCall basicCall = (SqlBasicCall) call;
+                SqlOperator operator = basicCall.getOperator();
+
+                List<SqlOperator> resolvedOperators = new ArrayList<>(1);
+
+                HazelcastSqlOperatorTable.instance().lookupOperatorOverloads(
+                    operator.getNameAsId(),
+                    null,
+                    operator.getSyntax(),
+                    resolvedOperators,
+                    validator.getCatalogReader().nameMatcher()
+                );
+
+                if (resolvedOperators.isEmpty()) {
+                    throw functionDoesNotExist(call);
+                }
+
+                assert resolvedOperators.size() == 1;
+
+                basicCall.setOperator(resolvedOperators.get(0));
+            } else if (call instanceof SqlCase) {
+                // TODO: Support CASE
+                throw functionDoesNotExist(call);
+            }
+        }
+
+        private CalciteException functionDoesNotExist(SqlCall call) {
+            throw HazelcastResources.RESOURCE.functionDoesNotExist(call.getOperator().getName()).ex();
+        }
     }
 }

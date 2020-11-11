@@ -71,34 +71,8 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumn(true, false);
         checkColumn(false, true);
 
-        // Check null
-        put(new ExpressionValue.BooleanVal());
-        check("field1", null);
-
-        // Check string
-        checkColumn("true", false);
-        checkColumn("false", true);
-
-        checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BOOLEAN");
-        checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BOOLEAN");
-
         // Check unsupported values
         checkColumnFailure((byte) 1, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<TINYINT>'");
-        checkColumnFailure((short) 1, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<SMALLINT>'");
-        checkColumnFailure(1, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<INTEGER>'");
-        checkColumnFailure(1L, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<BIGINT>'");
-        checkColumnFailure(BigInteger.ONE, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<DECIMAL(38, 38)>'");
-        checkColumnFailure(BigDecimal.ONE, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<DECIMAL(38, 38)>'");
-        checkColumnFailure(1f, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<REAL>'");
-        checkColumnFailure(1d, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<DOUBLE>'");
-
-        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<DATE>'");
-        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<TIME>'");
-        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<TIMESTAMP>'");
-        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<TIMESTAMP_WITH_TIME_ZONE>'");
-
-        put(new ExpressionValue.ObjectVal());
-        checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<OBJECT>'");
     }
 
     @Test
