@@ -84,7 +84,7 @@ public class DoubleFunctionIntegrationTest extends SqlExpressionIntegrationTestS
         checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<TIMESTAMP>)' name and argument types (you might need to an explicit CAST)");
         checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<TIMESTAMP_WITH_TIME_ZONE>)' name and argument types (you might need to an explicit CAST)");
         checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<OBJECT>)' name and argument types (you might need to an explicit CAST)");
-        checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply '" + mode.mode + "' to arguments of type '" + mode.mode + "(<BOOLEAN>)'");
+        checkColumnFailure(true, SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
     }
 
     private void checkColumn(Object value, double expectedArgument) {
@@ -143,7 +143,7 @@ public class DoubleFunctionIntegrationTest extends SqlExpressionIntegrationTestS
         checkLiteral("null", null);
 
         checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply '" + mode.mode + "' to arguments of type '" + mode.mode + "(<BOOLEAN>)'");
+        checkFailure("true", SqlErrorCode.PARSING, "No function matches '" + mode.mode + "(<BOOLEAN>)'");
     }
 
     private void checkLiteral(Object literal, Double expectedArg) {

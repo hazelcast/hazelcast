@@ -61,7 +61,7 @@ public class FloorFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
         checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
 
-        checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply 'FLOOR' to arguments of type 'FLOOR(<BOOLEAN>)'");
+        checkColumnFailure(true, SqlErrorCode.PARSING, "No function matches 'FLOOR(<BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
         checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "No function matches 'FLOOR(<DATE>)' name and argument types (you might need to an explicit CAST)");
         checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'FLOOR(<TIME>)' name and argument types (you might need to an explicit CAST)");
         checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'FLOOR(<TIMESTAMP>)' name and argument types (you might need to an explicit CAST)");
@@ -129,7 +129,7 @@ public class FloorFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkLiteral("1.1E0", SqlColumnType.DOUBLE, 1d);
 
         checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply 'FLOOR' to arguments of type 'FLOOR(<BOOLEAN>)'");
+        checkFailure("true", SqlErrorCode.PARSING, "No function matches 'FLOOR(<BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
     }
 
     private void checkLiteral(Object literal, SqlColumnType expectedType, Object expectedResult) {

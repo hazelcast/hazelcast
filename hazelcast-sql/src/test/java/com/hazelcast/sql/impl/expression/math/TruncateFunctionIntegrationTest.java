@@ -256,8 +256,8 @@ public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTes
 
     @Test
     public void test_boolean() {
-        checkColumnFailure_2(new ExpressionBiValue.BooleanIntegerVal().fields(true, 127), SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<BOOLEAN>, <INTEGER>)'");
-        checkColumnFailure_2(new ExpressionBiValue.IntegerBooleanVal().fields(127, true), SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<INTEGER>, <BOOLEAN>)'");
+        checkColumnFailure_2(new ExpressionBiValue.BooleanIntegerVal().fields(true, 127), SqlErrorCode.PARSING, "No function matches 'TRUNCATE(<BOOLEAN>, <INTEGER>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure_2(new ExpressionBiValue.IntegerBooleanVal().fields(127, true), SqlErrorCode.PARSING, "No function matches 'TRUNCATE(<INTEGER>, <BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
     }
 
     @Test
@@ -297,14 +297,14 @@ public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTes
         check_2("15.1", "field1", SqlColumnType.DECIMAL, new BigDecimal("10"));
         check_2("'15.1'", "field1", SqlColumnType.DECIMAL, new BigDecimal("10"));
         checkFailure_2("'bad'", "field1", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure_2("true", "field1", SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<BOOLEAN>, <INTEGER>)'");
+        checkFailure_2("true", "field1", SqlErrorCode.PARSING, "No function matches 'TRUNCATE(<BOOLEAN>, <INTEGER>)' name and argument types (you might need to an explicit CAST)");
 
         // Second operand
         put(new IntegerVal().field1(15));
         check_2("field1", "-1", SqlColumnType.INTEGER, 10);
         check_2("field1", "'-1'", SqlColumnType.INTEGER, 10);
         checkFailure_2("field1", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure_2("field1", "true", SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<INTEGER>, <BOOLEAN>)'");
+        checkFailure_2("field1", "true", SqlErrorCode.PARSING, "No function matches 'TRUNCATE(<INTEGER>, <BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
     }
 
     private void checkColumn_1(ExpressionValue value, SqlColumnType expectedType, Object expectedValue) {

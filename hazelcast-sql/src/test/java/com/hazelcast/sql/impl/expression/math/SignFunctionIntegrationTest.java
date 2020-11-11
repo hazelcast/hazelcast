@@ -87,7 +87,7 @@ public class SignFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumnFailure("a", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
         checkColumnFailure('a', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
 
-        checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply 'SIGN' to arguments of type 'SIGN(<BOOLEAN>)'");
+        checkColumnFailure(true, SqlErrorCode.PARSING, "No function matches 'SIGN(<BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
         checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "No function matches 'SIGN(<DATE>)' name and argument types (you might need to an explicit CAST)");
         checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'SIGN(<TIME>)' name and argument types (you might need to an explicit CAST)");
         checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'SIGN(<TIMESTAMP>)' name and argument types (you might need to an explicit CAST)");

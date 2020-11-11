@@ -95,7 +95,7 @@ public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
         checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
 
-        checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply 'RAND' to arguments of type 'RAND(<BOOLEAN>)'");
+        checkColumnFailure(true, SqlErrorCode.PARSING, "No function matches 'RAND(<BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
         checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "No function matches 'RAND(<DATE>)' name and argument types (you might need to an explicit CAST)");
         checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'RAND(<TIME>)' name and argument types (you might need to an explicit CAST)");
         checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'RAND(<TIMESTAMP>)' name and argument types (you might need to an explicit CAST)");
@@ -165,7 +165,7 @@ public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         assertNotEquals(nullRes1, nullRes2);
 
         checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply 'RAND' to arguments of type 'RAND(<BOOLEAN>)'");
+        checkFailure("true", SqlErrorCode.PARSING, "No function matches 'RAND(<BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
     }
 
     private void checkNumericLiteral(Object literal, long expectedSeed) {
