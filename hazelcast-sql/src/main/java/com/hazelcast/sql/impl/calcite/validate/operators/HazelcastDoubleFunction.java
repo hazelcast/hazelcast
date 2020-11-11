@@ -36,7 +36,7 @@ public class HazelcastDoubleFunction extends SqlFunction {
             name,
             SqlKind.OTHER_FUNCTION,
             ReturnTypes.DOUBLE_NULLABLE,
-            HazelcastInferTypes.explicit(SqlTypeName.DOUBLE),
+            HazelcastInferTypes.explicitSingle(SqlTypeName.DOUBLE),
             wrap(notAny(OperandTypes.NUMERIC)),
             SqlFunctionCategory.NUMERIC
         );
