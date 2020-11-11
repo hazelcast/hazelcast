@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.validate;
 
 import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.runtime.Resources;
+import org.apache.calcite.sql.validate.SqlValidatorException;
 
 public final class HazelcastResources {
 
@@ -31,5 +32,8 @@ public final class HazelcastResources {
     public interface HazelcastResource {
         @Resources.BaseMessage("Function ''{0}'' does not exist")
         Resources.ExInst<CalciteException> functionDoesNotExist(String a0);
+
+        @Resources.BaseMessage("No function matches {0} name and argument types (consider adding an explicit CAST)")
+        Resources.ExInst<SqlValidatorException> canNotApplyOp2Type(String a0);
     }
 }

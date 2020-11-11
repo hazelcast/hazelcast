@@ -72,6 +72,7 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumn(false, true);
 
         // Check unsupported values
+        // TODO: Restore test!
         checkColumnFailure((byte) 1, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<TINYINT>'");
     }
 
