@@ -39,12 +39,25 @@ public class SqlCallBindingOverride extends SqlCallBinding {
 
     @Override
     public CalciteException newValidationSignatureError() {
+        SqlOperator operator = getOperator();
         SqlValidator validator = getValidator();
         SqlCall call = getCall();
 
-        String signature = getCallSignature(getOperator(), validator, call, getScope());
+        String signature = getCallSignature(operator, validator, call, getScope());
 
-        Resources.ExInst<SqlValidatorException> error = HazelcastResources.RESOURCE.canNotApplyOp2Type(signature);
+        Resources.ExInst<SqlValidatorException> error;
+
+        switch (operator.getSyntax()) {
+            case FUNCTION:
+            case FUNCTION_STAR:
+            case FUNCTION_ID:
+                error = HazelcastResources.RESOURCE.canNotApplyOperandsToFunction(signature);
+
+                break;
+
+            default:
+                error = HazelcastResources.RESOURCE.canNotApplyOperandsToOperator(signature);
+        }
 
         return validator.newValidationError(call, error);
     }

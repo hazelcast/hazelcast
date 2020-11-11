@@ -91,11 +91,11 @@ public class AbsFunctionIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkColumnFailure("a", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
         checkColumnFailure('a', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
 
-        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply 'ABS' to arguments of type 'ABS(<DATE>)'");
-        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'ABS' to arguments of type 'ABS(<TIME>)'");
-        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'ABS' to arguments of type 'ABS(<TIMESTAMP>)'");
-        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'ABS' to arguments of type 'ABS(<TIMESTAMP_WITH_TIME_ZONE>)'");
-        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "Cannot apply 'ABS' to arguments of type 'ABS(<OBJECT>)'");
+        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "No function matches 'ABS(<DATE>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'ABS(<TIME>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'ABS(<TIMESTAMP>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'ABS(<TIMESTAMP_WITH_TIME_ZONE>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "No function matches 'ABS(<OBJECT>)' name and argument types (you might need to an explicit CAST)");
     }
 
     private void checkColumn(Object value, SqlColumnType expectedType, Object expectedResult) {
@@ -214,8 +214,8 @@ public class AbsFunctionIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkFailure(Long.MIN_VALUE, SqlErrorCode.DATA_EXCEPTION, "BIGINT overflow in ABS function (consider adding an explicit CAST to DECIMAL)");
 
         checkFailure("'a'", SqlErrorCode.PARSING, "Literal ''a'' can not be parsed to type 'DECIMAL'");
-        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply 'ABS' to arguments of type 'ABS(<BOOLEAN>)'");
-        checkFailure("false", SqlErrorCode.PARSING, "Cannot apply 'ABS' to arguments of type 'ABS(<BOOLEAN>)'");
+        checkFailure("true", SqlErrorCode.PARSING, "No function matches 'ABS(<BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
+        checkFailure("false", SqlErrorCode.PARSING, "No function matches 'ABS(<BOOLEAN>)' name and argument types (you might need to an explicit CAST)");
     }
 
     private void checkExactLiteral(Object literal, SqlColumnType expectedType, Object expectedValue) {

@@ -61,7 +61,7 @@ public class UpperFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkColumn(new ExpressionValue.OffsetDateTimeVal().field1(OFFSET_DATE_TIME_VAL), OFFSET_DATE_TIME_VAL.toString());
 
         put(new ObjectVal());
-        checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply 'UPPER' to arguments of type 'UPPER(<OBJECT>)'");
+        checkFailure("field1", SqlErrorCode.PARSING, "No function matches 'UPPER(<OBJECT>)' name and argument types (you might need to an explicit CAST)");
     }
 
     private void checkColumn(ExpressionValue value, String expectedResult) {

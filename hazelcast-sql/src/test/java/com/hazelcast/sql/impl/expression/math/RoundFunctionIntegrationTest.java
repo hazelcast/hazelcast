@@ -202,15 +202,15 @@ public class RoundFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
 
     @Test
     public void test_temporal() {
-        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalDateVal().fields(127, LOCAL_DATE_VAL), SqlErrorCode.PARSING, "Cannot apply 'ROUND' to arguments of type 'ROUND(<INTEGER>, <DATE>)'");
-        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalTimeVal().fields(127, LOCAL_TIME_VAL), SqlErrorCode.PARSING, "Cannot apply 'ROUND' to arguments of type 'ROUND(<INTEGER>, <TIME>)'");
-        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalDateTimeVal().fields(127, LOCAL_DATE_TIME_VAL), SqlErrorCode.PARSING, "Cannot apply 'ROUND' to arguments of type 'ROUND(<INTEGER>, <TIMESTAMP>)'");
-        checkColumnFailure_2(new ExpressionBiValue.IntegerOffsetDateTimeVal().fields(127, OFFSET_DATE_TIME_VAL), SqlErrorCode.PARSING, "Cannot apply 'ROUND' to arguments of type 'ROUND(<INTEGER>, <TIMESTAMP_WITH_TIME_ZONE>)'");
+        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalDateVal().fields(127, LOCAL_DATE_VAL), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <DATE>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalTimeVal().fields(127, LOCAL_TIME_VAL), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <TIME>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalDateTimeVal().fields(127, LOCAL_DATE_TIME_VAL), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <TIMESTAMP>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure_2(new ExpressionBiValue.IntegerOffsetDateTimeVal().fields(127, OFFSET_DATE_TIME_VAL), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <TIMESTAMP_WITH_TIME_ZONE>)' name and argument types (you might need to an explicit CAST)");
     }
 
     @Test
     public void test_object() {
-        checkColumnFailure_2(new IntegerObjectVal().fields(127, "bad"), SqlErrorCode.PARSING, "Cannot apply 'ROUND' to arguments of type 'ROUND(<INTEGER>, <OBJECT>)'");
+        checkColumnFailure_2(new IntegerObjectVal().fields(127, "bad"), SqlErrorCode.PARSING, "No function matches 'ROUND(<INTEGER>, <OBJECT>)' name and argument types (you might need to an explicit CAST)");
     }
 
     @Test

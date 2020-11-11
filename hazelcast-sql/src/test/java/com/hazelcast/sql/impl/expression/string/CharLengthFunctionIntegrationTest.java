@@ -78,7 +78,7 @@ public class CharLengthFunctionIntegrationTest extends SqlExpressionIntegrationT
         checkColumn(new ExpressionValue.OffsetDateTimeVal().field1(OFFSET_DATE_TIME_VAL), OFFSET_DATE_TIME_VAL.toString().length());
 
         put(new ObjectVal());
-        checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply '" + name + "' to arguments of type '" + name + "(<OBJECT>)'");
+        checkFailure("field1", SqlErrorCode.PARSING, "No function matches '" + name + "(<OBJECT>)' name and argument types (you might need to an explicit CAST)");
     }
 
     private void checkColumn(ExpressionValue value, Integer expectedResult) {

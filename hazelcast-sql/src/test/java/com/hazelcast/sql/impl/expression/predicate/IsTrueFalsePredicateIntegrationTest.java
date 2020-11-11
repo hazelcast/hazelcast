@@ -252,8 +252,8 @@ public class IsTrueFalsePredicateIntegrationTest extends SqlExpressionIntegratio
     }
 
     private void checkUnsupportedColumn(ExpressionType<?> type, String function, String expectedTypeNameInErrorMessage) {
-        String expectedErrorMessage = "Cannot apply '" + function + "' to arguments of type '<"
-            + expectedTypeNameInErrorMessage + "> " + function + "'. Supported form(s): '<BOOLEAN> " + function + "'";
+        String expectedErrorMessage = "No operator matches '<" + expectedTypeNameInErrorMessage + "> " + function
+            + "' name and argument types (you might need to an explicit CAST)";
 
         int key = 0;
         put(key, ExpressionValue.create(ExpressionValue.createClass(type), key, type.valueFrom()));

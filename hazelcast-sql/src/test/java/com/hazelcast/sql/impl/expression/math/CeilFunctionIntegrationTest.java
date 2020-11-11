@@ -61,12 +61,12 @@ public class CeilFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
         checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
 
-        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply 'CEIL' to arguments of type 'CEIL(<DATE>)'");
-        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'CEIL' to arguments of type 'CEIL(<TIME>)'");
-        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'CEIL' to arguments of type 'CEIL(<TIMESTAMP>)'");
-        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'CEIL' to arguments of type 'CEIL(<TIMESTAMP_WITH_TIME_ZONE>)'");
+        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "No function matches 'CEIL(<DATE>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'CEIL(<TIME>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'CEIL(<TIMESTAMP>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'CEIL(<TIMESTAMP_WITH_TIME_ZONE>)' name and argument types (you might need to an explicit CAST)");
 
-        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "Cannot apply 'CEIL' to arguments of type 'CEIL(<OBJECT>)'");
+        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "No function matches 'CEIL(<OBJECT>)' name and argument types (you might need to an explicit CAST)");
     }
 
     private void checkColumn(Object value, SqlColumnType expectedType, Object expectedResult) {

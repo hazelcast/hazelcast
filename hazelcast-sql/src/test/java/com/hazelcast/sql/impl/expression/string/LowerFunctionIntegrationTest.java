@@ -61,7 +61,7 @@ public class LowerFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkColumn(new ExpressionValue.OffsetDateTimeVal().field1(OFFSET_DATE_TIME_VAL), OFFSET_DATE_TIME_VAL.toString().toLowerCase());
 
         put(new ObjectVal());
-        checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply 'LOWER' to arguments of type 'LOWER(<OBJECT>)'");
+        checkFailure("field1", SqlErrorCode.PARSING, "No function matches 'LOWER(<OBJECT>)' name and argument types (you might need to an explicit CAST)");
     }
 
     private void checkColumn(ExpressionValue value, String expectedResult) {

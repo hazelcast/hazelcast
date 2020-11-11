@@ -61,12 +61,12 @@ public class FloorFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
         checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
 
-        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply 'FLOOR' to arguments of type 'FLOOR(<DATE>)'");
-        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'FLOOR' to arguments of type 'FLOOR(<TIME>)'");
-        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'FLOOR' to arguments of type 'FLOOR(<TIMESTAMP>)'");
-        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'FLOOR' to arguments of type 'FLOOR(<TIMESTAMP_WITH_TIME_ZONE>)'");
+        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "No function matches 'FLOOR(<DATE>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'FLOOR(<TIME>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'FLOOR(<TIMESTAMP>)' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'FLOOR(<TIMESTAMP_WITH_TIME_ZONE>)' name and argument types (you might need to an explicit CAST)");
 
-        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "Cannot apply 'FLOOR' to arguments of type 'FLOOR(<OBJECT>)'");
+        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "No function matches 'FLOOR(<OBJECT>)' name and argument types (you might need to an explicit CAST)");
     }
 
     private void checkColumn(Object value, SqlColumnType expectedType, Object expectedResult) {

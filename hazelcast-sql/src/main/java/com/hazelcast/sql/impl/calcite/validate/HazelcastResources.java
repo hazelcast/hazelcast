@@ -33,7 +33,10 @@ public final class HazelcastResources {
         @Resources.BaseMessage("Function ''{0}'' does not exist")
         Resources.ExInst<CalciteException> functionDoesNotExist(String a0);
 
-        @Resources.BaseMessage("No function matches {0} name and argument types (consider adding an explicit CAST)")
-        Resources.ExInst<SqlValidatorException> canNotApplyOp2Type(String a0);
+        @Resources.BaseMessage("No function matches {0} name and argument types (you might need to an explicit CAST)")
+        Resources.ExInst<SqlValidatorException> canNotApplyOperandsToFunction(String a0);
+
+        @Resources.BaseMessage("No operator matches {0} name and argument types (you might need to an explicit CAST)")
+        Resources.ExInst<SqlValidatorException> canNotApplyOperandsToOperator(String a0);
     }
 }

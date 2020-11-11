@@ -71,9 +71,34 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumn(true, false);
         checkColumn(false, true);
 
+        // Check null
+        put(new ExpressionValue.BooleanVal());
+        check("field1", null);
+
+        // Check string
+        checkColumn("true", false);
+        checkColumn("false", true);
+
+        checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BOOLEAN");
+        checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BOOLEAN");
+
         // Check unsupported values
-        // TODO: Restore test!
-        checkColumnFailure((byte) 1, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<TINYINT>'");
+        checkColumnFailure((byte) 1, SqlErrorCode.PARSING, "No operator matches 'NOT<TINYINT>' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure((short) 1, SqlErrorCode.PARSING, "No operator matches 'NOT<SMALLINT>' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(1, SqlErrorCode.PARSING, "No operator matches 'NOT<INTEGER>' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(1L, SqlErrorCode.PARSING, "No operator matches 'NOT<BIGINT>' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(BigInteger.ONE, SqlErrorCode.PARSING, "No operator matches 'NOT<DECIMAL(38, 38)>' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(BigDecimal.ONE, SqlErrorCode.PARSING, "No operator matches 'NOT<DECIMAL(38, 38)>' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(1f, SqlErrorCode.PARSING, "No operator matches 'NOT<REAL>' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(1d, SqlErrorCode.PARSING, "No operator matches 'NOT<DOUBLE>' name and argument types (you might need to an explicit CAST)");
+
+        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "No operator matches 'NOT<DATE>' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "No operator matches 'NOT<TIME>' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "No operator matches 'NOT<TIMESTAMP>' name and argument types (you might need to an explicit CAST)");
+        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "No operator matches 'NOT<TIMESTAMP_WITH_TIME_ZONE>' name and argument types (you might need to an explicit CAST)");
+
+        put(new ExpressionValue.ObjectVal());
+        checkFailure("field1", SqlErrorCode.PARSING, "No operator matches 'NOT<OBJECT>' name and argument types (you might need to an explicit CAST)");
     }
 
     @Test
@@ -117,8 +142,8 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         check("'false'", true);
         checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'BOOLEAN'");
 
-        checkFailure("1", SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<TINYINT>'");
-        checkFailure("1E0", SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<DOUBLE>'");
+        checkFailure("1", SqlErrorCode.PARSING, "No operator matches 'NOT<TINYINT>' name and argument types (you might need to an explicit CAST)");
+        checkFailure("1E0", SqlErrorCode.PARSING, "No operator matches 'NOT<DOUBLE>' name and argument types (you might need to an explicit CAST)");
     }
 
     private void checkColumn(Object value, Boolean expectedResult) {
@@ -364,8 +389,8 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
     }
 
     private void checkUnsupportedColumn(ExpressionType<?> type, String function, String expectedTypeNameInErrorMessage) {
-        String expectedErrorMessage = "Cannot apply '" + function + "' to arguments of type '<"
-            + expectedTypeNameInErrorMessage + "> " + function + "'. Supported form(s): '<BOOLEAN> " + function + "'";
+        String expectedErrorMessage = "No operator matches '<" + expectedTypeNameInErrorMessage + "> " + function
+            + "' name and argument types (you might need to an explicit CAST)";
 
         Class<? extends ExpressionValue> clazz = ExpressionValue.createClass(type);
 

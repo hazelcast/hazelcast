@@ -103,34 +103,34 @@ public class AndPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumnColumnFailure(new StringStringVal().fields("bad", null), SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BOOLEAN");
 
         // BOOLEAN/unsupported
-        checkColumnColumnFailure(new BooleanByteVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <TINYINT>'");
-        checkColumnColumnFailure(new BooleanShortVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <SMALLINT>'");
-        checkColumnColumnFailure(new BooleanIntegerVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <INTEGER>'");
-        checkColumnColumnFailure(new BooleanLongVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <BIGINT>'");
-        checkColumnColumnFailure(new BooleanBigIntegerVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <DECIMAL(38, 38)>'");
-        checkColumnColumnFailure(new BooleanBigDecimalVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <DECIMAL(38, 38)>'");
-        checkColumnColumnFailure(new BooleanFloatVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <REAL>'");
-        checkColumnColumnFailure(new BooleanDoubleVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <DOUBLE>'");
-        checkColumnColumnFailure(new BooleanLocalDateVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <DATE>'");
-        checkColumnColumnFailure(new BooleanLocalTimeVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <TIME>'");
-        checkColumnColumnFailure(new BooleanLocalDateTimeVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <TIMESTAMP>'");
-        checkColumnColumnFailure(new BooleanOffsetDateTimeVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <TIMESTAMP_WITH_TIME_ZONE>'");
-        checkColumnColumnFailure(new BooleanObjectVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <OBJECT>'");
+        checkColumnColumnFailure(new BooleanByteVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <TINYINT>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new BooleanShortVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <SMALLINT>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new BooleanIntegerVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <INTEGER>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new BooleanLongVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <BIGINT>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new BooleanBigIntegerVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <DECIMAL(38, 38)>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new BooleanBigDecimalVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <DECIMAL(38, 38)>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new BooleanFloatVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <REAL>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new BooleanDoubleVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <DOUBLE>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new BooleanLocalDateVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <DATE>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new BooleanLocalTimeVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <TIME>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new BooleanLocalDateTimeVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <TIMESTAMP>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new BooleanOffsetDateTimeVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <TIMESTAMP_WITH_TIME_ZONE>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new BooleanObjectVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <OBJECT>' name and argument types (you might need to an explicit CAST)");
 
         // VARCHAR/unsupported
-        checkColumnColumnFailure(new StringByteVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <TINYINT>'");
-        checkColumnColumnFailure(new StringShortVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <SMALLINT>'");
-        checkColumnColumnFailure(new StringIntegerVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <INTEGER>'");
-        checkColumnColumnFailure(new StringLongVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <BIGINT>'");
-        checkColumnColumnFailure(new StringBigIntegerVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <DECIMAL(38, 38)>'");
-        checkColumnColumnFailure(new StringBigDecimalVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <DECIMAL(38, 38)>'");
-        checkColumnColumnFailure(new StringFloatVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <REAL>'");
-        checkColumnColumnFailure(new StringDoubleVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <DOUBLE>'");
-        checkColumnColumnFailure(new StringLocalDateVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <DATE>'");
-        checkColumnColumnFailure(new StringLocalTimeVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <TIME>'");
-        checkColumnColumnFailure(new StringLocalDateTimeVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <TIMESTAMP>'");
-        checkColumnColumnFailure(new StringOffsetDateTimeVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <TIMESTAMP_WITH_TIME_ZONE>'");
-        checkColumnColumnFailure(new StringObjectVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <OBJECT>'");
+        checkColumnColumnFailure(new StringByteVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> AND <TINYINT>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new StringShortVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> AND <SMALLINT>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new StringIntegerVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> AND <INTEGER>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new StringLongVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> AND <BIGINT>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new StringBigIntegerVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> AND <DECIMAL(38, 38)>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new StringBigDecimalVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> AND <DECIMAL(38, 38)>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new StringFloatVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> AND <REAL>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new StringDoubleVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> AND <DOUBLE>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new StringLocalDateVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> AND <DATE>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new StringLocalTimeVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> AND <TIME>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new StringLocalDateTimeVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> AND <TIMESTAMP>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new StringOffsetDateTimeVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> AND <TIMESTAMP_WITH_TIME_ZONE>' name and argument types (you might need to an explicit CAST)");
+        checkColumnColumnFailure(new StringObjectVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> AND <OBJECT>' name and argument types (you might need to an explicit CAST)");
 
         // COLUMN/PARAMETER
         put(true);
@@ -145,8 +145,8 @@ public class AndPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         checkValue("this", "null", RES_NULL);
         checkValue("this", "'true'", RES_TRUE);
         checkValue("this", "'false'", RES_FALSE);
-        checkFailure("this", "1", SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <TINYINT>'");
-        checkFailure("this", "1E0", SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <DOUBLE>'");
+        checkFailure("this", "1", SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <TINYINT>' name and argument types (you might need to an explicit CAST)");
+        checkFailure("this", "1E0", SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <DOUBLE>' name and argument types (you might need to an explicit CAST)");
         checkFailure("this", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'BOOLEAN'");
     }
 
@@ -194,8 +194,8 @@ public class AndPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         checkValue("?", "'false'", RES_FALSE, true);
         checkValue("?", "'false'", RES_FALSE, false);
 
-        checkFailure("?", "1", SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <TINYINT>'", true);
-        checkFailure("?", "1E0", SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <DOUBLE>'", true);
+        checkFailure("?", "1", SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <TINYINT>' name and argument types (you might need to an explicit CAST)", true);
+        checkFailure("?", "1E0", SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <DOUBLE>' name and argument types (you might need to an explicit CAST)", true);
         checkFailure("?", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'BOOLEAN'", true);
     }
 
@@ -212,8 +212,8 @@ public class AndPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
 
         checkValue("true", "'false'", RES_FALSE);
 
-        checkFailure("true", "1", SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <TINYINT>'");
-        checkFailure("true", "1E0", SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <DOUBLE>'");
+        checkFailure("true", "1", SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <TINYINT>' name and argument types (you might need to an explicit CAST)");
+        checkFailure("true", "1E0", SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> AND <DOUBLE>' name and argument types (you might need to an explicit CAST)");
         checkFailure("true", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'BOOLEAN'");
     }
 
