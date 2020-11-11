@@ -27,7 +27,9 @@ https://github.com/hazelcast/hazelcast-jet/issues/<issue number>
 ADD YOUR PR ENTRY IN THIS SECTION: >>>
 
 Hazelcast Jet 4.x is based on IMDG version 4.y. Check out its Release
-Notes here: https://docs.hazelcast.org/docs/rn/index.html#4-y
+Notes here: https://docs.hazelcast.org/docs/rn/index.html#4-y and,
+for the Enterprise Edition,
+here: https://docs.hazelcast.org/docs/ern/index.html#4-0-3
 
 Members of the open source community that appear in these release notes:
 
