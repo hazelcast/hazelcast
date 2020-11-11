@@ -115,6 +115,9 @@ progress of event time-based pipelines as well.
 
 ## Full Release Notes
 
+Hazelcast Jet 4.3 is based on IMDG version 4.0.3. Check out its Release
+Notes [here](https://docs.hazelcast.org/docs/rn/index.html#4-0-3).
+
 Members of the open source community that appear in these release notes:
 
 - @caioguedes
