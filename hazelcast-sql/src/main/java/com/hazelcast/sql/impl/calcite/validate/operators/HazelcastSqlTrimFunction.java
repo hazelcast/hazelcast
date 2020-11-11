@@ -33,6 +33,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import java.util.Arrays;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.top;
 import static org.apache.calcite.sql.type.SqlTypeFamily.ANY;
 import static org.apache.calcite.sql.type.SqlTypeFamily.STRING;
 
@@ -48,7 +49,7 @@ public class HazelcastSqlTrimFunction extends SqlFunction {
             SqlKind.TRIM,
             ReturnTypes.ARG2_NULLABLE,
             new ReplaceUnknownOperandTypeInference(SqlTypeName.VARCHAR),
-            notAny(OperandTypes.family(ANY, STRING, STRING)),
+            top(notAny(OperandTypes.family(ANY, STRING, STRING))),
             SqlFunctionCategory.STRING
         );
     }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverrideOperandChecker;
 import org.apache.calcite.rel.type.RelDataTypeComparability;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlNode;
@@ -47,6 +48,10 @@ public final class HazelcastOperandTypes {
                     SqlOperandTypeChecker.Consistency.LEAST_RESTRICTIVE);
 
     private HazelcastOperandTypes() {
+    }
+
+    public static SqlOperandTypeChecker top(SqlOperandTypeChecker base) {
+        return new SqlCallBindingOverrideOperandChecker(base);
     }
 
     /**

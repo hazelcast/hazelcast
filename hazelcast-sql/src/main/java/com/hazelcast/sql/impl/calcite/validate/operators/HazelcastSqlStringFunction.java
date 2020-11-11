@@ -24,6 +24,7 @@ import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.top;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
 public class HazelcastSqlStringFunction extends SqlFunction {
@@ -33,7 +34,7 @@ public class HazelcastSqlStringFunction extends SqlFunction {
             SqlKind.OTHER_FUNCTION,
             returnTypeInference,
             new ReplaceUnknownOperandTypeInference(VARCHAR),
-            notAny(OperandTypes.CHARACTER),
+            top(notAny(OperandTypes.CHARACTER)),
             SqlFunctionCategory.STRING
         );
     }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -30,10 +32,11 @@ import static org.apache.calcite.util.Static.RESOURCE;
  * defined by {@linkplain Converter converters}. Specifically, disallowing
  * conversions between BOOLEAN and numeric types both ways.
  */
-public final class HazelcastSqlCastFunction extends SqlCastFunction {
-
+public final class HazelcastSqlCastFunction extends SqlCastFunction implements SqlCallBindingManualOverride {
     @Override
     public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
+        binding = new SqlCallBindingOverride(binding);
+
         RelDataType operand = binding.getOperandType(0);
         RelDataType targetType = binding.getOperandType(1);
 
@@ -47,5 +50,4 @@ public final class HazelcastSqlCastFunction extends SqlCastFunction {
 
         return super.checkOperandTypes(binding, throwOnFailure);
     }
-
 }

@@ -17,6 +17,8 @@
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.sql.SqlCall;
@@ -41,7 +43,7 @@ import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandType
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
-public class HazelcastSqlSubstringFunction extends SqlFunction {
+public class HazelcastSqlSubstringFunction extends SqlFunction implements SqlCallBindingManualOverride {
     public HazelcastSqlSubstringFunction() {
         super(
             "SUBSTRING",
@@ -86,6 +88,8 @@ public class HazelcastSqlSubstringFunction extends SqlFunction {
 
     @Override
     public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
+        callBinding = new SqlCallBindingOverride(callBinding);
+
         List<SqlNode> operands = callBinding.operands();
 
         assert operands.size() == 2 || operands.size() == 3;

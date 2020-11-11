@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -38,7 +40,7 @@ import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandType
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
 @SuppressWarnings("checkstyle:MagicNumber")
-public class HazelcastSqlLikeOperator extends SqlSpecialOperator {
+public class HazelcastSqlLikeOperator extends SqlSpecialOperator implements SqlCallBindingManualOverride {
 
     private static final int PRECEDENCE = 32;
 
@@ -61,6 +63,8 @@ public class HazelcastSqlLikeOperator extends SqlSpecialOperator {
 
     @Override
     public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
+        callBinding = new SqlCallBindingOverride(callBinding);
+
         int operandCount = callBinding.getOperandCount();
 
         assert operandCount == 2 || operandCount == 3;
