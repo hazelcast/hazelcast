@@ -78,10 +78,10 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -96,6 +96,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
@@ -110,7 +111,6 @@ import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Implementation of {@link ClientConnectionManager}.
@@ -299,23 +299,24 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
 
         heartbeat.start();
         connectToCluster();
-        if (isSmartRoutingEnabled) {
-            executor.scheduleWithFixedDelay(connectToAllClusterMembersTask, 1, 1, TimeUnit.SECONDS);
-        }
     }
 
-    public void connectToAllClusterMembers() {
+    public void tryConnectToAllClusterMembers(boolean sync) {
         if (!isSmartRoutingEnabled) {
             return;
         }
 
-        for (Member member : client.getClientClusterService().getMemberList()) {
-            try {
-                getOrConnect(member.getAddress());
-            } catch (Exception e) {
-                EmptyStatement.ignore(e);
+        if (sync) {
+            for (Member member : client.getClientClusterService().getMemberList()) {
+                try {
+                    getOrConnectToMember(member);
+                } catch (Exception e) {
+                    EmptyStatement.ignore(e);
+                }
             }
         }
+
+        executor.scheduleWithFixedDelay(connectToAllClusterMembersTask, 1, 1, TimeUnit.SECONDS);
     }
 
     protected void startNetworking() {
@@ -422,18 +423,18 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         return false;
     }
 
-    private Connection connect(Address address) {
+    Connection connect(Object target, Function<Object, Connection> getOrConnectFunction) {
         try {
-            logger.info("Trying to connect to " + address);
-            return getOrConnect(address);
+            logger.info("Trying to connect to " + target);
+            return getOrConnectFunction.apply(target);
         } catch (InvalidConfigurationException e) {
-            logger.warning("Exception during initial connection to " + address + ": " + e);
+            logger.warning("Exception during initial connection to " + target + ": " + e);
             throw rethrow(e);
         } catch (ClientNotAllowedInClusterException e) {
-            logger.warning("Exception during initial connection to " + address + ": " + e);
+            logger.warning("Exception during initial connection to " + target + ": " + e);
             throw e;
         } catch (Exception e) {
-            logger.warning("Exception during initial connection to " + address + ": " + e);
+            logger.warning("Exception during initial connection to " + target + ": " + e);
             return null;
         }
     }
@@ -448,18 +449,37 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         try {
             waitStrategy.reset();
             do {
-                Collection<Address> addresses = getPossibleMemberAddresses(context.getAddressProvider());
-                for (Address address : addresses) {
-                    checkClientActive();
-                    triedAddresses.add(address);
+                Set<Address> triedAddressesPerAttempt = new HashSet<>();
 
-                    Connection connection = connect(address);
+                List<Member> memberList = new ArrayList<>(client.getClientClusterService().getMemberList());
+                if (shuffleMemberList) {
+                    Collections.shuffle(memberList);
+                }
+                //try to connect to a member in the member list first
+                for (Member member : memberList) {
+                    checkClientActive();
+                    triedAddressesPerAttempt.add(member.getAddress());
+                    Connection connection = connect(member, o -> getOrConnectToMember((Member) o));
                     if (connection != null) {
                         return true;
                     }
                 }
-                // If the address providers load no addresses (which seems to be possible), then the above loop is not entered
+                //try to connect to a member given via config(explicit config/discovery mechanisms)
+                for (Address address : getPossibleMemberAddresses(context.getAddressProvider())) {
+                    checkClientActive();
+                    if (!triedAddressesPerAttempt.add(address)) {
+                        //if we can not add it means that it is already tried to be connected with the member list
+                        continue;
+                    }
+
+                    Connection connection = connect(address, o -> getOrConnectToAddress((Address) o));
+                    if (connection != null) {
+                        return true;
+                    }
+                }
+                // If the address providers load no addresses, then the above loop is not entered
                 // and the lifecycle check is missing, hence we need to repeat the same check at this point.
+                triedAddresses.addAll(triedAddressesPerAttempt);
                 checkClientActive();
             } while (waitStrategy.sleep());
         } catch (ClientNotAllowedInClusterException | InvalidConfigurationException e) {
@@ -493,17 +513,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     Collection<Address> getPossibleMemberAddresses(AddressProvider addressProvider) {
-        List<Address> memberAddresses = client.getClientClusterService()
-                .getMemberList()
-                .stream()
-                .map(Member::getAddress)
-                .collect(toList());
-        if (shuffleMemberList) {
-            Collections.shuffle(memberAddresses);
-        }
-
-        Collection<Address> addresses = new LinkedHashSet<>(memberAddresses);
-
+        Collection<Address> addresses = new LinkedHashSet<>();
         try {
             Addresses result = addressProvider.loadAddresses();
             if (shuffleMemberList) {
@@ -522,7 +532,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         } catch (Exception e) {
             logger.warning("Exception from AddressProvider: " + clusterDiscoveryService, e);
         }
-
         return addresses;
     }
 
@@ -556,35 +565,31 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         return activeConnections.get(uuid);
     }
 
-    private TcpClientConnection getConnection(@Nonnull Address address) {
+    TcpClientConnection getOrConnectToAddress(@Nonnull Address address) {
         for (TcpClientConnection connection : activeConnections.values()) {
             if (connection.getRemoteAddress().equals(address)) {
                 return connection;
             }
         }
-        return null;
+
+        address = translate(address);
+        TcpClientConnection connection = createSocketConnection(address);
+        ClientAuthenticationCodec.ResponseParameters response = authenticateOnCluster(connection);
+        return onAuthenticated(connection, response);
     }
 
-    TcpClientConnection getOrConnect(@Nonnull Address address) {
-        checkClientActive();
-        TcpClientConnection connection = getConnection(address);
+    TcpClientConnection getOrConnectToMember(@Nonnull Member member) {
+        UUID uuid = member.getUuid();
+        TcpClientConnection connection = activeConnections.get(uuid);
         if (connection != null) {
             return connection;
         }
 
-        synchronized (resolveAddress(address)) {
-            // this critical section is used for making a single connection
-            // attempt to the given address at a time.
-            connection = getConnection(address);
-            if (connection != null) {
-                return connection;
-            }
-
-            address = translate(address);
-            connection = createSocketConnection(address);
-            authenticateOnCluster(connection);
-            return connection;
-        }
+        Address address = member.getAddress();
+        address = translate(address);
+        connection = createSocketConnection(address);
+        ClientAuthenticationCodec.ResponseParameters response = authenticateOnCluster(connection);
+        return onAuthenticated(connection, response);
     }
 
     private void fireConnectionAddedEvent(TcpClientConnection connection) {
@@ -768,11 +773,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         }
 
         // Otherwise iterate over connections and return the very first valid
-        Iterator<Map.Entry<UUID, TcpClientConnection>> iterator = activeConnections.entrySet().iterator();
 
-        while (iterator.hasNext()) {
-            Map.Entry<UUID, TcpClientConnection> connectionEntry = iterator.next();
-
+        for (Map.Entry<UUID, TcpClientConnection> connectionEntry : activeConnections.entrySet()) {
             if (dataMember) {
                 UUID memberId = connectionEntry.getKey();
 
@@ -808,10 +810,10 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             return null;
         }
 
-        return getConnection(member.getUuid());
+        return activeConnections.get(member.getUuid());
     }
 
-    private void authenticateOnCluster(TcpClientConnection connection) {
+    private ClientAuthenticationCodec.ResponseParameters authenticateOnCluster(TcpClientConnection connection) {
         Address memberAddress = connection.getInitAddress();
         ClientMessage request = encodeAuthenticationRequest(memberAddress);
         ClientInvocationFuture future = new ClientInvocation(client, request, null, connection).invokeUrgent();
@@ -830,8 +832,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         }
         switch (authenticationStatus) {
             case AUTHENTICATED:
-                handleSuccessfulAuth(connection, response);
-                break;
+                return response;
             case CREDENTIALS_FAILED:
                 AuthenticationException authException = new AuthenticationException("Authentication failed. The configured "
                         + "cluster name on the client (see ClientConfig.setClusterName()) does not match the one configured in "
@@ -851,12 +852,23 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         }
     }
 
-    private void handleSuccessfulAuth(TcpClientConnection connection, ClientAuthenticationCodec.ResponseParameters response) {
+    /**
+     * The returned connection could be different than the one passed to this method if there is already an existing
+     * connection to the given member.
+     */
+    private TcpClientConnection onAuthenticated(TcpClientConnection connection,
+                                                ClientAuthenticationCodec.ResponseParameters response) {
         synchronized (clientStateMutex) {
             checkPartitionCount(response.partitionCount);
             connection.setConnectedServerVersion(response.serverHazelcastVersion);
             connection.setRemoteAddress(response.address);
             connection.setRemoteUuid(response.memberUuid);
+
+            TcpClientConnection existingConnection = activeConnections.get(response.memberUuid);
+            if (existingConnection != null) {
+                connection.close("Duplicate connection to same member with uuid : " + response.memberUuid, null);
+                return existingConnection;
+            }
 
             UUID newClusterId = response.clusterId;
 
@@ -899,6 +911,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         if (!connection.isAlive()) {
             onConnectionClose(connection);
         }
+        return connection;
     }
 
     private ClientMessage encodeAuthenticationRequest(Address toAddress) {
@@ -1018,36 +1031,40 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
 
     private class ConnectToAllClusterMembersTask implements Runnable {
 
-        private Set<Address> connectingAddresses = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        private final Set<UUID> connectingAddresses = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
         @Override
         public void run() {
+
             if (!client.getLifecycleService().isRunning()) {
                 return;
             }
 
             for (Member member : client.getClientClusterService().getMemberList()) {
-                Address address = member.getAddress();
+                UUID uuid = member.getUuid();
 
-                if (client.getLifecycleService().isRunning() && getConnection(address) == null
-                        && connectingAddresses.add(address)) {
-                    // submit a task for this address only if there is no
-                    // another connection attempt for it
-                    executor.submit(() -> {
-                        try {
-                            if (!client.getLifecycleService().isRunning()) {
-                                return;
-                            }
-                            if (getConnection(member.getUuid()) == null) {
-                                getOrConnect(address);
-                            }
-                        } catch (Exception e) {
-                            EmptyStatement.ignore(e);
-                        } finally {
-                            connectingAddresses.remove(address);
-                        }
-                    });
+                if (activeConnections.get(uuid) != null) {
+                    continue;
                 }
+
+                if (!connectingAddresses.add(uuid)) {
+                    continue;
+                }
+
+                // submit a task for this address only if there is no
+                // another connection attempt for it
+                executor.submit(() -> {
+                    try {
+                        if (!client.getLifecycleService().isRunning()) {
+                            return;
+                        }
+                        getOrConnectToMember(member);
+                    } catch (Exception e) {
+                        EmptyStatement.ignore(e);
+                    } finally {
+                        connectingAddresses.remove(uuid);
+                    }
+                });
             }
         }
     }
