@@ -1,10 +1,9 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to you under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -21,22 +20,19 @@ import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.validate.SqlValidatorException;
 
-public final class HazelcastResources {
+/**
+ * Error messages for parsing and validation stages.
+ */
+public interface HazelcastResources {
 
-    public static final HazelcastResource RESOURCE = Resources.create(HazelcastResource.class);
+    HazelcastResources RESOURCES = Resources.create(HazelcastResources.class);
 
-    private HazelcastResources() {
-        // No-op.
-    }
+    @Resources.BaseMessage("Function ''{0}'' does not exist")
+    Resources.ExInst<CalciteException> functionDoesNotExist(String a0);
 
-    public interface HazelcastResource {
-        @Resources.BaseMessage("Function ''{0}'' does not exist")
-        Resources.ExInst<CalciteException> functionDoesNotExist(String a0);
+    @Resources.BaseMessage("No function matches {0} name and argument types (you might need to an explicit CAST)")
+    Resources.ExInst<SqlValidatorException> canNotApplyOperandsToFunction(String a0);
 
-        @Resources.BaseMessage("No function matches {0} name and argument types (you might need to an explicit CAST)")
-        Resources.ExInst<SqlValidatorException> canNotApplyOperandsToFunction(String a0);
-
-        @Resources.BaseMessage("No operator matches {0} name and argument types (you might need to an explicit CAST)")
-        Resources.ExInst<SqlValidatorException> canNotApplyOperandsToOperator(String a0);
-    }
+    @Resources.BaseMessage("No operator matches {0} name and argument types (you might need to an explicit CAST)")
+    Resources.ExInst<SqlValidatorException> canNotApplyOperandsToOperator(String a0);
 }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.validate.binding;
 
-import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.runtime.Resources;
@@ -32,6 +31,16 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.sql.impl.calcite.validate.HazelcastResources.RESOURCES;
+
+/**
+ * An overridden implementation of {@link SqlCallBinding} that produces a custom error message for signature validation
+ * errors.
+ * <p>
+ * Operators must either use {@link SqlCallBindingOverrideOperandChecker} that replaces the original binding with
+ * {@code SqlCallBindingOverride}, or define the {@link SqlCallBindingManualOverride} marker interface and replace
+ * the original binding manually in the {@link SqlOperator#checkOperandTypes(SqlCallBinding, boolean)}.
+ */
 public class SqlCallBindingOverride extends SqlCallBinding {
     public SqlCallBindingOverride(SqlCallBinding binding) {
         super(binding.getValidator(), binding.getScope(), binding.getCall());
@@ -51,12 +60,12 @@ public class SqlCallBindingOverride extends SqlCallBinding {
             case FUNCTION:
             case FUNCTION_STAR:
             case FUNCTION_ID:
-                error = HazelcastResources.RESOURCE.canNotApplyOperandsToFunction(signature);
+                error = RESOURCES.canNotApplyOperandsToFunction(signature);
 
                 break;
 
             default:
-                error = HazelcastResources.RESOURCE.canNotApplyOperandsToOperator(signature);
+                error = RESOURCES.canNotApplyOperandsToOperator(signature);
         }
 
         return validator.newValidationError(call, error);

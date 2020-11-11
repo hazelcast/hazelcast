@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDoubleFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
@@ -45,6 +47,7 @@ import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
+import org.apache.calcite.sql.type.SqlOperandTypeChecker;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
@@ -52,17 +55,25 @@ import org.apache.calcite.sql.util.SqlBasicVisitor;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.sql.impl.calcite.validate.HazelcastResources.RESOURCES;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes.NULLABLE_OBJECT;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAllNull;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.top;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
 /**
- * Custom functions and operators.
+ * Operator table.
+ * <p>
+ * All supported operators and functions must be defined in this table, even if they are already defined in the
+ * {@link SqlStdOperatorTable}. This is needed to ensure that we have the full control over inference and coercion
+ * strategies.
+ * <p>
+ * Every operator must either have {@link HazelcastOperandTypes#wrap(SqlOperandTypeChecker)} as a top-level operand checker,
+ * or implement the {@link SqlCallBindingManualOverride} interface. See {@link SqlCallBindingOverride} for more information.
  */
 @SuppressWarnings("unused")
 public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable {
@@ -80,7 +91,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         ReturnTypes.BOOLEAN_NULLABLE,
         InferTypes.BOOLEAN,
-        top(notAny(OperandTypes.BOOLEAN_BOOLEAN))
+        wrap(notAny(OperandTypes.BOOLEAN_BOOLEAN))
     );
 
     public static final SqlBinaryOperator OR = new HazelcastSqlBinaryOperator(
@@ -90,7 +101,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         ReturnTypes.BOOLEAN_NULLABLE,
         InferTypes.BOOLEAN,
-        top(notAny(OperandTypes.BOOLEAN_BOOLEAN))
+        wrap(notAny(OperandTypes.BOOLEAN_BOOLEAN))
     );
 
     public static final SqlPrefixOperator NOT = new SqlPrefixOperator(
@@ -99,7 +110,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlStdOperatorTable.NOT.getLeftPrec(),
         ReturnTypes.ARG0,
         InferTypes.BOOLEAN,
-        top(notAny(OperandTypes.BOOLEAN))
+        wrap(notAny(OperandTypes.BOOLEAN))
     );
 
     //#endregion
@@ -113,7 +124,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         ReturnTypes.BOOLEAN_NULLABLE,
         HazelcastInferTypes.FIRST_KNOWN,
-        top(notAny(OperandTypes.COMPARABLE_UNORDERED_COMPARABLE_UNORDERED))
+        wrap(notAny(OperandTypes.COMPARABLE_UNORDERED_COMPARABLE_UNORDERED))
     );
 
     public static final SqlBinaryOperator NOT_EQUALS = new SqlBinaryOperator(
@@ -123,7 +134,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         ReturnTypes.BOOLEAN_NULLABLE,
         HazelcastInferTypes.FIRST_KNOWN,
-        top(notAny(OperandTypes.COMPARABLE_UNORDERED_COMPARABLE_UNORDERED))
+        wrap(notAny(OperandTypes.COMPARABLE_UNORDERED_COMPARABLE_UNORDERED))
     );
 
     public static final SqlBinaryOperator GREATER_THAN = new SqlBinaryOperator(
@@ -133,7 +144,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         ReturnTypes.BOOLEAN_NULLABLE,
         HazelcastInferTypes.FIRST_KNOWN,
-        top(notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED))
+        wrap(notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED))
     );
 
     public static final SqlBinaryOperator GREATER_THAN_OR_EQUAL = new SqlBinaryOperator(
@@ -143,7 +154,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         ReturnTypes.BOOLEAN_NULLABLE,
         HazelcastInferTypes.FIRST_KNOWN,
-        top(notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED))
+        wrap(notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED))
     );
 
     public static final SqlBinaryOperator LESS_THAN = new SqlBinaryOperator(
@@ -153,7 +164,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         ReturnTypes.BOOLEAN_NULLABLE,
         HazelcastInferTypes.FIRST_KNOWN,
-        top(notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED))
+        wrap(notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED))
     );
 
     public static final SqlBinaryOperator LESS_THAN_OR_EQUAL = new SqlBinaryOperator(
@@ -163,7 +174,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         ReturnTypes.BOOLEAN_NULLABLE,
         HazelcastInferTypes.FIRST_KNOWN,
-        top(notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED))
+        wrap(notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED))
     );
 
     //#endregion
@@ -177,7 +188,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         HazelcastReturnTypes.PLUS,
         HazelcastInferTypes.FIRST_KNOWN,
-        top(notAllNull(notAny(OperandTypes.PLUS_OPERATOR)))
+        wrap(notAllNull(notAny(OperandTypes.PLUS_OPERATOR)))
     );
 
     public static final SqlBinaryOperator MINUS = new HazelcastSqlMonotonicBinaryOperator(
@@ -187,7 +198,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         HazelcastReturnTypes.MINUS,
         HazelcastInferTypes.FIRST_KNOWN,
-        top(notAllNull(notAny(OperandTypes.MINUS_OPERATOR)))
+        wrap(notAllNull(notAny(OperandTypes.MINUS_OPERATOR)))
     );
 
     public static final SqlBinaryOperator MULTIPLY = new HazelcastSqlMonotonicBinaryOperator(
@@ -197,7 +208,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         HazelcastReturnTypes.MULTIPLY,
         HazelcastInferTypes.FIRST_KNOWN,
-        top(notAllNull(notAny(OperandTypes.MULTIPLY_OPERATOR)))
+        wrap(notAllNull(notAny(OperandTypes.MULTIPLY_OPERATOR)))
     );
 
     public static final SqlBinaryOperator DIVIDE = new HazelcastSqlBinaryOperator(
@@ -207,7 +218,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         HazelcastReturnTypes.DIVIDE,
         HazelcastInferTypes.FIRST_KNOWN,
-        top(notAllNull(notAny(OperandTypes.DIVISION_OPERATOR)))
+        wrap(notAllNull(notAny(OperandTypes.DIVISION_OPERATOR)))
     );
 
     public static final SqlPrefixOperator UNARY_PLUS = new SqlPrefixOperator(
@@ -216,7 +227,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlStdOperatorTable.UNARY_PLUS.getLeftPrec(),
         ReturnTypes.ARG0,
         InferTypes.RETURN_TYPE,
-        top(notAllNull(notAny(OperandTypes.NUMERIC_OR_INTERVAL)))
+        wrap(notAllNull(notAny(OperandTypes.NUMERIC_OR_INTERVAL)))
     );
 
     public static final SqlPrefixOperator UNARY_MINUS = new SqlPrefixOperator(
@@ -225,7 +236,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlStdOperatorTable.UNARY_MINUS.getLeftPrec(),
         HazelcastReturnTypes.UNARY_MINUS,
         InferTypes.RETURN_TYPE,
-        top(notAllNull(notAny(OperandTypes.NUMERIC_OR_INTERVAL)))
+        wrap(notAllNull(notAny(OperandTypes.NUMERIC_OR_INTERVAL)))
     );
 
     //#endregion
@@ -238,7 +249,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlStdOperatorTable.IS_TRUE.getLeftPrec(),
         ReturnTypes.BOOLEAN_NOT_NULL,
         InferTypes.BOOLEAN,
-        top(notAny(OperandTypes.BOOLEAN))
+        wrap(notAny(OperandTypes.BOOLEAN))
     );
 
     public static final SqlPostfixOperator IS_NOT_TRUE = new SqlPostfixOperator(
@@ -247,7 +258,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlStdOperatorTable.IS_NOT_TRUE.getLeftPrec(),
         ReturnTypes.BOOLEAN_NOT_NULL,
         InferTypes.BOOLEAN,
-        top(notAny(OperandTypes.BOOLEAN))
+        wrap(notAny(OperandTypes.BOOLEAN))
     );
 
     public static final SqlPostfixOperator IS_FALSE = new SqlPostfixOperator(
@@ -256,7 +267,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlStdOperatorTable.IS_FALSE.getLeftPrec(),
         ReturnTypes.BOOLEAN_NOT_NULL,
         InferTypes.BOOLEAN,
-        top(notAny(OperandTypes.BOOLEAN))
+        wrap(notAny(OperandTypes.BOOLEAN))
     );
 
     public static final SqlPostfixOperator IS_NOT_FALSE = new SqlPostfixOperator(
@@ -265,7 +276,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlStdOperatorTable.IS_NOT_FALSE.getLeftPrec(),
         ReturnTypes.BOOLEAN_NOT_NULL,
         InferTypes.BOOLEAN,
-        top(notAny(OperandTypes.BOOLEAN))
+        wrap(notAny(OperandTypes.BOOLEAN))
     );
 
     public static final SqlPostfixOperator IS_NULL = new SqlPostfixOperator(
@@ -274,7 +285,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlStdOperatorTable.IS_NULL.getLeftPrec(),
         ReturnTypes.BOOLEAN_NOT_NULL,
         NULLABLE_OBJECT,
-        top(OperandTypes.ANY)
+        wrap(OperandTypes.ANY)
     );
 
     public static final SqlPostfixOperator IS_NOT_NULL = new SqlPostfixOperator(
@@ -283,7 +294,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlStdOperatorTable.IS_NOT_NULL.getLeftPrec(),
         ReturnTypes.BOOLEAN_NOT_NULL,
         NULLABLE_OBJECT,
-        top(OperandTypes.ANY)
+        wrap(OperandTypes.ANY)
     );
 
     //#endregion
@@ -295,7 +306,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlKind.OTHER_FUNCTION,
         HazelcastReturnTypes.UNARY_MINUS,
         new ReplaceUnknownOperandTypeInference(DECIMAL),
-        top(notAny(OperandTypes.NUMERIC_OR_INTERVAL)),
+        wrap(notAny(OperandTypes.NUMERIC_OR_INTERVAL)),
         SqlFunctionCategory.NUMERIC
     );
 
@@ -304,7 +315,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlKind.OTHER_FUNCTION,
         ReturnTypes.ARG0,
         new ReplaceUnknownOperandTypeInference(DECIMAL),
-        top(notAny(OperandTypes.NUMERIC)),
+        wrap(notAny(OperandTypes.NUMERIC)),
         SqlFunctionCategory.NUMERIC
     );
 
@@ -313,7 +324,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlKind.OTHER_FUNCTION,
         ReturnTypes.DOUBLE,
         HazelcastInferTypes.explicit(BIGINT),
-        top(OperandTypes.or(OperandTypes.NILADIC, notAny(OperandTypes.NUMERIC))),
+        wrap(OperandTypes.or(OperandTypes.NILADIC, notAny(OperandTypes.NUMERIC))),
         SqlFunctionCategory.NUMERIC
     );
 
@@ -338,7 +349,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlKind.OTHER_FUNCTION,
         ReturnTypes.ARG0_NULLABLE,
         new ReplaceUnknownOperandTypeInference(new SqlTypeName[] { DECIMAL, INTEGER }),
-        top(notAny(OperandTypes.NUMERIC_OPTIONAL_INTEGER)),
+        wrap(notAny(OperandTypes.NUMERIC_OPTIONAL_INTEGER)),
         SqlFunctionCategory.NUMERIC
     );
 
@@ -347,7 +358,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlKind.OTHER_FUNCTION,
         ReturnTypes.ARG0_NULLABLE,
         new ReplaceUnknownOperandTypeInference(new SqlTypeName[] { DECIMAL, INTEGER }),
-        top(notAny(OperandTypes.NUMERIC_OPTIONAL_INTEGER)),
+        wrap(notAny(OperandTypes.NUMERIC_OPTIONAL_INTEGER)),
         SqlFunctionCategory.NUMERIC
     );
 
@@ -362,7 +373,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         ReturnTypes.DYADIC_STRING_SUM_PRECISION_NULLABLE,
         new ReplaceUnknownOperandTypeInference(VARCHAR),
-        top(notAny(OperandTypes.STRING_SAME_SAME))
+        wrap(notAny(OperandTypes.STRING_SAME_SAME))
     );
 
     public static final SqlSpecialOperator LIKE = new HazelcastSqlLikeOperator();
@@ -459,7 +470,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
         private void rewriteCall(SqlCall call) {
             if (call instanceof SqlBasicCall) {
-                // An slias is declared as a SqlBasicCall with "SqlKind.AS". We do not need to rewrite aliases, so skip it.
+                // An alias is declared as a SqlBasicCall with "SqlKind.AS". We do not need to rewrite aliases, so skip it.
                 if (call.getKind() == SqlKind.AS) {
                     return;
                 }
@@ -491,7 +502,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         }
 
         private CalciteException functionDoesNotExist(SqlCall call) {
-            throw HazelcastResources.RESOURCE.functionDoesNotExist(call.getOperator().getName()).ex();
+            throw RESOURCES.functionDoesNotExist(call.getOperator().getName()).ex();
         }
     }
 }

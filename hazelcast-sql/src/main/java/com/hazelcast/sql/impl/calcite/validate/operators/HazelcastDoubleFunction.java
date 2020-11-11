@@ -25,7 +25,7 @@ import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.top;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.wrap;
 
 /**
  * Function that accepts a DOUBLE argument and produces a DOUBLE result.
@@ -37,7 +37,7 @@ public class HazelcastDoubleFunction extends SqlFunction {
             SqlKind.OTHER_FUNCTION,
             ReturnTypes.DOUBLE_NULLABLE,
             HazelcastInferTypes.explicit(SqlTypeName.DOUBLE),
-            top(notAny(OperandTypes.NUMERIC)),
+            wrap(notAny(OperandTypes.NUMERIC)),
             SqlFunctionCategory.NUMERIC
         );
     }

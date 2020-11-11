@@ -28,7 +28,7 @@ import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.validate.SqlMonotonicity;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.top;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 
 public class HazelcastSqlFloorFunction extends SqlMonotonicUnaryFunction {
@@ -38,7 +38,7 @@ public class HazelcastSqlFloorFunction extends SqlMonotonicUnaryFunction {
             kind,
             ReturnTypes.ARG0_OR_EXACT_NO_SCALE,
             new ReplaceUnknownOperandTypeInference(DECIMAL),
-            top(notAny(OperandTypes.NUMERIC)),
+            wrap(notAny(OperandTypes.NUMERIC)),
             SqlFunctionCategory.NUMERIC
         );
     }

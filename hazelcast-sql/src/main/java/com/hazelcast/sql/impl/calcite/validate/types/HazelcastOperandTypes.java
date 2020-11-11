@@ -50,7 +50,12 @@ public final class HazelcastOperandTypes {
     private HazelcastOperandTypes() {
     }
 
-    public static SqlOperandTypeChecker top(SqlOperandTypeChecker base) {
+    /**
+     * Wrap the operand checker into {@link SqlCallBindingOverrideOperandChecker} that will
+     * provide the custom {@link SqlCallBinding} implementation for proper signature validation
+     * error messages.
+     */
+    public static SqlOperandTypeChecker wrap(SqlOperandTypeChecker base) {
         return new SqlCallBindingOverrideOperandChecker(base);
     }
 

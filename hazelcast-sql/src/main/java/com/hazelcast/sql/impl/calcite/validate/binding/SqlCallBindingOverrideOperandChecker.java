@@ -21,6 +21,9 @@ import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.type.SqlOperandTypeChecker;
 
+/**
+ * Special operand checker that replaces the passed binding with an instance of the {@link SqlCallBindingOverride} class.
+ */
 public class SqlCallBindingOverrideOperandChecker implements SqlOperandTypeChecker {
 
     private final SqlOperandTypeChecker delegate;
