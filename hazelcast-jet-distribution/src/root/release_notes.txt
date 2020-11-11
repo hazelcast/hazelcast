@@ -36,6 +36,8 @@ Thank you for your valuable contributions!
 
 3. Fixes
 
+[core] Jet now doesn't close System.out during JVM shutdown (#2649)
+
 4. Breaking Changes
 
 <<< END PR SECTION

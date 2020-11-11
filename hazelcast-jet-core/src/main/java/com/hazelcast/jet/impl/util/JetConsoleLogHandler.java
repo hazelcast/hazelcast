@@ -41,8 +41,17 @@ public class JetConsoleLogHandler extends StreamHandler {
 
     @Override
     public void publish(LogRecord record) {
-        // sync method call, we should implement own logger here.
+        // synchronized method call!
         super.publish(record);
+        flush();
+    }
+
+    /**
+     * Since this handler uses {@code System.out}, just flush it without
+     * closing.
+     */
+    @Override
+    public void close() {
         flush();
     }
 
