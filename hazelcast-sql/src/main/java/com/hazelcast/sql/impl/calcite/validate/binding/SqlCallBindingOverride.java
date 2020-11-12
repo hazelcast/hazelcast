@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.validate.binding;
 
-import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
