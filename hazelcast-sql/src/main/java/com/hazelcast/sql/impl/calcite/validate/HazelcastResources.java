@@ -28,11 +28,11 @@ public interface HazelcastResources {
     HazelcastResources RESOURCES = Resources.create(HazelcastResources.class);
 
     @Resources.BaseMessage("Function ''{0}'' does not exist")
-    Resources.ExInst<CalciteException> functionDoesNotExist(String a0);
+    Resources.ExInst<CalciteException> functionDoesNotExist(String functionName);
 
-    @Resources.BaseMessage("No function matches {0} name and argument types (you might need to add an explicit CAST)")
-    Resources.ExInst<SqlValidatorException> canNotApplyOperandsToFunction(String a0);
+    @Resources.BaseMessage("Cannot apply {1} to the {0} operator (consider adding an explicit CAST)")
+    Resources.ExInst<SqlValidatorException> invalidOperatorOperands(String operatorName, String operandTypes);
 
-    @Resources.BaseMessage("No operator matches {0} name and argument types (you might need to add an explicit CAST)")
-    Resources.ExInst<SqlValidatorException> canNotApplyOperandsToOperator(String a0);
+    @Resources.BaseMessage("Cannot apply {1} to the {0} function (consider adding an explicit CAST)")
+    Resources.ExInst<SqlValidatorException> invalidFunctionOperands(String functionName, String operandTypes);
 }
