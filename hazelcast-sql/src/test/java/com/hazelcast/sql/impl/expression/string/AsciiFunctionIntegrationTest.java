@@ -69,7 +69,7 @@ public class AsciiFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkColumn(new OffsetDateTimeVal().field1(OFFSET_DATE_TIME_VAL), codePoint('2'));
 
         put(new ObjectVal());
-        checkFailure("field1", SqlErrorCode.PARSING, "No function matches 'ASCII(<OBJECT>)' name and argument types (you might need to add an explicit CAST)");
+        checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply [OBJECT] to the 'ASCII' function (consider adding an explicit CAST)");
     }
 
     private void checkColumn(ExpressionValue value, Integer expectedResult) {

@@ -61,13 +61,13 @@ public class FloorFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
         checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
 
-        checkColumnFailure(true, SqlErrorCode.PARSING, "No function matches 'FLOOR(<BOOLEAN>)' name and argument types (you might need to add an explicit CAST)");
-        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "No function matches 'FLOOR(<DATE>)' name and argument types (you might need to add an explicit CAST)");
-        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'FLOOR(<TIME>)' name and argument types (you might need to add an explicit CAST)");
-        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'FLOOR(<TIMESTAMP>)' name and argument types (you might need to add an explicit CAST)");
-        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'FLOOR(<TIMESTAMP_WITH_TIME_ZONE>)' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'FLOOR' function (consider adding an explicit CAST)");
+        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply [DATE] to the 'FLOOR' function (consider adding an explicit CAST)");
+        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIME] to the 'FLOOR' function (consider adding an explicit CAST)");
+        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP] to the 'FLOOR' function (consider adding an explicit CAST)");
+        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP_WITH_TIME_ZONE] to the 'FLOOR' function (consider adding an explicit CAST)");
 
-        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "No function matches 'FLOOR(<OBJECT>)' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "Cannot apply [OBJECT] to the 'FLOOR' function (consider adding an explicit CAST)");
     }
 
     private void checkColumn(Object value, SqlColumnType expectedType, Object expectedResult) {
@@ -129,7 +129,7 @@ public class FloorFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkLiteral("1.1E0", SqlColumnType.DOUBLE, 1d);
 
         checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure("true", SqlErrorCode.PARSING, "No function matches 'FLOOR(<BOOLEAN>)' name and argument types (you might need to add an explicit CAST)");
+        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'FLOOR' function (consider adding an explicit CAST)");
     }
 
     private void checkLiteral(Object literal, SqlColumnType expectedType, Object expectedResult) {

@@ -95,12 +95,12 @@ public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
         checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
 
-        checkColumnFailure(true, SqlErrorCode.PARSING, "No function matches 'RAND(<BOOLEAN>)' name and argument types (you might need to add an explicit CAST)");
-        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "No function matches 'RAND(<DATE>)' name and argument types (you might need to add an explicit CAST)");
-        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'RAND(<TIME>)' name and argument types (you might need to add an explicit CAST)");
-        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'RAND(<TIMESTAMP>)' name and argument types (you might need to add an explicit CAST)");
-        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'RAND(<TIMESTAMP_WITH_TIME_ZONE>)' name and argument types (you might need to add an explicit CAST)");
-        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "No function matches 'RAND(<OBJECT>)' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'RAND' function (consider adding an explicit CAST)");
+        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply [DATE] to the 'RAND' function (consider adding an explicit CAST)");
+        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIME] to the 'RAND' function (consider adding an explicit CAST)");
+        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP] to the 'RAND' function (consider adding an explicit CAST)");
+        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP_WITH_TIME_ZONE] to the 'RAND' function (consider adding an explicit CAST)");
+        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "Cannot apply [OBJECT] to the 'RAND' function (consider adding an explicit CAST)");
     }
 
     private void checkColumn(Object value, long expectedSeed) {
@@ -165,7 +165,7 @@ public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         assertNotEquals(nullRes1, nullRes2);
 
         checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure("true", SqlErrorCode.PARSING, "No function matches 'RAND(<BOOLEAN>)' name and argument types (you might need to add an explicit CAST)");
+        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'RAND' function (consider adding an explicit CAST)");
     }
 
     private void checkNumericLiteral(Object literal, long expectedSeed) {

@@ -233,8 +233,8 @@ public class IsTrueFalsePredicateIntegrationTest extends SqlExpressionIntegratio
         checkUnsupportedColumn(BYTE, "TINYINT");
         checkUnsupportedColumn(INTEGER, "INTEGER");
         checkUnsupportedColumn(LONG, "BIGINT");
-        checkUnsupportedColumn(BIG_INTEGER, "DECIMAL(38, 38)");
-        checkUnsupportedColumn(BIG_DECIMAL, "DECIMAL(38, 38)");
+        checkUnsupportedColumn(BIG_INTEGER, "DECIMAL");
+        checkUnsupportedColumn(BIG_DECIMAL, "DECIMAL");
         checkUnsupportedColumn(FLOAT, "REAL");
         checkUnsupportedColumn(DOUBLE, "DOUBLE");
         checkUnsupportedColumn(OBJECT, "OBJECT");
@@ -252,8 +252,8 @@ public class IsTrueFalsePredicateIntegrationTest extends SqlExpressionIntegratio
     }
 
     private void checkUnsupportedColumn(ExpressionType<?> type, String function, String expectedTypeNameInErrorMessage) {
-        String expectedErrorMessage = "No operator matches '<" + expectedTypeNameInErrorMessage + "> " + function
-            + "' name and argument types (you might need to add an explicit CAST)";
+        String expectedErrorMessage = "Cannot apply [" + expectedTypeNameInErrorMessage + "] to the '" + function
+            + "' operator (consider adding an explicit CAST)";
 
         int key = 0;
         put(key, ExpressionValue.create(ExpressionValue.createClass(type), key, type.valueFrom()));
