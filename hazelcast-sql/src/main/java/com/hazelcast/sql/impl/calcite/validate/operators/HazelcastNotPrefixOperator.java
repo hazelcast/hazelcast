@@ -99,6 +99,7 @@ public class HazelcastNotPrefixOperator extends SqlPrefixOperator implements Haz
                 }
             }
         } else if (operand.getKind() == SqlKind.DYNAMIC_PARAM) {
+            // TODO: Enfore type on the parameter.
             RelDataType booleanType = SqlNodeUtil.createType(validator.getTypeFactory(), SqlTypeName.BOOLEAN, true);
 
             validator.setKnownNodeType(operand, booleanType);
@@ -119,10 +120,9 @@ public class HazelcastNotPrefixOperator extends SqlPrefixOperator implements Haz
         }
     }
 
+    // TODO: Remove! Looks like we do no need it!
     @Override
     public boolean coerce(HazelcastTypeCoercion coercion, SqlCallBinding binding, List<RelDataType> operandTypes) {
-        RelDataType type = binding.getOperandType(0);
-
         return false;
     }
 }
