@@ -37,7 +37,7 @@ public interface ParserResource {
     @BaseMessage("SINK INTO clause is not supported for {0}")
     ExInst<SqlValidatorException> sinkIntoNotSupported(String connectorName);
 
-    @BaseMessage("INSERT INTO clause is not supported for {0}")
+    @BaseMessage("INSERT INTO clause is not supported for {0}, use SINK INTO")
     ExInst<SqlValidatorException> insertIntoNotSupported(String connectorName);
 
     @BaseMessage("The OR REPLACE option is required for CREATE SNAPSHOT")
