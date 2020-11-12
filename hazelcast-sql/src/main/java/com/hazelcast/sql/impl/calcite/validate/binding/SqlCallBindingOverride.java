@@ -57,14 +57,8 @@ public class SqlCallBindingOverride extends SqlCallBinding {
 
         Resources.ExInst<SqlValidatorException> error;
 
-        // Add single quotes to operators that don't start with a letter
-        String operatorName = operator.getName();
+        String operatorName = '\'' + operator.getName() + '\'';
 
-        if (!Character.isLetter(operatorName.charAt(0))) {
-            operatorName = '\'' + operatorName + '\'';
-        }
-
-        // Pick the proper message depending on the operator type (function or operator)
         switch (operator.getSyntax()) {
             case FUNCTION:
             case FUNCTION_STAR:
