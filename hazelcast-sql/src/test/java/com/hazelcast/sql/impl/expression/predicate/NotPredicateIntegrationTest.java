@@ -78,8 +78,8 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         // Check string
         checkColumnFailure("true", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'NOT' operator (consider adding an explicit CAST)");
         checkColumnFailure("false", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot apply [VARCHAR] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot apply [VARCHAR] to the 'NOT' operator (consider adding an explicit CAST)");
+        checkColumnFailure("bad", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'NOT' operator (consider adding an explicit CAST)");
+        checkColumnFailure('b', SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'NOT' operator (consider adding an explicit CAST)");
 
         // Check unsupported values
         checkColumnFailure((byte) 1, SqlErrorCode.PARSING, "Cannot apply [TINYINT] to the 'NOT' operator (consider adding an explicit CAST)");
