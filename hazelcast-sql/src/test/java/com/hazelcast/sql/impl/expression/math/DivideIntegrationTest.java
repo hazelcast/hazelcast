@@ -39,33 +39,33 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
 
     @Test
     public void testBoolean() {
-        assertParsingError("booleanTrue / booleanTrue", "No operator matches '<BOOLEAN> / <BOOLEAN>'");
+        assertParsingError("booleanTrue / booleanTrue", "Cannot apply [BOOLEAN, BOOLEAN] to the '/' operator");
 
-        assertParsingError("booleanTrue / byte1", "No operator matches '<BOOLEAN> / <TINYINT>'");
-        assertParsingError("booleanTrue / short1", "No operator matches '<BOOLEAN> / <SMALLINT>'");
-        assertParsingError("booleanTrue / int1", "No operator matches '<BOOLEAN> / <INTEGER>'");
-        assertParsingError("booleanTrue / long1", "No operator matches '<BOOLEAN> / <BIGINT>'");
+        assertParsingError("booleanTrue / byte1", "Cannot apply [BOOLEAN, TINYINT] to the '/' operator");
+        assertParsingError("booleanTrue / short1", "Cannot apply [BOOLEAN, SMALLINT] to the '/' operator");
+        assertParsingError("booleanTrue / int1", "Cannot apply [BOOLEAN, INTEGER] to the '/' operator");
+        assertParsingError("booleanTrue / long1", "Cannot apply [BOOLEAN, BIGINT] to the '/' operator");
 
-        assertParsingError("booleanTrue / float1", "No operator matches '<BOOLEAN> / <REAL>'");
-        assertParsingError("booleanTrue / double1", "No operator matches '<BOOLEAN> / <DOUBLE>'");
+        assertParsingError("booleanTrue / float1", "Cannot apply [BOOLEAN, REAL] to the '/' operator");
+        assertParsingError("booleanTrue / double1", "Cannot apply [BOOLEAN, DOUBLE] to the '/' operator");
 
-        assertParsingError("booleanTrue / decimal1", "No operator matches '<BOOLEAN> / <DECIMAL(38, 38)>'");
-        assertParsingError("booleanTrue / bigInteger1", "No operator matches '<BOOLEAN> / <DECIMAL(38, 38)>'");
+        assertParsingError("booleanTrue / decimal1", "Cannot apply [BOOLEAN, DECIMAL] to the '/' operator");
+        assertParsingError("booleanTrue / bigInteger1", "Cannot apply [BOOLEAN, DECIMAL] to the '/' operator");
 
-        assertParsingError("booleanTrue / string1", "No operator matches '<BOOLEAN> / <BOOLEAN>'");
-        assertParsingError("booleanTrue / char1", "No operator matches '<BOOLEAN> / <BOOLEAN>'");
+        assertParsingError("booleanTrue / string1", "Cannot apply [BOOLEAN, BOOLEAN] to the '/' operator");
+        assertParsingError("booleanTrue / char1", "Cannot apply [BOOLEAN, BOOLEAN] to the '/' operator");
 
-        assertParsingError("booleanTrue / dateCol", "No operator matches '<BOOLEAN> / <DATE>'");
-        assertParsingError("booleanTrue / timeCol", "No operator matches '<BOOLEAN> / <TIME>'");
-        assertParsingError("booleanTrue / dateTimeCol", "No operator matches '<BOOLEAN> / <TIMESTAMP>'");
-        assertParsingError("booleanTrue / offsetDateTimeCol", "No operator matches '<BOOLEAN> / <TIMESTAMP_WITH_TIME_ZONE>'");
+        assertParsingError("booleanTrue / dateCol", "Cannot apply [BOOLEAN, DATE] to the '/' operator");
+        assertParsingError("booleanTrue / timeCol", "Cannot apply [BOOLEAN, TIME] to the '/' operator");
+        assertParsingError("booleanTrue / dateTimeCol", "Cannot apply [BOOLEAN, TIMESTAMP] to the '/' operator");
+        assertParsingError("booleanTrue / offsetDateTimeCol", "Cannot apply [BOOLEAN, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
 
-        assertParsingError("booleanTrue / object", "No operator matches '<BOOLEAN> / <OBJECT>'");
+        assertParsingError("booleanTrue / object", "Cannot apply [BOOLEAN, OBJECT] to the '/' operator");
     }
 
     @Test
     public void testTinyint() {
-        assertParsingError("byte1 / booleanTrue", "No operator matches '<TINYINT> / <BOOLEAN>'");
+        assertParsingError("byte1 / booleanTrue", "Cannot apply [TINYINT, BOOLEAN] to the '/' operator");
 
         assertRow("byte1 / byte2", EXPR0, SMALLINT, (short) 0);
         assertRow("byteMax / byte2", EXPR0, SMALLINT, (short) (Byte.MAX_VALUE / 2));
@@ -114,17 +114,17 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertDataError("byte1 / char0", "division by zero");
         assertDataError("byte1 / charF", "Cannot convert VARCHAR to BIGINT");
 
-        assertParsingError("byte1 / dateCol", "No operator matches '<TINYINT> / <DATE>'");
-        assertParsingError("byte1 / timeCol", "No operator matches '<TINYINT> / <TIME>'");
-        assertParsingError("byte1 / dateTimeCol", "No operator matches '<TINYINT> / <TIMESTAMP>'");
-        assertParsingError("byte1 / offsetDateTimeCol", "No operator matches '<TINYINT> / <TIMESTAMP_WITH_TIME_ZONE>'");
+        assertParsingError("byte1 / dateCol", "Cannot apply [TINYINT, DATE] to the '/' operator");
+        assertParsingError("byte1 / timeCol", "Cannot apply [TINYINT, TIME] to the '/' operator");
+        assertParsingError("byte1 / dateTimeCol", "Cannot apply [TINYINT, TIMESTAMP] to the '/' operator");
+        assertParsingError("byte1 / offsetDateTimeCol", "Cannot apply [TINYINT, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
 
-        assertParsingError("byte1 / object", "No operator matches '<TINYINT> / <OBJECT>'");
+        assertParsingError("byte1 / object", "Cannot apply [TINYINT, OBJECT] to the '/' operator");
     }
 
     @Test
     public void testSmallint() {
-        assertParsingError("short1 / booleanTrue", "No operator matches '<SMALLINT> / <BOOLEAN>'");
+        assertParsingError("short1 / booleanTrue", "Cannot apply [SMALLINT, BOOLEAN] to the '/' operator");
 
         assertRow("short1 / byte2", EXPR0, INTEGER, 0);
         assertRow("shortMax / byte2", EXPR0, INTEGER, Short.MAX_VALUE / 2);
@@ -173,17 +173,17 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertDataError("short1 / char0", "division by zero");
         assertDataError("short1 / charF", "Cannot convert VARCHAR to BIGINT");
 
-        assertParsingError("short1 / dateCol", "No operator matches '<SMALLINT> / <DATE>'");
-        assertParsingError("short1 / timeCol", "No operator matches '<SMALLINT> / <TIME>'");
-        assertParsingError("short1 / dateTimeCol", "No operator matches '<SMALLINT> / <TIMESTAMP>'");
-        assertParsingError("short1 / offsetDateTimeCol", "No operator matches '<SMALLINT> / <TIMESTAMP_WITH_TIME_ZONE>'");
+        assertParsingError("short1 / dateCol", "Cannot apply [SMALLINT, DATE] to the '/' operator");
+        assertParsingError("short1 / timeCol", "Cannot apply [SMALLINT, TIME] to the '/' operator");
+        assertParsingError("short1 / dateTimeCol", "Cannot apply [SMALLINT, TIMESTAMP] to the '/' operator");
+        assertParsingError("short1 / offsetDateTimeCol", "Cannot apply [SMALLINT, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
 
-        assertParsingError("short1 / object", "No operator matches '<SMALLINT> / <OBJECT>'");
+        assertParsingError("short1 / object", "Cannot apply [SMALLINT, OBJECT] to the '/' operator");
     }
 
     @Test
     public void testInteger() {
-        assertParsingError("int1 / booleanTrue", "No operator matches '<INTEGER> / <BOOLEAN>'");
+        assertParsingError("int1 / booleanTrue", "Cannot apply [INTEGER, BOOLEAN] to the '/' operator");
 
         assertRow("int1 / byte2", EXPR0, BIGINT, 0L);
         assertRow("intMax / byte2", EXPR0, BIGINT, Integer.MAX_VALUE / 2L);
@@ -232,17 +232,17 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertDataError("int1 / char0", "division by zero");
         assertDataError("int1 / charF", "Cannot convert VARCHAR to BIGINT");
 
-        assertParsingError("int1 / dateCol", "No operator matches '<INTEGER> / <DATE>'");
-        assertParsingError("int1 / timeCol", "No operator matches '<INTEGER> / <TIME>'");
-        assertParsingError("int1 / dateTimeCol", "No operator matches '<INTEGER> / <TIMESTAMP>'");
-        assertParsingError("int1 / offsetDateTimeCol", "No operator matches '<INTEGER> / <TIMESTAMP_WITH_TIME_ZONE>'");
+        assertParsingError("int1 / dateCol", "Cannot apply [INTEGER, DATE] to the '/' operator");
+        assertParsingError("int1 / timeCol", "Cannot apply [INTEGER, TIME] to the '/' operator");
+        assertParsingError("int1 / dateTimeCol", "Cannot apply [INTEGER, TIMESTAMP] to the '/' operator");
+        assertParsingError("int1 / offsetDateTimeCol", "Cannot apply [INTEGER, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
 
-        assertParsingError("int1 / object", "No operator matches '<INTEGER> / <OBJECT>'");
+        assertParsingError("int1 / object", "Cannot apply [INTEGER, OBJECT] to the '/' operator");
     }
 
     @Test
     public void testBigint() {
-        assertParsingError("long1 / booleanTrue", "No operator matches '<BIGINT> / <BOOLEAN>'");
+        assertParsingError("long1 / booleanTrue", "Cannot apply [BIGINT, BOOLEAN] to the '/' operator");
 
         assertRow("long1 / byte2", EXPR0, BIGINT, 0L);
         assertRow("longMax / byte2", EXPR0, BIGINT, Long.MAX_VALUE / 2L);
@@ -291,17 +291,17 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertDataError("long1 / char0", "division by zero");
         assertDataError("long1 / charF", "Cannot convert VARCHAR to BIGINT");
 
-        assertParsingError("long1 / dateCol", "No operator matches '<BIGINT> / <DATE>'");
-        assertParsingError("long1 / timeCol", "No operator matches '<BIGINT> / <TIME>'");
-        assertParsingError("long1 / dateTimeCol", "No operator matches '<BIGINT> / <TIMESTAMP>'");
-        assertParsingError("long1 / offsetDateTimeCol", "No operator matches '<BIGINT> / <TIMESTAMP_WITH_TIME_ZONE>'");
+        assertParsingError("long1 / dateCol", "Cannot apply [BIGINT, DATE] to the '/' operator");
+        assertParsingError("long1 / timeCol", "Cannot apply [BIGINT, TIME] to the '/' operator");
+        assertParsingError("long1 / dateTimeCol", "Cannot apply [BIGINT, TIMESTAMP] to the '/' operator");
+        assertParsingError("long1 / offsetDateTimeCol", "Cannot apply [BIGINT, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
 
-        assertParsingError("long1 / object", "No operator matches '<BIGINT> / <OBJECT>'");
+        assertParsingError("long1 / object", "Cannot apply [BIGINT, OBJECT] to the '/' operator");
     }
 
     @Test
     public void testReal() {
-        assertParsingError("float1 / booleanTrue", "No operator matches '<REAL> / <BOOLEAN>'");
+        assertParsingError("float1 / booleanTrue", "Cannot apply [REAL, BOOLEAN] to the '/' operator");
 
         assertRow("float1 / byte2", EXPR0, REAL, 0.5f);
         assertRow("floatMax / byte2", EXPR0, REAL, Float.MAX_VALUE / 2);
@@ -346,17 +346,17 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertDataError("float1 / char0", "division by zero");
         assertDataError("float1 / charF", "Cannot convert VARCHAR to REAL");
 
-        assertParsingError("float1 / dateCol", "No operator matches '<REAL> / <DATE>'");
-        assertParsingError("float1 / timeCol", "No operator matches '<REAL> / <TIME>'");
-        assertParsingError("float1 / dateTimeCol", "No operator matches '<REAL> / <TIMESTAMP>'");
-        assertParsingError("float1 / offsetDateTimeCol", "No operator matches '<REAL> / <TIMESTAMP_WITH_TIME_ZONE>'");
+        assertParsingError("float1 / dateCol", "Cannot apply [REAL, DATE] to the '/' operator");
+        assertParsingError("float1 / timeCol", "Cannot apply [REAL, TIME] to the '/' operator");
+        assertParsingError("float1 / dateTimeCol", "Cannot apply [REAL, TIMESTAMP] to the '/' operator");
+        assertParsingError("float1 / offsetDateTimeCol", "Cannot apply [REAL, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
 
-        assertParsingError("float1 / object", "No operator matches '<REAL> / <OBJECT>'");
+        assertParsingError("float1 / object", "Cannot apply [REAL, OBJECT] to the '/' operator");
     }
 
     @Test
     public void testDouble() {
-        assertParsingError("double1 / booleanTrue", "No operator matches '<DOUBLE> / <BOOLEAN>'");
+        assertParsingError("double1 / booleanTrue", "Cannot apply [DOUBLE, BOOLEAN] to the '/' operator");
 
         assertRow("double1 / byte2", EXPR0, DOUBLE, 0.5);
         assertRow("doubleMax / byte2", EXPR0, DOUBLE, Double.MAX_VALUE / 2);
@@ -401,17 +401,17 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertDataError("double1 / char0", "division by zero");
         assertDataError("double1 / charF", "Cannot convert VARCHAR to DOUBLE");
 
-        assertParsingError("double1 / dateCol", "No operator matches '<DOUBLE> / <DATE>'");
-        assertParsingError("double1 / timeCol", "No operator matches '<DOUBLE> / <TIME>'");
-        assertParsingError("double1 / dateTimeCol", "No operator matches '<DOUBLE> / <TIMESTAMP>'");
-        assertParsingError("double1 / offsetDateTimeCol", "No operator matches '<DOUBLE> / <TIMESTAMP_WITH_TIME_ZONE>'");
+        assertParsingError("double1 / dateCol", "Cannot apply [DOUBLE, DATE] to the '/' operator");
+        assertParsingError("double1 / timeCol", "Cannot apply [DOUBLE, TIME] to the '/' operator");
+        assertParsingError("double1 / dateTimeCol", "Cannot apply [DOUBLE, TIMESTAMP] to the '/' operator");
+        assertParsingError("double1 / offsetDateTimeCol", "Cannot apply [DOUBLE, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
 
-        assertParsingError("double1 / object", "No operator matches '<DOUBLE> / <OBJECT>'");
+        assertParsingError("double1 / object", "Cannot apply [DOUBLE, OBJECT] to the '/' operator");
     }
 
     @Test
     public void testDecimal() {
-        assertParsingError("decimal1 / booleanTrue", "No operator matches '<DECIMAL(38, 38)> / <BOOLEAN>'");
+        assertParsingError("decimal1 / booleanTrue", "Cannot apply [DECIMAL, BOOLEAN] to the '/' operator");
 
         assertRow("decimal1 / byte2", EXPR0, DECIMAL, BigDecimal.valueOf(0.5));
         assertRow("decimalBig / byte2", EXPR0, DECIMAL,
@@ -465,17 +465,17 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertDataError("decimal1 / char0", "division by zero");
         assertDataError("decimal1 / charF", "Cannot convert VARCHAR to DECIMAL");
 
-        assertParsingError("decimal1 / dateCol", "No operator matches '<DECIMAL(38, 38)> / <DATE>'");
-        assertParsingError("decimal1 / timeCol", "No operator matches '<DECIMAL(38, 38)> / <TIME>'");
-        assertParsingError("decimal1 / dateTimeCol", "No operator matches '<DECIMAL(38, 38)> / <TIMESTAMP>'");
-        assertParsingError("decimal1 / offsetDateTimeCol", "No operator matches '<DECIMAL(38, 38)> / <TIMESTAMP_WITH_TIME_ZONE>'");
+        assertParsingError("decimal1 / dateCol", "Cannot apply [DECIMAL, DATE] to the '/' operator");
+        assertParsingError("decimal1 / timeCol", "Cannot apply [DECIMAL, TIME] to the '/' operator");
+        assertParsingError("decimal1 / dateTimeCol", "Cannot apply [DECIMAL, TIMESTAMP] to the '/' operator");
+        assertParsingError("decimal1 / offsetDateTimeCol", "Cannot apply [DECIMAL, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
 
-        assertParsingError("decimal1 / object", "No operator matches '<DECIMAL(38, 38)> / <OBJECT>'");
+        assertParsingError("decimal1 / object", "Cannot apply [DECIMAL, OBJECT] to the '/' operator");
     }
 
     @Test
     public void testVarchar() {
-        assertParsingError("string1 / booleanTrue", "No operator matches '<BOOLEAN> / <BOOLEAN>'");
+        assertParsingError("string1 / booleanTrue", "Cannot apply [BOOLEAN, BOOLEAN] to the '/' operator");
 
         assertRow("string1 / byte2", EXPR0, BIGINT, 0L);
         assertRow("stringLongMax / byte2", EXPR0, BIGINT, Long.MAX_VALUE / 2);
@@ -520,142 +520,142 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
 
         assertDataError("stringBig / int1", "Cannot convert VARCHAR to BIGINT");
 
-        assertParsingError("string1 / dateCol", "No operator matches '<DATE> / <DATE>'");
-        assertParsingError("string1 / timeCol", "No operator matches '<TIME> / <TIME>'");
-        assertParsingError("string1 / dateTimeCol", "No operator matches '<TIMESTAMP> / <TIMESTAMP>'");
-        assertParsingError("string1 / offsetDateTimeCol", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <TIMESTAMP_WITH_TIME_ZONE>'");
+        assertParsingError("string1 / dateCol", "Cannot apply [DATE, DATE] to the '/' operator");
+        assertParsingError("string1 / timeCol", "Cannot apply [TIME, TIME] to the '/' operator");
+        assertParsingError("string1 / dateTimeCol", "Cannot apply [TIMESTAMP, TIMESTAMP] to the '/' operator");
+        assertParsingError("string1 / offsetDateTimeCol", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
 
-        assertParsingError("string1 / object", "No operator matches '<VARCHAR> / <OBJECT>'");
+        assertParsingError("string1 / object", "Cannot apply [VARCHAR, OBJECT] to the '/' operator");
     }
 
     @Test
     public void testDate() {
-        assertParsingError("dateCol / booleanTrue", "No operator matches '<DATE> / <BOOLEAN>'");
+        assertParsingError("dateCol / booleanTrue", "Cannot apply [DATE, BOOLEAN] to the '/' operator");
 
-        assertParsingError("dateCol / byte1", "No operator matches '<DATE> / <TINYINT>'");
-        assertParsingError("dateCol / short1", "No operator matches '<DATE> / <SMALLINT>'");
-        assertParsingError("dateCol / int1", "No operator matches '<DATE> / <INTEGER>'");
-        assertParsingError("dateCol / long1", "No operator matches '<DATE> / <BIGINT>'");
+        assertParsingError("dateCol / byte1", "Cannot apply [DATE, TINYINT] to the '/' operator");
+        assertParsingError("dateCol / short1", "Cannot apply [DATE, SMALLINT] to the '/' operator");
+        assertParsingError("dateCol / int1", "Cannot apply [DATE, INTEGER] to the '/' operator");
+        assertParsingError("dateCol / long1", "Cannot apply [DATE, BIGINT] to the '/' operator");
 
-        assertParsingError("dateCol / float1", "No operator matches '<DATE> / <REAL>'");
-        assertParsingError("dateCol / double1", "No operator matches '<DATE> / <DOUBLE>'");
+        assertParsingError("dateCol / float1", "Cannot apply [DATE, REAL] to the '/' operator");
+        assertParsingError("dateCol / double1", "Cannot apply [DATE, DOUBLE] to the '/' operator");
 
-        assertParsingError("dateCol / decimal1", "No operator matches '<DATE> / <DECIMAL(38, 38)>'");
-        assertParsingError("dateCol / bigInteger1", "No operator matches '<DATE> / <DECIMAL(38, 38)>'");
+        assertParsingError("dateCol / decimal1", "Cannot apply [DATE, DECIMAL] to the '/' operator");
+        assertParsingError("dateCol / bigInteger1", "Cannot apply [DATE, DECIMAL] to the '/' operator");
 
-        assertParsingError("dateCol / string1", "No operator matches '<DATE> / <DATE>'");
-        assertParsingError("dateCol / char1", "No operator matches '<DATE> / <DATE>'");
+        assertParsingError("dateCol / string1", "Cannot apply [DATE, DATE] to the '/' operator");
+        assertParsingError("dateCol / char1", "Cannot apply [DATE, DATE] to the '/' operator");
 
-        assertParsingError("dateCol / dateCol", "No operator matches '<DATE> / <DATE>'");
-        assertParsingError("dateCol / timeCol", "No operator matches '<DATE> / <TIME>'");
-        assertParsingError("dateCol / dateTimeCol", "No operator matches '<DATE> / <TIMESTAMP>'");
-        assertParsingError("dateCol / offsetDateTimeCol", "No operator matches '<DATE> / <TIMESTAMP_WITH_TIME_ZONE>'");
+        assertParsingError("dateCol / dateCol", "Cannot apply [DATE, DATE] to the '/' operator");
+        assertParsingError("dateCol / timeCol", "Cannot apply [DATE, TIME] to the '/' operator");
+        assertParsingError("dateCol / dateTimeCol", "Cannot apply [DATE, TIMESTAMP] to the '/' operator");
+        assertParsingError("dateCol / offsetDateTimeCol", "Cannot apply [DATE, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
 
-        assertParsingError("dateCol / object", "No operator matches '<DATE> / <OBJECT>'");
+        assertParsingError("dateCol / object", "Cannot apply [DATE, OBJECT] to the '/' operator");
     }
 
     @Test
     public void testTime() {
-        assertParsingError("timeCol / booleanTrue", "No operator matches '<TIME> / <BOOLEAN>'");
+        assertParsingError("timeCol / booleanTrue", "Cannot apply [TIME, BOOLEAN] to the '/' operator");
 
-        assertParsingError("timeCol / byte1", "No operator matches '<TIME> / <TINYINT>'");
-        assertParsingError("timeCol / short1", "No operator matches '<TIME> / <SMALLINT>'");
-        assertParsingError("timeCol / int1", "No operator matches '<TIME> / <INTEGER>'");
-        assertParsingError("timeCol / long1", "No operator matches '<TIME> / <BIGINT>'");
+        assertParsingError("timeCol / byte1", "Cannot apply [TIME, TINYINT] to the '/' operator");
+        assertParsingError("timeCol / short1", "Cannot apply [TIME, SMALLINT] to the '/' operator");
+        assertParsingError("timeCol / int1", "Cannot apply [TIME, INTEGER] to the '/' operator");
+        assertParsingError("timeCol / long1", "Cannot apply [TIME, BIGINT] to the '/' operator");
 
-        assertParsingError("timeCol / float1", "No operator matches '<TIME> / <REAL>'");
-        assertParsingError("timeCol / double1", "No operator matches '<TIME> / <DOUBLE>'");
+        assertParsingError("timeCol / float1", "Cannot apply [TIME, REAL] to the '/' operator");
+        assertParsingError("timeCol / double1", "Cannot apply [TIME, DOUBLE] to the '/' operator");
 
-        assertParsingError("timeCol / decimal1", "No operator matches '<TIME> / <DECIMAL(38, 38)>'");
-        assertParsingError("timeCol / bigInteger1", "No operator matches '<TIME> / <DECIMAL(38, 38)>'");
+        assertParsingError("timeCol / decimal1", "Cannot apply [TIME, DECIMAL] to the '/' operator");
+        assertParsingError("timeCol / bigInteger1", "Cannot apply [TIME, DECIMAL] to the '/' operator");
 
-        assertParsingError("timeCol / string1", "No operator matches '<TIME> / <TIME>'");
-        assertParsingError("timeCol / char1", "No operator matches '<TIME> / <TIME>'");
+        assertParsingError("timeCol / string1", "Cannot apply [TIME, TIME] to the '/' operator");
+        assertParsingError("timeCol / char1", "Cannot apply [TIME, TIME] to the '/' operator");
 
-        assertParsingError("timeCol / dateCol", "No operator matches '<TIME> / <DATE>'");
-        assertParsingError("timeCol / timeCol", "No operator matches '<TIME> / <TIME>'");
-        assertParsingError("timeCol / dateTimeCol", "No operator matches '<TIME> / <TIMESTAMP>'");
-        assertParsingError("timeCol / offsetDateTimeCol", "No operator matches '<TIME> / <TIMESTAMP_WITH_TIME_ZONE>'");
+        assertParsingError("timeCol / dateCol", "Cannot apply [TIME, DATE] to the '/' operator");
+        assertParsingError("timeCol / timeCol", "Cannot apply [TIME, TIME] to the '/' operator");
+        assertParsingError("timeCol / dateTimeCol", "Cannot apply [TIME, TIMESTAMP] to the '/' operator");
+        assertParsingError("timeCol / offsetDateTimeCol", "Cannot apply [TIME, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
 
-        assertParsingError("timeCol / object", "No operator matches '<TIME> / <OBJECT>'");
+        assertParsingError("timeCol / object", "Cannot apply [TIME, OBJECT] to the '/' operator");
     }
 
     @Test
     public void testTimestamp() {
-        assertParsingError("dateTimeCol / booleanTrue", "No operator matches '<TIMESTAMP> / <BOOLEAN>'");
+        assertParsingError("dateTimeCol / booleanTrue", "Cannot apply [TIMESTAMP, BOOLEAN] to the '/' operator");
 
-        assertParsingError("dateTimeCol / byte1", "No operator matches '<TIMESTAMP> / <TINYINT>'");
-        assertParsingError("dateTimeCol / short1", "No operator matches '<TIMESTAMP> / <SMALLINT>'");
-        assertParsingError("dateTimeCol / int1", "No operator matches '<TIMESTAMP> / <INTEGER>'");
-        assertParsingError("dateTimeCol / long1", "No operator matches '<TIMESTAMP> / <BIGINT>'");
+        assertParsingError("dateTimeCol / byte1", "Cannot apply [TIMESTAMP, TINYINT] to the '/' operator");
+        assertParsingError("dateTimeCol / short1", "Cannot apply [TIMESTAMP, SMALLINT] to the '/' operator");
+        assertParsingError("dateTimeCol / int1", "Cannot apply [TIMESTAMP, INTEGER] to the '/' operator");
+        assertParsingError("dateTimeCol / long1", "Cannot apply [TIMESTAMP, BIGINT] to the '/' operator");
 
-        assertParsingError("dateTimeCol / float1", "No operator matches '<TIMESTAMP> / <REAL>'");
-        assertParsingError("dateTimeCol / double1", "No operator matches '<TIMESTAMP> / <DOUBLE>'");
+        assertParsingError("dateTimeCol / float1", "Cannot apply [TIMESTAMP, REAL] to the '/' operator");
+        assertParsingError("dateTimeCol / double1", "Cannot apply [TIMESTAMP, DOUBLE] to the '/' operator");
 
-        assertParsingError("dateTimeCol / decimal1", "No operator matches '<TIMESTAMP> / <DECIMAL(38, 38)>'");
-        assertParsingError("dateTimeCol / bigInteger1", "No operator matches '<TIMESTAMP> / <DECIMAL(38, 38)>'");
+        assertParsingError("dateTimeCol / decimal1", "Cannot apply [TIMESTAMP, DECIMAL] to the '/' operator");
+        assertParsingError("dateTimeCol / bigInteger1", "Cannot apply [TIMESTAMP, DECIMAL] to the '/' operator");
 
-        assertParsingError("dateTimeCol / string1", "No operator matches '<TIMESTAMP> / <TIMESTAMP>'");
-        assertParsingError("dateTimeCol / char1", "No operator matches '<TIMESTAMP> / <TIMESTAMP>'");
+        assertParsingError("dateTimeCol / string1", "Cannot apply [TIMESTAMP, TIMESTAMP] to the '/' operator");
+        assertParsingError("dateTimeCol / char1", "Cannot apply [TIMESTAMP, TIMESTAMP] to the '/' operator");
 
-        assertParsingError("dateTimeCol / dateCol", "No operator matches '<TIMESTAMP> / <DATE>'");
-        assertParsingError("dateTimeCol / timeCol", "No operator matches '<TIMESTAMP> / <TIME>'");
-        assertParsingError("dateTimeCol / dateTimeCol", "No operator matches '<TIMESTAMP> / <TIMESTAMP>'");
-        assertParsingError("dateTimeCol / offsetDateTimeCol", "No operator matches '<TIMESTAMP> / <TIMESTAMP_WITH_TIME_ZONE>'");
+        assertParsingError("dateTimeCol / dateCol", "Cannot apply [TIMESTAMP, DATE] to the '/' operator");
+        assertParsingError("dateTimeCol / timeCol", "Cannot apply [TIMESTAMP, TIME] to the '/' operator");
+        assertParsingError("dateTimeCol / dateTimeCol", "Cannot apply [TIMESTAMP, TIMESTAMP] to the '/' operator");
+        assertParsingError("dateTimeCol / offsetDateTimeCol", "Cannot apply [TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
 
-        assertParsingError("dateTimeCol / object", "No operator matches '<TIMESTAMP> / <OBJECT>'");
+        assertParsingError("dateTimeCol / object", "Cannot apply [TIMESTAMP, OBJECT] to the '/' operator");
     }
 
     @Test
     public void testTimestampWithTimeZone() {
-        assertParsingError("offsetDateTimeCol / booleanTrue", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <BOOLEAN>'");
+        assertParsingError("offsetDateTimeCol / booleanTrue", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, BOOLEAN] to the '/' operator");
 
-        assertParsingError("offsetDateTimeCol / byte1", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <TINYINT>'");
-        assertParsingError("offsetDateTimeCol / short1", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <SMALLINT>'");
-        assertParsingError("offsetDateTimeCol / int1", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <INTEGER>'");
-        assertParsingError("offsetDateTimeCol / long1", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <BIGINT>'");
+        assertParsingError("offsetDateTimeCol / byte1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, TINYINT] to the '/' operator");
+        assertParsingError("offsetDateTimeCol / short1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, SMALLINT] to the '/' operator");
+        assertParsingError("offsetDateTimeCol / int1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, INTEGER] to the '/' operator");
+        assertParsingError("offsetDateTimeCol / long1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, BIGINT] to the '/' operator");
 
-        assertParsingError("offsetDateTimeCol / float1", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <REAL>'");
-        assertParsingError("offsetDateTimeCol / double1", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <DOUBLE>'");
+        assertParsingError("offsetDateTimeCol / float1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, REAL] to the '/' operator");
+        assertParsingError("offsetDateTimeCol / double1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, DOUBLE] to the '/' operator");
 
-        assertParsingError("offsetDateTimeCol / decimal1", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <DECIMAL(38, 38)>'");
-        assertParsingError("offsetDateTimeCol / bigInteger1", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <DECIMAL(38, 38)>'");
+        assertParsingError("offsetDateTimeCol / decimal1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, DECIMAL] to the '/' operator");
+        assertParsingError("offsetDateTimeCol / bigInteger1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, DECIMAL] to the '/' operator");
 
-        assertParsingError("offsetDateTimeCol / string1", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <TIMESTAMP_WITH_TIME_ZONE>'");
-        assertParsingError("offsetDateTimeCol / char1", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <TIMESTAMP_WITH_TIME_ZONE>'");
+        assertParsingError("offsetDateTimeCol / string1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
+        assertParsingError("offsetDateTimeCol / char1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
 
-        assertParsingError("offsetDateTimeCol / dateCol", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <DATE>'");
-        assertParsingError("offsetDateTimeCol / timeCol", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <TIME>'");
-        assertParsingError("offsetDateTimeCol / dateTimeCol", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <TIMESTAMP>'");
-        assertParsingError("offsetDateTimeCol / offsetDateTimeCol", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <TIMESTAMP_WITH_TIME_ZONE>'");
+        assertParsingError("offsetDateTimeCol / dateCol", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, DATE] to the '/' operator");
+        assertParsingError("offsetDateTimeCol / timeCol", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, TIME] to the '/' operator");
+        assertParsingError("offsetDateTimeCol / dateTimeCol", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP] to the '/' operator");
+        assertParsingError("offsetDateTimeCol / offsetDateTimeCol", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
 
-        assertParsingError("offsetDateTimeCol / object", "No operator matches '<TIMESTAMP_WITH_TIME_ZONE> / <OBJECT>'");
+        assertParsingError("offsetDateTimeCol / object", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, OBJECT] to the '/' operator");
     }
 
     @Test
     public void testObject() {
-        assertParsingError("object / booleanTrue", "No operator matches '<OBJECT> / <BOOLEAN>'");
+        assertParsingError("object / booleanTrue", "Cannot apply [OBJECT, BOOLEAN] to the '/' operator");
 
-        assertParsingError("object / byte1", "No operator matches '<OBJECT> / <TINYINT>'");
-        assertParsingError("object / short1", "No operator matches '<OBJECT> / <SMALLINT>'");
-        assertParsingError("object / int1", "No operator matches '<OBJECT> / <INTEGER>'");
-        assertParsingError("object / long1", "No operator matches '<OBJECT> / <BIGINT>'");
+        assertParsingError("object / byte1", "Cannot apply [OBJECT, TINYINT] to the '/' operator");
+        assertParsingError("object / short1", "Cannot apply [OBJECT, SMALLINT] to the '/' operator");
+        assertParsingError("object / int1", "Cannot apply [OBJECT, INTEGER] to the '/' operator");
+        assertParsingError("object / long1", "Cannot apply [OBJECT, BIGINT] to the '/' operator");
 
-        assertParsingError("object / float1", "No operator matches '<OBJECT> / <REAL>'");
-        assertParsingError("object / double1", "No operator matches '<OBJECT> / <DOUBLE>'");
+        assertParsingError("object / float1", "Cannot apply [OBJECT, REAL] to the '/' operator");
+        assertParsingError("object / double1", "Cannot apply [OBJECT, DOUBLE] to the '/' operator");
 
-        assertParsingError("object / decimal1", "No operator matches '<OBJECT> / <DECIMAL(38, 38)>'");
-        assertParsingError("object / bigInteger1", "No operator matches '<OBJECT> / <DECIMAL(38, 38)>'");
+        assertParsingError("object / decimal1", "Cannot apply [OBJECT, DECIMAL] to the '/' operator");
+        assertParsingError("object / bigInteger1", "Cannot apply [OBJECT, DECIMAL] to the '/' operator");
 
-        assertParsingError("object / string1", "No operator matches '<OBJECT> / <VARCHAR>'");
-        assertParsingError("object / char1", "No operator matches '<OBJECT> / <VARCHAR>'");
+        assertParsingError("object / string1", "Cannot apply [OBJECT, VARCHAR] to the '/' operator");
+        assertParsingError("object / char1", "Cannot apply [OBJECT, VARCHAR] to the '/' operator");
 
-        assertParsingError("object / dateCol", "No operator matches '<OBJECT> / <DATE>'");
-        assertParsingError("object / timeCol", "No operator matches '<OBJECT> / <TIME>'");
-        assertParsingError("object / dateTimeCol", "No operator matches '<OBJECT> / <TIMESTAMP>'");
-        assertParsingError("object / offsetDateTimeCol", "No operator matches '<OBJECT> / <TIMESTAMP_WITH_TIME_ZONE>'");
+        assertParsingError("object / dateCol", "Cannot apply [OBJECT, DATE] to the '/' operator");
+        assertParsingError("object / timeCol", "Cannot apply [OBJECT, TIME] to the '/' operator");
+        assertParsingError("object / dateTimeCol", "Cannot apply [OBJECT, TIMESTAMP] to the '/' operator");
+        assertParsingError("object / offsetDateTimeCol", "Cannot apply [OBJECT, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
 
-        assertParsingError("object / object", "No operator matches '<OBJECT> / <OBJECT>'");
+        assertParsingError("object / object", "Cannot apply [OBJECT, OBJECT] to the '/' operator");
     }
 
 }

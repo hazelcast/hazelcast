@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.type;
 
+import com.hazelcast.sql.SqlColumnType;
+
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_DATE;
@@ -41,32 +43,35 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIMESTAMP_
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_VARCHAR;
 
 public enum QueryDataTypeFamily {
-    NULL(false, TYPE_LEN_NULL, PRECEDENCE_NULL),
-    VARCHAR(false, TYPE_LEN_VARCHAR, PRECEDENCE_VARCHAR),
-    BOOLEAN(false, 1, PRECEDENCE_BOOLEAN),
-    TINYINT(false, 1, PRECEDENCE_TINYINT),
-    SMALLINT(false, 2, PRECEDENCE_SMALLINT),
-    INTEGER(false, 4, PRECEDENCE_INTEGER),
-    BIGINT(false, 8, PRECEDENCE_BIGINT),
-    DECIMAL(false, TYPE_LEN_DECIMAL, PRECEDENCE_DECIMAL),
-    REAL(false, 4, PRECEDENCE_REAL),
-    DOUBLE(false, 8, PRECEDENCE_DOUBLE),
-    TIME(true, TYPE_LEN_TIME, PRECEDENCE_TIME),
-    DATE(true, TYPE_LEN_DATE, PRECEDENCE_DATE),
-    TIMESTAMP(true, TYPE_LEN_TIMESTAMP, PRECEDENCE_TIMESTAMP),
-    TIMESTAMP_WITH_TIME_ZONE(true, TYPE_LEN_TIMESTAMP_WITH_TIME_ZONE, PRECEDENCE_TIMESTAMP_WITH_TIME_ZONE),
-    OBJECT(false, TYPE_LEN_OBJECT, PRECEDENCE_OBJECT);
+    NULL(false, TYPE_LEN_NULL, PRECEDENCE_NULL, SqlColumnType.NULL),
+    VARCHAR(false, TYPE_LEN_VARCHAR, PRECEDENCE_VARCHAR, SqlColumnType.VARCHAR),
+    BOOLEAN(false, 1, PRECEDENCE_BOOLEAN, SqlColumnType.BOOLEAN),
+    TINYINT(false, 1, PRECEDENCE_TINYINT, SqlColumnType.TINYINT),
+    SMALLINT(false, 2, PRECEDENCE_SMALLINT, SqlColumnType.SMALLINT),
+    INTEGER(false, 4, PRECEDENCE_INTEGER, SqlColumnType.INTEGER),
+    BIGINT(false, 8, PRECEDENCE_BIGINT, SqlColumnType.BIGINT),
+    DECIMAL(false, TYPE_LEN_DECIMAL, PRECEDENCE_DECIMAL, SqlColumnType.DECIMAL),
+    REAL(false, 4, PRECEDENCE_REAL, SqlColumnType.REAL),
+    DOUBLE(false, 8, PRECEDENCE_DOUBLE, SqlColumnType.DOUBLE),
+    TIME(true, TYPE_LEN_TIME, PRECEDENCE_TIME, SqlColumnType.TIME),
+    DATE(true, TYPE_LEN_DATE, PRECEDENCE_DATE, SqlColumnType.DATE),
+    TIMESTAMP(true, TYPE_LEN_TIMESTAMP, PRECEDENCE_TIMESTAMP, SqlColumnType.TIMESTAMP),
+    TIMESTAMP_WITH_TIME_ZONE(true, TYPE_LEN_TIMESTAMP_WITH_TIME_ZONE, PRECEDENCE_TIMESTAMP_WITH_TIME_ZONE,
+        SqlColumnType.TIMESTAMP_WITH_TIME_ZONE),
+    OBJECT(false, TYPE_LEN_OBJECT, PRECEDENCE_OBJECT, SqlColumnType.OBJECT);
 
     private final boolean temporal;
     private final int estimatedSize;
     private final int precedence;
+    private final SqlColumnType publicType;
 
-    QueryDataTypeFamily(boolean temporal, int estimatedSize, int precedence) {
+    QueryDataTypeFamily(boolean temporal, int estimatedSize, int precedence, SqlColumnType publictype) {
         assert estimatedSize > 0;
 
         this.temporal = temporal;
         this.estimatedSize = estimatedSize;
         this.precedence = precedence;
+        this.publicType = publictype;
     }
 
     public boolean isTemporal() {
@@ -79,5 +84,9 @@ public enum QueryDataTypeFamily {
 
     public int getPrecedence() {
         return precedence;
+    }
+
+    public SqlColumnType getPublicType() {
+        return publicType;
     }
 }

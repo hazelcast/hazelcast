@@ -87,13 +87,13 @@ public class SignFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumnFailure("a", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
         checkColumnFailure('a', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
 
-        checkColumnFailure(true, SqlErrorCode.PARSING, "No function matches 'SIGN(<BOOLEAN>)' name and argument types (you might need to add an explicit CAST)");
-        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "No function matches 'SIGN(<DATE>)' name and argument types (you might need to add an explicit CAST)");
-        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'SIGN(<TIME>)' name and argument types (you might need to add an explicit CAST)");
-        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'SIGN(<TIMESTAMP>)' name and argument types (you might need to add an explicit CAST)");
-        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "No function matches 'SIGN(<TIMESTAMP_WITH_TIME_ZONE>)' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'SIGN' function (consider adding an explicit CAST)");
+        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply [DATE] to the 'SIGN' function (consider adding an explicit CAST)");
+        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIME] to the 'SIGN' function (consider adding an explicit CAST)");
+        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP] to the 'SIGN' function (consider adding an explicit CAST)");
+        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP_WITH_TIME_ZONE] to the 'SIGN' function (consider adding an explicit CAST)");
 
-        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "No function matches 'SIGN(<OBJECT>)' name and argument types (you might need to add an explicit CAST)");
+        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "Cannot apply [OBJECT] to the 'SIGN' function (consider adding an explicit CAST)");
     }
 
     private void checkColumn(Object value, SqlColumnType expectedType, Object expectedResult) {
@@ -208,8 +208,8 @@ public class SignFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkInexactLiteral("-1.1E0", SqlColumnType.DOUBLE, -1.0d);
 
         checkFailure("'a'", SqlErrorCode.PARSING, "Literal ''a'' can not be parsed to type 'DECIMAL'");
-        checkFailure("true", SqlErrorCode.PARSING, "No function matches 'SIGN(<BOOLEAN>)' name and argument types (you might need to add an explicit CAST)");
-        checkFailure("false", SqlErrorCode.PARSING, "No function matches 'SIGN(<BOOLEAN>)' name and argument types (you might need to add an explicit CAST)");
+        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'SIGN' function (consider adding an explicit CAST)");
+        checkFailure("false", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'SIGN' function (consider adding an explicit CAST)");
     }
 
     private void checkExactLiteral(Object literal, SqlColumnType expectedType, Object expectedValue) {

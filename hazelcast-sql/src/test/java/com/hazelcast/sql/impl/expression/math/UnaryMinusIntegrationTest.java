@@ -39,7 +39,7 @@ public class UnaryMinusIntegrationTest extends ExpressionIntegrationTestBase {
 
     @Test
     public void testBoolean() {
-        assertParsingError("-booleanTrue", "No operator matches '-<BOOLEAN>' name and argument types (you might need to add an explicit CAST)");
+        assertParsingError("-booleanTrue", "Cannot apply [BOOLEAN] to the '-' operator (consider adding an explicit CAST)");
     }
 
     @Test
@@ -119,11 +119,11 @@ public class UnaryMinusIntegrationTest extends ExpressionIntegrationTestBase {
 
     @Test
     public void testUnsupported() {
-        assertParsingError("-dateCol", "No operator matches '-<DATE>' name and argument types (you might need to add an explicit CAST)");
-        assertParsingError("-timeCol", "No operator matches '-<TIME>' name and argument types (you might need to add an explicit CAST)");
-        assertParsingError("-dateTimeCol", "No operator matches '-<TIMESTAMP>' name and argument types (you might need to add an explicit CAST)");
-        assertParsingError("-offsetDateTimeCol", "No operator matches '-<TIMESTAMP_WITH_TIME_ZONE>' name and argument types (you might need to add an explicit CAST)");
-        assertParsingError("-object", "No operator matches '-<OBJECT>' name and argument types (you might need to add an explicit CAST)");
+        assertParsingError("-dateCol", "Cannot apply [DATE] to the '-' operator (consider adding an explicit CAST)");
+        assertParsingError("-timeCol", "Cannot apply [TIME] to the '-' operator (consider adding an explicit CAST)");
+        assertParsingError("-dateTimeCol", "Cannot apply [TIMESTAMP] to the '-' operator (consider adding an explicit CAST)");
+        assertParsingError("-offsetDateTimeCol", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE] to the '-' operator (consider adding an explicit CAST)");
+        assertParsingError("-object", "Cannot apply [OBJECT] to the '-' operator (consider adding an explicit CAST)");
     }
 
 }

@@ -103,34 +103,34 @@ public class OrPredicateIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkColumnColumnFailure(new StringStringVal().fields("bad", null), SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BOOLEAN");
 
         // BOOLEAN/unsupported
-        checkColumnColumnFailure(new BooleanByteVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <TINYINT>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new BooleanShortVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <SMALLINT>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new BooleanIntegerVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <INTEGER>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new BooleanLongVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <BIGINT>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new BooleanBigIntegerVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <DECIMAL(38, 38)>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new BooleanBigDecimalVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <DECIMAL(38, 38)>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new BooleanFloatVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <REAL>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new BooleanDoubleVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <DOUBLE>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new BooleanLocalDateVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <DATE>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new BooleanLocalTimeVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <TIME>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new BooleanLocalDateTimeVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <TIMESTAMP>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new BooleanOffsetDateTimeVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <TIMESTAMP_WITH_TIME_ZONE>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new BooleanObjectVal().fields(true, null), SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <OBJECT>' name and argument types (you might need to add an explicit CAST)");
+        checkColumnColumnFailure(new BooleanByteVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TINYINT] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new BooleanShortVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, SMALLINT] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new BooleanIntegerVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, INTEGER] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new BooleanLongVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, BIGINT] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new BooleanBigIntegerVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, DECIMAL] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new BooleanBigDecimalVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, DECIMAL] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new BooleanFloatVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, REAL] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new BooleanDoubleVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, DOUBLE] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new BooleanLocalDateVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, DATE] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new BooleanLocalTimeVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TIME] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new BooleanLocalDateTimeVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TIMESTAMP] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new BooleanOffsetDateTimeVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TIMESTAMP_WITH_TIME_ZONE] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new BooleanObjectVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, OBJECT] to the 'OR' operator (consider adding an explicit CAST)");
 
         // VARCHAR/unsupported
-        checkColumnColumnFailure(new StringByteVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> OR <TINYINT>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new StringShortVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> OR <SMALLINT>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new StringIntegerVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> OR <INTEGER>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new StringLongVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> OR <BIGINT>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new StringBigIntegerVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> OR <DECIMAL(38, 38)>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new StringBigDecimalVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> OR <DECIMAL(38, 38)>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new StringFloatVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> OR <REAL>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new StringDoubleVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> OR <DOUBLE>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new StringLocalDateVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> OR <DATE>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new StringLocalTimeVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> OR <TIME>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new StringLocalDateTimeVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> OR <TIMESTAMP>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new StringOffsetDateTimeVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> OR <TIMESTAMP_WITH_TIME_ZONE>' name and argument types (you might need to add an explicit CAST)");
-        checkColumnColumnFailure(new StringObjectVal().fields("true", null), SqlErrorCode.PARSING, "No operator matches '<VARCHAR> OR <OBJECT>' name and argument types (you might need to add an explicit CAST)");
+        checkColumnColumnFailure(new StringByteVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, TINYINT] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new StringShortVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, SMALLINT] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new StringIntegerVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, INTEGER] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new StringLongVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, BIGINT] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new StringBigIntegerVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, DECIMAL] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new StringBigDecimalVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, DECIMAL] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new StringFloatVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, REAL] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new StringDoubleVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, DOUBLE] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new StringLocalDateVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, DATE] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new StringLocalTimeVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, TIME] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new StringLocalDateTimeVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, TIMESTAMP] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new StringOffsetDateTimeVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, TIMESTAMP_WITH_TIME_ZONE] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new StringObjectVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, OBJECT] to the 'OR' operator (consider adding an explicit CAST)");
 
         // COLUMN/PARAMETER
         put(false);
@@ -145,8 +145,8 @@ public class OrPredicateIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkValue("this", "null", RES_NULL);
         checkValue("this", "'true'", RES_TRUE);
         checkValue("this", "'false'", RES_FALSE);
-        checkFailure("this", "1", SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <TINYINT>' name and argument types (you might need to add an explicit CAST)");
-        checkFailure("this", "1E0", SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <DOUBLE>' name and argument types (you might need to add an explicit CAST)");
+        checkFailure("this", "1", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TINYINT] to the 'OR' operator (consider adding an explicit CAST)");
+        checkFailure("this", "1E0", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, DOUBLE] to the 'OR' operator (consider adding an explicit CAST)");
         checkFailure("this", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'BOOLEAN'");
     }
 
@@ -194,8 +194,8 @@ public class OrPredicateIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkValue("?", "'false'", RES_TRUE, true);
         checkValue("?", "'false'", RES_FALSE, false);
 
-        checkFailure("?", "1", SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <TINYINT>' name and argument types (you might need to add an explicit CAST)", true);
-        checkFailure("?", "1E0", SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <DOUBLE>' name and argument types (you might need to add an explicit CAST)", true);
+        checkFailure("?", "1", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TINYINT] to the 'OR' operator (consider adding an explicit CAST)", true);
+        checkFailure("?", "1E0", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, DOUBLE] to the 'OR' operator (consider adding an explicit CAST)", true);
         checkFailure("?", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'BOOLEAN'", true);
     }
 
@@ -212,8 +212,8 @@ public class OrPredicateIntegrationTest extends SqlExpressionIntegrationTestSupp
 
         checkValue("true", "'false'", RES_TRUE);
 
-        checkFailure("true", "1", SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <TINYINT>' name and argument types (you might need to add an explicit CAST)");
-        checkFailure("true", "1E0", SqlErrorCode.PARSING, "No operator matches '<BOOLEAN> OR <DOUBLE>' name and argument types (you might need to add an explicit CAST)");
+        checkFailure("true", "1", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TINYINT] to the 'OR' operator (consider adding an explicit CAST)");
+        checkFailure("true", "1E0", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, DOUBLE] to the 'OR' operator (consider adding an explicit CAST)");
         checkFailure("true", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'BOOLEAN'");
     }
 

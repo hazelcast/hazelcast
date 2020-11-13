@@ -123,7 +123,7 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // TINYINT/OBJECT
         clazz = createBiClass(ExpressionTypes.BYTE, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, (byte) 0, 1, SqlErrorCode.PARSING, "No operator matches '<OBJECT>");
+        checkColumnColumnFailure(clazz, (byte) 0, 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
 
         // SMALLINT/SMALLINT
         clazz = createBiClass(ExpressionTypes.SHORT, ExpressionTypes.SHORT);
@@ -176,7 +176,7 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // SMALLINT/OBJECT
         clazz = createBiClass(ExpressionTypes.SHORT, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, (short) 0, 1, SqlErrorCode.PARSING, "No operator matches '<OBJECT>");
+        checkColumnColumnFailure(clazz, (short) 0, 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
 
         // INTEGER/INTEGER
         clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.INTEGER);
@@ -223,7 +223,7 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // INTEGER/OBJECT
         clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, 0, 1, SqlErrorCode.PARSING, "No operator matches '<OBJECT>");
+        checkColumnColumnFailure(clazz, 0, 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
 
         // BIGINT/BIGINT
         clazz = createBiClass(ExpressionTypes.LONG, ExpressionTypes.LONG);
@@ -264,7 +264,7 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // BIGINT/OBJECT
         clazz = createBiClass(ExpressionTypes.LONG, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, 0L, 1, SqlErrorCode.PARSING, "No operator matches '<OBJECT>");
+        checkColumnColumnFailure(clazz, 0L, 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
 
         // DECIMAL(BigInteger)/DECIMAL
         clazz = createBiClass(ExpressionTypes.BIG_INTEGER, ExpressionTypes.BIG_INTEGER);
@@ -299,7 +299,7 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // DECIMAL(BigInteger)/OBJECT
         clazz = createBiClass(ExpressionTypes.BIG_INTEGER, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, BigInteger.ZERO, 1, SqlErrorCode.PARSING, "No operator matches '<OBJECT>");
+        checkColumnColumnFailure(clazz, BigInteger.ZERO, 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
 
         // BIGINT(BigDecimal)/DECIMAL
         clazz = createBiClass(ExpressionTypes.BIG_DECIMAL, ExpressionTypes.BIG_DECIMAL);
@@ -330,7 +330,7 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // DECIMAL(BigDecimal)/OBJECT
         clazz = createBiClass(ExpressionTypes.BIG_DECIMAL, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, BigDecimal.ZERO, 1, SqlErrorCode.PARSING, "No operator matches '<OBJECT>");
+        checkColumnColumnFailure(clazz, BigDecimal.ZERO, 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
 
         // REAL/REAL
         clazz = createBiClass(ExpressionTypes.FLOAT, ExpressionTypes.FLOAT);
@@ -354,7 +354,7 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // REAL/OBJECT
         clazz = createBiClass(ExpressionTypes.FLOAT, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, 0f, 1, SqlErrorCode.PARSING, "No operator matches '<OBJECT>");
+        checkColumnColumnFailure(clazz, 0f, 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
 
         // DOUBLE/DOUBLE
         clazz = createBiClass(ExpressionTypes.DOUBLE, ExpressionTypes.DOUBLE);
@@ -372,7 +372,7 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // DOUBLE/OBJECT
         clazz = createBiClass(ExpressionTypes.DOUBLE, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, 0d, 1, SqlErrorCode.PARSING, "No operator matches '<OBJECT>");
+        checkColumnColumnFailure(clazz, 0d, 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
 
         // VARCHAR(char)/VARCHAR
         clazz = createBiClass(ExpressionTypes.CHARACTER, ExpressionTypes.CHARACTER);
@@ -385,7 +385,7 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // VARCHAR(char)/OBJECT
         clazz = createBiClass(ExpressionTypes.CHARACTER, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, '0', 1, SqlErrorCode.PARSING, "No operator matches '<OBJECT>");
+        checkColumnColumnFailure(clazz, '0', 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
 
         // VARCHAR(char)/VARCHAR
         clazz = createBiClass(ExpressionTypes.STRING, ExpressionTypes.STRING);
@@ -395,11 +395,11 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // VARCHAR(char)/OBJECT
         clazz = createBiClass(ExpressionTypes.STRING, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, "abc", 1, SqlErrorCode.PARSING, "No operator matches '<OBJECT>");
+        checkColumnColumnFailure(clazz, "abc", 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
 
         // OBJECT/OBJECT
         clazz = createBiClass(ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, 1, 2, SqlErrorCode.PARSING, "No operator matches '<OBJECT>");
+        checkColumnColumnFailure(clazz, 1, 2, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
 
         // Handle special case for temporal types
         clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.LOCAL_DATE);

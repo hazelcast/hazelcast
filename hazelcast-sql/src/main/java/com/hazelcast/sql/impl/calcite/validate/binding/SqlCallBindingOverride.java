@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.validate.binding;
 
+import com.hazelcast.sql.impl.calcite.SqlToQueryType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.runtime.Resources;
@@ -23,13 +25,11 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperator;
-import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorException;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.StringJoiner;
 
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastResources.RESOURCES;
 
@@ -52,41 +52,41 @@ public class SqlCallBindingOverride extends SqlCallBinding {
         SqlValidator validator = getValidator();
         SqlCall call = getCall();
 
-        String signature = getCallSignature(operator, validator, call, getScope());
+        String operandTypes = getOperandTypes(validator, call, getScope());
 
         Resources.ExInst<SqlValidatorException> error;
+
+        String operatorName = '\'' + operator.getName() + '\'';
 
         switch (operator.getSyntax()) {
             case FUNCTION:
             case FUNCTION_STAR:
             case FUNCTION_ID:
-                error = RESOURCES.canNotApplyOperandsToFunction(signature);
+                error = RESOURCES.invalidFunctionOperands(operatorName, operandTypes);
 
                 break;
 
             default:
-                error = RESOURCES.canNotApplyOperandsToOperator(signature);
+                error = RESOURCES.invalidOperatorOperands(operatorName, operandTypes);
         }
 
         return validator.newValidationError(call, error);
     }
 
-    private static String getCallSignature(
-        SqlOperator operator,
+    private static String getOperandTypes(
         SqlValidator validator,
         SqlCall call,
         SqlValidatorScope scope
     ) {
-        List<String> operandTypes = new ArrayList<>();
+        StringJoiner res = new StringJoiner(", ", "[", "]");
 
         for (SqlNode operand : call.getOperandList()) {
-            RelDataType operandType = validator.deriveType(scope, operand);
+            RelDataType calciteType = validator.deriveType(scope, operand);
+            QueryDataType hazelcastType = SqlToQueryType.map(calciteType.getSqlTypeName());
 
-            assert operandType != null;
-
-            operandTypes.add(operandType.toString());
+            res.add(hazelcastType.getTypeFamily().getPublicType().name());
         }
 
-        return SqlUtil.getOperatorSignature(operator, operandTypes);
+        return res.toString();
     }
 }
