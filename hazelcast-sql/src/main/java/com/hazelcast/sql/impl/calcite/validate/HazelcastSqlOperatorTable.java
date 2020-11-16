@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastComparisonOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPredicateAndOr;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDoubleFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPredicateNot;
@@ -94,65 +95,12 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#region Comparison operators.
 
-    public static final SqlBinaryOperator EQUALS = new SqlBinaryOperator(
-        "=",
-        SqlKind.EQUALS,
-        SqlStdOperatorTable.EQUALS.getLeftPrec(),
-        true,
-        ReturnTypes.BOOLEAN_NULLABLE,
-        HazelcastInferTypes.FIRST_KNOWN,
-        wrap(notAny(OperandTypes.COMPARABLE_UNORDERED_COMPARABLE_UNORDERED))
-    );
-
-    public static final SqlBinaryOperator NOT_EQUALS = new SqlBinaryOperator(
-        "<>",
-        SqlKind.NOT_EQUALS,
-        SqlStdOperatorTable.NOT_EQUALS.getLeftPrec(),
-        true,
-        ReturnTypes.BOOLEAN_NULLABLE,
-        HazelcastInferTypes.FIRST_KNOWN,
-        wrap(notAny(OperandTypes.COMPARABLE_UNORDERED_COMPARABLE_UNORDERED))
-    );
-
-    public static final SqlBinaryOperator GREATER_THAN = new SqlBinaryOperator(
-        ">",
-        SqlKind.GREATER_THAN,
-        SqlStdOperatorTable.GREATER_THAN.getLeftPrec(),
-        true,
-        ReturnTypes.BOOLEAN_NULLABLE,
-        HazelcastInferTypes.FIRST_KNOWN,
-        wrap(notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED))
-    );
-
-    public static final SqlBinaryOperator GREATER_THAN_OR_EQUAL = new SqlBinaryOperator(
-        ">=",
-        SqlKind.GREATER_THAN_OR_EQUAL,
-        SqlStdOperatorTable.GREATER_THAN_OR_EQUAL.getLeftPrec(),
-        true,
-        ReturnTypes.BOOLEAN_NULLABLE,
-        HazelcastInferTypes.FIRST_KNOWN,
-        wrap(notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED))
-    );
-
-    public static final SqlBinaryOperator LESS_THAN = new SqlBinaryOperator(
-        "<",
-        SqlKind.LESS_THAN,
-        SqlStdOperatorTable.LESS_THAN.getLeftPrec(),
-        true,
-        ReturnTypes.BOOLEAN_NULLABLE,
-        HazelcastInferTypes.FIRST_KNOWN,
-        wrap(notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED))
-    );
-
-    public static final SqlBinaryOperator LESS_THAN_OR_EQUAL = new SqlBinaryOperator(
-        "<=",
-        SqlKind.LESS_THAN_OR_EQUAL,
-        SqlStdOperatorTable.LESS_THAN_OR_EQUAL.getLeftPrec(),
-        true,
-        ReturnTypes.BOOLEAN_NULLABLE,
-        HazelcastInferTypes.FIRST_KNOWN,
-        wrap(notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED))
-    );
+    public static final SqlBinaryOperator EQUALS = HazelcastComparisonOperator.EQUALS;
+    public static final SqlBinaryOperator NOT_EQUALS = HazelcastComparisonOperator.NOT_EQUALS;
+    public static final SqlBinaryOperator GREATER_THAN = HazelcastComparisonOperator.GREATER_THAN;
+    public static final SqlBinaryOperator GREATER_THAN_OR_EQUAL = HazelcastComparisonOperator.GREATER_THAN_OR_EQUAL;
+    public static final SqlBinaryOperator LESS_THAN = HazelcastComparisonOperator.LESS_THAN;
+    public static final SqlBinaryOperator LESS_THAN_OR_EQUAL = HazelcastComparisonOperator.LESS_THAN_OR_EQUAL;
 
     //#endregion
 
