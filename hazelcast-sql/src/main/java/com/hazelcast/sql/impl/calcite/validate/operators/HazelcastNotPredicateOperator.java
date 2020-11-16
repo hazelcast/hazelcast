@@ -34,8 +34,8 @@ import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public class HazelcastNotPrefixOperator extends SqlPrefixOperator implements SqlCallBindingManualOverride {
-    public HazelcastNotPrefixOperator() {
+public class HazelcastNotPredicateOperator extends SqlPrefixOperator implements SqlCallBindingManualOverride {
+    public HazelcastNotPredicateOperator() {
         super(
             "NOT",
             SqlKind.NOT,

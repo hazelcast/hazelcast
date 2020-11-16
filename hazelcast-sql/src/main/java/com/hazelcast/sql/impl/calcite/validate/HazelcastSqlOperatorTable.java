@@ -18,9 +18,10 @@ package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastAndOrPredicateOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDoubleFunction;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastNotPrefixOperator;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlBinaryOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastNotPredicateOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDivideOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlFloorFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlLikeOperator;
@@ -85,27 +86,9 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#region Predicates.
 
-    public static final SqlBinaryOperator AND = new HazelcastSqlBinaryOperator(
-        "AND",
-        SqlKind.AND,
-        SqlStdOperatorTable.AND.getLeftPrec(),
-        true,
-        ReturnTypes.BOOLEAN_NULLABLE,
-        InferTypes.BOOLEAN,
-        wrap(notAny(OperandTypes.BOOLEAN_BOOLEAN))
-    );
-
-    public static final SqlBinaryOperator OR = new HazelcastSqlBinaryOperator(
-        "OR",
-        SqlKind.OR,
-        SqlStdOperatorTable.OR.getLeftPrec(),
-        true,
-        ReturnTypes.BOOLEAN_NULLABLE,
-        InferTypes.BOOLEAN,
-        wrap(notAny(OperandTypes.BOOLEAN_BOOLEAN))
-    );
-
-    public static final SqlPrefixOperator NOT = new HazelcastNotPrefixOperator();
+    public static final SqlBinaryOperator AND = HazelcastAndOrPredicateOperator.AND;
+    public static final SqlBinaryOperator OR = HazelcastAndOrPredicateOperator.OR;
+    public static final SqlPrefixOperator NOT = new HazelcastNotPredicateOperator();
 
     //#endregion
 
@@ -205,15 +188,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         wrap(notAllNull(notAny(OperandTypes.MULTIPLY_OPERATOR)))
     );
 
-    public static final SqlBinaryOperator DIVIDE = new HazelcastSqlBinaryOperator(
-        "/",
-        SqlKind.DIVIDE,
-        SqlStdOperatorTable.DIVIDE.getLeftPrec(),
-        true,
-        HazelcastReturnTypes.DIVIDE,
-        HazelcastInferTypes.FIRST_KNOWN,
-        wrap(notAllNull(notAny(OperandTypes.DIVISION_OPERATOR)))
-    );
+    public static final SqlBinaryOperator DIVIDE = new HazelcastDivideOperator();
 
     public static final SqlPrefixOperator UNARY_PLUS = new SqlPrefixOperator(
         "+",

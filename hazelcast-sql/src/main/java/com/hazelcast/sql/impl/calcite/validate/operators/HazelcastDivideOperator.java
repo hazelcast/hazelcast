@@ -17,46 +17,46 @@
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperatorBinding;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.SqlOperandTypeChecker;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.validate.SqlMonotonicity;
-import org.apache.calcite.util.Litmus;
+
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAllNull;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.wrap;
 
 /**
  * The same as {@link SqlBinaryOperator}, but supports monotonicity for NULL
  * literals and operators from our custom {@link HazelcastSqlOperatorTable}.
  */
-public class HazelcastSqlBinaryOperator extends SqlBinaryOperator {
-
-    public HazelcastSqlBinaryOperator(String name, SqlKind kind, int prec, boolean leftAssoc,
-                                      SqlReturnTypeInference returnTypeInference, SqlOperandTypeInference operandTypeInference,
-                                      SqlOperandTypeChecker operandTypeChecker) {
-        super(name, kind, prec, leftAssoc, returnTypeInference, operandTypeInference, operandTypeChecker);
+public class HazelcastDivideOperator extends SqlBinaryOperator {
+    public HazelcastDivideOperator() {
+        super(
+            "/",
+            SqlKind.DIVIDE,
+            SqlStdOperatorTable.DIVIDE.getLeftPrec(),
+            true,
+            HazelcastReturnTypes.DIVIDE,
+            HazelcastInferTypes.FIRST_KNOWN,
+            wrap(notAllNull(notAny(OperandTypes.DIVISION_OPERATOR)))
+        );
     }
 
     @Override
     public SqlMonotonicity getMonotonicity(SqlOperatorBinding call) {
-        // XXX: super method does the same, but doesn't consider NULLs to be
-        // producing results with the constant monotonicity.
-        if (getName().equals("/") && (call.isOperandNull(0, true) || call.isOperandNull(1, true))) {
+        // The original method does the same, but doesn't consider NULLs to be producing results with the constant monotonicity.
+        if (call.isOperandNull(0, true) || call.isOperandNull(1, true)) {
             return SqlMonotonicity.CONSTANT;
         }
 
         return super.getMonotonicity(call);
     }
-
-    @Override
-    public boolean validRexOperands(int count, Litmus litmus) {
-        // XXX: super method does the same, but works only for operators from
-        // Calcite's standard SqlStdOperatorTable.
-        if ((this == HazelcastSqlOperatorTable.AND || this == HazelcastSqlOperatorTable.OR) && count > 2) {
-            return true;
-        }
-        return super.validRexOperands(count, litmus);
-    }
-
 }
