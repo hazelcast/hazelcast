@@ -42,14 +42,15 @@ public class JetQueryResultProducer implements QueryResultProducer {
 
     private static final Exception NORMAL_COMPLETION = new NormalCompletionException();
 
-    private final OneToOneConcurrentArrayQueue<Row> queue = new OneToOneConcurrentArrayQueue<>(QUEUE_CAPACITY);
+    private final OneToOneConcurrentArrayQueue<Row> rows = new OneToOneConcurrentArrayQueue<>(QUEUE_CAPACITY);
     private final AtomicReference<Exception> done = new AtomicReference<>();
+
     private InternalIterator iterator;
 
     @Override
     public ResultIterator<Row> iterator() {
         if (iterator != null) {
-            throw new IllegalStateException("The iterator can be requested only once");
+            throw new IllegalStateException("Iterator can be requested only once");
         }
         iterator = new InternalIterator();
         return iterator;
@@ -68,7 +69,7 @@ public class JetQueryResultProducer implements QueryResultProducer {
         if (done.get() != null) {
             throw new RuntimeException(done.get());
         }
-        for (Object[] r; (r = (Object[]) inbox.peek()) != null && queue.offer(new HeapRow(r)); ) {
+        for (Object[] row; (row = (Object[]) inbox.peek()) != null && rows.offer(new HeapRow(row)); ) {
             inbox.remove();
         }
     }
@@ -82,7 +83,7 @@ public class JetQueryResultProducer implements QueryResultProducer {
 
         @Override
         public HasNextResult hasNext(long timeout, TimeUnit timeUnit) {
-            return nextRow != null || (nextRow = queue.poll()) != null ? YES
+            return nextRow != null || (nextRow = rows.poll()) != null ? YES
                     : isDone() ? DONE
                     : timeout == 0 ? TIMEOUT
                     : hasNextWait(System.nanoTime() + timeUnit.toNanos(timeout));
@@ -101,14 +102,14 @@ public class JetQueryResultProducer implements QueryResultProducer {
             try {
                 return nextRow;
             } finally {
-                nextRow = queue.poll();
+                nextRow = rows.poll();
             }
         }
 
         private HasNextResult hasNextWait(long endTimeNanos) {
             long idleCount = 0;
             do {
-                if (nextRow != null || (nextRow = queue.poll()) != null) {
+                if (nextRow != null || (nextRow = rows.poll()) != null) {
                     return YES;
                 }
                 if (isDone()) {
@@ -121,18 +122,19 @@ public class JetQueryResultProducer implements QueryResultProducer {
 
         /**
          * Returns:<ul>
-         *     <li>true, if done
-         *     <li>false, if not done
-         *     <li>throws exception, if done with error
+         * <li>true, if done and rows are exhausted
+         * <li>false, if not done or rows are not exhausted
+         * <li>throws exception, if done with error
          * </ul>
          */
         private boolean isDone() {
-            Exception doneExc = done.get();
-            if (doneExc != null) {
-                if (doneExc instanceof NormalCompletionException) {
-                    return true;
+            Exception exception = done.get();
+            if (exception != null) {
+                if (exception instanceof NormalCompletionException) {
+                    // finish the rows first
+                    return rows.isEmpty();
                 }
-                throw new RuntimeException("The Jet SQL job failed: " + doneExc.getMessage(), doneExc);
+                throw new RuntimeException("The Jet SQL job failed: " + exception.getMessage(), exception);
             }
             return false;
         }
@@ -140,7 +142,9 @@ public class JetQueryResultProducer implements QueryResultProducer {
 
     private static final class NormalCompletionException extends Exception {
         NormalCompletionException() {
-            super("done normally");
+            // Use writableStackTrace = false, the exception is not created at a place where it's thrown,
+            // it's better if it has no stack trace then.
+            super("Done normally", null, false, false);
         }
     }
 }
