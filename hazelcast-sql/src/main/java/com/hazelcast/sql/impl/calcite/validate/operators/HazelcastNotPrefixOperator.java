@@ -21,7 +21,6 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
@@ -35,9 +34,7 @@ import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import java.util.List;
-
-public class HazelcastNotPrefixOperator extends SqlPrefixOperator implements HazelcastOperatorCoercion, SqlCallBindingManualOverride {
+public class HazelcastNotPrefixOperator extends SqlPrefixOperator implements SqlCallBindingManualOverride {
     public HazelcastNotPrefixOperator() {
         super(
             "NOT",
@@ -54,6 +51,7 @@ public class HazelcastNotPrefixOperator extends SqlPrefixOperator implements Haz
         return SqlOperandCountRanges.of(1);
     }
 
+    @SuppressWarnings("checkstyle:NestedIfDepth")
     @Override
     public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
         callBinding = new SqlCallBindingOverride(callBinding);
@@ -118,11 +116,5 @@ public class HazelcastNotPrefixOperator extends SqlPrefixOperator implements Haz
                 }
             }
         }
-    }
-
-    // TODO: Remove! Looks like we do no need it!
-    @Override
-    public boolean coerce(HazelcastTypeCoercion coercion, SqlCallBinding binding, List<RelDataType> operandTypes) {
-        return false;
     }
 }

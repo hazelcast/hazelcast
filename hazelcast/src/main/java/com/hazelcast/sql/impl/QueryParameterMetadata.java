@@ -16,36 +16,27 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.impl.type.QueryDataType;
-
 /**
  * Provides query parameter metadata.
  */
 public final class QueryParameterMetadata {
 
-    /**
-     * Zero-parameters metadata.
-     */
     public static final QueryParameterMetadata EMPTY = new QueryParameterMetadata();
 
-    private final QueryDataType[] parameterTypes;
+    private final ParameterConverter[] parameterConverters;
 
-    public QueryParameterMetadata(QueryDataType... parameterTypes) {
-        this.parameterTypes = parameterTypes;
+    public QueryParameterMetadata(ParameterConverter... parameterConverters) {
+        this.parameterConverters = parameterConverters;
     }
 
     /**
      * @return the number of parameters this metadata describes.
      */
     public int getParameterCount() {
-        return parameterTypes.length;
+        return parameterConverters.length;
     }
 
-    /**
-     * @return a type of a parameter with the given index.
-     */
-    public QueryDataType getParameterType(int index) {
-        return parameterTypes[index];
+    public ParameterConverter getParameterConverter(int index) {
+        return parameterConverters[index];
     }
-
 }

@@ -16,12 +16,16 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
+import com.hazelcast.sql.impl.ParameterConverter;
+import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.validate.param.PrecedenceParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
@@ -29,6 +33,7 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.sql.validate.SelectScope;
@@ -41,6 +46,7 @@ import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.util.Util;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +87,12 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
 
     /** Visitor to rewrite Calcite operators to Hazelcast operators. */
     private final HazelcastSqlOperatorTable.RewriteVisitor rewriteVisitor;
+
+    /** Parameter converter that will be passed to parameter metadata. */
+    private final Map<Integer, ParameterConverter> parameterConverterMap = new HashMap<>();
+
+    /** Parameter positions. */
+    private final Map<Integer, SqlParserPos> parameterPositionMap = new HashMap<>();
 
     public HazelcastSqlValidator(
         SqlValidatorCatalogReader catalogReader,
@@ -173,6 +185,11 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
     @Override
     public void validateLiteral(SqlLiteral literal) {
         validateLiteral(literal, getValidatedNodeType(literal));
+    }
+
+    @Override
+    public void validateDynamicParam(SqlDynamicParam dynamicParam) {
+        parameterPositionMap.put(dynamicParam.getIndex(), dynamicParam.getParserPosition());
     }
 
     @Override
@@ -346,4 +363,31 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         return Util.last(names);
     }
 
+    public void setParamaterConverter(int ordinal, ParameterConverter parameterConverter) {
+        parameterConverterMap.put(ordinal, parameterConverter);
+    }
+
+    public ParameterConverter[] getParameterConverters(SqlNode node) {
+        // Get original parameter row type.
+        RelDataType rowType = getParameterRowType(node);
+
+        // Create precedence-based converters with optional override by a more specialized converters.
+        ParameterConverter[] res = new ParameterConverter[rowType.getFieldCount()];
+
+        for (int i = 0; i < res.length; i++) {
+            ParameterConverter converter = parameterConverterMap.get(i);
+
+            if (converter == null) {
+                converter = new PrecedenceParameterConverter(
+                    i,
+                    parameterPositionMap.get(i),
+                    SqlToQueryType.map(rowType.getFieldList().get(i).getType().getSqlTypeName())
+                );
+            }
+
+            res[i] = converter;
+        }
+
+        return res;
+    }
 }

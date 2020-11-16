@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
-import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlCallBinding;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.util.List;
-
-public interface HazelcastOperatorCoercion {
-
-    boolean coerce(HazelcastTypeCoercion coercion, SqlCallBinding binding, List<RelDataType> operandTypes);
+/**
+ * A common interface to enforce a certain restriction on passed parameters.
+ */
+public interface ParameterConverter {
+    Object convert(Object value);
+    QueryDataType type();
 }

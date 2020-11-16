@@ -18,12 +18,12 @@ package com.hazelcast.sql.impl.calcite.parse;
 
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.SqlBackend;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.util.SqlVisitor;
@@ -63,16 +63,13 @@ public class QueryParserTest {
     private SqlBackend jetSqlBackend;
 
     @Mock
-    private SqlValidator sqlValidator;
+    private HazelcastSqlValidator sqlValidator;
 
     @Mock
-    private SqlValidator jetSqlValidator;
+    private HazelcastSqlValidator jetSqlValidator;
 
     @Mock
     private SqlNode validatedNode;
-
-    @Mock
-    private RelDataType parameterRowType;
 
     @Mock
     private SqlVisitor<Void> unsupportedOperatorVisitor;
@@ -91,7 +88,6 @@ public class QueryParserTest {
     public void when_imdgCanHandleSql() {
         // given
         given(sqlValidator.validate(isA(SqlNode.class))).willReturn(validatedNode);
-        given(sqlValidator.getParameterRowType(validatedNode)).willReturn(parameterRowType);
         given(sqlBackend.unsupportedOperationVisitor(catalogReader)).willReturn(unsupportedOperatorVisitor);
 
         // when
@@ -99,7 +95,6 @@ public class QueryParserTest {
 
         // then
         assertEquals(validatedNode, result.getNode());
-        assertEquals(parameterRowType, result.getParameterRowType());
         assertEquals(sqlBackend, result.getSqlBackend());
         assertEquals(sqlValidator, result.getValidator());
 
@@ -124,7 +119,6 @@ public class QueryParserTest {
         given(sqlValidator.validate(isA(SqlNode.class))).willThrow(new CalciteException("expected test exception", null));
 
         given(jetSqlValidator.validate(isA(SqlNode.class))).willReturn(validatedNode);
-        given(jetSqlValidator.getParameterRowType(validatedNode)).willReturn(parameterRowType);
         given(jetSqlBackend.unsupportedOperationVisitor(catalogReader)).willReturn(unsupportedOperatorVisitor);
 
         // when
@@ -132,7 +126,6 @@ public class QueryParserTest {
 
         // then
         assertEquals(validatedNode, result.getNode());
-        assertEquals(parameterRowType, result.getParameterRowType());
         assertEquals(jetSqlBackend, result.getSqlBackend());
         assertEquals(jetSqlValidator, result.getValidator());
 

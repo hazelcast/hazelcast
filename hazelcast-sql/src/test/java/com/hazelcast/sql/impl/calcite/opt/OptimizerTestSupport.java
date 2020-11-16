@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt;
 
+import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlTestSupport;
@@ -34,6 +35,7 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
+import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
@@ -47,6 +49,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.parser.SqlParserPos;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -85,8 +88,19 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     private Result optimize(String sql, int nodeCount, boolean physical, QueryDataType... parameterTypes) {
         HazelcastSchema schema = createDefaultSchema();
 
-        QueryParameterMetadata parameterMetadata = parameterTypes == null || parameterTypes.length == 0
-            ? null : new QueryParameterMetadata(parameterTypes);
+        QueryParameterMetadata parameterMetadata;
+
+        if (parameterTypes == null) {
+            parameterMetadata = null;
+        } else {
+            ParameterConverter[] parameterConverters = new ParameterConverter[parameterTypes.length];
+
+            for (int i = 0; i < parameterTypes.length; i++) {
+                parameterConverters[i] = new StrictParameterConverter(0, SqlParserPos.ZERO, parameterTypes[i]);
+            }
+
+            parameterMetadata = new QueryParameterMetadata(parameterConverters);
+        }
 
         return optimize(sql, schema, nodeCount, physical, parameterMetadata);
     }

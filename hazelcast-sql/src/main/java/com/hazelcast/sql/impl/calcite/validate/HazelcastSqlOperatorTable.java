@@ -76,7 +76,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
  * Every operator must either have {@link HazelcastOperandTypes#wrap(SqlOperandTypeChecker)} as a top-level operand checker,
  * or implement the {@link SqlCallBindingManualOverride} interface. See {@link SqlCallBindingOverride} for more information.
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "checkstyle:ClassDataAbstractionCoupling"})
 public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable {
 
     //@formatter:off

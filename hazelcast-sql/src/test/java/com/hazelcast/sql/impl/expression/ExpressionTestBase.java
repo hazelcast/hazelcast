@@ -22,6 +22,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -35,6 +36,7 @@ import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -94,7 +96,6 @@ import java.util.concurrent.Future;
 import java.util.function.Function;
 
 import static com.hazelcast.sql.impl.calcite.SqlToQueryType.map;
-import static com.hazelcast.sql.impl.calcite.SqlToQueryType.mapRowType;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedence;
 import static java.util.Collections.emptyList;
@@ -644,7 +645,7 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
             QueryParseResult parseResult = optimizerContext.parse(query);
 
             SqlNode sqlNode = parseResult.getNode();
-            SqlValidator validator = parseResult.getValidator();
+            HazelcastSqlValidator validator = (HazelcastSqlValidator) parseResult.getValidator();
             assert sqlNode instanceof SqlSelect;
             if (trace != null) {
                 trace.append("parsed: ").append(sqlNode).append('\n');
@@ -709,7 +710,7 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
                 RexNode rexNode = project.getProjects().get(0);
                 assertEquals(expectedReturnType, rexNode.getType());
 
-                Expression<?> expression = convertToExpression(project, validator.getParameterRowType(sqlNode));
+                Expression<?> expression = convertToExpression(project, validator.getParameterConverters(sqlNode));
                 QueryDataType expectedReturnQueryType = map(expectedReturnType.getSqlTypeName());
                 QueryDataType actualReturnQueryType = expression.getType();
                 assertEquals(expectedReturnQueryType, actualReturnQueryType);
@@ -1114,11 +1115,11 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
         };
     }
 
-    private static Expression<?> convertToExpression(Project project, RelDataType parameterRowType) {
+    private static Expression<?> convertToExpression(Project project, ParameterConverter[] parameterConverters) {
         assert project.getProjects().size() == 1;
         RexNode rexNode = project.getProjects().get(0);
 
-        QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mapRowType(parameterRowType));
+        QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(parameterConverters);
         return rexNode.accept(new RexToExpressionVisitor(SCHEMA, parameterMetadata));
     }
 

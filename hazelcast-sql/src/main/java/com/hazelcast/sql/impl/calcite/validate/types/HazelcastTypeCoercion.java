@@ -20,14 +20,12 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastOperatorCoercion;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeFamily;
@@ -143,17 +141,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         }
 
         return coerced;
-    }
-
-    @Override
-    public boolean builtinFunctionCoercion(SqlCallBinding binding, List<RelDataType> operandTypes, List<SqlTypeFamily> expectedFamilies) {
-        SqlOperator operator = binding.getOperator();
-
-        if (operator instanceof HazelcastOperatorCoercion) {
-            return ((HazelcastOperatorCoercion) operator).coerce(this, binding, operandTypes);
-        }
-
-        return super.builtinFunctionCoercion(binding, operandTypes, expectedFamilies);
     }
 
     @Override
