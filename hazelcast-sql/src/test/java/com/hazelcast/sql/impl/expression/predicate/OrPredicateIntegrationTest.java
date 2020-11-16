@@ -24,6 +24,7 @@ import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanBigDecimal
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanBigIntegerVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanBooleanVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanByteVal;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanCharacterVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanDoubleVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanLocalDateTimeVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanLocalDateVal;
@@ -32,6 +33,7 @@ import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanLongVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanObjectVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanOffsetDateTimeVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanShortVal;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanStringVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.CharacterBooleanVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringBigDecimalVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringBigIntegerVal;
@@ -47,7 +49,6 @@ import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringLongVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringObjectVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringOffsetDateTimeVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringShortVal;
-import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringStringVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -90,17 +91,14 @@ public class OrPredicateIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkColumnColumn(new BooleanBooleanVal().fields(null, null), RES_NULL);
 
         // BOOLEAN/VARCHAR
-        checkColumnColumn(new StringBooleanVal().fields("true", true), RES_TRUE);
-        checkColumnColumn(new StringBooleanVal().fields("false", true), RES_TRUE);
-        checkColumnColumn(new StringBooleanVal().fields("false", false), RES_FALSE);
-        checkColumnColumnFailure(new StringBooleanVal().fields("bad", null), SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BOOLEAN");
-        checkColumnColumnFailure(new CharacterBooleanVal().fields('b', null), SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BOOLEAN");
+        checkColumnColumnFailure(new StringBooleanVal().fields("true", true), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, BOOLEAN] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new StringBooleanVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, BOOLEAN] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new CharacterBooleanVal().fields('t', null), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, BOOLEAN] to the 'OR' operator (consider adding an explicit CAST)");
 
-        // VARCHAR/VARCHAR
-        checkColumnColumn(new StringStringVal().fields("true", "true"), RES_TRUE);
-        checkColumnColumn(new StringStringVal().fields("false", "true"), RES_TRUE);
-        checkColumnColumn(new StringStringVal().fields("false", "false"), RES_FALSE);
-        checkColumnColumnFailure(new StringStringVal().fields("bad", null), SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BOOLEAN");
+        // VARCHAR/BOOLEAN
+        checkColumnColumnFailure(new BooleanStringVal().fields(true, "true"), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new BooleanStringVal().fields(null, "true"), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'OR' operator (consider adding an explicit CAST)");
+        checkColumnColumnFailure(new BooleanCharacterVal().fields(null, 't'), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'OR' operator (consider adding an explicit CAST)");
 
         // BOOLEAN/unsupported
         checkColumnColumnFailure(new BooleanByteVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TINYINT] to the 'OR' operator (consider adding an explicit CAST)");
@@ -137,7 +135,7 @@ public class OrPredicateIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkValue("this", "?", RES_TRUE, true);
         checkValue("this", "?", RES_FALSE, false);
         checkValue("this", "?", RES_NULL, new Object[] { null });
-        checkFailure("this", "?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to BOOLEAN", "bad");
+        checkFailure("this", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", "bad");
 
         // COLUMN/LITERAL
         checkValue("this", "true", RES_TRUE);
@@ -147,7 +145,7 @@ public class OrPredicateIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkValue("this", "'false'", RES_FALSE);
         checkFailure("this", "1", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TINYINT] to the 'OR' operator (consider adding an explicit CAST)");
         checkFailure("this", "1E0", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, DOUBLE] to the 'OR' operator (consider adding an explicit CAST)");
-        checkFailure("this", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'BOOLEAN'");
+        checkFailure("this", "'bad'", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'OR' operator (consider adding an explicit CAST)");
     }
 
     @Test
@@ -161,26 +159,22 @@ public class OrPredicateIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkValue("?", "?", RES_NULL, false, null);
         checkValue("?", "?", RES_NULL, null, null);
 
-        checkValue("?", "?", RES_TRUE, true, "true");
-        checkValue("?", "?", RES_TRUE, true, "false");
-        checkValue("?", "?", RES_TRUE, "true", "true");
-        checkValue("?", "?", RES_TRUE, "true", "false");
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", "true", true);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 1 must be of BOOLEAN type", true, "true");
 
-        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 1 from VARCHAR to BOOLEAN", true, "bad");
-
-        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from TINYINT to BOOLEAN", true, (byte) 1);
-        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from SMALLINT to BOOLEAN", true, (short) 1);
-        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from INTEGER to BOOLEAN", true, 1);
-        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from BIGINT to BOOLEAN", true, 1L);
-        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from DECIMAL to BOOLEAN", true, BigInteger.ONE);
-        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from DECIMAL to BOOLEAN", true, BigDecimal.ONE);
-        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from REAL to BOOLEAN", true, 1f);
-        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from DOUBLE to BOOLEAN", true, 1d);
-        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from DATE to BOOLEAN", true, LOCAL_DATE_VAL);
-        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from TIME to BOOLEAN", true, LOCAL_TIME_VAL);
-        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from TIMESTAMP to BOOLEAN", true, LOCAL_DATE_TIME_VAL);
-        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from TIMESTAMP_WITH_TIME_ZONE to BOOLEAN", true, OFFSET_DATE_TIME_VAL);
-        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from OBJECT to BOOLEAN", true, new ExpressionValue.ObjectVal());
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 1 must be of BOOLEAN type", true, (byte) 1);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 1 must be of BOOLEAN type", true, (short) 1);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 1 must be of BOOLEAN type", true, 1);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 1 must be of BOOLEAN type", true, 1L);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 1 must be of BOOLEAN type", true, BigInteger.ONE);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 1 must be of BOOLEAN type", true, BigDecimal.ONE);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 1 must be of BOOLEAN type", true, 1f);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 1 must be of BOOLEAN type", true, 1d);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 1 must be of BOOLEAN type", true, LOCAL_DATE_VAL);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 1 must be of BOOLEAN type", true, LOCAL_TIME_VAL);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 1 must be of BOOLEAN type", true, LOCAL_DATE_TIME_VAL);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 1 must be of BOOLEAN type", true, OFFSET_DATE_TIME_VAL);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 1 must be of BOOLEAN type", true, new ExpressionValue.ObjectVal());
 
         checkValue("?", "true", RES_TRUE, true);
         checkValue("?", "true", RES_TRUE, false);
@@ -196,25 +190,7 @@ public class OrPredicateIntegrationTest extends SqlExpressionIntegrationTestSupp
 
         checkFailure("?", "1", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TINYINT] to the 'OR' operator (consider adding an explicit CAST)", true);
         checkFailure("?", "1E0", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, DOUBLE] to the 'OR' operator (consider adding an explicit CAST)", true);
-        checkFailure("?", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'BOOLEAN'", true);
-    }
-
-    @Test
-    public void test_literal() {
-        put(1);
-
-        checkValue("true", "true", RES_TRUE);
-        checkValue("true", "false", RES_TRUE);
-        checkValue("true", "null", RES_TRUE);
-        checkValue("false", "false", RES_FALSE);
-        checkValue("false", "null", RES_NULL);
-        checkValue("null", "null", RES_NULL);
-
-        checkValue("true", "'false'", RES_TRUE);
-
-        checkFailure("true", "1", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TINYINT] to the 'OR' operator (consider adding an explicit CAST)");
-        checkFailure("true", "1E0", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, DOUBLE] to the 'OR' operator (consider adding an explicit CAST)");
-        checkFailure("true", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'BOOLEAN'");
+        checkFailure("?", "'bad'", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'OR' operator (consider adding an explicit CAST)", true);
     }
 
     private void checkColumnColumn(ExpressionBiValue value, Boolean expectedValue) {

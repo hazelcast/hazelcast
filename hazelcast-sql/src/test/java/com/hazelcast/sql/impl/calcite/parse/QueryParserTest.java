@@ -28,7 +28,6 @@ import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
-import org.apache.calcite.sql.validate.SqlValidator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

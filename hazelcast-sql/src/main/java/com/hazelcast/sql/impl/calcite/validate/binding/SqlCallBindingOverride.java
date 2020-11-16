@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.validate.binding;
 
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.runtime.CalciteException;
@@ -44,6 +45,11 @@ import static com.hazelcast.sql.impl.calcite.validate.HazelcastResources.RESOURC
 public class SqlCallBindingOverride extends SqlCallBinding {
     public SqlCallBindingOverride(SqlCallBinding binding) {
         super(binding.getValidator(), binding.getScope(), binding.getCall());
+    }
+
+    @Override
+    public HazelcastSqlValidator getValidator() {
+        return (HazelcastSqlValidator) super.getValidator();
     }
 
     @Override

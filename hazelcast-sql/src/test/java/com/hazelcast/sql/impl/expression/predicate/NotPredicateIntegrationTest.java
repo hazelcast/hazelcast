@@ -108,25 +108,23 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         check("?", false, true);
         check("?", true, false);
 
-        // TODO: Set inference strategy for parameters!
-        check("?", true, "false");
-        check("?", false, "true");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to BOOLEAN", "bad");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to BOOLEAN", 'b');
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TINYINT to BOOLEAN", (byte) 0);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from SMALLINT to BOOLEAN", (short) 0);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to BOOLEAN", 0);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BIGINT to BOOLEAN", 0L);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BOOLEAN", BigInteger.ZERO);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BOOLEAN", BigDecimal.ZERO);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to BOOLEAN", 0f);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to BOOLEAN", 0d);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to BOOLEAN", LOCAL_DATE_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to BOOLEAN", LOCAL_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to BOOLEAN", LOCAL_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to BOOLEAN", OFFSET_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to BOOLEAN", new ExpressionValue.ObjectVal());
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", "false");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", "true");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", "bad");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", 'b');
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", (byte) 0);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", (short) 0);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", 0);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", 0L);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", BigInteger.ZERO);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", BigDecimal.ZERO);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", 0f);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", 0d);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", LOCAL_DATE_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", LOCAL_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", LOCAL_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", OFFSET_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", new ExpressionValue.ObjectVal());
     }
 
     @Test

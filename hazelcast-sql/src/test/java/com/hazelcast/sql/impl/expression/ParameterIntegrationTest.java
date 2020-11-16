@@ -36,16 +36,15 @@ import static com.hazelcast.sql.SqlColumnType.REAL;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ParameterIntegrationTest extends ExpressionIntegrationTestBase {
-
     @Test
     public void testBoolean() {
         assertRow("booleanTrue and ?", EXPR0, BOOLEAN, false, false);
         assertRow("booleanTrue and ?", EXPR0, BOOLEAN, true, true);
-        assertRow("booleanTrue and ?", EXPR0, BOOLEAN, true, "tRuE");
-        assertRow("booleanTrue and ? and ?", EXPR0, BOOLEAN, false, "tRuE", false);
-        assertRow("? and ? and ?", EXPR0, BOOLEAN, true, "tRuE", true, "true");
-        assertDataError("booleanTrue and ?", "failed to convert parameter", "foo");
-        assertDataError("booleanTrue and ?", "Cannot implicitly convert parameter at position 0 from INTEGER to BOOLEAN", 1);
+        assertDataError("booleanTrue and ?", "Parameter at position 0 must be of BOOLEAN type", "tRuE");
+        assertDataError("booleanTrue and ? and ?", "Parameter at position 0 must be of BOOLEAN type", "tRuE", false);
+        assertDataError("? and ? and ?", "Parameter at position 0 must be of BOOLEAN type", "tRuE", false, "true");
+        assertDataError("booleanTrue and ?", "Parameter at position 0 must be of BOOLEAN type", "foo");
+        assertDataError("booleanTrue and ?", "Parameter at position 0 must be of BOOLEAN type", 1);
     }
 
     @Test

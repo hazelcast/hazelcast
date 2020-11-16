@@ -32,7 +32,10 @@ public class StrictParameterConverter extends AbstractParameterConverter {
         if (type.getTypeFamily() != valueConverter.getTypeFamily()) {
             throw QueryException.error(
                 SqlErrorCode.DATA_EXCEPTION,
-                withContext("Parameter at position " + ordinal + " must be of " + type.getTypeFamily().getPublicType() + " type")
+                withContext(
+                    "Parameter at position " + ordinal + " must be of " + type.getTypeFamily().getPublicType()
+                        + " type (consider adding an explicit CAST)"
+                )
             );
         }
     }

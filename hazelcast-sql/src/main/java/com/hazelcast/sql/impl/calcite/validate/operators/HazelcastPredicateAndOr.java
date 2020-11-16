@@ -16,36 +16,34 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operand.BooleanOperandChecker;
 import org.apache.calcite.sql.SqlBinaryOperator;
+import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.InferTypes;
-import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
+import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.util.Litmus;
 
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.wrap;
+public final class HazelcastPredicateAndOr extends SqlBinaryOperator implements SqlCallBindingManualOverride {
 
-public class HazelcastAndOrPredicateOperator extends SqlBinaryOperator {
-
-    public static HazelcastAndOrPredicateOperator AND = new HazelcastAndOrPredicateOperator(
+    public static final HazelcastPredicateAndOr AND = new HazelcastPredicateAndOr(
         "AND",
         SqlKind.AND,
         SqlStdOperatorTable.AND.getLeftPrec()
     );
 
-    public static final SqlBinaryOperator OR = new HazelcastAndOrPredicateOperator(
+    public static final SqlBinaryOperator OR = new HazelcastPredicateAndOr(
         "OR",
         SqlKind.OR,
         SqlStdOperatorTable.OR.getLeftPrec()
     );
 
-    private HazelcastAndOrPredicateOperator(
-        String name,
-        SqlKind kind,
-        int prec
-    ) {
+    private HazelcastPredicateAndOr(String name, SqlKind kind, int prec) {
         super(
             name,
             kind,
@@ -53,8 +51,31 @@ public class HazelcastAndOrPredicateOperator extends SqlBinaryOperator {
             true,
             ReturnTypes.BOOLEAN_NULLABLE,
             InferTypes.BOOLEAN,
-            wrap(notAny(OperandTypes.BOOLEAN_BOOLEAN))
+            null
         );
+    }
+
+    @SuppressWarnings("checkstyle:NestedIfDepth")
+    @Override
+    public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
+        SqlCallBindingOverride callBinding0 = new SqlCallBindingOverride(callBinding);
+
+        boolean res = true;
+
+        for (int i = 0; i < callBinding.getOperandCount(); i++) {
+            boolean operandRes = BooleanOperandChecker.INSTANCE.check(callBinding0, throwOnFailure, i);
+
+            if (!operandRes) {
+                res = false;
+            }
+        }
+
+        return res;
+    }
+
+    @Override
+    public SqlOperandCountRange getOperandCountRange() {
+        return SqlOperandCountRanges.from(2);
     }
 
     @Override

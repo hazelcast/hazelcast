@@ -312,7 +312,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         }
     }
 
-    private void setKnownAndValidatedNodeType(SqlNode node, RelDataType type) {
+    public void setKnownAndValidatedNodeType(SqlNode node, RelDataType type) {
         setKnownNodeType(node, type);
         setValidatedNodeType(node, type);
     }
@@ -363,7 +363,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         return Util.last(names);
     }
 
-    public void setParamaterConverter(int ordinal, ParameterConverter parameterConverter) {
+    public void setParameterConverter(int ordinal, ParameterConverter parameterConverter) {
         parameterConverterMap.put(ordinal, parameterConverter);
     }
 

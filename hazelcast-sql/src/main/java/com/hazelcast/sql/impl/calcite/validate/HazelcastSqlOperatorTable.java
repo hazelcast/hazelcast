@@ -18,9 +18,9 @@ package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastAndOrPredicateOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPredicateAndOr;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDoubleFunction;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastNotPredicateOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPredicateNot;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDivideOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlFloorFunction;
@@ -86,9 +86,9 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#region Predicates.
 
-    public static final SqlBinaryOperator AND = HazelcastAndOrPredicateOperator.AND;
-    public static final SqlBinaryOperator OR = HazelcastAndOrPredicateOperator.OR;
-    public static final SqlPrefixOperator NOT = new HazelcastNotPredicateOperator();
+    public static final SqlBinaryOperator AND = HazelcastPredicateAndOr.AND;
+    public static final SqlBinaryOperator OR = HazelcastPredicateAndOr.OR;
+    public static final SqlPrefixOperator NOT = new HazelcastPredicateNot();
 
     //#endregion
 
