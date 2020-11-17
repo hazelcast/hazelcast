@@ -119,6 +119,7 @@
         <spring.version>4.3.0.RELEASE</spring.version>
         <avro.version>1.8.2</avro.version>
         <scala.version>2.12</scala.version>
+        <zookeeper.version>3.5.8</zookeeper.version>
         <kafka.version>2.2.0</kafka.version>
         <grpc.version>1.31.0</grpc.version>
         <protobuf.version>3.13.0</protobuf.version>
