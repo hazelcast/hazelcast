@@ -459,7 +459,7 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
         put(1);
 
         // Exact numeric literal
-        check("?", "1", RES_NULL, new Object[] { null });
+        check("?", "null", RES_NULL, new Object[] { null });
 
         check("?", "1", RES_LT, (byte) 0);
         check("?", "1", RES_EQ, (byte) 1);

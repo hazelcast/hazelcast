@@ -16,13 +16,14 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
+import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteralFunction;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastComparisonOperator;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPredicateAndOr;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDoubleFunction;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPredicateNot;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDivideOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDoubleFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPredicateAndOr;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPredicateComparison;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPredicateNot;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlFloorFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlLikeOperator;
@@ -95,12 +96,12 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#region Comparison operators.
 
-    public static final SqlBinaryOperator EQUALS = HazelcastComparisonOperator.EQUALS;
-    public static final SqlBinaryOperator NOT_EQUALS = HazelcastComparisonOperator.NOT_EQUALS;
-    public static final SqlBinaryOperator GREATER_THAN = HazelcastComparisonOperator.GREATER_THAN;
-    public static final SqlBinaryOperator GREATER_THAN_OR_EQUAL = HazelcastComparisonOperator.GREATER_THAN_OR_EQUAL;
-    public static final SqlBinaryOperator LESS_THAN = HazelcastComparisonOperator.LESS_THAN;
-    public static final SqlBinaryOperator LESS_THAN_OR_EQUAL = HazelcastComparisonOperator.LESS_THAN_OR_EQUAL;
+    public static final SqlBinaryOperator EQUALS = HazelcastPredicateComparison.EQUALS;
+    public static final SqlBinaryOperator NOT_EQUALS = HazelcastPredicateComparison.NOT_EQUALS;
+    public static final SqlBinaryOperator GREATER_THAN = HazelcastPredicateComparison.GREATER_THAN;
+    public static final SqlBinaryOperator GREATER_THAN_OR_EQUAL = HazelcastPredicateComparison.GREATER_THAN_OR_EQUAL;
+    public static final SqlBinaryOperator LESS_THAN = HazelcastPredicateComparison.LESS_THAN;
+    public static final SqlBinaryOperator LESS_THAN_OR_EQUAL = HazelcastPredicateComparison.LESS_THAN_OR_EQUAL;
 
     //#endregion
 
@@ -380,6 +381,11 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
         @Override
         public Void visit(SqlCall call) {
+            // Do not rewrite literals
+            if (call.getOperator() == HazelcastSqlLiteralFunction.INSTANCE) {
+                return null;
+            }
+
             rewriteCall(call);
 
             return super.visit(call);

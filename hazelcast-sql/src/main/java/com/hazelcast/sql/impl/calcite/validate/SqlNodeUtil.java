@@ -111,6 +111,7 @@ public final class SqlNodeUtil {
      *                                 that doesn't have a valid numeric
      *                                 representation.
      */
+    // TODO: Remove candidate
     public static Number numericValue(SqlNode node) {
         if (node.getKind() != SqlKind.LITERAL) {
             return null;
@@ -152,12 +153,20 @@ public final class SqlNodeUtil {
     }
 
     public static RelDataType createType(RelDataTypeFactory typeFactory, SqlTypeName typeName, boolean nullable) {
-        RelDataType res = typeFactory.createSqlType(typeName);
+        RelDataType type = typeFactory.createSqlType(typeName);
 
         if (nullable) {
-            res = typeFactory.createTypeWithNullability(res, true);
+            type = createNullableType(typeFactory, type);
         }
 
-        return res;
+        return type;
+    }
+
+    public static RelDataType createNullableType(RelDataTypeFactory typeFactory, RelDataType type) {
+        if (!type.isNullable()) {
+            type = typeFactory.createTypeWithNullability(type, true);
+        }
+
+        return type;
     }
 }

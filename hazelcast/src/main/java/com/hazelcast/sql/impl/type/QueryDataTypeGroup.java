@@ -14,26 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operand;
+package com.hazelcast.sql.impl.type;
 
-import org.apache.calcite.rel.type.RelDataType;
-
-public final class LiteralValue {
-
-    private final RelDataType type;
-    private final Object value;
-
-    LiteralValue(RelDataType type, Object value) {
-        this.value = value;
-        this.type = type;
-    }
-
-    public RelDataType getType() {
-        return type;
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> T getValue() {
-        return (T) value;
-    }
+public enum QueryDataTypeGroup {
+    NULL,
+    BOOLEAN,
+    VARCHAR,
+    NUMERIC,
+    TIME,
+    DATE,
+    TIMESTAMP,
+    TIMESTAMP_WITH_TIME_ZONE,
+    OBJECT
 }

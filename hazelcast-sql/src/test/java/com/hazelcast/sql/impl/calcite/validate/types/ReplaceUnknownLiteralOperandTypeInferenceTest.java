@@ -30,7 +30,7 @@ import static junit.framework.TestCase.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ReplaceUnknownOperandTypeInferenceTest extends InferTypesTestSupport {
+public class ReplaceUnknownLiteralOperandTypeInferenceTest extends InferTypesTestSupport {
 
     private static final SqlCallBinding BINDING = createBinding();
     private static final RelDataType RETURN_TYPE = type(SqlTypeName.BIGINT);

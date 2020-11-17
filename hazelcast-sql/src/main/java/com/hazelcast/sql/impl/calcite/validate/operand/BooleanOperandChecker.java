@@ -16,17 +16,18 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operand;
 
-import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.sql.impl.ParameterConverter;
+import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
+import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteralFunction;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 
@@ -44,11 +45,17 @@ public final class BooleanOperandChecker implements OperandChecker {
 
         SqlNode operand = callBinding.operand(i);
 
-        if (operand.getKind() == SqlKind.LITERAL) {
-            return checkLiteral(validator, callBinding, throwOnFailure, i, (SqlLiteral) operand);
-        } else if (operand.getKind() == SqlKind.DYNAMIC_PARAM) {
+        if (operand.getKind() == SqlKind.DYNAMIC_PARAM) {
             return checkParameter(validator, (SqlDynamicParam) operand);
         } else {
+            if (operand instanceof SqlBasicCall) {
+                SqlBasicCall operandCall = (SqlBasicCall) operand;
+
+                if (operandCall.getOperator() == HazelcastSqlLiteralFunction.INSTANCE) {
+                    return checkLiteral(callBinding, throwOnFailure, operandCall.operand(0));
+                }
+            }
+
             RelDataType operandType = validator.deriveType(callBinding.getScope(), operand);
 
             if (operandType.getSqlTypeName() == SqlTypeName.BOOLEAN) {
@@ -64,43 +71,19 @@ public final class BooleanOperandChecker implements OperandChecker {
     }
 
     private boolean checkLiteral(
-        HazelcastSqlValidator validator,
         SqlCallBindingOverride callBinding,
         boolean throwOnFailure,
-        int operandIndex,
-        SqlLiteral operand
+        HazelcastSqlLiteral operand
     ) {
-        BiTuple<Boolean, Boolean> value = SqlNodeUtil.booleanValue(operand);
-
-        if (value.element1()) {
-            // We were able to cast the literal to BOOLEAN value. Validation will definitely succeed
-            if (operand.getTypeName() != SqlTypeName.BOOLEAN) {
-                // If the original operand type is not BOOLEAN, then mark it as BOOLEAN forcefully
-                // For example, this is needed for ['true'] literal that is originally handled as VARCHAR
-                boolean nullable = value.element2() == null;
-
-                operand = nullable ? SqlLiteral.createUnknown(operand.getParserPosition())
-                    : SqlLiteral.createBoolean(value.element2(), operand.getParserPosition());
-
-                RelDataType booleanType = SqlNodeUtil.createType(
-                    validator.getTypeFactory(),
-                    SqlTypeName.BOOLEAN,
-                    nullable
-                );
-
-                callBinding.getCall().setOperand(operandIndex, operand);
-
-                validator.setKnownAndValidatedNodeType(operand, booleanType);
-            }
-
+        if (operand.getTypeName() == SqlTypeName.BOOLEAN || operand.getTypeName() == SqlTypeName.NULL) {
             return true;
+        }
+
+        // Cannot convert the literal to BOOLEAN, validation fails
+        if (throwOnFailure) {
+            throw callBinding.newValidationSignatureError();
         } else {
-            // Cannot convert the literal to BOOLEAN, validation fails
-            if (throwOnFailure) {
-                throw callBinding.newValidationSignatureError();
-            } else {
-                return false;
-            }
+            return false;
         }
     }
 

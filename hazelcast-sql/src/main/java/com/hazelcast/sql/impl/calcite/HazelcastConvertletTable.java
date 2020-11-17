@@ -14,26 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operand;
+package com.hazelcast.sql.impl.calcite;
 
-import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql2rel.SqlRexConvertlet;
+import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 
-public final class LiteralValue {
+public class HazelcastConvertletTable implements SqlRexConvertletTable {
 
-    private final RelDataType type;
-    private final Object value;
+    private final SqlRexConvertletTable delegate;
 
-    LiteralValue(RelDataType type, Object value) {
-        this.value = value;
-        this.type = type;
+    public HazelcastConvertletTable(SqlRexConvertletTable delegate) {
+        this.delegate = delegate;
     }
 
-    public RelDataType getType() {
-        return type;
-    }
+    @Override
+    public SqlRexConvertlet get(SqlCall call) {
+        if (call.getOperator() instanceof SqlRexConvertlet) {
+            return (SqlRexConvertlet) call.getOperator();
+        }
 
-    @SuppressWarnings("unchecked")
-    public <T> T getValue() {
-        return (T) value;
+        return delegate.get(call);
     }
 }

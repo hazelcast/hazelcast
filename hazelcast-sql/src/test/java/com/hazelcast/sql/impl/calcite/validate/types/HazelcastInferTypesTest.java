@@ -43,48 +43,6 @@ import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class HazelcastInferTypesTest extends InferTypesTestSupport {
     @Test
-    public void testFirstKnown() {
-        //@formatter:off
-        assertInference(
-                "1 = 1", FIRST_KNOWN,
-                HazelcastIntegerType.of(1, false), HazelcastIntegerType.of(1, false),
-                HazelcastIntegerType.of(1, false), HazelcastIntegerType.of(1, false)
-        );
-        //@formatter:on
-
-        //@formatter:off
-        assertInference(
-                "null = 10", FIRST_KNOWN,
-                TYPE_FACTORY.createSqlType(NULL), HazelcastIntegerType.of(bitWidthOf(10), false),
-                HazelcastIntegerType.of(bitWidthOf(10), false), HazelcastIntegerType.of(bitWidthOf(10), false)
-        );
-        assertInference(
-                "10 = null", FIRST_KNOWN,
-                HazelcastIntegerType.of(bitWidthOf(10), false), TYPE_FACTORY.createSqlType(NULL),
-                HazelcastIntegerType.of(bitWidthOf(10), false), HazelcastIntegerType.of(bitWidthOf(10), false)
-        );
-        assertInference(
-                "null = null", FIRST_KNOWN,
-                TYPE_FACTORY.createSqlType(NULL), TYPE_FACTORY.createSqlType(NULL),
-                null, null
-        );
-        //@formatter:on
-
-        //@formatter:off
-        assertInference(
-                "1 = ?", FIRST_KNOWN,
-                TYPE_FACTORY.createSqlType(TINYINT), null,
-                HazelcastIntegerType.of(BIGINT, false), HazelcastIntegerType.of(BIGINT, false)
-        );
-        assertInference(
-                "? = 1", FIRST_KNOWN,
-                null, TYPE_FACTORY.createSqlType(TINYINT),
-                HazelcastIntegerType.of(BIGINT, false), HazelcastIntegerType.of(BIGINT, false)
-        );
-        //@formatter:on
-    }
-
-    @Test
     public void testExplicit() {
         SqlOperandTypeInference inference = HazelcastInferTypes.explicitSingle(SqlTypeName.INTEGER);
 

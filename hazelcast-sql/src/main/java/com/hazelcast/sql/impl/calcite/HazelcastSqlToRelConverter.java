@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite;
 
+import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
+import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteralFunction;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BooleanConverter;
 import com.hazelcast.sql.impl.type.converter.Converter;
@@ -26,6 +28,7 @@ import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
@@ -70,6 +73,12 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return convertLiteral((SqlLiteral) node);
         } else if (node.getKind() == SqlKind.CAST) {
             return convertCast((SqlCall) node, blackboard);
+        } else if (node instanceof SqlBasicCall) {
+            SqlBasicCall call = (SqlBasicCall) node;
+
+            if (call.getOperator() == HazelcastSqlLiteralFunction.INSTANCE) {
+                return convertLiteralFunction(call);
+            }
         }
 
         return null;
@@ -132,6 +141,17 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
         // also removes the cast if it's not required
         return getRexBuilder().makeCast(to, operand);
+    }
+
+    private RexNode convertLiteralFunction(SqlBasicCall call) {
+        RelDataType targetType = validator.getValidatedNodeType(call);
+        HazelcastSqlLiteral literal = call.operand(0);
+
+        SqlLiteral originalLiteral = literal.getOriginal();
+
+        RexNode res = rexBuilder.makeLiteral(originalLiteral.getValue(), targetType, true);
+
+        return res;
     }
 
     @SuppressWarnings("UnpredictableBigDecimalConstructorCall")

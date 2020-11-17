@@ -26,6 +26,7 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorException;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
@@ -88,9 +89,18 @@ public class SqlCallBindingOverride extends SqlCallBinding {
 
         for (SqlNode operand : call.getOperandList()) {
             RelDataType calciteType = validator.deriveType(scope, operand);
-            QueryDataType hazelcastType = SqlToQueryType.map(calciteType.getSqlTypeName());
 
-            res.add(hazelcastType.getTypeFamily().getPublicType().name());
+            String typeName;
+
+            if (calciteType.getSqlTypeName() == SqlTypeName.NULL) {
+                typeName = validator.getUnknownType().toString();
+            } else {
+                QueryDataType hazelcastType = SqlToQueryType.map(calciteType.getSqlTypeName());
+
+                typeName = hazelcastType.getTypeFamily().getPublicType().name();
+            }
+
+            res.add(typeName);
         }
 
         return res.toString();

@@ -18,12 +18,15 @@ package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
+import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
+import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteralFunction;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.param.PrecedenceParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -205,16 +208,35 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
     protected SqlNode performUnconditionalRewrites(SqlNode node, boolean underFrom) {
         SqlNode rewritten = super.performUnconditionalRewrites(node, underFrom);
 
-        if (rewritten != null && rewritten.isA(SqlKind.TOP_LEVEL)) {
-            // Rewrite operators to Hazelcast ones starting at every top node.
-            // For instance, SELECT a + b is rewritten to SELECT a + b, where
-            // the first '+' refers to the standard Calcite SqlStdOperatorTable.PLUS
-            // operator and the second '+' refers to HazelcastSqlOperatorTable.PLUS
-            // operator.
-            rewritten.accept(rewriteVisitor);
+        if (rewritten != null) {
+            if (rewritten.isA(SqlKind.TOP_LEVEL)) {
+                // Rewrite operators to Hazelcast ones starting at every top node.
+                // For instance, SELECT a + b is rewritten to SELECT a + b, where
+                // the first '+' refers to the standard Calcite SqlStdOperatorTable.PLUS
+                // operator and the second '+' refers to HazelcastSqlOperatorTable.PLUS
+                // operator.
+
+                rewritten.accept(rewriteVisitor);
+            } else if (node.getKind() == SqlKind.LITERAL) {
+                // TODO: This may disable RexSimplify optimizations. Double-check when exactly the simplification is called.
+                HazelcastSqlLiteral converted = HazelcastSqlLiteral.convert((SqlLiteral) rewritten);
+
+                if (converted != null) {
+                    rewritten = new SqlBasicCall(
+                        HazelcastSqlLiteralFunction.INSTANCE,
+                        new SqlNode[] { converted },
+                        rewritten.getParserPosition()
+                    );
+                }
+            }
         }
 
         return rewritten;
+    }
+
+    @Override
+    public HazelcastTypeCoercion getTypeCoercion() {
+        return (HazelcastTypeCoercion) super.getTypeCoercion();
     }
 
     private RelDataType deriveLiteralType(RelDataType derived, SqlNode expression) {
@@ -295,6 +317,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         return derived;
     }
 
+    // TODO: Remove?
     private void validateLiteral(SqlLiteral literal, RelDataType type) {
         SqlTypeName literalTypeName = literal.getTypeName();
 

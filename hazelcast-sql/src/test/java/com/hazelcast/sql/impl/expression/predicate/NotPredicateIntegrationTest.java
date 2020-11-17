@@ -135,8 +135,8 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         check("false", true);
         check("null", null);
 
-        check("'true'", false);
-        check("'false'", true);
+        checkFailure("'true'", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'NOT' operator (consider adding an explicit CAST)");
+        checkFailure("'false'", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'NOT' operator (consider adding an explicit CAST)");
         checkFailure("'bad'", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'NOT' operator (consider adding an explicit CAST)");
         checkFailure("1", SqlErrorCode.PARSING, "Cannot apply [TINYINT] to the 'NOT' operator (consider adding an explicit CAST)");
         checkFailure("1E0", SqlErrorCode.PARSING, "Cannot apply [DOUBLE] to the 'NOT' operator (consider adding an explicit CAST)");
@@ -178,110 +178,6 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         assertEquals(1, row.getMetadata().getColumnCount());
         assertEquals(SqlColumnType.BOOLEAN, row.getMetadata().getColumn(0).getType());
         assertEquals(expectedResult, row.getObject(0));
-    }
-
-    @Test
-    public void testLiteral() {
-        Class<? extends ExpressionValue> clazz = ExpressionValue.createClass(INTEGER);
-
-        int key = 0;
-        ExpressionValue value = ExpressionValue.create(clazz, 0, 1);
-
-        put(key, value);
-
-        // TRUE literal
-        checkLiteral("TRUE", "IS TRUE", true);
-        checkLiteral("true", "IS TRUE", true);
-        checkLiteral("'TRUE'", "IS TRUE", true);
-        checkLiteral("'true'", "IS TRUE", true);
-
-        checkLiteral("TRUE", "IS FALSE", false);
-
-        checkLiteral("true", "IS FALSE", false);
-        checkLiteral("'TRUE'", "IS FALSE", false);
-        checkLiteral("'true'", "IS FALSE", false);
-
-        checkLiteral("TRUE", "IS NOT TRUE", false);
-        checkLiteral("true", "IS NOT TRUE", false);
-        checkLiteral("'TRUE'", "IS NOT TRUE", false);
-        checkLiteral("'true'", "IS NOT TRUE", false);
-
-        checkLiteral("TRUE", "IS NOT FALSE", true);
-        checkLiteral("true", "IS NOT FALSE", true);
-        checkLiteral("'TRUE'", "IS NOT FALSE", true);
-        checkLiteral("'true'", "IS NOT FALSE", true);
-
-        // False literal
-        checkLiteral("FALSE", "IS TRUE", false);
-        checkLiteral("false", "IS TRUE", false);
-        checkLiteral("'FALSE'", "IS TRUE", false);
-        checkLiteral("'false'", "IS TRUE", false);
-
-        checkLiteral("FALSE", "IS FALSE", true);
-        checkLiteral("false", "IS FALSE", true);
-        checkLiteral("'FALSE'", "IS FALSE", true);
-        checkLiteral("'false'", "IS FALSE", true);
-
-        checkLiteral("FALSE", "IS NOT TRUE", true);
-        checkLiteral("false", "IS NOT TRUE", true);
-        checkLiteral("'FALSE'", "IS NOT TRUE", true);
-        checkLiteral("'false'", "IS NOT TRUE", true);
-
-        checkLiteral("FALSE", "IS NOT FALSE", false);
-        checkLiteral("false", "IS NOT FALSE", false);
-        checkLiteral("'FALSE'", "IS NOT FALSE", false);
-        checkLiteral("'false'", "IS NOT FALSE", false);
-
-        // NULL literal
-        checkLiteral("NULL", "IS TRUE", false);
-        checkLiteral("null", "IS TRUE", false);
-
-        checkLiteral("NULL", "IS FALSE", false);
-        checkLiteral("null", "IS FALSE", false);
-
-        checkLiteral("NULL", "IS NOT TRUE", true);
-        checkLiteral("null", "IS NOT TRUE", true);
-
-        checkLiteral("NULL", "IS NOT FALSE", true);
-        checkLiteral("null", "IS NOT FALSE", true);
-
-        // Bad literal
-        checkBadLiteral("IS TRUE");
-        checkBadLiteral("IS FALSE");
-        checkBadLiteral("IS NOT TRUE");
-        checkBadLiteral("IS NOT FALSE");
-    }
-
-    private void checkLiteral(String literal, String function, boolean expectedResult) {
-        String expression = literal + " " + function;
-        String sql = "SELECT " + expression + " FROM map WHERE " + expression;
-
-        List<SqlRow> rows = execute(member, sql);
-
-        if (expectedResult) {
-            assertEquals(1, rows.size());
-
-            SqlRow row = rows.get(0);
-
-            assertEquals(SqlColumnType.BOOLEAN, row.getMetadata().getColumn(0).getType());
-            assertTrue(row.getObject(0));
-        } else {
-            assertEquals(0, rows.size());
-        }
-    }
-
-    private void checkBadLiteral(String function) {
-        checkFailureInternal(
-            "SELECT * FROM map WHERE 'bad' " + function,
-            SqlErrorCode.PARSING,
-            "Literal ''bad'' can not be parsed to type 'BOOLEAN'"
-        );
-
-        checkFailureInternal(
-            "SELECT 'bad' " + function + " FROM map",
-            SqlErrorCode.PARSING,
-            "Literal ''bad'' can not be parsed to type 'BOOLEAN'"
-        );
     }
 
     @Test

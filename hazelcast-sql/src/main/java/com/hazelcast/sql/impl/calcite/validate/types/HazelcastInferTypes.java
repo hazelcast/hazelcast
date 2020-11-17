@@ -39,6 +39,7 @@ public final class HazelcastInferTypes {
      * The same as Calcite's {@link InferTypes#FIRST_KNOWN}, but doesn't consider
      * NULL as a known type and widens integer types to BIGINT for dynamic parameters.
      */
+    // TODO: Delete cadidate
     public static final SqlOperandTypeInference FIRST_KNOWN = (binding, returnType, operandTypes) -> {
         // NOTE: Calcite validator's unknown type has NULL SqlTypeName.
 
