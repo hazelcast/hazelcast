@@ -17,6 +17,7 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
@@ -52,6 +53,13 @@ public class DirtyBackupTest extends PartitionCorrectnessTestSupport {
                 {2, 3},
                 {3, 4},
         });
+    }
+
+    @Override
+    protected Config getConfig() {
+        // Partition count is overwritten back to PartitionCorrectnessTestSupport.partitionCount
+        // in PartitionCorrectnessTestSupport.getConfig(boolean, boolean).
+        return smallInstanceConfig();
     }
 
     @Test
