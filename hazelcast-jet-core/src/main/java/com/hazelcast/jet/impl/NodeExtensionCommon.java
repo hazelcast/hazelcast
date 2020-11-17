@@ -81,6 +81,7 @@ class NodeExtensionCommon {
 
     void printNodeInfo(ILogger log, String addToProductName) {
         log.info(versionAndAddressMessage(addToProductName));
+        log.info(imdgVersionMessage());
         log.info(clusterNameMessage());
         log.fine(serializationVersionMessage());
         log.info('\n' + JET_LOGO);
@@ -96,6 +97,15 @@ class NodeExtensionCommon {
         }
         return "Hazelcast Jet" + addToName + ' ' + jetBuildInfo.getVersion() +
                 " (" + build + ") starting at " + node.getThisAddress();
+    }
+
+    private String imdgVersionMessage() {
+        String build = node.getBuildInfo().getBuild();
+        String revision = node.getBuildInfo().getRevision();
+        if (!revision.isEmpty()) {
+            build += " - " + revision;
+        }
+        return "Based on Hazelcast IMDG version: " + node.getVersion() + " (" + build + ")";
     }
 
     private String serializationVersionMessage() {
