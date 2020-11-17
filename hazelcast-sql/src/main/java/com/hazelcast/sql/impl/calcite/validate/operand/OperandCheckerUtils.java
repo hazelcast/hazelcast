@@ -16,24 +16,21 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operand;
 
-import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.sql.SqlBasicCall;
+import org.apache.calcite.sql.SqlNode;
 
-public final class LiteralValue {
-
-    private final RelDataType type;
-    private final Object value;
-
-    LiteralValue(RelDataType type, Object value) {
-        this.value = value;
-        this.type = type;
+public final class OperandCheckerUtils {
+    private OperandCheckerUtils() {
+        // No-op.
     }
 
-    public RelDataType getType() {
-        return type;
-    }
+    public static SqlBasicCall asLiteral(SqlNode operand) {
+        if (operand instanceof SqlBasicCall) {
+            SqlBasicCall call = (SqlBasicCall) operand;
 
-    @SuppressWarnings("unchecked")
-    public <T> T getValue() {
-        return (T) value;
+            return call;
+        }
+
+        return null;
     }
 }

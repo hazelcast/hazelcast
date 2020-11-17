@@ -31,84 +31,15 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public final class VarcharOperandChecker implements OperandChecker {
+public final class VarcharOperandChecker extends AbstractTypedOperandChecker {
 
     public static final VarcharOperandChecker INSTANCE = new VarcharOperandChecker();
 
     private VarcharOperandChecker() {
-        // No-op
+        super(SqlTypeName.VARCHAR);
     }
-
     @Override
-    public boolean check(SqlCallBindingOverride callBinding, boolean throwOnFailure, int i) {
-        HazelcastSqlValidator validator = callBinding.getValidator();
-
-        SqlNode operand = callBinding.operand(i);
-
-        if (operand.getKind() == SqlKind.DYNAMIC_PARAM) {
-            return checkParameter(validator, (SqlDynamicParam) operand);
-        } else {
-            if (operand instanceof SqlBasicCall) {
-                SqlBasicCall operandCall = (SqlBasicCall) operand;
-
-                if (operandCall.getOperator() == HazelcastSqlLiteralFunction.INSTANCE) {
-                    return checkLiteral(validator, callBinding, throwOnFailure, operandCall, operandCall.operand(0));
-                }
-            }
-
-            RelDataType operandType = validator.deriveType(callBinding.getScope(), operand);
-
-            if (operandType.getSqlTypeName() == SqlTypeName.VARCHAR) {
-                return true;
-            } else {
-                if (throwOnFailure) {
-                    throw callBinding.newValidationSignatureError();
-                } else {
-                    return false;
-                }
-            }
-        }
-    }
-
-    private boolean checkLiteral(
-        HazelcastSqlValidator validator,
-        SqlCallBindingOverride callBinding,
-        boolean throwOnFailure,
-        SqlNode operand,
-        HazelcastSqlLiteral literal
-    ) {
-        if (literal.getTypeName() == SqlTypeName.VARCHAR) {
-            return true;
-        }
-
-        if (literal.getTypeName() == SqlTypeName.NULL) {
-            RelDataType returnType = SqlNodeUtil.createType(validator.getTypeFactory(), SqlTypeName.VARCHAR, true);
-            validator.setKnownAndValidatedNodeType(operand, returnType);
-
-            return true;
-        }
-
-        if (throwOnFailure) {
-            throw callBinding.newValidationSignatureError();
-        } else {
-            return false;
-        }
-    }
-
-    private boolean checkParameter(HazelcastSqlValidator validator, SqlDynamicParam operand) {
-        // Set parameter type.
-        RelDataType type = SqlNodeUtil.createType(validator.getTypeFactory(), SqlTypeName.VARCHAR, true);
-        validator.setKnownAndValidatedNodeType(operand, type);
-
-        // Set parameter converter.
-        ParameterConverter converter = new StrictParameterConverter(
-            operand.getIndex(),
-            operand.getParserPosition(),
-            QueryDataType.VARCHAR
-        );
-
-        validator.setParameterConverter(operand.getIndex(), converter);
-
-        return true;
+    protected ParameterConverter parameterConverter(SqlDynamicParam operand) {
+        return new StrictParameterConverter(operand.getIndex(), operand.getParserPosition(), QueryDataType.VARCHAR);
     }
 }
