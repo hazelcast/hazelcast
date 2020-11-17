@@ -16,12 +16,19 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operand.BooleanOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.DoubleOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes;
+import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
+import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
@@ -30,15 +37,25 @@ import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandType
 /**
  * Function that accepts a DOUBLE argument and produces a DOUBLE result.
  */
-public class HazelcastDoubleFunction extends SqlFunction {
+public class HazelcastDoubleFunction extends SqlFunction implements SqlCallBindingManualOverride {
     public HazelcastDoubleFunction(String name) {
         super(
             name,
             SqlKind.OTHER_FUNCTION,
             ReturnTypes.DOUBLE_NULLABLE,
             HazelcastInferTypes.explicitSingle(SqlTypeName.DOUBLE),
-            wrap(notAny(OperandTypes.NUMERIC)),
+            null,
             SqlFunctionCategory.NUMERIC
         );
+    }
+
+    @Override
+    public SqlOperandCountRange getOperandCountRange() {
+        return SqlOperandCountRanges.of(1);
+    }
+
+    @Override
+    public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
+        return DoubleOperandChecker.INSTANCE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
     }
 }

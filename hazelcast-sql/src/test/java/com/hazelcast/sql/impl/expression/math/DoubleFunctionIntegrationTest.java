@@ -70,14 +70,14 @@ public class DoubleFunctionIntegrationTest extends SqlExpressionIntegrationTestS
         checkColumn(BigInteger.ONE, 1d);
         checkColumn(new BigDecimal("1.1"), 1.1d);
 
-        checkColumn("1", 1d);
-        checkColumn('1', 1d);
+        checkColumnFailure("1", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the '" + mode.mode + "' function (consider adding an explicit CAST)");
+        checkColumnFailure('1', SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the '" + mode.mode + "' function (consider adding an explicit CAST)");
 
         put(new ExpressionValue.IntegerVal());
         checkValue("field1", null);
 
-        checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-        checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
+        checkColumnFailure("bad", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the '" + mode.mode + "' function (consider adding an explicit CAST)");
+        checkColumnFailure('b', SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the '" + mode.mode + "' function (consider adding an explicit CAST)");
 
         checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply [DATE] to the '" + mode.mode + "' function (consider adding an explicit CAST)");
         checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIME] to the '" + mode.mode + "' function (consider adding an explicit CAST)");
@@ -112,14 +112,14 @@ public class DoubleFunctionIntegrationTest extends SqlExpressionIntegrationTestS
         checkParameter(BigInteger.ONE, 1d);
         checkParameter(new BigDecimal("1.1"), 1.1d);
 
-        checkParameter("1.1", 1.1d);
-        checkParameter('1', 1d);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to DOUBLE", "1.1");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to DOUBLE", '1');
 
         checkValue("?", null, new Object[] { null });
 
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to DOUBLE", true);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DOUBLE", "bad");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DOUBLE", 'b');
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BOOLEAN to DOUBLE", true);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to DOUBLE", "bad");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to DOUBLE", 'b');
 
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to DOUBLE", LOCAL_DATE_VAL);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to DOUBLE", LOCAL_TIME_VAL);
@@ -138,11 +138,11 @@ public class DoubleFunctionIntegrationTest extends SqlExpressionIntegrationTestS
 
         checkLiteral(0, 0d);
         checkLiteral("1.1", 1.1d);
-        checkLiteral("'1.1'", 1.1d);
+        checkFailure("'1.1'", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the '" + mode.mode + "' function (consider adding an explicit CAST)");
 
         checkLiteral("null", null);
 
-        checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
+        checkFailure("'bad'", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the '" + mode.mode + "' function (consider adding an explicit CAST)");
         checkFailure("true", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the '" + mode.mode + "' function (consider adding an explicit CAST)");
     }
 

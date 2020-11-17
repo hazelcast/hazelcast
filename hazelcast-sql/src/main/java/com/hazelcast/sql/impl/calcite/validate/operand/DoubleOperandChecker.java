@@ -17,12 +17,13 @@
 package com.hazelcast.sql.impl.calcite.validate.operand;
 
 import com.hazelcast.sql.impl.ParameterConverter;
+import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
 import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteralFunction;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
-import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
+import com.hazelcast.sql.impl.calcite.validate.param.NumericPrecedenceParameterConverter;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlBasicCall;
@@ -31,11 +32,11 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public final class BooleanOperandChecker implements OperandChecker {
+public final class DoubleOperandChecker implements OperandChecker {
 
-    public static final BooleanOperandChecker INSTANCE = new BooleanOperandChecker();
+    public static final DoubleOperandChecker INSTANCE = new DoubleOperandChecker();
 
-    private BooleanOperandChecker() {
+    private DoubleOperandChecker() {
         // No-op
     }
 
@@ -48,19 +49,32 @@ public final class BooleanOperandChecker implements OperandChecker {
         if (operand.getKind() == SqlKind.DYNAMIC_PARAM) {
             return checkParameter(validator, (SqlDynamicParam) operand);
         } else {
+            RelDataType operandType = validator.deriveType(callBinding.getScope(), operand);
+
             if (operand instanceof SqlBasicCall) {
                 SqlBasicCall operandCall = (SqlBasicCall) operand;
 
                 if (operandCall.getOperator() == HazelcastSqlLiteralFunction.INSTANCE) {
-                    return checkLiteral(validator, callBinding, throwOnFailure, operandCall, operandCall.operand(0));
+                    return checkLiteral(validator, callBinding, throwOnFailure, operandCall, operandType, operandCall.operand(0));
                 }
             }
 
-            RelDataType operandType = validator.deriveType(callBinding.getScope(), operand);
-
-            if (operandType.getSqlTypeName() == SqlTypeName.BOOLEAN) {
+            if (operandType.getSqlTypeName() == SqlTypeName.DOUBLE) {
                 return true;
             } else {
+                if (SqlToQueryType.map(operandType.getSqlTypeName()).getTypeFamily().isNumeric()) {
+                    RelDataType doubleType = SqlNodeUtil.createType(
+                        validator.getTypeFactory(),
+                        SqlTypeName.DOUBLE,
+                        operandType.isNullable()
+                    );
+
+                    validator.getTypeCoercion().coerceOperandType(callBinding.getScope(), callBinding.getCall(), 0, doubleType);
+                    validator.setKnownAndValidatedNodeType(operand, doubleType);
+
+                    return true;
+                }
+
                 if (throwOnFailure) {
                     throw callBinding.newValidationSignatureError();
                 } else {
@@ -75,9 +89,10 @@ public final class BooleanOperandChecker implements OperandChecker {
         SqlCallBindingOverride callBinding,
         boolean throwOnFailure,
         SqlNode operand,
+        RelDataType operandType,
         HazelcastSqlLiteral literal
     ) {
-        if (literal.getTypeName() == SqlTypeName.BOOLEAN) {
+        if (literal.getTypeName() == SqlTypeName.DOUBLE) {
             return true;
         }
 
@@ -88,7 +103,20 @@ public final class BooleanOperandChecker implements OperandChecker {
             return true;
         }
 
-        // Cannot convert the literal to BOOLEAN, validation fails
+        if (SqlToQueryType.map(operandType.getSqlTypeName()).getTypeFamily().isNumeric()) {
+            RelDataType doubleType = SqlNodeUtil.createType(
+                validator.getTypeFactory(),
+                SqlTypeName.DOUBLE,
+                operandType.isNullable()
+            );
+
+            validator.getTypeCoercion().coerceOperandType(callBinding.getScope(), callBinding.getCall(), 0, doubleType);
+            validator.setKnownAndValidatedNodeType(operand, doubleType);
+
+            return true;
+        }
+
+        // Cannot convert the literal to numeric, validation fails
         if (throwOnFailure) {
             throw callBinding.newValidationSignatureError();
         } else {
@@ -102,10 +130,10 @@ public final class BooleanOperandChecker implements OperandChecker {
         validator.setKnownAndValidatedNodeType(operand, type);
 
         // Set parameter converter.
-        ParameterConverter converter = new StrictParameterConverter(
+        ParameterConverter converter = new NumericPrecedenceParameterConverter(
             operand.getIndex(),
             operand.getParserPosition(),
-            QueryDataType.BOOLEAN
+            QueryDataType.DOUBLE
         );
 
         validator.setParameterConverter(operand.getIndex(), converter);

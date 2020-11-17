@@ -19,18 +19,14 @@ package com.hazelcast.sql.impl.calcite.validate.operators;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.BooleanOperandChecker;
-import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
-import org.apache.calcite.sql.SqlOperatorBinding;
 import org.apache.calcite.sql.SqlPrefixOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.InferTypes;
+import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
-import org.apache.calcite.sql.type.SqlReturnTypeInference;
-import org.apache.calcite.sql.type.SqlTypeName;
 
 public class HazelcastPredicateNot extends SqlPrefixOperator implements SqlCallBindingManualOverride {
     public HazelcastPredicateNot() {
@@ -38,7 +34,7 @@ public class HazelcastPredicateNot extends SqlPrefixOperator implements SqlCallB
             "NOT",
             SqlKind.NOT,
             SqlStdOperatorTable.NOT.getLeftPrec(),
-            new ReturnTypeInference(),
+            ReturnTypes.BOOLEAN_NULLABLE,
             InferTypes.BOOLEAN,
             null
         );
@@ -52,21 +48,5 @@ public class HazelcastPredicateNot extends SqlPrefixOperator implements SqlCallB
     @Override
     public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
         return BooleanOperandChecker.INSTANCE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
-    }
-
-    // TODO: Generalize
-    private static final class ReturnTypeInference implements SqlReturnTypeInference {
-        @Override
-        public RelDataType inferReturnType(SqlOperatorBinding opBinding) {
-            RelDataTypeFactory typeFactory = opBinding.getTypeFactory();
-
-            RelDataType res = typeFactory.createSqlType(SqlTypeName.BOOLEAN);
-
-            if (opBinding.getOperandType(0).isNullable()) {
-                res = typeFactory.createTypeWithNullability(res, true);
-            }
-
-            return res;
-        }
     }
 }

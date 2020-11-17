@@ -84,12 +84,16 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //@formatter:off
 
+    // TODO
     public static final SqlFunction CAST = new HazelcastSqlCastFunction();
 
     //#region Predicates.
 
+    // TODO
     public static final SqlBinaryOperator AND = HazelcastPredicateAndOr.AND;
+    // TODO
     public static final SqlBinaryOperator OR = HazelcastPredicateAndOr.OR;
+    // TODO
     public static final SqlPrefixOperator NOT = new HazelcastPredicateNot();
 
     //#endregion
@@ -107,6 +111,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#region Arithmetic operators.
 
+    // TODO
     public static final SqlBinaryOperator PLUS = new HazelcastSqlMonotonicBinaryOperator(
         "+",
         SqlKind.PLUS,
@@ -117,6 +122,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         wrap(notAllNull(notAny(OperandTypes.PLUS_OPERATOR)))
     );
 
+    // TODO
     public static final SqlBinaryOperator MINUS = new HazelcastSqlMonotonicBinaryOperator(
         "-",
         SqlKind.MINUS,
@@ -127,6 +133,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         wrap(notAllNull(notAny(OperandTypes.MINUS_OPERATOR)))
     );
 
+    // TODO
     public static final SqlBinaryOperator MULTIPLY = new HazelcastSqlMonotonicBinaryOperator(
         "*",
         SqlKind.TIMES,
@@ -137,8 +144,10 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         wrap(notAllNull(notAny(OperandTypes.MULTIPLY_OPERATOR)))
     );
 
+    // TODO
     public static final SqlBinaryOperator DIVIDE = new HazelcastDivideOperator();
 
+    // TODO
     public static final SqlPrefixOperator UNARY_PLUS = new SqlPrefixOperator(
         "+",
         SqlKind.PLUS_PREFIX,
@@ -148,6 +157,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         wrap(notAllNull(notAny(OperandTypes.NUMERIC_OR_INTERVAL)))
     );
 
+    // TODO
     public static final SqlPrefixOperator UNARY_MINUS = new SqlPrefixOperator(
         "-",
         SqlKind.MINUS_PREFIX,
@@ -161,6 +171,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#region "IS" family of predicates.
 
+    // TODO
     public static final SqlPostfixOperator IS_TRUE = new SqlPostfixOperator(
         "IS TRUE",
         SqlKind.IS_TRUE,
@@ -170,6 +181,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         wrap(notAny(OperandTypes.BOOLEAN))
     );
 
+    // TODO
     public static final SqlPostfixOperator IS_NOT_TRUE = new SqlPostfixOperator(
         "IS NOT TRUE",
         SqlKind.IS_NOT_TRUE,
@@ -179,6 +191,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         wrap(notAny(OperandTypes.BOOLEAN))
     );
 
+    // TODO
     public static final SqlPostfixOperator IS_FALSE = new SqlPostfixOperator(
         "IS FALSE",
         SqlKind.IS_FALSE,
@@ -188,6 +201,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         wrap(notAny(OperandTypes.BOOLEAN))
     );
 
+    // TODO
     public static final SqlPostfixOperator IS_NOT_FALSE = new SqlPostfixOperator(
         "IS NOT FALSE",
         SqlKind.IS_NOT_FALSE,
@@ -197,6 +211,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         wrap(notAny(OperandTypes.BOOLEAN))
     );
 
+    // TODO
     public static final SqlPostfixOperator IS_NULL = new SqlPostfixOperator(
         "IS NULL",
         SqlKind.IS_NULL,
@@ -206,6 +221,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         wrap(OperandTypes.ANY)
     );
 
+    // TODO
     public static final SqlPostfixOperator IS_NOT_NULL = new SqlPostfixOperator(
         "IS NOT NULL",
         SqlKind.IS_NOT_NULL,
@@ -219,6 +235,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#region Math functions.
 
+    // TODO
     public static final SqlFunction ABS = new SqlFunction(
         "ABS",
         SqlKind.OTHER_FUNCTION,
@@ -228,6 +245,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlFunctionCategory.NUMERIC
     );
 
+    // TODO
     public static final SqlFunction SIGN = new SqlFunction(
         "SIGN",
         SqlKind.OTHER_FUNCTION,
@@ -237,6 +255,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlFunctionCategory.NUMERIC
     );
 
+    // TODO
     public static final SqlFunction RAND = new SqlFunction(
         "RAND",
         SqlKind.OTHER_FUNCTION,
@@ -259,9 +278,12 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction DEGREES = new HazelcastDoubleFunction("DEGREES");
     public static final SqlFunction RADIANS = new HazelcastDoubleFunction("RADIANS");
 
+    // TODO
     public static final SqlFunction FLOOR = new HazelcastSqlFloorFunction(SqlKind.FLOOR);
+    // TODO
     public static final SqlFunction CEIL = new HazelcastSqlFloorFunction(SqlKind.CEIL);
 
+    // TODO
     public static final SqlFunction ROUND = new SqlFunction(
         "ROUND",
         SqlKind.OTHER_FUNCTION,
@@ -271,6 +293,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlFunctionCategory.NUMERIC
     );
 
+    // TODO
     public static final SqlFunction TRUNCATE = new SqlFunction(
         "TRUNCATE",
         SqlKind.OTHER_FUNCTION,
@@ -284,6 +307,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#region String functions
 
+    // TODO
     public static final SqlBinaryOperator CONCAT = new SqlBinaryOperator(
         "||",
         SqlKind.OTHER,
@@ -294,61 +318,28 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         wrap(notAny(OperandTypes.STRING_SAME_SAME))
     );
 
+    // TODO
     public static final SqlSpecialOperator LIKE = new HazelcastSqlLikeOperator();
 
-    public static final SqlFunction ASCII = new HazelcastSqlStringFunction(
-        "ASCII",
-        ReturnTypes.INTEGER_NULLABLE
-    );
+    public static final SqlFunction ASCII = HazelcastSqlStringFunction.withIntegerReturn("ASCII");
+    public static final SqlFunction INITCAP = HazelcastSqlStringFunction.withStringReturn("INITCAP");
 
-    public static final SqlFunction INITCAP = new HazelcastSqlStringFunction(
-        "INITCAP",
-        ReturnTypes.ARG0_NULLABLE
-    );
+    public static final SqlFunction CHAR_LENGTH = HazelcastSqlStringFunction.withIntegerReturn("CHAR_LENGTH");
+    public static final SqlFunction CHARACTER_LENGTH = HazelcastSqlStringFunction.withIntegerReturn("CHARACTER_LENGTH");
+    public static final SqlFunction LENGTH = HazelcastSqlStringFunction.withIntegerReturn("LENGTH");
 
-    public static final SqlFunction CHAR_LENGTH = new HazelcastSqlStringFunction(
-        "CHAR_LENGTH",
-        ReturnTypes.INTEGER_NULLABLE
-    );
+    public static final SqlFunction LOWER = HazelcastSqlStringFunction.withStringReturn("LOWER");
+    public static final SqlFunction UPPER = HazelcastSqlStringFunction.withStringReturn("UPPER");
 
-    public static final SqlFunction CHARACTER_LENGTH = new HazelcastSqlStringFunction(
-        "CHARACTER_LENGTH",
-        ReturnTypes.INTEGER_NULLABLE
-    );
-
-    public static final SqlFunction LENGTH = new HazelcastSqlStringFunction(
-        "LENGTH",
-        ReturnTypes.INTEGER_NULLABLE
-    );
-
-    public static final SqlFunction LOWER = new HazelcastSqlStringFunction(
-        "LOWER",
-        ReturnTypes.ARG0_NULLABLE
-    );
-
-    public static final SqlFunction UPPER = new HazelcastSqlStringFunction(
-        "UPPER",
-        ReturnTypes.ARG0_NULLABLE
-    );
-
+    // TODO
     public static final SqlFunction SUBSTRING = new HazelcastSqlSubstringFunction();
 
+    // TODO
     public static final SqlFunction TRIM = new HazelcastSqlTrimFunction();
 
-    public static final SqlFunction RTRIM = new HazelcastSqlStringFunction(
-        "RTRIM",
-        ReturnTypes.ARG0_NULLABLE
-    );
-
-    public static final SqlFunction LTRIM = new HazelcastSqlStringFunction(
-        "LTRIM",
-        ReturnTypes.ARG0_NULLABLE
-    );
-
-    public static final SqlFunction BTRIM = new HazelcastSqlStringFunction(
-        "BTRIM",
-        ReturnTypes.ARG0_NULLABLE
-    );
+    public static final SqlFunction RTRIM = HazelcastSqlStringFunction.withStringReturn("RTRIM");
+    public static final SqlFunction LTRIM = HazelcastSqlStringFunction.withStringReturn("LTRIM");
+    public static final SqlFunction BTRIM = HazelcastSqlStringFunction.withStringReturn("BTRIM");
 
     //#endregion
 

@@ -31,11 +31,11 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public final class BooleanOperandChecker implements OperandChecker {
+public final class VarcharOperandChecker implements OperandChecker {
 
-    public static final BooleanOperandChecker INSTANCE = new BooleanOperandChecker();
+    public static final VarcharOperandChecker INSTANCE = new VarcharOperandChecker();
 
-    private BooleanOperandChecker() {
+    private VarcharOperandChecker() {
         // No-op
     }
 
@@ -58,7 +58,7 @@ public final class BooleanOperandChecker implements OperandChecker {
 
             RelDataType operandType = validator.deriveType(callBinding.getScope(), operand);
 
-            if (operandType.getSqlTypeName() == SqlTypeName.BOOLEAN) {
+            if (operandType.getSqlTypeName() == SqlTypeName.VARCHAR) {
                 return true;
             } else {
                 if (throwOnFailure) {
@@ -77,18 +77,17 @@ public final class BooleanOperandChecker implements OperandChecker {
         SqlNode operand,
         HazelcastSqlLiteral literal
     ) {
-        if (literal.getTypeName() == SqlTypeName.BOOLEAN) {
+        if (literal.getTypeName() == SqlTypeName.VARCHAR) {
             return true;
         }
 
         if (literal.getTypeName() == SqlTypeName.NULL) {
-            RelDataType booleanNullableType = SqlNodeUtil.createType(validator.getTypeFactory(), SqlTypeName.BOOLEAN, true);
-            validator.setKnownAndValidatedNodeType(operand, booleanNullableType);
+            RelDataType returnType = SqlNodeUtil.createType(validator.getTypeFactory(), SqlTypeName.VARCHAR, true);
+            validator.setKnownAndValidatedNodeType(operand, returnType);
 
             return true;
         }
 
-        // Cannot convert the literal to BOOLEAN, validation fails
         if (throwOnFailure) {
             throw callBinding.newValidationSignatureError();
         } else {
@@ -98,14 +97,14 @@ public final class BooleanOperandChecker implements OperandChecker {
 
     private boolean checkParameter(HazelcastSqlValidator validator, SqlDynamicParam operand) {
         // Set parameter type.
-        RelDataType type = SqlNodeUtil.createType(validator.getTypeFactory(), SqlTypeName.BOOLEAN, true);
+        RelDataType type = SqlNodeUtil.createType(validator.getTypeFactory(), SqlTypeName.VARCHAR, true);
         validator.setKnownAndValidatedNodeType(operand, type);
 
         // Set parameter converter.
         ParameterConverter converter = new StrictParameterConverter(
             operand.getIndex(),
             operand.getParserPosition(),
-            QueryDataType.BOOLEAN
+            QueryDataType.VARCHAR
         );
 
         validator.setParameterConverter(operand.getIndex(), converter);

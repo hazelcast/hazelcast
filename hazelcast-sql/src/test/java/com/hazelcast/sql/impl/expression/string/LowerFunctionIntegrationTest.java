@@ -70,6 +70,12 @@ public class LowerFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         check("field1", expectedResult);
     }
 
+    private void checkColumnFailure(ExpressionValue value, int expectedErrorCode, String expectedErrorMessage) {
+        put(value);
+
+        checkFailure("field1", expectedErrorCode, expectedErrorMessage);
+    }
+
     @Test
     public void test_literal() {
         put(1);

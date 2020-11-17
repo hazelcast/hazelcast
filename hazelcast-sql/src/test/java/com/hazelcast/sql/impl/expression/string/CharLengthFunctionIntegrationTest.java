@@ -20,11 +20,19 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
+import com.hazelcast.sql.support.expressions.ExpressionValue.BigDecimalVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.BigIntegerVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ByteVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.CharacterVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.DoubleVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.FloatVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.IntegerVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.LocalDateTimeVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.LocalDateVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.LocalTimeVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.LongVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ObjectVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.OffsetDateTimeVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ShortVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.StringVal;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -64,21 +72,19 @@ public class CharLengthFunctionIntegrationTest extends SqlExpressionIntegrationT
 
         checkColumn(new CharacterVal().field1('a'), 1);
 
-        checkColumn(new ByteVal().field1((byte) 100), 3);
-        checkColumn(new ShortVal().field1((short) 100), 3);
-        checkColumn(new IntegerVal().field1(100), 3);
-        checkColumn(new LongVal().field1((long) 100), 3);
-        checkColumn(new ExpressionValue.BigIntegerVal().field1(new BigInteger("100")), 3);
-        checkColumn(new ExpressionValue.BigDecimalVal().field1(new BigDecimal("100.5")), 5);
-        checkColumn(new ExpressionValue.FloatVal().field1(100.5f), Float.toString(100.5f).length());
-        checkColumn(new ExpressionValue.DoubleVal().field1(100.5d), Double.toString(100.5d).length());
-        checkColumn(new ExpressionValue.LocalDateVal().field1(LOCAL_DATE_VAL), LOCAL_DATE_VAL.toString().length());
-        checkColumn(new ExpressionValue.LocalTimeVal().field1(LOCAL_TIME_VAL), LOCAL_TIME_VAL.toString().length());
-        checkColumn(new ExpressionValue.LocalDateTimeVal().field1(LOCAL_DATE_TIME_VAL), LOCAL_DATE_TIME_VAL.toString().length());
-        checkColumn(new ExpressionValue.OffsetDateTimeVal().field1(OFFSET_DATE_TIME_VAL), OFFSET_DATE_TIME_VAL.toString().length());
-
-        put(new ObjectVal());
-        checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply [OBJECT] to the '" + name + "' function (consider adding an explicit CAST)");
+        checkColumnFailure(new ByteVal().field1((byte) 100), SqlErrorCode.PARSING, "Cannot apply [TINYINT] to the '" + name + "' function (consider adding an explicit CAST)");
+        checkColumnFailure(new ShortVal().field1((short) 100), SqlErrorCode.PARSING, "Cannot apply [SMALLINT] to the '" + name + "' function (consider adding an explicit CAST)");
+        checkColumnFailure(new IntegerVal().field1(100), SqlErrorCode.PARSING, "Cannot apply [INTEGER] to the '" + name + "' function (consider adding an explicit CAST)");
+        checkColumnFailure(new LongVal().field1((long) 100), SqlErrorCode.PARSING, "Cannot apply [BIGINT] to the '" + name + "' function (consider adding an explicit CAST)");
+        checkColumnFailure(new BigIntegerVal().field1(new BigInteger("100")), SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the '" + name + "' function (consider adding an explicit CAST)");
+        checkColumnFailure(new BigDecimalVal().field1(new BigDecimal("100.5")), SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the '" + name + "' function (consider adding an explicit CAST)");
+        checkColumnFailure(new FloatVal().field1(100.5f), SqlErrorCode.PARSING, "Cannot apply [REAL] to the '" + name + "' function (consider adding an explicit CAST)");
+        checkColumnFailure(new DoubleVal().field1(100.5d), SqlErrorCode.PARSING, "Cannot apply [DOUBLE] to the '" + name + "' function (consider adding an explicit CAST)");
+        checkColumnFailure(new LocalDateVal().field1(LOCAL_DATE_VAL), SqlErrorCode.PARSING, "Cannot apply [DATE] to the '" + name + "' function (consider adding an explicit CAST)");
+        checkColumnFailure(new LocalTimeVal().field1(LOCAL_TIME_VAL), SqlErrorCode.PARSING, "Cannot apply [TIME] to the '" + name + "' function (consider adding an explicit CAST)");
+        checkColumnFailure(new LocalDateTimeVal().field1(LOCAL_DATE_TIME_VAL), SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP] to the '" + name + "' function (consider adding an explicit CAST)");
+        checkColumnFailure(new OffsetDateTimeVal().field1(OFFSET_DATE_TIME_VAL), SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP_WITH_TIME_ZONE] to the '" + name + "' function (consider adding an explicit CAST)");
+        checkColumnFailure(new ObjectVal(), SqlErrorCode.PARSING, "Cannot apply [OBJECT] to the '" + name + "' function (consider adding an explicit CAST)");
     }
 
     private void checkColumn(ExpressionValue value, Integer expectedResult) {
@@ -87,15 +93,22 @@ public class CharLengthFunctionIntegrationTest extends SqlExpressionIntegrationT
         check("field1", expectedResult);
     }
 
+    private void checkColumnFailure(ExpressionValue value, int expectedErrorCode, String expectedErrorMessage) {
+        put(value);
+
+        checkFailure("field1", expectedErrorCode, expectedErrorMessage);
+    }
+
     @Test
     public void test_literal() {
         put(1);
 
         check("null", null);
 
-        check("true", 4);
+        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the '" + name + "' function");
+        check("'true'", 4);
 
-        check("100", 3);
+        checkFailure("100", SqlErrorCode.PARSING, "Cannot apply [TINYINT] to the '" + name + "' function");
         check("'100'", 3);
         check("'abcde'", 5);
 
@@ -113,20 +126,20 @@ public class CharLengthFunctionIntegrationTest extends SqlExpressionIntegrationT
 
         check("?", 1, 'a');
 
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BOOLEAN to VARCHAR", true);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TINYINT to VARCHAR", (byte) 100);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from SMALLINT to VARCHAR", (short) 100);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 100);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BIGINT to VARCHAR", 100L);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to VARCHAR", BigInteger.ONE);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to VARCHAR", BigDecimal.ONE);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to VARCHAR", 100f);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to VARCHAR", 100d);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to VARCHAR", new ObjectVal());
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to VARCHAR", LOCAL_DATE_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to VARCHAR", LOCAL_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to VARCHAR", LOCAL_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to VARCHAR", OFFSET_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", true);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", (byte) 100);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", (short) 100);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 100);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 100L);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", BigInteger.ONE);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", BigDecimal.ONE);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 100f);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 100d);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", new ObjectVal());
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_DATE_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", OFFSET_DATE_TIME_VAL);
     }
 
     private void check(Object operand, Integer expectedResult, Object... params) {
