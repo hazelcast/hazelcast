@@ -31,6 +31,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.utility.ResourceReaper;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -138,6 +139,7 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
                 .withRemoveVolumes(true)
                 .withForce(true)
                 .exec();
+        ResourceReaper.instance().unregisterContainer(containerId);
     }
 
     protected <T> T namedTestContainer(GenericContainer<?> container) {
