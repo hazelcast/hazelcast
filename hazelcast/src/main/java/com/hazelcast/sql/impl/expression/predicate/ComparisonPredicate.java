@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression.predicate;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.BiExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -63,7 +64,6 @@ public final class ComparisonPredicate extends BiExpression<Boolean> implements 
         return SqlDataSerializerHook.EXPRESSION_COMPARISON;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
     @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "Any SQL expression may return null")
     @Override
     public Boolean eval(Row row, ExpressionEvalContext context) {
@@ -77,10 +77,10 @@ public final class ComparisonPredicate extends BiExpression<Boolean> implements 
             return null;
         }
 
-        Comparable leftComparable = (Comparable) left;
-        Comparable rightComparable = (Comparable) right;
+        Comparable<?> leftComparable = asComparable(left);
+        Comparable<?> rightComparable = asComparable(right);
 
-        int order = leftComparable.compareTo(rightComparable);
+        int order = compare(leftComparable, rightComparable);
 
         switch (mode) {
             case EQUALS:
@@ -103,6 +103,25 @@ public final class ComparisonPredicate extends BiExpression<Boolean> implements 
 
             default:
                 throw new IllegalStateException("unexpected comparison mode: " + mode);
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static Comparable asComparable(Object value) {
+        try {
+            return (Comparable) value;
+        } catch (ClassCastException e) {
+            throw QueryException.dataException("Value is not comparable", e);
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static int compare(Comparable left, Comparable right) {
+        try {
+            // TODO: Add more tests, possibly coerce?
+            return left.compareTo(right);
+        } catch (Exception e) {
+            throw QueryException.dataException("Cannot compare values: " + e.getMessage(), e);
         }
     }
 

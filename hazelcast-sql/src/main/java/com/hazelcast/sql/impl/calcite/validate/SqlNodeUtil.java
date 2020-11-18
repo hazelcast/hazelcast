@@ -20,6 +20,7 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
+import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteralFunction;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -177,7 +178,9 @@ public final class SqlNodeUtil {
         if (operand instanceof SqlBasicCall) {
             SqlBasicCall call = (SqlBasicCall) operand;
 
-            return call;
+            if (call.getOperator() == HazelcastSqlLiteralFunction.INSTANCE) {
+                return call;
+            }
         }
 
         return null;

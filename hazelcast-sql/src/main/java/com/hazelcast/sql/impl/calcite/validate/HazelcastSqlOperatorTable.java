@@ -93,7 +93,6 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlBinaryOperator AND = HazelcastPredicateAndOr.AND;
     // TODO
     public static final SqlBinaryOperator OR = HazelcastPredicateAndOr.OR;
-    // TODO
     public static final SqlPrefixOperator NOT = new HazelcastPredicateNot();
 
     //#endregion

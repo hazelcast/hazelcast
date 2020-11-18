@@ -158,7 +158,7 @@ public final class HazelcastPredicateComparison extends SqlBinaryOperator {
             return true;
         }
 
-        if (highHZType.getTypeFamily().getGroup() != highHZType.getTypeFamily().getGroup()) {
+        if (highHZType.getTypeFamily().getGroup() != lowHZType.getTypeFamily().getGroup()) {
             // Types cannot be converted to each other, throw.
             if (throwOnFailure) {
                 throw callBinding.newValidationSignatureError();

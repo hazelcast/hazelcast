@@ -218,7 +218,8 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
 
                 rewritten.accept(rewriteVisitor);
             } else if (node.getKind() == SqlKind.LITERAL) {
-                // TODO: This may disable RexSimplify optimizations. Double-check when exactly the simplification is called.
+                // TODO: Instead of doing this through a function, we may just constantly convert literals
+                //   to our own representation.
                 HazelcastSqlLiteral converted = HazelcastSqlLiteral.convert((SqlLiteral) rewritten);
 
                 if (converted != null) {

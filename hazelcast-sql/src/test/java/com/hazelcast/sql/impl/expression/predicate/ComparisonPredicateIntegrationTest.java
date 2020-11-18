@@ -115,15 +115,14 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // TINYINT/VARCHAR
         clazz = createBiClass(ExpressionTypes.BYTE, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, (byte) 0, '1', RES_LT);
+        checkColumnColumnFailure(clazz, (byte) 0, 'b', SqlErrorCode.PARSING, "Cannot apply [TINYINT, VARCHAR]");
 
         clazz = createBiClass(ExpressionTypes.BYTE, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, (byte) 0, "1", RES_LT);
-        checkColumnColumnFailure(clazz, (byte) 0, "bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BIGINT");
+        checkColumnColumnFailure(clazz, (byte) 0, "bad", SqlErrorCode.PARSING, "Cannot apply [TINYINT, VARCHAR]");
 
         // TINYINT/OBJECT
         clazz = createBiClass(ExpressionTypes.BYTE, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, (byte) 0, 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
+        checkColumnColumnFailure(clazz, (byte) 0, 1, SqlErrorCode.PARSING, "Cannot apply [TINYINT, OBJECT]");
 
         // SMALLINT/SMALLINT
         clazz = createBiClass(ExpressionTypes.SHORT, ExpressionTypes.SHORT);
@@ -168,15 +167,14 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // SMALLINT/VARCHAR
         clazz = createBiClass(ExpressionTypes.SHORT, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, (short) 0, '1', RES_LT);
+        checkColumnColumnFailure(clazz, (short) 0, 'b', SqlErrorCode.PARSING, "Cannot apply [SMALLINT, VARCHAR]");
 
         clazz = createBiClass(ExpressionTypes.SHORT, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, (short) 0, "1", RES_LT);
-        checkColumnColumnFailure(clazz, (short) 0, "bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BIGINT");
+        checkColumnColumnFailure(clazz, (short) 0, "bad", SqlErrorCode.PARSING, "Cannot apply [SMALLINT, VARCHAR]");
 
         // SMALLINT/OBJECT
         clazz = createBiClass(ExpressionTypes.SHORT, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, (short) 0, 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
+        checkColumnColumnFailure(clazz, (short) 0, 1, SqlErrorCode.PARSING, "Cannot apply [SMALLINT, OBJECT]");
 
         // INTEGER/INTEGER
         clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.INTEGER);
@@ -215,15 +213,14 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // INTEGER/VARCHAR
         clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, 0, '1', RES_LT);
+        checkColumnColumnFailure(clazz, 0, 'b', SqlErrorCode.PARSING, "Cannot apply [INTEGER, VARCHAR]");
 
         clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, 0, "1", RES_LT);
-        checkColumnColumnFailure(clazz, 0, "bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BIGINT");
+        checkColumnColumnFailure(clazz, 0, "bad", SqlErrorCode.PARSING, "Cannot apply [INTEGER, VARCHAR]");
 
         // INTEGER/OBJECT
         clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, 0, 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
+        checkColumnColumnFailure(clazz, 0, 1, SqlErrorCode.PARSING, "Cannot apply [INTEGER, OBJECT]");
 
         // BIGINT/BIGINT
         clazz = createBiClass(ExpressionTypes.LONG, ExpressionTypes.LONG);
@@ -256,15 +253,14 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // BIGINT/VARCHAR
         clazz = createBiClass(ExpressionTypes.LONG, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, 0L, '1', RES_LT);
+        checkColumnColumnFailure(clazz, 0L, 'b', SqlErrorCode.PARSING, "Cannot apply [BIGINT, VARCHAR]");
 
         clazz = createBiClass(ExpressionTypes.LONG, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, 0L, "1", RES_LT);
-        checkColumnColumnFailure(clazz, 0L, "bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BIGINT");
+        checkColumnColumnFailure(clazz, 0L, "bad", SqlErrorCode.PARSING, "Cannot apply [BIGINT, VARCHAR]");
 
         // BIGINT/OBJECT
         clazz = createBiClass(ExpressionTypes.LONG, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, 0L, 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
+        checkColumnColumnFailure(clazz, 0L, 1, SqlErrorCode.PARSING, "Cannot apply [BIGINT, OBJECT]");
 
         // DECIMAL(BigInteger)/DECIMAL
         clazz = createBiClass(ExpressionTypes.BIG_INTEGER, ExpressionTypes.BIG_INTEGER);
@@ -291,15 +287,14 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // DECIMAL(BigInteger)/VARCHAR
         clazz = createBiClass(ExpressionTypes.BIG_INTEGER, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, BigInteger.ZERO, '1', RES_LT);
+        checkColumnColumnFailure(clazz, BigInteger.ZERO, 'b', SqlErrorCode.PARSING, "Cannot apply [DECIMAL, VARCHAR]");
 
         clazz = createBiClass(ExpressionTypes.BIG_INTEGER, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, BigInteger.ZERO, "1", RES_LT);
-        checkColumnColumnFailure(clazz, BigInteger.ZERO, "bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
+        checkColumnColumnFailure(clazz, BigInteger.ZERO, "bad", SqlErrorCode.PARSING, "Cannot apply [DECIMAL, VARCHAR]");
 
         // DECIMAL(BigInteger)/OBJECT
         clazz = createBiClass(ExpressionTypes.BIG_INTEGER, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, BigInteger.ZERO, 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
+        checkColumnColumnFailure(clazz, BigInteger.ZERO, 1, SqlErrorCode.PARSING, "Cannot apply [DECIMAL, OBJECT]");
 
         // BIGINT(BigDecimal)/DECIMAL
         clazz = createBiClass(ExpressionTypes.BIG_DECIMAL, ExpressionTypes.BIG_DECIMAL);
@@ -322,15 +317,14 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // DECIMAL(BigDecimal)/VARCHAR
         clazz = createBiClass(ExpressionTypes.BIG_DECIMAL, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, BigDecimal.ZERO, '1', RES_LT);
+        checkColumnColumnFailure(clazz, BigDecimal.ZERO, 'b', SqlErrorCode.PARSING, "Cannot apply [DECIMAL, VARCHAR]");
 
         clazz = createBiClass(ExpressionTypes.BIG_DECIMAL, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, BigDecimal.ZERO, "1", RES_LT);
-        checkColumnColumnFailure(clazz, BigDecimal.ZERO, "bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
+        checkColumnColumnFailure(clazz, BigDecimal.ZERO, "bad", SqlErrorCode.PARSING, "Cannot apply [DECIMAL, VARCHAR]");
 
         // DECIMAL(BigDecimal)/OBJECT
         clazz = createBiClass(ExpressionTypes.BIG_DECIMAL, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, BigDecimal.ZERO, 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
+        checkColumnColumnFailure(clazz, BigDecimal.ZERO, 1, SqlErrorCode.PARSING, "Cannot apply [DECIMAL, OBJECT]");
 
         // REAL/REAL
         clazz = createBiClass(ExpressionTypes.FLOAT, ExpressionTypes.FLOAT);
@@ -346,15 +340,14 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // REAL/VARCHAR
         clazz = createBiClass(ExpressionTypes.FLOAT, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, 0f, '1', RES_LT);
+        checkColumnColumnFailure(clazz, 0f, 'b', SqlErrorCode.PARSING, "Cannot apply [REAL, VARCHAR]");
 
         clazz = createBiClass(ExpressionTypes.FLOAT, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, 0f, "1", RES_LT);
-        checkColumnColumnFailure(clazz, 0f, "bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to REAL");
+        checkColumnColumnFailure(clazz, 0f, "bad", SqlErrorCode.PARSING, "Cannot apply [REAL, VARCHAR]");
 
         // REAL/OBJECT
         clazz = createBiClass(ExpressionTypes.FLOAT, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, 0f, 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
+        checkColumnColumnFailure(clazz, 0f, 1, SqlErrorCode.PARSING, "Cannot apply [REAL, OBJECT]");
 
         // DOUBLE/DOUBLE
         clazz = createBiClass(ExpressionTypes.DOUBLE, ExpressionTypes.DOUBLE);
@@ -364,15 +357,14 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // DOUBLE/VARCHAR
         clazz = createBiClass(ExpressionTypes.DOUBLE, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, 0d, '1', RES_LT);
+        checkColumnColumnFailure(clazz, 0d, 'b', SqlErrorCode.PARSING, "Cannot apply [DOUBLE, VARCHAR]");
 
         clazz = createBiClass(ExpressionTypes.DOUBLE, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, 0d, "1", RES_LT);
-        checkColumnColumnFailure(clazz, 0d, "bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DOUBLE");
+        checkColumnColumnFailure(clazz, 0d, "bad", SqlErrorCode.PARSING, "Cannot apply [DOUBLE, VARCHAR]");
 
         // DOUBLE/OBJECT
         clazz = createBiClass(ExpressionTypes.DOUBLE, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, 0d, 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
+        checkColumnColumnFailure(clazz, 0d, 1, SqlErrorCode.PARSING, "Cannot apply [DOUBLE, OBJECT]");
 
         // VARCHAR(char)/VARCHAR
         clazz = createBiClass(ExpressionTypes.CHARACTER, ExpressionTypes.CHARACTER);
@@ -385,7 +377,7 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         // VARCHAR(char)/OBJECT
         clazz = createBiClass(ExpressionTypes.CHARACTER, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, '0', 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
+        checkColumnColumnFailure(clazz, '0', 1, SqlErrorCode.PARSING, "Cannot apply [VARCHAR, OBJECT]");
 
         // VARCHAR(char)/VARCHAR
         clazz = createBiClass(ExpressionTypes.STRING, ExpressionTypes.STRING);
@@ -393,29 +385,30 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
         checkColumnColumn(clazz, "abc", "abc", RES_EQ);
         checkColumnColumn(clazz, "abc", "abcd", RES_LT);
 
-        // VARCHAR(char)/OBJECT
+        // VARCHAR/OBJECT
         clazz = createBiClass(ExpressionTypes.STRING, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, "abc", 1, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
+        checkColumnColumnFailure(clazz, "abc", 1, SqlErrorCode.PARSING, "Cannot apply [VARCHAR, OBJECT]");
 
         // OBJECT/OBJECT
+        // TODO: More tests
         clazz = createBiClass(ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, 1, 2, SqlErrorCode.PARSING, "Cannot apply [OBJECT");
+        checkColumnColumn(clazz, 1, 2, RES_LT);
 
         // Handle special case for temporal types
         clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.LOCAL_DATE);
-        checkColumnColumnFailure(clazz, 0, LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply comparison operation to DATE");
+        checkColumnColumnFailure(clazz, 0, LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply [INTEGER, DATE]");
 
         clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.LOCAL_TIME);
-        checkColumnColumnFailure(clazz, 0, LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply comparison operation to TIME");
+        checkColumnColumnFailure(clazz, 0, LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [INTEGER, TIME]");
 
         clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.LOCAL_DATE_TIME);
-        checkColumnColumnFailure(clazz, 0, LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply comparison operation to TIMESTAMP");
+        checkColumnColumnFailure(clazz, 0, LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [INTEGER, TIMESTAMP]");
 
         clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.OFFSET_DATE_TIME);
-        checkColumnColumnFailure(clazz, 0, OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply comparison operation to TIMESTAMP_WITH_TIME_ZONE");
+        checkColumnColumnFailure(clazz, 0, OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [INTEGER, TIMESTAMP_WITH_TIME_ZONE]");
 
         clazz = createBiClass(ExpressionTypes.LOCAL_DATE, ExpressionTypes.OFFSET_DATE_TIME);
-        checkColumnColumnFailure(clazz, LOCAL_DATE_VAL, OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply comparison operation to DATE");
+        checkColumnColumnFailure(clazz, LOCAL_DATE_VAL, OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [DATE, TIMESTAMP_WITH_TIME_ZONE]");
     }
 
     @Test
@@ -441,10 +434,11 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         checkColumnLiteral(1, "null", RES_NULL);
 
-        checkColumnLiteralFailure(1, "true", SqlErrorCode.PARSING, "Cast function cannot convert value of type BOOLEAN to type INTEGER");
-        checkColumnLiteralFailure(1, "false", SqlErrorCode.PARSING, "Cast function cannot convert value of type BOOLEAN to type INTEGER");
-
-        checkColumnLiteralFailure(1, "'bad'", SqlErrorCode.PARSING, "Cast function cannot convert value of type VARCHAR to type INTEGER");
+        checkColumnLiteralFailure(1, "true", SqlErrorCode.PARSING, "Cannot apply [INTEGER, BOOLEAN]");
+        checkColumnLiteralFailure(1, "false", SqlErrorCode.PARSING, "Cannot apply [INTEGER, BOOLEAN]");
+        checkColumnLiteralFailure(1, "'true'", SqlErrorCode.PARSING, "Cannot apply [INTEGER, VARCHAR]");
+        checkColumnLiteralFailure(1, "'false'", SqlErrorCode.PARSING, "Cannot apply [INTEGER, VARCHAR]");
+        checkColumnLiteralFailure(1, "'bad'", SqlErrorCode.PARSING, "Cannot apply [INTEGER, VARCHAR]");
     }
 
     @Test
@@ -537,28 +531,28 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
         check("1", "1", RES_EQ);
         check("1", "2", RES_LT);
         check("1", "2E0", RES_LT);
-        check("1", "'2'", RES_LT);
-        checkFailure("1", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure("1", "true", SqlErrorCode.PARSING, "Literal 'TRUE' can not be parsed to type 'TINYINT'");
+        checkFailure("1", "'2'", SqlErrorCode.PARSING, "Cannot apply [TINYINT, VARCHAR]");
+        checkFailure("1", "'bad'", SqlErrorCode.PARSING, "Cannot apply [TINYINT, VARCHAR]");
+        checkFailure("1", "true", SqlErrorCode.PARSING, "Cannot apply [TINYINT, BOOLEAN]");
         check("1", "null", RES_NULL);
 
         check("1E0", "0E0", RES_GT);
         check("1E0", "1E0", RES_EQ);
         check("1E0", "2E0", RES_LT);
-        check("1E0", "'2'", RES_LT);
-        checkFailure("1E0", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure("1E0", "true", SqlErrorCode.PARSING, "Literal 'TRUE' can not be parsed to type 'DOUBLE'");
+        checkFailure("1E0", "'2'", SqlErrorCode.PARSING, "Cannot apply [DOUBLE, VARCHAR]");
+        checkFailure("1E0", "'bad'", SqlErrorCode.PARSING, "Cannot apply [DOUBLE, VARCHAR]");
+        checkFailure("1E0", "true", SqlErrorCode.PARSING, "Cannot apply [DOUBLE, BOOLEAN]");
         check("1E0", "null", RES_NULL);
 
         check("'1'", "'2'", RES_LT);
         check("'abc'", "'def'", RES_LT);
-        checkFailure("'abc'", "true", SqlErrorCode.PARSING, "Literal ''abc'' can not be parsed to type 'BOOLEAN'");
+        checkFailure("'abc'", "true", SqlErrorCode.PARSING, "Cannot apply [VARCHAR, BOOLEAN]");
         check("'abc'", "null", RES_NULL);
 
         check("true", "false", RES_GT);
         check("true", "null", RES_NULL);
 
-        check("null", "null", RES_NULL);
+        checkFailure("null", "null", SqlErrorCode.PARSING, "Cannot apply [UNKNOWN, UNKNOWN]");
     }
 
     private void checkColumnColumn(
