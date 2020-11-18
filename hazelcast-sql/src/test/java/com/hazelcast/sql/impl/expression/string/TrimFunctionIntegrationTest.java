@@ -230,45 +230,9 @@ public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
     public void test_trim_1_arg() {
         // Columns
         put("abc");
-        checkValueInternal("SELECT TRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
 
-        put(" abc");
-        checkValueInternal("SELECT TRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put("  abc");
-        checkValueInternal("SELECT TRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put("abc ");
-        checkValueInternal("SELECT TRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put("abc  ");
-        checkValueInternal("SELECT TRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put(" _ abc _ ");
-        checkValueInternal("SELECT TRIM(this) FROM map", SqlColumnType.VARCHAR, "_ abc _");
-
-        put(new ExpressionValue.StringVal());
-        checkValueInternal("SELECT TRIM(field1) FROM map", SqlColumnType.VARCHAR, null);
-
-        // Only one test for numeric column because we are going to restrict them anyway
-        put(BigDecimal.ONE);
-        checkValueInternal("SELECT TRIM(this) FROM map", SqlColumnType.VARCHAR, "1");
-
-        // Parameters
-        put(1);
-        checkValueInternal("SELECT TRIM(?) FROM map", SqlColumnType.VARCHAR, null, new Object[] { null });
-        checkValueInternal("SELECT TRIM(?) FROM map", SqlColumnType.VARCHAR, "abc", " abc ");
-        checkValueInternal("SELECT TRIM(?) FROM map", SqlColumnType.VARCHAR, "a", 'a');
-
-        checkFailureInternal("SELECT TRIM(?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-
-        // Literals
-        checkValueInternal("SELECT TRIM(' abc ') FROM map", SqlColumnType.VARCHAR, "abc");
         checkValueInternal("SELECT TRIM(null) FROM map", SqlColumnType.VARCHAR, null);
-        checkValueInternal("SELECT TRIM(true) FROM map", SqlColumnType.VARCHAR, "true");
-        checkValueInternal("SELECT TRIM(1) FROM map", SqlColumnType.VARCHAR, "1");
-        checkValueInternal("SELECT TRIM(1.1) FROM map", SqlColumnType.VARCHAR, "1.1");
-        checkValueInternal("SELECT TRIM(1.1E2) FROM map", SqlColumnType.VARCHAR, "110.0");
+
     }
 
     @Test

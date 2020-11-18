@@ -240,6 +240,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         return (HazelcastTypeCoercion) super.getTypeCoercion();
     }
 
+    // TODO: Remove candidate
     private RelDataType deriveLiteralType(RelDataType derived, SqlNode expression) {
         RelDataType known = knownNodeTypes.get(expression);
         if (derived == known) {
@@ -258,6 +259,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         return derived;
     }
 
+    // TODO: Review
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     private RelDataType deriveCastType(RelDataType derived, SqlValidatorScope scope, SqlNode expression) {
         RelDataType known = knownNodeTypes.get(expression);

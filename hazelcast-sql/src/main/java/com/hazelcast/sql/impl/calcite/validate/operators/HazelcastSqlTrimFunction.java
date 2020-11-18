@@ -16,32 +16,32 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operand.VarcharOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.fun.SqlTrimFunction;
 import org.apache.calcite.sql.parser.SqlParserPos;
-import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
+import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.Arrays;
-
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.wrap;
-import static org.apache.calcite.sql.type.SqlTypeFamily.ANY;
-import static org.apache.calcite.sql.type.SqlTypeFamily.STRING;
 
 /**
  * Our own implementation of the TRIM function that has custom operand type inference to allow for dynamic parameters.
  * <p>
  * Code of some methods is copy-pasted from the Calcite's {@link SqlTrimFunction}, because it is not extensible enough.
  */
+// TODO: Find the way to print proper error messages for different function forms (add separate operand for this?)
 public class HazelcastSqlTrimFunction extends SqlFunction {
     public HazelcastSqlTrimFunction() {
         super(
@@ -49,9 +49,25 @@ public class HazelcastSqlTrimFunction extends SqlFunction {
             SqlKind.TRIM,
             ReturnTypes.ARG2_NULLABLE,
             new ReplaceUnknownOperandTypeInference(SqlTypeName.VARCHAR),
-            wrap(notAny(OperandTypes.family(ANY, STRING, STRING))),
+            null,
             SqlFunctionCategory.STRING
         );
+    }
+
+    @Override
+    public SqlOperandCountRange getOperandCountRange() {
+        return SqlOperandCountRanges.of(3);
+    }
+
+    @Override
+    public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
+        boolean res = VarcharOperandChecker.INSTANCE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 1);
+
+        if (res) {
+            res = VarcharOperandChecker.INSTANCE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 2);
+        }
+
+        return res;
     }
 
     @Override
