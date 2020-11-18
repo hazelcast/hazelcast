@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.expression;
+package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,38 +28,33 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
-import static com.hazelcast.sql.impl.type.QueryDataType.INT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ColumnTest extends SqlTestSupport {
+public class NotTest extends SqlTestSupport {
     @Test
     public void testCreationAndEval() {
-        int index = 1;
-
-        ColumnExpression<?> expression = ColumnExpression.create(index, INT);
-
-        assertEquals(INT, expression.getType());
-
-        HeapRow row = HeapRow.of(new Object(), new Object(), new Object());
-        assertSame(row.get(index), expression.eval(row, SimpleExpressionEvalContext.create()));
+        assertFalse(not(true).eval(row("foo"), SimpleExpressionEvalContext.create()));
+        assertTrue(not(false).eval(row("foo"), SimpleExpressionEvalContext.create()));
     }
 
     @Test
     public void testEquality() {
-        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(1, INT), true);
-        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(1, BIGINT), false);
-        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(2, INT), false);
+        checkEquals(not(true), not(true), true);
+        checkEquals(not(true), not(false), false);
     }
 
     @Test
     public void testSerialization() {
-        ColumnExpression<?> original = ColumnExpression.create(1, INT);
-        ColumnExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_COLUMN);
+        NotPredicate original = not(true);
+        NotPredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_NOT);
 
         checkEquals(original, restored, true);
+    }
+
+    private static NotPredicate not(Boolean value) {
+        return NotPredicate.create(ConstantExpression.create(value, QueryDataType.BOOLEAN));
     }
 }

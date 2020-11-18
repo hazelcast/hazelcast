@@ -39,7 +39,6 @@ import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isTimestampWithTimeZone;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedence;
-import static com.hazelcast.sql.impl.expression.ExpressionTestBase.TYPE_FACTORY;
 import static org.apache.calcite.sql.parser.SqlParserPos.ZERO;
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
@@ -64,6 +63,8 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class HazelcastTypeSystemTest {
+
+    private static final HazelcastTypeFactory TYPE_FACTORY = HazelcastTypeFactory.INSTANCE;
 
     @Test
     public void numericPrecisionAndScaleTest() {

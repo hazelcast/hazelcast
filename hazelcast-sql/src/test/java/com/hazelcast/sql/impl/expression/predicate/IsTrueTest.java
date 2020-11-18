@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.expression.math;
+package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -28,35 +28,34 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.sql.impl.type.QueryDataType.INT;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class UnaryMinusTest extends SqlTestSupport {
+public class IsTrueTest extends SqlTestSupport {
     @Test
     public void testCreationAndEval() {
-        UnaryMinusFunction<?> expression = UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT);
-        assertEquals(INT, expression.getType());
-        assertEquals(-1, expression.eval(row("foo"), SimpleExpressionEvalContext.create()));
+        IsTruePredicate predicate = IsTruePredicate.create(ColumnExpression.create(0, QueryDataType.BOOLEAN));
+
+        assertTrue(predicate.eval(row(true), SimpleExpressionEvalContext.create()));
+        assertFalse(predicate.eval(row(false), SimpleExpressionEvalContext.create()));
+        assertFalse(predicate.eval(row(new Object[]{null}), SimpleExpressionEvalContext.create()));
     }
 
     @Test
     public void testEquality() {
-        checkEquals(UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT),
-                UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT), true);
+        ColumnExpression<?> column1 = ColumnExpression.create(1, QueryDataType.BOOLEAN);
+        ColumnExpression<?> column2 = ColumnExpression.create(2, QueryDataType.BOOLEAN);
 
-        checkEquals(UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT),
-                UnaryMinusFunction.create(ConstantExpression.create(1, INT), QueryDataType.BIGINT), false);
-
-        checkEquals(UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT),
-                UnaryMinusFunction.create(ConstantExpression.create(2, INT), QueryDataType.BIGINT), false);
+        checkEquals(IsTruePredicate.create(column1), IsTruePredicate.create(column1), true);
+        checkEquals(IsTruePredicate.create(column1), IsTruePredicate.create(column2), false);
     }
 
     @Test
     public void testSerialization() {
-        UnaryMinusFunction<?> original = UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT);
-        UnaryMinusFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_UNARY_MINUS);
+        IsTruePredicate original = IsTruePredicate.create(ColumnExpression.create(1, QueryDataType.BOOLEAN));
+        IsTruePredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_IS_TRUE);
 
         checkEquals(original, restored, true);
     }

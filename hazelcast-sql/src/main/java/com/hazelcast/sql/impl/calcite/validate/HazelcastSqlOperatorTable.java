@@ -27,7 +27,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlLikeOperato
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlMonotonicBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlStringFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlSubstringFunction;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlTrimFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastTrimFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
@@ -277,9 +277,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     public static final SqlFunction SUBSTRING = new HazelcastSqlSubstringFunction();
 
-    // TODO
-    public static final SqlFunction TRIM = new HazelcastSqlTrimFunction();
-
+    public static final SqlFunction TRIM = new HazelcastTrimFunction();
     public static final SqlFunction RTRIM = HazelcastSqlStringFunction.withStringReturn("RTRIM");
     public static final SqlFunction LTRIM = HazelcastSqlStringFunction.withStringReturn("LTRIM");
     public static final SqlFunction BTRIM = HazelcastSqlStringFunction.withStringReturn("BTRIM");

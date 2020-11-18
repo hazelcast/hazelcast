@@ -38,7 +38,6 @@ import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LiteralIntegrationTest extends ExpressionIntegrationTestBase {
-
     @Test
     public void testValid() {
         assertRow("0", EXPR0, TINYINT, (byte) 0);
@@ -63,6 +62,8 @@ public class LiteralIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow(Long.toString(Integer.MAX_VALUE + 1L), EXPR0, BIGINT, Integer.MAX_VALUE + 1L);
         assertRow(Long.toString(Long.MAX_VALUE), EXPR0, BIGINT, Long.MAX_VALUE);
         assertRow(Long.toString(Long.MIN_VALUE), EXPR0, BIGINT, Long.MIN_VALUE);
+
+        assertRow(Long.MAX_VALUE + "0", EXPR0, DECIMAL, new BigDecimal(Long.MAX_VALUE).multiply(BigDecimal.TEN));
 
         assertRow("0.0", EXPR0, DECIMAL, new BigDecimal("0.0"));
         assertRow("1.0", EXPR0, DECIMAL, new BigDecimal("1.0"));
@@ -105,7 +106,6 @@ public class LiteralIntegrationTest extends ExpressionIntegrationTestBase {
 
     @Test
     public void testInvalid() {
-        assertParsingError(Long.MAX_VALUE + "0", "out of range");
         assertParsingError("0..0", "was expecting one of");
         assertParsingError("'foo", "was expecting one of");
     }

@@ -33,6 +33,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.NULL;
  * A collection of operand type inference strategies. Basically, a mirror of
  * {@link InferTypes} provided by Calcite with various enhancements.
  */
+// TODO: Delete cadidate
 public final class HazelcastInferTypes {
 
     /**

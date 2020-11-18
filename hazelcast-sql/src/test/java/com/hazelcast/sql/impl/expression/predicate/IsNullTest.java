@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.expression;
+package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,37 +28,33 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
-import static com.hazelcast.sql.impl.type.QueryDataType.INT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ColumnTest extends SqlTestSupport {
+public class IsNullTest extends SqlTestSupport {
     @Test
     public void testCreationAndEval() {
-        int index = 1;
+        IsNullPredicate predicate = IsNullPredicate.create(ColumnExpression.create(0, QueryDataType.VARCHAR));
 
-        ColumnExpression<?> expression = ColumnExpression.create(index, INT);
-
-        assertEquals(INT, expression.getType());
-
-        HeapRow row = HeapRow.of(new Object(), new Object(), new Object());
-        assertSame(row.get(index), expression.eval(row, SimpleExpressionEvalContext.create()));
+        assertFalse(predicate.eval(row("test"), SimpleExpressionEvalContext.create()));
+        assertTrue(predicate.eval(row(new Object[]{null}), SimpleExpressionEvalContext.create()));
     }
 
     @Test
     public void testEquality() {
-        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(1, INT), true);
-        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(1, BIGINT), false);
-        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(2, INT), false);
+        ColumnExpression<?> column1 = ColumnExpression.create(1, QueryDataType.VARCHAR);
+        ColumnExpression<?> column2 = ColumnExpression.create(2, QueryDataType.VARCHAR);
+
+        checkEquals(IsNullPredicate.create(column1), IsNullPredicate.create(column1), true);
+        checkEquals(IsNullPredicate.create(column1), IsNullPredicate.create(column2), false);
     }
 
     @Test
     public void testSerialization() {
-        ColumnExpression<?> original = ColumnExpression.create(1, INT);
-        ColumnExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_COLUMN);
+        IsNullPredicate original = IsNullPredicate.create(ColumnExpression.create(1, QueryDataType.VARCHAR));
+        IsNullPredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_IS_NULL);
 
         checkEquals(original, restored, true);
     }

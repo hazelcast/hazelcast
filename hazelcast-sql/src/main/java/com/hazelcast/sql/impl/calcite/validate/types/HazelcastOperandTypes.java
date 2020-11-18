@@ -17,12 +17,10 @@
 package com.hazelcast.sql.impl.calcite.validate.types;
 
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverrideOperandChecker;
-import org.apache.calcite.rel.type.RelDataTypeComparability;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlOperator;
-import org.apache.calcite.sql.type.ComparableOperandTypeChecker;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.SqlOperandTypeChecker;
 import org.apache.calcite.sql.type.SqlSingleOperandTypeChecker;
@@ -37,18 +35,8 @@ import static org.apache.calcite.sql.type.SqlTypeName.NULL;
  */
 // TODO: Must be removed eventually
 public final class HazelcastOperandTypes {
-
-    /**
-     * The same as Calcite's {@link OperandTypes#COMPARABLE_ORDERED_COMPARABLE_ORDERED},
-     * but selects the least restrictive type as a common type. We do character
-     * coercion provided by {@link SqlOperandTypeChecker.Consistency#COMPARE} and
-     * used by Calcite on our own.
-     */
-    public static final SqlOperandTypeChecker COMPARABLE_ORDERED_COMPARABLE_ORDERED =
-            new ComparableOperandTypeChecker(2, RelDataTypeComparability.ALL,
-                    SqlOperandTypeChecker.Consistency.LEAST_RESTRICTIVE);
-
     private HazelcastOperandTypes() {
+        // No-op
     }
 
     /**

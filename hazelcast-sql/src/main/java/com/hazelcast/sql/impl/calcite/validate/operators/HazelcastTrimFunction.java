@@ -16,9 +16,14 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
+import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
+import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingSignatureErrorAware;
 import com.hazelcast.sql.impl.calcite.validate.operand.VarcharOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlFunction;
@@ -35,15 +40,17 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Our own implementation of the TRIM function that has custom operand type inference to allow for dynamic parameters.
  * <p>
  * Code of some methods is copy-pasted from the Calcite's {@link SqlTrimFunction}, because it is not extensible enough.
  */
-// TODO: Find the way to print proper error messages for different function forms (add separate operand for this?)
-public class HazelcastSqlTrimFunction extends SqlFunction {
-    public HazelcastSqlTrimFunction() {
+public class HazelcastTrimFunction extends SqlFunction implements SqlCallBindingManualOverride,
+    SqlCallBindingSignatureErrorAware {
+    public HazelcastTrimFunction() {
         super(
             "TRIM",
             SqlKind.TRIM,
@@ -60,14 +67,36 @@ public class HazelcastSqlTrimFunction extends SqlFunction {
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
-        boolean res = VarcharOperandChecker.INSTANCE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 1);
+    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
+        SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
+
+        boolean res = VarcharOperandChecker.INSTANCE.check(bindingOverride, throwOnFailure, 1);
 
         if (res) {
-            res = VarcharOperandChecker.INSTANCE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 2);
+            res = VarcharOperandChecker.INSTANCE.check(bindingOverride, throwOnFailure, 2);
         }
 
         return res;
+    }
+
+    @Override
+    public Collection<SqlNode> getOperandsForSignatureError(SqlCall call) {
+        SqlNode fromOperand = call.operand(1);
+        SqlNode targetOperand = call.operand(2);
+
+        SqlBasicCall fromLiteral = SqlNodeUtil.asLiteralCall(fromOperand);
+
+        if (fromLiteral != null) {
+            HazelcastSqlLiteral literal = fromLiteral.operand(0);
+
+            if (literal.getTypeName() == SqlTypeName.VARCHAR && " ".equals(literal.getValue())) {
+                // Default value for the FROM operand, report only target operand.
+                return Collections.singletonList(targetOperand);
+            }
+        }
+
+        // Non-default FROM, report both target and FROM operands.
+        return Arrays.asList(fromOperand, targetOperand);
     }
 
     @Override

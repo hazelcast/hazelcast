@@ -49,6 +49,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+// TODO: Move common stuff here
 public abstract class ExpressionIntegrationTestBase extends SqlTestSupport {
 
     public static final String EXPR0 = "EXPR$0";

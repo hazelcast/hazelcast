@@ -17,10 +17,10 @@
 package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.calcite.rel.type.RelDataType;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,13 +31,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ParameterTest extends ExpressionTestBase {
-
-    @Test
-    public void verify() {
-        verify(IDENTITY, ParameterTest::expectedTypes, ParameterTest::expectedValues, "%s", PARAMETERS);
-    }
-
+public class ParameterTest extends SqlTestSupport {
     @Test
     public void testCreationAndEval() {
         ParameterExpression<?> expression = ParameterExpression.create(1, INT);
@@ -59,13 +53,4 @@ public class ParameterTest extends ExpressionTestBase {
 
         checkEquals(original, restored, true);
     }
-
-    private static RelDataType[] expectedTypes(Operand[] operands) {
-        return null;
-    }
-
-    private static Object expectedValues(Operand[] operands, RelDataType[] types, Object[] args) {
-        return INVALID_VALUE;
-    }
-
 }

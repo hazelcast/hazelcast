@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
 import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteralFunction;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -36,7 +37,7 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public final class HazelcastComparisonPredicate extends SqlBinaryOperator {
+public final class HazelcastComparisonPredicate extends SqlBinaryOperator implements SqlCallBindingManualOverride {
 
     public static final HazelcastComparisonPredicate EQUALS = new HazelcastComparisonPredicate(
         SqlStdOperatorTable.EQUALS
@@ -205,7 +206,7 @@ public final class HazelcastComparisonPredicate extends SqlBinaryOperator {
                     // Will resolve operand type at this index later.
                     unknownTypeOperandIndex = i;
                 } else {
-                    if (hasParameters && SqlNodeUtil.isExactNumericLiteral(binding.operand(i))) {
+                    if (hasParameters && SqlNodeUtil.isExactNumericLiteralCall(binding.operand(i))) {
                         // If we are here, there is a parameter, and an exact numeric literal.
                         // We upcast the type of the numeric literal to BIGINT, so that an expression `1 > ?` is resolved to
                         // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`

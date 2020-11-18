@@ -93,9 +93,7 @@ public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkValueInternal("SELECT TRIM(BOTH field1 FROM 'aa aba aa') FROM map", SqlColumnType.VARCHAR, " aba ");
 
         put(new ExpressionValue.BigDecimalVal().field1(BigDecimal.ONE));
-        checkValueInternal("SELECT TRIM(LEADING field1 FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, " 121 11");
-        checkValueInternal("SELECT TRIM(TRAILING field1 FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, "11 121 ");
-        checkValueInternal("SELECT TRIM(BOTH field1 FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, " 121 ");
+        checkFailureInternal("SELECT TRIM(LEADING field1 FROM '11 121 11') FROM map", SqlErrorCode.PARSING, "Cannot apply [DECIMAL, VARCHAR] to the 'TRIM' function");
 
         // Test parameter
         put(1);
@@ -112,9 +110,7 @@ public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkValueInternal("SELECT TRIM(TRAILING ? FROM 'aa ab aa') FROM map", SqlColumnType.VARCHAR, "aa ab ", 'a');
         checkValueInternal("SELECT TRIM(BOTH ? FROM 'aa ab aa') FROM map", SqlColumnType.VARCHAR, " ab ", 'a');
 
-        checkFailureInternal("SELECT TRIM(LEADING ? FROM 'aa ab aa') FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-        checkFailureInternal("SELECT TRIM(TRAILING ? FROM 'aa ab aa') FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-        checkFailureInternal("SELECT TRIM(BOTH ? FROM 'aa ab aa') FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
+        checkFailureInternal("SELECT TRIM(LEADING ? FROM 'aa ab aa') FROM map", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 1);
 
         checkValueInternal("SELECT TRIM(LEADING ? FROM ?) FROM map", SqlColumnType.VARCHAR, " aba aa", "a", "aa aba aa");
         checkValueInternal("SELECT TRIM(TRAILING ? FROM ?) FROM map", SqlColumnType.VARCHAR, "aa aba ", "a", "aa aba aa");
@@ -125,9 +121,8 @@ public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkValueInternal("SELECT TRIM(TRAILING null FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, null);
         checkValueInternal("SELECT TRIM(BOTH null FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, null);
 
-        checkValueInternal("SELECT TRIM(LEADING 1 FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, " 121 11");
-        checkValueInternal("SELECT TRIM(TRAILING 1 FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, "11 121 ");
-        checkValueInternal("SELECT TRIM(BOTH 1 FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, " 121 ");
+        checkFailureInternal("SELECT TRIM(LEADING 1 FROM '11 121 11') FROM map", SqlErrorCode.PARSING, "Cannot apply [TINYINT, VARCHAR] to the 'TRIM' function");
+        checkFailureInternal("SELECT TRIM(LEADING '11 121 11' FROM 1) FROM map", SqlErrorCode.PARSING, "Cannot apply [VARCHAR, TINYINT] to the 'TRIM' function");
     }
 
     /**
@@ -176,11 +171,9 @@ public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkValueInternal("SELECT TRIM(TRAILING field1) FROM map", SqlColumnType.VARCHAR, null);
         checkValueInternal("SELECT TRIM(BOTH field1) FROM map", SqlColumnType.VARCHAR, null);
 
-        // Only one test for numeric column because we are going to restrict them anyway
+        // TODO: Errors for other types
         put(BigDecimal.ONE);
-        checkValueInternal("SELECT TRIM(LEADING this) FROM map", SqlColumnType.VARCHAR, "1");
-        checkValueInternal("SELECT TRIM(TRAILING this) FROM map", SqlColumnType.VARCHAR, "1");
-        checkValueInternal("SELECT TRIM(BOTH this) FROM map", SqlColumnType.VARCHAR, "1");
+        checkFailureInternal("SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the 'TRIM' function");
 
         // Parameters
         put(1);
@@ -196,9 +189,7 @@ public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkValueInternal("SELECT TRIM(TRAILING ?) FROM map", SqlColumnType.VARCHAR, "a", 'a');
         checkValueInternal("SELECT TRIM(BOTH ?) FROM map", SqlColumnType.VARCHAR, "a", 'a');
 
-        checkFailureInternal("SELECT TRIM(LEADING ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-        checkFailureInternal("SELECT TRIM(TRAILING ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-        checkFailureInternal("SELECT TRIM(BOTH ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
+        checkFailureInternal("SELECT TRIM(LEADING ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 1);
 
         // Literals
         checkValueInternal("SELECT TRIM(LEADING ' abc ') FROM map", SqlColumnType.VARCHAR, "abc ");
@@ -209,21 +200,10 @@ public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkValueInternal("SELECT TRIM(TRAILING null) FROM map", SqlColumnType.VARCHAR, null);
         checkValueInternal("SELECT TRIM(BOTH null) FROM map", SqlColumnType.VARCHAR, null);
 
-        checkValueInternal("SELECT TRIM(LEADING true) FROM map", SqlColumnType.VARCHAR, "true");
-        checkValueInternal("SELECT TRIM(TRAILING true) FROM map", SqlColumnType.VARCHAR, "true");
-        checkValueInternal("SELECT TRIM(BOTH true) FROM map", SqlColumnType.VARCHAR, "true");
-
-        checkValueInternal("SELECT TRIM(LEADING 1) FROM map", SqlColumnType.VARCHAR, "1");
-        checkValueInternal("SELECT TRIM(TRAILING 1) FROM map", SqlColumnType.VARCHAR, "1");
-        checkValueInternal("SELECT TRIM(BOTH 1) FROM map", SqlColumnType.VARCHAR, "1");
-
-        checkValueInternal("SELECT TRIM(LEADING 1.1) FROM map", SqlColumnType.VARCHAR, "1.1");
-        checkValueInternal("SELECT TRIM(TRAILING 1.1) FROM map", SqlColumnType.VARCHAR, "1.1");
-        checkValueInternal("SELECT TRIM(BOTH 1.1) FROM map", SqlColumnType.VARCHAR, "1.1");
-
-        checkValueInternal("SELECT TRIM(LEADING 1.1E2) FROM map", SqlColumnType.VARCHAR, "110.0");
-        checkValueInternal("SELECT TRIM(TRAILING 1.1E2) FROM map", SqlColumnType.VARCHAR, "110.0");
-        checkValueInternal("SELECT TRIM(BOTH 1.1E2) FROM map", SqlColumnType.VARCHAR, "110.0");
+        checkFailureInternal("SELECT TRIM(LEADING true) FROM map", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'TRIM' function");
+        checkFailureInternal("SELECT TRIM(LEADING 1) FROM map", SqlErrorCode.PARSING, "Cannot apply [TINYINT] to the 'TRIM' function");
+        checkFailureInternal("SELECT TRIM(LEADING 1.1) FROM map", SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the 'TRIM' function");
+        checkFailureInternal("SELECT TRIM(LEADING 1.1E2) FROM map", SqlErrorCode.PARSING, "Cannot apply [DOUBLE] to the 'TRIM' function");
     }
 
     @Test

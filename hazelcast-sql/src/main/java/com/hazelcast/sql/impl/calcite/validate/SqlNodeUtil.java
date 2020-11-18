@@ -174,7 +174,7 @@ public final class SqlNodeUtil {
         return type;
     }
 
-    public static SqlBasicCall asLiteral(SqlNode operand) {
+    public static SqlBasicCall asLiteralCall(SqlNode operand) {
         if (operand instanceof SqlBasicCall) {
             SqlBasicCall call = (SqlBasicCall) operand;
 
@@ -186,12 +186,12 @@ public final class SqlNodeUtil {
         return null;
     }
 
-    public static boolean isLiteral(SqlNode operand) {
-        return asLiteral(operand) != null;
+    public static boolean isLiteralCall(SqlNode operand) {
+        return asLiteralCall(operand) != null;
     }
 
-    public static boolean isExactNumericLiteral(SqlNode operand) {
-        SqlBasicCall call = asLiteral(operand);
+    public static boolean isExactNumericLiteralCall(SqlNode operand) {
+        SqlBasicCall call = asLiteralCall(operand);
 
         if (call != null) {
             HazelcastSqlLiteral literal = call.operand(0);

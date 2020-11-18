@@ -31,6 +31,7 @@ import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorException;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 
+import java.util.Collection;
 import java.util.StringJoiner;
 
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastResources.RESOURCES;
@@ -87,15 +88,13 @@ public class SqlCallBindingOverride extends SqlCallBinding {
     ) {
         StringJoiner res = new StringJoiner(", ", "[", "]");
 
-        for (SqlNode operand : call.getOperandList()) {
+        for (SqlNode operand : getOperands(call)) {
             RelDataType calciteType = validator.deriveType(scope, operand);
 
             String typeName;
 
             if (calciteType.getSqlTypeName() == SqlTypeName.NULL) {
                 typeName = validator.getUnknownType().toString();
-            } else if (calciteType.getSqlTypeName() == SqlTypeName.SYMBOL) {
-                typeName = calciteType.getSqlTypeName().toString();
             } else {
                 QueryDataType hazelcastType = SqlToQueryType.map(calciteType.getSqlTypeName());
 
@@ -106,5 +105,15 @@ public class SqlCallBindingOverride extends SqlCallBinding {
         }
 
         return res.toString();
+    }
+
+    private static Collection<SqlNode> getOperands(SqlCall call) {
+        SqlOperator operator = call.getOperator();
+
+        if (operator instanceof SqlCallBindingSignatureErrorAware) {
+            return ((SqlCallBindingSignatureErrorAware) operator).getOperandsForSignatureError(call);
+        } else {
+            return call.getOperandList();
+        }
     }
 }
