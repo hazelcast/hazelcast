@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.calcite.validate.operators;
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operand.NumericOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.VarcharOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.sql.SqlCall;
@@ -26,20 +28,13 @@ import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.SqlWriter;
-import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
-import org.apache.calcite.sql.type.SqlSingleOperandTypeChecker;
-import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import java.util.List;
-
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
@@ -87,29 +82,25 @@ public class HazelcastSqlSubstringFunction extends SqlFunction implements SqlCal
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
-        callBinding = new SqlCallBindingOverride(callBinding);
-
-        List<SqlNode> operands = callBinding.operands();
-
-        assert operands.size() == 2 || operands.size() == 3;
-
-        SqlSingleOperandTypeChecker checker;
-
-        if (operands.size() == 2) {
-            checker = OperandTypes.family(SqlTypeFamily.STRING, SqlTypeFamily.INTEGER);
-        } else {
-            checker = OperandTypes.family(SqlTypeFamily.STRING, SqlTypeFamily.INTEGER, SqlTypeFamily.INTEGER);
-        }
-
-        checker = notAny(checker);
-
-        return checker.checkOperandTypes(callBinding, throwOnFailure);
+    public SqlOperandCountRange getOperandCountRange() {
+        return SqlOperandCountRanges.between(2, 3);
     }
 
     @Override
-    public SqlOperandCountRange getOperandCountRange() {
-        return SqlOperandCountRanges.between(2, 3);
+    public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
+        callBinding = new SqlCallBindingOverride(callBinding);
+
+        boolean res = VarcharOperandChecker.INSTANCE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
+
+        if (res) {
+            res = NumericOperandChecker.INTEGER.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 1);
+        }
+
+        if (res && callBinding.getOperandCount() == 3) {
+            res = NumericOperandChecker.INTEGER.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 2);
+        }
+
+        return res;
     }
 
     @Override

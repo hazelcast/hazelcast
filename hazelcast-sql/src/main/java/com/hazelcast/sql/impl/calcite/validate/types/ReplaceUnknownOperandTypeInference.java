@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
+import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -49,22 +50,25 @@ public class ReplaceUnknownOperandTypeInference implements SqlOperandTypeInferen
 
     @Override
     public void inferOperandTypes(SqlCallBinding callBinding, RelDataType returnType, RelDataType[] operandTypes) {
-        RelDataType unknownType = callBinding.getTypeFactory().createUnknownType();
-
         for (int i = 0; i < operandTypes.length; i++) {
-            RelDataType operandType = operandTypes[i];
+            RelDataType operandType = callBinding.getOperandType(i);
 
-            if (operandType.equals(unknownType)) {
-                RelDataType newOperandType = operandType(i, callBinding.getTypeFactory());
+            if (operandType.getSqlTypeName() == SqlTypeName.NULL) {
+                RelDataType resolvedOperandType = resolveOperandType(i, callBinding.getTypeFactory());
 
-                if (newOperandType != null) {
-                    operandTypes[i] = newOperandType;
+                // Preserve nullability
+                if (operandType.isNullable()) {
+                    resolvedOperandType = SqlNodeUtil.createNullableType(callBinding.getTypeFactory(), resolvedOperandType);
                 }
+
+                operandType = resolvedOperandType;
             }
+
+            operandTypes[i] = operandType;
         }
     }
 
-    private RelDataType operandType(int index, RelDataTypeFactory typeFactory) {
+    private RelDataType resolveOperandType(int index, RelDataTypeFactory typeFactory) {
         SqlTypeName typeName = null;
 
         if (typeNames != null && index < typeNames.length) {
@@ -75,10 +79,8 @@ public class ReplaceUnknownOperandTypeInference implements SqlOperandTypeInferen
             typeName = defaultTypeName;
         }
 
-        if (typeName != null) {
-            return typeFactory.createSqlType(typeName);
-        }
+        assert typeName != null;
 
-        return null;
+        return typeFactory.createSqlType(typeName);
     }
 }

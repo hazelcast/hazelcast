@@ -28,13 +28,19 @@ import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-// TODO: Remove
-public final class DoubleOperandChecker extends AbstractTypedOperandChecker {
+public final class NumericOperandChecker extends AbstractTypedOperandChecker {
 
-    public static final DoubleOperandChecker INSTANCE = new DoubleOperandChecker();
+    public static final NumericOperandChecker INTEGER = new NumericOperandChecker(SqlTypeName.INTEGER);
+    public static final NumericOperandChecker DOUBLE = new NumericOperandChecker(SqlTypeName.DOUBLE);
 
-    private DoubleOperandChecker() {
-        super(SqlTypeName.DOUBLE);
+    private final QueryDataType type;
+
+    private NumericOperandChecker(SqlTypeName typeName) {
+        super(typeName);
+
+         type = SqlToQueryType.map(typeName);
+
+         assert type.getTypeFamily().isNumeric();
     }
 
     @Override
@@ -42,7 +48,7 @@ public final class DoubleOperandChecker extends AbstractTypedOperandChecker {
         return new NumericPrecedenceParameterConverter(
             operand.getIndex(),
             operand.getParserPosition(),
-            QueryDataType.DOUBLE
+            type
         );
     }
 
@@ -54,16 +60,33 @@ public final class DoubleOperandChecker extends AbstractTypedOperandChecker {
         RelDataType operandType,
         int operandIndex
     ) {
-        if (SqlToQueryType.map(operandType.getSqlTypeName()).getTypeFamily().isNumeric()) {
-            RelDataType type = SqlNodeUtil.createType(validator.getTypeFactory(), typeName, operandType.isNullable());
+        QueryDataType operandType0 = SqlToQueryType.map(operandType.getSqlTypeName());
 
-            // TODO: Can it fail?
-            validator.getTypeCoercion().coerceOperandType(callBinding.getScope(), callBinding.getCall(), operandIndex, type);
-            validator.setKnownAndValidatedNodeType(operand, type);
-
-            return true;
+        if (!operandType0.getTypeFamily().isNumeric()) {
+            // We allow coercion only within numeric types.
+            return false;
         }
 
-        return false;
+        if (type.getTypeFamily().getPrecedence() < operandType0.getTypeFamily().getPrecedence()) {
+            // Cannot convert type with higher precedence to lower precedence (e.g. DOUBLE to INTEGER)
+            return false;
+        }
+
+        // Otherwise we are good to go. Construct the new type of the operand.
+        RelDataType newOperandType = SqlNodeUtil.createType(validator.getTypeFactory(), typeName, operandType.isNullable());
+
+        // Perform coercion
+        // TODO: Can it fail? Should we check for boolean result?
+        validator.getTypeCoercion().coerceOperandType(
+            callBinding.getScope(),
+            callBinding.getCall(),
+            operandIndex,
+            newOperandType
+        );
+
+        // Let validator know about the type change.
+        validator.setKnownAndValidatedNodeType(operand, newOperandType);
+
+        return true;
     }
 }

@@ -331,7 +331,6 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction LOWER = HazelcastSqlStringFunction.withStringReturn("LOWER");
     public static final SqlFunction UPPER = HazelcastSqlStringFunction.withStringReturn("UPPER");
 
-    // TODO
     public static final SqlFunction SUBSTRING = new HazelcastSqlSubstringFunction();
 
     // TODO

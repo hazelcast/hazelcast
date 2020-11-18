@@ -19,10 +19,12 @@ package com.hazelcast.sql.impl.calcite.validate;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.runtime.CalciteContextException;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
@@ -60,7 +62,8 @@ public final class SqlNodeUtil {
      * @return {@code true} if the given node is a {@linkplain SqlLiteral literal},
      * {@code false} otherwise.
      */
-    public static boolean isLiteral(SqlNode node) {
+    // TODO: Remove candidate
+    public static boolean isLiteral_old(SqlNode node) {
         return node.getKind() == SqlKind.LITERAL;
     }
 
@@ -168,5 +171,40 @@ public final class SqlNodeUtil {
         }
 
         return type;
+    }
+
+    public static SqlBasicCall asLiteral(SqlNode operand) {
+        if (operand instanceof SqlBasicCall) {
+            SqlBasicCall call = (SqlBasicCall) operand;
+
+            return call;
+        }
+
+        return null;
+    }
+
+    public static boolean isLiteral(SqlNode operand) {
+        return asLiteral(operand) != null;
+    }
+
+    public static boolean isExactNumericLiteral(SqlNode operand) {
+        SqlBasicCall call = asLiteral(operand);
+
+        if (call != null) {
+            HazelcastSqlLiteral literal = call.operand(0);
+
+            switch (literal.getTypeName()) {
+                case TINYINT:
+                case SMALLINT:
+                case INTEGER:
+                case BIGINT:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        return false;
     }
 }

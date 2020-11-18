@@ -55,7 +55,7 @@ public abstract class AbstractTypedOperandChecker implements OperandChecker {
         }
 
         // Handle literal
-        SqlBasicCall literal = OperandCheckerUtils.asLiteral(operand);
+        SqlBasicCall literal = SqlNodeUtil.asLiteral(operand);
 
         if (literal != null) {
             return checkLiteral(validator, callBinding, throwOnFailure, literal, operandType, literal.operand(0));

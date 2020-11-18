@@ -20,6 +20,7 @@ import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
 import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteralFunction;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -35,9 +36,8 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isParameter;
-
 public final class HazelcastPredicateComparison extends SqlBinaryOperator {
+
     public static final HazelcastPredicateComparison EQUALS = new HazelcastPredicateComparison(
         SqlStdOperatorTable.EQUALS
     );
@@ -69,7 +69,7 @@ public final class HazelcastPredicateComparison extends SqlBinaryOperator {
             base.getLeftPrec(),
             true,
             ReturnTypes.BOOLEAN_NULLABLE,
-            new OperandTypeInference(),
+            new ComparisonOperandTypeInference(),
             null
         );
     }
@@ -102,14 +102,16 @@ public final class HazelcastPredicateComparison extends SqlBinaryOperator {
         }
 
         // Now we do not have NULL at any side, proceed
-        return checkOperandTypes(binding, throwOnFailure, validator, firstType, secondType);
+        return checkOperandTypes(binding, throwOnFailure, validator, first, firstType, second, secondType);
     }
 
     private boolean checkOperandTypes(
         SqlCallBindingOverride callBinding,
         boolean throwOnFailure,
         HazelcastSqlValidator validator,
+        SqlNode first,
         RelDataType firstType,
+        SqlNode second,
         RelDataType secondType
     ) {
         RelDataType winningType = HazelcastTypeSystem.withHigherPrecedence(firstType, secondType);
@@ -120,6 +122,7 @@ public final class HazelcastPredicateComparison extends SqlBinaryOperator {
                 throwOnFailure,
                 validator,
                 firstType,
+                second,
                 secondType,
                 1
             );
@@ -131,6 +134,7 @@ public final class HazelcastPredicateComparison extends SqlBinaryOperator {
                 throwOnFailure,
                 validator,
                 secondType,
+                first,
                 firstType,
                 0
             );
@@ -142,6 +146,7 @@ public final class HazelcastPredicateComparison extends SqlBinaryOperator {
         boolean throwOnFailure,
         HazelcastSqlValidator validator,
         RelDataType highType,
+        SqlNode lowOperand,
         RelDataType lowType,
         int lowIndex
     ) {
@@ -164,8 +169,8 @@ public final class HazelcastPredicateComparison extends SqlBinaryOperator {
 
         // Types are in the same group, cast lower to higher.
         // TODO: What to do with the result?
-        // TODO: Should we call validated node type?
         validator.getTypeCoercion().coerceOperandType(callBinding.getScope(), callBinding.getCall(), lowIndex, highType);
+        validator.setKnownAndValidatedNodeType(lowOperand, highType);
 
         return true;
     }
@@ -184,18 +189,35 @@ public final class HazelcastPredicateComparison extends SqlBinaryOperator {
         return false;
     }
 
-    private static final class OperandTypeInference implements SqlOperandTypeInference {
+    private static final class ComparisonOperandTypeInference implements SqlOperandTypeInference {
         @Override
         public void inferOperandTypes(SqlCallBinding binding, RelDataType returnType, RelDataType[] operandTypes) {
-            boolean hasUnknownTypes = false;
+            // Check if we have parameters. If yes, we will upcast integer literals to BIGINT as explained below
+            boolean hasParameters = binding.operands().stream().anyMatch(SqlNodeUtil::isParameter);
+
+            int unknownTypeOperandIndex = -1;
             RelDataType knownType = null;
 
             for (int i = 0; i < binding.getOperandCount(); i++) {
                 RelDataType operandType = binding.getOperandType(i);
 
                 if (operandType.getSqlTypeName() == SqlTypeName.NULL) {
-                    hasUnknownTypes = true;
+                    // Will resolve operand type at this index later.
+                    unknownTypeOperandIndex = i;
                 } else {
+                    if (hasParameters && SqlNodeUtil.isExactNumericLiteral(binding.operand(i))) {
+                        // If we are here, there is a parameter, and an exact numeric literal.
+                        // We upcast the type of the numeric literal to BIGINT, so that an expression `1 > ?` is resolved to
+                        // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`
+                        RelDataType newOperandType = SqlNodeUtil.createType(
+                            binding.getTypeFactory(),
+                            SqlTypeName.BIGINT,
+                            operandType.isNullable()
+                        );
+
+                        operandType = newOperandType;
+                    }
+
                     operandTypes[i] = operandType;
 
                     if (knownType == null) {
@@ -204,16 +226,14 @@ public final class HazelcastPredicateComparison extends SqlBinaryOperator {
                 }
             }
 
+            // If we have [UNKNOWN, UNKNOWN] operands, throw an signature error, since we cannot deduce the return type
             if (knownType == null) {
                 throw new SqlCallBindingOverride(binding).newValidationSignatureError();
             }
 
-            if (hasUnknownTypes) {
-                for (int i = 0; i < binding.getOperandCount(); i++) {
-                    if (isParameter(binding.operand(i))) {
-                        operandTypes[i] = knownType;
-                    }
-                }
+            // If there is an operand with an unresolved type, set it to the known type.
+            if (unknownTypeOperandIndex != -1) {
+                operandTypes[unknownTypeOperandIndex] = knownType;
             }
         }
     }

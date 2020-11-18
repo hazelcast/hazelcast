@@ -426,7 +426,7 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         checkColumnParameter(0, null, RES_NULL);
 
-        checkColumnParameterFailure(1, new BigDecimal("1.1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT");
+        checkColumnParameterFailure(1, new BigDecimal("1.1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER");
     }
 
     @Test
@@ -441,26 +441,26 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
         checkColumnLiteral(1, "null", RES_NULL);
 
-        checkColumnLiteralFailure(1, "true", SqlErrorCode.PARSING, "Literal 'TRUE' can not be parsed to type 'INTEGER'");
-        checkColumnLiteralFailure(1, "false", SqlErrorCode.PARSING, "Literal 'FALSE' can not be parsed to type 'INTEGER'");
+        checkColumnLiteralFailure(1, "true", SqlErrorCode.PARSING, "Cast function cannot convert value of type BOOLEAN to type INTEGER");
+        checkColumnLiteralFailure(1, "false", SqlErrorCode.PARSING, "Cast function cannot convert value of type BOOLEAN to type INTEGER");
 
-        checkColumnLiteralFailure(1, "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
+        checkColumnLiteralFailure(1, "'bad'", SqlErrorCode.PARSING, "Cast function cannot convert value of type VARCHAR to type INTEGER");
     }
 
     @Test
     public void test_parameter_parameter() {
         put(1);
 
-        checkFailure("?", "?", SqlErrorCode.PARSING, "Illegal use of dynamic parameter");
+        checkFailure("?", "?", SqlErrorCode.PARSING, "Cannot apply [UNKNOWN, UNKNOWN]");
     }
 
     @Test
     public void test_parameter_literal() {
         put(1);
 
-        // Exact numeric literal
-        check("?", "null", RES_NULL, new Object[] { null });
+        checkFailure("?", "null", SqlErrorCode.PARSING, "Cannot apply [UNKNOWN, UNKNOWN]", new Object[] { null });
 
+        // Exact numeric literal
         check("?", "1", RES_LT, (byte) 0);
         check("?", "1", RES_EQ, (byte) 1);
         check("?", "1", RES_GT, (byte) 2);
@@ -526,7 +526,7 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
         checkFailure("?", "true", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to BOOLEAN", 1);
 
         // Null literal
-        checkFailure("?", "null", SqlErrorCode.PARSING, "Illegal use of dynamic parameter", 1);
+        checkFailure("?", "null", SqlErrorCode.PARSING, "Cannot apply [UNKNOWN, UNKNOWN]", 1);
     }
 
     @Test

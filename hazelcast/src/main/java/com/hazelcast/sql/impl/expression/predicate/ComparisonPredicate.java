@@ -49,7 +49,7 @@ public final class ComparisonPredicate extends BiExpression<Boolean> implements 
     }
 
     public static ComparisonPredicate create(Expression<?> left, Expression<?> right, ComparisonMode comparisonMode) {
-        assert left.getType().equals(right.getType());
+        assert left.getType().equals(right.getType()) : "Left: " + left.getType() + ", right=" + right.getType();
         return new ComparisonPredicate(left, right, comparisonMode);
     }
 

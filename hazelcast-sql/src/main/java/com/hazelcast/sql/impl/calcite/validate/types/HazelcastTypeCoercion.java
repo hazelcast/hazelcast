@@ -35,7 +35,7 @@ import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
 
 import java.util.List;
 
-import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isLiteral;
+import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isLiteral_old;
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isParameter;
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.numericValue;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isChar;
@@ -201,11 +201,17 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             return false;
         }
 
-        if (isLiteral(node) && !(isTemporal(from) || isTemporal(to) || isChar(from) || isChar(to))) {
+        if (isLiteral_old(node) && !(isTemporal(from) || isTemporal(to) || isChar(from) || isChar(to))) {
             // never cast literals, let Calcite decide on temporal and char ones
             return false;
         }
 
+        if (typeName(from) != typeName(to)) {
+            // Force conversion between different types.
+            return true;
+        }
+
+        // TODO: Check if we need this delegation
         return super.needToCast(scope, node, to);
     }
 
@@ -224,7 +230,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         for (SqlNode operand : operands) {
             RelDataType operandType = validator.deriveType(scope, operand);
-            if (isLiteral(operand)) {
+            if (isLiteral_old(operand)) {
                 continue;
             }
 
@@ -240,7 +246,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         for (SqlNode operand : operands) {
             RelDataType operandType = validator.deriveType(scope, operand);
-            if (!isLiteral(operand) || !isNumeric(operandType)) {
+            if (!isLiteral_old(operand) || !isNumeric(operandType)) {
                 continue;
             }
             SqlLiteral literal = (SqlLiteral) operand;
@@ -260,7 +266,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         for (SqlNode operand : operands) {
             RelDataType operandType = validator.deriveType(scope, operand);
-            if (!isLiteral(operand) || isNumeric(operandType)) {
+            if (!isLiteral_old(operand) || isNumeric(operandType)) {
                 continue;
             }
             SqlLiteral literal = (SqlLiteral) operand;
@@ -312,7 +318,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
                 types[i] = TYPE_FACTORY.createTypeWithNullability(commonType, true);
                 nullable = true;
-            } else if (isLiteral(operand)) {
+            } else if (isLiteral_old(operand)) {
                 SqlLiteral literal = (SqlLiteral) operand;
 
                 if (literal.getValue() == null) {

@@ -55,7 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isLiteral;
+import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isLiteral_old;
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isParameter;
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.numericValue;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.canRepresent;
@@ -296,7 +296,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
             from = narrowestTypeFor(numeric, typeName(to));
         }
 
-        if (isLiteral(operand)) {
+        if (isLiteral_old(operand)) {
             validateLiteral((SqlLiteral) operand, to);
         }
 
