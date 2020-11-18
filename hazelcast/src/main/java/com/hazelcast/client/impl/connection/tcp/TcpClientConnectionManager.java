@@ -460,7 +460,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                 }
                 // If the address providers load no addresses (which seems to be possible), then the above loop is not entered
                 // and the lifecycle check is missing, hence we need to repeat the same check at this point.
-                checkClientActive();
+                if (addresses.isEmpty()) {
+                    checkClientActive();
+                }
             } while (waitStrategy.sleep());
         } catch (ClientNotAllowedInClusterException | InvalidConfigurationException e) {
             logger.warning("Stopped trying on the cluster: " + context.getClusterName()
