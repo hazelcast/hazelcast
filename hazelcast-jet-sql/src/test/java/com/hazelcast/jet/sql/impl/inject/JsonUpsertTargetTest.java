@@ -74,7 +74,7 @@ public class JsonUpsertTargetTest {
         timestampTzInjector.set(OffsetDateTime.of(2020, 9, 9, 12, 23, 34, 200_000_000, UTC));
         Object json = target.conclude();
 
-        assertThat(json.toString()).isEqualTo("{"
+        assertThat(new String((byte[]) json)).isEqualTo("{"
                 + "\"null\":null"
                 + ",\"object\":{}"
                 + ",\"string\":\"string\""
@@ -125,6 +125,6 @@ public class JsonUpsertTargetTest {
         injector.set(value);
         Object json = target.conclude();
 
-        assertThat(json.toString()).isEqualTo("{\"object\":" + expected + "}");
+        assertThat(new String((byte[]) json)).isEqualTo("{\"object\":" + expected + "}");
     }
 }

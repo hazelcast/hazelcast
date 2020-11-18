@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -71,7 +72,11 @@ public class JsonQueryTargetTest {
                 + ", \"null\": null"
                 + ", \"object\": {}"
                 + "}";
-        return new Object[]{new Object[]{json}, new Object[]{new ObjectMapper().readTree(json)}};
+        return new Object[]{
+                new Object[]{json},
+                new Object[]{json.getBytes(StandardCharsets.UTF_8)},
+                new Object[]{new ObjectMapper().readTree(json)}
+        };
     }
 
     @Test

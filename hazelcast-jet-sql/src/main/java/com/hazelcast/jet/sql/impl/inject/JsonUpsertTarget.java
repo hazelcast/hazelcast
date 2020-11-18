@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -25,6 +26,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
 
 @NotThreadSafe
@@ -114,6 +116,10 @@ class JsonUpsertTarget implements UpsertTarget {
     public Object conclude() {
         ObjectNode json = this.json;
         this.json = null;
-        return json;
+        try {
+            return MAPPER.writeValueAsBytes(json);
+        } catch (JsonProcessingException jpe) {
+            throw sneakyThrow(jpe);
+        }
     }
 }
