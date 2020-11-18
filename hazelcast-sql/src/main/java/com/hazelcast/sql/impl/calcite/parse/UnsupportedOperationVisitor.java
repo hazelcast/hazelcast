@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
-import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteralFunction;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
@@ -109,9 +108,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
         // Supported operators
         SUPPORTED_OPERATORS = new HashSet<>();
-
-        // System
-        SUPPORTED_OPERATORS.add(HazelcastSqlLiteralFunction.INSTANCE);
 
         // Math
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.COS);

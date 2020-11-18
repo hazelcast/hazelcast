@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
-import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteralFunction;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDivideOperator;
@@ -313,11 +312,6 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
         @Override
         public Void visit(SqlCall call) {
-            // Do not rewrite literals
-            if (call.getOperator() == HazelcastSqlLiteralFunction.INSTANCE) {
-                return null;
-            }
-
             rewriteCall(call);
 
             return super.visit(call);

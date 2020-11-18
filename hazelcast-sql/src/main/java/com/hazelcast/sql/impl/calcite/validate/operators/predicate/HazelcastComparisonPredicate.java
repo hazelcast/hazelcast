@@ -17,8 +17,6 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
-import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
-import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteralFunction;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
@@ -26,7 +24,6 @@ import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlNode;
@@ -177,17 +174,9 @@ public final class HazelcastComparisonPredicate extends SqlBinaryOperator implem
     }
 
     private boolean isNullLiteral(SqlNode node) {
-        if (node instanceof SqlBasicCall) {
-            SqlBasicCall call = (SqlBasicCall) node;
+        SqlTypeName typeName = SqlNodeUtil.literalTypeName(node);
 
-            if (call.getOperator() == HazelcastSqlLiteralFunction.INSTANCE) {
-                HazelcastSqlLiteral literal = call.operand(0);
-
-                return literal.getTypeName() == SqlTypeName.NULL;
-            }
-        }
-
-        return false;
+        return typeName == SqlTypeName.NULL;
     }
 
     private static final class ComparisonOperandTypeInference implements SqlOperandTypeInference {
@@ -206,7 +195,7 @@ public final class HazelcastComparisonPredicate extends SqlBinaryOperator implem
                     // Will resolve operand type at this index later.
                     unknownTypeOperandIndex = i;
                 } else {
-                    if (hasParameters && SqlNodeUtil.isExactNumericLiteralCall(binding.operand(i))) {
+                    if (hasParameters && SqlNodeUtil.isExactNumericLiteral(binding.operand(i))) {
                         // If we are here, there is a parameter, and an exact numeric literal.
                         // We upcast the type of the numeric literal to BIGINT, so that an expression `1 > ?` is resolved to
                         // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`

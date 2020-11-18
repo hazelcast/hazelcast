@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.validate.types;
 
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.type.BasicSqlType;
 import org.apache.calcite.sql.type.SqlTypeName;
 
@@ -246,31 +245,6 @@ public final class HazelcastIntegerType extends BasicSqlType {
 
         HazelcastIntegerType integerType = (HazelcastIntegerType) type;
         return Math.min(integerType.bitWidth, bitWidthOf(type.getSqlTypeName()));
-    }
-
-    /**
-     * Derives the integer type of the given numeric and supposedly
-     * integer-valued SQL literal.
-     * <p>
-     * If the given literal is numeric, but can't be represented as Java {@code
-     * long}, its type is assumed to be BIGINT. Callers should validate the
-     * literal value to make sure it's compatible with the derived type.
-     *
-     * @param literal the literal to derive the type of.
-     * @return the derived literal type.
-     * @throws Error if the given literal is not numeric.
-     */
-    public static RelDataType deriveLiteralType(SqlLiteral literal) {
-        long value;
-        try {
-            value = literal.bigDecimalValue().longValueExact();
-        } catch (ArithmeticException e) {
-            // It's ok to fallback to BIGINT here, we will fail later with a
-            // proper error message while validating the literal.
-            return HazelcastTypeFactory.INSTANCE.createSqlType(BIGINT);
-        }
-
-        return HazelcastIntegerType.of(bitWidthOf(value), false);
     }
 
     /**

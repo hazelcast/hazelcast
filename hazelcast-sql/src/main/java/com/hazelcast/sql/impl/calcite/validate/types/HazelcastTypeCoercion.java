@@ -177,6 +177,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     }
 
     @SuppressWarnings("checkstyle:NPathComplexity")
+    // TODO: Review
     @Override
     protected boolean needToCast(SqlValidatorScope scope, SqlNode node, RelDataType to) {
         RelDataType from = validator.deriveType(scope, node);
@@ -221,6 +222,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:NPathComplexity",
             "checkstyle:NestedIfDepth"})
+    // TODO: Review/rmeove
     private RelDataType[] inferTypes(SqlValidatorScope scope, List<SqlNode> operands, boolean assumeNumeric) {
         // Infer common type from columns and sub-expressions.
 

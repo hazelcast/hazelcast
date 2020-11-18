@@ -16,8 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
-import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteralFunction;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BooleanConverter;
 import com.hazelcast.sql.impl.type.converter.Converter;
@@ -28,13 +27,11 @@ import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlUtil;
-import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
@@ -45,12 +42,8 @@ import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isNumeric;
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 import static org.apache.calcite.sql.type.SqlTypeName.APPROX_TYPES;
-import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN_TYPES;
-import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
-import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.REAL;
-import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
 /**
  * Custom Hazelcast sql-to-rel converter.
@@ -73,12 +66,6 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return convertLiteral((SqlLiteral) node);
         } else if (node.getKind() == SqlKind.CAST) {
             return convertCast((SqlCall) node, blackboard);
-        } else if (node instanceof SqlBasicCall) {
-            SqlBasicCall call = (SqlBasicCall) node;
-
-            if (call.getOperator() == HazelcastSqlLiteralFunction.INSTANCE) {
-                return convertLiteralFunction(call);
-            }
         }
 
         return null;
@@ -143,18 +130,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         return getRexBuilder().makeCast(to, operand);
     }
 
-    private RexNode convertLiteralFunction(SqlBasicCall call) {
-        RelDataType targetType = validator.getValidatedNodeType(call);
-        HazelcastSqlLiteral literal = call.operand(0);
-
-        SqlLiteral originalLiteral = literal.getOriginal();
-
-        RexNode res = rexBuilder.makeLiteral(originalLiteral.getValue(), targetType, true);
-
-        return res;
-    }
-
-    @SuppressWarnings("UnpredictableBigDecimalConstructorCall")
+    // TODO: Do we need it?
     private RexNode convertLiteral(SqlLiteral literal) {
         if (literal.getValue() == null) {
             // trust Calcite on generation for NULL literals
@@ -162,43 +138,8 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         }
 
         RelDataType type = validator.getValidatedNodeType(literal);
-        SqlTypeName literalTypeName = literal.getTypeName();
 
-        // Extract the literal value.
-
-        Object value;
-        if (CHAR_TYPES.contains(literalTypeName)) {
-            if (isNumeric(type)) {
-                value = StringConverter.INSTANCE.asDecimal(literal.getValueAs(String.class));
-            } else if (BOOLEAN_TYPES.contains(type.getSqlTypeName())) {
-                value = StringConverter.INSTANCE.asBoolean(literal.getValueAs(String.class));
-            } else {
-                value = literal.getValue();
-            }
-        } else if (INTERVAL_TYPES.contains(literalTypeName)) {
-            value = literal.getValueAs(BigDecimal.class);
-        } else {
-            value = literal.getValue();
-        }
-
-        // Convert REAL/DOUBLE values from BigDecimal representation to
-        // REAL/DOUBLE and back, otherwise Calcite might think two floating-point
-        // values having the same REAL/DOUBLE representation are distinct since
-        // their BigDecimal representations might differ.
-        if (type.getSqlTypeName() == DOUBLE) {
-            value = new BigDecimal(BigDecimalConverter.INSTANCE.asDouble(value), DECIMAL_MATH_CONTEXT);
-        } else if (type.getSqlTypeName() == REAL) {
-            value = new BigDecimal(BigDecimalConverter.INSTANCE.asReal(value), DECIMAL_MATH_CONTEXT);
-        }
-
-        // Generate the literal.
-
-        // Internally, all string literals in Calcite have CHAR type, but we
-        // interpret all strings as having VARCHAR type. By allowing the casting
-        // for VARCHAR, we emit string literals of VARCHAR type. The cast itself
-        // is optimized away, so we're left with just a literal.
-        boolean allowCast = type.getSqlTypeName() == VARCHAR;
-        return getRexBuilder().makeLiteral(value, type, allowCast);
+        return getRexBuilder().makeLiteral(literal.getValue(), type, true);
     }
 
 }

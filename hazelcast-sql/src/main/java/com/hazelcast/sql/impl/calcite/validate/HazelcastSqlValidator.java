@@ -18,15 +18,12 @@ package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
-import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
-import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteralFunction;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.param.PrecedenceParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -162,9 +159,19 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         super.addToSelectList(list, aliases, fieldList, exp, scope, includeSystemVars);
     }
 
+    // TODO: Review
     @Override
     public RelDataType deriveType(SqlValidatorScope scope, SqlNode expression) {
-        RelDataType derived = super.deriveType(scope, expression);
+        RelDataType derived = null;
+
+        if (expression.getKind() == SqlKind.LITERAL) {
+            derived = SqlNodeUtil.literalType(expression, (HazelcastTypeFactory) typeFactory);
+        }
+
+        if (derived == null) {
+            derived = super.deriveType(scope, expression);
+        }
+
         assert derived != null;
 
         if (derived.getSqlTypeName() == CHAR) {
@@ -217,18 +224,6 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
                 // operator.
 
                 rewritten.accept(rewriteVisitor);
-            } else if (node.getKind() == SqlKind.LITERAL) {
-                // TODO: Instead of doing this through a function, we may just constantly convert literals
-                //   to our own representation.
-                HazelcastSqlLiteral converted = HazelcastSqlLiteral.convert((SqlLiteral) rewritten);
-
-                if (converted != null) {
-                    rewritten = new SqlBasicCall(
-                        HazelcastSqlLiteralFunction.INSTANCE,
-                        new SqlNode[] { converted },
-                        rewritten.getParserPosition()
-                    );
-                }
             }
         }
 
@@ -240,21 +235,14 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         return (HazelcastTypeCoercion) super.getTypeCoercion();
     }
 
-    // TODO: Remove candidate
     private RelDataType deriveLiteralType(RelDataType derived, SqlNode expression) {
         RelDataType known = knownNodeTypes.get(expression);
-        if (derived == known) {
-            return derived;
+
+        if (known != null) {
+            derived = known;
         }
 
-        SqlLiteral literal = (SqlLiteral) expression;
-
-        if (HazelcastIntegerType.supports(typeName(derived)) && literal.getValue() != null) {
-            // Assign narrowest type to non-null integer literals.
-
-            derived = HazelcastIntegerType.deriveLiteralType(literal);
-            setKnownAndValidatedNodeType(expression, derived);
-        }
+        setKnownAndValidatedNodeType(expression, derived);
 
         return derived;
     }

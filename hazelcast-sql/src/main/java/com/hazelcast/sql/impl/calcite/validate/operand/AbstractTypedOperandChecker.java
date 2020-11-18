@@ -17,12 +17,11 @@
 package com.hazelcast.sql.impl.calcite.validate.operand;
 
 import com.hazelcast.sql.impl.ParameterConverter;
-import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
@@ -55,10 +54,10 @@ public abstract class AbstractTypedOperandChecker implements OperandChecker {
         }
 
         // Handle literal
-        SqlBasicCall literalCall = SqlNodeUtil.asLiteralCall(operand);
+        RelDataType literalType = SqlNodeUtil.literalType(operand, (HazelcastTypeFactory) validator.getTypeFactory());
 
-        if (literalCall != null) {
-            return checkLiteral(validator, callBinding, throwOnFailure, literalCall, operandType, literalCall.operand(0));
+        if (literalType != null) {
+            return checkLiteral(validator, callBinding, throwOnFailure, operand, operandType, operandIndex);
         }
 
         // Handle coercion if possible
@@ -80,10 +79,10 @@ public abstract class AbstractTypedOperandChecker implements OperandChecker {
         boolean throwOnFailure,
         SqlNode operand,
         RelDataType operandType,
-        HazelcastSqlLiteral literal
+        int operandIndex
     ) {
         // Handle NULL literal
-        if (literal.getTypeName() == SqlTypeName.NULL) {
+        if (operandType.getSqlTypeName() == SqlTypeName.NULL) {
             validator.setKnownAndValidatedNodeType(
                 operand,
                 SqlNodeUtil.createType(validator.getTypeFactory(), typeName, true)
@@ -93,7 +92,7 @@ public abstract class AbstractTypedOperandChecker implements OperandChecker {
         }
 
         // Coerce if possible
-        if (coerce(validator, callBinding, operand, operandType, 0)) {
+        if (coerce(validator, callBinding, operand, operandType, operandIndex)) {
             return true;
         }
 

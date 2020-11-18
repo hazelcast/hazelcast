@@ -16,14 +16,12 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
-import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
 import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingSignatureErrorAware;
 import com.hazelcast.sql.impl.calcite.validate.operand.VarcharOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
-import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlFunction;
@@ -84,15 +82,11 @@ public class HazelcastTrimFunction extends SqlFunction implements SqlCallBinding
         SqlNode fromOperand = call.operand(1);
         SqlNode targetOperand = call.operand(2);
 
-        SqlBasicCall fromLiteral = SqlNodeUtil.asLiteralCall(fromOperand);
+        SqlTypeName literalType = SqlNodeUtil.literalTypeName(fromOperand);
 
-        if (fromLiteral != null) {
-            HazelcastSqlLiteral literal = fromLiteral.operand(0);
-
-            if (literal.getTypeName() == SqlTypeName.VARCHAR && " ".equals(literal.getValue())) {
-                // Default value for the FROM operand, report only target operand.
-                return Collections.singletonList(targetOperand);
-            }
+        if (literalType == SqlTypeName.VARCHAR && " ".equals(((SqlLiteral) fromOperand).getValueAs(String.class))) {
+            // Default value for the FROM operand, report only target operand.
+            return Collections.singletonList(targetOperand);
         }
 
         // Non-default FROM, report both target and FROM operands.

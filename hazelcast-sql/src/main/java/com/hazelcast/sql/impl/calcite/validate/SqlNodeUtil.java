@@ -20,12 +20,11 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
-import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteralFunction;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.runtime.CalciteContextException;
-import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
@@ -174,29 +173,35 @@ public final class SqlNodeUtil {
         return type;
     }
 
-    public static SqlBasicCall asLiteralCall(SqlNode operand) {
-        if (operand instanceof SqlBasicCall) {
-            SqlBasicCall call = (SqlBasicCall) operand;
+    public static SqlTypeName literalTypeName(SqlNode operand) {
+        if (operand instanceof SqlLiteral) {
+            HazelcastSqlLiteral literal = HazelcastSqlLiteral.convert((SqlLiteral) operand);
 
-            if (call.getOperator() == HazelcastSqlLiteralFunction.INSTANCE) {
-                return call;
+            if (literal != null) {
+                return literal.getTypeName();
             }
         }
 
         return null;
     }
 
-    public static boolean isLiteralCall(SqlNode operand) {
-        return asLiteralCall(operand) != null;
+    public static RelDataType literalType(SqlNode operand, HazelcastTypeFactory typeFactory) {
+        if (operand instanceof SqlLiteral) {
+            HazelcastSqlLiteral literal = HazelcastSqlLiteral.convert((SqlLiteral) operand);
+
+            if (literal != null) {
+                return literal.getType(typeFactory);
+            }
+        }
+
+        return null;
     }
 
-    public static boolean isExactNumericLiteralCall(SqlNode operand) {
-        SqlBasicCall call = asLiteralCall(operand);
+    public static boolean isExactNumericLiteral(SqlNode operand) {
+        SqlTypeName type = literalTypeName(operand);
 
-        if (call != null) {
-            HazelcastSqlLiteral literal = call.operand(0);
-
-            switch (literal.getTypeName()) {
+        if (type != null) {
+            switch (type) {
                 case TINYINT:
                 case SMALLINT:
                 case INTEGER:

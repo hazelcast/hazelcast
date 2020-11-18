@@ -20,7 +20,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -30,7 +29,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertThrows;
-import static org.apache.calcite.sql.parser.SqlParserPos.ZERO;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.apache.calcite.sql.type.SqlTypeName.SMALLINT;
@@ -190,29 +188,6 @@ public class HazelcastIntegerTypeTest {
                     break;
             }
         }
-    }
-
-    @Test
-    public void testDeriveLiteralType() {
-        assertType(TINYINT, 0, false, HazelcastIntegerType.deriveLiteralType(SqlLiteral.createExactNumeric("0", ZERO)));
-        assertType(TINYINT, 1, false, HazelcastIntegerType.deriveLiteralType(SqlLiteral.createExactNumeric("1", ZERO)));
-        assertType(TINYINT, 1, false, HazelcastIntegerType.deriveLiteralType(SqlLiteral.createExactNumeric("-1", ZERO)));
-        assertType(TINYINT, 2, false, HazelcastIntegerType.deriveLiteralType(SqlLiteral.createExactNumeric("2", ZERO)));
-        assertType(TINYINT, 2, false, HazelcastIntegerType.deriveLiteralType(SqlLiteral.createExactNumeric("-2", ZERO)));
-        assertType(SMALLINT, 10, false, HazelcastIntegerType.deriveLiteralType(SqlLiteral.createExactNumeric("555", ZERO)));
-        assertType(SMALLINT, 10, false, HazelcastIntegerType.deriveLiteralType(SqlLiteral.createExactNumeric("-555", ZERO)));
-        assertType(INTEGER, 16, false, HazelcastIntegerType.deriveLiteralType(SqlLiteral.createExactNumeric("55555", ZERO)));
-        assertType(INTEGER, 16, false, HazelcastIntegerType.deriveLiteralType(SqlLiteral.createExactNumeric("-55555", ZERO)));
-        assertType(BIGINT, Long.SIZE - 1, false,
-                HazelcastIntegerType.deriveLiteralType(SqlLiteral.createExactNumeric(Long.toString(Long.MAX_VALUE), ZERO)));
-        assertType(BIGINT, Long.SIZE - 1, false,
-                HazelcastIntegerType.deriveLiteralType(SqlLiteral.createExactNumeric(Long.toString(Long.MIN_VALUE), ZERO)));
-
-        assertThrows(Error.class, () -> HazelcastIntegerType.deriveLiteralType(SqlLiteral.createCharString("foo", ZERO)));
-        assertThrows(Error.class, () -> HazelcastIntegerType.deriveLiteralType(SqlLiteral.createCharString("0", ZERO)));
-
-        assertType(BIGINT, Long.SIZE - 1, false,
-                HazelcastIntegerType.deriveLiteralType(SqlLiteral.createApproxNumeric("0.1", ZERO)));
     }
 
     @Test
