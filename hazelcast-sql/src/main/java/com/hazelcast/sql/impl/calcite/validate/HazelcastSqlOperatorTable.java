@@ -21,9 +21,6 @@ import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverr
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDivideOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDoubleFunction;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPredicateAndOr;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPredicateComparison;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPredicateNot;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlFloorFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlLikeOperator;
@@ -31,6 +28,10 @@ import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlMonotonicBi
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlStringFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlSubstringFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlTrimFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastAndOrPredicate;
+import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicate;
+import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
+import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastNotPredicate;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
@@ -60,7 +61,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastResources.RESOURCES;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes.NULLABLE_OBJECT;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAllNull;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.wrap;
@@ -89,22 +89,20 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#region Predicates.
 
-    // TODO
-    public static final SqlBinaryOperator AND = HazelcastPredicateAndOr.AND;
-    // TODO
-    public static final SqlBinaryOperator OR = HazelcastPredicateAndOr.OR;
-    public static final SqlPrefixOperator NOT = new HazelcastPredicateNot();
+    public static final SqlBinaryOperator AND = HazelcastAndOrPredicate.AND;
+    public static final SqlBinaryOperator OR = HazelcastAndOrPredicate.OR;
+    public static final SqlPrefixOperator NOT = new HazelcastNotPredicate();
 
     //#endregion
 
     //#region Comparison operators.
 
-    public static final SqlBinaryOperator EQUALS = HazelcastPredicateComparison.EQUALS;
-    public static final SqlBinaryOperator NOT_EQUALS = HazelcastPredicateComparison.NOT_EQUALS;
-    public static final SqlBinaryOperator GREATER_THAN = HazelcastPredicateComparison.GREATER_THAN;
-    public static final SqlBinaryOperator GREATER_THAN_OR_EQUAL = HazelcastPredicateComparison.GREATER_THAN_OR_EQUAL;
-    public static final SqlBinaryOperator LESS_THAN = HazelcastPredicateComparison.LESS_THAN;
-    public static final SqlBinaryOperator LESS_THAN_OR_EQUAL = HazelcastPredicateComparison.LESS_THAN_OR_EQUAL;
+    public static final SqlBinaryOperator EQUALS = HazelcastComparisonPredicate.EQUALS;
+    public static final SqlBinaryOperator NOT_EQUALS = HazelcastComparisonPredicate.NOT_EQUALS;
+    public static final SqlBinaryOperator GREATER_THAN = HazelcastComparisonPredicate.GREATER_THAN;
+    public static final SqlBinaryOperator GREATER_THAN_OR_EQUAL = HazelcastComparisonPredicate.GREATER_THAN_OR_EQUAL;
+    public static final SqlBinaryOperator LESS_THAN = HazelcastComparisonPredicate.LESS_THAN;
+    public static final SqlBinaryOperator LESS_THAN_OR_EQUAL = HazelcastComparisonPredicate.LESS_THAN_OR_EQUAL;
 
     //#endregion
 
@@ -170,65 +168,12 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#region "IS" family of predicates.
 
-    // TODO
-    public static final SqlPostfixOperator IS_TRUE = new SqlPostfixOperator(
-        "IS TRUE",
-        SqlKind.IS_TRUE,
-        SqlStdOperatorTable.IS_TRUE.getLeftPrec(),
-        ReturnTypes.BOOLEAN_NOT_NULL,
-        InferTypes.BOOLEAN,
-        wrap(notAny(OperandTypes.BOOLEAN))
-    );
-
-    // TODO
-    public static final SqlPostfixOperator IS_NOT_TRUE = new SqlPostfixOperator(
-        "IS NOT TRUE",
-        SqlKind.IS_NOT_TRUE,
-        SqlStdOperatorTable.IS_NOT_TRUE.getLeftPrec(),
-        ReturnTypes.BOOLEAN_NOT_NULL,
-        InferTypes.BOOLEAN,
-        wrap(notAny(OperandTypes.BOOLEAN))
-    );
-
-    // TODO
-    public static final SqlPostfixOperator IS_FALSE = new SqlPostfixOperator(
-        "IS FALSE",
-        SqlKind.IS_FALSE,
-        SqlStdOperatorTable.IS_FALSE.getLeftPrec(),
-        ReturnTypes.BOOLEAN_NOT_NULL,
-        InferTypes.BOOLEAN,
-        wrap(notAny(OperandTypes.BOOLEAN))
-    );
-
-    // TODO
-    public static final SqlPostfixOperator IS_NOT_FALSE = new SqlPostfixOperator(
-        "IS NOT FALSE",
-        SqlKind.IS_NOT_FALSE,
-        SqlStdOperatorTable.IS_NOT_FALSE.getLeftPrec(),
-        ReturnTypes.BOOLEAN_NOT_NULL,
-        InferTypes.BOOLEAN,
-        wrap(notAny(OperandTypes.BOOLEAN))
-    );
-
-    // TODO
-    public static final SqlPostfixOperator IS_NULL = new SqlPostfixOperator(
-        "IS NULL",
-        SqlKind.IS_NULL,
-        SqlStdOperatorTable.IS_NULL.getLeftPrec(),
-        ReturnTypes.BOOLEAN_NOT_NULL,
-        NULLABLE_OBJECT,
-        wrap(OperandTypes.ANY)
-    );
-
-    // TODO
-    public static final SqlPostfixOperator IS_NOT_NULL = new SqlPostfixOperator(
-        "IS NOT NULL",
-        SqlKind.IS_NOT_NULL,
-        SqlStdOperatorTable.IS_NOT_NULL.getLeftPrec(),
-        ReturnTypes.BOOLEAN_NOT_NULL,
-        NULLABLE_OBJECT,
-        wrap(OperandTypes.ANY)
-    );
+    public static final SqlPostfixOperator IS_TRUE = HazelcastIsTrueFalseNullPredicate.IS_TRUE;
+    public static final SqlPostfixOperator IS_NOT_TRUE = HazelcastIsTrueFalseNullPredicate.IS_NOT_TRUE;
+    public static final SqlPostfixOperator IS_FALSE = HazelcastIsTrueFalseNullPredicate.IS_FALSE;
+    public static final SqlPostfixOperator IS_NOT_FALSE = HazelcastIsTrueFalseNullPredicate.IS_NOT_FALSE;
+    public static final SqlPostfixOperator IS_NULL = HazelcastIsTrueFalseNullPredicate.IS_NULL;
+    public static final SqlPostfixOperator IS_NOT_NULL = HazelcastIsTrueFalseNullPredicate.IS_NOT_NULL;
 
     //#endregion
 
@@ -408,7 +353,6 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
                 basicCall.setOperator(resolvedOperators.get(0));
             } else if (call instanceof SqlCase) {
-                // TODO: Support CASE
                 throw functionDoesNotExist(call);
             }
         }

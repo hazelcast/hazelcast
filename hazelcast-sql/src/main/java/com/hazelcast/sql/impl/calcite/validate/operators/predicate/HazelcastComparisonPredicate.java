@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
@@ -36,33 +36,33 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public final class HazelcastPredicateComparison extends SqlBinaryOperator {
+public final class HazelcastComparisonPredicate extends SqlBinaryOperator {
 
-    public static final HazelcastPredicateComparison EQUALS = new HazelcastPredicateComparison(
+    public static final HazelcastComparisonPredicate EQUALS = new HazelcastComparisonPredicate(
         SqlStdOperatorTable.EQUALS
     );
 
-    public static final HazelcastPredicateComparison NOT_EQUALS = new HazelcastPredicateComparison(
+    public static final HazelcastComparisonPredicate NOT_EQUALS = new HazelcastComparisonPredicate(
         SqlStdOperatorTable.NOT_EQUALS
     );
 
-    public static final HazelcastPredicateComparison GREATER_THAN = new HazelcastPredicateComparison(
+    public static final HazelcastComparisonPredicate GREATER_THAN = new HazelcastComparisonPredicate(
         SqlStdOperatorTable.GREATER_THAN
     );
 
-    public static final HazelcastPredicateComparison GREATER_THAN_OR_EQUAL = new HazelcastPredicateComparison(
+    public static final HazelcastComparisonPredicate GREATER_THAN_OR_EQUAL = new HazelcastComparisonPredicate(
         SqlStdOperatorTable.GREATER_THAN_OR_EQUAL
     );
 
-    public static final HazelcastPredicateComparison LESS_THAN = new HazelcastPredicateComparison(
+    public static final HazelcastComparisonPredicate LESS_THAN = new HazelcastComparisonPredicate(
         SqlStdOperatorTable.LESS_THAN
     );
 
-    public static final HazelcastPredicateComparison LESS_THAN_OR_EQUAL = new HazelcastPredicateComparison(
+    public static final HazelcastComparisonPredicate LESS_THAN_OR_EQUAL = new HazelcastComparisonPredicate(
         SqlStdOperatorTable.LESS_THAN_OR_EQUAL
     );
 
-    private HazelcastPredicateComparison(SqlBinaryOperator base) {
+    private HazelcastComparisonPredicate(SqlBinaryOperator base) {
         super(
             base.getName(),
             base.getKind(),

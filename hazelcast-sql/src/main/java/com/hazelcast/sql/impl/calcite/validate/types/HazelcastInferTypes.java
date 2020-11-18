@@ -64,24 +64,6 @@ public final class HazelcastInferTypes {
         Arrays.fill(operandTypes, known);
     };
 
-    /**
-     * The same as Calcite's {@link InferTypes#ANY_NULLABLE}, but doesn't assign
-     * OBJECT/ANY type to NULLs.
-     */
-    public static final SqlOperandTypeInference NULLABLE_OBJECT = (binding, returnType, operandTypes) -> {
-        // NOTE: Calcite validator's unknown type has NULL SqlTypeName.
-
-        assert binding.getTypeFactory() == HazelcastTypeFactory.INSTANCE;
-        RelDataType unknown = binding.getValidator().getUnknownType();
-        for (int i = 0; i < operandTypes.length; ++i) {
-            RelDataType type = binding.getOperandType(i);
-
-            if (unknown.equals(type) || typeName(type) != NULL) {
-                operandTypes[i] = HazelcastObjectType.NULLABLE_INSTANCE;
-            }
-        }
-    };
-
     private HazelcastInferTypes() {
         // No-op.
     }

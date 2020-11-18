@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
@@ -29,21 +29,21 @@ import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.util.Litmus;
 
-public final class HazelcastPredicateAndOr extends SqlBinaryOperator implements SqlCallBindingManualOverride {
+public final class HazelcastAndOrPredicate extends SqlBinaryOperator implements SqlCallBindingManualOverride {
 
-    public static final HazelcastPredicateAndOr AND = new HazelcastPredicateAndOr(
+    public static final HazelcastAndOrPredicate AND = new HazelcastAndOrPredicate(
         "AND",
         SqlKind.AND,
         SqlStdOperatorTable.AND.getLeftPrec()
     );
 
-    public static final SqlBinaryOperator OR = new HazelcastPredicateAndOr(
+    public static final SqlBinaryOperator OR = new HazelcastAndOrPredicate(
         "OR",
         SqlKind.OR,
         SqlStdOperatorTable.OR.getLeftPrec()
     );
 
-    private HazelcastPredicateAndOr(String name, SqlKind kind, int prec) {
+    private HazelcastAndOrPredicate(String name, SqlKind kind, int prec) {
         super(
             name,
             kind,
@@ -55,7 +55,6 @@ public final class HazelcastPredicateAndOr extends SqlBinaryOperator implements 
         );
     }
 
-    @SuppressWarnings("checkstyle:NestedIfDepth")
     @Override
     public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
         SqlCallBindingOverride callBinding0 = new SqlCallBindingOverride(callBinding);

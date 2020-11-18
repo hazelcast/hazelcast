@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
+/**
+ * Contains Calcite-related classes.
+ */
 package org.apache.calcite.sql;
-
-import org.apache.calcite.sql.parser.SqlParserPos;
-
-public abstract class SqlNodeBridge extends SqlNode {
-    public SqlNodeBridge(SqlParserPos pos) {
-        super(pos);
-    }
-}

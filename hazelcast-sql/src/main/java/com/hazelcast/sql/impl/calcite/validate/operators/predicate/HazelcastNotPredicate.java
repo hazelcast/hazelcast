@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
@@ -28,8 +28,8 @@ import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
-public class HazelcastPredicateNot extends SqlPrefixOperator implements SqlCallBindingManualOverride {
-    public HazelcastPredicateNot() {
+public class HazelcastNotPredicate extends SqlPrefixOperator implements SqlCallBindingManualOverride {
+    public HazelcastNotPredicate() {
         super(
             "NOT",
             SqlKind.NOT,

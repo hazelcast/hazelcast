@@ -70,45 +70,28 @@ public class IsTrueFalsePredicateIntegrationTest extends SqlExpressionIntegratio
         // TRUE literal
         checkLiteral("TRUE", "IS TRUE", true);
         checkLiteral("true", "IS TRUE", true);
-        checkLiteral("'TRUE'", "IS TRUE", true);
-        checkLiteral("'true'", "IS TRUE", true);
 
         checkLiteral("TRUE", "IS FALSE", false);
-
         checkLiteral("true", "IS FALSE", false);
-        checkLiteral("'TRUE'", "IS FALSE", false);
-        checkLiteral("'true'", "IS FALSE", false);
 
         checkLiteral("TRUE", "IS NOT TRUE", false);
         checkLiteral("true", "IS NOT TRUE", false);
-        checkLiteral("'TRUE'", "IS NOT TRUE", false);
-        checkLiteral("'true'", "IS NOT TRUE", false);
 
         checkLiteral("TRUE", "IS NOT FALSE", true);
         checkLiteral("true", "IS NOT FALSE", true);
-        checkLiteral("'TRUE'", "IS NOT FALSE", true);
-        checkLiteral("'true'", "IS NOT FALSE", true);
 
         // False literal
         checkLiteral("FALSE", "IS TRUE", false);
         checkLiteral("false", "IS TRUE", false);
-        checkLiteral("'FALSE'", "IS TRUE", false);
-        checkLiteral("'false'", "IS TRUE", false);
 
         checkLiteral("FALSE", "IS FALSE", true);
         checkLiteral("false", "IS FALSE", true);
-        checkLiteral("'FALSE'", "IS FALSE", true);
-        checkLiteral("'false'", "IS FALSE", true);
 
         checkLiteral("FALSE", "IS NOT TRUE", true);
         checkLiteral("false", "IS NOT TRUE", true);
-        checkLiteral("'FALSE'", "IS NOT TRUE", true);
-        checkLiteral("'false'", "IS NOT TRUE", true);
 
         checkLiteral("FALSE", "IS NOT FALSE", false);
         checkLiteral("false", "IS NOT FALSE", false);
-        checkLiteral("'FALSE'", "IS NOT FALSE", false);
-        checkLiteral("'false'", "IS NOT FALSE", false);
 
         // NULL literal
         checkLiteral("NULL", "IS TRUE", false);
@@ -123,11 +106,14 @@ public class IsTrueFalsePredicateIntegrationTest extends SqlExpressionIntegratio
         checkLiteral("NULL", "IS NOT FALSE", true);
         checkLiteral("null", "IS NOT FALSE", true);
 
-        // Bad literal
-        checkBadLiteral("IS TRUE");
-        checkBadLiteral("IS FALSE");
-        checkBadLiteral("IS NOT TRUE");
-        checkBadLiteral("IS NOT FALSE");
+        // Bad literals
+        checkLiteralFailure("'true'", "VARCHAR");
+        checkLiteralFailure("'false'", "VARCHAR");
+        checkLiteralFailure("'null'", "VARCHAR");
+        checkLiteralFailure("'any'", "VARCHAR");
+        checkLiteralFailure("1", "TINYINT");
+        checkLiteralFailure("1.1", "DECIMAL");
+        checkLiteralFailure("1e1", "DOUBLE");
     }
 
     private void checkLiteral(String literal, String function, boolean expectedResult) {
@@ -148,19 +134,23 @@ public class IsTrueFalsePredicateIntegrationTest extends SqlExpressionIntegratio
         }
     }
 
-    private void checkBadLiteral(String function) {
-        checkFailureInternal("SELECT * FROM map WHERE 'bad' " + function, SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'BOOLEAN'");
-        checkFailureInternal("SELECT 'bad' " + function + " FROM map", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'BOOLEAN'");
+    private void checkLiteralFailure(String literal, String expectedType) {
+        checkLiteralFailure(literal, "IS TRUE", expectedType);
+        checkLiteralFailure(literal, "IS FALSE", expectedType);
+        checkLiteralFailure(literal, "IS NOT TRUE", expectedType);
+        checkLiteralFailure(literal, "IS NOT FALSE", expectedType);
+    }
+
+    private void checkLiteralFailure(String literal, String function, String expectedType) {
+        String expression = literal + " " + function;
+        String sql = "SELECT " + expression + " FROM map WHERE " + expression;
+
+        checkFailureInternal(sql, SqlErrorCode.PARSING, "Cannot apply [" + expectedType + "] to the '" + function + "' operator");
     }
 
     @Test
     public void testColumn_boolean() {
         checkColumn(BOOLEAN, true, false);
-    }
-
-    @Test
-    public void testColumn_string() {
-        checkColumn(STRING, "true", "false");
     }
 
     private void checkColumn(ExpressionType<?> type, Object trueValue, Object falseValue) {
@@ -223,8 +213,8 @@ public class IsTrueFalsePredicateIntegrationTest extends SqlExpressionIntegratio
     private void checkColumnBad(String function, Object expectedFromType) {
         checkFailureInternal(
             "SELECT key FROM map WHERE field1 " + function,
-            SqlErrorCode.DATA_EXCEPTION,
-            "Cannot convert " + expectedFromType + " to BOOLEAN"
+            SqlErrorCode.PARSING,
+            "Cannot apply [" + expectedFromType + "]"
         );
     }
 
@@ -280,57 +270,50 @@ public class IsTrueFalsePredicateIntegrationTest extends SqlExpressionIntegratio
 
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS TRUE", true));
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS TRUE", false));
-        assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS TRUE", "true"));
-        assertEquals(set(), keys("SELECT key FROM map WHERE ? IS TRUE", "false"));
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS TRUE", new Object[] { null }));
 
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS FALSE", true));
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS FALSE", false));
-        assertEquals(set(), keys("SELECT key FROM map WHERE ? IS FALSE", "true"));
-        assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS FALSE", "false"));
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS FALSE", new Object[] { null }));
 
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS NOT TRUE", true));
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT TRUE", false));
-        assertEquals(set(), keys("SELECT key FROM map WHERE ? IS NOT TRUE", "true"));
-        assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT TRUE", "false"));
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT TRUE", new Object[] { null }));
 
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT FALSE", true));
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS NOT FALSE", false));
-        assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT FALSE", "true"));
-        assertEquals(set(), keys("SELECT key FROM map WHERE ? IS NOT FALSE", "false"));
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT FALSE", new Object[] { null }));
 
-        checkUnsupportedParameter((byte) 1, "TINYINT");
-        checkUnsupportedParameter((short) 1, "SMALLINT");
-        checkUnsupportedParameter(1, "INTEGER");
-        checkUnsupportedParameter((long) 1, "BIGINT");
-        checkUnsupportedParameter(BigInteger.ONE, "DECIMAL");
-        checkUnsupportedParameter(BigDecimal.ONE, "DECIMAL");
-        checkUnsupportedParameter(1f, "REAL");
-        checkUnsupportedParameter(1d, "DOUBLE");
+        checkUnsupportedParameter("true");
+        checkUnsupportedParameter((byte) 1);
+        checkUnsupportedParameter((short) 1);
+        checkUnsupportedParameter(1);
+        checkUnsupportedParameter((long) 1);
+        checkUnsupportedParameter(BigInteger.ONE);
+        checkUnsupportedParameter(BigDecimal.ONE);
+        checkUnsupportedParameter(1f);
+        checkUnsupportedParameter(1d);
 
-        checkUnsupportedParameter(LOCAL_DATE_VAL, "DATE");
-        checkUnsupportedParameter(LOCAL_TIME_VAL, "TIME");
-        checkUnsupportedParameter(LOCAL_DATE_TIME_VAL, "TIMESTAMP");
-        checkUnsupportedParameter(OFFSET_DATE_TIME_VAL, "TIMESTAMP_WITH_TIME_ZONE");
+        checkUnsupportedParameter(LOCAL_DATE_VAL);
+        checkUnsupportedParameter(LOCAL_TIME_VAL);
+        checkUnsupportedParameter(LOCAL_DATE_TIME_VAL);
+        checkUnsupportedParameter(OFFSET_DATE_TIME_VAL);
     }
 
-    private void checkUnsupportedParameter(Object param, String expectedTypeInErrorMessage) {
-        checkUnsupportedParameter("IS TRUE", param, expectedTypeInErrorMessage);
-        checkUnsupportedParameter("IS FALSE", param, expectedTypeInErrorMessage);
-        checkUnsupportedParameter("IS NOT TRUE", param, expectedTypeInErrorMessage);
-        checkUnsupportedParameter("IS NOT FALSE", param, expectedTypeInErrorMessage);
+    private void checkUnsupportedParameter(Object param) {
+        checkUnsupportedParameter("IS TRUE", param);
+        checkUnsupportedParameter("IS FALSE", param);
+        checkUnsupportedParameter("IS NOT TRUE", param);
+        checkUnsupportedParameter("IS NOT FALSE", param);
     }
 
-    private void checkUnsupportedParameter(String function, Object param, String expectedTypeInErrorMessage) {
+    private void checkUnsupportedParameter(String function, Object param) {
         String sql = "SELECT * FROM map WHERE ? " + function;
 
         checkFailureInternal(
             sql,
             SqlErrorCode.DATA_EXCEPTION,
-            "Cannot implicitly convert parameter at position 0 from " + expectedTypeInErrorMessage + " to BOOLEAN",
+            "Parameter at position 0 must be of BOOLEAN type",
             param
         );
     }

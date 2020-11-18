@@ -64,7 +64,7 @@ public final class SqlNodeUtil {
      * {@code false} otherwise.
      */
     // TODO: Remove candidate
-    public static boolean isLiteral_old(SqlNode node) {
+    public static boolean isLiteralRemoveMe(SqlNode node) {
         return node.getKind() == SqlKind.LITERAL;
     }
 

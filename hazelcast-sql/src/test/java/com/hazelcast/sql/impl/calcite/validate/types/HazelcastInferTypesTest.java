@@ -31,13 +31,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes.FIRST_KNOWN;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType.bitWidthOf;
-import static com.hazelcast.sql.impl.expression.ExpressionTestBase.TYPE_FACTORY;
 import static junit.framework.TestCase.assertEquals;
-import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
-import static org.apache.calcite.sql.type.SqlTypeName.NULL;
-import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})

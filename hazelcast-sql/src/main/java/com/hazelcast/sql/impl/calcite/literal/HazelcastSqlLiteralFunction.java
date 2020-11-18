@@ -35,11 +35,11 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql2rel.SqlRexContext;
 import org.apache.calcite.sql2rel.SqlRexConvertlet;
 
-public class HazelcastSqlLiteralFunction extends SqlFunction implements SqlRexConvertlet {
-
-    private static final String NAME = "$LITERAL";
+public final class HazelcastSqlLiteralFunction extends SqlFunction implements SqlRexConvertlet {
 
     public static final HazelcastSqlLiteralFunction INSTANCE = new HazelcastSqlLiteralFunction();
+
+    private static final String NAME = "$LITERAL";
 
     private HazelcastSqlLiteralFunction() {
         super(
