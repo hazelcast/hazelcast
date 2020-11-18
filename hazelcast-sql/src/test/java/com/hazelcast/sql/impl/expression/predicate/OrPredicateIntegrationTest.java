@@ -77,7 +77,7 @@ public class OrPredicateIntegrationTest extends SqlExpressionIntegrationTestSupp
 
         String sql = sql("?", "?", "?");
 
-        checkValue(sql, true, null, true, false);
+        checkValue(sql, RES_TRUE, null, true, false);
     }
 
     @Test
@@ -131,18 +131,17 @@ public class OrPredicateIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkColumnColumnFailure(new StringObjectVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, OBJECT] to the 'OR' operator (consider adding an explicit CAST)");
 
         // COLUMN/PARAMETER
-        put(false);
+        put(true);
         checkValue("this", "?", RES_TRUE, true);
-        checkValue("this", "?", RES_FALSE, false);
-        checkValue("this", "?", RES_NULL, new Object[] { null });
+        checkValue("this", "?", RES_TRUE, false);
+        checkValue("this", "?", RES_TRUE, new Object[] { null });
         checkFailure("this", "?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", "bad");
 
         // COLUMN/LITERAL
         checkValue("this", "true", RES_TRUE);
-        checkValue("this", "false", RES_FALSE);
-        checkValue("this", "null", RES_NULL);
-        checkValue("this", "'true'", RES_TRUE);
-        checkValue("this", "'false'", RES_FALSE);
+        checkValue("this", "false", RES_TRUE);
+        checkValue("this", "null", RES_TRUE);
+        checkFailure("this", "'true'", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'OR' operator (consider adding an explicit CAST)");
         checkFailure("this", "1", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TINYINT] to the 'OR' operator (consider adding an explicit CAST)");
         checkFailure("this", "1E0", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, DOUBLE] to the 'OR' operator (consider adding an explicit CAST)");
         checkFailure("this", "'bad'", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'OR' operator (consider adding an explicit CAST)");
@@ -183,14 +182,27 @@ public class OrPredicateIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkValue("?", "null", RES_TRUE, true);
         checkValue("?", "null", RES_NULL, false);
 
-        checkValue("?", "'true'", RES_TRUE, true);
-        checkValue("?", "'true'", RES_TRUE, false);
-        checkValue("?", "'false'", RES_TRUE, true);
-        checkValue("?", "'false'", RES_FALSE, false);
-
         checkFailure("?", "1", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TINYINT] to the 'OR' operator (consider adding an explicit CAST)", true);
         checkFailure("?", "1E0", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, DOUBLE] to the 'OR' operator (consider adding an explicit CAST)", true);
         checkFailure("?", "'bad'", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'OR' operator (consider adding an explicit CAST)", true);
+        checkFailure("?", "'true'", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'OR' operator (consider adding an explicit CAST)", true);
+    }
+
+    @Test
+    public void test_literal() {
+        put(1);
+
+        checkValue("true", "true", RES_TRUE);
+        checkValue("true", "false", RES_TRUE);
+        checkValue("true", "null", RES_TRUE);
+        checkValue("false", "false", RES_FALSE);
+        checkValue("false", "null", RES_NULL);
+        checkValue("null", "null", RES_NULL);
+
+        checkFailure("true", "1", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TINYINT] to the 'OR' operator (consider adding an explicit CAST)");
+        checkFailure("true", "1E0", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, DOUBLE] to the 'OR' operator (consider adding an explicit CAST)");
+        checkFailure("true", "'bad'", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'OR' operator (consider adding an explicit CAST)");
+        checkFailure("true", "'true'", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'OR' operator (consider adding an explicit CAST)");
     }
 
     private void checkColumnColumn(ExpressionBiValue value, Boolean expectedValue) {

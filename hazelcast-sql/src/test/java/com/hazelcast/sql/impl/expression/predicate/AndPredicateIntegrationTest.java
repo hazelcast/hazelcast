@@ -141,8 +141,7 @@ public class AndPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         checkValue("this", "true", RES_TRUE);
         checkValue("this", "false", RES_FALSE);
         checkValue("this", "null", RES_NULL);
-        checkValue("this", "'true'", RES_TRUE);
-        checkValue("this", "'false'", RES_FALSE);
+        checkFailure("this", "'true'", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'AND' operator (consider adding an explicit CAST)");
         checkFailure("this", "1", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TINYINT] to the 'AND' operator (consider adding an explicit CAST)");
         checkFailure("this", "1E0", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, DOUBLE] to the 'AND' operator (consider adding an explicit CAST)");
         checkFailure("this", "'bad'", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'AND' operator (consider adding an explicit CAST)");
@@ -183,14 +182,10 @@ public class AndPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         checkValue("?", "null", RES_NULL, true);
         checkValue("?", "null", RES_FALSE, false);
 
-        checkValue("?", "'true'", RES_TRUE, true);
-        checkValue("?", "'true'", RES_FALSE, false);
-        checkValue("?", "'false'", RES_FALSE, true);
-        checkValue("?", "'false'", RES_FALSE, false);
-
         checkFailure("?", "1", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TINYINT] to the 'AND' operator (consider adding an explicit CAST)", true);
         checkFailure("?", "1E0", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, DOUBLE] to the 'AND' operator (consider adding an explicit CAST)", true);
         checkFailure("?", "'bad'", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'AND' operator (consider adding an explicit CAST)", true);
+        checkFailure("?", "'true'", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'AND' operator (consider adding an explicit CAST)", true);
     }
 
     @Test
@@ -204,11 +199,10 @@ public class AndPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         checkValue("false", "null", RES_FALSE);
         checkValue("null", "null", RES_NULL);
 
-        checkValue("true", "'false'", RES_FALSE);
-
         checkFailure("true", "1", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, TINYINT] to the 'AND' operator (consider adding an explicit CAST)");
         checkFailure("true", "1E0", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, DOUBLE] to the 'AND' operator (consider adding an explicit CAST)");
         checkFailure("true", "'bad'", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'AND' operator (consider adding an explicit CAST)");
+        checkFailure("true", "'true'", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, VARCHAR] to the 'AND' operator (consider adding an explicit CAST)");
     }
 
     private void checkColumnColumn(ExpressionBiValue value, Boolean expectedValue) {

@@ -20,19 +20,11 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
-import com.hazelcast.sql.support.expressions.ExpressionValue.BigDecimalVal;
-import com.hazelcast.sql.support.expressions.ExpressionValue.BigIntegerVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ByteVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.CharacterVal;
-import com.hazelcast.sql.support.expressions.ExpressionValue.DoubleVal;
-import com.hazelcast.sql.support.expressions.ExpressionValue.FloatVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.IntegerVal;
-import com.hazelcast.sql.support.expressions.ExpressionValue.LocalDateTimeVal;
-import com.hazelcast.sql.support.expressions.ExpressionValue.LocalDateVal;
-import com.hazelcast.sql.support.expressions.ExpressionValue.LocalTimeVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.LongVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ObjectVal;
-import com.hazelcast.sql.support.expressions.ExpressionValue.OffsetDateTimeVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ShortVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.StringVal;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -52,24 +44,21 @@ public class AsciiFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
     public void test_column() {
         checkColumn(new StringVal(), null);
         checkColumn(new StringVal().field1("abcde"), codePoint('a'));
-
         checkColumn(new CharacterVal().field1('a'), codePoint('a'));
 
-        checkColumn(new ByteVal().field1((byte) 100), codePoint('1'));
-        checkColumn(new ShortVal().field1((short) 100), codePoint('1'));
-        checkColumn(new IntegerVal().field1(100), codePoint('1'));
-        checkColumn(new LongVal().field1((long) 100), codePoint('1'));
-        checkColumn(new BigIntegerVal().field1(new BigInteger("100")), codePoint('1'));
-        checkColumn(new BigDecimalVal().field1(new BigDecimal("100.5")), codePoint('1'));
-        checkColumn(new FloatVal().field1(100.5f), codePoint('1'));
-        checkColumn(new DoubleVal().field1(100.5d), codePoint('1'));
-        checkColumn(new LocalDateVal().field1(LOCAL_DATE_VAL), codePoint('2'));
-        checkColumn(new LocalTimeVal().field1(LOCAL_TIME_VAL), codePoint('0'));
-        checkColumn(new LocalDateTimeVal().field1(LOCAL_DATE_TIME_VAL), codePoint('2'));
-        checkColumn(new OffsetDateTimeVal().field1(OFFSET_DATE_TIME_VAL), codePoint('2'));
-
-        put(new ObjectVal());
-        checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply [OBJECT] to the 'ASCII' function (consider adding an explicit CAST)");
+        checkColumnFailure(new ByteVal().field1((byte) 100), "TINYINT");
+        checkColumnFailure(new ShortVal().field1((short) 100), "SMALLINT");
+        checkColumnFailure(new IntegerVal().field1(100), "INTEGER");
+        checkColumnFailure(new LongVal().field1((long) 100), "BIGINT");
+        checkColumnFailure(new ExpressionValue.BigIntegerVal().field1(new BigInteger("100")), "DECIMAL");
+        checkColumnFailure(new ExpressionValue.BigDecimalVal().field1(new BigDecimal("100.5")), "DECIMAL");
+        checkColumnFailure(new ExpressionValue.FloatVal().field1(100.5f), "REAL");
+        checkColumnFailure(new ExpressionValue.DoubleVal().field1(100.5d), "DOUBLE");
+        checkColumnFailure(new ExpressionValue.LocalDateVal().field1(LOCAL_DATE_VAL), "DATE");
+        checkColumnFailure(new ExpressionValue.LocalTimeVal().field1(LOCAL_TIME_VAL), "TIME");
+        checkColumnFailure(new ExpressionValue.LocalDateTimeVal().field1(LOCAL_DATE_TIME_VAL), "TIMESTAMP");
+        checkColumnFailure(new ExpressionValue.OffsetDateTimeVal().field1(OFFSET_DATE_TIME_VAL), "TIMESTAMP_WITH_TIME_ZONE");
+        checkColumnFailure(new ObjectVal(), "OBJECT");
     }
 
     private void checkColumn(ExpressionValue value, Integer expectedResult) {
@@ -78,19 +67,23 @@ public class AsciiFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         check("field1", expectedResult);
     }
 
+    private void checkColumnFailure(ExpressionValue value, String expectedType) {
+        put(value);
+
+        checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply [" + expectedType + "] to the 'ASCII' function");
+    }
+
     @Test
     public void test_literal() {
         put(1);
 
         check("null", null);
-
-        check("true", codePoint('t'));
-
-        check("100", codePoint('1'));
         check("'100'", codePoint('1'));
         check("'abcde'", codePoint('a'));
 
-        check("'100E0'", codePoint('1'));
+        checkFailure("100", SqlErrorCode.PARSING, "Cannot apply [TINYINT] to the 'ASCII' function");
+        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'ASCII' function");
+        checkFailure("100E0", SqlErrorCode.PARSING, "Cannot apply [DOUBLE] to the 'ASCII' function");
     }
 
     @Test
@@ -105,20 +98,20 @@ public class AsciiFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
 
         check("?", codePoint('a'), 'a');
 
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BOOLEAN to VARCHAR", true);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TINYINT to VARCHAR", (byte) 100);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from SMALLINT to VARCHAR", (short) 100);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 100);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BIGINT to VARCHAR", 100L);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to VARCHAR", BigInteger.ONE);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to VARCHAR", BigDecimal.ONE);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to VARCHAR", 100f);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to VARCHAR", 100d);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to VARCHAR", new ObjectVal());
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to VARCHAR", LOCAL_DATE_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to VARCHAR", LOCAL_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to VARCHAR", LOCAL_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to VARCHAR", OFFSET_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", true);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", (byte) 100);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", (short) 100);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 100);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 100L);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", BigInteger.ONE);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", BigDecimal.ONE);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 100f);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 100d);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", new ObjectVal());
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_DATE_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", OFFSET_DATE_TIME_VAL);
     }
 
     private void check(Object operand, Integer expectedResult, Object... params) {

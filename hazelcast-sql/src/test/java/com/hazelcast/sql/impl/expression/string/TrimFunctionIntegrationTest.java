@@ -295,9 +295,8 @@ public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         put(new ExpressionValue.StringVal());
         checkValueInternal("SELECT LTRIM(field1) FROM map", SqlColumnType.VARCHAR, null);
 
-        // Only one test for numeric column because we are going to restrict them anyway
         put(BigDecimal.ONE);
-        checkValueInternal("SELECT LTRIM(this) FROM map", SqlColumnType.VARCHAR, "1");
+        checkFailureInternal("SELECT LTRIM(this) FROM map", SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the 'LTRIM' function");
 
         // Parameters
         put(1);
@@ -305,15 +304,15 @@ public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkValueInternal("SELECT LTRIM(?) FROM map", SqlColumnType.VARCHAR, "abc ", " abc ");
         checkValueInternal("SELECT LTRIM(?) FROM map", SqlColumnType.VARCHAR, "a", 'a');
 
-        checkFailureInternal("SELECT LTRIM(?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
+        checkFailureInternal("SELECT LTRIM(?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 1);
 
         // Literals
         checkValueInternal("SELECT LTRIM(' abc ') FROM map", SqlColumnType.VARCHAR, "abc ");
         checkValueInternal("SELECT LTRIM(null) FROM map", SqlColumnType.VARCHAR, null);
-        checkValueInternal("SELECT LTRIM(true) FROM map", SqlColumnType.VARCHAR, "true");
-        checkValueInternal("SELECT LTRIM(1) FROM map", SqlColumnType.VARCHAR, "1");
-        checkValueInternal("SELECT LTRIM(1.1) FROM map", SqlColumnType.VARCHAR, "1.1");
-        checkValueInternal("SELECT LTRIM(1.1E2) FROM map", SqlColumnType.VARCHAR, "110.0");
+        checkFailureInternal("SELECT LTRIM(true) FROM map", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'LTRIM' function");
+        checkFailureInternal("SELECT LTRIM(1) FROM map", SqlErrorCode.PARSING, "Cannot apply [TINYINT] to the 'LTRIM' function");
+        checkFailureInternal("SELECT LTRIM(1.1) FROM map", SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the 'LTRIM' function");
+        checkFailureInternal("SELECT LTRIM(1.1E2) FROM map", SqlErrorCode.PARSING, "Cannot apply [DOUBLE] to the 'LTRIM' function");
     }
 
     @Test
@@ -340,9 +339,8 @@ public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         put(new ExpressionValue.StringVal());
         checkValueInternal("SELECT RTRIM(field1) FROM map", SqlColumnType.VARCHAR, null);
 
-        // Only one test for numeric column because we are going to restrict them anyway
         put(BigDecimal.ONE);
-        checkValueInternal("SELECT RTRIM(this) FROM map", SqlColumnType.VARCHAR, "1");
+        checkFailureInternal("SELECT RTRIM(this) FROM map", SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the 'RTRIM' function");
 
         // Parameters
         put(1);
@@ -350,15 +348,15 @@ public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkValueInternal("SELECT RTRIM(?) FROM map", SqlColumnType.VARCHAR, " abc", " abc ");
         checkValueInternal("SELECT RTRIM(?) FROM map", SqlColumnType.VARCHAR, "a", 'a');
 
-        checkFailureInternal("SELECT RTRIM(?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
+        checkFailureInternal("SELECT RTRIM(?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 1);
 
         // Literals
         checkValueInternal("SELECT RTRIM(' abc ') FROM map", SqlColumnType.VARCHAR, " abc");
         checkValueInternal("SELECT RTRIM(null) FROM map", SqlColumnType.VARCHAR, null);
-        checkValueInternal("SELECT RTRIM(true) FROM map", SqlColumnType.VARCHAR, "true");
-        checkValueInternal("SELECT RTRIM(1) FROM map", SqlColumnType.VARCHAR, "1");
-        checkValueInternal("SELECT RTRIM(1.1) FROM map", SqlColumnType.VARCHAR, "1.1");
-        checkValueInternal("SELECT RTRIM(1.1E2) FROM map", SqlColumnType.VARCHAR, "110.0");
+        checkFailureInternal("SELECT RTRIM(true) FROM map", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'RTRIM' function");
+        checkFailureInternal("SELECT RTRIM(1) FROM map", SqlErrorCode.PARSING, "Cannot apply [TINYINT] to the 'RTRIM' function");
+        checkFailureInternal("SELECT RTRIM(1.1) FROM map", SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the 'RTRIM' function");
+        checkFailureInternal("SELECT RTRIM(1.1E2) FROM map", SqlErrorCode.PARSING, "Cannot apply [DOUBLE] to the 'RTRIM' function");
     }
 
     @Test
@@ -385,9 +383,8 @@ public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         put(new ExpressionValue.StringVal());
         checkValueInternal("SELECT BTRIM(field1) FROM map", SqlColumnType.VARCHAR, null);
 
-        // Only one test for numeric column because we are going to restrict them anyway
         put(BigDecimal.ONE);
-        checkValueInternal("SELECT BTRIM(this) FROM map", SqlColumnType.VARCHAR, "1");
+        checkFailureInternal("SELECT BTRIM(this) FROM map", SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the 'BTRIM' function");
 
         // Parameters
         put(1);
@@ -395,14 +392,14 @@ public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkValueInternal("SELECT BTRIM(?) FROM map", SqlColumnType.VARCHAR, "abc", " abc ");
         checkValueInternal("SELECT BTRIM(?) FROM map", SqlColumnType.VARCHAR, "a", 'a');
 
-        checkFailureInternal("SELECT BTRIM(?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
+        checkFailureInternal("SELECT BTRIM(?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 1);
 
         // Literals
         checkValueInternal("SELECT BTRIM(' abc ') FROM map", SqlColumnType.VARCHAR, "abc");
         checkValueInternal("SELECT BTRIM(null) FROM map", SqlColumnType.VARCHAR, null);
-        checkValueInternal("SELECT BTRIM(true) FROM map", SqlColumnType.VARCHAR, "true");
-        checkValueInternal("SELECT BTRIM(1) FROM map", SqlColumnType.VARCHAR, "1");
-        checkValueInternal("SELECT BTRIM(1.1) FROM map", SqlColumnType.VARCHAR, "1.1");
-        checkValueInternal("SELECT BTRIM(1.1E2) FROM map", SqlColumnType.VARCHAR, "110.0");
+        checkFailureInternal("SELECT BTRIM(true) FROM map", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'BTRIM' function");
+        checkFailureInternal("SELECT BTRIM(1) FROM map", SqlErrorCode.PARSING, "Cannot apply [TINYINT] to the 'BTRIM' function");
+        checkFailureInternal("SELECT BTRIM(1.1) FROM map", SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the 'BTRIM' function");
+        checkFailureInternal("SELECT BTRIM(1.1E2) FROM map", SqlErrorCode.PARSING, "Cannot apply [DOUBLE] to the 'BTRIM' function");
     }
 }

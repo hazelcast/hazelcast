@@ -36,10 +36,6 @@ import org.junit.runner.RunWith;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import static com.hazelcast.sql.support.expressions.ExpressionValue.BigDecimalVal;
-import static com.hazelcast.sql.support.expressions.ExpressionValue.BigIntegerVal;
-import static com.hazelcast.sql.support.expressions.ExpressionValue.DoubleVal;
-import static com.hazelcast.sql.support.expressions.ExpressionValue.FloatVal;
 import static com.hazelcast.sql.support.expressions.ExpressionValue.ObjectVal;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -51,21 +47,21 @@ public class InitcapFunctionIntegrationTest extends SqlExpressionIntegrationTest
         checkColumn(new StringVal().field1("-first"), "-First");
         checkColumn(new StringVal().field1("fiRst"), "First");
         checkColumn(new StringVal().field1("fiRst seCond"), "First Second");
-
         checkColumn(new CharacterVal().field1('a'), "A");
 
-        checkColumn(new ByteVal().field1((byte) 100), "100");
-        checkColumn(new ShortVal().field1((short) 100), "100");
-        checkColumn(new IntegerVal().field1(100), "100");
-        checkColumn(new LongVal().field1((long) 100), "100");
-        checkColumn(new BigIntegerVal().field1(new BigInteger("100")), "100");
-        checkColumn(new BigDecimalVal().field1(new BigDecimal("100.5")), "100.5");
-        checkColumn(new FloatVal().field1(100.5f), Float.toString(100.5f));
-        checkColumn(new DoubleVal().field1(100.5d), Double.toString(100.5d));
-        checkColumn(new ExpressionValue.LocalDateVal().field1(LOCAL_DATE_VAL), LOCAL_DATE_VAL.toString());
-        checkColumn(new ExpressionValue.LocalTimeVal().field1(LOCAL_TIME_VAL), LOCAL_TIME_VAL.toString());
-        checkColumn(new ExpressionValue.LocalDateTimeVal().field1(LOCAL_DATE_TIME_VAL), LOCAL_DATE_TIME_VAL.toString().toLowerCase());
-        checkColumn(new ExpressionValue.OffsetDateTimeVal().field1(OFFSET_DATE_TIME_VAL), OFFSET_DATE_TIME_VAL.toString().toLowerCase());
+        checkColumnFailure(new ByteVal().field1((byte) 100), "TINYINT");
+        checkColumnFailure(new ShortVal().field1((short) 100), "SMALLINT");
+        checkColumnFailure(new IntegerVal().field1(100), "INTEGER");
+        checkColumnFailure(new LongVal().field1((long) 100), "BIGINT");
+        checkColumnFailure(new ExpressionValue.BigIntegerVal().field1(new BigInteger("100")), "DECIMAL");
+        checkColumnFailure(new ExpressionValue.BigDecimalVal().field1(new BigDecimal("100.5")), "DECIMAL");
+        checkColumnFailure(new ExpressionValue.FloatVal().field1(100.5f), "REAL");
+        checkColumnFailure(new ExpressionValue.DoubleVal().field1(100.5d), "DOUBLE");
+        checkColumnFailure(new ExpressionValue.LocalDateVal().field1(LOCAL_DATE_VAL), "DATE");
+        checkColumnFailure(new ExpressionValue.LocalTimeVal().field1(LOCAL_TIME_VAL), "TIME");
+        checkColumnFailure(new ExpressionValue.LocalDateTimeVal().field1(LOCAL_DATE_TIME_VAL), "TIMESTAMP");
+        checkColumnFailure(new ExpressionValue.OffsetDateTimeVal().field1(OFFSET_DATE_TIME_VAL), "TIMESTAMP_WITH_TIME_ZONE");
+        checkColumnFailure(new ObjectVal(), "OBJECT");
     }
 
     private void checkColumn(ExpressionValue value, String expectedResult) {
@@ -74,19 +70,23 @@ public class InitcapFunctionIntegrationTest extends SqlExpressionIntegrationTest
         check("field1", expectedResult);
     }
 
+    private void checkColumnFailure(ExpressionValue value, String expectedType) {
+        put(value);
+
+        checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply [" + expectedType + "] to the 'INITCAP' function");
+    }
+
     @Test
     public void test_literal() {
         put(1);
 
         check("null", null);
-
-        check("true", "True");
-
-        check("100", "100");
         check("'100'", "100");
         check("'abCde'", "Abcde");
 
-        check("'100E0'", "100e0");
+        checkFailure("100", SqlErrorCode.PARSING, "Cannot apply [TINYINT] to the 'INITCAP' function");
+        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'INITCAP' function");
+        checkFailure("100E0", SqlErrorCode.PARSING, "Cannot apply [DOUBLE] to the 'INITCAP' function");
     }
 
     @Test
@@ -101,20 +101,20 @@ public class InitcapFunctionIntegrationTest extends SqlExpressionIntegrationTest
 
         check("?", "A", 'a');
 
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BOOLEAN to VARCHAR", true);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TINYINT to VARCHAR", (byte) 100);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from SMALLINT to VARCHAR", (short) 100);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 100);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BIGINT to VARCHAR", 100L);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to VARCHAR", BigInteger.ONE);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to VARCHAR", BigDecimal.ONE);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to VARCHAR", 100f);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to VARCHAR", 100d);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to VARCHAR", new ObjectVal());
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to VARCHAR", LOCAL_DATE_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to VARCHAR", LOCAL_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to VARCHAR", LOCAL_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to VARCHAR", OFFSET_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", true);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", (byte) 100);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", (short) 100);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 100);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 100L);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", BigInteger.ONE);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", BigDecimal.ONE);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 100f);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 100d);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", new ObjectVal());
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_DATE_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", OFFSET_DATE_TIME_VAL);
     }
 
     private void check(Object operand, String expectedResult, Object... params) {

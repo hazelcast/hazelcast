@@ -35,6 +35,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.NULL;
  * A collection of operand type checkers. Basically, a mirror of {@link
  * OperandTypes} provided by Calcite with various enhancements.
  */
+// TODO: Must be removed eventually
 public final class HazelcastOperandTypes {
 
     /**
