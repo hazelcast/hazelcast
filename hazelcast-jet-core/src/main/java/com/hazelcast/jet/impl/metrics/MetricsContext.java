@@ -26,8 +26,8 @@ import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.core.metrics.Unit;
 
 import javax.annotation.Nonnull;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.BiFunction;
 
@@ -36,10 +36,7 @@ public class MetricsContext implements DynamicMetricsProvider {
     private static final BiFunction<String, Unit, AbstractMetric> CREATE_SINGLE_WRITER_METRIC = SingleWriterMetric::new;
     private static final BiFunction<String, Unit, AbstractMetric> CREATE_THREAD_SAFE_METRICS = ThreadSafeMetric::new;
 
-    private String onlyName;
-    private AbstractMetric onlyMetric;
-
-    private Map<String, AbstractMetric> metrics;
+    private volatile Map<String, AbstractMetric> metrics;
 
     Metric metric(String name, Unit unit) {
         return metric(name, unit, CREATE_SINGLE_WRITER_METRIC);
@@ -50,43 +47,24 @@ public class MetricsContext implements DynamicMetricsProvider {
     }
 
     private Metric metric(String name, Unit unit, BiFunction<String, Unit, AbstractMetric> metricSupplier) {
-        if (metrics == null) { //at most one already defined metric
-            if (onlyMetric == null) { //no already defined metrics
-                onlyMetric = metricSupplier.apply(name, unit);
-                onlyName = name;
-                return onlyMetric;
-            } else { //one single already defined metric
-                if (name.equals(onlyName)) { //single already defined metric same as the requested one
-                    return onlyMetric;
-                } else { //single already defined metric different from the requested one
-                    metrics = new HashMap<>();
-                    metrics.put(onlyName, onlyMetric);
+        if (metrics == null) { //first metric being stored
+            metrics = new ConcurrentHashMap<>();
+        }
 
-                    onlyMetric = null;
-                    onlyName = null;
-
-                    AbstractMetric metric = metricSupplier.apply(name, unit);
-                    metrics.put(name, metric);
-                    return metric;
-                }
-            }
-        } else { //multiple metrics already defined
-            AbstractMetric metric = metrics.get(name);
-            if (metric == null) { //requested metric not yet defined
-                metric = metricSupplier.apply(name, unit);
-                metrics.put(name, metric);
-            }
+        AbstractMetric metric = metrics.get(name);
+        if (metric != null) {
             return metric;
         }
+
+        metric = metricSupplier.apply(name, unit);
+        metrics.put(name, metric);
+
+        return metric;
     }
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor tagger, MetricsCollectionContext context) {
-        if (onlyMetric != null) {
-            context.collect(
-                    addUserTag(tagger), onlyName, ProbeLevel.INFO, toProbeUnit(onlyMetric.unit()), onlyMetric.get()
-            );
-        } else if (metrics != null) {
+        if (metrics != null) {
             MetricDescriptor withUserTag = addUserTag(tagger);
             metrics.forEach((name, metric) ->
                     context.collect(withUserTag, name, ProbeLevel.INFO, toProbeUnit(metric.unit()), metric.get()));
