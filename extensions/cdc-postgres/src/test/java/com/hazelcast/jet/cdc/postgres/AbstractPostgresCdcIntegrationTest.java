@@ -18,6 +18,7 @@ package com.hazelcast.jet.cdc.postgres;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hazelcast.jet.cdc.AbstractCdcIntegrationTest;
+import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
@@ -50,7 +51,8 @@ public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcInte
                 .setDatabasePort(postgres.getMappedPort(POSTGRESQL_PORT))
                 .setDatabaseUser("postgres")
                 .setDatabasePassword("postgres")
-                .setDatabaseName("postgres");
+                .setDatabaseName("postgres")
+                .setReconnectBehavior(RetryStrategies.indefinitely(1000));
     }
 
     protected void createSchema(String schema) throws SQLException {
