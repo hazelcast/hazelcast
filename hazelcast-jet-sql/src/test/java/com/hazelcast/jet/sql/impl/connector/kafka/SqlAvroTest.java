@@ -35,7 +35,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
-import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.eclipse.jetty.server.Server;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -111,10 +110,6 @@ public class SqlAvroTest extends SqlTestSupport {
                 + ", \"" + OPTION_VALUE_FORMAT + "\" '" + AVRO_FORMAT + '\''
                 + ", \"bootstrap.servers\" '" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", \"schema.registry.url\" '" + schemaRegistry.getURI() + '\''
-                + ", \"key.serializer\" '" + KafkaAvroSerializer.class.getCanonicalName() + '\''
-                + ", \"key.deserializer\" '" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
-                + ", \"value.serializer\" '" + KafkaAvroSerializer.class.getCanonicalName() + '\''
-                + ", \"value.deserializer\" '" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
                 + ", \"auto.offset.reset\" 'earliest'"
                 + ")"
         );
@@ -145,10 +140,6 @@ public class SqlAvroTest extends SqlTestSupport {
                 + ", \"" + OPTION_VALUE_FORMAT + "\" '" + AVRO_FORMAT + '\''
                 + ", \"bootstrap.servers\" '" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", \"schema.registry.url\" '" + schemaRegistry.getURI() + '\''
-                + ", \"key.serializer\" '" + KafkaAvroSerializer.class.getCanonicalName() + '\''
-                + ", \"key.deserializer\" '" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
-                + ", \"value.serializer\" '" + KafkaAvroSerializer.class.getCanonicalName() + '\''
-                + ", \"value.deserializer\" '" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
                 + ", \"auto.offset.reset\" 'earliest'"
                 + ")"
         );
@@ -179,10 +170,6 @@ public class SqlAvroTest extends SqlTestSupport {
                 + ", \"" + OPTION_VALUE_FORMAT + "\" '" + AVRO_FORMAT + '\''
                 + ", \"bootstrap.servers\" '" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", \"schema.registry.url\" '" + schemaRegistry.getURI() + '\''
-                + ", \"key.serializer\" '" + KafkaAvroSerializer.class.getCanonicalName() + '\''
-                + ", \"key.deserializer\" '" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
-                + ", \"value.serializer\" '" + KafkaAvroSerializer.class.getCanonicalName() + '\''
-                + ", \"value.deserializer\" '" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
                 + ", \"auto.offset.reset\" 'earliest'"
                 + ")"
         );
@@ -201,10 +188,6 @@ public class SqlAvroTest extends SqlTestSupport {
                 + ", \"" + OPTION_VALUE_FORMAT + "\" '" + AVRO_FORMAT + '\''
                 + ", \"bootstrap.servers\" '" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", \"schema.registry.url\" '" + schemaRegistry.getURI() + '\''
-                + ", \"key.serializer\" '" + KafkaAvroSerializer.class.getCanonicalName() + '\''
-                + ", \"key.deserializer\" '" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
-                + ", \"value.serializer\" '" + KafkaAvroSerializer.class.getCanonicalName() + '\''
-                + ", \"value.deserializer\" '" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
                 + ", \"auto.offset.reset\" 'earliest'"
                 + ")"
         );
@@ -250,10 +233,6 @@ public class SqlAvroTest extends SqlTestSupport {
                 + ", \"" + OPTION_VALUE_FORMAT + "\" '" + AVRO_FORMAT + '\''
                 + ", \"bootstrap.servers\" '" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", \"schema.registry.url\" '" + schemaRegistry.getURI() + '\''
-                + ", \"key.serializer\" '" + KafkaAvroSerializer.class.getCanonicalName() + '\''
-                + ", \"key.deserializer\" '" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
-                + ", \"value.serializer\" '" + KafkaAvroSerializer.class.getCanonicalName() + '\''
-                + ", \"value.deserializer\" '" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
                 + ", \"auto.offset.reset\" 'earliest'"
                 + ")"
         );
@@ -315,11 +294,8 @@ public class SqlAvroTest extends SqlTestSupport {
                 + ", valueFormat 'avro'"
                 + ", \"bootstrap.servers\" '" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", \"schema.registry.url\" '" + schemaRegistry.getURI() + '\''
-                + ", \"key.serializer\" '" + IntegerSerializer.class.getCanonicalName() + '\''
-                + ", \"key.deserializer\" '" + IntegerDeserializer.class.getCanonicalName() + '\''
-                + ", \"value.serializer\" '" + KafkaAvroSerializer.class.getCanonicalName() + '\''
-                + ", \"value.deserializer\" '" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
-                + ", \"auto.offset.reset\" 'earliest')");
+                + ", \"auto.offset.reset\" 'earliest')"
+        );
 
         sqlService.execute("INSERT INTO " + topicName + " VALUES(42, 'foo')");
         sqlService.execute("INSERT INTO " + topicName + " VALUES(43, 'bar')");
@@ -389,10 +365,6 @@ public class SqlAvroTest extends SqlTestSupport {
                 + ", \"" + OPTION_VALUE_FORMAT + "\" '" + AVRO_FORMAT + '\''
                 + ", \"bootstrap.servers\" '" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", \"schema.registry.url\" '" + schemaRegistry.getURI() + '\''
-                + ", \"key.serializer\" '" + KafkaAvroSerializer.class.getCanonicalName() + '\''
-                + ", \"key.deserializer\" '" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
-                + ", \"value.serializer\" '" + KafkaAvroSerializer.class.getCanonicalName() + '\''
-                + ", \"value.deserializer\" '" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
                 + ", \"auto.offset.reset\" 'earliest'"
                 + ")"
         );
@@ -404,6 +376,40 @@ public class SqlAvroTest extends SqlTestSupport {
                         new GenericRecordBuilder(intSchema("id")).set("id", 1).build(),
                         new GenericRecordBuilder(stringSchema("name")).set("name", "Alice").build()
                 ))
+        );
+    }
+
+    @Test
+    public void test_explicitKeyAndValueSerializers() {
+        String name = createRandomTopic();
+        sqlService.execute("CREATE MAPPING " + name + " ("
+                + "key_name VARCHAR EXTERNAL NAME \"__key.name\""
+                + ", value_name VARCHAR EXTERNAL NAME \"this.name\""
+                + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '"' + OPTION_KEY_FORMAT + "\" '" + AVRO_FORMAT + '\''
+                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + AVRO_FORMAT + '\''
+                + ", \"key.serializer\" '" + KafkaAvroSerializer.class.getCanonicalName() + '\''
+                + ", \"key.deserializer\" '" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
+                + ", \"value.serializer\" '" + KafkaAvroSerializer.class.getCanonicalName() + '\''
+                + ", \"value.deserializer\" '" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
+                + ", \"bootstrap.servers\" '" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", \"schema.registry.url\" '" + schemaRegistry.getURI() + '\''
+                + ", \"auto.offset.reset\" 'earliest'"
+                + ")"
+        );
+
+        assertTopicEventually(
+                name,
+                "INSERT INTO " + name + " (value_name, key_name) VALUES ('Bob', 'Alice')",
+                createMap(
+                        new GenericRecordBuilder(stringSchema("name")).set("name", "Alice").build(),
+                        new GenericRecordBuilder(stringSchema("name")).set("name", "Bob").build()
+                )
+        );
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row("Alice", "Bob"))
         );
     }
 

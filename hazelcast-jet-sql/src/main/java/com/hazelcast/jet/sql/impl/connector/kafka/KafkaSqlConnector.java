@@ -40,7 +40,6 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.Edge.between;
@@ -80,8 +79,7 @@ public class KafkaSqlConnector implements SqlConnector {
         return true;
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
@@ -90,8 +88,7 @@ public class KafkaSqlConnector implements SqlConnector {
         return metadataResolvers.resolveAndValidateFields(userFields, options, nodeEngine);
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
@@ -106,9 +103,6 @@ public class KafkaSqlConnector implements SqlConnector {
         List<TableField> fields = concat(keyMetadata.getFields().stream(), valueMetadata.getFields().stream())
                 .collect(toList());
 
-        Properties properties = new Properties();
-        properties.putAll(options);
-
         return new KafkaTable(
                 this,
                 schemaName,
@@ -116,7 +110,7 @@ public class KafkaSqlConnector implements SqlConnector {
                 fields,
                 new ConstantTableStatistics(0),
                 topicName,
-                properties,
+                PropertiesResolver.resolveProperties(options),
                 keyMetadata.getQueryTargetDescriptor(),
                 keyMetadata.getUpsertTargetDescriptor(),
                 valueMetadata.getQueryTargetDescriptor(),
@@ -129,8 +123,7 @@ public class KafkaSqlConnector implements SqlConnector {
         return true;
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public Vertex fullScanReader(
             @Nonnull DAG dag,
             @Nonnull Table table0,
@@ -175,8 +168,7 @@ public class KafkaSqlConnector implements SqlConnector {
         return true;
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public Vertex sink(
             @Nonnull DAG dag,
             @Nonnull Table table0
