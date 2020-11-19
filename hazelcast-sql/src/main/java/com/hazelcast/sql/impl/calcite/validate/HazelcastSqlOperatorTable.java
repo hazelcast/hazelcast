@@ -20,10 +20,11 @@ import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverr
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDivideOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
-import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastFloorCeilFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlMonotonicBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastFloorCeilFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastRandFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastRoundTruncateFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastSignFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicate;
@@ -55,7 +56,6 @@ import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandTypeChecker;
-import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 
@@ -67,7 +67,6 @@ import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandType
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
-import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 
 /**
  * Operator table.
@@ -208,25 +207,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction FLOOR = HazelcastFloorCeilFunction.FLOOR;
     public static final SqlFunction CEIL = HazelcastFloorCeilFunction.CEIL;
 
-    // TODO
-    public static final SqlFunction ROUND = new SqlFunction(
-        "ROUND",
-        SqlKind.OTHER_FUNCTION,
-        ReturnTypes.ARG0_NULLABLE,
-        new ReplaceUnknownOperandTypeInference(new SqlTypeName[] { DECIMAL, INTEGER }),
-        wrap(notAny(OperandTypes.NUMERIC_OPTIONAL_INTEGER)),
-        SqlFunctionCategory.NUMERIC
-    );
-
-    // TODO
-    public static final SqlFunction TRUNCATE = new SqlFunction(
-        "TRUNCATE",
-        SqlKind.OTHER_FUNCTION,
-        ReturnTypes.ARG0_NULLABLE,
-        new ReplaceUnknownOperandTypeInference(new SqlTypeName[] { DECIMAL, INTEGER }),
-        wrap(notAny(OperandTypes.NUMERIC_OPTIONAL_INTEGER)),
-        SqlFunctionCategory.NUMERIC
-    );
+    public static final SqlFunction ROUND = HazelcastRoundTruncateFunction.ROUND;
+    public static final SqlFunction TRUNCATE = HazelcastRoundTruncateFunction.TRUNCATE;
 
     //#endregion
 

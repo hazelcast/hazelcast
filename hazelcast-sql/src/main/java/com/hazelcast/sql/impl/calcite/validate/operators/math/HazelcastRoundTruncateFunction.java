@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.calcite.validate.operators.math;
 
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.NumericOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.NumericTypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -27,19 +29,22 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
+import org.apache.calcite.sql.type.SqlTypeName;
 
-import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
+import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
+import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 
-/**
- * Function that accepts a DOUBLE argument and produces a DOUBLE result.
- */
-public class HazelcastDoubleFunction extends SqlFunction implements SqlCallBindingManualOverride {
-    public HazelcastDoubleFunction(String name) {
+public final class HazelcastRoundTruncateFunction extends SqlFunction implements SqlCallBindingManualOverride {
+
+    public static final HazelcastRoundTruncateFunction ROUND = new HazelcastRoundTruncateFunction("ROUND");
+    public static final HazelcastRoundTruncateFunction TRUNCATE = new HazelcastRoundTruncateFunction("TRUNCATE");
+
+    private HazelcastRoundTruncateFunction(String name) {
         super(
             name,
             SqlKind.OTHER_FUNCTION,
-            ReturnTypes.DOUBLE_NULLABLE,
-            new ReplaceUnknownOperandTypeInference(BIGINT),
+            ReturnTypes.ARG0_NULLABLE,
+            new ReplaceUnknownOperandTypeInference(new SqlTypeName[] { DECIMAL, INTEGER }),
             null,
             SqlFunctionCategory.NUMERIC
         );
@@ -47,11 +52,22 @@ public class HazelcastDoubleFunction extends SqlFunction implements SqlCallBindi
 
     @Override
     public SqlOperandCountRange getOperandCountRange() {
-        return SqlOperandCountRanges.of(1);
+        return SqlOperandCountRanges.between(1, 2);
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
-        return NumericTypedOperandChecker.DOUBLE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
+    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
+        SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
+
+        if (bindingOverride.getOperandCount() == 1) {
+            return NumericOperandChecker.UNKNOWN_AS_DECIMAL.check(bindingOverride, throwOnFailure, 0);
+        } else {
+            assert bindingOverride.getOperandCount() == 2;
+
+            return new CompositeOperandChecker(
+                NumericOperandChecker.UNKNOWN_AS_DECIMAL,
+                NumericTypedOperandChecker.INTEGER
+            ).check(bindingOverride, throwOnFailure);
+        }
     }
 }

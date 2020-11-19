@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators.math;
 
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
-import com.hazelcast.sql.impl.calcite.validate.operand.NumericOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.NumericTypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlFunction;
@@ -58,6 +58,6 @@ public final class HazelcastRandFunction extends SqlFunction implements SqlCallB
 
         SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
 
-        return NumericOperandChecker.BIGINT.check(bindingOverride, throwOnFailure, 0);
+        return NumericTypedOperandChecker.BIGINT.check(bindingOverride, throwOnFailure, 0);
     }
 }

@@ -16,105 +16,30 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operand;
 
-import com.hazelcast.sql.impl.ParameterConverter;
-import com.hazelcast.sql.impl.calcite.SqlToQueryType;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
-import com.hazelcast.sql.impl.calcite.validate.param.NumericPrecedenceParameterConverter;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public final class NumericOperandChecker extends AbstractTypedOperandChecker {
+public final class NumericOperandChecker implements OperandChecker {
 
-    public static final NumericOperandChecker TINYINT = new NumericOperandChecker(SqlTypeName.TINYINT);
-    public static final NumericOperandChecker SMALLINT = new NumericOperandChecker(SqlTypeName.SMALLINT);
-    public static final NumericOperandChecker INTEGER = new NumericOperandChecker(SqlTypeName.INTEGER);
-    public static final NumericOperandChecker BIGINT = new NumericOperandChecker(SqlTypeName.BIGINT);
-    public static final NumericOperandChecker DECIMAL = new NumericOperandChecker(SqlTypeName.DECIMAL);
-    public static final NumericOperandChecker REAL = new NumericOperandChecker(SqlTypeName.REAL);
-    public static final NumericOperandChecker DOUBLE = new NumericOperandChecker(SqlTypeName.DOUBLE);
+    public static final NumericOperandChecker UNKNOWN_AS_BIGINT = new NumericOperandChecker(SqlTypeName.BIGINT);
+    public static final NumericOperandChecker UNKNOWN_AS_DECIMAL = new NumericOperandChecker(SqlTypeName.DECIMAL);
 
-    private final QueryDataType type;
+    private final SqlTypeName unknownTypeReplacement;
 
-    private NumericOperandChecker(SqlTypeName typeName) {
-        super(typeName);
-
-         type = SqlToQueryType.map(typeName);
-
-         assert type.getTypeFamily().isNumeric();
+    private NumericOperandChecker(SqlTypeName unknownTypeReplacement) {
+        this.unknownTypeReplacement = unknownTypeReplacement;
     }
 
     @Override
-    protected ParameterConverter parameterConverter(SqlDynamicParam operand) {
-        return new NumericPrecedenceParameterConverter(
-            operand.getIndex(),
-            operand.getParserPosition(),
-            type
-        );
-    }
-
-    @Override
-    protected boolean coerce(
-        HazelcastSqlValidator validator,
-        SqlCallBindingOverride callBinding,
-        SqlNode operand,
-        RelDataType operandType,
-        int operandIndex
-    ) {
-        QueryDataType operandType0 = SqlToQueryType.map(operandType.getSqlTypeName());
-
-        if (!operandType0.getTypeFamily().isNumeric()) {
-            // We allow coercion only within numeric types.
-            return false;
-        }
-
-        if (type.getTypeFamily().getPrecedence() < operandType0.getTypeFamily().getPrecedence()) {
-            // Cannot convert type with higher precedence to lower precedence (e.g. DOUBLE to INTEGER)
-            return false;
-        }
-
-        // Otherwise we are good to go. Construct the new type of the operand.
-        RelDataType newOperandType = SqlNodeUtil.createType(validator.getTypeFactory(), typeName, operandType.isNullable());
-
-        // Perform coercion
-        // TODO: Can it fail? Should we check for boolean result?
-        validator.getTypeCoercion().coerceOperandType(
-            callBinding.getScope(),
-            callBinding.getCall(),
-            operandIndex,
-            newOperandType
-        );
-
-        // Let validator know about the type change.
-        validator.setKnownAndValidatedNodeType(operand, newOperandType);
-
-        return true;
-    }
-
-    public static boolean checkNumericUnknownAsBigint(SqlCallBindingOverride binding, boolean throwOnFailure, int index) {
-        return checkNumeric(binding, throwOnFailure, index, SqlTypeName.BIGINT);
-    }
-
-    public static boolean checkNumericUnknownAsDecimal(SqlCallBindingOverride binding, boolean throwOnFailure, int index) {
-        return checkNumeric(binding, throwOnFailure, index, SqlTypeName.DECIMAL);
-    }
-
-    private static boolean checkNumeric(
-        SqlCallBindingOverride binding,
-        boolean throwOnFailure,
-        int index,
-        SqlTypeName unknownTypeReplacement
-    ) {
+    public boolean check(SqlCallBindingOverride binding, boolean throwOnFailure, int index) {
         // Resolve a numeric checker for the operand
         SqlNode operand = binding.operand(index);
 
         RelDataType operandType = binding.getValidator().deriveType(binding.getScope(), operand);
 
-        NumericOperandChecker checker = checkerForTypeName(operandType.getSqlTypeName(), unknownTypeReplacement);
+        NumericTypedOperandChecker checker = checkerForTypeName(operandType.getSqlTypeName(), unknownTypeReplacement);
 
         if (checker != null) {
             // Numeric checker is found, invoke
@@ -130,33 +55,33 @@ public final class NumericOperandChecker extends AbstractTypedOperandChecker {
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
-    private static NumericOperandChecker checkerForTypeName(SqlTypeName typeName, SqlTypeName unknownTypeReplacement) {
+    private static NumericTypedOperandChecker checkerForTypeName(SqlTypeName typeName, SqlTypeName unknownTypeReplacement) {
         if (typeName == SqlTypeName.NULL) {
             typeName = unknownTypeReplacement;
         }
 
         switch (typeName) {
             case TINYINT:
-                return TINYINT;
+                return NumericTypedOperandChecker.TINYINT;
 
             case SMALLINT:
-                return SMALLINT;
+                return NumericTypedOperandChecker.SMALLINT;
 
             case INTEGER:
-                return INTEGER;
+                return NumericTypedOperandChecker.INTEGER;
 
             case BIGINT:
-                return BIGINT;
+                return NumericTypedOperandChecker.BIGINT;
 
             case DECIMAL:
-                return DECIMAL;
+                return NumericTypedOperandChecker.DECIMAL;
 
             case REAL:
             case FLOAT:
-                return REAL;
+                return NumericTypedOperandChecker.REAL;
 
             case DOUBLE:
-                return DOUBLE;
+                return NumericTypedOperandChecker.DOUBLE;
 
             default:
                 return null;

@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.operand.NumericOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.NumericTypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.VarcharOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.linq4j.Ord;
@@ -97,15 +97,15 @@ public final class HazelcastSubstringFunction extends SqlFunction implements Sql
         if (bindingOverride.getOperandCount() == 2) {
             return new CompositeOperandChecker(
                 VarcharOperandChecker.INSTANCE,
-                NumericOperandChecker.INTEGER
+                NumericTypedOperandChecker.INTEGER
             ).check(bindingOverride, throwOnFailure);
         } else {
             assert bindingOverride.getOperandCount() == 3;
 
             return new CompositeOperandChecker(
                 VarcharOperandChecker.INSTANCE,
-                NumericOperandChecker.INTEGER,
-                NumericOperandChecker.INTEGER
+                NumericTypedOperandChecker.INTEGER,
+                NumericTypedOperandChecker.INTEGER
             ).check(bindingOverride, throwOnFailure);
         }
     }

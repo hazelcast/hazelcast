@@ -48,10 +48,10 @@ import java.util.Collections;
  * <p>
  * Code of some methods is copy-pasted from the Calcite's {@link SqlTrimFunction}, because it is not extensible enough.
  */
-public class HazelcastTrimFunction extends SqlFunction implements SqlCallBindingManualOverride,
+public final class HazelcastTrimFunction extends SqlFunction implements SqlCallBindingManualOverride,
     SqlCallBindingSignatureErrorAware {
 
-    public static HazelcastTrimFunction INSTANCE = new HazelcastTrimFunction();
+    public static final HazelcastTrimFunction INSTANCE = new HazelcastTrimFunction();
 
     private HazelcastTrimFunction() {
         super(

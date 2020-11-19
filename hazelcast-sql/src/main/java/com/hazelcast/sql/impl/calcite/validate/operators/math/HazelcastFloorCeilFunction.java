@@ -58,7 +58,7 @@ public final class HazelcastFloorCeilFunction extends SqlMonotonicUnaryFunction 
 
     @Override
     public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
-        return NumericOperandChecker.checkNumericUnknownAsDecimal(new SqlCallBindingOverride(binding), throwOnFailure, 0);
+        return NumericOperandChecker.UNKNOWN_AS_DECIMAL.check(new SqlCallBindingOverride(binding), throwOnFailure, 0);
     }
 
     @Override public SqlMonotonicity getMonotonicity(SqlOperatorBinding call) {
