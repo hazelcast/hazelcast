@@ -35,6 +35,22 @@ AS query_spec
 - `option_name`, `option_value`: the job configuration options. The list
   of options matches the methods in the `JobConfig` class.
 
+#### List of Available Job Options
+
+|Option|Allowed value|
+|--|--|
+|`processingGuarantee`|`exactlyOnce`<br>`atLeastOnce`<br>`none`|
+|`snapshotIntervalMillis`|a positive number|
+|`autoScaling`|`true`, `false`|
+|`splitBrainProtectionEnabled`|`true`, `false`|
+|`metricsEnabled`|`true`, `false`|
+|`storeMetricsAfterJobCompletion`|`true`, `false`|
+|`initialSnapshotName`|any string|
+
+The methods to add resources and classes to the job classpath (e.g.
+`addClass`, `addJar`) aren't supported. If you need some library or
+resource, it has to be available on the members' classpath.
+
 #### Example
 
 ```sql

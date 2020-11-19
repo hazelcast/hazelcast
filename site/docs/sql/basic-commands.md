@@ -17,7 +17,7 @@ FROM [schema_name.]table_name [ [ AS ] table_alias ]
 ```
 
 The clauses above are standard SQL clauses. The `table_name` is a
-mapping name, either as created using [DDL](01-ddl.md) or one created
+mapping name, either as created using [DDL](ddl.md) or one created
 automatically for non-empty IMaps.
 
 Jet supports all operators and functions supported by IMDG. Go to the

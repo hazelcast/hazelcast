@@ -173,3 +173,32 @@ mapping is needed only when inserting into that map.
 extract the field by name, regardless of the actual serialization format
 encountered at runtime. The specified serialization format will be used
 when writing into that topic.
+
+## Installation
+
+You need the `hazelcast-jet-kafka` module on your classpath. For
+Gradle or Maven, make sure to add the dependency:
+
+<!--DOCUSAURUS_CODE_TABS-->
+
+<!--Gradle-->
+
+```groovy
+compile 'com.hazelcast.jet:hazelcast-jet-kafka:{jet-version}'
+```
+
+<!--Maven-->
+
+```xml
+<dependency>
+    <groupId>com.hazelcast.jet</groupId>
+    <artifactId>hazelcast-jet-kafka</artifactId>
+    <version>{jet-version}</version>
+</dependency>
+```
+
+<!--END_DOCUSAURUS_CODE_TABS-->
+
+If you're using the distribution package, make sure to move the
+`hazelcast-jet-kafka-{jet-version}.jar` file from the `opt/` to the
+`lib/` directory.

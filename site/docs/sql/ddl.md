@@ -61,6 +61,9 @@ TYPE type_identifier
   an SQL identifier, and must be enclosed in double quotes if it
   contains special characters like `.`, `-` etc. `option_value` is a
   regular SQL string literal enclosed in apostrophes.
+  <br>The `objectName` option is common for all connectors: it's the name
+  of the object in the external system. By default, it's equal to the
+  mapping name.
 
 #### Auto-resolving of columns and options
 
@@ -99,7 +102,7 @@ the string value is a JSON object like this:
 ```
 
 For details regarding the above statement see the [IMap
-connector](03-imap-connector.md) chapter.
+connector](imap-connector.md) chapter.
 
 ### DROP MAPPING Synopsis
 
