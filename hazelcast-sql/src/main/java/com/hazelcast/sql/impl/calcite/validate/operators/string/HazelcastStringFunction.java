@@ -31,23 +31,23 @@ import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
-public final class HazelcasStringFunction extends SqlFunction implements SqlCallBindingManualOverride {
+public final class HazelcastStringFunction extends SqlFunction implements SqlCallBindingManualOverride {
 
-    public static final SqlFunction ASCII = HazelcasStringFunction.withIntegerReturn("ASCII");
-    public static final SqlFunction INITCAP = HazelcasStringFunction.withStringReturn("INITCAP");
+    public static final SqlFunction ASCII = HazelcastStringFunction.withIntegerReturn("ASCII");
+    public static final SqlFunction INITCAP = HazelcastStringFunction.withStringReturn("INITCAP");
 
-    public static final SqlFunction CHAR_LENGTH = HazelcasStringFunction.withIntegerReturn("CHAR_LENGTH");
-    public static final SqlFunction CHARACTER_LENGTH = HazelcasStringFunction.withIntegerReturn("CHARACTER_LENGTH");
-    public static final SqlFunction LENGTH = HazelcasStringFunction.withIntegerReturn("LENGTH");
+    public static final SqlFunction CHAR_LENGTH = HazelcastStringFunction.withIntegerReturn("CHAR_LENGTH");
+    public static final SqlFunction CHARACTER_LENGTH = HazelcastStringFunction.withIntegerReturn("CHARACTER_LENGTH");
+    public static final SqlFunction LENGTH = HazelcastStringFunction.withIntegerReturn("LENGTH");
 
-    public static final SqlFunction LOWER = HazelcasStringFunction.withStringReturn("LOWER");
-    public static final SqlFunction UPPER = HazelcasStringFunction.withStringReturn("UPPER");
+    public static final SqlFunction LOWER = HazelcastStringFunction.withStringReturn("LOWER");
+    public static final SqlFunction UPPER = HazelcastStringFunction.withStringReturn("UPPER");
 
-    public static final SqlFunction RTRIM = HazelcasStringFunction.withStringReturn("RTRIM");
-    public static final SqlFunction LTRIM = HazelcasStringFunction.withStringReturn("LTRIM");
-    public static final SqlFunction BTRIM = HazelcasStringFunction.withStringReturn("BTRIM");
+    public static final SqlFunction RTRIM = HazelcastStringFunction.withStringReturn("RTRIM");
+    public static final SqlFunction LTRIM = HazelcastStringFunction.withStringReturn("LTRIM");
+    public static final SqlFunction BTRIM = HazelcastStringFunction.withStringReturn("BTRIM");
 
-    private HazelcasStringFunction(String name, SqlReturnTypeInference returnTypeInference) {
+    private HazelcastStringFunction(String name, SqlReturnTypeInference returnTypeInference) {
         super(
             name,
             SqlKind.OTHER_FUNCTION,
@@ -68,11 +68,11 @@ public final class HazelcasStringFunction extends SqlFunction implements SqlCall
         return VarcharOperandChecker.INSTANCE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
     }
 
-    private static HazelcasStringFunction withStringReturn(String name) {
-        return new HazelcasStringFunction(name, ReturnTypes.ARG0_NULLABLE);
+    private static HazelcastStringFunction withStringReturn(String name) {
+        return new HazelcastStringFunction(name, ReturnTypes.ARG0_NULLABLE);
     }
 
-    private static HazelcasStringFunction withIntegerReturn(String name) {
-        return new HazelcasStringFunction(name, ReturnTypes.INTEGER_NULLABLE);
+    private static HazelcastStringFunction withIntegerReturn(String name) {
+        return new HazelcastStringFunction(name, ReturnTypes.INTEGER_NULLABLE);
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.sql.impl.calcite.validate.operators.string;
 
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
@@ -37,13 +37,13 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
 @SuppressWarnings("checkstyle:MagicNumber")
-public final class HazelcastSqlLikeOperator extends SqlSpecialOperator implements SqlCallBindingManualOverride {
+public final class HazelcastLikeOperator extends SqlSpecialOperator implements SqlCallBindingManualOverride {
 
-    public static final HazelcastSqlLikeOperator INSTANCE = new HazelcastSqlLikeOperator();
+    public static final HazelcastLikeOperator INSTANCE = new HazelcastLikeOperator();
 
     private static final int PRECEDENCE = 32;
 
-    private HazelcastSqlLikeOperator() {
+    private HazelcastLikeOperator() {
         super(
             "LIKE",
             SqlKind.LIKE,

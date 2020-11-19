@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.sql.impl.calcite.validate.operators.string;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
