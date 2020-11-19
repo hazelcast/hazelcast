@@ -225,19 +225,20 @@ public final class ClassLoaderUtil {
         if (primitiveClass != null) {
             return primitiveClass;
         }
-        // If this is a Hazelcast class, try to load it using our classloader first
-        ClassLoader theClassLoader = ClassLoaderUtil.class.getClassLoader();
-        if (theClassLoader != null && belongsToHazelcastPackage(className)) {
-            try {
-                return tryLoadClass(className, ClassLoaderUtil.class.getClassLoader());
-            } catch (ClassNotFoundException ignore) {
-            }
-        }
 
         // Try to load it using the hinted classloader if not null
         if (classLoaderHint != null) {
             try {
                 return tryLoadClass(className, classLoaderHint);
+            } catch (ClassNotFoundException ignore) {
+            }
+        }
+
+        // If this is a Hazelcast class, try to load it using our classloader
+        ClassLoader theClassLoader = ClassLoaderUtil.class.getClassLoader();
+        if (theClassLoader != null && belongsToHazelcastPackage(className)) {
+            try {
+                return tryLoadClass(className, ClassLoaderUtil.class.getClassLoader());
             } catch (ClassNotFoundException ignore) {
             }
         }
