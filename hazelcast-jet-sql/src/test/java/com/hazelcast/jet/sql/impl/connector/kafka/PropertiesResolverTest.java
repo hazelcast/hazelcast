@@ -17,8 +17,12 @@
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.google.common.collect.ImmutableMap;
+import io.confluent.kafka.serializers.KafkaAvroDeserializer;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.DoubleDeserializer;
 import org.apache.kafka.common.serialization.DoubleSerializer;
 import org.apache.kafka.common.serialization.FloatDeserializer;
@@ -43,10 +47,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver.AVRO_DESERIALIZER;
-import static com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver.AVRO_SERIALIZER;
-import static com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver.JSON_DESERIALIZER;
-import static com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver.JSON_SERIALIZER;
 import static com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver.KEY_DESERIALIZER;
 import static com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver.KEY_SERIALIZER;
 import static com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver.VALUE_DESERIALIZER;
@@ -55,37 +55,35 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(JUnitParamsRunner.class)
-@SuppressWarnings("LineLength")
 public class PropertiesResolverTest {
 
+    private static final String UNKNOWN_FORMAT = "unknown";
+
     @Test
-    public void when_formatIsAbsent_then_doesNotFail() {
-        assertThat(PropertiesResolver.resolveProperties(emptyMap())).isEmpty();
+    public void test_absentFormat() {
+        assertThat(PropertiesResolver.resolveProperties(emptyMap()))
+                .containsExactlyInAnyOrderEntriesOf(ImmutableMap.of(
+                        KEY_SERIALIZER, ByteArraySerializer.class.getCanonicalName(),
+                        KEY_DESERIALIZER, ByteArrayDeserializer.class.getCanonicalName()
+                ));
     }
 
     @Test
-    public void when_propertyIsDefined_then_itsNotOverwritten() {
+    public void when_formatIsUnknown_then_itIsIgnored() {
         // key
-        Map<String, String> keyOptions = ImmutableMap.of(
-                OPTION_KEY_FORMAT, JAVA_FORMAT,
-                OPTION_KEY_CLASS, short.class.getName(),
-                KEY_SERIALIZER, "already-defined-key-serializer",
-                KEY_DESERIALIZER, "already-defined-key-deserializer"
-        );
+        Map<String, String> keyOptions = ImmutableMap.of(OPTION_KEY_FORMAT, UNKNOWN_FORMAT);
         assertThat(PropertiesResolver.resolveProperties(keyOptions)).containsExactlyInAnyOrderEntriesOf(keyOptions);
 
         // value
         Map<String, String> valueOptions = ImmutableMap.of(
-                OPTION_VALUE_FORMAT, JAVA_FORMAT,
-                OPTION_VALUE_CLASS, short.class.getName(),
-                VALUE_SERIALIZER, "already-defined-value-serializer",
-                VALUE_DESERIALIZER, "already-defined-value-deserializer"
+                OPTION_KEY_FORMAT, UNKNOWN_FORMAT,
+                OPTION_VALUE_FORMAT, UNKNOWN_FORMAT
         );
         assertThat(PropertiesResolver.resolveProperties(valueOptions)).containsExactlyInAnyOrderEntriesOf(valueOptions);
     }
 
-    @SuppressWarnings("unused")
-    private Object[] javaValues() {
+    @SuppressWarnings({"unused", "LineLength"})
+    private Object[] values() {
         return new Object[]{
                 new Object[]{Short.class.getName(), ShortSerializer.class.getCanonicalName(), ShortDeserializer.class.getCanonicalName()},
                 new Object[]{short.class.getName(), ShortSerializer.class.getCanonicalName(), ShortDeserializer.class.getCanonicalName()},
@@ -102,17 +100,68 @@ public class PropertiesResolverTest {
     }
 
     @Test
-    @Parameters(method = "javaValues")
+    @Parameters(method = "values")
     public void test_java(String clazz, String serializer, String deserializer) {
         // key
-        assertThat(PropertiesResolver.resolveProperties(ImmutableMap.of(OPTION_KEY_FORMAT, JAVA_FORMAT, OPTION_KEY_CLASS, clazz)))
-                .hasSize(4)
-                .containsAllEntriesOf(ImmutableMap.of(KEY_SERIALIZER, serializer, KEY_DESERIALIZER, deserializer));
+        assertThat(PropertiesResolver.resolveProperties(ImmutableMap.of(
+                OPTION_KEY_FORMAT, JAVA_FORMAT,
+                OPTION_KEY_CLASS, clazz
+        ))).hasSize(4)
+           .containsAllEntriesOf(ImmutableMap.of(KEY_SERIALIZER, serializer, KEY_DESERIALIZER, deserializer));
 
         // value
-        assertThat(PropertiesResolver.resolveProperties(ImmutableMap.of(OPTION_VALUE_FORMAT, JAVA_FORMAT, OPTION_VALUE_CLASS, clazz)))
-                .hasSize(4)
-                .containsAllEntriesOf(ImmutableMap.of(VALUE_SERIALIZER, serializer, VALUE_DESERIALIZER, deserializer));
+        assertThat(PropertiesResolver.resolveProperties(ImmutableMap.of(
+                OPTION_KEY_FORMAT, UNKNOWN_FORMAT,
+                OPTION_VALUE_FORMAT, JAVA_FORMAT,
+                OPTION_VALUE_CLASS, clazz)
+        )).hasSize(5)
+          .containsAllEntriesOf(ImmutableMap.of(VALUE_SERIALIZER, serializer, VALUE_DESERIALIZER, deserializer));
+    }
+
+    @SuppressWarnings("unused")
+    private Object[] classes() {
+        return new Object[]{
+                new Object[]{Short.class.getName()},
+                new Object[]{short.class.getName()},
+                new Object[]{Integer.class.getName()},
+                new Object[]{int.class.getName()},
+                new Object[]{Long.class.getName()},
+                new Object[]{long.class.getName()},
+                new Object[]{Float.class.getName()},
+                new Object[]{float.class.getName()},
+                new Object[]{Double.class.getName()},
+                new Object[]{double.class.getName()},
+                new Object[]{String.class.getName()},
+        };
+    }
+
+    @Test
+    @Parameters(method = "classes")
+    public void when_javaPropertyIsDefined_then_itsNotOverwritten(String clazz) {
+        // key
+        Map<String, String> keyOptions = ImmutableMap.of(
+                OPTION_KEY_FORMAT, JAVA_FORMAT,
+                OPTION_KEY_CLASS, clazz,
+                KEY_SERIALIZER, "serializer",
+                KEY_DESERIALIZER, "deserializer"
+        );
+
+        assertThat(PropertiesResolver.resolveProperties(keyOptions))
+                .isNotSameAs(keyOptions)
+                .containsExactlyInAnyOrderEntriesOf(keyOptions);
+
+        // value
+        Map<String, String> valueOptions = ImmutableMap.of(
+                OPTION_KEY_FORMAT, UNKNOWN_FORMAT,
+                OPTION_VALUE_FORMAT, JAVA_FORMAT,
+                OPTION_VALUE_CLASS, clazz,
+                VALUE_SERIALIZER, "serializer",
+                VALUE_DESERIALIZER, "deserializer"
+        );
+
+        assertThat(PropertiesResolver.resolveProperties(valueOptions))
+                .isNotSameAs(valueOptions)
+                .containsExactlyInAnyOrderEntriesOf(valueOptions);
     }
 
     @Test
@@ -120,12 +169,46 @@ public class PropertiesResolverTest {
         // key
         assertThat(PropertiesResolver.resolveProperties(ImmutableMap.of(OPTION_KEY_FORMAT, AVRO_FORMAT)))
                 .hasSize(3)
-                .containsAllEntriesOf(ImmutableMap.of(KEY_SERIALIZER, AVRO_SERIALIZER, KEY_DESERIALIZER, AVRO_DESERIALIZER));
+                .containsAllEntriesOf(ImmutableMap.of(
+                        KEY_SERIALIZER, KafkaAvroSerializer.class.getCanonicalName(),
+                        KEY_DESERIALIZER, KafkaAvroDeserializer.class.getCanonicalName()
+                ));
 
         // value
-        assertThat(PropertiesResolver.resolveProperties(ImmutableMap.of(OPTION_VALUE_FORMAT, AVRO_FORMAT)))
-                .hasSize(3)
-                .containsAllEntriesOf(ImmutableMap.of(VALUE_SERIALIZER, AVRO_SERIALIZER, VALUE_DESERIALIZER, AVRO_DESERIALIZER));
+        assertThat(PropertiesResolver.resolveProperties(ImmutableMap.of(
+                OPTION_KEY_FORMAT, UNKNOWN_FORMAT,
+                OPTION_VALUE_FORMAT, AVRO_FORMAT
+        ))).hasSize(4)
+           .containsAllEntriesOf(ImmutableMap.of(
+                   VALUE_SERIALIZER, KafkaAvroSerializer.class.getCanonicalName(),
+                   VALUE_DESERIALIZER, KafkaAvroDeserializer.class.getCanonicalName()
+           ));
+    }
+
+    @Test
+    public void when_avroPropertyIsDefined_then_itsNotOverwritten() {
+        // key
+        Map<String, String> keyOptions = ImmutableMap.of(
+                OPTION_KEY_FORMAT, AVRO_FORMAT,
+                KEY_SERIALIZER, "serializer",
+                KEY_DESERIALIZER, "deserializer"
+        );
+
+        assertThat(PropertiesResolver.resolveProperties(keyOptions))
+                .isNotSameAs(keyOptions)
+                .containsExactlyInAnyOrderEntriesOf(keyOptions);
+
+        // value
+        Map<String, String> valueOptions = ImmutableMap.of(
+                OPTION_KEY_FORMAT, UNKNOWN_FORMAT,
+                OPTION_VALUE_FORMAT, AVRO_FORMAT,
+                VALUE_SERIALIZER, "serializer",
+                VALUE_DESERIALIZER, "deserializer"
+        );
+
+        assertThat(PropertiesResolver.resolveProperties(valueOptions))
+                .isNotSameAs(valueOptions)
+                .containsExactlyInAnyOrderEntriesOf(valueOptions);
     }
 
     @Test
@@ -133,11 +216,45 @@ public class PropertiesResolverTest {
         // key
         assertThat(PropertiesResolver.resolveProperties(ImmutableMap.of(OPTION_KEY_FORMAT, JSON_FORMAT)))
                 .hasSize(3)
-                .containsAllEntriesOf(ImmutableMap.of(KEY_SERIALIZER, JSON_SERIALIZER, KEY_DESERIALIZER, JSON_DESERIALIZER));
+                .containsAllEntriesOf(ImmutableMap.of(
+                        KEY_SERIALIZER, ByteArraySerializer.class.getCanonicalName(),
+                        KEY_DESERIALIZER, ByteArrayDeserializer.class.getCanonicalName()
+                ));
 
         // value
-        assertThat(PropertiesResolver.resolveProperties(ImmutableMap.of(OPTION_VALUE_FORMAT, JSON_FORMAT)))
-                .hasSize(3)
-                .containsAllEntriesOf(ImmutableMap.of(VALUE_SERIALIZER, JSON_SERIALIZER, VALUE_DESERIALIZER, JSON_DESERIALIZER));
+        assertThat(PropertiesResolver.resolveProperties(ImmutableMap.of(
+                OPTION_KEY_FORMAT, UNKNOWN_FORMAT,
+                OPTION_VALUE_FORMAT, JSON_FORMAT
+        ))).hasSize(4)
+           .containsAllEntriesOf(ImmutableMap.of(
+                   VALUE_SERIALIZER, ByteArraySerializer.class.getCanonicalName(),
+                   VALUE_DESERIALIZER, ByteArrayDeserializer.class.getCanonicalName()
+           ));
+    }
+
+    @Test
+    public void when_jsonPropertyIsDefined_then_itsNotOverwritten() {
+        // key
+        Map<String, String> keyOptions = ImmutableMap.of(
+                OPTION_KEY_FORMAT, JSON_FORMAT,
+                KEY_SERIALIZER, "serializer",
+                KEY_DESERIALIZER, "deserializer"
+        );
+
+        assertThat(PropertiesResolver.resolveProperties(keyOptions))
+                .isNotSameAs(keyOptions)
+                .containsExactlyInAnyOrderEntriesOf(keyOptions);
+
+        // value
+        Map<String, String> valueOptions = ImmutableMap.of(
+                OPTION_KEY_FORMAT, UNKNOWN_FORMAT,
+                OPTION_VALUE_FORMAT, JSON_FORMAT,
+                VALUE_SERIALIZER, "serializer",
+                VALUE_DESERIALIZER, "deserializer"
+        );
+
+        assertThat(PropertiesResolver.resolveProperties(valueOptions))
+                .isNotSameAs(valueOptions)
+                .containsExactlyInAnyOrderEntriesOf(valueOptions);
     }
 }

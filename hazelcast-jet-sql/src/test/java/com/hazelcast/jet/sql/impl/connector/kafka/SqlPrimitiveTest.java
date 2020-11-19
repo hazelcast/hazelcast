@@ -331,8 +331,6 @@ public class SqlPrimitiveTest extends SqlTestSupport {
                            + "OPTIONS ("
                            + '"' + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + "',"
                            + '"' + OPTION_VALUE_CLASS + "\" '" + Integer.class.getName() + "'"
-                           + ", \"key.serializer\" '" + IntegerSerializer.class.getCanonicalName() + '\''
-                           + ", \"key.deserializer\" '" + IntegerDeserializer.class.getCanonicalName() + '\''
                            + ", \"bootstrap.servers\" '" + kafkaTestSupport.getBrokerConnectionString() + '\''
                            + ", \"auto.offset.reset\" 'earliest'"
                            + ")"
