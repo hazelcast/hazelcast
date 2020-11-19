@@ -225,30 +225,29 @@ public final class ClassLoaderUtil {
         if (primitiveClass != null) {
             return primitiveClass;
         }
-        ClassLoader theClassLoader = classLoaderHint;
-        if (theClassLoader == null) {
-            theClassLoader = Thread.currentThread().getContextClassLoader();
-        }
-
-        // first try to load it through the given classloader
-        if (theClassLoader != null) {
+        // If this is a Hazelcast class, try to load it using our classloader first
+        if (className.startsWith(HAZELCAST_BASE_PACKAGE) || className.startsWith(HAZELCAST_ARRAY)) {
             try {
-                return tryLoadClass(className, theClassLoader);
+                return tryLoadClass(className, ClassLoaderUtil.class.getClassLoader());
             } catch (ClassNotFoundException ignore) {
-                // reset selected classloader and try with others
-                theClassLoader = null;
             }
         }
 
-        // if failed and this is a Hazelcast class, try again with our classloader
-        if (className.startsWith(HAZELCAST_BASE_PACKAGE) || className.startsWith(HAZELCAST_ARRAY)) {
-            theClassLoader = ClassLoaderUtil.class.getClassLoader();
+        // Try to load it using the hinted classloader if not null
+        if (classLoaderHint != null) {
+            try {
+                return tryLoadClass(className, classLoaderHint);
+            } catch (ClassNotFoundException ignore) {
+            }
         }
-        if (theClassLoader == null) {
-            theClassLoader = Thread.currentThread().getContextClassLoader();
-        }
-        if (theClassLoader != null) {
-            return tryLoadClass(className, theClassLoader);
+
+        // Try to load it using context class loader if not null
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        if (contextClassLoader != null) {
+            try {
+                return tryLoadClass(className, contextClassLoader);
+            } catch (ClassNotFoundException ignore) {
+            }
         }
         return Class.forName(className);
     }
