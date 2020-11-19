@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.sql.impl.calcite.validate.operators.string;
 
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
@@ -31,8 +31,8 @@ import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
-public final class HazelcastSqlStringFunction extends SqlFunction implements SqlCallBindingManualOverride {
-    private HazelcastSqlStringFunction(String name, SqlReturnTypeInference returnTypeInference) {
+public final class HazelcasStringFunction extends SqlFunction implements SqlCallBindingManualOverride {
+    private HazelcasStringFunction(String name, SqlReturnTypeInference returnTypeInference) {
         super(
             name,
             SqlKind.OTHER_FUNCTION,
@@ -43,13 +43,13 @@ public final class HazelcastSqlStringFunction extends SqlFunction implements Sql
         );
     }
 
-    public static HazelcastSqlStringFunction withStringReturn(String name) {
+    public static HazelcasStringFunction withStringReturn(String name) {
         // TODO: Return VARCHAR_NULLABLE?
-        return new HazelcastSqlStringFunction(name, ReturnTypes.ARG0_NULLABLE);
+        return new HazelcasStringFunction(name, ReturnTypes.ARG0_NULLABLE);
     }
 
-    public static HazelcastSqlStringFunction withIntegerReturn(String name) {
-        return new HazelcastSqlStringFunction(name, ReturnTypes.INTEGER_NULLABLE);
+    public static HazelcasStringFunction withIntegerReturn(String name) {
+        return new HazelcasStringFunction(name, ReturnTypes.INTEGER_NULLABLE);
     }
 
     @Override

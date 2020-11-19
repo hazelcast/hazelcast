@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operand;
 
+import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
@@ -30,7 +31,12 @@ import org.apache.calcite.sql.type.SqlTypeName;
 
 public final class NumericOperandChecker extends AbstractTypedOperandChecker {
 
+    public static final NumericOperandChecker TINYINT = new NumericOperandChecker(SqlTypeName.TINYINT);
+    public static final NumericOperandChecker SMALLINT = new NumericOperandChecker(SqlTypeName.SMALLINT);
     public static final NumericOperandChecker INTEGER = new NumericOperandChecker(SqlTypeName.INTEGER);
+    public static final NumericOperandChecker BIGINT = new NumericOperandChecker(SqlTypeName.BIGINT);
+    public static final NumericOperandChecker DECIMAL = new NumericOperandChecker(SqlTypeName.DECIMAL);
+    public static final NumericOperandChecker REAL = new NumericOperandChecker(SqlTypeName.REAL);
     public static final NumericOperandChecker DOUBLE = new NumericOperandChecker(SqlTypeName.DOUBLE);
 
     private final QueryDataType type;
@@ -88,5 +94,59 @@ public final class NumericOperandChecker extends AbstractTypedOperandChecker {
         validator.setKnownAndValidatedNodeType(operand, newOperandType);
 
         return true;
+    }
+
+    public static boolean checkNumeric(SqlCallBindingOverride binding, boolean throwOnFailure, int index) {
+        // Resolve a numeric checker for the operand
+        SqlNode operand = binding.operand(index);
+
+        RelDataType operandType = binding.getValidator().deriveType(binding.getScope(), operand);
+
+        NumericOperandChecker checker = checkerForTypeName(operandType.getSqlTypeName());
+
+        if (checker != null) {
+            // Numeric checker is found, invoke
+            return checker.check(binding, throwOnFailure, index);
+        } else {
+            // Not a numeric type, fail.
+            if (throwOnFailure) {
+                throw binding.newValidationSignatureError();
+            } else {
+                return false;
+            }
+        }
+    }
+
+    private static NumericOperandChecker checkerForTypeName(SqlTypeName typeName) {
+        switch (typeName) {
+            case NULL:
+                // Upcast unknown operand (parameter, NULL literal) to BIGINT
+                return BIGINT;
+
+            case TINYINT:
+                return TINYINT;
+
+            case SMALLINT:
+                return SMALLINT;
+
+            case INTEGER:
+                return INTEGER;
+
+            case BIGINT:
+                return BIGINT;
+
+            case DECIMAL:
+                return DECIMAL;
+
+            case REAL:
+            case FLOAT:
+                return REAL;
+
+            case DOUBLE:
+                return DOUBLE;
+
+            default:
+                return null;
+        }
     }
 }

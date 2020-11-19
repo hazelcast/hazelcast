@@ -27,6 +27,7 @@ public class StrictParameterConverter extends AbstractParameterConverter {
         super(ordinal, parserPos, type);
     }
 
+    // TODO: Common error messages for all converters?
     @Override
     protected void validate(Object value, Converter valueConverter) {
         if (type.getTypeFamily() != valueConverter.getTypeFamily()) {

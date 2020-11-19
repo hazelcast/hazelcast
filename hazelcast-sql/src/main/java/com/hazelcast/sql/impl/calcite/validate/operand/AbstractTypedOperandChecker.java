@@ -46,9 +46,9 @@ public abstract class AbstractTypedOperandChecker implements OperandChecker {
             return checkParameter(validator, (SqlDynamicParam) operand);
         }
 
-        // Handle direct type match
         RelDataType operandType = validator.deriveType(callBinding.getScope(), operand);
 
+        // Handle direct type match
         if (operandType.getSqlTypeName() == typeName) {
             return true;
         }

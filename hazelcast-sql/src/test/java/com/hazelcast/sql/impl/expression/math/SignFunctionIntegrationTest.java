@@ -81,11 +81,10 @@ public class SignFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumn(Double.NEGATIVE_INFINITY, SqlColumnType.DOUBLE, -1d);
         checkColumn(Double.NaN, SqlColumnType.DOUBLE, Double.NaN);
 
-        checkColumn("0", SqlColumnType.DECIMAL, BigDecimal.ZERO);
-        checkColumn("1.1", SqlColumnType.DECIMAL, new BigDecimal("1"));
-        checkColumn("-1.1", SqlColumnType.DECIMAL, new BigDecimal("-1"));
-        checkColumnFailure("a", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-        checkColumnFailure('a', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
+        checkColumnFailure("0", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'SIGN' function (consider adding an explicit CAST)");
+        checkColumnFailure("1.1", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'SIGN' function (consider adding an explicit CAST)");
+        checkColumnFailure("-1.1", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'SIGN' function (consider adding an explicit CAST)");
+        checkColumnFailure("a", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'SIGN' function (consider adding an explicit CAST)");
 
         checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'SIGN' function (consider adding an explicit CAST)");
         checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply [DATE] to the 'SIGN' function (consider adding an explicit CAST)");
@@ -112,117 +111,80 @@ public class SignFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
     public void testParameter() {
         put(0);
 
-        BigDecimal zero = BigDecimal.ZERO;
-        BigDecimal positive = BigDecimal.ONE;
-        BigDecimal negative = BigDecimal.ONE.negate();
+        long zero = 0L;
+        long positive = 1L;
+        long negative = -1L;
 
         checkParameter((byte) 0, zero);
         checkParameter((byte) 1, positive);
         checkParameter((byte) -1, negative);
         checkParameter(Byte.MAX_VALUE, positive);
         checkParameter(Byte.MIN_VALUE, negative);
-        checkParameter(Byte.toString(Byte.MAX_VALUE), positive);
-        checkParameter(Byte.toString(Byte.MIN_VALUE), negative);
 
         checkParameter((short) 0, zero);
         checkParameter((short) 1, positive);
         checkParameter((short) -1, negative);
         checkParameter(Short.MAX_VALUE, positive);
         checkParameter(Short.MIN_VALUE, negative);
-        checkParameter(Short.toString(Short.MAX_VALUE), positive);
-        checkParameter(Short.toString(Short.MIN_VALUE), negative);
 
         checkParameter(0, zero);
         checkParameter(1, positive);
         checkParameter(-1, negative);
         checkParameter(Integer.MAX_VALUE, positive);
         checkParameter(Integer.MIN_VALUE, negative);
-        checkParameter(Integer.toString(Integer.MAX_VALUE), positive);
-        checkParameter(Integer.toString(Integer.MIN_VALUE), negative);
 
         checkParameter(0L, zero);
         checkParameter(1L, positive);
         checkParameter(-1L, negative);
         checkParameter(Long.MAX_VALUE, positive);
         checkParameter(Long.MIN_VALUE, negative);
-        checkParameter(Long.toString(Long.MAX_VALUE), positive);
-        checkParameter(Long.toString(Long.MIN_VALUE), negative);
 
-        checkParameter(BigInteger.ZERO, zero);
-        checkParameter(BigInteger.ONE, positive);
-        checkParameter(BigInteger.ONE.negate(), negative);
-
-        checkParameter(BigDecimal.ZERO, zero);
-        checkParameter(BigDecimal.ONE, positive);
-        checkParameter(BigDecimal.ONE.negate(), negative);
-        checkParameter(new BigDecimal("1.1"), positive);
-        checkParameter(new BigDecimal("-1.1"), negative);
-        checkParameter("1.1", positive);
-        checkParameter("-1.1", negative);
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to DECIMAL", 0.0f);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 0.0d);
-
-        checkParameter('0', zero);
-        checkParameter('1', positive);
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to DECIMAL", true);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", "bad");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", 'b');
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to DECIMAL", LOCAL_DATE_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to DECIMAL", LOCAL_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to DECIMAL", LOCAL_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to DECIMAL", OFFSET_DATE_TIME_VAL);
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to BIGINT", "0");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BOOLEAN to BIGINT", true);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT", BigInteger.ZERO);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT", BigDecimal.ZERO);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to BIGINT", 0.0f);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to BIGINT", 0.0d);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to BIGINT", LOCAL_DATE_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to BIGINT", LOCAL_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to BIGINT", LOCAL_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to BIGINT", OFFSET_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to BIGINT", new ExpressionValue.ObjectVal());
     }
 
     private void checkParameter(Object parameterValue, Object expectedValue) {
-        checkValue("?", SqlColumnType.DECIMAL, expectedValue, parameterValue);
+        checkValue("?", SqlColumnType.BIGINT, expectedValue, parameterValue);
     }
 
     @Test
     public void testLiteral() {
         put(0);
 
-        checkExactLiteral(0, SqlColumnType.TINYINT, (byte) 0);
-        checkExactLiteral(1, SqlColumnType.TINYINT, (byte) 1);
-        checkExactLiteral(-1, SqlColumnType.TINYINT, (byte) -1);
-        checkExactLiteral(Byte.MAX_VALUE, SqlColumnType.TINYINT, (byte) 1);
-        checkExactLiteral(Byte.MIN_VALUE, SqlColumnType.TINYINT, (byte) -1);
-        checkExactLiteral(Short.MAX_VALUE, SqlColumnType.SMALLINT, (short) 1);
-        checkExactLiteral(Short.MIN_VALUE, SqlColumnType.SMALLINT, (short) -1);
-        checkExactLiteral(Integer.MAX_VALUE, SqlColumnType.INTEGER, 1);
-        checkExactLiteral(Integer.MIN_VALUE, SqlColumnType.INTEGER, -1);
-        checkExactLiteral(Long.MAX_VALUE, SqlColumnType.BIGINT, 1L);
-        checkExactLiteral(Long.MIN_VALUE, SqlColumnType.BIGINT, -1L);
+        checkValue("null", SqlColumnType.BIGINT, null);
 
-        checkValue("null", SqlColumnType.DECIMAL, null);
-        checkExactLiteral("1.1", SqlColumnType.DECIMAL, new BigDecimal("1"));
-        checkExactLiteral("0.0", SqlColumnType.DECIMAL, new BigDecimal("0"));
-        checkExactLiteral("-1.1", SqlColumnType.DECIMAL, new BigDecimal("-1"));
+        checkValue(0, SqlColumnType.TINYINT, (byte) 0);
+        checkValue(1, SqlColumnType.TINYINT, (byte) 1);
+        checkValue(-1, SqlColumnType.TINYINT, (byte) -1);
+        checkValue(Byte.MAX_VALUE, SqlColumnType.TINYINT, (byte) 1);
+        checkValue(Byte.MIN_VALUE, SqlColumnType.TINYINT, (byte) -1);
+        checkValue(Short.MAX_VALUE, SqlColumnType.SMALLINT, (short) 1);
+        checkValue(Short.MIN_VALUE, SqlColumnType.SMALLINT, (short) -1);
+        checkValue(Integer.MAX_VALUE, SqlColumnType.INTEGER, 1);
+        checkValue(Integer.MIN_VALUE, SqlColumnType.INTEGER, -1);
+        checkValue(Long.MAX_VALUE, SqlColumnType.BIGINT, 1L);
+        checkValue(Long.MIN_VALUE, SqlColumnType.BIGINT, -1L);
 
-        checkInexactLiteral("1.1E0", SqlColumnType.DOUBLE, 1.0d);
-        checkInexactLiteral("0.0E0", SqlColumnType.DOUBLE, 0d);
-        checkInexactLiteral("-1.1E0", SqlColumnType.DOUBLE, -1.0d);
+        checkValue("1.1", SqlColumnType.DECIMAL, new BigDecimal("1"));
+        checkValue("0.0", SqlColumnType.DECIMAL, new BigDecimal("0"));
+        checkValue("-1.1", SqlColumnType.DECIMAL, new BigDecimal("-1"));
 
-        checkFailure("'a'", SqlErrorCode.PARSING, "Literal ''a'' can not be parsed to type 'DECIMAL'");
+        checkValue("1.1E0", SqlColumnType.DOUBLE, 1.0d);
+        checkValue("0.0E0", SqlColumnType.DOUBLE, 0d);
+        checkValue("-1.1E0", SqlColumnType.DOUBLE, -1.0d);
+
+        checkFailure("'a'", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'SIGN' function (consider adding an explicit CAST)");
         checkFailure("true", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'SIGN' function (consider adding an explicit CAST)");
         checkFailure("false", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'SIGN' function (consider adding an explicit CAST)");
-    }
-
-    private void checkExactLiteral(Object literal, SqlColumnType expectedType, Object expectedValue) {
-        String literalString = literal.toString();
-
-        checkValue(literalString, expectedType, expectedValue);
-        checkValue("'" + literalString + "'", SqlColumnType.DECIMAL, new BigDecimal(expectedValue.toString()));
-    }
-
-    private void checkInexactLiteral(Object literal, SqlColumnType expectedType, double expectedValue) {
-        String literalString = literal.toString();
-
-        checkValue(literalString, expectedType, expectedValue);
     }
 
     private void checkValue(Object operand, SqlColumnType expectedType, Object expectedValue, Object... params) {

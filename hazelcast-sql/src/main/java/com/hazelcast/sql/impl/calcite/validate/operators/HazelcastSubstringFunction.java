@@ -38,8 +38,8 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
-public class HazelcastSqlSubstringFunction extends SqlFunction implements SqlCallBindingManualOverride {
-    public HazelcastSqlSubstringFunction() {
+public class HazelcastSubstringFunction extends SqlFunction implements SqlCallBindingManualOverride {
+    public HazelcastSubstringFunction() {
         super(
             "SUBSTRING",
             SqlKind.OTHER_FUNCTION,
