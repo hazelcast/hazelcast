@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators.string;
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.NumericOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.VarcharOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
@@ -38,8 +39,11 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
-public class HazelcastSubstringFunction extends SqlFunction implements SqlCallBindingManualOverride {
-    public HazelcastSubstringFunction() {
+public final class HazelcastSubstringFunction extends SqlFunction implements SqlCallBindingManualOverride {
+
+    public static final HazelcastSubstringFunction INSTANCE = new HazelcastSubstringFunction();
+
+    private HazelcastSubstringFunction() {
         super(
             "SUBSTRING",
             SqlKind.OTHER_FUNCTION,
@@ -87,20 +91,23 @@ public class HazelcastSubstringFunction extends SqlFunction implements SqlCallBi
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
-        callBinding = new SqlCallBindingOverride(callBinding);
+    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
+        SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
 
-        boolean res = VarcharOperandChecker.INSTANCE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
+        if (bindingOverride.getOperandCount() == 2) {
+            return new CompositeOperandChecker(
+                VarcharOperandChecker.INSTANCE,
+                NumericOperandChecker.INTEGER
+            ).check(bindingOverride, throwOnFailure);
+        } else {
+            assert bindingOverride.getOperandCount() == 3;
 
-        if (res) {
-            res = NumericOperandChecker.INTEGER.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 1);
+            return new CompositeOperandChecker(
+                VarcharOperandChecker.INSTANCE,
+                NumericOperandChecker.INTEGER,
+                NumericOperandChecker.INTEGER
+            ).check(bindingOverride, throwOnFailure);
         }
-
-        if (res && callBinding.getOperandCount() == 3) {
-            res = NumericOperandChecker.INTEGER.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 2);
-        }
-
-        return res;
     }
 
     @Override

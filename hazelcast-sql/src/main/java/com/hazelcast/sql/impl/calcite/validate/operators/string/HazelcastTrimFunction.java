@@ -20,6 +20,8 @@ import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingSignatureErrorAware;
+import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.NoOpOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.VarcharOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCall;
@@ -48,7 +50,10 @@ import java.util.Collections;
  */
 public class HazelcastTrimFunction extends SqlFunction implements SqlCallBindingManualOverride,
     SqlCallBindingSignatureErrorAware {
-    public HazelcastTrimFunction() {
+
+    public static HazelcastTrimFunction INSTANCE = new HazelcastTrimFunction();
+
+    private HazelcastTrimFunction() {
         super(
             "TRIM",
             SqlKind.TRIM,
@@ -68,13 +73,20 @@ public class HazelcastTrimFunction extends SqlFunction implements SqlCallBinding
     public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
         SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
 
-        boolean res = VarcharOperandChecker.INSTANCE.check(bindingOverride, throwOnFailure, 1);
+        if (bindingOverride.getOperandCount() == 2) {
+            return new CompositeOperandChecker(
+                NoOpOperandChecker.INSTANCE,
+                VarcharOperandChecker.INSTANCE
+            ).check(bindingOverride, throwOnFailure);
+        } else {
+            assert bindingOverride.getOperandCount() == 3;
 
-        if (res) {
-            res = VarcharOperandChecker.INSTANCE.check(bindingOverride, throwOnFailure, 2);
+            return new CompositeOperandChecker(
+                NoOpOperandChecker.INSTANCE,
+                VarcharOperandChecker.INSTANCE,
+                VarcharOperandChecker.INSTANCE
+            ).check(bindingOverride, throwOnFailure);
         }
-
-        return res;
     }
 
     @Override

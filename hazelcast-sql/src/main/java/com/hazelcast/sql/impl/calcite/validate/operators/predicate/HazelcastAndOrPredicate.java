@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.BooleanOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.OperandChecker;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
@@ -28,6 +30,8 @@ import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.util.Litmus;
+
+import java.util.Arrays;
 
 public final class HazelcastAndOrPredicate extends SqlBinaryOperator implements SqlCallBindingManualOverride {
 
@@ -56,20 +60,13 @@ public final class HazelcastAndOrPredicate extends SqlBinaryOperator implements 
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
-        SqlCallBindingOverride callBinding0 = new SqlCallBindingOverride(callBinding);
+    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
+        SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
 
-        boolean res = true;
+        OperandChecker[] checkers = new OperandChecker[binding.getOperandCount()];
+        Arrays.fill(checkers, BooleanOperandChecker.INSTANCE);
 
-        for (int i = 0; i < callBinding.getOperandCount(); i++) {
-            boolean operandRes = BooleanOperandChecker.INSTANCE.check(callBinding0, throwOnFailure, i);
-
-            if (!operandRes) {
-                res = false;
-            }
-        }
-
-        return res;
+        return new CompositeOperandChecker(checkers).check(bindingOverride, throwOnFailure);
     }
 
     @Override

@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionType;
@@ -72,6 +71,12 @@ public class ConcatFunctionIntegrationTest extends SqlExpressionIntegrationTestS
         check("this || ?", "12", "2");
         check("this || ?", "12", '2');
         check("this || ?", null, new Object[]{null});
+        check("this || ?", "12", 2);
+
+        check("this || ?", "1" + LOCAL_DATE_VAL, LOCAL_DATE_VAL);
+        check("this || ?", "1" + LOCAL_TIME_VAL, LOCAL_TIME_VAL);
+        check("this || ?", "1" + LOCAL_DATE_TIME_VAL, LOCAL_DATE_TIME_VAL);
+        check("this || ?", "1" + OFFSET_DATE_TIME_VAL, OFFSET_DATE_TIME_VAL);
 
         check("? || this", "21", "2");
         check("? || this", "21", '2');
@@ -84,12 +89,6 @@ public class ConcatFunctionIntegrationTest extends SqlExpressionIntegrationTestS
 
         check("? || null", null, "1");
         check("null || ?", null, "1");
-
-        checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR ", 2);
-        checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to VARCHAR ", LOCAL_DATE_VAL);
-        checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to VARCHAR ", LOCAL_TIME_VAL);
-        checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to VARCHAR ", LOCAL_DATE_TIME_VAL);
-        checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to VARCHAR ", OFFSET_DATE_TIME_VAL);
     }
 
     @Test

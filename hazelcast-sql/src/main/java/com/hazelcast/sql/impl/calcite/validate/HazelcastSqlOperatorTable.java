@@ -21,9 +21,7 @@ import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDivideOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlFloorFunction;
-import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlMonotonicBinaryOperator;
-import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastSubstringFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastRandFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastSignFunction;
@@ -31,7 +29,10 @@ import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastAndO
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastNotPredicate;
+import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastConcatFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastStringFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastSubstringFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastTrimFunction;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes;
@@ -67,7 +68,6 @@ import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandType
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
-import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
 /**
  * Operator table.
@@ -234,22 +234,13 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#region String functions
 
-    // TODO
-    public static final SqlBinaryOperator CONCAT = new SqlBinaryOperator(
-        "||",
-        SqlKind.OTHER,
-        60,
-        true,
-        ReturnTypes.DYADIC_STRING_SUM_PRECISION_NULLABLE,
-        new ReplaceUnknownOperandTypeInference(VARCHAR),
-        wrap(notAny(OperandTypes.STRING_SAME_SAME))
-    );
+    public static final SqlBinaryOperator CONCAT = HazelcastConcatFunction.INSTANCE;
 
     public static final SqlSpecialOperator LIKE = HazelcastLikeOperator.INSTANCE;
 
-    public static final SqlFunction SUBSTRING = new HazelcastSubstringFunction();
+    public static final SqlFunction SUBSTRING = HazelcastSubstringFunction.INSTANCE;
 
-    public static final SqlFunction TRIM = new HazelcastTrimFunction();
+    public static final SqlFunction TRIM = HazelcastTrimFunction.INSTANCE;
 
     public static final SqlFunction RTRIM = HazelcastStringFunction.RTRIM;
     public static final SqlFunction LTRIM = HazelcastStringFunction.LTRIM;

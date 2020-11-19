@@ -74,31 +74,31 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
 
         // Other columns
         put(true);
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "true");
+        checkFailureInternal(sql("this", "1"), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, INTEGER] to the 'SUBSTRING' function");
 
         put((byte) 1);
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "1");
+        checkFailureInternal(sql("this", "1"), SqlErrorCode.PARSING, "Cannot apply [TINYINT, INTEGER] to the 'SUBSTRING' function");
 
         put((short) 2);
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "2");
+        checkFailureInternal(sql("this", "1"), SqlErrorCode.PARSING, "Cannot apply [SMALLINT, INTEGER] to the 'SUBSTRING' function");
 
         put(3);
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "3");
+        checkFailureInternal(sql("this", "1"), SqlErrorCode.PARSING, "Cannot apply [INTEGER, INTEGER] to the 'SUBSTRING' function");
 
         put(4L);
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "4");
+        checkFailureInternal(sql("this", "1"), SqlErrorCode.PARSING, "Cannot apply [BIGINT, INTEGER] to the 'SUBSTRING' function");
 
         put(new BigInteger("5"));
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "5");
+        checkFailureInternal(sql("this", "1"), SqlErrorCode.PARSING, "Cannot apply [DECIMAL, INTEGER] to the 'SUBSTRING' function");
 
         put(new BigDecimal("6"));
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "6");
+        checkFailureInternal(sql("this", "1"), SqlErrorCode.PARSING, "Cannot apply [DECIMAL, INTEGER] to the 'SUBSTRING' function");
 
         put(7f);
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "7.0");
+        checkFailureInternal(sql("this", "1"), SqlErrorCode.PARSING, "Cannot apply [REAL, INTEGER] to the 'SUBSTRING' function");
 
-        put(8f);
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "8.0");
+        put(8d);
+        checkFailureInternal(sql("this", "1"), SqlErrorCode.PARSING, "Cannot apply [DOUBLE, INTEGER] to the 'SUBSTRING' function");
 
         // Parameter
         put(1);
@@ -106,23 +106,23 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         checkValueInternal(sql("?", "1"), SqlColumnType.VARCHAR, "a", 'a');
         checkValueInternal(sql("?", "1"), SqlColumnType.VARCHAR, null, new Object[] { null });
 
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TINYINT to VARCHAR", (byte) 1);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from SMALLINT to VARCHAR", (short) 1);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BIGINT to VARCHAR", 1L);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to VARCHAR", BigInteger.ONE);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to VARCHAR", BigDecimal.ONE);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to VARCHAR", 1f);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to VARCHAR", 1d);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to VARCHAR", new ExpressionValue.ObjectVal());
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to VARCHAR", LOCAL_DATE_VAL);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to VARCHAR", LOCAL_TIME_VAL);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to VARCHAR", LOCAL_DATE_TIME_VAL);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to VARCHAR", OFFSET_DATE_TIME_VAL);
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", (byte) 1);
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", (short) 1);
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 1);
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 1L);
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", BigInteger.ONE);
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", BigDecimal.ONE);
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 1f);
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 1d);
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", new ExpressionValue.ObjectVal());
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_DATE_VAL);
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_TIME_VAL);
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_DATE_TIME_VAL);
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", OFFSET_DATE_TIME_VAL);
 
         // Literal
         checkValueInternal(sql("'abc'", "1"), SqlColumnType.VARCHAR, "abc");
-        checkValueInternal(sql("1", "1"), SqlColumnType.VARCHAR, "1");
+        checkFailureInternal(sql("1", "1"), SqlErrorCode.PARSING, "Cannot apply [TINYINT, INTEGER] to the 'SUBSTRING' function");
     }
 
     @Test
@@ -155,13 +155,13 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         checkValueInternal(sql("'abcde'", "this"), SqlColumnType.VARCHAR, "bcde");
 
         put(2L);
-        checkValueInternal(sql("'abcde'", "this"), SqlColumnType.VARCHAR, "bcde");
+        checkFailureInternal(sql("'abcde'", "this"), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, BIGINT] to the 'SUBSTRING' function");
 
         put("2");
-        checkValueInternal(sql("'abcde'", "this"), SqlColumnType.VARCHAR, "bcde");
+        checkFailureInternal(sql("'abcde'", "this"), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, VARCHAR] to the 'SUBSTRING' function");
 
         put('2');
-        checkValueInternal(sql("'abcde'", "this"), SqlColumnType.VARCHAR, "bcde");
+        checkFailureInternal(sql("'abcde'", "this"), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, VARCHAR] to the 'SUBSTRING' function");
 
         // Parameters
         put("abcde");
@@ -169,13 +169,9 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         checkValueInternal(sql("this", "?"), SqlColumnType.VARCHAR, "bcde", (byte) 2);
         checkValueInternal(sql("this", "?"), SqlColumnType.VARCHAR, "bcde", (short) 2);
         checkValueInternal(sql("this", "?"), SqlColumnType.VARCHAR, "bcde", 2);
-        checkValueInternal(sql("this", "?"), SqlColumnType.VARCHAR, "bcde", "2");
-        checkValueInternal(sql("this", "?"), SqlColumnType.VARCHAR, "bcde", '2');
-
-        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to INTEGER", "bad");
-        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to INTEGER", 'b');
-
-        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to INTEGER", true);
+        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to INTEGER", "2");
+        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to INTEGER", '2');
+        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BOOLEAN to INTEGER", true);
         checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BIGINT to INTEGER", 2L);
         checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", BigInteger.ONE);
         checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", BigDecimal.ONE);
@@ -189,7 +185,7 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         // Literals
         put("abcde");
         checkValueInternal(sql("this", "2"), SqlColumnType.VARCHAR, "bcde");
-        checkValueInternal(sql("this", "'2'"), SqlColumnType.VARCHAR, "bcde");
+        checkFailureInternal(sql("this", "'2'"), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, VARCHAR] to the 'SUBSTRING' function (consider adding an explicit CAST)");
         checkValueInternal(sql("this", "null"), SqlColumnType.VARCHAR, null);
         checkFailureInternal(sql("this", "true"), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, BOOLEAN] to the 'SUBSTRING' function (consider adding an explicit CAST)");
     }
@@ -209,7 +205,7 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         checkValueInternal(sql("'abcde'", "2", "field1"), SqlColumnType.VARCHAR, null);
 
         put(true);
-        checkFailureInternal(sql("'abcde'", "2", "this"), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, TINYINT, BOOLEAN] to the 'SUBSTRING' function (consider adding an explicit CAST)");
+        checkFailureInternal(sql("'abcde'", "2", "this"), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, INTEGER, BOOLEAN] to the 'SUBSTRING' function (consider adding an explicit CAST)");
 
         put((byte) 2);
         checkValueInternal(sql("'abcde'", "2", "this"), SqlColumnType.VARCHAR, "bc");
@@ -221,7 +217,7 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         checkValueInternal(sql("'abcde'", "2", "this"), SqlColumnType.VARCHAR, "bc");
 
         put(2L);
-        checkValueInternal(sql("'abcde'", "2", "this"), SqlColumnType.VARCHAR, "bc");
+        checkFailureInternal(sql("'abcde'", "2", "this"), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, INTEGER, BIGINT] to the 'SUBSTRING' function");
 
         // Parameters
         put(1);
@@ -229,13 +225,9 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         checkValueInternal(sql("'abcde'", "2", "?"), SqlColumnType.VARCHAR, "bc", (byte) 2);
         checkValueInternal(sql("'abcde'", "2", "?"), SqlColumnType.VARCHAR, "bc", (short) 2);
         checkValueInternal(sql("'abcde'", "2", "?"), SqlColumnType.VARCHAR, "bc", 2);
-        checkValueInternal(sql("'abcde'", "2", "?"), SqlColumnType.VARCHAR, "bc", "2");
-        checkValueInternal(sql("'abcde'", "2", "?"), SqlColumnType.VARCHAR, "bc", '2');
-
-        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to INTEGER", "bad");
-        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to INTEGER", 'b');
-
-        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to INTEGER", true);
+        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to INTEGER", "2");
+        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to INTEGER", '2');
+        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BOOLEAN to INTEGER", true);
         checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BIGINT to INTEGER", 2L);
         checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", new BigInteger("2"));
         checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", new BigDecimal("2"));
@@ -250,9 +242,9 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         put(1);
 
         checkValueInternal(sql("'abcde'", "2", "2"), SqlColumnType.VARCHAR, "bc");
-        checkValueInternal(sql("'abcde'", "2", "'2'"), SqlColumnType.VARCHAR, "bc");
+        checkFailureInternal(sql("'abcde'", "2", "'2'"), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, INTEGER, VARCHAR] to the 'SUBSTRING' function");
         checkValueInternal(sql("'abcde'", "2", "null"), SqlColumnType.VARCHAR, null);
-        checkFailureInternal(sql("'abcde'", "2", "true"), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, TINYINT, BOOLEAN] to the 'SUBSTRING' function (consider adding an explicit CAST)");
+        checkFailureInternal(sql("'abcde'", "2", "true"), SqlErrorCode.PARSING, "Cannot apply [VARCHAR, INTEGER, BOOLEAN] to the 'SUBSTRING' function (consider adding an explicit CAST)");
     }
 
     @Test

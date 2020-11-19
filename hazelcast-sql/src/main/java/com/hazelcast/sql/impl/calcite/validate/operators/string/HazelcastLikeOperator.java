@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators.string;
 
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.VarcharOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCall;
@@ -64,21 +65,20 @@ public final class HazelcastLikeOperator extends SqlSpecialOperator implements S
     public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
         SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
 
-        int operandCount = binding.getOperandCount();
+        if (bindingOverride.getOperandCount() == 2) {
+            return new CompositeOperandChecker(
+                VarcharOperandChecker.INSTANCE,
+                VarcharOperandChecker.INSTANCE
+            ).check(bindingOverride, throwOnFailure);
+        } else {
+            assert bindingOverride.getOperandCount() == 3;
 
-        assert operandCount == 2 || operandCount == 3;
-
-        boolean res = VarcharOperandChecker.INSTANCE.check(bindingOverride, throwOnFailure, 0);
-
-        if (res) {
-            res = VarcharOperandChecker.INSTANCE.check(bindingOverride, throwOnFailure, 1);
+            return new CompositeOperandChecker(
+                VarcharOperandChecker.INSTANCE,
+                VarcharOperandChecker.INSTANCE,
+                VarcharOperandChecker.INSTANCE
+            ).check(bindingOverride, throwOnFailure);
         }
-
-        if (res && operandCount == 3) {
-            res = VarcharOperandChecker.INSTANCE.check(bindingOverride, throwOnFailure, 2);
-        }
-
-        return res;
     }
 
     @Override
