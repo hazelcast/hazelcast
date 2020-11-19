@@ -31,9 +31,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.utility.ResourceReaper;
 
 import javax.annotation.Nonnull;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -125,21 +125,22 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
         }
     }
 
+    protected static int fixPortBinding(GenericContainer<?> container, Integer defaultPort) {
+        int port = container.getMappedPort(defaultPort);
+        container.setPortBindings(Collections.singletonList(port + ":" + defaultPort));
+        return port;
+    }
+
     /**
      * Stops a container via the `docker stop` command. Necessary because the
      * {@code stop()} method of test containers is implemented via `docker kill`
      * and this matters for some tests.
      */
     protected static void stopContainer(GenericContainer<?> container) {
-        String containerId = container.getContainerId();
         DockerClient dockerClient = DockerClientFactory.instance().client();
-        dockerClient.stopContainerCmd(containerId)
-                .exec();
-        dockerClient.removeContainerCmd(containerId)
-                .withRemoveVolumes(true)
-                .withForce(true)
-                .exec();
-        ResourceReaper.instance().unregisterContainer(containerId);
+        dockerClient.stopContainerCmd(container.getContainerId()).exec();
+
+        container.stop(); //allow the resource reaper to clean its registries
     }
 
     protected <T> T namedTestContainer(GenericContainer<?> container) {

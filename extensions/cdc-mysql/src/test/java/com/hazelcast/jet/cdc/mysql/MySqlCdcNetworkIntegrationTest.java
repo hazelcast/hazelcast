@@ -47,22 +47,16 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.ToxiproxyContainer;
 
-import java.io.IOException;
-import java.net.ServerSocket;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -114,18 +108,16 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
     @After
     public void after() {
         if (mysql != null) {
-            stopContainer(mysql);
+            mysql.stop();
         }
     }
 
     @Test
     public void when_noDatabaseToConnectTo() throws Exception {
-        mysql = initMySql(null, 0);
+        mysql = initMySql(null, null);
+        int port = fixPortBinding(mysql, MYSQL_PORT);
         String containerIpAddress = mysql.getContainerIpAddress();
         stopContainer(mysql);
-        mysql = null;
-
-        int port = findRandomOpenPortInRange(MYSQL_PORT + 100, MYSQL_PORT + 1000);
 
         Pipeline pipeline = initPipeline(containerIpAddress, port);
 
@@ -144,7 +136,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             assertTrue(jet.getMap("results").isEmpty());
 
             // and DB starts
-            mysql = initMySql(null, port);
+            mysql.start();
             try {
                 // then source connects successfully
                 assertEqualsEventually(() -> jet.getMap("results").size(), 4);
@@ -193,8 +185,9 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
     @Test
     public void when_databaseShutdownDuringSnapshotting() throws Exception {
-        int port = findRandomOpenPort();
-        mysql = initMySql(null, port);
+        mysql = initMySql(null, null);
+        int port = fixPortBinding(mysql, MYSQL_PORT);
+
         Pipeline pipeline = initPipeline(mysql.getContainerIpAddress(), port);
         // when job starts
         JetInstance jet = createJetMembers(2)[0];
@@ -207,7 +200,6 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
         // and DB is stopped
         stopContainer(mysql);
-        mysql = null;
 
         boolean neverReconnect = reconnectBehavior.getMaxAttempts() == 0;
         if (neverReconnect) {
@@ -267,8 +259,9 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
     @Test
     public void when_databaseShutdownDuringBinlogReading() throws Exception {
-        int port = findRandomOpenPort();
-        mysql = initMySql(null, port);
+        mysql = initMySql(null, null);
+        int port = fixPortBinding(mysql, MYSQL_PORT);
+
         Pipeline pipeline = initPipeline(mysql.getContainerIpAddress(), port);
         // when connector is up and transitions to binlog reading
         JetInstance jet = createJetMembers(2)[0];
@@ -280,7 +273,6 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
         // and DB is stopped
         stopContainer(mysql);
-        mysql = null;
 
         boolean neverReconnect = reconnectBehavior.getMaxAttempts() == 0;
         if (neverReconnect) {
@@ -385,31 +377,6 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             statement.executeBatch();
             connection.commit();
         }
-    }
-
-    private static int findRandomOpenPort() throws Exception {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
-        }
-    }
-
-    private static int findRandomOpenPortInRange(int fromInclusive, int toExclusive) throws IOException {
-        List<Integer> randomizedPortsInRange = IntStream.range(fromInclusive, toExclusive)
-                .boxed()
-                .collect(Collectors.toList());
-        Collections.shuffle(randomizedPortsInRange);
-
-        for (int port : randomizedPortsInRange) {
-            try {
-                ServerSocket serverSocket = new ServerSocket(port);
-                serverSocket.close();
-                return port;
-            } catch (Exception e) {
-                //swallow, expected
-            }
-        }
-
-        throw new IOException("No free port in range [" + fromInclusive + ", " + toExclusive + ")");
     }
 
     @SuppressWarnings("StatementWithEmptyBody")

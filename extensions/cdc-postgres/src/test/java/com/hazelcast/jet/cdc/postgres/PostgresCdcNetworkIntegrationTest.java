@@ -48,20 +48,14 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.ToxiproxyContainer;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.net.ServerSocket;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -95,28 +89,27 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
 
     @Parameters(name = "{2}")
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-                { RetryStrategies.never(), false, "fail"},
-                { RetryStrategies.indefinitely(RECONNECT_INTERVAL_MS), false, "reconnect"},
-                { RetryStrategies.indefinitely(RECONNECT_INTERVAL_MS), true, "reconnect w/ state reset"}
+        return Arrays.asList(new Object[][]{
+                {RetryStrategies.never(), false, "fail"},
+                {RetryStrategies.indefinitely(RECONNECT_INTERVAL_MS), false, "reconnect"},
+                {RetryStrategies.indefinitely(RECONNECT_INTERVAL_MS), true, "reconnect w/ state reset"}
         });
     }
 
     @After
     public void after() {
         if (postgres != null) {
-            stopContainer(postgres);
+            postgres.stop();
         }
     }
 
     @Test
     public void when_noDatabaseToConnectTo() throws Exception {
-        postgres = initPostgres(null, 0);
+        postgres = initPostgres(null, null);
+        int port = fixPortBinding(postgres, POSTGRESQL_PORT);
         String containerIpAddress = postgres.getContainerIpAddress();
         stopContainer(postgres);
-        postgres = null;
 
-        int port = findRandomOpenPortInRange(POSTGRESQL_PORT + 100, POSTGRESQL_PORT + 1000);
         Pipeline pipeline = initPipeline(containerIpAddress, port);
 
         // when job starts
@@ -136,7 +129,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
             assertTrue(jet.getMap("results").isEmpty());
 
             // and DB starts
-            postgres = initPostgres(null, port);
+            postgres.start();
             try {
                 // then source connects successfully
                 assertEqualsEventually(() -> jet.getMap("results").size(), 4);
@@ -186,8 +179,9 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
 
     @Test
     public void when_databaseShutdownOrLongDisconnectDuringSnapshotting() throws Exception {
-        int port = findRandomOpenPort();
-        postgres = initPostgres(null, port);
+        postgres = initPostgres(null, null);
+        int port = fixPortBinding(postgres, POSTGRESQL_PORT);
+
         Pipeline pipeline = initPipeline(postgres.getContainerIpAddress(), port);
         // when job starts
         JetInstance jet = createJetMembers(2)[0];
@@ -200,7 +194,6 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
 
         // and DB is stopped
         stopContainer(postgres);
-        postgres = null;
 
         // then
         boolean neverReconnect = reconnectBehavior.getMaxAttempts() == 0;
@@ -267,8 +260,9 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
     public void when_databaseShutdownOrLongDisconnectDuringBinlogReading() throws Exception {
         Assume.assumeFalse(reconnectBehavior.getMaxAttempts() < 0 && !resetStateOnReconnect);
 
-        int port = findRandomOpenPort();
-        postgres = initPostgres(null, port);
+        postgres = initPostgres(null, null);
+        int port = fixPortBinding(postgres, POSTGRESQL_PORT);
+
         Pipeline pipeline = initPipeline(postgres.getContainerIpAddress(), port);
         // when connector is up and transitions to binlog reading
         JetInstance jet = createJetMembers(2)[0];
@@ -280,7 +274,6 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
 
         // and DB is stopped
         stopContainer(postgres);
-        postgres = null;
 
         boolean neverReconnect = reconnectBehavior.getMaxAttempts() == 0;
         if (neverReconnect) {
@@ -359,7 +352,6 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
             postgres = postgres.withNetwork(network);
         }
         postgres.start();
-        waitUntilUp(postgres);
         return postgres;
     }
 
@@ -378,24 +370,6 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
         return toxiproxy.getProxy(postgres, POSTGRESQL_PORT);
     }
 
-    private static void waitUntilUp(PostgreSQLContainer<?> postgres) {
-        for (; ; ) {
-            try {
-                try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
-                        postgres.getPassword())) {
-                    connection.setSchema("inventory");
-                    boolean successfull = connection.createStatement().execute("SELECT 1");
-                    if (successfull) {
-                        return;
-                    }
-                }
-            } catch (SQLException throwables) {
-                // repeat
-            }
-            System.out.println("Waiting for the database to come up...");
-        }
-    }
-
     private static void insertRecords(PostgreSQLContainer<?> postgres, int... ids) throws SQLException {
         try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
                 postgres.getPassword())) {
@@ -409,31 +383,6 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
             statement.executeBatch();
             connection.commit();
         }
-    }
-
-    private static int findRandomOpenPort() throws Exception {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
-        }
-    }
-
-    private static int findRandomOpenPortInRange(int fromInclusive, int toExclusive) throws IOException {
-        List<Integer> randomizedPortsInRange = IntStream.range(fromInclusive, toExclusive)
-                .boxed()
-                .collect(Collectors.toList());
-        Collections.shuffle(randomizedPortsInRange);
-
-        for (int port : randomizedPortsInRange) {
-            try {
-                ServerSocket serverSocket = new ServerSocket(port);
-                serverSocket.close();
-                return port;
-            } catch (Exception e) {
-                //swallow, expected
-            }
-        }
-
-        throw new IOException("No free port in range [" + fromInclusive + ", " + toExclusive + ")");
     }
 
 }
