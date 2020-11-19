@@ -30,6 +30,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.management.ScriptEngineManagerContext;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.management.dto.MCEventDTO;
@@ -46,6 +47,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import java.security.AccessControlException;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +77,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -316,7 +320,13 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
 
     @Test
     public void runScript() throws Exception {
-        String result = resolve(managementCenterService.runScript(members[0], "javascript", "'hello world';"));
+        String engineName = "javascript";
+
+        ScriptEngineManager scriptEngineManager = ScriptEngineManagerContext.getScriptEngineManager();
+        ScriptEngine scriptEngine = scriptEngineManager.getEngineByName(engineName);
+        assumeNotNull(scriptEngine);
+
+        String result = resolve(managementCenterService.runScript(members[0], engineName, "'hello world';"));
         assertEquals("hello world", result);
     }
 
