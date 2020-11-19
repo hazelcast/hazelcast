@@ -44,8 +44,8 @@ public class FloorFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkColumn(BigInteger.ONE, SqlColumnType.DECIMAL, BigDecimal.ONE);
         checkColumn(new BigDecimal("1.1"), SqlColumnType.DECIMAL, BigDecimal.ONE);
 
-        checkColumn("1.1", SqlColumnType.DECIMAL, BigDecimal.ONE);
-        checkColumn('1', SqlColumnType.DECIMAL, BigDecimal.ONE);
+        checkColumnFailure("1.1", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'FLOOR' function");
+        checkColumnFailure('1', SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'FLOOR' function");
 
         checkColumn(Float.POSITIVE_INFINITY, SqlColumnType.REAL, Float.POSITIVE_INFINITY);
         checkColumn(Float.NEGATIVE_INFINITY, SqlColumnType.REAL, Float.NEGATIVE_INFINITY);
@@ -58,8 +58,8 @@ public class FloorFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         put(new ExpressionValue.IntegerVal());
         checkValue("field1", SqlColumnType.INTEGER, null);
 
-        checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-        checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
+        checkColumnFailure("bad", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'FLOOR' function");
+        checkColumnFailure('b', SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'FLOOR' function");
 
         checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'FLOOR' function (consider adding an explicit CAST)");
         checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply [DATE] to the 'FLOOR' function (consider adding an explicit CAST)");
@@ -96,14 +96,14 @@ public class FloorFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to DECIMAL", 0.0f);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 0.0d);
 
-        checkParameter("1.1", BigDecimal.ONE);
-        checkParameter('1', BigDecimal.ONE);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to DECIMAL", "1.1");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to DECIMAL", '1');
 
         checkValue("?", SqlColumnType.DECIMAL, null, new Object[] { null });
 
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to DECIMAL", true);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", "bad");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", 'b');
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BOOLEAN to DECIMAL", true);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to DECIMAL", "bad");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to DECIMAL", 'b');
 
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to DECIMAL", LOCAL_DATE_VAL);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to DECIMAL", LOCAL_TIME_VAL);
@@ -125,11 +125,10 @@ public class FloorFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
 
         checkLiteral("null", SqlColumnType.DECIMAL, null);
         checkLiteral("1.1", SqlColumnType.DECIMAL, new BigDecimal("1"));
-        checkLiteral("'1.1'", SqlColumnType.DECIMAL, new BigDecimal("1"));
         checkLiteral("1.1E0", SqlColumnType.DOUBLE, 1d);
 
-        checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
         checkFailure("true", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'FLOOR' function (consider adding an explicit CAST)");
+        checkFailure("'1.1'", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'FLOOR' function (consider adding an explicit CAST)");
     }
 
     private void checkLiteral(Object literal, SqlColumnType expectedType, Object expectedResult) {

@@ -54,6 +54,6 @@ public final class HazelcastSignFunction extends SqlFunction implements SqlCallB
     public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
         SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
 
-        return NumericOperandChecker.checkNumeric(bindingOverride, throwOnFailure, 0);
+        return NumericOperandChecker.checkNumericUnknownAsBigint(bindingOverride, throwOnFailure, 0);
     }
 }

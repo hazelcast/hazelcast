@@ -95,13 +95,26 @@ public final class NumericOperandChecker extends AbstractTypedOperandChecker {
         return true;
     }
 
-    public static boolean checkNumeric(SqlCallBindingOverride binding, boolean throwOnFailure, int index) {
+    public static boolean checkNumericUnknownAsBigint(SqlCallBindingOverride binding, boolean throwOnFailure, int index) {
+        return checkNumeric(binding, throwOnFailure, index, SqlTypeName.BIGINT);
+    }
+
+    public static boolean checkNumericUnknownAsDecimal(SqlCallBindingOverride binding, boolean throwOnFailure, int index) {
+        return checkNumeric(binding, throwOnFailure, index, SqlTypeName.DECIMAL);
+    }
+
+    private static boolean checkNumeric(
+        SqlCallBindingOverride binding,
+        boolean throwOnFailure,
+        int index,
+        SqlTypeName unknownTypeReplacement
+    ) {
         // Resolve a numeric checker for the operand
         SqlNode operand = binding.operand(index);
 
         RelDataType operandType = binding.getValidator().deriveType(binding.getScope(), operand);
 
-        NumericOperandChecker checker = checkerForTypeName(operandType.getSqlTypeName());
+        NumericOperandChecker checker = checkerForTypeName(operandType.getSqlTypeName(), unknownTypeReplacement);
 
         if (checker != null) {
             // Numeric checker is found, invoke
@@ -117,12 +130,12 @@ public final class NumericOperandChecker extends AbstractTypedOperandChecker {
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
-    private static NumericOperandChecker checkerForTypeName(SqlTypeName typeName) {
-        switch (typeName) {
-            case NULL:
-                // Upcast unknown operand (parameter, NULL literal) to BIGINT
-                return BIGINT;
+    private static NumericOperandChecker checkerForTypeName(SqlTypeName typeName, SqlTypeName unknownTypeReplacement) {
+        if (typeName == SqlTypeName.NULL) {
+            typeName = unknownTypeReplacement;
+        }
 
+        switch (typeName) {
             case TINYINT:
                 return TINYINT;
 

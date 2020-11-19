@@ -20,7 +20,7 @@ import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverr
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDivideOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlFloorFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastFloorCeilFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlMonotonicBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastRandFunction;
@@ -205,10 +205,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction DEGREES = new HazelcastDoubleFunction("DEGREES");
     public static final SqlFunction RADIANS = new HazelcastDoubleFunction("RADIANS");
 
-    // TODO
-    public static final SqlFunction FLOOR = new HazelcastSqlFloorFunction(SqlKind.FLOOR);
-    // TODO
-    public static final SqlFunction CEIL = new HazelcastSqlFloorFunction(SqlKind.CEIL);
+    public static final SqlFunction FLOOR = HazelcastFloorCeilFunction.FLOOR;
+    public static final SqlFunction CEIL = HazelcastFloorCeilFunction.CEIL;
 
     // TODO
     public static final SqlFunction ROUND = new SqlFunction(

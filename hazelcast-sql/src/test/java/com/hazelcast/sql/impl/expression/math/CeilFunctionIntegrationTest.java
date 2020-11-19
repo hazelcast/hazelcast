@@ -44,8 +44,8 @@ public class CeilFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumn(BigInteger.ONE, SqlColumnType.DECIMAL, BigDecimal.ONE);
         checkColumn(new BigDecimal("0.9"), SqlColumnType.DECIMAL, BigDecimal.ONE);
 
-        checkColumn("0.9", SqlColumnType.DECIMAL, BigDecimal.ONE);
-        checkColumn('1', SqlColumnType.DECIMAL, BigDecimal.ONE);
+        checkColumnFailure("0.9", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'CEIL' function");
+        checkColumnFailure('1', SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'CEIL' function");
 
         checkColumn(Float.POSITIVE_INFINITY, SqlColumnType.REAL, Float.POSITIVE_INFINITY);
         checkColumn(Float.NEGATIVE_INFINITY, SqlColumnType.REAL, Float.NEGATIVE_INFINITY);
@@ -58,8 +58,8 @@ public class CeilFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         put(new ExpressionValue.IntegerVal());
         checkValue("field1", SqlColumnType.INTEGER, null);
 
-        checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-        checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
+        checkColumnFailure("bad", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'CEIL' function");
+        checkColumnFailure('b', SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'CEIL' function");
 
         checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'CEIL' function (consider adding an explicit CAST)");
         checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply [DATE] to the 'CEIL' function (consider adding an explicit CAST)");
@@ -96,14 +96,14 @@ public class CeilFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to DECIMAL", 0.0f);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 0.0d);
 
-        checkParameter("0.9", BigDecimal.ONE);
-        checkParameter('1', BigDecimal.ONE);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to DECIMAL", "1.1");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to DECIMAL", '1');
 
         checkValue("?", SqlColumnType.DECIMAL, null, new Object[] { null });
 
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to DECIMAL", true);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", "bad");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", 'b');
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BOOLEAN to DECIMAL", true);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to DECIMAL", "bad");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to DECIMAL", 'b');
 
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to DECIMAL", LOCAL_DATE_VAL);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to DECIMAL", LOCAL_TIME_VAL);
@@ -125,11 +125,10 @@ public class CeilFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
 
         checkLiteral("null", SqlColumnType.DECIMAL, null);
         checkLiteral("1.1", SqlColumnType.DECIMAL, new BigDecimal("2"));
-        checkLiteral("'1.1'", SqlColumnType.DECIMAL, new BigDecimal("2"));
         checkLiteral("1.1E0", SqlColumnType.DOUBLE, 2d);
 
-        checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
         checkFailure("true", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'CEIL' function (consider adding an explicit CAST)");
+        checkFailure("'1.1'", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'CEIL' function (consider adding an explicit CAST)");
     }
 
     private void checkLiteral(Object literal, SqlColumnType expectedType, Object expectedResult) {

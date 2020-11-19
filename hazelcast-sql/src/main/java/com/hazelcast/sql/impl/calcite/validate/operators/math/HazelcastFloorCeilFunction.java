@@ -14,33 +14,51 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.sql.impl.calcite.validate.operators.math;
 
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operand.NumericOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlCallBinding;
+import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlOperatorBinding;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.fun.SqlMonotonicUnaryFunction;
-import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
+import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.validate.SqlMonotonicity;
 
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 
-public class HazelcastSqlFloorFunction extends SqlMonotonicUnaryFunction {
-    public HazelcastSqlFloorFunction(SqlKind kind) {
+public final class HazelcastFloorCeilFunction extends SqlMonotonicUnaryFunction implements SqlCallBindingManualOverride {
+
+    public static final SqlFunction FLOOR = new HazelcastFloorCeilFunction(SqlKind.FLOOR);
+    public static final SqlFunction CEIL = new HazelcastFloorCeilFunction(SqlKind.CEIL);
+
+    private HazelcastFloorCeilFunction(SqlKind kind) {
         super(
             kind.name(),
             kind,
             ReturnTypes.ARG0_OR_EXACT_NO_SCALE,
             new ReplaceUnknownOperandTypeInference(DECIMAL),
-            wrap(notAny(OperandTypes.NUMERIC)),
+            null,
             SqlFunctionCategory.NUMERIC
         );
+    }
+
+    @Override
+    public SqlOperandCountRange getOperandCountRange() {
+        return SqlOperandCountRanges.of(1);
+    }
+
+    @Override
+    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
+        return NumericOperandChecker.checkNumericUnknownAsDecimal(new SqlCallBindingOverride(binding), throwOnFailure, 0);
     }
 
     @Override public SqlMonotonicity getMonotonicity(SqlOperatorBinding call) {
