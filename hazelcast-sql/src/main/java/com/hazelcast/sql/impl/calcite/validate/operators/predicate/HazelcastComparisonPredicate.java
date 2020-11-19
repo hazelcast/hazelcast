@@ -93,13 +93,9 @@ public final class HazelcastComparisonPredicate extends SqlBinaryOperator implem
         RelDataType firstType = validator.deriveType(binding.getScope(), first);
         RelDataType secondType = validator.deriveType(binding.getScope(), second);
 
+        assert firstType.getSqlTypeName() != SqlTypeName.NULL;
+        assert secondType.getSqlTypeName() != SqlTypeName.NULL;
 
-        if (isNullLiteral(first) || isNullLiteral(second)) {
-            // At least one side is NULL literal, will convert to NULL on rex-to-expression phase.
-            return true;
-        }
-
-        // Now we do not have NULL at any side, proceed
         return checkOperandTypes(binding, throwOnFailure, validator, first, firstType, second, secondType);
     }
 
@@ -171,12 +167,6 @@ public final class HazelcastComparisonPredicate extends SqlBinaryOperator implem
         validator.setKnownAndValidatedNodeType(lowOperand, highType);
 
         return true;
-    }
-
-    private boolean isNullLiteral(SqlNode node) {
-        SqlTypeName typeName = SqlNodeUtil.literalTypeName(node);
-
-        return typeName == SqlTypeName.NULL;
     }
 
     private static final class ComparisonOperandTypeInference implements SqlOperandTypeInference {

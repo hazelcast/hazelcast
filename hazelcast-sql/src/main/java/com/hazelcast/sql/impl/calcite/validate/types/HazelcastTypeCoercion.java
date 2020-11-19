@@ -154,12 +154,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     }
 
     @Override
-    protected void updateInferredType(SqlNode node, RelDataType type) {
-        ((HazelcastSqlValidator) validator).setKnownNodeType(node, type);
-        super.updateInferredType(node, type);
-    }
-
-    @Override
     public boolean coerceOperandType(SqlValidatorScope scope, SqlCall call, int index, RelDataType to) {
         SqlNode operand = call.getOperandList().get(index);
 
@@ -222,7 +216,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:NPathComplexity",
             "checkstyle:NestedIfDepth"})
-    // TODO: Review/rmeove
+    // TODO: Review/remove
     private RelDataType[] inferTypes(SqlValidatorScope scope, List<SqlNode> operands, boolean assumeNumeric) {
         // Infer common type from columns and sub-expressions.
 

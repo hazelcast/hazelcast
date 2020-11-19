@@ -20,7 +20,6 @@ import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
@@ -48,16 +47,11 @@ public abstract class AbstractTypedOperandChecker implements OperandChecker {
 
         RelDataType operandType = validator.deriveType(callBinding.getScope(), operand);
 
+        assert operandType.getSqlTypeName() != SqlTypeName.NULL : "Operand type is not resolved";
+
         // Handle direct type match
         if (operandType.getSqlTypeName() == typeName) {
             return true;
-        }
-
-        // Handle literal
-        RelDataType literalType = SqlNodeUtil.literalType(operand, (HazelcastTypeFactory) validator.getTypeFactory());
-
-        if (literalType != null) {
-            return checkLiteral(validator, callBinding, throwOnFailure, operand, operandType, operandIndex);
         }
 
         // Handle coercion if possible
