@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators;
 
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operand.VarcharOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -30,21 +31,19 @@ import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.fun.SqlLikeOperator;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.parser.SqlParserUtil;
-import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
-import org.apache.calcite.sql.type.SqlSingleOperandTypeChecker;
-import org.apache.calcite.sql.type.SqlTypeUtil;
 
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
 @SuppressWarnings("checkstyle:MagicNumber")
-public class HazelcastSqlLikeOperator extends SqlSpecialOperator implements SqlCallBindingManualOverride {
+public final class HazelcastSqlLikeOperator extends SqlSpecialOperator implements SqlCallBindingManualOverride {
+
+    public static final HazelcastSqlLikeOperator INSTANCE = new HazelcastSqlLikeOperator();
 
     private static final int PRECEDENCE = 32;
 
-    public HazelcastSqlLikeOperator() {
+    private HazelcastSqlLikeOperator() {
         super(
             "LIKE",
             SqlKind.LIKE,
@@ -62,23 +61,24 @@ public class HazelcastSqlLikeOperator extends SqlSpecialOperator implements SqlC
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
-        callBinding = new SqlCallBindingOverride(callBinding);
+    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
+        SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
 
-        int operandCount = callBinding.getOperandCount();
+        int operandCount = binding.getOperandCount();
 
         assert operandCount == 2 || operandCount == 3;
 
-        SqlSingleOperandTypeChecker operandTypeChecker = operandCount == 2
-            ? OperandTypes.STRING_SAME_SAME : OperandTypes.STRING_SAME_SAME_SAME;
+        boolean res = VarcharOperandChecker.INSTANCE.check(bindingOverride, throwOnFailure, 0);
 
-        operandTypeChecker = notAny(operandTypeChecker);
-
-        if (!operandTypeChecker.checkOperandTypes(callBinding, throwOnFailure)) {
-            return false;
+        if (res) {
+            res = VarcharOperandChecker.INSTANCE.check(bindingOverride, throwOnFailure, 1);
         }
 
-        return SqlTypeUtil.isCharTypeComparable(callBinding, callBinding.operands(), throwOnFailure);
+        if (res && operandCount == 3) {
+            res = VarcharOperandChecker.INSTANCE.check(bindingOverride, throwOnFailure, 2);
+        }
+
+        return res;
     }
 
     @Override

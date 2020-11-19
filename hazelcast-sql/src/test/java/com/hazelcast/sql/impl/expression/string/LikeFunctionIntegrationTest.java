@@ -35,6 +35,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+// TODO: Tests
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LikeFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
@@ -131,18 +132,13 @@ public class LikeFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
     public void test_literals() {
         put("abcde");
 
-        check("20 LIKE 2", false);
-        check("20 LIKE '2'", false);
-        check("'20' LIKE 2", false);
+        checkFailure("20 LIKE 2", SqlErrorCode.PARSING, "Cannot apply [TINYINT, TINYINT] to the 'LIKE' operator");
+        checkFailure("20 LIKE '2'", SqlErrorCode.PARSING, "Cannot apply [TINYINT, VARCHAR] to the 'LIKE' operator");
+        checkFailure("'20' LIKE 2", SqlErrorCode.PARSING, "Cannot apply [VARCHAR, TINYINT] to the 'LIKE' operator");
 
-        check("'20' LIKE 20", true);
-        check("20 LIKE '20'", true);
-        check("'20' LIKE '20'", true);
-
-        check("20 LIKE '2_'", true);
-
+        check("'20' LIKE '2_'", true);
         check("null LIKE '2_'", null);
-        check("20 LIKE null", null);
+        check("'20' LIKE null", null);
     }
 
     @Test

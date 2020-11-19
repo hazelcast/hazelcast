@@ -65,7 +65,6 @@ import static com.hazelcast.sql.impl.calcite.validate.HazelcastResources.RESOURC
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAllNull;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.wrap;
-import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
@@ -246,8 +245,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         wrap(notAny(OperandTypes.STRING_SAME_SAME))
     );
 
-    // TODO
-    public static final SqlSpecialOperator LIKE = new HazelcastSqlLikeOperator();
+    public static final SqlSpecialOperator LIKE = HazelcastSqlLikeOperator.INSTANCE;
 
     public static final SqlFunction SUBSTRING = new HazelcastSubstringFunction();
 

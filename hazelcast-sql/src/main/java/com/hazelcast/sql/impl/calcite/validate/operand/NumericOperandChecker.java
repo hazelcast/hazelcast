@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operand;
 
-import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
@@ -117,6 +116,7 @@ public final class NumericOperandChecker extends AbstractTypedOperandChecker {
         }
     }
 
+    @SuppressWarnings("checkstyle:ReturnCount")
     private static NumericOperandChecker checkerForTypeName(SqlTypeName typeName) {
         switch (typeName) {
             case NULL:

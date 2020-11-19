@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BooleanConverter;
 import com.hazelcast.sql.impl.type.converter.Converter;
