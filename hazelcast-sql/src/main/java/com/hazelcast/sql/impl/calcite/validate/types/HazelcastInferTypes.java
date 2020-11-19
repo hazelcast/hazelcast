@@ -19,10 +19,8 @@ package com.hazelcast.sql.impl.calcite.validate.types;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
-import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.Arrays;
-import java.util.Collections;
 
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isParameter;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.typeName;
@@ -67,16 +65,5 @@ public final class HazelcastInferTypes {
 
     private HazelcastInferTypes() {
         // No-op.
-    }
-
-    /**
-     * Inference strategy that replaces the first operand of the call binding with the provided type, or does nothing if
-     * the call has more than one operand.
-     *
-     * @param typeName type to be used for the first operand
-     * @return inference strategy
-     */
-    public static SqlOperandTypeInference explicitSingle(SqlTypeName typeName) {
-        return InferTypes.explicit(Collections.singletonList(HazelcastTypeFactory.INSTANCE.createSqlType(typeName)));
     }
 }

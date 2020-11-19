@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators.string;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.VarcharOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes;
+import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
@@ -32,24 +32,30 @@ import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
 public final class HazelcasStringFunction extends SqlFunction implements SqlCallBindingManualOverride {
+
+    public static final SqlFunction ASCII = HazelcasStringFunction.withIntegerReturn("ASCII");
+    public static final SqlFunction INITCAP = HazelcasStringFunction.withStringReturn("INITCAP");
+
+    public static final SqlFunction CHAR_LENGTH = HazelcasStringFunction.withIntegerReturn("CHAR_LENGTH");
+    public static final SqlFunction CHARACTER_LENGTH = HazelcasStringFunction.withIntegerReturn("CHARACTER_LENGTH");
+    public static final SqlFunction LENGTH = HazelcasStringFunction.withIntegerReturn("LENGTH");
+
+    public static final SqlFunction LOWER = HazelcasStringFunction.withStringReturn("LOWER");
+    public static final SqlFunction UPPER = HazelcasStringFunction.withStringReturn("UPPER");
+
+    public static final SqlFunction RTRIM = HazelcasStringFunction.withStringReturn("RTRIM");
+    public static final SqlFunction LTRIM = HazelcasStringFunction.withStringReturn("LTRIM");
+    public static final SqlFunction BTRIM = HazelcasStringFunction.withStringReturn("BTRIM");
+
     private HazelcasStringFunction(String name, SqlReturnTypeInference returnTypeInference) {
         super(
             name,
             SqlKind.OTHER_FUNCTION,
             returnTypeInference,
-            HazelcastInferTypes.explicitSingle(VARCHAR),
+            new ReplaceUnknownOperandTypeInference(VARCHAR),
             null,
             SqlFunctionCategory.STRING
         );
-    }
-
-    public static HazelcasStringFunction withStringReturn(String name) {
-        // TODO: Return VARCHAR_NULLABLE?
-        return new HazelcasStringFunction(name, ReturnTypes.ARG0_NULLABLE);
-    }
-
-    public static HazelcasStringFunction withIntegerReturn(String name) {
-        return new HazelcasStringFunction(name, ReturnTypes.INTEGER_NULLABLE);
     }
 
     @Override
@@ -60,5 +66,13 @@ public final class HazelcasStringFunction extends SqlFunction implements SqlCall
     @Override
     public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
         return VarcharOperandChecker.INSTANCE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
+    }
+
+    private static HazelcasStringFunction withStringReturn(String name) {
+        return new HazelcasStringFunction(name, ReturnTypes.ARG0_NULLABLE);
+    }
+
+    private static HazelcasStringFunction withIntegerReturn(String name) {
+        return new HazelcasStringFunction(name, ReturnTypes.INTEGER_NULLABLE);
     }
 }

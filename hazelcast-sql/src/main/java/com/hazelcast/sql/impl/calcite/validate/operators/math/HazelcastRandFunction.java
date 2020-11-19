@@ -30,15 +30,15 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 
-/**
- * Function that accepts a DOUBLE argument and produces a DOUBLE result.
- */
-public class HazelcastDoubleFunction extends SqlFunction implements SqlCallBindingManualOverride {
-    public HazelcastDoubleFunction(String name) {
+public final class HazelcastRandFunction extends SqlFunction implements SqlCallBindingManualOverride {
+
+    public static final HazelcastRandFunction INSTANCE = new HazelcastRandFunction();
+
+    private HazelcastRandFunction() {
         super(
-            name,
+            "RAND",
             SqlKind.OTHER_FUNCTION,
-            ReturnTypes.DOUBLE_NULLABLE,
+            ReturnTypes.DOUBLE,
             new ReplaceUnknownOperandTypeInference(BIGINT),
             null,
             SqlFunctionCategory.NUMERIC
@@ -47,11 +47,17 @@ public class HazelcastDoubleFunction extends SqlFunction implements SqlCallBindi
 
     @Override
     public SqlOperandCountRange getOperandCountRange() {
-        return SqlOperandCountRanges.of(1);
+        return SqlOperandCountRanges.between(0, 1);
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
-        return NumericOperandChecker.DOUBLE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
+    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
+        if (binding.getOperandCount() == 0) {
+            return true;
+        }
+
+        SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
+
+        return NumericOperandChecker.BIGINT.check(bindingOverride, throwOnFailure, 0);
     }
 }

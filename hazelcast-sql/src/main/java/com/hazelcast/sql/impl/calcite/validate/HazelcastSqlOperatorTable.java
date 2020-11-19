@@ -19,19 +19,20 @@ package com.hazelcast.sql.impl.calcite.validate;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDivideOperator;
-import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlFloorFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlLikeOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlMonotonicBinaryOperator;
-import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcasStringFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSubstringFunction;
-import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastTrimFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastRandFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastSignFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastNotPredicate;
+import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcasStringFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastTrimFunction;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
@@ -190,16 +191,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     );
 
     public static final SqlFunction SIGN = HazelcastSignFunction.INSTANCE;
-
-    // TODO
-    public static final SqlFunction RAND = new SqlFunction(
-        "RAND",
-        SqlKind.OTHER_FUNCTION,
-        ReturnTypes.DOUBLE,
-        HazelcastInferTypes.explicitSingle(BIGINT),
-        wrap(OperandTypes.or(OperandTypes.NILADIC, notAny(OperandTypes.NUMERIC))),
-        SqlFunctionCategory.NUMERIC
-    );
+    public static final SqlFunction RAND = HazelcastRandFunction.INSTANCE;
 
     public static final SqlFunction COS = new HazelcastDoubleFunction("COS");
     public static final SqlFunction SIN = new HazelcastDoubleFunction("SIN");
@@ -257,22 +249,23 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     // TODO
     public static final SqlSpecialOperator LIKE = new HazelcastSqlLikeOperator();
 
-    public static final SqlFunction ASCII = HazelcasStringFunction.withIntegerReturn("ASCII");
-    public static final SqlFunction INITCAP = HazelcasStringFunction.withStringReturn("INITCAP");
-
-    public static final SqlFunction CHAR_LENGTH = HazelcasStringFunction.withIntegerReturn("CHAR_LENGTH");
-    public static final SqlFunction CHARACTER_LENGTH = HazelcasStringFunction.withIntegerReturn("CHARACTER_LENGTH");
-    public static final SqlFunction LENGTH = HazelcasStringFunction.withIntegerReturn("LENGTH");
-
-    public static final SqlFunction LOWER = HazelcasStringFunction.withStringReturn("LOWER");
-    public static final SqlFunction UPPER = HazelcasStringFunction.withStringReturn("UPPER");
-
     public static final SqlFunction SUBSTRING = new HazelcastSubstringFunction();
 
     public static final SqlFunction TRIM = new HazelcastTrimFunction();
-    public static final SqlFunction RTRIM = HazelcasStringFunction.withStringReturn("RTRIM");
-    public static final SqlFunction LTRIM = HazelcasStringFunction.withStringReturn("LTRIM");
-    public static final SqlFunction BTRIM = HazelcasStringFunction.withStringReturn("BTRIM");
+
+    public static final SqlFunction RTRIM = HazelcasStringFunction.RTRIM;
+    public static final SqlFunction LTRIM = HazelcasStringFunction.LTRIM;
+    public static final SqlFunction BTRIM = HazelcasStringFunction.BTRIM;
+
+    public static final SqlFunction ASCII = HazelcasStringFunction.ASCII;
+    public static final SqlFunction INITCAP = HazelcasStringFunction.INITCAP;
+
+    public static final SqlFunction CHAR_LENGTH = HazelcasStringFunction.CHAR_LENGTH;
+    public static final SqlFunction CHARACTER_LENGTH = HazelcasStringFunction.CHARACTER_LENGTH;
+    public static final SqlFunction LENGTH = HazelcasStringFunction.LENGTH;
+
+    public static final SqlFunction LOWER = HazelcasStringFunction.LOWER;
+    public static final SqlFunction UPPER = HazelcasStringFunction.UPPER;
 
     //#endregion
 

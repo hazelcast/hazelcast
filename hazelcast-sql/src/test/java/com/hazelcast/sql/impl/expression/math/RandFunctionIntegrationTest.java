@@ -79,23 +79,19 @@ public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumn((short) 1, 1L);
         checkColumn(1, 1L);
         checkColumn(1L, 1L);
-        checkColumn(1f, 1L);
-        checkColumn(1d, 1L);
-        checkColumn(BigInteger.ONE, 1L);
-        checkColumn(BigDecimal.ONE, 1L);
-
-        checkColumn("1", 1L);
-        checkColumn('1', 1L);
 
         put(new ExpressionValue.IntegerVal());
         double nullRes1 = checkValue("field1", SKIP_VALUE_CHECK);
         double nullRes2 = checkValue("field1", SKIP_VALUE_CHECK);
         assertNotEquals(nullRes1, nullRes2);
 
-        checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-        checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-
         checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'RAND' function (consider adding an explicit CAST)");
+        checkColumnFailure(1f, SqlErrorCode.PARSING, "Cannot apply [REAL] to the 'RAND' function (consider adding an explicit CAST)");
+        checkColumnFailure(1d, SqlErrorCode.PARSING, "Cannot apply [DOUBLE] to the 'RAND' function (consider adding an explicit CAST)");
+        checkColumnFailure(BigInteger.ONE, SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the 'RAND' function (consider adding an explicit CAST)");
+        checkColumnFailure(BigDecimal.ONE, SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the 'RAND' function (consider adding an explicit CAST)");
+        checkColumnFailure("1", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'RAND' function (consider adding an explicit CAST)");
+        checkColumnFailure('1', SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'RAND' function (consider adding an explicit CAST)");
         checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply [DATE] to the 'RAND' function (consider adding an explicit CAST)");
         checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIME] to the 'RAND' function (consider adding an explicit CAST)");
         checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP] to the 'RAND' function (consider adding an explicit CAST)");
@@ -119,32 +115,26 @@ public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
     public void testParameter() {
         put(0);
 
+        double nullRes1 = checkValue("?", SKIP_VALUE_CHECK, new Object[] { null });
+        double nullRes2 = checkValue("?", SKIP_VALUE_CHECK, new Object[] { null });
+        assertNotEquals(nullRes1, nullRes2);
+
         checkParameter((byte) 1, 1L);
         checkParameter((short) 1, 1L);
         checkParameter(1, 1L);
         checkParameter(1L, 1L);
 
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BOOLEAN to BIGINT", true);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT", BigInteger.ONE);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT", BigDecimal.ONE);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to BIGINT", 0.0f);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to BIGINT", 0.0d);
-
-        checkParameter("1", 1L);
-        checkParameter('1', 1L);
-
-        double nullRes1 = checkValue("?", SKIP_VALUE_CHECK, new Object[] { null });
-        double nullRes2 = checkValue("?", SKIP_VALUE_CHECK, new Object[] { null });
-        assertNotEquals(nullRes1, nullRes2);
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to BIGINT", true);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to BIGINT", "bad");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to BIGINT", 'b');
-
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to BIGINT", "1");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to BIGINT", '1');
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to BIGINT", LOCAL_DATE_VAL);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to BIGINT", LOCAL_TIME_VAL);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to BIGINT", LOCAL_DATE_TIME_VAL);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to BIGINT", OFFSET_DATE_TIME_VAL);
-
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to BIGINT", new ExpressionValue.ObjectVal());
     }
 
@@ -156,23 +146,17 @@ public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
     public void testLiteral() {
         put(0);
 
-        checkNumericLiteral(0, 0L);
-        checkNumericLiteral(Long.MAX_VALUE, Long.MAX_VALUE);
-        checkNumericLiteral("1.1", 1L);
+        checkValue(0, new Random(0).nextDouble());
+        checkValue(Long.MAX_VALUE, new Random(Long.MAX_VALUE).nextDouble());
 
         double nullRes1 = checkValue("null", SKIP_VALUE_CHECK);
         double nullRes2 = checkValue("null", SKIP_VALUE_CHECK);
         assertNotEquals(nullRes1, nullRes2);
 
-        checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
         checkFailure("true", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'RAND' function (consider adding an explicit CAST)");
-    }
-
-    private void checkNumericLiteral(Object literal, long expectedSeed) {
-        String literalString = literal.toString();
-
-        checkValue(literalString, new Random(expectedSeed).nextDouble());
-        checkValue("'" +  literalString + "'", new Random(expectedSeed).nextDouble());
+        checkFailure("1.1", SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the 'RAND' function (consider adding an explicit CAST)");
+        checkFailure("1.1E1", SqlErrorCode.PARSING, "Cannot apply [DOUBLE] to the 'RAND' function (consider adding an explicit CAST)");
+        checkFailure("'bad'", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'RAND' function (consider adding an explicit CAST)");
     }
 
     private Double checkValue(Object operand, Object expectedValue, Object... params) {
