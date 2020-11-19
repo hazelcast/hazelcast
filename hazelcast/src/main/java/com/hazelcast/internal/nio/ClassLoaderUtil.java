@@ -246,10 +246,7 @@ public final class ClassLoaderUtil {
         // Try to load it using context class loader if not null
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         if (contextClassLoader != null) {
-            try {
-                return tryLoadClass(className, contextClassLoader);
-            } catch (ClassNotFoundException ignore) {
-            }
+            return tryLoadClass(className, contextClassLoader);
         }
         return Class.forName(className);
     }
