@@ -153,8 +153,7 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
 
     @Test
     public void test_tinyint() {
-        checkNumericBasic("f_tinyint", 2, "index_tinyint", TINYINT);
-
+        checkIndexForCondition("f_tinyint=1", "index_tinyint", "=($2, 1:TINYINT(1))");
         checkIndexForCondition("CAST(f_tinyint AS SMALLINT)=1", "index_tinyint", "=(CAST($2):SMALLINT(7), 1)");
         checkIndexForCondition("CAST(f_tinyint AS INT)=1", "index_tinyint", "=(CAST($2):INTEGER(7), 1)");
         checkIndexForCondition("CAST(f_tinyint AS BIGINT)=1", "index_tinyint", "=(CAST($2):BIGINT(7), 1)");
