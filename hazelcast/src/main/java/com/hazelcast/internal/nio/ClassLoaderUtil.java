@@ -226,7 +226,8 @@ public final class ClassLoaderUtil {
             return primitiveClass;
         }
         // If this is a Hazelcast class, try to load it using our classloader first
-        if (className.startsWith(HAZELCAST_BASE_PACKAGE) || className.startsWith(HAZELCAST_ARRAY)) {
+        ClassLoader theClassLoader = ClassLoaderUtil.class.getClassLoader();
+        if (theClassLoader != null && belongsToHazelcastPackage(className)) {
             try {
                 return tryLoadClass(className, ClassLoaderUtil.class.getClassLoader());
             } catch (ClassNotFoundException ignore) {
@@ -250,6 +251,10 @@ public final class ClassLoaderUtil {
             }
         }
         return Class.forName(className);
+    }
+
+    private static boolean belongsToHazelcastPackage(String className) {
+        return className.startsWith(HAZELCAST_BASE_PACKAGE) || className.startsWith(HAZELCAST_ARRAY);
     }
 
     private static Class<?> tryPrimitiveClass(String className) {
