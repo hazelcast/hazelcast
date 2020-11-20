@@ -34,9 +34,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.apache.calcite.sql.type.SqlTypeName.SMALLINT;
 import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -86,17 +84,11 @@ public class HazelcastIntegerTypeTest {
                 assertType(TINYINT, i, false, type);
                 assertType(TINYINT, i, true, nullableType);
 
-                assertFalse(HazelcastIntegerType.canOverflow(type));
-                assertFalse(HazelcastIntegerType.canOverflow(nullableType));
-
                 assertEquals(i, HazelcastIntegerType.noOverflowBitWidthOf(type));
                 assertEquals(i, HazelcastIntegerType.noOverflowBitWidthOf(nullableType));
             } else if (i < Short.SIZE) {
                 assertType(SMALLINT, i, false, type);
                 assertType(SMALLINT, i, true, nullableType);
-
-                assertFalse(HazelcastIntegerType.canOverflow(type));
-                assertFalse(HazelcastIntegerType.canOverflow(nullableType));
 
                 assertEquals(i, HazelcastIntegerType.noOverflowBitWidthOf(type));
                 assertEquals(i, HazelcastIntegerType.noOverflowBitWidthOf(nullableType));
@@ -104,26 +96,17 @@ public class HazelcastIntegerTypeTest {
                 assertType(INTEGER, i, false, type);
                 assertType(INTEGER, i, true, nullableType);
 
-                assertFalse(HazelcastIntegerType.canOverflow(type));
-                assertFalse(HazelcastIntegerType.canOverflow(nullableType));
-
                 assertEquals(i, HazelcastIntegerType.noOverflowBitWidthOf(type));
                 assertEquals(i, HazelcastIntegerType.noOverflowBitWidthOf(nullableType));
             } else if (i < Long.SIZE) {
                 assertType(BIGINT, i, false, type);
                 assertType(BIGINT, i, true, nullableType);
 
-                assertFalse(HazelcastIntegerType.canOverflow(type));
-                assertFalse(HazelcastIntegerType.canOverflow(nullableType));
-
                 assertEquals(i, HazelcastIntegerType.noOverflowBitWidthOf(type));
                 assertEquals(i, HazelcastIntegerType.noOverflowBitWidthOf(nullableType));
             } else {
                 assertType(BIGINT, Long.SIZE, false, type);
                 assertType(BIGINT, Long.SIZE, true, nullableType);
-
-                assertTrue(HazelcastIntegerType.canOverflow(type));
-                assertTrue(HazelcastIntegerType.canOverflow(nullableType));
 
                 assertEquals(Long.SIZE - 1, HazelcastIntegerType.noOverflowBitWidthOf(type));
                 assertEquals(Long.SIZE - 1, HazelcastIntegerType.noOverflowBitWidthOf(nullableType));
@@ -188,52 +171,6 @@ public class HazelcastIntegerTypeTest {
                     break;
             }
         }
-    }
-
-    @Test
-    public void testCastTypeToType() {
-        // tinyint(0) as tinyint(0) -> tinyint(0), identity
-        assertType(TINYINT, 0, false,
-                HazelcastIntegerType.deriveCastType(HazelcastIntegerType.of(0, false), HazelcastIntegerType.of(0, false)));
-
-        // bigint(50) as bigint(50) -> bigint(50), identity
-        assertType(BIGINT, 50, false,
-                HazelcastIntegerType.deriveCastType(HazelcastIntegerType.of(50, false), HazelcastIntegerType.of(50, false)));
-
-        // tinyint(1) as tinyint(5) -> tinyint(1), bit width is preserved
-        assertType(TINYINT, 1, true,
-                HazelcastIntegerType.deriveCastType(HazelcastIntegerType.of(1, false), HazelcastIntegerType.of(5, true)));
-
-        // smallint(10) as int(20) -> int(10), type is upgraded, bit width is preserved
-        assertType(INTEGER, 10, false,
-                HazelcastIntegerType.deriveCastType(HazelcastIntegerType.of(10, true), HazelcastIntegerType.of(20, false)));
-
-        // int(20) as smallint(10) -> smallint(16), overflow detected
-        assertType(SMALLINT, Short.SIZE, false,
-                HazelcastIntegerType.deriveCastType(HazelcastIntegerType.of(20, true), HazelcastIntegerType.of(10, false)));
-
-        // bigint(64) as smallint(10) -> smallint(16), overflow preserved
-        assertType(SMALLINT, Short.SIZE, false, HazelcastIntegerType.deriveCastType(HazelcastIntegerType.of(Long.SIZE, true),
-                HazelcastIntegerType.of(10, false)));
-
-        // bigint(64) as bigint(50) -> bigint(64), overflow preserved
-        assertType(BIGINT, Long.SIZE, false, HazelcastIntegerType.deriveCastType(HazelcastIntegerType.of(Long.SIZE, true),
-                HazelcastIntegerType.of(50, false)));
-
-        // bigint(50) as bigint(40) -> bigint(50), no overflow, bigint(40) still can fit any bigint
-        assertType(BIGINT, 50, false,
-                HazelcastIntegerType.deriveCastType(HazelcastIntegerType.of(50, true), HazelcastIntegerType.of(40, false)));
-    }
-
-    @Test
-    public void testCastLongToType() {
-        assertType(TINYINT, 0, false, HazelcastIntegerType.deriveCastType(0, HazelcastIntegerType.of(5, false)));
-        assertType(TINYINT, 1, false, HazelcastIntegerType.deriveCastType(1, HazelcastIntegerType.of(5, false)));
-        assertType(TINYINT, Byte.SIZE, false, HazelcastIntegerType.deriveCastType(555, HazelcastIntegerType.of(5, false)));
-
-        assertType(TINYINT, 0, true, HazelcastIntegerType.deriveCastType(0, HazelcastIntegerType.of(5, true)));
-        assertType(TINYINT, 1, true, HazelcastIntegerType.deriveCastType(1, HazelcastIntegerType.of(5, true)));
-        assertType(TINYINT, Byte.SIZE, true, HazelcastIntegerType.deriveCastType(555, HazelcastIntegerType.of(5, true)));
     }
 
     @Test

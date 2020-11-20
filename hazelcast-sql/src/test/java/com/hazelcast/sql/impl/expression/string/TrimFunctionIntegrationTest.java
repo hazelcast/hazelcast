@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 
+// TODO: Tests with nested calls for all functions?
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {

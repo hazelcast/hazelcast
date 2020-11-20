@@ -151,7 +151,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         return getRexBuilder().makeCast(to, operand);
     }
 
-    // TODO: Do we need it?
+    // TODO: Review
     private RexNode convertLiteral(SqlLiteral literal) {
         if (literal.getValue() == null) {
             // trust Calcite on generation for NULL literals

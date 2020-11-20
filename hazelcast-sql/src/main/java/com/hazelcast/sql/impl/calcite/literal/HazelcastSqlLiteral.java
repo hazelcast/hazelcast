@@ -30,6 +30,7 @@ import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.Litmus;
 
+// TODO: Convert to a static method(s)
 public abstract class HazelcastSqlLiteral extends SqlNodeBridge {
 
     protected final SqlLiteral original;
@@ -82,7 +83,7 @@ public abstract class HazelcastSqlLiteral extends SqlNodeBridge {
 
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
-        // TODO: See SqlValidatorImpl.validateLiteral - do we need to take something from there?
+        throw new UnsupportedOperationException();
     }
 
     @Override

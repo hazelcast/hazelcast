@@ -43,7 +43,7 @@ public final class HazelcastRexBuilder extends RexBuilder {
         assert typeFactory instanceof HazelcastTypeFactory;
     }
 
-    // TODO: Delete candidate
+    // TODO: Review
     @Override
     public RexNode makeLiteral(Object value, RelDataType type, boolean allowCast) {
         // XXX: Calcite evaluates casts like CAST(0 AS ANY) statically and

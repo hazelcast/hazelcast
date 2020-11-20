@@ -116,7 +116,7 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     @Nullable
     private RelDataType createType(SqlTypeName typeName) {
         if (typeName == DECIMAL) {
-            return createDecimal();
+            return super.createSqlType(DECIMAL, MAX_DECIMAL_PRECISION, MAX_DECIMAL_SCALE);
         } else if (typeName == ANY) {
             return HazelcastObjectType.INSTANCE;
         } else if (typeName == TIME) {
@@ -152,6 +152,7 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
         return super.createTypeWithNullability(type, nullable);
     }
 
+    // TODO: Review
     @Override
     public RelDataType leastRestrictive(List<RelDataType> types) {
         // XXX: Calcite infers imprecise types: BIGINT for any integer type and
@@ -189,11 +190,4 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
 
         return selected;
     }
-
-    private RelDataType createDecimal() {
-        // Produces a strange type: DECIMAL(38, 38), but since we are not tracking
-        // precision and scale for DECIMALs, that's fine for our purposes.
-        return super.createSqlType(DECIMAL, MAX_DECIMAL_PRECISION, MAX_DECIMAL_SCALE);
-    }
-
 }

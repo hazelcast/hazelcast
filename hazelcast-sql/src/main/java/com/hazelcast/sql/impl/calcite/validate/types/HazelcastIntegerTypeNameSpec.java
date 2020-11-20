@@ -21,11 +21,11 @@ import org.apache.calcite.sql.SqlBasicTypeNameSpec;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.validate.SqlValidator;
 
-public class HazelcasIntegerTypeNameSpec extends SqlBasicTypeNameSpec {
+public class HazelcastIntegerTypeNameSpec extends SqlBasicTypeNameSpec {
 
     private final RelDataType type;
 
-    public HazelcasIntegerTypeNameSpec(HazelcastIntegerType type) {
+    public HazelcastIntegerTypeNameSpec(HazelcastIntegerType type) {
         super(type.getSqlTypeName(), type.getBitWidth(), SqlParserPos.ZERO);
 
         this.type = type;

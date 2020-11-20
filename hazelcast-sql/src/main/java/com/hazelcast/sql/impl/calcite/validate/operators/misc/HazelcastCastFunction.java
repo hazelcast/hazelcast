@@ -16,8 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
+import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastFunction;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -37,7 +39,6 @@ import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
 
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.canCast;
 import static org.apache.calcite.util.Static.RESOURCE;
 
 public final class HazelcastCastFunction extends HazelcastFunction {
@@ -62,18 +63,25 @@ public final class HazelcastCastFunction extends HazelcastFunction {
     @Override
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         RelDataType sourceType = binding.getOperandType(0);
-        RelDataType toType = binding.getOperandType(1);
+        RelDataType targetType = binding.getOperandType(1);
 
-        if (canCast(sourceType, toType)) {
+        if (canCast(sourceType, targetType)) {
             return true;
         }
 
         if (throwOnFailure) {
             // TODO: Custom error message
-            throw binding.newError(RESOURCE.cannotCastValue(sourceType.toString(), toType.toString()));
+            throw binding.newError(RESOURCE.cannotCastValue(sourceType.toString(), targetType.toString()));
         } else {
             return false;
         }
+    }
+
+    private static boolean canCast(RelDataType sourceType, RelDataType targetType) {
+        QueryDataType queryFrom = SqlToQueryType.map(sourceType.getSqlTypeName());
+        QueryDataType queryTo = SqlToQueryType.map(targetType.getSqlTypeName());
+
+        return queryFrom.getConverter().canConvertTo(queryTo.getTypeFamily());
     }
 
     @Override
