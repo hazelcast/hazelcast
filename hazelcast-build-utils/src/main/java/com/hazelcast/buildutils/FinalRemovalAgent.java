@@ -16,6 +16,7 @@
 
 package com.hazelcast.buildutils;
 
+import com.hazelcast.core.HazelcastException;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.ModifierAdjustment;
 import net.bytebuddy.description.modifier.MethodManifestation;
@@ -27,7 +28,6 @@ import java.lang.instrument.Instrumentation;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -100,8 +100,11 @@ public final class FinalRemovalAgent {
         return builder;
     }
 
-    public static <T> Set<T> setOf(T... items) {
-        List<T> list = Arrays.asList(items);
-        return new HashSet<T>(list);
+    private static <T> Set<T> setOf(T... items) {
+        Set<T> set = new HashSet<>(Arrays.asList(items));
+        if (set.size() < items.length) {
+            throw new HazelcastException("set cannot contain duplicate items");
+        }
+        return set;
     }
 }
