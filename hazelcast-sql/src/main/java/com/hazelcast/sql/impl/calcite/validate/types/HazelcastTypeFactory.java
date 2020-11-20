@@ -152,17 +152,16 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
         return super.createTypeWithNullability(type, nullable);
     }
 
-    // TODO: Review
     @Override
     public RelDataType leastRestrictive(List<RelDataType> types) {
-        // XXX: Calcite infers imprecise types: BIGINT for any integer type and
-        // DOUBLE for any floating point type (except DECIMAL). The code bellow
-        // fixes that.
-
+        // Calcite returns BIGINT for all integer types and DOUBLE for all inexact fractional types.
+        // This code allows us to use more narrow types in these cases.
         RelDataType selected = super.leastRestrictive(types);
+
         if (selected == null) {
             return null;
         }
+
         SqlTypeName selectedTypeName = selected.getSqlTypeName();
 
         if (HazelcastIntegerType.supports(selectedTypeName)) {
