@@ -106,6 +106,12 @@
                                         <include>**/Parser.jj</include>
                                     </includes>
                                 </filter>
+                                <filter>
+                                    <artifact>${project.groupId}:${project.artifactId}</artifact>
+                                    <excludes>
+                                        <exclude>org/slf4j/**</exclude>
+                                    </excludes>
+                                </filter>
                             </filters>
                         </configuration>
                     </execution>
