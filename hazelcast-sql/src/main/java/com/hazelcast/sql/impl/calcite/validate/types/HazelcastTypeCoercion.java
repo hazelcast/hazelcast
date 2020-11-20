@@ -227,10 +227,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         return super.needToCast(scope, node, to);
     }
 
-    private static SqlNode makeCast(SqlNode node, RelDataType type) {
-        return HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, node, SqlTypeUtil.convertTypeToSpec(type));
-    }
-
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:NPathComplexity",
             "checkstyle:NestedIfDepth"})
     // TODO: Review/remove

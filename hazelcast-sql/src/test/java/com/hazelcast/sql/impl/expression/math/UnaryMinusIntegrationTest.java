@@ -105,20 +105,9 @@ public class UnaryMinusIntegrationTest extends ExpressionIntegrationTestBase {
     }
 
     @Test
-    public void testVarchar() {
-        assertRow("-string0", EXPR0, DOUBLE, -0.0);
-        assertRow("-string1", EXPR0, DOUBLE, -1.0);
-        assertRow("-stringBig", EXPR0, DOUBLE, -Double.parseDouble(getRecord().stringBig));
-        assertRow("-stringBigNegative", EXPR0, DOUBLE, -Double.parseDouble(getRecord().stringBigNegative));
-        assertDataError("-stringFoo", "Cannot convert VARCHAR to DOUBLE");
-
-        assertRow("-char0", EXPR0, DOUBLE, -0.0);
-        assertRow("-char1", EXPR0, DOUBLE, -1.0);
-        assertDataError("-charF", "Cannot convert VARCHAR to DOUBLE");
-    }
-
-    @Test
     public void testUnsupported() {
+        assertParsingError("-string0", "Cannot apply [VARCHAR] to the '-' operator (consider adding an explicit CAST)");
+        assertParsingError("-char0", "Cannot apply [VARCHAR] to the '-' operator (consider adding an explicit CAST)");
         assertParsingError("-dateCol", "Cannot apply [DATE] to the '-' operator (consider adding an explicit CAST)");
         assertParsingError("-timeCol", "Cannot apply [TIME] to the '-' operator (consider adding an explicit CAST)");
         assertParsingError("-dateTimeCol", "Cannot apply [TIMESTAMP] to the '-' operator (consider adding an explicit CAST)");

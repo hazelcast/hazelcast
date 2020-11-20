@@ -82,15 +82,6 @@ public final class HazelcastReturnTypes {
     public static final SqlReturnTypeInference DIVIDE = chain(DECIMAL_QUOTIENT_NULLABLE, ARG0_INTERVAL_NULLABLE,
             binding -> integer(binding, HazelcastReturnTypes::integerDivide), LEAST_RESTRICTIVE);
 
-    /**
-     * Infers return type of {@link HazelcastSqlOperatorTable#UNARY_MINUS}
-     * operator.
-     */
-    public static final SqlReturnTypeInference UNARY_MINUS = binding -> {
-        RelDataType type = binding.getOperandType(0);
-        return HazelcastIntegerType.supports(typeName(type)) ? integerUnaryMinus(type) : type;
-    };
-
     private HazelcastReturnTypes() {
     }
 

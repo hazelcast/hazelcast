@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite;
 
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTrackingReturnTypeInference;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BooleanConverter;
 import com.hazelcast.sql.impl.type.converter.Converter;
@@ -36,6 +37,10 @@ import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Set;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isChar;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isNumeric;
@@ -53,6 +58,8 @@ import static org.apache.calcite.sql.type.SqlTypeName.REAL;
  */
 public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
+    private final Set<SqlNode> callSet = Collections.newSetFromMap(new IdentityHashMap<>());
+
     public HazelcastSqlToRelConverter(RelOptTable.ViewExpander viewExpander, SqlValidator validator,
                                       Prepare.CatalogReader catalogReader, RelOptCluster cluster,
                                       SqlRexConvertletTable convertletTable, Config config) {
@@ -65,11 +72,27 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return convertLiteral((SqlLiteral) node);
         } else if (node.getKind() == SqlKind.CAST) {
             return convertCast((SqlCall) node, blackboard);
+        } else if (node instanceof SqlCall) {
+            if (callSet.add(node)) {
+                try {
+                    RelDataType type = validator.getValidatedNodeType(node);
+
+                    HazelcastTrackingReturnTypeInference.push(type);
+                    try {
+                        return blackboard.convertExpression(node);
+                    } finally {
+                        HazelcastTrackingReturnTypeInference.poll();
+                    }
+                } finally {
+                    callSet.remove(node);
+                }
+            }
         }
 
         return null;
     }
 
+    // TODO: Review
     @SuppressWarnings("UnpredictableBigDecimalConstructorCall")
     private RexNode convertCast(SqlCall call, Blackboard blackboard) {
         RelDataType to = validator.getValidatedNodeType(call);

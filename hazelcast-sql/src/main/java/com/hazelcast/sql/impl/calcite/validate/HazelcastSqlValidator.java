@@ -53,6 +53,16 @@ import java.util.Set;
  */
 public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
+    private static final ThreadLocal<HazelcastSqlValidator> VALIDATOR = new ThreadLocal<>();
+
+    public static void setValidator(HazelcastSqlValidator validator) {
+        VALIDATOR.set(validator);
+    }
+
+    public static HazelcastSqlValidator getValidator() {
+        return VALIDATOR.get();
+    }
+
     private static final Config CONFIG = Config.DEFAULT.withIdentifierExpansion(true);
 
     /** Visitor to rewrite Calcite operators to Hazelcast operators. */

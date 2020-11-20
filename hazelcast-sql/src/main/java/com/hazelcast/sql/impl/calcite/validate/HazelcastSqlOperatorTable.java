@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDivideOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlMonotonicBinaryOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.arithmetics.HazelcastUnaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastFloorCeilFunction;
@@ -51,9 +52,7 @@ import org.apache.calcite.sql.SqlPrefixOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.fun.SqlCase;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
-import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.OperandTypes;
-import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandTypeChecker;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
@@ -141,25 +140,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     // TODO
     public static final SqlBinaryOperator DIVIDE = new HazelcastDivideOperator();
 
-    // TODO
-    public static final SqlPrefixOperator UNARY_PLUS = new SqlPrefixOperator(
-        "+",
-        SqlKind.PLUS_PREFIX,
-        SqlStdOperatorTable.UNARY_PLUS.getLeftPrec(),
-        ReturnTypes.ARG0,
-        InferTypes.RETURN_TYPE,
-        wrap(notAllNull(notAny(OperandTypes.NUMERIC_OR_INTERVAL)))
-    );
-
-    // TODO
-    public static final SqlPrefixOperator UNARY_MINUS = new SqlPrefixOperator(
-        "-",
-        SqlKind.MINUS_PREFIX,
-        SqlStdOperatorTable.UNARY_MINUS.getLeftPrec(),
-        HazelcastReturnTypes.UNARY_MINUS,
-        InferTypes.RETURN_TYPE,
-        wrap(notAllNull(notAny(OperandTypes.NUMERIC_OR_INTERVAL)))
-    );
+    public static final SqlPrefixOperator UNARY_PLUS = HazelcastUnaryOperator.PLUS;
+    public static final SqlPrefixOperator UNARY_MINUS = HazelcastUnaryOperator.MINUS;
 
     //#endregion
 
