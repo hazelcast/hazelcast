@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
@@ -84,15 +83,7 @@ public class QueryConverter {
         );
 
         // 1. Perform initial conversion.
-        RelRoot root;
-
-        HazelcastSqlValidator.setValidator((HazelcastSqlValidator) parseResult.getValidator());
-
-        try {
-            root = converter.convertQuery(node, false, true);
-        } finally {
-            HazelcastSqlValidator.setValidator(null);
-        }
+        RelRoot root = converter.convertQuery(node, false, true);
 
         // 2. Remove subquery expressions, converting them to Correlate nodes.
         RelNode relNoSubqueries = rewriteSubqueries(root.project());

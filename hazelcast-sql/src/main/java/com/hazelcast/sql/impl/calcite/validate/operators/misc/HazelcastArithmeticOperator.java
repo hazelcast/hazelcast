@@ -42,6 +42,7 @@ public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
     public static final HazelcastArithmeticOperator MULTIPLY = new HazelcastArithmeticOperator(SqlStdOperatorTable.MULTIPLY);
     public static final HazelcastArithmeticOperator DIVIDE = new HazelcastArithmeticOperator(SqlStdOperatorTable.DIVIDE);
 
+    // TODO: Use custom inference, similar to comparisons
     private HazelcastArithmeticOperator(SqlBinaryOperator base) {
         super(
             base.getName(),
@@ -49,7 +50,7 @@ public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
             base.getLeftPrec(),
             true,
             wrap(ReturnTypes.ARG0),
-            new ReplaceUnknownOperandTypeInference(BIGINT) // TODO: Use custom inference, similar to comparisons
+            new ReplaceUnknownOperandTypeInference(BIGINT)
         );
     }
 

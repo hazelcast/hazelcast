@@ -81,7 +81,7 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertDataError("byte1 / int0", "division by zero");
 
         assertRow("byte1 / long2", EXPR0, BIGINT, 0L);
-        assertRow("byteMax / long2", EXPR0, BIGINT, (long )(Byte.MAX_VALUE / 2));
+        assertRow("byteMax / long2", EXPR0, BIGINT, (long) (Byte.MAX_VALUE / 2));
         assertDataError("byte1 / long0", "division by zero");
 
         assertRow("byte1 / float2", EXPR0, REAL, 0.5f);
