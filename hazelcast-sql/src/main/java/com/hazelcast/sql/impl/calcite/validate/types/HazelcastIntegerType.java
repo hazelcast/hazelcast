@@ -77,7 +77,6 @@ public final class HazelcastIntegerType extends BasicSqlType {
 
     static {
         // Preallocate all possible types of all possible bit widths.
-
         TYPES.put(TINYINT, new HazelcastIntegerType[Byte.SIZE + 1]);
         TYPES.put(SMALLINT, new HazelcastIntegerType[Short.SIZE + 1]);
         TYPES.put(INTEGER, new HazelcastIntegerType[Integer.SIZE + 1]);

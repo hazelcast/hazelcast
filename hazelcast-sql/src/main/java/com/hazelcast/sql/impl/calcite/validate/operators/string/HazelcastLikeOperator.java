@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators.string;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.operand.VarcharOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -67,16 +67,16 @@ public final class HazelcastLikeOperator extends SqlSpecialOperator implements S
 
         if (bindingOverride.getOperandCount() == 2) {
             return new CompositeOperandChecker(
-                VarcharOperandChecker.INSTANCE,
-                VarcharOperandChecker.INSTANCE
+                TypedOperandChecker.VARCHAR,
+                TypedOperandChecker.VARCHAR
             ).check(bindingOverride, throwOnFailure);
         } else {
             assert bindingOverride.getOperandCount() == 3;
 
             return new CompositeOperandChecker(
-                VarcharOperandChecker.INSTANCE,
-                VarcharOperandChecker.INSTANCE,
-                VarcharOperandChecker.INSTANCE
+                TypedOperandChecker.VARCHAR,
+                TypedOperandChecker.VARCHAR,
+                TypedOperandChecker.VARCHAR
             ).check(bindingOverride, throwOnFailure);
         }
     }

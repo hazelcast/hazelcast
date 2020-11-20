@@ -16,22 +16,18 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operand;
 
-import com.hazelcast.sql.impl.ParameterConverter;
-import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
-import com.hazelcast.sql.impl.type.QueryDataType;
-import org.apache.calcite.sql.SqlDynamicParam;
-import org.apache.calcite.sql.type.SqlTypeName;
+import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 
-public final class BooleanOperandChecker extends AbstractTypedOperandChecker {
+public final class AnyOperandChecker implements OperandChecker {
 
-    public static final BooleanOperandChecker INSTANCE = new BooleanOperandChecker();
+    public static final AnyOperandChecker INSTANCE = new AnyOperandChecker();
 
-    private BooleanOperandChecker() {
-        super(SqlTypeName.BOOLEAN);
+    private AnyOperandChecker() {
+        // No-op
     }
 
     @Override
-    protected ParameterConverter parameterConverter(SqlDynamicParam operand) {
-        return new StrictParameterConverter(operand.getIndex(), operand.getParserPosition(), QueryDataType.BOOLEAN);
+    public boolean check(SqlCallBindingOverride callBinding, boolean throwOnFailure, int i) {
+        return true;
     }
 }

@@ -23,13 +23,10 @@ import org.apache.calcite.sql.type.SqlTypeName;
 
 public final class NumericOperandChecker implements OperandChecker {
 
-    public static final NumericOperandChecker UNKNOWN_AS_BIGINT = new NumericOperandChecker(SqlTypeName.BIGINT);
-    public static final NumericOperandChecker UNKNOWN_AS_DECIMAL = new NumericOperandChecker(SqlTypeName.DECIMAL);
+    public static final NumericOperandChecker INSTANCE = new NumericOperandChecker();
 
-    private final SqlTypeName unknownTypeReplacement;
-
-    private NumericOperandChecker(SqlTypeName unknownTypeReplacement) {
-        this.unknownTypeReplacement = unknownTypeReplacement;
+    private NumericOperandChecker() {
+        // No-op.
     }
 
     @Override
@@ -39,7 +36,7 @@ public final class NumericOperandChecker implements OperandChecker {
 
         RelDataType operandType = binding.getValidator().deriveType(binding.getScope(), operand);
 
-        NumericTypedOperandChecker checker = checkerForTypeName(operandType.getSqlTypeName(), unknownTypeReplacement);
+        TypedOperandChecker checker = checkerForTypeName(operandType.getSqlTypeName());
 
         if (checker != null) {
             // Numeric checker is found, invoke
@@ -55,33 +52,29 @@ public final class NumericOperandChecker implements OperandChecker {
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
-    private static NumericTypedOperandChecker checkerForTypeName(SqlTypeName typeName, SqlTypeName unknownTypeReplacement) {
-        if (typeName == SqlTypeName.NULL) {
-            typeName = unknownTypeReplacement;
-        }
-
+    private static TypedOperandChecker checkerForTypeName(SqlTypeName typeName) {
         switch (typeName) {
             case TINYINT:
-                return NumericTypedOperandChecker.TINYINT;
+                return TypedOperandChecker.TINYINT;
 
             case SMALLINT:
-                return NumericTypedOperandChecker.SMALLINT;
+                return TypedOperandChecker.SMALLINT;
 
             case INTEGER:
-                return NumericTypedOperandChecker.INTEGER;
+                return TypedOperandChecker.INTEGER;
 
             case BIGINT:
-                return NumericTypedOperandChecker.BIGINT;
+                return TypedOperandChecker.BIGINT;
 
             case DECIMAL:
-                return NumericTypedOperandChecker.DECIMAL;
+                return TypedOperandChecker.DECIMAL;
 
             case REAL:
             case FLOAT:
-                return NumericTypedOperandChecker.REAL;
+                return TypedOperandChecker.REAL;
 
             case DOUBLE:
-                return NumericTypedOperandChecker.DOUBLE;
+                return TypedOperandChecker.DOUBLE;
 
             default:
                 return null;

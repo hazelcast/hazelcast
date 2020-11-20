@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
-import com.hazelcast.sql.impl.calcite.validate.operand.BooleanOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
@@ -47,6 +47,6 @@ public class HazelcastNotPredicate extends SqlPrefixOperator implements SqlCallB
 
     @Override
     public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
-        return BooleanOperandChecker.INSTANCE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
+        return TypedOperandChecker.BOOLEAN.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
     }
 }

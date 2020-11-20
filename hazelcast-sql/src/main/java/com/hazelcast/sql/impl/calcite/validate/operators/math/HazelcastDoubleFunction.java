@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators.math;
 
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
-import com.hazelcast.sql.impl.calcite.validate.operand.NumericTypedOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlFunction;
@@ -52,6 +52,6 @@ public class HazelcastDoubleFunction extends SqlFunction implements SqlCallBindi
 
     @Override
     public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
-        return NumericTypedOperandChecker.DOUBLE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
+        return TypedOperandChecker.DOUBLE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
     }
 }

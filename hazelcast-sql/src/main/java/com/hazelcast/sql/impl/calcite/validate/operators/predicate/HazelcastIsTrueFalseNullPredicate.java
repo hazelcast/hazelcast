@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
-import com.hazelcast.sql.impl.calcite.validate.operand.BooleanOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastObjectType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -80,7 +80,7 @@ public final class HazelcastIsTrueFalseNullPredicate extends SqlPostfixOperator 
             return true;
         } else {
             // IS (NOT) TRUE|FALSE accept boolean operands only
-            return BooleanOperandChecker.INSTANCE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
+            return TypedOperandChecker.BOOLEAN.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
         }
     }
 

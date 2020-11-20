@@ -20,7 +20,7 @@ import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverr
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.NumericOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.operand.NumericTypedOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlFunction;
@@ -60,13 +60,13 @@ public final class HazelcastRoundTruncateFunction extends SqlFunction implements
         SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
 
         if (bindingOverride.getOperandCount() == 1) {
-            return NumericOperandChecker.UNKNOWN_AS_DECIMAL.check(bindingOverride, throwOnFailure, 0);
+            return NumericOperandChecker.INSTANCE.check(bindingOverride, throwOnFailure, 0);
         } else {
             assert bindingOverride.getOperandCount() == 2;
 
             return new CompositeOperandChecker(
-                NumericOperandChecker.UNKNOWN_AS_DECIMAL,
-                NumericTypedOperandChecker.INTEGER
+                NumericOperandChecker.INSTANCE,
+                TypedOperandChecker.INTEGER
             ).check(bindingOverride, throwOnFailure);
         }
     }

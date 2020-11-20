@@ -18,20 +18,17 @@ package com.hazelcast.sql.impl.calcite.validate.operand;
 
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public abstract class AbstractTypedOperandChecker implements OperandChecker {
-
-    protected final SqlTypeName typeName;
-
-    public AbstractTypedOperandChecker(SqlTypeName typeName) {
-        this.typeName = typeName;
+public abstract class AbstractOperandChecker implements OperandChecker {
+    protected AbstractOperandChecker() {
+        // No-op
     }
 
     @Override
@@ -42,15 +39,25 @@ public abstract class AbstractTypedOperandChecker implements OperandChecker {
 
         // Handle parameter
         if (operand.getKind() == SqlKind.DYNAMIC_PARAM) {
-            return checkParameter(validator, (SqlDynamicParam) operand);
+            SqlDynamicParam operand0 = (SqlDynamicParam) operand;
+
+            // Set parameter type
+            RelDataType type = getTargetType(validator.getTypeFactory(), true);
+            validator.setKnownAndValidatedNodeType(operand, type);
+
+            // Set parameter converter
+            ParameterConverter converter = parameterConverter(operand0);
+            validator.setParameterConverter(operand0.getIndex(), converter);
+
+            return true;
         }
 
         RelDataType operandType = validator.deriveType(callBinding.getScope(), operand);
 
         assert operandType.getSqlTypeName() != SqlTypeName.NULL : "Operand type is not resolved";
 
-        // Handle direct type match
-        if (operandType.getSqlTypeName() == typeName) {
+        // Handle type match
+        if (matchesTargetType(operandType)) {
             return true;
         }
 
@@ -67,58 +74,17 @@ public abstract class AbstractTypedOperandChecker implements OperandChecker {
         }
     }
 
-    private boolean checkLiteral(
-        HazelcastSqlValidator validator,
-        SqlCallBindingOverride callBinding,
-        boolean throwOnFailure,
-        SqlNode operand,
-        RelDataType operandType,
-        int operandIndex
-    ) {
-        // Handle NULL literal
-        if (operandType.getSqlTypeName() == SqlTypeName.NULL) {
-            validator.setKnownAndValidatedNodeType(
-                operand,
-                SqlNodeUtil.createType(validator.getTypeFactory(), typeName, true)
-            );
+    protected abstract RelDataType getTargetType(RelDataTypeFactory factory, boolean nullable);
 
-            return true;
-        }
-
-        // Coerce if possible
-        if (coerce(validator, callBinding, operand, operandType, operandIndex)) {
-            return true;
-        }
-
-        // Failed
-        if (throwOnFailure) {
-            throw callBinding.newValidationSignatureError();
-        } else {
-            return false;
-        }
-    }
-
-    private boolean checkParameter(HazelcastSqlValidator validator, SqlDynamicParam operand) {
-        // Set parameter type
-        RelDataType type = SqlNodeUtil.createType(validator.getTypeFactory(), typeName, true);
-        validator.setKnownAndValidatedNodeType(operand, type);
-
-        // Set parameter converter
-        ParameterConverter converter = parameterConverter(operand);
-        validator.setParameterConverter(operand.getIndex(), converter);
-
-        return true;
-    }
+    protected abstract boolean matchesTargetType(RelDataType operandType);
 
     protected abstract ParameterConverter parameterConverter(SqlDynamicParam operand);
 
-    protected boolean coerce(
+    protected abstract boolean coerce(
         HazelcastSqlValidator validator,
         SqlCallBindingOverride callBinding,
         SqlNode operand,
         RelDataType operandType,
         int operandIndex
-    ) {
-        return false;
-    }
+    );
 }

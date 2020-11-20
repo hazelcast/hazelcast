@@ -21,8 +21,8 @@ import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverr
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingSignatureErrorAware;
 import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.operand.NoOpOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.operand.VarcharOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.AnyOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -75,16 +75,16 @@ public final class HazelcastTrimFunction extends SqlFunction implements SqlCallB
 
         if (bindingOverride.getOperandCount() == 2) {
             return new CompositeOperandChecker(
-                NoOpOperandChecker.INSTANCE,
-                VarcharOperandChecker.INSTANCE
+                AnyOperandChecker.INSTANCE,
+                TypedOperandChecker.VARCHAR
             ).check(bindingOverride, throwOnFailure);
         } else {
             assert bindingOverride.getOperandCount() == 3;
 
             return new CompositeOperandChecker(
-                NoOpOperandChecker.INSTANCE,
-                VarcharOperandChecker.INSTANCE,
-                VarcharOperandChecker.INSTANCE
+                AnyOperandChecker.INSTANCE,
+                TypedOperandChecker.VARCHAR,
+                TypedOperandChecker.VARCHAR
             ).check(bindingOverride, throwOnFailure);
         }
     }
