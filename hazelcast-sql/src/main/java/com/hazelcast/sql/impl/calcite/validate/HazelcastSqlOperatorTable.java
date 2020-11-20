@@ -97,10 +97,10 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#region Binary and unary operators.
 
-    public static final SqlBinaryOperator PLUS = HazelcastBinaryOperator.PLUS;
-    public static final SqlBinaryOperator MINUS = HazelcastBinaryOperator.MINUS;
-    public static final SqlBinaryOperator MULTIPLY = HazelcastBinaryOperator.MULTIPLY;
-    public static final SqlBinaryOperator DIVIDE = HazelcastBinaryOperator.DIVIDE;
+    public static final SqlOperator PLUS = HazelcastBinaryOperator.PLUS;
+    public static final SqlOperator MINUS = HazelcastBinaryOperator.MINUS;
+    public static final SqlOperator MULTIPLY = HazelcastBinaryOperator.MULTIPLY;
+    public static final SqlOperator DIVIDE = HazelcastBinaryOperator.DIVIDE;
 
     public static final SqlPrefixOperator UNARY_PLUS = HazelcastUnaryOperator.PLUS;
     public static final SqlPrefixOperator UNARY_MINUS = HazelcastUnaryOperator.MINUS;

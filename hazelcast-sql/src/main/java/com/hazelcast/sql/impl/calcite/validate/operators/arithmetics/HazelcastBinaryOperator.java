@@ -14,6 +14,7 @@ import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlOperatorBinding;
+import org.apache.calcite.sql.SqlSyntax;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
@@ -44,6 +45,12 @@ public final class HazelcastBinaryOperator extends SqlBinaryOperator implements 
         return SqlOperandCountRanges.of(2);
     }
 
+    @Override
+    public SqlSyntax getSyntax() {
+        return SqlSyntax.BINARY;
+    }
+
+    // TODO: This might be called before the inferUnknownOperands routine!
     @Override
     public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
         SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
