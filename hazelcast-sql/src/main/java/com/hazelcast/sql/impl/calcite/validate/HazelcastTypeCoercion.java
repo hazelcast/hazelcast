@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerTypeNameSpec;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerTypeNameSpec;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
@@ -34,14 +34,8 @@ import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
 
 import java.util.List;
 
-import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isLiteralRemoveMe;
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isParameter;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isChar;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isTemporal;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.typeName;
-import static org.apache.calcite.sql.type.SqlTypeName.ANY;
-import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
-import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 
 /**
@@ -54,6 +48,55 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     public HazelcastTypeCoercion(HazelcastSqlValidator validator) {
         super(TYPE_FACTORY, validator);
+    }
+
+    @Override
+    public boolean coerceOperandType(SqlValidatorScope scope, SqlCall call, int index, RelDataType targetType) {
+        SqlNode operand = call.getOperandList().get(index);
+
+        // just update the inferred type if casting is not needed
+        if (!requiresCast(scope, operand, targetType)) {
+            updateInferredType(operand, targetType);
+
+            return false;
+        }
+
+        SqlDataTypeSpec targetTypeSpec;
+
+        if (targetType instanceof HazelcastIntegerType) {
+            HazelcastIntegerTypeNameSpec targetTypeNameSpec = new HazelcastIntegerTypeNameSpec((HazelcastIntegerType) targetType);
+
+            targetTypeSpec = new SqlDataTypeSpec(
+                targetTypeNameSpec,
+                SqlParserPos.ZERO
+            );
+        } else {
+            targetTypeSpec = SqlTypeUtil.convertTypeToSpec(targetType);
+        }
+
+        SqlNode cast = HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, operand, targetTypeSpec);
+
+        call.setOperand(index, cast);
+
+        validator.deriveType(scope, cast);
+
+        return true;
+    }
+
+    private boolean requiresCast(SqlValidatorScope scope, SqlNode node, RelDataType to) {
+        RelDataType from = validator.deriveType(scope, node);
+
+        if (typeName(from) == NULL || SqlUtil.isNullLiteral(node, false)) {
+            // Never cast NULLs, just assign types to them
+            return false;
+        }
+
+        if (isParameter(node)) {
+            // Never cast parameters, just assign types to them
+            return false;
+        }
+
+        return typeName(from) != typeName(to);
     }
 
     @Override
@@ -103,89 +146,5 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         SqlNode query
     ) {
         throw new UnsupportedOperationException("Should not be called");
-    }
-
-    // TODO: Review
-    @Override
-    public RelDataType implicitCast(RelDataType in, SqlTypeFamily expected) {
-        // enables implicit conversion from CHAR to BOOLEAN
-        if (CHAR_TYPES.contains(typeName(in)) && expected == SqlTypeFamily.BOOLEAN) {
-            return TYPE_FACTORY.createSqlType(BOOLEAN, in.isNullable());
-        }
-
-        return super.implicitCast(in, expected);
-    }
-
-    @Override
-    public boolean coerceOperandType(SqlValidatorScope scope, SqlCall call, int index, RelDataType targetType) {
-        SqlNode operand = call.getOperandList().get(index);
-
-        // just update the inferred type if casting is not needed
-        if (!needToCast(scope, operand, targetType)) {
-            updateInferredType(operand, targetType);
-
-            return false;
-        }
-
-        SqlDataTypeSpec targetTypeSpec;
-
-        if (targetType instanceof HazelcastIntegerType) {
-            HazelcastIntegerTypeNameSpec targetTypeNameSpec = new HazelcastIntegerTypeNameSpec((HazelcastIntegerType) targetType);
-
-            targetTypeSpec = new SqlDataTypeSpec(
-                targetTypeNameSpec,
-                SqlParserPos.ZERO
-            );
-        } else {
-            targetTypeSpec = SqlTypeUtil.convertTypeToSpec(targetType);
-        }
-
-        SqlNode cast = HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, operand, targetTypeSpec);
-
-        call.setOperand(index, cast);
-
-        validator.deriveType(scope, cast);
-
-        return true;
-    }
-
-    // TODO: Review (move to separate method?)
-    @SuppressWarnings("checkstyle:NPathComplexity")
-    @Override
-    protected boolean needToCast(SqlValidatorScope scope, SqlNode node, RelDataType to) {
-        RelDataType from = validator.deriveType(scope, node);
-
-        if (typeName(from) == typeName(to)) {
-            // already of the same type
-            return false;
-        }
-
-        if (typeName(from) == NULL || SqlUtil.isNullLiteral(node, false)) {
-            // never cast NULLs, just assign types to them
-            return false;
-        }
-
-        if (typeName(to) == ANY) {
-            // all types can be implicitly interpreted as ANY
-            return false;
-        }
-
-        if (isParameter(node)) {
-            // never cast parameters, just assign types to them
-            return false;
-        }
-
-        if (isLiteralRemoveMe(node) && !(isTemporal(from) || isTemporal(to) || isChar(from) || isChar(to))) {
-            // never cast literals, let Calcite decide on temporal and char ones
-            return false;
-        }
-
-        if (typeName(from) != typeName(to)) {
-            // Force conversion between different types.
-            return true;
-        }
-
-        // TODO: Check if we need this delegation
-        return super.needToCast(scope, node, to);
     }
 }
