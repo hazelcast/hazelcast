@@ -32,6 +32,7 @@ import static com.hazelcast.sql.SqlColumnType.DOUBLE;
 import static com.hazelcast.sql.SqlColumnType.INTEGER;
 import static com.hazelcast.sql.SqlColumnType.REAL;
 import static com.hazelcast.sql.SqlColumnType.SMALLINT;
+import static com.hazelcast.sql.SqlColumnType.TINYINT;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -52,8 +53,8 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertParsingError("booleanTrue / decimal1", "Cannot apply [BOOLEAN, DECIMAL] to the '/' operator");
         assertParsingError("booleanTrue / bigInteger1", "Cannot apply [BOOLEAN, DECIMAL] to the '/' operator");
 
-        assertParsingError("booleanTrue / string1", "Cannot apply [BOOLEAN, BOOLEAN] to the '/' operator");
-        assertParsingError("booleanTrue / char1", "Cannot apply [BOOLEAN, BOOLEAN] to the '/' operator");
+        assertParsingError("booleanTrue / string1", "Cannot apply [BOOLEAN, VARCHAR] to the '/' operator");
+        assertParsingError("booleanTrue / char1", "Cannot apply [BOOLEAN, VARCHAR] to the '/' operator");
 
         assertParsingError("booleanTrue / dateCol", "Cannot apply [BOOLEAN, DATE] to the '/' operator");
         assertParsingError("booleanTrue / timeCol", "Cannot apply [BOOLEAN, TIME] to the '/' operator");
@@ -67,20 +68,20 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
     public void testTinyint() {
         assertParsingError("byte1 / booleanTrue", "Cannot apply [TINYINT, BOOLEAN] to the '/' operator");
 
-        assertRow("byte1 / byte2", EXPR0, SMALLINT, (short) 0);
-        assertRow("byteMax / byte2", EXPR0, SMALLINT, (short) (Byte.MAX_VALUE / 2));
+        assertRow("byte1 / byte2", EXPR0, TINYINT, (byte) 0);
+        assertRow("byteMax / byte2", EXPR0, TINYINT, (byte) (Byte.MAX_VALUE / 2));
         assertDataError("byte1 / byte0", "division by zero");
 
         assertRow("byte1 / short2", EXPR0, SMALLINT, (short) 0);
         assertRow("byteMax / short2", EXPR0, SMALLINT, (short) (Byte.MAX_VALUE / 2));
         assertDataError("byte1 / short0", "division by zero");
 
-        assertRow("byte1 / int2", EXPR0, SMALLINT, (short) 0);
-        assertRow("byteMax / int2", EXPR0, SMALLINT, (short) (Byte.MAX_VALUE / 2));
+        assertRow("byte1 / int2", EXPR0, INTEGER, 0);
+        assertRow("byteMax / int2", EXPR0, INTEGER, Byte.MAX_VALUE / 2);
         assertDataError("byte1 / int0", "division by zero");
 
-        assertRow("byte1 / long2", EXPR0, SMALLINT, (short) 0);
-        assertRow("byteMax / long2", EXPR0, SMALLINT, (short) (Byte.MAX_VALUE / 2));
+        assertRow("byte1 / long2", EXPR0, BIGINT, 0L);
+        assertRow("byteMax / long2", EXPR0, BIGINT, (long )(Byte.MAX_VALUE / 2));
         assertDataError("byte1 / long0", "division by zero");
 
         assertRow("byte1 / float2", EXPR0, REAL, 0.5f);
@@ -103,22 +104,12 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
                 BigDecimal.valueOf(Byte.MAX_VALUE).divide(BigDecimal.valueOf(2), ExpressionMath.DECIMAL_MATH_CONTEXT));
         assertDataError("byte1 / bigInteger0", "division by zero");
 
-        assertRow("byte1 / string2", EXPR0, SMALLINT, (short) 0);
-        assertRow("byteMax / string2", EXPR0, SMALLINT, (short) (Byte.MAX_VALUE / 2));
-        assertDataError("byte1 / string0", "division by zero");
-        assertDataError("byte1 / stringBig", "Cannot convert VARCHAR to BIGINT");
-        assertDataError("byte1 / stringFoo", "Cannot convert VARCHAR to BIGINT");
-
-        assertRow("byte1 / char2", EXPR0, SMALLINT, (short) 0);
-        assertRow("byteMax / char2", EXPR0, SMALLINT, (short) (Byte.MAX_VALUE / 2));
-        assertDataError("byte1 / char0", "division by zero");
-        assertDataError("byte1 / charF", "Cannot convert VARCHAR to BIGINT");
-
+        assertParsingError("byte1 / string1", "Cannot apply [TINYINT, VARCHAR] to the '/' operator");
+        assertParsingError("byte1 / char1", "Cannot apply [TINYINT, VARCHAR] to the '/' operator");
         assertParsingError("byte1 / dateCol", "Cannot apply [TINYINT, DATE] to the '/' operator");
         assertParsingError("byte1 / timeCol", "Cannot apply [TINYINT, TIME] to the '/' operator");
         assertParsingError("byte1 / dateTimeCol", "Cannot apply [TINYINT, TIMESTAMP] to the '/' operator");
         assertParsingError("byte1 / offsetDateTimeCol", "Cannot apply [TINYINT, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
-
         assertParsingError("byte1 / object", "Cannot apply [TINYINT, OBJECT] to the '/' operator");
     }
 
@@ -126,20 +117,20 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
     public void testSmallint() {
         assertParsingError("short1 / booleanTrue", "Cannot apply [SMALLINT, BOOLEAN] to the '/' operator");
 
-        assertRow("short1 / byte2", EXPR0, INTEGER, 0);
-        assertRow("shortMax / byte2", EXPR0, INTEGER, Short.MAX_VALUE / 2);
+        assertRow("short1 / byte2", EXPR0, SMALLINT, (short) 0);
+        assertRow("shortMax / byte2", EXPR0, SMALLINT, (short) (Short.MAX_VALUE / 2));
         assertDataError("short1 / byte0", "division by zero");
 
-        assertRow("short1 / short2", EXPR0, INTEGER, 0);
-        assertRow("shortMax / short2", EXPR0, INTEGER, Short.MAX_VALUE / 2);
+        assertRow("short1 / short2", EXPR0, SMALLINT, (short) 0);
+        assertRow("shortMax / short2", EXPR0, SMALLINT, (short) (Short.MAX_VALUE / 2));
         assertDataError("short1 / short0", "division by zero");
 
         assertRow("short1 / int2", EXPR0, INTEGER, 0);
         assertRow("shortMax / int2", EXPR0, INTEGER, Short.MAX_VALUE / 2);
         assertDataError("short1 / int0", "division by zero");
 
-        assertRow("short1 / long2", EXPR0, INTEGER, 0);
-        assertRow("shortMax / long2", EXPR0, INTEGER, Short.MAX_VALUE / 2);
+        assertRow("short1 / long2", EXPR0, BIGINT, 0L);
+        assertRow("shortMax / long2", EXPR0, BIGINT, (long) (Short.MAX_VALUE / 2));
         assertDataError("short1 / long0", "division by zero");
 
         assertRow("short1 / float2", EXPR0, REAL, 0.5f);
@@ -162,22 +153,12 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
                 BigDecimal.valueOf(Short.MAX_VALUE).divide(BigDecimal.valueOf(2), ExpressionMath.DECIMAL_MATH_CONTEXT));
         assertDataError("short1 / bigInteger0", "division by zero");
 
-        assertRow("short1 / string2", EXPR0, INTEGER, 0);
-        assertRow("shortMax / string2", EXPR0, INTEGER, Short.MAX_VALUE / 2);
-        assertDataError("short1 / string0", "division by zero");
-        assertDataError("short1 / stringBig", "Cannot convert VARCHAR to BIGINT");
-        assertDataError("short1 / stringFoo", "Cannot convert VARCHAR to BIGINT");
-
-        assertRow("short1 / char2", EXPR0, INTEGER, 0);
-        assertRow("shortMax / char2", EXPR0, INTEGER, Short.MAX_VALUE / 2);
-        assertDataError("short1 / char0", "division by zero");
-        assertDataError("short1 / charF", "Cannot convert VARCHAR to BIGINT");
-
+        assertParsingError("short1 / string1", "Cannot apply [SMALLINT, VARCHAR] to the '/' operator");
+        assertParsingError("short1 / char1", "Cannot apply [SMALLINT, VARCHAR] to the '/' operator");
         assertParsingError("short1 / dateCol", "Cannot apply [SMALLINT, DATE] to the '/' operator");
         assertParsingError("short1 / timeCol", "Cannot apply [SMALLINT, TIME] to the '/' operator");
         assertParsingError("short1 / dateTimeCol", "Cannot apply [SMALLINT, TIMESTAMP] to the '/' operator");
         assertParsingError("short1 / offsetDateTimeCol", "Cannot apply [SMALLINT, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
-
         assertParsingError("short1 / object", "Cannot apply [SMALLINT, OBJECT] to the '/' operator");
     }
 
@@ -185,16 +166,16 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
     public void testInteger() {
         assertParsingError("int1 / booleanTrue", "Cannot apply [INTEGER, BOOLEAN] to the '/' operator");
 
-        assertRow("int1 / byte2", EXPR0, BIGINT, 0L);
-        assertRow("intMax / byte2", EXPR0, BIGINT, Integer.MAX_VALUE / 2L);
+        assertRow("int1 / byte2", EXPR0, INTEGER, 0);
+        assertRow("intMax / byte2", EXPR0, INTEGER, Integer.MAX_VALUE / 2);
         assertDataError("int1 / byte0", "division by zero");
 
-        assertRow("int1 / short2", EXPR0, BIGINT, 0L);
-        assertRow("intMax / short2", EXPR0, BIGINT, Integer.MAX_VALUE / 2L);
+        assertRow("int1 / short2", EXPR0, INTEGER, 0);
+        assertRow("intMax / short2", EXPR0, INTEGER, Integer.MAX_VALUE / 2);
         assertDataError("int1 / short0", "division by zero");
 
-        assertRow("int1 / int2", EXPR0, BIGINT, 0L);
-        assertRow("intMax / int2", EXPR0, BIGINT, Integer.MAX_VALUE / 2L);
+        assertRow("int1 / int2", EXPR0, INTEGER, 0);
+        assertRow("intMax / int2", EXPR0, INTEGER, Integer.MAX_VALUE / 2);
         assertDataError("int1 / int0", "division by zero");
 
         assertRow("int1 / long2", EXPR0, BIGINT, 0L);
@@ -221,22 +202,12 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
                 BigDecimal.valueOf(Integer.MAX_VALUE).divide(BigDecimal.valueOf(2), ExpressionMath.DECIMAL_MATH_CONTEXT));
         assertDataError("int1 / bigInteger0", "division by zero");
 
-        assertRow("int1 / string2", EXPR0, BIGINT, 0L);
-        assertRow("intMax / string2", EXPR0, BIGINT, Integer.MAX_VALUE / 2L);
-        assertDataError("int1 / string0", "division by zero");
-        assertDataError("int1 / stringBig", "Cannot convert VARCHAR to BIGINT");
-        assertDataError("int1 / stringFoo", "Cannot convert VARCHAR to BIGINT");
-
-        assertRow("int1 / char2", EXPR0, BIGINT, 0L);
-        assertRow("intMax / char2", EXPR0, BIGINT, Integer.MAX_VALUE / 2L);
-        assertDataError("int1 / char0", "division by zero");
-        assertDataError("int1 / charF", "Cannot convert VARCHAR to BIGINT");
-
+        assertParsingError("int1 / string1", "Cannot apply [INTEGER, VARCHAR] to the '/' operator");
+        assertParsingError("int1 / char1", "Cannot apply [INTEGER, VARCHAR] to the '/' operator");
         assertParsingError("int1 / dateCol", "Cannot apply [INTEGER, DATE] to the '/' operator");
         assertParsingError("int1 / timeCol", "Cannot apply [INTEGER, TIME] to the '/' operator");
         assertParsingError("int1 / dateTimeCol", "Cannot apply [INTEGER, TIMESTAMP] to the '/' operator");
         assertParsingError("int1 / offsetDateTimeCol", "Cannot apply [INTEGER, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
-
         assertParsingError("int1 / object", "Cannot apply [INTEGER, OBJECT] to the '/' operator");
     }
 
@@ -280,17 +251,8 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
                 BigDecimal.valueOf(Long.MAX_VALUE).divide(BigDecimal.valueOf(2), ExpressionMath.DECIMAL_MATH_CONTEXT));
         assertDataError("long1 / bigInteger0", "division by zero");
 
-        assertRow("long1 / string2", EXPR0, BIGINT, 0L);
-        assertRow("longMax / string2", EXPR0, BIGINT, Long.MAX_VALUE / 2L);
-        assertDataError("long1 / string0", "division by zero");
-        assertDataError("long1 / stringBig", "Cannot convert VARCHAR to BIGINT");
-        assertDataError("long1 / stringFoo", "Cannot convert VARCHAR to BIGINT");
-
-        assertRow("long1 / char2", EXPR0, BIGINT, 0L);
-        assertRow("longMax / char2", EXPR0, BIGINT, Long.MAX_VALUE / 2L);
-        assertDataError("long1 / char0", "division by zero");
-        assertDataError("long1 / charF", "Cannot convert VARCHAR to BIGINT");
-
+        assertParsingError("long1 / string1", "Cannot apply [BIGINT, VARCHAR] to the '/' operator");
+        assertParsingError("long1 / char1", "Cannot apply [BIGINT, VARCHAR] to the '/' operator");
         assertParsingError("long1 / dateCol", "Cannot apply [BIGINT, DATE] to the '/' operator");
         assertParsingError("long1 / timeCol", "Cannot apply [BIGINT, TIME] to the '/' operator");
         assertParsingError("long1 / dateTimeCol", "Cannot apply [BIGINT, TIMESTAMP] to the '/' operator");
@@ -335,17 +297,8 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("floatMax / bigInteger2", EXPR0, REAL, Float.MAX_VALUE / 2);
         assertDataError("float1 / bigInteger0", "division by zero");
 
-        assertRow("float1 / string2", EXPR0, REAL, 0.5f);
-        assertRow("floatMax / string2", EXPR0, REAL, Float.MAX_VALUE / 2);
-        assertDataError("float1 / string0", "division by zero");
-        assertRow("float1 / stringBig", EXPR0, REAL, 1.0f / Float.parseFloat(getRecord().stringBig));
-        assertDataError("float1 / stringFoo", "Cannot convert VARCHAR to REAL");
-
-        assertRow("float1 / char2", EXPR0, REAL, 0.5f);
-        assertRow("floatMax / char2", EXPR0, REAL, Float.MAX_VALUE / 2);
-        assertDataError("float1 / char0", "division by zero");
-        assertDataError("float1 / charF", "Cannot convert VARCHAR to REAL");
-
+        assertParsingError("float1 / string1", "Cannot apply [REAL, VARCHAR] to the '/' operator");
+        assertParsingError("float1 / char1", "Cannot apply [REAL, VARCHAR] to the '/' operator");
         assertParsingError("float1 / dateCol", "Cannot apply [REAL, DATE] to the '/' operator");
         assertParsingError("float1 / timeCol", "Cannot apply [REAL, TIME] to the '/' operator");
         assertParsingError("float1 / dateTimeCol", "Cannot apply [REAL, TIMESTAMP] to the '/' operator");
@@ -390,17 +343,8 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("doubleMax / bigInteger2", EXPR0, DOUBLE, Double.MAX_VALUE / 2);
         assertDataError("double1 / bigInteger0", "division by zero");
 
-        assertRow("double1 / string2", EXPR0, DOUBLE, 0.5);
-        assertRow("doubleMax / string2", EXPR0, DOUBLE, Double.MAX_VALUE / 2);
-        assertDataError("double1 / string0", "division by zero");
-        assertRow("double1 / stringBig", EXPR0, DOUBLE, 1.0 / Double.parseDouble(getRecord().stringBig));
-        assertDataError("double1 / stringFoo", "Cannot convert VARCHAR to DOUBLE");
-
-        assertRow("double1 / char2", EXPR0, DOUBLE, 0.5);
-        assertRow("doubleMax / char2", EXPR0, DOUBLE, Double.MAX_VALUE / 2);
-        assertDataError("double1 / char0", "division by zero");
-        assertDataError("double1 / charF", "Cannot convert VARCHAR to DOUBLE");
-
+        assertParsingError("double1 / string1", "Cannot apply [DOUBLE, VARCHAR] to the '/' operator");
+        assertParsingError("double1 / char1", "Cannot apply [DOUBLE, VARCHAR] to the '/' operator");
         assertParsingError("double1 / dateCol", "Cannot apply [DOUBLE, DATE] to the '/' operator");
         assertParsingError("double1 / timeCol", "Cannot apply [DOUBLE, TIME] to the '/' operator");
         assertParsingError("double1 / dateTimeCol", "Cannot apply [DOUBLE, TIMESTAMP] to the '/' operator");
@@ -451,20 +395,8 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
                 getRecord().decimalBig.divide(BigDecimal.valueOf(2), ExpressionMath.DECIMAL_MATH_CONTEXT));
         assertDataError("decimal1 / bigInteger0", "division by zero");
 
-        assertRow("decimal1 / string2", EXPR0, DECIMAL, BigDecimal.valueOf(0.5));
-        assertRow("decimalBig / string2", EXPR0, DECIMAL,
-                getRecord().decimalBig.divide(BigDecimal.valueOf(2), ExpressionMath.DECIMAL_MATH_CONTEXT));
-        assertDataError("decimal1 / string0", "division by zero");
-        assertRow("decimal1 / stringBig", EXPR0, DECIMAL,
-                BigDecimal.valueOf(1).divide(new BigDecimal(getRecord().stringBig), ExpressionMath.DECIMAL_MATH_CONTEXT));
-        assertDataError("decimal1 / stringFoo", "Cannot convert VARCHAR to DECIMAL");
-
-        assertRow("decimal1 / char2", EXPR0, DECIMAL, BigDecimal.valueOf(0.5));
-        assertRow("decimalBig / char2", EXPR0, DECIMAL,
-                getRecord().decimalBig.divide(BigDecimal.valueOf(2), ExpressionMath.DECIMAL_MATH_CONTEXT));
-        assertDataError("decimal1 / char0", "division by zero");
-        assertDataError("decimal1 / charF", "Cannot convert VARCHAR to DECIMAL");
-
+        assertParsingError("decimal1 / string1", "Cannot apply [DECIMAL, VARCHAR] to the '/' operator");
+        assertParsingError("decimal1 / char1", "Cannot apply [DECIMAL, VARCHAR] to the '/' operator");
         assertParsingError("decimal1 / dateCol", "Cannot apply [DECIMAL, DATE] to the '/' operator");
         assertParsingError("decimal1 / timeCol", "Cannot apply [DECIMAL, TIME] to the '/' operator");
         assertParsingError("decimal1 / dateTimeCol", "Cannot apply [DECIMAL, TIMESTAMP] to the '/' operator");
@@ -475,56 +407,21 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
 
     @Test
     public void testVarchar() {
-        assertParsingError("string1 / booleanTrue", "Cannot apply [BOOLEAN, BOOLEAN] to the '/' operator");
-
-        assertRow("string1 / byte2", EXPR0, BIGINT, 0L);
-        assertRow("stringLongMax / byte2", EXPR0, BIGINT, Long.MAX_VALUE / 2);
-        assertDataError("string1 / byte0", "division by zero");
-
-        assertRow("string1 / short2", EXPR0, BIGINT, 0L);
-        assertRow("stringLongMax / short2", EXPR0, BIGINT, Long.MAX_VALUE / 2);
-        assertDataError("string1 / short0", "division by zero");
-
-        assertRow("string1 / int2", EXPR0, BIGINT, 0L);
-        assertRow("stringLongMax / int2", EXPR0, BIGINT, Long.MAX_VALUE / 2);
-        assertDataError("string1 / int0", "division by zero");
-
-        assertRow("string1 / long2", EXPR0, BIGINT, 0L);
-        assertRow("stringLongMax / long2", EXPR0, BIGINT, Long.MAX_VALUE / 2);
-        assertDataError("string1 / long0", "division by zero");
-
-        assertRow("string1 / float2", EXPR0, REAL, 0.5f);
-        assertRow("stringLongMax / float2", EXPR0, REAL, Long.MAX_VALUE / 2.0f);
-        assertDataError("string1 / float0", "division by zero");
-
-        assertRow("string1 / double2", EXPR0, DOUBLE, 0.5);
-        assertRow("stringLongMax / double2", EXPR0, DOUBLE, Long.MAX_VALUE / 2.0);
-        assertDataError("string1 / double0", "division by zero");
-
-        assertRow("string1 / decimal2", EXPR0, DECIMAL, BigDecimal.valueOf(0.5));
-        assertRow("stringLongMax / decimal2", EXPR0, DECIMAL,
-                BigDecimal.valueOf(Long.MAX_VALUE).divide(BigDecimal.valueOf(2), ExpressionMath.DECIMAL_MATH_CONTEXT));
-        assertDataError("string1 / decimal0", "division by zero");
-
-        assertRow("string1 / bigInteger2", EXPR0, DECIMAL, BigDecimal.valueOf(0.5));
-        assertRow("stringLongMax / bigInteger2", EXPR0, DECIMAL,
-                BigDecimal.valueOf(Long.MAX_VALUE).divide(BigDecimal.valueOf(2), ExpressionMath.DECIMAL_MATH_CONTEXT));
-        assertDataError("string1 / bigInteger0", "division by zero");
-
-        assertRow("string1 / string1", EXPR0, DOUBLE, 1.0);
-        assertRow("string1 / string2", EXPR0, DOUBLE, 0.5);
-        assertRow("string1 / stringBig", EXPR0, DOUBLE, 1.0 / Double.parseDouble(getRecord().stringBig));
-        assertDataError("string1 / stringFoo", "Cannot convert VARCHAR to DOUBLE");
-        assertRow("string1 / char1", EXPR0, DOUBLE, 1.0);
-        assertDataError("string1 / charF", "Cannot convert VARCHAR to DOUBLE");
-
-        assertDataError("stringBig / int1", "Cannot convert VARCHAR to BIGINT");
-
-        assertParsingError("string1 / dateCol", "Cannot apply [DATE, DATE] to the '/' operator");
-        assertParsingError("string1 / timeCol", "Cannot apply [TIME, TIME] to the '/' operator");
-        assertParsingError("string1 / dateTimeCol", "Cannot apply [TIMESTAMP, TIMESTAMP] to the '/' operator");
-        assertParsingError("string1 / offsetDateTimeCol", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
-
+        assertParsingError("string1 / booleanTrue", "Cannot apply [VARCHAR, BOOLEAN] to the '/' operator");
+        assertParsingError("string1 / byte1", "Cannot apply [VARCHAR, TINYINT] to the '/' operator");
+        assertParsingError("string1 / short1", "Cannot apply [VARCHAR, SMALLINT] to the '/' operator");
+        assertParsingError("string1 / int1", "Cannot apply [VARCHAR, INTEGER] to the '/' operator");
+        assertParsingError("string1 / long1", "Cannot apply [VARCHAR, BIGINT] to the '/' operator");
+        assertParsingError("string1 / float1", "Cannot apply [VARCHAR, REAL] to the '/' operator");
+        assertParsingError("string1 / double1", "Cannot apply [VARCHAR, DOUBLE] to the '/' operator");
+        assertParsingError("string1 / decimal1", "Cannot apply [VARCHAR, DECIMAL] to the '/' operator");
+        assertParsingError("string1 / bigInteger1", "Cannot apply [VARCHAR, DECIMAL] to the '/' operator");
+        assertParsingError("string1 / string1", "Cannot apply [VARCHAR, VARCHAR] to the '/' operator");
+        assertParsingError("string1 / char1", "Cannot apply [VARCHAR, VARCHAR] to the '/' operator");
+        assertParsingError("string1 / dateCol", "Cannot apply [VARCHAR, DATE] to the '/' operator");
+        assertParsingError("string1 / timeCol", "Cannot apply [VARCHAR, TIME] to the '/' operator");
+        assertParsingError("string1 / dateTimeCol", "Cannot apply [VARCHAR, TIMESTAMP] to the '/' operator");
+        assertParsingError("string1 / offsetDateTimeCol", "Cannot apply [VARCHAR, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
         assertParsingError("string1 / object", "Cannot apply [VARCHAR, OBJECT] to the '/' operator");
     }
 
@@ -543,8 +440,8 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertParsingError("dateCol / decimal1", "Cannot apply [DATE, DECIMAL] to the '/' operator");
         assertParsingError("dateCol / bigInteger1", "Cannot apply [DATE, DECIMAL] to the '/' operator");
 
-        assertParsingError("dateCol / string1", "Cannot apply [DATE, DATE] to the '/' operator");
-        assertParsingError("dateCol / char1", "Cannot apply [DATE, DATE] to the '/' operator");
+        assertParsingError("dateCol / string1", "Cannot apply [DATE, VARCHAR] to the '/' operator");
+        assertParsingError("dateCol / char1", "Cannot apply [DATE, VARCHAR] to the '/' operator");
 
         assertParsingError("dateCol / dateCol", "Cannot apply [DATE, DATE] to the '/' operator");
         assertParsingError("dateCol / timeCol", "Cannot apply [DATE, TIME] to the '/' operator");
@@ -569,8 +466,8 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertParsingError("timeCol / decimal1", "Cannot apply [TIME, DECIMAL] to the '/' operator");
         assertParsingError("timeCol / bigInteger1", "Cannot apply [TIME, DECIMAL] to the '/' operator");
 
-        assertParsingError("timeCol / string1", "Cannot apply [TIME, TIME] to the '/' operator");
-        assertParsingError("timeCol / char1", "Cannot apply [TIME, TIME] to the '/' operator");
+        assertParsingError("timeCol / string1", "Cannot apply [TIME, VARCHAR] to the '/' operator");
+        assertParsingError("timeCol / char1", "Cannot apply [TIME, VARCHAR] to the '/' operator");
 
         assertParsingError("timeCol / dateCol", "Cannot apply [TIME, DATE] to the '/' operator");
         assertParsingError("timeCol / timeCol", "Cannot apply [TIME, TIME] to the '/' operator");
@@ -595,8 +492,8 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertParsingError("dateTimeCol / decimal1", "Cannot apply [TIMESTAMP, DECIMAL] to the '/' operator");
         assertParsingError("dateTimeCol / bigInteger1", "Cannot apply [TIMESTAMP, DECIMAL] to the '/' operator");
 
-        assertParsingError("dateTimeCol / string1", "Cannot apply [TIMESTAMP, TIMESTAMP] to the '/' operator");
-        assertParsingError("dateTimeCol / char1", "Cannot apply [TIMESTAMP, TIMESTAMP] to the '/' operator");
+        assertParsingError("dateTimeCol / string1", "Cannot apply [TIMESTAMP, VARCHAR] to the '/' operator");
+        assertParsingError("dateTimeCol / char1", "Cannot apply [TIMESTAMP, VARCHAR] to the '/' operator");
 
         assertParsingError("dateTimeCol / dateCol", "Cannot apply [TIMESTAMP, DATE] to the '/' operator");
         assertParsingError("dateTimeCol / timeCol", "Cannot apply [TIMESTAMP, TIME] to the '/' operator");
@@ -621,8 +518,8 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertParsingError("offsetDateTimeCol / decimal1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, DECIMAL] to the '/' operator");
         assertParsingError("offsetDateTimeCol / bigInteger1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, DECIMAL] to the '/' operator");
 
-        assertParsingError("offsetDateTimeCol / string1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
-        assertParsingError("offsetDateTimeCol / char1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE] to the '/' operator");
+        assertParsingError("offsetDateTimeCol / string1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, VARCHAR] to the '/' operator");
+        assertParsingError("offsetDateTimeCol / char1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, VARCHAR] to the '/' operator");
 
         assertParsingError("offsetDateTimeCol / dateCol", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, DATE] to the '/' operator");
         assertParsingError("offsetDateTimeCol / timeCol", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, TIME] to the '/' operator");

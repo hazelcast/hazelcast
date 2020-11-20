@@ -52,8 +52,8 @@ public class MultiplyIntegrationTest extends ExpressionIntegrationTestBase {
         assertParsingError("booleanTrue * decimal1", "Cannot apply [BOOLEAN, DECIMAL] to the '*' operator");
         assertParsingError("booleanTrue * bigInteger1", "Cannot apply [BOOLEAN, DECIMAL] to the '*' operator");
 
-        assertParsingError("booleanTrue * string1", "Cannot apply [BOOLEAN, BOOLEAN] to the '*' operator");
-        assertParsingError("booleanTrue * char1", "Cannot apply [BOOLEAN, BOOLEAN] to the '*' operator");
+        assertParsingError("booleanTrue * string1", "Cannot apply [BOOLEAN, VARCHAR] to the '*' operator");
+        assertParsingError("booleanTrue * char1", "Cannot apply [BOOLEAN, VARCHAR] to the '*' operator");
 
         assertParsingError("booleanTrue * dateCol", "Cannot apply [BOOLEAN, DATE] to the '*' operator");
         assertParsingError("booleanTrue * timeCol", "Cannot apply [BOOLEAN, TIME] to the '*' operator");
@@ -103,18 +103,12 @@ public class MultiplyIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("byte1 * bigIntegerBig", EXPR0, DECIMAL, getRecord().decimalBig);
         assertRow("byteMax * bigIntegerBig", EXPR0, DECIMAL, BigDecimal.valueOf(Byte.MAX_VALUE).multiply(getRecord().decimalBig));
 
-        assertRow("byte1 * string1", EXPR0, BIGINT, 1L);
-        assertRow("byteMax * string2", EXPR0, BIGINT, Byte.MAX_VALUE * 2L);
-        assertDataError("byte1 * stringBig", "Cannot convert VARCHAR to BIGINT");
-        assertDataError("byte1 * stringFoo", "Cannot convert VARCHAR to BIGINT");
-        assertRow("byte1 * char1", EXPR0, BIGINT, 1L);
-        assertDataError("byte1 * charF", "Cannot convert VARCHAR to BIGINT");
-
+        assertParsingError("byte1 * string1", "Cannot apply [TINYINT, VARCHAR] to the '*' operator");
+        assertParsingError("byte1 * char1", "Cannot apply [TINYINT, VARCHAR] to the '*' operator");
         assertParsingError("byte1 * dateCol", "Cannot apply [TINYINT, DATE] to the '*' operator");
         assertParsingError("byte1 * timeCol", "Cannot apply [TINYINT, TIME] to the '*' operator");
         assertParsingError("byte1 * dateTimeCol", "Cannot apply [TINYINT, TIMESTAMP] to the '*' operator");
         assertParsingError("byte1 * offsetDateTimeCol", "Cannot apply [TINYINT, TIMESTAMP_WITH_TIME_ZONE] to the '*' operator");
-
         assertParsingError("byte1 * object", "Cannot apply [TINYINT, OBJECT] to the '*' operator");
     }
 
@@ -159,18 +153,12 @@ public class MultiplyIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("shortMax * bigIntegerBig", EXPR0, DECIMAL,
                 BigDecimal.valueOf(Short.MAX_VALUE).multiply(getRecord().decimalBig));
 
-        assertRow("short1 * string1", EXPR0, BIGINT, 1L);
-        assertRow("shortMax * string2", EXPR0, BIGINT, Short.MAX_VALUE * 2L);
-        assertDataError("short1 * stringBig", "Cannot convert VARCHAR to BIGINT");
-        assertDataError("short1 * stringFoo", "Cannot convert VARCHAR to BIGINT");
-        assertRow("short1 * char1", EXPR0, BIGINT, 1L);
-        assertDataError("short1 * charF", "Cannot convert VARCHAR to BIGINT");
-
+        assertParsingError("short1 * string1", "Cannot apply [SMALLINT, VARCHAR] to the '*' operator");
+        assertParsingError("short1 * char1", "Cannot apply [SMALLINT, VARCHAR] to the '*' operator");
         assertParsingError("short1 * dateCol", "Cannot apply [SMALLINT, DATE] to the '*' operator");
         assertParsingError("short1 * timeCol", "Cannot apply [SMALLINT, TIME] to the '*' operator");
         assertParsingError("short1 * dateTimeCol", "Cannot apply [SMALLINT, TIMESTAMP] to the '*' operator");
         assertParsingError("short1 * offsetDateTimeCol", "Cannot apply [SMALLINT, TIMESTAMP_WITH_TIME_ZONE] to the '*' operator");
-
         assertParsingError("short1 * object", "Cannot apply [SMALLINT, OBJECT] to the '*' operator");
     }
 
@@ -215,18 +203,12 @@ public class MultiplyIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("intMax * bigIntegerBig", EXPR0, DECIMAL,
                 BigDecimal.valueOf(Integer.MAX_VALUE).multiply(getRecord().decimalBig));
 
-        assertRow("int1 * string1", EXPR0, BIGINT, 1L);
-        assertRow("intMax * string2", EXPR0, BIGINT, Integer.MAX_VALUE * 2L);
-        assertDataError("int1 * stringBig", "Cannot convert VARCHAR to BIGINT");
-        assertDataError("int1 * stringFoo", "Cannot convert VARCHAR to BIGINT");
-        assertRow("int1 * char1", EXPR0, BIGINT, 1L);
-        assertDataError("int1 * charF", "Cannot convert VARCHAR to BIGINT");
-
+        assertParsingError("int1 * string1", "Cannot apply [INTEGER, VARCHAR] to the '*' operator");
+        assertParsingError("int1 * char1", "Cannot apply [INTEGER, VARCHAR] to the '*' operator");
         assertParsingError("int1 * dateCol", "Cannot apply [INTEGER, DATE] to the '*' operator");
         assertParsingError("int1 * timeCol", "Cannot apply [INTEGER, TIME] to the '*' operator");
         assertParsingError("int1 * dateTimeCol", "Cannot apply [INTEGER, TIMESTAMP] to the '*' operator");
         assertParsingError("int1 * offsetDateTimeCol", "Cannot apply [INTEGER, TIMESTAMP_WITH_TIME_ZONE] to the '*' operator");
-
         assertParsingError("int1 * object", "Cannot apply [INTEGER, OBJECT] to the '*' operator");
     }
 
@@ -272,18 +254,12 @@ public class MultiplyIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("longMax * bigIntegerBig", EXPR0, DECIMAL,
                 BigDecimal.valueOf(Long.MAX_VALUE).multiply(getRecord().decimalBig, ExpressionMath.DECIMAL_MATH_CONTEXT));
 
-        assertRow("long1 * string1", EXPR0, BIGINT, 1L);
-        assertDataError("longMax * string2", "BIGINT overflow");
-        assertDataError("long1 * stringBig", "Cannot convert VARCHAR to BIGINT");
-        assertDataError("long1 * stringFoo", "Cannot convert VARCHAR to BIGINT");
-        assertRow("long1 * char1", EXPR0, BIGINT, 1L);
-        assertDataError("long1 * charF", "Cannot convert VARCHAR to BIGINT");
-
+        assertParsingError("long1 * string1", "Cannot apply [BIGINT, VARCHAR] to the '*' operator");
+        assertParsingError("long1 * char1", "Cannot apply [BIGINT, VARCHAR] to the '*' operator");
         assertParsingError("long1 * dateCol", "Cannot apply [BIGINT, DATE] to the '*' operator");
         assertParsingError("long1 * timeCol", "Cannot apply [BIGINT, TIME] to the '*' operator");
         assertParsingError("long1 * dateTimeCol", "Cannot apply [BIGINT, TIMESTAMP] to the '*' operator");
         assertParsingError("long1 * offsetDateTimeCol", "Cannot apply [BIGINT, TIMESTAMP_WITH_TIME_ZONE] to the '*' operator");
-
         assertParsingError("long1 * object", "Cannot apply [BIGINT, OBJECT] to the '*' operator");
     }
 
@@ -325,18 +301,12 @@ public class MultiplyIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("float1 * bigIntegerBig", EXPR0, REAL, getRecord().bigIntegerBig.floatValue());
         assertRow("float2 * bigIntegerBig", EXPR0, REAL, 2.0f * getRecord().decimalBig.floatValue());
 
-        assertRow("float1 * string1", EXPR0, REAL, 1.0f);
-        assertRow("float2 * string2", EXPR0, REAL, 4.0f);
-        assertRow("float1 * stringBig", EXPR0, REAL, Float.parseFloat(getRecord().stringBig));
-        assertDataError("float1 * stringFoo", "Cannot convert VARCHAR to REAL");
-        assertRow("float1 * char1", EXPR0, REAL, 1.0f);
-        assertDataError("float1 * charF", "Cannot convert VARCHAR to REAL");
-
+        assertParsingError("float1 * string1", "Cannot apply [REAL, VARCHAR] to the '*' operator");
+        assertParsingError("float1 * char1", "Cannot apply [REAL, VARCHAR] to the '*' operator");
         assertParsingError("float1 * dateCol", "Cannot apply [REAL, DATE] to the '*' operator");
         assertParsingError("float1 * timeCol", "Cannot apply [REAL, TIME] to the '*' operator");
         assertParsingError("float1 * dateTimeCol", "Cannot apply [REAL, TIMESTAMP] to the '*' operator");
         assertParsingError("float1 * offsetDateTimeCol", "Cannot apply [REAL, TIMESTAMP_WITH_TIME_ZONE] to the '*' operator");
-
         assertParsingError("float1 * object", "Cannot apply [REAL, OBJECT] to the '*' operator");
     }
 
@@ -375,18 +345,12 @@ public class MultiplyIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("double1 * bigInteger1", EXPR0, DOUBLE, 1.0);
         assertRow("double1 * bigIntegerBig", EXPR0, DOUBLE, getRecord().bigIntegerBig.doubleValue());
 
-        assertRow("double1 * string1", EXPR0, DOUBLE, 1.0);
-        assertRow("double1 * stringBig", EXPR0, DOUBLE, Double.parseDouble(getRecord().stringBig));
-        assertRow("double2 * stringBig", EXPR0, DOUBLE, 2.0 * Double.parseDouble(getRecord().stringBig));
-        assertDataError("double1 * stringFoo", "Cannot convert VARCHAR to DOUBLE");
-        assertRow("double1 * char1", EXPR0, DOUBLE, 1.0);
-        assertDataError("double1 * charF", "Cannot convert VARCHAR to DOUBLE");
-
+        assertParsingError("double1 * string1", "Cannot apply [DOUBLE, VARCHAR] to the '*' operator");
+        assertParsingError("double1 * char1", "Cannot apply [DOUBLE, VARCHAR] to the '*' operator");
         assertParsingError("double1 * dateCol", "Cannot apply [DOUBLE, DATE] to the '*' operator");
         assertParsingError("double1 * timeCol", "Cannot apply [DOUBLE, TIME] to the '*' operator");
         assertParsingError("double1 * dateTimeCol", "Cannot apply [DOUBLE, TIMESTAMP] to the '*' operator");
         assertParsingError("double1 * offsetDateTimeCol", "Cannot apply [DOUBLE, TIMESTAMP_WITH_TIME_ZONE] to the '*' operator");
-
         assertParsingError("double1 * object", "Cannot apply [DOUBLE, OBJECT] to the '*' operator");
     }
 
@@ -428,71 +392,32 @@ public class MultiplyIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("decimal1 * bigIntegerBig", EXPR0, DECIMAL, getRecord().decimalBig);
         assertRow("decimal2 * bigIntegerBig", EXPR0, DECIMAL, BigDecimal.valueOf(2).multiply(getRecord().decimalBig));
 
-        assertRow("decimal1 * string1", EXPR0, DECIMAL, BigDecimal.valueOf(1));
-        assertRow("decimal2 * string2", EXPR0, DECIMAL, BigDecimal.valueOf(4));
-        assertRow("decimal1 * stringBig", EXPR0, DECIMAL, new BigDecimal(getRecord().stringBig));
-        assertDataError("decimal1 * stringFoo", "Cannot convert VARCHAR to DECIMAL");
-        assertRow("decimal1 * char1", EXPR0, DECIMAL, BigDecimal.valueOf(1));
-        assertDataError("decimal1 * charF", "Cannot convert VARCHAR to DECIMAL");
-
+        assertParsingError("decimal1 * string1", "Cannot apply [DECIMAL, VARCHAR] to the '*' operator");
+        assertParsingError("decimal1 * char1", "Cannot apply [DECIMAL, VARCHAR] to the '*' operator");
         assertParsingError("decimal1 * dateCol", "Cannot apply [DECIMAL, DATE] to the '*' operator");
         assertParsingError("decimal1 * timeCol", "Cannot apply [DECIMAL, TIME] to the '*' operator");
         assertParsingError("decimal1 * dateTimeCol", "Cannot apply [DECIMAL, TIMESTAMP] to the '*' operator");
         assertParsingError("decimal1 * offsetDateTimeCol", "Cannot apply [DECIMAL, TIMESTAMP_WITH_TIME_ZONE] to the '*' operator");
-
         assertParsingError("decimal1 * object", "Cannot apply [DECIMAL, OBJECT] to the '*' operator");
     }
 
     @Test
     public void testVarchar() {
-        assertParsingError("string1 * booleanTrue", "Cannot apply [BOOLEAN, BOOLEAN] to the '*' operator");
-
-        assertRow("string1 * byte1", EXPR0, BIGINT, 1L);
-        assertRow("string1 * byteMax", EXPR0, BIGINT, (long) Byte.MAX_VALUE);
-        assertRow("string2 * byteMax", EXPR0, BIGINT, 2L * Byte.MAX_VALUE);
-
-        assertRow("string1 * short1", EXPR0, BIGINT, 1L);
-        assertRow("string1 * shortMax", EXPR0, BIGINT, (long) Short.MAX_VALUE);
-        assertRow("string2 * shortMax", EXPR0, BIGINT, 2L * Short.MAX_VALUE);
-
-        assertRow("string1 * int1", EXPR0, BIGINT, 1L);
-        assertRow("string1 * intMax", EXPR0, BIGINT, (long) Integer.MAX_VALUE);
-        assertRow("string2 * intMax", EXPR0, BIGINT, 2L * Integer.MAX_VALUE);
-
-        assertRow("string1 * long1", EXPR0, BIGINT, 1L);
-        assertRow("string1 * longMax", EXPR0, BIGINT, Long.MAX_VALUE);
-        assertDataError("string2 * longMax", "BIGINT overflow");
-
-        assertRow("string1 * float1", EXPR0, REAL, 1.0f);
-        assertRow("string1 * floatMax", EXPR0, REAL, Float.MAX_VALUE);
-        //noinspection NumericOverflow
-        assertRow("string2 * floatMax", EXPR0, REAL, 2L * Float.MAX_VALUE);
-
-        assertRow("string1 * double1", EXPR0, DOUBLE, 1.0);
-        assertRow("string1 * doubleMax", EXPR0, DOUBLE, Double.MAX_VALUE);
-        //noinspection NumericOverflow
-        assertRow("string2 * doubleMax", EXPR0, DOUBLE, 2L * Double.MAX_VALUE);
-
-        assertRow("string1 * decimal1", EXPR0, DECIMAL, BigDecimal.valueOf(1));
-        assertRow("string1 * decimalBig", EXPR0, DECIMAL, getRecord().decimalBig);
-        assertRow("string2 * decimalBig", EXPR0, DECIMAL, BigDecimal.valueOf(2).multiply(getRecord().decimalBig));
-
-        assertRow("string1 * bigInteger1", EXPR0, DECIMAL, BigDecimal.valueOf(1));
-        assertRow("string1 * bigIntegerBig", EXPR0, DECIMAL, getRecord().decimalBig);
-        assertRow("string2 * bigIntegerBig", EXPR0, DECIMAL, BigDecimal.valueOf(2).multiply(getRecord().decimalBig));
-
-        assertRow("string1 * string1", EXPR0, DOUBLE, 1.0);
-        assertRow("string2 * string2", EXPR0, DOUBLE, 4.0);
-        assertRow("string1 * stringBig", EXPR0, DOUBLE, Double.parseDouble(getRecord().stringBig));
-        assertDataError("string1 * stringFoo", "Cannot convert VARCHAR to DOUBLE");
-        assertRow("string1 * char1", EXPR0, DOUBLE, 1.0);
-        assertDataError("string1 * charF", "Cannot convert VARCHAR to DOUBLE");
-
-        assertParsingError("string1 * dateCol", "Cannot apply [DATE, DATE] to the '*' operator");
-        assertParsingError("string1 * timeCol", "Cannot apply [TIME, TIME] to the '*' operator");
-        assertParsingError("string1 * dateTimeCol", "Cannot apply [TIMESTAMP, TIMESTAMP] to the '*' operator");
-        assertParsingError("string1 * offsetDateTimeCol", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE] to the '*' operator");
-
+        assertParsingError("string1 * booleanTrue", "Cannot apply [VARCHAR, BOOLEAN] to the '*' operator");
+        assertParsingError("string1 * byte1", "Cannot apply [VARCHAR, TINYINT] to the '*' operator");
+        assertParsingError("string1 * short1", "Cannot apply [VARCHAR, SMALLINT] to the '*' operator");
+        assertParsingError("string1 * int1", "Cannot apply [VARCHAR, INTEGER] to the '*' operator");
+        assertParsingError("string1 * long1", "Cannot apply [VARCHAR, BIGINT] to the '*' operator");
+        assertParsingError("string1 * float1", "Cannot apply [VARCHAR, REAL] to the '*' operator");
+        assertParsingError("string1 * double1", "Cannot apply [VARCHAR, DOUBLE] to the '*' operator");
+        assertParsingError("string1 * decimal1", "Cannot apply [VARCHAR, DECIMAL] to the '*' operator");
+        assertParsingError("string1 * bigInteger1", "Cannot apply [VARCHAR, DECIMAL] to the '*' operator");
+        assertParsingError("string1 * string1", "Cannot apply [VARCHAR, VARCHAR] to the '*' operator");
+        assertParsingError("string1 * char1", "Cannot apply [VARCHAR, VARCHAR] to the '*' operator");
+        assertParsingError("string1 * dateCol", "Cannot apply [VARCHAR, DATE] to the '*' operator");
+        assertParsingError("string1 * timeCol", "Cannot apply [VARCHAR, TIME] to the '*' operator");
+        assertParsingError("string1 * dateTimeCol", "Cannot apply [VARCHAR, TIMESTAMP] to the '*' operator");
+        assertParsingError("string1 * offsetDateTimeCol", "Cannot apply [VARCHAR, TIMESTAMP_WITH_TIME_ZONE] to the '*' operator");
         assertParsingError("string1 * object", "Cannot apply [VARCHAR, OBJECT] to the '*' operator");
     }
 
@@ -511,8 +436,8 @@ public class MultiplyIntegrationTest extends ExpressionIntegrationTestBase {
         assertParsingError("dateCol * decimal1", "Cannot apply [DATE, DECIMAL] to the '*' operator");
         assertParsingError("dateCol * bigInteger1", "Cannot apply [DATE, DECIMAL] to the '*' operator");
 
-        assertParsingError("dateCol * string1", "Cannot apply [DATE, DATE] to the '*' operator");
-        assertParsingError("dateCol * char1", "Cannot apply [DATE, DATE] to the '*' operator");
+        assertParsingError("dateCol * string1", "Cannot apply [DATE, VARCHAR] to the '*' operator");
+        assertParsingError("dateCol * char1", "Cannot apply [DATE, VARCHAR] to the '*' operator");
 
         assertParsingError("dateCol * dateCol", "Cannot apply [DATE, DATE] to the '*' operator");
         assertParsingError("dateCol * timeCol", "Cannot apply [DATE, TIME] to the '*' operator");
@@ -537,8 +462,8 @@ public class MultiplyIntegrationTest extends ExpressionIntegrationTestBase {
         assertParsingError("timeCol * decimal1", "Cannot apply [TIME, DECIMAL] to the '*' operator");
         assertParsingError("timeCol * bigInteger1", "Cannot apply [TIME, DECIMAL] to the '*' operator");
 
-        assertParsingError("timeCol * string1", "Cannot apply [TIME, TIME] to the '*' operator");
-        assertParsingError("timeCol * char1", "Cannot apply [TIME, TIME] to the '*' operator");
+        assertParsingError("timeCol * string1", "Cannot apply [TIME, VARCHAR] to the '*' operator");
+        assertParsingError("timeCol * char1", "Cannot apply [TIME, VARCHAR] to the '*' operator");
 
         assertParsingError("timeCol * dateCol", "Cannot apply [TIME, DATE] to the '*' operator");
         assertParsingError("timeCol * timeCol", "Cannot apply [TIME, TIME] to the '*' operator");
@@ -563,8 +488,8 @@ public class MultiplyIntegrationTest extends ExpressionIntegrationTestBase {
         assertParsingError("dateTimeCol * decimal1", "Cannot apply [TIMESTAMP, DECIMAL] to the '*' operator");
         assertParsingError("dateTimeCol * bigInteger1", "Cannot apply [TIMESTAMP, DECIMAL] to the '*' operator");
 
-        assertParsingError("dateTimeCol * string1", "Cannot apply [TIMESTAMP, TIMESTAMP] to the '*' operator");
-        assertParsingError("dateTimeCol * char1", "Cannot apply [TIMESTAMP, TIMESTAMP] to the '*' operator");
+        assertParsingError("dateTimeCol * string1", "Cannot apply [TIMESTAMP, VARCHAR] to the '*' operator");
+        assertParsingError("dateTimeCol * char1", "Cannot apply [TIMESTAMP, VARCHAR] to the '*' operator");
 
         assertParsingError("dateTimeCol * dateCol", "Cannot apply [TIMESTAMP, DATE] to the '*' operator");
         assertParsingError("dateTimeCol * timeCol", "Cannot apply [TIMESTAMP, TIME] to the '*' operator");
@@ -589,8 +514,8 @@ public class MultiplyIntegrationTest extends ExpressionIntegrationTestBase {
         assertParsingError("offsetDateTimeCol * decimal1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, DECIMAL] to the '*' operator");
         assertParsingError("offsetDateTimeCol * bigInteger1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, DECIMAL] to the '*' operator");
 
-        assertParsingError("offsetDateTimeCol * string1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE] to the '*' operator");
-        assertParsingError("offsetDateTimeCol * char1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE] to the '*' operator");
+        assertParsingError("offsetDateTimeCol * string1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, VARCHAR] to the '*' operator");
+        assertParsingError("offsetDateTimeCol * char1", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, VARCHAR] to the '*' operator");
 
         assertParsingError("offsetDateTimeCol * dateCol", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, DATE] to the '*' operator");
         assertParsingError("offsetDateTimeCol * timeCol", "Cannot apply [TIMESTAMP_WITH_TIME_ZONE, TIME] to the '*' operator");

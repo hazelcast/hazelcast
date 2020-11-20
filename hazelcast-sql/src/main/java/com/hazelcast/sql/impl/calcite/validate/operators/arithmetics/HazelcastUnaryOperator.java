@@ -34,7 +34,6 @@ public final class HazelcastUnaryOperator extends SqlPrefixOperator implements S
             base.getName(),
             base.getKind(),
             base.getLeftPrec(),
-//            ReturnTypes.ARG0,
             new ReturnTypeInference(),
             new ReplaceUnknownOperandTypeInference(BIGINT),
             null

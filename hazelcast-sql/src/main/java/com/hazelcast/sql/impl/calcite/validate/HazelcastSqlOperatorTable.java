@@ -18,9 +18,8 @@ package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDivideOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlMonotonicBinaryOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.arithmetics.HazelcastBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.arithmetics.HazelcastUnaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
@@ -37,9 +36,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOpe
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastStringFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastSubstringFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastTrimFunction;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
 import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlBinaryOperator;
@@ -52,7 +49,6 @@ import org.apache.calcite.sql.SqlPrefixOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.fun.SqlCase;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
-import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.SqlOperandTypeChecker;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
@@ -61,9 +57,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastResources.RESOURCES;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAllNull;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.wrap;
 
 /**
  * Operator table.
@@ -83,7 +76,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     // TODO
     public static final SqlFunction CAST = new HazelcastSqlCastFunction();
 
-    //#region Predicates.
+    //#region Boolean predicates.
 
     public static final SqlBinaryOperator AND = HazelcastAndOrPredicate.AND;
     public static final SqlBinaryOperator OR = HazelcastAndOrPredicate.OR;
@@ -91,7 +84,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#endregion
 
-    //#region Comparison operators.
+    //#region Comparison predicates.
 
     public static final SqlBinaryOperator EQUALS = HazelcastComparisonPredicate.EQUALS;
     public static final SqlBinaryOperator NOT_EQUALS = HazelcastComparisonPredicate.NOT_EQUALS;
@@ -102,50 +95,19 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#endregion
 
-    //#region Arithmetic operators.
+    //#region Binary and unary operators.
 
-    // TODO
-    public static final SqlBinaryOperator PLUS = new HazelcastSqlMonotonicBinaryOperator(
-        "+",
-        SqlKind.PLUS,
-        SqlStdOperatorTable.PLUS.getLeftPrec(),
-        true,
-        HazelcastReturnTypes.PLUS,
-        HazelcastInferTypes.FIRST_KNOWN,
-        wrap(notAllNull(notAny(OperandTypes.PLUS_OPERATOR)))
-    );
-
-    // TODO
-    public static final SqlBinaryOperator MINUS = new HazelcastSqlMonotonicBinaryOperator(
-        "-",
-        SqlKind.MINUS,
-        SqlStdOperatorTable.MINUS.getLeftPrec(),
-        true,
-        HazelcastReturnTypes.MINUS,
-        HazelcastInferTypes.FIRST_KNOWN,
-        wrap(notAllNull(notAny(OperandTypes.MINUS_OPERATOR)))
-    );
-
-    // TODO
-    public static final SqlBinaryOperator MULTIPLY = new HazelcastSqlMonotonicBinaryOperator(
-        "*",
-        SqlKind.TIMES,
-        SqlStdOperatorTable.MULTIPLY.getLeftPrec(),
-        true,
-        HazelcastReturnTypes.MULTIPLY,
-        HazelcastInferTypes.FIRST_KNOWN,
-        wrap(notAllNull(notAny(OperandTypes.MULTIPLY_OPERATOR)))
-    );
-
-    // TODO
-    public static final SqlBinaryOperator DIVIDE = new HazelcastDivideOperator();
+    public static final SqlBinaryOperator PLUS = HazelcastBinaryOperator.PLUS;
+    public static final SqlBinaryOperator MINUS = HazelcastBinaryOperator.MINUS;
+    public static final SqlBinaryOperator MULTIPLY = HazelcastBinaryOperator.MULTIPLY;
+    public static final SqlBinaryOperator DIVIDE = HazelcastBinaryOperator.DIVIDE;
 
     public static final SqlPrefixOperator UNARY_PLUS = HazelcastUnaryOperator.PLUS;
     public static final SqlPrefixOperator UNARY_MINUS = HazelcastUnaryOperator.MINUS;
 
     //#endregion
 
-    //#region "IS" family of predicates.
+    //#region "IS" predicates.
 
     public static final SqlPostfixOperator IS_TRUE = HazelcastIsTrueFalseNullPredicate.IS_TRUE;
     public static final SqlPostfixOperator IS_NOT_TRUE = HazelcastIsTrueFalseNullPredicate.IS_NOT_TRUE;

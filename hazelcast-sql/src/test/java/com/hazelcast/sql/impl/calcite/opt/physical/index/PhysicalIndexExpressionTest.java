@@ -141,7 +141,7 @@ public class PhysicalIndexExpressionTest extends IndexOptimizerTestSupport {
 
     @Test
     public void test_column_expressionWithColumns() {
-        checkNoIndexForCondition("f=(1+ret)", "=(CAST($1):BIGINT(32), +(1:TINYINT(1), $0))");
+        checkNoIndexForCondition("f=(1+ret)", "=(CAST($1):BIGINT(32), +(1, CAST($0):BIGINT(32)))");
     }
 
     @Test
