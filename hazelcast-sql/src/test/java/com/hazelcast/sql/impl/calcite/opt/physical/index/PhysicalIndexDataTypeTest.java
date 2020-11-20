@@ -154,9 +154,9 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
     @Test
     public void test_tinyint() {
         checkIndexForCondition("f_tinyint=1", "index_tinyint", "=($2, 1:TINYINT(1))");
-        checkIndexForCondition("CAST(f_tinyint AS SMALLINT)=1", "index_tinyint", "=(CAST($2):SMALLINT(7), 1)");
-        checkIndexForCondition("CAST(f_tinyint AS INT)=1", "index_tinyint", "=(CAST($2):INTEGER(7), 1)");
-        checkIndexForCondition("CAST(f_tinyint AS BIGINT)=1", "index_tinyint", "=(CAST($2):BIGINT(7), 1)");
+        checkIndexForCondition("CAST(f_tinyint AS SMALLINT)=1", "index_tinyint", "=(CAST($2):SMALLINT(15), 1)");
+        checkIndexForCondition("CAST(f_tinyint AS INT)=1", "index_tinyint", "=(CAST($2):INTEGER(31), 1)");
+        checkIndexForCondition("CAST(f_tinyint AS BIGINT)=1", "index_tinyint", "=(CAST($2):BIGINT(63), 1)");
         checkIndexForCondition("CAST(f_tinyint AS DECIMAL)=1", "index_tinyint", "=(CAST($2):DECIMAL(38, 38), 1)");
         checkIndexForCondition("CAST(f_tinyint AS REAL)=1", "index_tinyint", "=(CAST($2):REAL, 1E0)");
         checkIndexForCondition("CAST(f_tinyint AS DOUBLE)=1", "index_tinyint", "=(CAST($2):DOUBLE, 1E0)");
@@ -170,8 +170,8 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
         checkNumericBasic("f_smallint", 3, "index_smallint", SMALLINT);
 
         checkNoIndexForCondition("CAST(f_smallint AS TINYINT)=1");
-        checkIndexForCondition("CAST(f_smallint AS INT)=1", "index_smallint", "=(CAST($3):INTEGER(15), 1)");
-        checkIndexForCondition("CAST(f_smallint AS BIGINT)=1", "index_smallint", "=(CAST($3):BIGINT(15), 1)");
+        checkIndexForCondition("CAST(f_smallint AS INT)=1", "index_smallint", "=(CAST($3):INTEGER(31), 1)");
+        checkIndexForCondition("CAST(f_smallint AS BIGINT)=1", "index_smallint", "=(CAST($3):BIGINT(63), 1)");
         checkIndexForCondition("CAST(f_smallint AS DECIMAL)=1", "index_smallint", "=(CAST($3):DECIMAL(38, 38), 1)");
         checkIndexForCondition("CAST(f_smallint AS REAL)=1", "index_smallint", "=(CAST($3):REAL, 1E0)");
         checkIndexForCondition("CAST(f_smallint AS DOUBLE)=1", "index_smallint", "=(CAST($3):DOUBLE, 1E0)");
@@ -186,7 +186,7 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
 
         checkNoIndexForCondition("CAST(f_int AS TINYINT)=1");
         checkNoIndexForCondition("CAST(f_int AS SMALLINT)=1");
-        checkIndexForCondition("CAST(f_int AS BIGINT)=1", "index_int", "=(CAST($4):BIGINT(31), 1)");
+        checkIndexForCondition("CAST(f_int AS BIGINT)=1", "index_int", "=(CAST($4):BIGINT(63), 1)");
         checkIndexForCondition("CAST(f_int AS DECIMAL)=1", "index_int", "=(CAST($4):DECIMAL(38, 38), 1)");
         checkIndexForCondition("CAST(f_int AS REAL)=1", "index_int", "=(CAST($4):REAL, 1E0)");
         checkIndexForCondition("CAST(f_int AS DOUBLE)=1", "index_int", "=(CAST($4):DOUBLE, 1E0)");

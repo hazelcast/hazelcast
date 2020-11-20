@@ -115,70 +115,48 @@ public class AbsFunctionIntegrationTest extends SqlExpressionIntegrationTestSupp
     public void testParameter() {
         put(0);
 
-        checkParameter((byte) 0, BigDecimal.ZERO);
-        checkParameter((byte) 1, BigDecimal.ONE);
-        checkParameter((byte) -1, BigDecimal.ONE);
-        checkParameter(Byte.MAX_VALUE, new BigDecimal(Byte.MAX_VALUE));
-        checkParameter(Byte.MIN_VALUE, new BigDecimal(Byte.MIN_VALUE).negate());
-        checkParameter(Byte.toString(Byte.MAX_VALUE), new BigDecimal(Byte.MAX_VALUE));
-        checkParameter(Byte.toString(Byte.MIN_VALUE), new BigDecimal(Byte.MIN_VALUE).negate());
+        long zero = 0L;
+        long one = 1L;
 
-        checkParameter((short) 0, BigDecimal.ZERO);
-        checkParameter((short) 1, BigDecimal.ONE);
-        checkParameter((short) -1, BigDecimal.ONE);
-        checkParameter(Short.MAX_VALUE, new BigDecimal(Short.MAX_VALUE));
-        checkParameter(Short.MIN_VALUE, new BigDecimal(Short.MIN_VALUE).negate());
-        checkParameter(Short.toString(Short.MAX_VALUE), new BigDecimal(Short.MAX_VALUE));
-        checkParameter(Short.toString(Short.MIN_VALUE), new BigDecimal(Short.MIN_VALUE).negate());
+        checkParameter((byte) 0, zero);
+        checkParameter((byte) 1, one);
+        checkParameter((byte) -1, one);
+        checkParameter(Byte.MAX_VALUE, (long) Byte.MAX_VALUE);
+        checkParameter(Byte.MIN_VALUE, (long) Byte.MIN_VALUE * -1);
 
-        checkParameter(0, BigDecimal.ZERO);
-        checkParameter(1, BigDecimal.ONE);
-        checkParameter(-1, BigDecimal.ONE);
-        checkParameter(Integer.MAX_VALUE, new BigDecimal(Integer.MAX_VALUE));
-        checkParameter(Integer.MIN_VALUE, new BigDecimal(Integer.MIN_VALUE).negate());
-        checkParameter(Integer.toString(Integer.MAX_VALUE), new BigDecimal(Integer.MAX_VALUE));
-        checkParameter(Integer.toString(Integer.MIN_VALUE), new BigDecimal(Integer.MIN_VALUE).negate());
+        checkParameter((short) 0, zero);
+        checkParameter((short) 1, one);
+        checkParameter((short) -1, one);
+        checkParameter(Short.MAX_VALUE, (long) Short.MAX_VALUE);
+        checkParameter(Short.MIN_VALUE, (long) Short.MIN_VALUE * -1);
 
-        checkParameter(0L, BigDecimal.ZERO);
-        checkParameter(1L, BigDecimal.ONE);
-        checkParameter(-1L, BigDecimal.ONE);
-        checkParameter(Long.MAX_VALUE, new BigDecimal(Long.MAX_VALUE));
-        checkParameter(Long.MIN_VALUE, new BigDecimal(Long.MIN_VALUE).negate());
-        checkParameter(Long.toString(Long.MAX_VALUE), new BigDecimal(Long.MAX_VALUE));
-        checkParameter(Long.toString(Long.MIN_VALUE), new BigDecimal(Long.MIN_VALUE).negate());
+        checkParameter(0, zero);
+        checkParameter(1, one);
+        checkParameter(-1, one);
+        checkParameter(Integer.MAX_VALUE, (long) Integer.MAX_VALUE);
+        checkParameter(Integer.MIN_VALUE, (long) Integer.MIN_VALUE * -1);
 
-        checkParameter(BigInteger.ZERO, BigDecimal.ZERO);
-        checkParameter(BigInteger.ONE, BigDecimal.ONE);
-        checkParameter(BigInteger.ONE.negate(), BigDecimal.ONE);
+        checkParameter(0L, zero);
+        checkParameter(1L, one);
+        checkParameter(-1L, one);
+        checkParameter(Long.MAX_VALUE, Long.MAX_VALUE);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "BIGINT overflow in ABS function (consider adding an explicit CAST to DECIMAL)", Long.MIN_VALUE);
 
-        checkParameter(BigDecimal.ZERO, BigDecimal.ZERO);
-        checkParameter(BigDecimal.ONE, BigDecimal.ONE);
-        checkParameter(BigDecimal.ONE.negate(), BigDecimal.ONE);
-        checkParameter(new BigDecimal("1.1"), new BigDecimal("1.1"));
-        checkParameter(new BigDecimal("-1.1"), new BigDecimal("1.1"));
-        checkParameter("1.1", new BigDecimal("1.1"));
-        checkParameter("-1.1", new BigDecimal("1.1"));
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to DECIMAL", 0.0f);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 0.0d);
-
-        checkParameter('0', BigDecimal.ZERO);
-        checkParameter('1', BigDecimal.ONE);
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", "bad");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", 'b');
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to DECIMAL", LOCAL_DATE_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to DECIMAL", LOCAL_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to DECIMAL", LOCAL_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to DECIMAL", OFFSET_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to DECIMAL", true);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BOOLEAN to BIGINT", true);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to BIGINT", "0.0");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT", BigInteger.ZERO);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT", BigDecimal.ZERO);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to BIGINT", 0.0f);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to BIGINT", 0.0d);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to BIGINT", LOCAL_DATE_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to BIGINT", LOCAL_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to BIGINT", LOCAL_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to BIGINT", OFFSET_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to BIGINT", new ExpressionValue.ObjectVal());
     }
 
     private void checkParameter(Object parameterValue, Object expectedValue) {
-        check("?", SqlColumnType.DECIMAL, expectedValue, parameterValue);
+        check("?", SqlColumnType.BIGINT, expectedValue, parameterValue);
     }
 
     @Test

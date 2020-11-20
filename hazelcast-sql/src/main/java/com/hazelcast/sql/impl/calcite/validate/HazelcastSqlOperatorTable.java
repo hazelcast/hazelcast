@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDivideOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlMonotonicBinaryOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastFloorCeilFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastRandFunction;
@@ -38,13 +39,11 @@ import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastTrimFun
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
-import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunction;
-import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlPostfixOperator;
@@ -66,7 +65,6 @@ import static com.hazelcast.sql.impl.calcite.validate.HazelcastResources.RESOURC
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAllNull;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.wrap;
-import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 
 /**
  * Operator table.
@@ -178,15 +176,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#region Math functions.
 
-    // TODO
-    public static final SqlFunction ABS = new SqlFunction(
-        "ABS",
-        SqlKind.OTHER_FUNCTION,
-        HazelcastReturnTypes.UNARY_MINUS,
-        new ReplaceUnknownOperandTypeInference(DECIMAL),
-        wrap(notAny(OperandTypes.NUMERIC_OR_INTERVAL)),
-        SqlFunctionCategory.NUMERIC
-    );
+    public static final SqlFunction ABS = HazelcastAbsFunction.INSTANCE;
 
     public static final SqlFunction SIGN = HazelcastSignFunction.INSTANCE;
     public static final SqlFunction RAND = HazelcastRandFunction.INSTANCE;

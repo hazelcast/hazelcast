@@ -43,19 +43,40 @@ public class TypedOperandChecker extends AbstractOperandChecker {
     public static final TypedOperandChecker DOUBLE = new TypedOperandChecker(SqlTypeName.DOUBLE);
 
     private final SqlTypeName typeName;
+    private final RelDataType type;
 
     private TypedOperandChecker(SqlTypeName typeName) {
         this.typeName = typeName;
+
+        type = null;
+    }
+
+    private TypedOperandChecker(RelDataType type) {
+        typeName = type.getSqlTypeName();
+
+        this.type = type;
+    }
+
+    public static TypedOperandChecker forType(RelDataType type) {
+        return new TypedOperandChecker(type);
     }
 
     @Override
     protected boolean matchesTargetType(RelDataType operandType) {
-        return operandType.getSqlTypeName() == typeName;
+        if (type != null) {
+            return type.equals(operandType);
+        } else {
+            return operandType.getSqlTypeName() == typeName;
+        }
     }
 
     @Override
     protected RelDataType getTargetType(RelDataTypeFactory factory, boolean nullable) {
-        return SqlNodeUtil.createType(factory, typeName, nullable);
+        if (type != null) {
+            return factory.createTypeWithNullability(type, nullable);
+        } else {
+            return SqlNodeUtil.createType(factory, typeName, nullable);
+        }
     }
 
     @Override
@@ -90,6 +111,7 @@ public class TypedOperandChecker extends AbstractOperandChecker {
             newOperandType
         );
 
+        // TODO: Perhaps we do not need this
         // Let validator know about the type change.
         validator.setKnownAndValidatedNodeType(operand, newOperandType);
 

@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators.math;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.NumericOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
@@ -60,20 +61,12 @@ public final class HazelcastAbsFunction extends SqlFunction implements SqlCallBi
 
         RelDataType operandType = bindingOverride.getOperandType(0);
 
-        // TODO: Get the target type, then create checker for it, then invoke the checker.
         if (HazelcastTypeSystem.isInteger(operandType)) {
             int bitWidth = HazelcastIntegerType.bitWidthOf(operandType);
 
-            RelDataType newOperandType = HazelcastIntegerType.of(bitWidth + 1, operandType.isNullable());
-            int newBitWidth = HazelcastIntegerType.bitWidthOf(newOperandType);
-
-            if (bitWidth != newBitWidth) {
-                HazelcastTypeCoercion coercion = (HazelcastTypeCoercion) binding.getValidator().getTypeCoercion();
-
-                coercion.coerceOperandType(bindingOverride.getScope(), bindingOverride.getCall(), 0, newOperandType);
-            }
+            operandType = HazelcastIntegerType.of(bitWidth + 1, operandType.isNullable());
         }
 
-        return NumericOperandChecker.INSTANCE.check(bindingOverride, throwOnFailure, 0);
+        return TypedOperandChecker.forType(operandType).check(bindingOverride, throwOnFailure, 0);
     }
 }

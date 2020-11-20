@@ -21,8 +21,10 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.sql.SqlBasicTypeNameSpec;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
+import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
@@ -154,19 +156,35 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     }
 
     @Override
-    public boolean coerceOperandType(SqlValidatorScope scope, SqlCall call, int index, RelDataType to) {
+    public boolean coerceOperandType(SqlValidatorScope scope, SqlCall call, int index, RelDataType targetType) {
         SqlNode operand = call.getOperandList().get(index);
 
         // just update the inferred type if casting is not needed
-        if (!needToCast(scope, operand, to)) {
-            updateInferredType(operand, to);
+        if (!needToCast(scope, operand, targetType)) {
+            updateInferredType(operand, targetType);
+
             return false;
         }
 
-        SqlNode cast = makeCast(operand, to);
+        SqlDataTypeSpec targetTypeSpec;
+
+        if (targetType instanceof HazelcastIntegerType) {
+            HazelcasIntegerTypeNameSpec targetTypeNameSpec = new HazelcasIntegerTypeNameSpec((HazelcastIntegerType) targetType);
+
+            targetTypeSpec = new SqlDataTypeSpec(
+                targetTypeNameSpec,
+                SqlParserPos.ZERO
+            );
+        } else {
+            targetTypeSpec = SqlTypeUtil.convertTypeToSpec(targetType);
+        }
+
+        SqlNode cast = HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, operand, targetTypeSpec);
+
         call.setOperand(index, cast);
-        // derive the type of the newly created CAST immediately
+
         validator.deriveType(scope, cast);
+
         return true;
     }
 

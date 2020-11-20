@@ -137,6 +137,10 @@ public final class HazelcastIntegerType extends BasicSqlType {
         computeDigest();
     }
 
+    public int getBitWidth() {
+        return bitWidth;
+    }
+
     @Override
     protected void generateTypeString(StringBuilder sb, boolean withDetail) {
         super.generateTypeString(sb, withDetail);
