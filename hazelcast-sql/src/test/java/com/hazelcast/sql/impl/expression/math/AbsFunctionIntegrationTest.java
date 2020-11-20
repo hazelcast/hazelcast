@@ -85,12 +85,7 @@ public class AbsFunctionIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkColumn(Double.NEGATIVE_INFINITY, SqlColumnType.DOUBLE, Double.POSITIVE_INFINITY);
         checkColumn(Double.NaN, SqlColumnType.DOUBLE, Double.NaN);
 
-        checkColumn("0", SqlColumnType.DECIMAL, BigDecimal.ZERO);
-        checkColumn("1.1", SqlColumnType.DECIMAL, new BigDecimal("1.1"));
-        checkColumn("-1.1", SqlColumnType.DECIMAL, new BigDecimal("1.1"));
-        checkColumnFailure("a", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-        checkColumnFailure('a', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-
+        checkColumnFailure("0", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'ABS' function (consider adding an explicit CAST)");
         checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply [DATE] to the 'ABS' function (consider adding an explicit CAST)");
         checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIME] to the 'ABS' function (consider adding an explicit CAST)");
         checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP] to the 'ABS' function (consider adding an explicit CAST)");
@@ -163,53 +158,43 @@ public class AbsFunctionIntegrationTest extends SqlExpressionIntegrationTestSupp
     public void testLiteral() {
         put(0);
 
-        checkExactLiteral(1, SqlColumnType.TINYINT, (byte) 1);
-        checkExactLiteral(0, SqlColumnType.TINYINT, (byte) 0);
-        checkExactLiteral(-1, SqlColumnType.TINYINT, (byte) 1);
+        checkLiteral(1, SqlColumnType.TINYINT, (byte) 1);
+        checkLiteral(0, SqlColumnType.TINYINT, (byte) 0);
+        checkLiteral(-1, SqlColumnType.TINYINT, (byte) 1);
 
-        checkExactLiteral(Byte.MAX_VALUE - 1, SqlColumnType.SMALLINT, (short) (Byte.MAX_VALUE - 1));
-        checkExactLiteral(Byte.MAX_VALUE, SqlColumnType.SMALLINT, (short) Byte.MAX_VALUE);
-        checkExactLiteral(Byte.MIN_VALUE, SqlColumnType.SMALLINT, (short) (Byte.MAX_VALUE + 1));
+        checkLiteral(Byte.MAX_VALUE - 1, SqlColumnType.SMALLINT, (short) (Byte.MAX_VALUE - 1));
+        checkLiteral(Byte.MAX_VALUE, SqlColumnType.SMALLINT, (short) Byte.MAX_VALUE);
+        checkLiteral(Byte.MIN_VALUE, SqlColumnType.SMALLINT, (short) (Byte.MAX_VALUE + 1));
 
-        checkExactLiteral(Short.MAX_VALUE - 1, SqlColumnType.INTEGER, Short.MAX_VALUE - 1);
-        checkExactLiteral(Short.MAX_VALUE, SqlColumnType.INTEGER, (int) Short.MAX_VALUE);
-        checkExactLiteral(Short.MIN_VALUE, SqlColumnType.INTEGER, Short.MAX_VALUE + 1);
+        checkLiteral(Short.MAX_VALUE - 1, SqlColumnType.INTEGER, Short.MAX_VALUE - 1);
+        checkLiteral(Short.MAX_VALUE, SqlColumnType.INTEGER, (int) Short.MAX_VALUE);
+        checkLiteral(Short.MIN_VALUE, SqlColumnType.INTEGER, Short.MAX_VALUE + 1);
 
-        checkExactLiteral(Integer.MAX_VALUE - 1, SqlColumnType.BIGINT, (long) (Integer.MAX_VALUE - 1));
-        checkExactLiteral(Integer.MAX_VALUE, SqlColumnType.BIGINT, (long) Integer.MAX_VALUE);
-        checkExactLiteral(Integer.MIN_VALUE, SqlColumnType.BIGINT, (long) Integer.MAX_VALUE + 1);
+        checkLiteral(Integer.MAX_VALUE - 1, SqlColumnType.BIGINT, (long) (Integer.MAX_VALUE - 1));
+        checkLiteral(Integer.MAX_VALUE, SqlColumnType.BIGINT, (long) Integer.MAX_VALUE);
+        checkLiteral(Integer.MIN_VALUE, SqlColumnType.BIGINT, (long) Integer.MAX_VALUE + 1);
 
-        checkExactLiteral(Long.MAX_VALUE - 1, SqlColumnType.BIGINT, Long.MAX_VALUE - 1);
-        checkExactLiteral(Long.MAX_VALUE, SqlColumnType.BIGINT, Long.MAX_VALUE);
+        checkLiteral(Long.MAX_VALUE - 1, SqlColumnType.BIGINT, Long.MAX_VALUE - 1);
+        checkLiteral(Long.MAX_VALUE, SqlColumnType.BIGINT, Long.MAX_VALUE);
 
-        check("null", SqlColumnType.DECIMAL, null);
-        checkExactLiteral("1.1", SqlColumnType.DECIMAL, new BigDecimal("1.1"));
-        checkExactLiteral("0.0", SqlColumnType.DECIMAL, new BigDecimal("0.0"));
-        checkExactLiteral("-1.1", SqlColumnType.DECIMAL, new BigDecimal("1.1"));
+        check("null", SqlColumnType.BIGINT, null);
+        checkLiteral("1.1", SqlColumnType.DECIMAL, new BigDecimal("1.1"));
+        checkLiteral("0.0", SqlColumnType.DECIMAL, new BigDecimal("0.0"));
+        checkLiteral("-1.1", SqlColumnType.DECIMAL, new BigDecimal("1.1"));
 
-        checkInexactLiteral("0.0E0", SqlColumnType.DOUBLE, 0.0d);
-        checkInexactLiteral("-0.0E0", SqlColumnType.DOUBLE, 0.0d);
-        checkInexactLiteral("1.1E0", SqlColumnType.DOUBLE, 1.1d);
-        checkInexactLiteral("-1.1E0", SqlColumnType.DOUBLE, 1.1d);
+        checkLiteral("0.0E0", SqlColumnType.DOUBLE, 0.0d);
+        checkLiteral("-0.0E0", SqlColumnType.DOUBLE, 0.0d);
+        checkLiteral("1.1E0", SqlColumnType.DOUBLE, 1.1d);
+        checkLiteral("-1.1E0", SqlColumnType.DOUBLE, 1.1d);
 
         checkFailure(Long.MIN_VALUE, SqlErrorCode.DATA_EXCEPTION, "BIGINT overflow in ABS function (consider adding an explicit CAST to DECIMAL)");
 
-        checkFailure("'a'", SqlErrorCode.PARSING, "Literal ''a'' can not be parsed to type 'DECIMAL'");
         checkFailure("true", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'ABS' function (consider adding an explicit CAST)");
-        checkFailure("false", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'ABS' function (consider adding an explicit CAST)");
+        checkFailure("'a'", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'ABS' function (consider adding an explicit CAST)");
     }
 
-    private void checkExactLiteral(Object literal, SqlColumnType expectedType, Object expectedValue) {
-        String literalString = literal.toString();
-
-        check(literalString, expectedType, expectedValue);
-        check("'" + literalString + "'", SqlColumnType.DECIMAL, new BigDecimal(expectedValue.toString()));
-    }
-
-    private void checkInexactLiteral(Object literal, SqlColumnType expectedType, double expectedValue) {
-        String literalString = literal.toString();
-
-        check(literalString, expectedType, expectedValue);
+    private void checkLiteral(Object literal, SqlColumnType expectedType, Object expectedValue) {
+        check(literal.toString(), expectedType, expectedValue);
     }
 
     private void check(Object operand, SqlColumnType expectedType, Object expectedValue, Object... params) {

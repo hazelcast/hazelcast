@@ -18,10 +18,8 @@ package com.hazelcast.sql.impl.calcite.validate.operators.math;
 
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
 import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
-import com.hazelcast.sql.impl.calcite.validate.operand.NumericOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.rel.type.RelDataType;
@@ -67,6 +65,16 @@ public final class HazelcastAbsFunction extends SqlFunction implements SqlCallBi
             operandType = HazelcastIntegerType.of(bitWidth + 1, operandType.isNullable());
         }
 
-        return TypedOperandChecker.forType(operandType).check(bindingOverride, throwOnFailure, 0);
+        TypedOperandChecker checker = TypedOperandChecker.forType(operandType);
+
+        if (checker.isNumeric()) {
+            return checker.check(bindingOverride, throwOnFailure, 0);
+        }
+
+        if (throwOnFailure) {
+            throw bindingOverride.newValidationSignatureError();
+        } else {
+            return false;
+        }
     }
 }

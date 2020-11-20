@@ -30,7 +30,7 @@ import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public class TypedOperandChecker extends AbstractOperandChecker {
+public final class TypedOperandChecker extends AbstractOperandChecker {
 
     public static final TypedOperandChecker BOOLEAN = new TypedOperandChecker(SqlTypeName.BOOLEAN);
     public static final TypedOperandChecker VARCHAR = new TypedOperandChecker(SqlTypeName.VARCHAR);
@@ -141,7 +141,7 @@ public class TypedOperandChecker extends AbstractOperandChecker {
         return SqlToQueryType.map(typeName);
     }
 
-    private boolean isNumeric() {
+    public boolean isNumeric() {
         return getTargetHazelcastType().getTypeFamily().isNumeric();
     }
 }

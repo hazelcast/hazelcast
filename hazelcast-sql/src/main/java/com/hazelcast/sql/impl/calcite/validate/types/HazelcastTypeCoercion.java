@@ -21,7 +21,6 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlBasicTypeNameSpec;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlDataTypeSpec;
