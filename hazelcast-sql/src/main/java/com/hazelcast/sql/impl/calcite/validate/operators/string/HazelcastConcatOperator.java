@@ -19,39 +19,34 @@ package com.hazelcast.sql.impl.calcite.validate.operators.string;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastBinaryOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.param.VarcharParameterConverter;
-import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlBinaryOperator;
-import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
-import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.wrap;
+import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
-public final class HazelcastConcatFunction extends SqlBinaryOperator implements SqlCallBindingManualOverride {
+public final class HazelcastConcatOperator extends HazelcastBinaryOperator {
 
-    public static final HazelcastConcatFunction INSTANCE = new HazelcastConcatFunction();
+    public static final HazelcastConcatOperator INSTANCE = new HazelcastConcatOperator();
 
-    private HazelcastConcatFunction() {
+    private HazelcastConcatOperator() {
         super(
             "||",
             SqlKind.OTHER,
             SqlStdOperatorTable.CONCAT.getLeftPrec(),
             true,
-            ReturnTypes.DYADIC_STRING_SUM_PRECISION_NULLABLE,
-            new ReplaceUnknownOperandTypeInference(VARCHAR),
-            wrap(notAny(OperandTypes.STRING_SAME_SAME))
+            wrap(ReturnTypes.DYADIC_STRING_SUM_PRECISION_NULLABLE),
+            new ReplaceUnknownOperandTypeInference(VARCHAR)
         );
     }
 
@@ -61,14 +56,12 @@ public final class HazelcastConcatFunction extends SqlBinaryOperator implements 
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
-        SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
+    public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
+        HazelcastSqlValidator validator = binding.getValidator();
 
-        HazelcastSqlValidator validator = (HazelcastSqlValidator) binding.getValidator();
-
-        for (int i = 0; i < bindingOverride.getOperandCount(); i++) {
-            SqlNode operand = bindingOverride.operand(i);
-            RelDataType operandType = bindingOverride.getOperandType(i);
+        for (int i = 0; i < binding.getOperandCount(); i++) {
+            SqlNode operand = binding.operand(i);
+            RelDataType operandType = binding.getOperandType(i);
 
             if (operandType.getSqlTypeName() != VARCHAR) {
                 // Coerce everything to VARCHAR
@@ -79,13 +72,13 @@ public final class HazelcastConcatFunction extends SqlBinaryOperator implements 
                 );
 
                 validator.getTypeCoercion().coerceOperandType(
-                    bindingOverride.getScope(),
-                    bindingOverride.getCall(),
+                    binding.getScope(),
+                    binding.getCall(),
                     i,
                     newOperandType
                 );
 
-                validator.setKnownAndValidatedNodeType(bindingOverride.operand(i), newOperandType);
+                validator.setKnownAndValidatedNodeType(binding.operand(i), newOperandType);
             }
 
             // Set parameter converters

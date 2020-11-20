@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.calcite.validate.operand;
 
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlDynamicParam;
@@ -32,7 +32,7 @@ public abstract class AbstractOperandChecker implements OperandChecker {
     }
 
     @Override
-    public boolean check(SqlCallBindingOverride callBinding, boolean throwOnFailure, int operandIndex) {
+    public boolean check(HazelcastCallBinding callBinding, boolean throwOnFailure, int operandIndex) {
         HazelcastSqlValidator validator = callBinding.getValidator();
 
         SqlNode operand = callBinding.operand(operandIndex);
@@ -82,7 +82,7 @@ public abstract class AbstractOperandChecker implements OperandChecker {
 
     protected abstract boolean coerce(
         HazelcastSqlValidator validator,
-        SqlCallBindingOverride callBinding,
+        HazelcastCallBinding callBinding,
         SqlNode operand,
         RelDataType operandType,
         int operandIndex

@@ -17,16 +17,14 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.string;
 
 import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingSignatureErrorAware;
-import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBindingSignatureErrorAware;
 import com.hazelcast.sql.impl.calcite.validate.operand.AnyOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCall;
-import org.apache.calcite.sql.SqlCallBinding;
-import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
@@ -43,13 +41,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
+import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
+
 /**
  * Our own implementation of the TRIM function that has custom operand type inference to allow for dynamic parameters.
  * <p>
  * Code of some methods is copy-pasted from the Calcite's {@link SqlTrimFunction}, because it is not extensible enough.
  */
-public final class HazelcastTrimFunction extends SqlFunction implements SqlCallBindingManualOverride,
-    SqlCallBindingSignatureErrorAware {
+public final class HazelcastTrimFunction extends HazelcastFunction implements HazelcastCallBindingSignatureErrorAware {
 
     public static final HazelcastTrimFunction INSTANCE = new HazelcastTrimFunction();
 
@@ -57,9 +56,8 @@ public final class HazelcastTrimFunction extends SqlFunction implements SqlCallB
         super(
             "TRIM",
             SqlKind.TRIM,
-            ReturnTypes.ARG2_NULLABLE,
+            wrap(ReturnTypes.ARG2_NULLABLE),
             new ReplaceUnknownOperandTypeInference(SqlTypeName.VARCHAR),
-            null,
             SqlFunctionCategory.STRING
         );
     }
@@ -70,22 +68,20 @@ public final class HazelcastTrimFunction extends SqlFunction implements SqlCallB
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
-        SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
-
-        if (bindingOverride.getOperandCount() == 2) {
+    public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
+        if (binding.getOperandCount() == 2) {
             return new CompositeOperandChecker(
                 AnyOperandChecker.INSTANCE,
                 TypedOperandChecker.VARCHAR
-            ).check(bindingOverride, throwOnFailure);
+            ).check(binding, throwOnFailure);
         } else {
-            assert bindingOverride.getOperandCount() == 3;
+            assert binding.getOperandCount() == 3;
 
             return new CompositeOperandChecker(
                 AnyOperandChecker.INSTANCE,
                 TypedOperandChecker.VARCHAR,
                 TypedOperandChecker.VARCHAR
-            ).check(bindingOverride, throwOnFailure);
+            ).check(binding, throwOnFailure);
         }
     }
 

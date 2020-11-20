@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operand;
 
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -30,7 +30,7 @@ public final class NumericOperandChecker implements OperandChecker {
     }
 
     @Override
-    public boolean check(SqlCallBindingOverride binding, boolean throwOnFailure, int index) {
+    public boolean check(HazelcastCallBinding binding, boolean throwOnFailure, int index) {
         // Resolve a numeric checker for the operand
         SqlNode operand = binding.operand(index);
 

@@ -16,31 +16,30 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.math;
 
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCallBinding;
-import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
+import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 
 /**
  * Function that accepts a DOUBLE argument and produces a DOUBLE result.
  */
-public class HazelcastDoubleFunction extends SqlFunction implements SqlCallBindingManualOverride {
+public class HazelcastDoubleFunction extends HazelcastFunction {
     public HazelcastDoubleFunction(String name) {
         super(
             name,
             SqlKind.OTHER_FUNCTION,
-            ReturnTypes.DOUBLE_NULLABLE,
+            wrap(ReturnTypes.DOUBLE_NULLABLE),
             new ReplaceUnknownOperandTypeInference(BIGINT),
-            null,
             SqlFunctionCategory.NUMERIC
         );
     }
@@ -51,7 +50,7 @@ public class HazelcastDoubleFunction extends SqlFunction implements SqlCallBindi
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
-        return TypedOperandChecker.DOUBLE.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
+    public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
+        return TypedOperandChecker.DOUBLE.check(binding, throwOnFailure, 0);
     }
 }

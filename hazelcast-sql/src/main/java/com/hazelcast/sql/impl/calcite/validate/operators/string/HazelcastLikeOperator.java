@@ -16,18 +16,16 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.string;
 
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSpecialOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCall;
-import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlOperator;
-import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.fun.SqlLikeOperator;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -35,10 +33,11 @@ import org.apache.calcite.sql.parser.SqlParserUtil;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
+import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
 @SuppressWarnings("checkstyle:MagicNumber")
-public final class HazelcastLikeOperator extends SqlSpecialOperator implements SqlCallBindingManualOverride {
+public final class HazelcastLikeOperator extends HazelcastSpecialOperator {
 
     public static final HazelcastLikeOperator INSTANCE = new HazelcastLikeOperator();
 
@@ -50,9 +49,8 @@ public final class HazelcastLikeOperator extends SqlSpecialOperator implements S
             SqlKind.LIKE,
             PRECEDENCE,
             false,
-            ReturnTypes.BOOLEAN_NULLABLE,
-            new ReplaceUnknownOperandTypeInference(VARCHAR),
-            null
+            wrap(ReturnTypes.BOOLEAN_NULLABLE),
+            new ReplaceUnknownOperandTypeInference(VARCHAR)
         );
     }
 
@@ -62,22 +60,20 @@ public final class HazelcastLikeOperator extends SqlSpecialOperator implements S
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
-        SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
-
-        if (bindingOverride.getOperandCount() == 2) {
+    public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
+        if (binding.getOperandCount() == 2) {
             return new CompositeOperandChecker(
                 TypedOperandChecker.VARCHAR,
                 TypedOperandChecker.VARCHAR
-            ).check(bindingOverride, throwOnFailure);
+            ).check(binding, throwOnFailure);
         } else {
-            assert bindingOverride.getOperandCount() == 3;
+            assert binding.getOperandCount() == 3;
 
             return new CompositeOperandChecker(
                 TypedOperandChecker.VARCHAR,
                 TypedOperandChecker.VARCHAR,
                 TypedOperandChecker.VARCHAR
-            ).check(bindingOverride, throwOnFailure);
+            ).check(binding, throwOnFailure);
         }
     }
 

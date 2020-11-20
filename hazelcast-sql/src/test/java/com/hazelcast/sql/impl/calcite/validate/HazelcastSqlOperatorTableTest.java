@@ -17,14 +17,13 @@
 package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.internal.util.BiTuple;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverrideOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastOperandTypeCheckerAware;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSyntax;
-import org.apache.calcite.sql.type.SqlOperandTypeChecker;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -33,7 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static junit.framework.TestCase.assertNull;
-import static junit.framework.TestCase.fail;
+import static junit.framework.TestCase.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -59,21 +58,21 @@ public class HazelcastSqlOperatorTableTest {
      * or confirm explicitly that they override the binding manually.
      */
     @Test
-    public void testSqlBindingOverride() {
+    public void testOperandTypeChecker() {
         for (SqlOperator operator : HazelcastSqlOperatorTable.instance().getOperatorList()) {
-            SqlOperandTypeChecker operandTypeChecker = operator.getOperandTypeChecker();
+            boolean valid = operator instanceof HazelcastOperandTypeCheckerAware;
 
-            boolean valid = operator instanceof SqlCallBindingManualOverride
-                || operandTypeChecker instanceof SqlCallBindingOverrideOperandChecker;
+            assertTrue("Operator must implement " + HazelcastOperandTypeCheckerAware.class.getSimpleName() + ": " + operator.getClass().getSimpleName(), valid);
+        }
+    }
 
-            if (valid) {
-                continue;
-            }
+    @Test
+    public void testReturnTypeInference() {
+        for (SqlOperator operator : HazelcastSqlOperatorTable.instance().getOperatorList()) {
+            boolean valid = operator.getReturnTypeInference() instanceof HazelcastReturnTypeInference;
 
-            fail("Operator \"" + operator.getName() + "\" must have \""
-                + SqlCallBindingOverrideOperandChecker.class.getSimpleName() + "\" as top-level operand type checker or "
-                + "implement " + SqlCallBindingManualOverride.class.getSimpleName() + " interface"
-            );
+            assertTrue("Operator must have " + HazelcastReturnTypeInference.class.getSimpleName() + ": " + operator.getClass().getSimpleName(), valid);
         }
     }
 }
+

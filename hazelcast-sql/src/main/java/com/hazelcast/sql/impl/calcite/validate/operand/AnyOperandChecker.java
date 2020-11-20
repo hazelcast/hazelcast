@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operand;
 
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 
 public final class AnyOperandChecker implements OperandChecker {
 
@@ -27,7 +27,7 @@ public final class AnyOperandChecker implements OperandChecker {
     }
 
     @Override
-    public boolean check(SqlCallBindingOverride callBinding, boolean throwOnFailure, int i) {
+    public boolean check(HazelcastCallBinding callBinding, boolean throwOnFailure, int i) {
         return true;
     }
 }

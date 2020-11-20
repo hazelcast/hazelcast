@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.types;
+package com.hazelcast.sql.impl.calcite.validate.operators;
 
 import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;

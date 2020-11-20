@@ -17,15 +17,13 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.string;
 
 import com.google.common.collect.ImmutableList;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.sql.SqlCall;
-import org.apache.calcite.sql.SqlCallBinding;
-import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
@@ -35,10 +33,11 @@ import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
-public final class HazelcastSubstringFunction extends SqlFunction implements SqlCallBindingManualOverride {
+public final class HazelcastSubstringFunction extends HazelcastFunction {
 
     public static final HazelcastSubstringFunction INSTANCE = new HazelcastSubstringFunction();
 
@@ -46,9 +45,8 @@ public final class HazelcastSubstringFunction extends SqlFunction implements Sql
         super(
             "SUBSTRING",
             SqlKind.OTHER_FUNCTION,
-            ReturnTypes.ARG0_NULLABLE_VARYING,
+            wrap(ReturnTypes.ARG0_NULLABLE_VARYING),
             new ReplaceUnknownOperandTypeInference(new SqlTypeName[] { VARCHAR, INTEGER, INTEGER }),
-            null,
             SqlFunctionCategory.STRING
         );
     }
@@ -90,22 +88,20 @@ public final class HazelcastSubstringFunction extends SqlFunction implements Sql
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
-        SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
-
-        if (bindingOverride.getOperandCount() == 2) {
+    public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
+        if (binding.getOperandCount() == 2) {
             return new CompositeOperandChecker(
                 TypedOperandChecker.VARCHAR,
                 TypedOperandChecker.INTEGER
-            ).check(bindingOverride, throwOnFailure);
+            ).check(binding, throwOnFailure);
         } else {
-            assert bindingOverride.getOperandCount() == 3;
+            assert binding.getOperandCount() == 3;
 
             return new CompositeOperandChecker(
                 TypedOperandChecker.VARCHAR,
                 TypedOperandChecker.INTEGER,
                 TypedOperandChecker.INTEGER
-            ).check(bindingOverride, throwOnFailure);
+            ).check(binding, throwOnFailure);
         }
     }
 

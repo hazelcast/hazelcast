@@ -16,21 +16,20 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.math;
 
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.NumericOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
-import org.apache.calcite.sql.SqlCallBinding;
-import org.apache.calcite.sql.SqlFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
+import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 
-public final class HazelcastSignFunction extends SqlFunction implements SqlCallBindingManualOverride {
+public final class HazelcastSignFunction extends HazelcastFunction {
 
     public static final HazelcastSignFunction INSTANCE = new HazelcastSignFunction();
 
@@ -38,9 +37,8 @@ public final class HazelcastSignFunction extends SqlFunction implements SqlCallB
         super(
             "SIGN",
             SqlKind.OTHER_FUNCTION,
-            ReturnTypes.ARG0,
+            wrap(ReturnTypes.ARG0),
             new ReplaceUnknownOperandTypeInference(BIGINT),
-            null,
             SqlFunctionCategory.NUMERIC
         );
     }
@@ -51,9 +49,7 @@ public final class HazelcastSignFunction extends SqlFunction implements SqlCallB
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
-        SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
-
-        return NumericOperandChecker.INSTANCE.check(bindingOverride, throwOnFailure, 0);
+    public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
+        return NumericOperandChecker.INSTANCE.check(binding, throwOnFailure, 0);
     }
 }

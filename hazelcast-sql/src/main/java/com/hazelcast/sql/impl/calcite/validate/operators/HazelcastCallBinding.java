@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.binding;
+package com.hazelcast.sql.impl.calcite.validate.operators;
 
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
@@ -37,15 +37,11 @@ import java.util.StringJoiner;
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastResources.RESOURCES;
 
 /**
- * An overridden implementation of {@link SqlCallBinding} that produces a custom error message for signature validation
+ * A custom implementation of {@link SqlCallBinding} that produces a custom error message for signature validation
  * errors.
- * <p>
- * Operators must either use {@link SqlCallBindingOverrideOperandChecker} that replaces the original binding with
- * {@code SqlCallBindingOverride}, or define the {@link SqlCallBindingManualOverride} marker interface and replace
- * the original binding manually in the {@link SqlOperator#checkOperandTypes(SqlCallBinding, boolean)}.
  */
-public class SqlCallBindingOverride extends SqlCallBinding {
-    public SqlCallBindingOverride(SqlCallBinding binding) {
+public class HazelcastCallBinding extends SqlCallBinding {
+    public HazelcastCallBinding(SqlCallBinding binding) {
         super(binding.getValidator(), binding.getScope(), binding.getCall());
     }
 
@@ -110,8 +106,8 @@ public class SqlCallBindingOverride extends SqlCallBinding {
     private static Collection<SqlNode> getOperands(SqlCall call) {
         SqlOperator operator = call.getOperator();
 
-        if (operator instanceof SqlCallBindingSignatureErrorAware) {
-            return ((SqlCallBindingSignatureErrorAware) operator).getOperandsForSignatureError(call);
+        if (operator instanceof HazelcastCallBindingSignatureErrorAware) {
+            return ((HazelcastCallBindingSignatureErrorAware) operator).getOperandsForSignatureError(call);
         } else {
             return call.getOperandList();
         }

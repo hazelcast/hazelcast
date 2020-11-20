@@ -1,42 +1,55 @@
-package com.hazelcast.sql.impl.calcite.validate.operators.arithmetics;
+/*
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+package com.hazelcast.sql.impl.calcite.validate.operators.misc;
+
 import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastBinaryOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTrackingReturnTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
-import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlBinaryOperator;
-import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
-import org.apache.calcite.sql.SqlOperatorBinding;
 import org.apache.calcite.sql.SqlSyntax;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
-import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
+import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 
-public final class HazelcastBinaryOperator extends SqlBinaryOperator implements SqlCallBindingManualOverride {
+public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
 
-    public static final HazelcastBinaryOperator PLUS = new HazelcastBinaryOperator(SqlStdOperatorTable.PLUS);
-    public static final HazelcastBinaryOperator MINUS = new HazelcastBinaryOperator(SqlStdOperatorTable.MINUS);
-    public static final HazelcastBinaryOperator MULTIPLY = new HazelcastBinaryOperator(SqlStdOperatorTable.MULTIPLY);
-    public static final HazelcastBinaryOperator DIVIDE = new HazelcastBinaryOperator(SqlStdOperatorTable.DIVIDE);
+    public static final HazelcastArithmeticOperator PLUS = new HazelcastArithmeticOperator(SqlStdOperatorTable.PLUS);
+    public static final HazelcastArithmeticOperator MINUS = new HazelcastArithmeticOperator(SqlStdOperatorTable.MINUS);
+    public static final HazelcastArithmeticOperator MULTIPLY = new HazelcastArithmeticOperator(SqlStdOperatorTable.MULTIPLY);
+    public static final HazelcastArithmeticOperator DIVIDE = new HazelcastArithmeticOperator(SqlStdOperatorTable.DIVIDE);
 
-    private HazelcastBinaryOperator(SqlBinaryOperator base) {
+    private HazelcastArithmeticOperator(SqlBinaryOperator base) {
         super(
             base.getName(),
             base.getKind(),
             base.getLeftPrec(),
             true,
-            new ReturnTypeInference(),
-            new ReplaceUnknownOperandTypeInference(BIGINT),
-            null
+            wrap(ReturnTypes.ARG0),
+            new ReplaceUnknownOperandTypeInference(BIGINT) // TODO: Use custom inference, similar to comparisons
         );
     }
 
@@ -50,17 +63,14 @@ public final class HazelcastBinaryOperator extends SqlBinaryOperator implements 
         return SqlSyntax.BINARY;
     }
 
-    // TODO: This might be called before the inferUnknownOperands routine!
     @Override
-    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
-        SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
-
-        RelDataType firstType = bindingOverride.getOperandType(0);
-        RelDataType secondType = bindingOverride.getOperandType(1);
+    public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
+        RelDataType firstType = binding.getOperandType(0);
+        RelDataType secondType = binding.getOperandType(1);
 
         if (!isNumeric(firstType) || !isNumeric(secondType)) {
             if (throwOnFailure) {
-                throw bindingOverride.newValidationSignatureError();
+                throw binding.newValidationSignatureError();
             } else {
                 return false;
             }
@@ -97,7 +107,7 @@ public final class HazelcastBinaryOperator extends SqlBinaryOperator implements 
         return new CompositeOperandChecker(
             checker,
             checker
-        ).check(bindingOverride, throwOnFailure);
+        ).check(binding, throwOnFailure);
     }
 
     private static boolean isNumeric(RelDataType type) {
@@ -114,20 +124,6 @@ public final class HazelcastBinaryOperator extends SqlBinaryOperator implements 
 
             default:
                 return false;
-        }
-    }
-
-    // TODO: Apply to all operators
-    private static class ReturnTypeInference implements SqlReturnTypeInference {
-        @Override
-        public RelDataType inferReturnType(SqlOperatorBinding opBinding) {
-            RelDataType knownType = HazelcastTrackingReturnTypeInference.peek();
-
-            if (knownType != null) {
-                return knownType;
-            }
-
-            return opBinding.getOperandType(0);
         }
     }
 }

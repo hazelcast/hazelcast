@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTrackingReturnTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BooleanConverter;
 import com.hazelcast.sql.impl.type.converter.Converter;
@@ -38,7 +38,6 @@ import org.apache.calcite.sql2rel.SqlToRelConverter;
 
 import java.math.BigDecimal;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Set;
 
@@ -77,11 +76,11 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
                 try {
                     RelDataType type = validator.getValidatedNodeType(node);
 
-                    HazelcastTrackingReturnTypeInference.push(type);
+                    HazelcastReturnTypeInference.push(type);
                     try {
                         return blackboard.convertExpression(node);
                     } finally {
-                        HazelcastTrackingReturnTypeInference.poll();
+                        HazelcastReturnTypeInference.pop();
                     }
                 } finally {
                     callSet.remove(node);

@@ -16,11 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.string;
 
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
-import org.apache.calcite.sql.SqlCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
@@ -29,9 +28,10 @@ import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
+import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
-public final class HazelcastStringFunction extends SqlFunction implements SqlCallBindingManualOverride {
+public final class HazelcastStringFunction extends HazelcastFunction {
 
     public static final SqlFunction ASCII = HazelcastStringFunction.withIntegerReturn("ASCII");
     public static final SqlFunction INITCAP = HazelcastStringFunction.withStringReturn("INITCAP");
@@ -51,9 +51,8 @@ public final class HazelcastStringFunction extends SqlFunction implements SqlCal
         super(
             name,
             SqlKind.OTHER_FUNCTION,
-            returnTypeInference,
+            wrap(returnTypeInference),
             new ReplaceUnknownOperandTypeInference(VARCHAR),
-            null,
             SqlFunctionCategory.STRING
         );
     }
@@ -64,8 +63,8 @@ public final class HazelcastStringFunction extends SqlFunction implements SqlCal
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
-        return TypedOperandChecker.VARCHAR.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
+    public boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
+        return TypedOperandChecker.VARCHAR.check(callBinding, throwOnFailure, 0);
     }
 
     private static HazelcastStringFunction withStringReturn(String name) {

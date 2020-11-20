@@ -16,27 +16,26 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
-import org.apache.calcite.sql.SqlCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPrefixOperator;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
-import org.apache.calcite.sql.SqlPrefixOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
-public class HazelcastNotPredicate extends SqlPrefixOperator implements SqlCallBindingManualOverride {
+import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
+
+public class HazelcastNotPredicate extends HazelcastPrefixOperator {
     public HazelcastNotPredicate() {
         super(
             "NOT",
             SqlKind.NOT,
             SqlStdOperatorTable.NOT.getLeftPrec(),
-            ReturnTypes.BOOLEAN_NULLABLE,
-            InferTypes.BOOLEAN,
-            null
+            wrap(ReturnTypes.BOOLEAN_NULLABLE),
+            InferTypes.BOOLEAN
         );
     }
 
@@ -46,7 +45,7 @@ public class HazelcastNotPredicate extends SqlPrefixOperator implements SqlCallB
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
-        return TypedOperandChecker.BOOLEAN.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
+    public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
+        return TypedOperandChecker.BOOLEAN.check(binding, throwOnFailure, 0);
     }
 }

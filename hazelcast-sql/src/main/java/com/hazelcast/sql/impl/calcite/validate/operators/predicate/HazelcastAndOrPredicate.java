@@ -16,13 +16,12 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.OperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastBinaryOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import org.apache.calcite.sql.SqlBinaryOperator;
-import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -33,7 +32,9 @@ import org.apache.calcite.util.Litmus;
 
 import java.util.Arrays;
 
-public final class HazelcastAndOrPredicate extends SqlBinaryOperator implements SqlCallBindingManualOverride {
+import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
+
+public final class HazelcastAndOrPredicate extends HazelcastBinaryOperator {
 
     public static final HazelcastAndOrPredicate AND = new HazelcastAndOrPredicate(
         "AND",
@@ -53,20 +54,17 @@ public final class HazelcastAndOrPredicate extends SqlBinaryOperator implements 
             kind,
             prec,
             true,
-            ReturnTypes.BOOLEAN_NULLABLE,
-            InferTypes.BOOLEAN,
-            null
+            wrap(ReturnTypes.BOOLEAN_NULLABLE),
+            InferTypes.BOOLEAN
         );
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
-        SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
-
+    public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         OperandChecker[] checkers = new OperandChecker[binding.getOperandCount()];
         Arrays.fill(checkers, TypedOperandChecker.BOOLEAN);
 
-        return new CompositeOperandChecker(checkers).check(bindingOverride, throwOnFailure);
+        return new CompositeOperandChecker(checkers).check(binding, throwOnFailure);
     }
 
     @Override

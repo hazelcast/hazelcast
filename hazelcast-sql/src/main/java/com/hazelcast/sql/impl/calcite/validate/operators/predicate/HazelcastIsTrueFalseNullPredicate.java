@@ -17,9 +17,9 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
 import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPostfixOperator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastObjectType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -31,9 +31,10 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 
-public final class HazelcastIsTrueFalseNullPredicate extends SqlPostfixOperator implements SqlCallBindingManualOverride {
+public final class HazelcastIsTrueFalseNullPredicate extends HazelcastPostfixOperator {
 
     public static final HazelcastIsTrueFalseNullPredicate IS_TRUE =
         new HazelcastIsTrueFalseNullPredicate(SqlStdOperatorTable.IS_TRUE, false);
@@ -60,9 +61,8 @@ public final class HazelcastIsTrueFalseNullPredicate extends SqlPostfixOperator 
             base.getName(),
             base.getKind(),
             base.getLeftPrec(),
-            ReturnTypes.BOOLEAN_NOT_NULL,
-            objectOperand ? OperandTypeInference.OBJECT : OperandTypeInference.BOOLEAN,
-            null
+            wrap(ReturnTypes.BOOLEAN_NOT_NULL),
+            objectOperand ? OperandTypeInference.OBJECT : OperandTypeInference.BOOLEAN
         );
 
         this.objectOperand = objectOperand;
@@ -74,13 +74,13 @@ public final class HazelcastIsTrueFalseNullPredicate extends SqlPostfixOperator 
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
+    public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         if (objectOperand) {
             // IS (NOT) NULL accept any operand types
             return true;
         } else {
             // IS (NOT) TRUE|FALSE accept boolean operands only
-            return TypedOperandChecker.BOOLEAN.check(new SqlCallBindingOverride(callBinding), throwOnFailure, 0);
+            return TypedOperandChecker.BOOLEAN.check(binding, throwOnFailure, 0);
         }
     }
 

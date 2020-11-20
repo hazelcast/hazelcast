@@ -16,26 +16,25 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.math;
 
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.NumericOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCall;
-import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlOperatorBinding;
 import org.apache.calcite.sql.SqlWriter;
-import org.apache.calcite.sql.fun.SqlMonotonicUnaryFunction;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.validate.SqlMonotonicity;
 
+import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 
-public final class HazelcastFloorCeilFunction extends SqlMonotonicUnaryFunction implements SqlCallBindingManualOverride {
+public final class HazelcastFloorCeilFunction extends HazelcastFunction {
 
     public static final SqlFunction FLOOR = new HazelcastFloorCeilFunction(SqlKind.FLOOR);
     public static final SqlFunction CEIL = new HazelcastFloorCeilFunction(SqlKind.CEIL);
@@ -44,9 +43,8 @@ public final class HazelcastFloorCeilFunction extends SqlMonotonicUnaryFunction 
         super(
             kind.name(),
             kind,
-            ReturnTypes.ARG0_OR_EXACT_NO_SCALE,
+            wrap(ReturnTypes.ARG0_OR_EXACT_NO_SCALE),
             new ReplaceUnknownOperandTypeInference(DECIMAL),
-            null,
             SqlFunctionCategory.NUMERIC
         );
     }
@@ -57,8 +55,8 @@ public final class HazelcastFloorCeilFunction extends SqlMonotonicUnaryFunction 
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
-        return NumericOperandChecker.INSTANCE.check(new SqlCallBindingOverride(binding), throwOnFailure, 0);
+    public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
+        return NumericOperandChecker.INSTANCE.check(binding, throwOnFailure, 0);
     }
 
     @Override public SqlMonotonicity getMonotonicity(SqlOperatorBinding call) {

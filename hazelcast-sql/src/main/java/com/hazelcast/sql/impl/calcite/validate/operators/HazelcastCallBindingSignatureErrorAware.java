@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.binding;
+package com.hazelcast.sql.impl.calcite.validate.operators;
 
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlNode;
 
 import java.util.Collection;
 
-public interface SqlCallBindingSignatureErrorAware {
+public interface HazelcastCallBindingSignatureErrorAware {
     Collection<SqlNode> getOperandsForSignatureError(SqlCall call);
 }

@@ -16,21 +16,20 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.math;
 
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
-import org.apache.calcite.sql.SqlCallBinding;
-import org.apache.calcite.sql.SqlFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
+import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 
-public final class HazelcastRandFunction extends SqlFunction implements SqlCallBindingManualOverride {
+public final class HazelcastRandFunction extends HazelcastFunction {
 
     public static final HazelcastRandFunction INSTANCE = new HazelcastRandFunction();
 
@@ -38,9 +37,8 @@ public final class HazelcastRandFunction extends SqlFunction implements SqlCallB
         super(
             "RAND",
             SqlKind.OTHER_FUNCTION,
-            ReturnTypes.DOUBLE,
+            wrap(ReturnTypes.DOUBLE),
             new ReplaceUnknownOperandTypeInference(BIGINT),
-            null,
             SqlFunctionCategory.NUMERIC
         );
     }
@@ -51,13 +49,11 @@ public final class HazelcastRandFunction extends SqlFunction implements SqlCallB
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
+    public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         if (binding.getOperandCount() == 0) {
             return true;
         }
 
-        SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
-
-        return TypedOperandChecker.BIGINT.check(bindingOverride, throwOnFailure, 0);
+        return TypedOperandChecker.BIGINT.check(binding, throwOnFailure, 0);
     }
 }

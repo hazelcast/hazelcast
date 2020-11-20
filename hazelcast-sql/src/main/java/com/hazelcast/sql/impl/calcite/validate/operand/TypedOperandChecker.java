@@ -20,7 +20,7 @@ import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.param.NumericPrecedenceParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -82,7 +82,7 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
     @Override
     protected boolean coerce(
         HazelcastSqlValidator validator,
-        SqlCallBindingOverride callBinding,
+        HazelcastCallBinding callBinding,
         SqlNode operand,
         RelDataType operandType,
         int operandIndex

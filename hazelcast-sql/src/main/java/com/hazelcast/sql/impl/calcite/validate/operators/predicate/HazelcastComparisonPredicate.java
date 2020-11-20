@@ -19,8 +19,8 @@ package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastBinaryOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
@@ -34,7 +34,9 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public final class HazelcastComparisonPredicate extends SqlBinaryOperator implements SqlCallBindingManualOverride {
+import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
+
+public final class HazelcastComparisonPredicate extends HazelcastBinaryOperator {
 
     public static final HazelcastComparisonPredicate EQUALS = new HazelcastComparisonPredicate(
         SqlStdOperatorTable.EQUALS
@@ -66,9 +68,8 @@ public final class HazelcastComparisonPredicate extends SqlBinaryOperator implem
             base.getKind(),
             base.getLeftPrec(),
             true,
-            ReturnTypes.BOOLEAN_NULLABLE,
-            new ComparisonOperandTypeInference(),
-            null
+            wrap(ReturnTypes.BOOLEAN_NULLABLE),
+            new OperandTypeInference()
         );
     }
 
@@ -78,13 +79,7 @@ public final class HazelcastComparisonPredicate extends SqlBinaryOperator implem
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
-        SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
-
-        return checkOperandTypes(bindingOverride, throwOnFailure);
-    }
-
-    private boolean checkOperandTypes(SqlCallBindingOverride binding, boolean throwOnFailure) {
+    public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         SqlNode first = binding.operand(0);
         SqlNode second = binding.operand(1);
 
@@ -100,7 +95,7 @@ public final class HazelcastComparisonPredicate extends SqlBinaryOperator implem
     }
 
     private boolean checkOperandTypes(
-        SqlCallBindingOverride callBinding,
+        HazelcastCallBinding callBinding,
         boolean throwOnFailure,
         HazelcastSqlValidator validator,
         SqlNode first,
@@ -136,7 +131,7 @@ public final class HazelcastComparisonPredicate extends SqlBinaryOperator implem
     }
 
     private boolean checkOperandTypesWithPrecedence(
-        SqlCallBindingOverride callBinding,
+        HazelcastCallBinding callBinding,
         boolean throwOnFailure,
         HazelcastSqlValidator validator,
         RelDataType highType,
@@ -169,7 +164,7 @@ public final class HazelcastComparisonPredicate extends SqlBinaryOperator implem
         return true;
     }
 
-    private static final class ComparisonOperandTypeInference implements SqlOperandTypeInference {
+    private static final class OperandTypeInference implements SqlOperandTypeInference {
         @Override
         public void inferOperandTypes(SqlCallBinding binding, RelDataType returnType, RelDataType[] operandTypes) {
             // Check if we have parameters. If yes, we will upcast integer literals to BIGINT as explained below
@@ -208,7 +203,7 @@ public final class HazelcastComparisonPredicate extends SqlBinaryOperator implem
 
             // If we have [UNKNOWN, UNKNOWN] operands, throw an signature error, since we cannot deduce the return type
             if (knownType == null) {
-                throw new SqlCallBindingOverride(binding).newValidationSignatureError();
+                throw new HazelcastCallBinding(binding).newValidationSignatureError();
             }
 
             // If there is an operand with an unresolved type, set it to the known type.

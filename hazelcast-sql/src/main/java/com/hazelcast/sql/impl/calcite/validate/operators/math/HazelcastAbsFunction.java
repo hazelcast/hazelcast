@@ -16,24 +16,23 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.math;
 
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingManualOverride;
-import com.hazelcast.sql.impl.calcite.validate.binding.SqlCallBindingOverride;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
-import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlCallBinding;
-import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
+import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 
-public final class HazelcastAbsFunction extends SqlFunction implements SqlCallBindingManualOverride {
+public final class HazelcastAbsFunction extends HazelcastFunction {
 
     public static final HazelcastAbsFunction INSTANCE = new HazelcastAbsFunction();
 
@@ -41,9 +40,8 @@ public final class HazelcastAbsFunction extends SqlFunction implements SqlCallBi
         super(
             "ABS",
             SqlKind.OTHER_FUNCTION,
-            ReturnTypes.ARG0,
+            wrap(ReturnTypes.ARG0),
             new ReplaceUnknownOperandTypeInference(BIGINT),
-            null,
             SqlFunctionCategory.NUMERIC
         );
     }
@@ -54,10 +52,8 @@ public final class HazelcastAbsFunction extends SqlFunction implements SqlCallBi
     }
 
     @Override
-    public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
-        SqlCallBindingOverride bindingOverride = new SqlCallBindingOverride(binding);
-
-        RelDataType operandType = bindingOverride.getOperandType(0);
+    public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
+        RelDataType operandType = binding.getOperandType(0);
 
         if (HazelcastTypeSystem.isInteger(operandType)) {
             int bitWidth = HazelcastIntegerType.bitWidthOf(operandType);
@@ -68,11 +64,11 @@ public final class HazelcastAbsFunction extends SqlFunction implements SqlCallBi
         TypedOperandChecker checker = TypedOperandChecker.forType(operandType);
 
         if (checker.isNumeric()) {
-            return checker.check(bindingOverride, throwOnFailure, 0);
+            return checker.check(binding, throwOnFailure, 0);
         }
 
         if (throwOnFailure) {
-            throw bindingOverride.newValidationSignatureError();
+            throw binding.newValidationSignatureError();
         } else {
             return false;
         }
