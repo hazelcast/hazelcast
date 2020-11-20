@@ -57,7 +57,7 @@ public interface HazelcastOperandTypeCheckerAware {
             operandTypeInference.inferOperandTypes(binding, binding.getValidator().getUnknownType(), operandTypes);
 
             for (int i = 0; i < binding.getOperandCount(); i++) {
-                validator.setKnownAndValidatedNodeType(binding.operand(i), operandTypes[i]);
+                validator.setValidatedNodeType(binding.operand(i), operandTypes[i]);
             }
         }
 

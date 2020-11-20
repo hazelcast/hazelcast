@@ -111,10 +111,6 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
             newOperandType
         );
 
-        // TODO: Perhaps we do not need this
-        // Let validator know about the type change.
-        validator.setKnownAndValidatedNodeType(operand, newOperandType);
-
         return true;
     }
 

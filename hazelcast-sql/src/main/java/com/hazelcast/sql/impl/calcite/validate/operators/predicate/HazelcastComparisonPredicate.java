@@ -91,16 +91,14 @@ public final class HazelcastComparisonPredicate extends HazelcastBinaryOperator 
         assert firstType.getSqlTypeName() != SqlTypeName.NULL;
         assert secondType.getSqlTypeName() != SqlTypeName.NULL;
 
-        return checkOperandTypes(binding, throwOnFailure, validator, first, firstType, second, secondType);
+        return checkOperandTypes(binding, throwOnFailure, validator, firstType, secondType);
     }
 
     private boolean checkOperandTypes(
         HazelcastCallBinding callBinding,
         boolean throwOnFailure,
         HazelcastSqlValidator validator,
-        SqlNode first,
         RelDataType firstType,
-        SqlNode second,
         RelDataType secondType
     ) {
         RelDataType winningType = HazelcastTypeSystem.withHigherPrecedence(firstType, secondType);
@@ -111,7 +109,6 @@ public final class HazelcastComparisonPredicate extends HazelcastBinaryOperator 
                 throwOnFailure,
                 validator,
                 firstType,
-                second,
                 secondType,
                 1
             );
@@ -123,7 +120,6 @@ public final class HazelcastComparisonPredicate extends HazelcastBinaryOperator 
                 throwOnFailure,
                 validator,
                 secondType,
-                first,
                 firstType,
                 0
             );
@@ -135,7 +131,6 @@ public final class HazelcastComparisonPredicate extends HazelcastBinaryOperator 
         boolean throwOnFailure,
         HazelcastSqlValidator validator,
         RelDataType highType,
-        SqlNode lowOperand,
         RelDataType lowType,
         int lowIndex
     ) {
@@ -157,9 +152,7 @@ public final class HazelcastComparisonPredicate extends HazelcastBinaryOperator 
         }
 
         // Types are in the same group, cast lower to higher.
-        // TODO: What to do with the result?
         validator.getTypeCoercion().coerceOperandType(callBinding.getScope(), callBinding.getCall(), lowIndex, highType);
-        validator.setKnownAndValidatedNodeType(lowOperand, highType);
 
         return true;
     }

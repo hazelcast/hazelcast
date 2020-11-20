@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
-import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
@@ -26,8 +25,6 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
-
-import java.util.Locale;
 
 /**
  * Utility methods to work with {@link SqlNode}s.
@@ -43,46 +40,6 @@ public final class SqlNodeUtil {
      */
     public static boolean isParameter(SqlNode node) {
         return node.getKind() == SqlKind.DYNAMIC_PARAM;
-    }
-
-    /**
-     * @return {@code true} if the given node is a {@linkplain SqlLiteral literal},
-     * {@code false} otherwise.
-     */
-    // TODO: Remove candidate
-    public static boolean isLiteralRemoveMe(SqlNode node) {
-        return node.getKind() == SqlKind.LITERAL;
-    }
-
-    public static BiTuple<Boolean, Boolean> booleanValue(SqlLiteral literal) {
-        switch (literal.getTypeName()) {
-            case BOOLEAN:
-                return BiTuple.of(true, literal.booleanValue());
-
-            case NULL:
-                return BiTuple.of(true, null);
-
-            case CHAR:
-            case VARCHAR:
-                String value = literal.getValueAs(String.class);
-
-                if (value == null) {
-                    return BiTuple.of(true, null);
-                } else {
-                    value = value.toLowerCase(Locale.ROOT);
-
-                    if (Boolean.TRUE.toString().equals(value)) {
-                        return BiTuple.of(true, true);
-                    } else if (Boolean.FALSE.toString().equals(value)) {
-                        return BiTuple.of(true, false);
-                    } else {
-                        return BiTuple.of(false, false);
-                    }
-                }
-
-            default:
-                return BiTuple.of(false, false);
-        }
     }
 
     public static RelDataType createType(RelDataTypeFactory typeFactory, SqlTypeName typeName, boolean nullable) {

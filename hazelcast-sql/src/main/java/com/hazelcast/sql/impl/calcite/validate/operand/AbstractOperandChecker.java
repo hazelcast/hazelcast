@@ -43,7 +43,7 @@ public abstract class AbstractOperandChecker implements OperandChecker {
 
             // Set parameter type
             RelDataType type = getTargetType(validator.getTypeFactory(), true);
-            validator.setKnownAndValidatedNodeType(operand, type);
+            validator.setValidatedNodeType(operand, type);
 
             // Set parameter converter
             ParameterConverter converter = parameterConverter(operand0);

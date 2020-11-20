@@ -77,8 +77,6 @@ public final class HazelcastConcatOperator extends HazelcastBinaryOperator {
                     i,
                     newOperandType
                 );
-
-                validator.setKnownAndValidatedNodeType(binding.operand(i), newOperandType);
             }
 
             // Set parameter converters
