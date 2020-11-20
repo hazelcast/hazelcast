@@ -45,6 +45,7 @@ import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
 import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
+import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.tools.RuleSet;
 
 import javax.annotation.Nonnull;
@@ -196,7 +197,7 @@ public final class OptimizerContext {
     ) {
         HazelcastRelOptCluster cluster = HazelcastRelOptCluster.create(
             planner,
-            new HazelcastRexBuilder(typeFactory),
+            new RexBuilder(typeFactory),
             distributionTraitDef
         );
 

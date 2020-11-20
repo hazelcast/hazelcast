@@ -59,9 +59,14 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
     private final Set<SqlNode> callSet = Collections.newSetFromMap(new IdentityHashMap<>());
 
-    public HazelcastSqlToRelConverter(RelOptTable.ViewExpander viewExpander, SqlValidator validator,
-                                      Prepare.CatalogReader catalogReader, RelOptCluster cluster,
-                                      SqlRexConvertletTable convertletTable, Config config) {
+    public HazelcastSqlToRelConverter(
+        RelOptTable.ViewExpander viewExpander,
+        SqlValidator validator,
+        Prepare.CatalogReader catalogReader,
+        RelOptCluster cluster,
+        SqlRexConvertletTable convertletTable,
+        Config config
+    ) {
         super(viewExpander, validator, catalogReader, cluster, convertletTable, config);
     }
 
@@ -72,26 +77,19 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         } else if (node.getKind() == SqlKind.CAST) {
             return convertCast((SqlCall) node, blackboard);
         } else if (node instanceof SqlCall) {
-            if (callSet.add(node)) {
-                try {
-                    RelDataType type = validator.getValidatedNodeType(node);
-
-                    HazelcastReturnTypeInference.push(type);
-                    try {
-                        return blackboard.convertExpression(node);
-                    } finally {
-                        HazelcastReturnTypeInference.pop();
-                    }
-                } finally {
-                    callSet.remove(node);
-                }
-            }
+            return convertCall(node, blackboard);
         }
 
         return null;
     }
 
-    // TODO: Review
+    private RexNode convertLiteral(SqlLiteral literal) {
+        RelDataType type = validator.getValidatedNodeType(literal);
+
+        return getRexBuilder().makeLiteral(literal.getValue(), type, true);
+    }
+
+    // TODO: Better documentation
     @SuppressWarnings("UnpredictableBigDecimalConstructorCall")
     private RexNode convertCast(SqlCall call, Blackboard blackboard) {
         RelDataType to = validator.getValidatedNodeType(call);
@@ -151,16 +149,22 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         return getRexBuilder().makeCast(to, operand);
     }
 
-    // TODO: Review
-    private RexNode convertLiteral(SqlLiteral literal) {
-        if (literal.getValue() == null) {
-            // trust Calcite on generation for NULL literals
-            return null;
+    private RexNode convertCall(SqlNode node, Blackboard blackboard) {
+        if (callSet.add(node)) {
+            try {
+                RelDataType type = validator.getValidatedNodeType(node);
+
+                HazelcastReturnTypeInference.push(type);
+                try {
+                    return blackboard.convertExpression(node);
+                } finally {
+                    HazelcastReturnTypeInference.pop();
+                }
+            } finally {
+                callSet.remove(node);
+            }
         }
 
-        RelDataType type = validator.getValidatedNodeType(literal);
-
-        return getRexBuilder().makeLiteral(literal.getValue(), type, true);
+        return null;
     }
-
 }
