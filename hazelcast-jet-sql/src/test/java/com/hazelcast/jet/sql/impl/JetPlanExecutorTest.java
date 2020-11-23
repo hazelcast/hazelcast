@@ -122,7 +122,7 @@ public class JetPlanExecutorTest {
         // given
         QueryId queryId = QueryId.create(UuidUtil.newSecureUUID());
         SqlRowMetadata rowMetadata = rowMetadata();
-        ExecutionPlan plan = new ExecutionPlan(dag, false, false, queryId, rowMetadata, planExecutor);
+        ExecutionPlan plan = new ExecutionPlan(dag, false, false, queryId, rowMetadata, planExecutor, emptyList());
 
         given(jetInstance.newJob(dag)).willReturn(job);
 
@@ -140,7 +140,7 @@ public class JetPlanExecutorTest {
         // given
         QueryId queryId = QueryId.create(UuidUtil.newSecureUUID());
         SqlRowMetadata rowMetadata = rowMetadata();
-        ExecutionPlan plan = new ExecutionPlan(dag, false, true, queryId, rowMetadata, planExecutor);
+        ExecutionPlan plan = new ExecutionPlan(dag, false, true, queryId, rowMetadata, planExecutor, emptyList());
 
         given(jetInstance.newJob(dag)).willReturn(job);
 
@@ -157,7 +157,7 @@ public class JetPlanExecutorTest {
         // given
         QueryId queryId = QueryId.create(UuidUtil.newSecureUUID());
         SqlRowMetadata rowMetadata = rowMetadata();
-        ExecutionPlan plan = new ExecutionPlan(dag, true, true, queryId, rowMetadata, planExecutor);
+        ExecutionPlan plan = new ExecutionPlan(dag, true, true, queryId, rowMetadata, planExecutor, emptyList());
 
         given(jetInstance.newJob(dag)).willReturn(job);
 

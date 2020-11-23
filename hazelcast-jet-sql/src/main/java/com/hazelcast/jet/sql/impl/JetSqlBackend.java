@@ -29,10 +29,10 @@ import com.hazelcast.jet.sql.impl.calcite.parser.JetSqlParser;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
+import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.JetRootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
-import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
@@ -46,6 +46,8 @@ import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.jet.sql.impl.validate.JetSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.UnsupportedOperationVisitor;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -55,15 +57,19 @@ import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptTable.ViewExpander;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelShuttleImpl;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableScan;
@@ -76,6 +82,7 @@ import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.SqlToRelConverter.Config;
 
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -228,15 +235,47 @@ class JetSqlBackend implements SqlBackend {
         boolean isStreaming = containsStreamSource(rel);
         boolean isInsert = physicalRel instanceof TableModify;
 
+        List<Permission> permissions = extractPermissions(physicalRel);
         if (isInsert) {
             DAG dag = createDag(physicalRel);
-            return new ExecutionPlan(dag, isStreaming, true, null, null, planExecutor);
+            return new ExecutionPlan(dag, isStreaming, true, null, null, planExecutor, permissions);
         } else {
             QueryId queryId = QueryId.create(nodeEngine.getLocalMember().getUuid());
             DAG dag = createDag(new JetRootRel(physicalRel, nodeEngine.getThisAddress(), queryId));
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema().getTypes());
-            return new ExecutionPlan(dag, isStreaming, false, queryId, rowMetadata, planExecutor);
+            return new ExecutionPlan(dag, isStreaming, false, queryId, rowMetadata, planExecutor, permissions);
         }
+    }
+
+    private List<Permission> extractPermissions(PhysicalRel physicalRel) {
+        List<Permission> permissions = new ArrayList<>();
+
+        physicalRel.accept(new RelShuttleImpl() {
+            @Override
+            public RelNode visit(TableScan scan) {
+                addPermissionForTable(scan.getTable(), ActionConstants.ACTION_READ);
+                return super.visit(scan);
+            }
+
+            @Override
+            public RelNode visit(RelNode other) {
+                addPermissionForTable(other.getTable(), ActionConstants.ACTION_PUT);
+                return super.visit(other);
+            }
+
+            private void addPermissionForTable(RelOptTable t, String action) {
+                if (t == null) {
+                    return;
+                }
+                HazelcastTable table = t.unwrap(HazelcastTable.class);
+                if (table != null && table.getTarget() instanceof AbstractMapTable) {
+                    String mapName = ((AbstractMapTable) table.getTarget()).getMapName();
+                    permissions.add(new MapPermission(mapName, action));
+                }
+            }
+        });
+
+        return permissions;
     }
 
     /**

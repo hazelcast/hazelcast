@@ -26,13 +26,12 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
+import java.security.Permission;
+import java.util.List;
+
 interface JetPlan extends SqlPlan {
 
     SqlResult execute();
-
-    default void checkPermissions(SqlSecurityContext context) {
-        // TODO: implement
-    }
 
     class CreateMappingPlan implements JetPlan {
         private final Mapping mapping;
@@ -55,6 +54,10 @@ interface JetPlan extends SqlPlan {
         @Override
         public SqlResult execute() {
             return planExecutor.execute(this);
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
         }
 
         Mapping mapping() {
@@ -90,6 +93,10 @@ interface JetPlan extends SqlPlan {
             return planExecutor.execute(this);
         }
 
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+        }
+
         String name() {
             return name;
         }
@@ -118,6 +125,11 @@ interface JetPlan extends SqlPlan {
             this.ifNotExists = ifNotExists;
             this.executionPlan = executionPlan;
             this.planExecutor = planExecutor;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            executionPlan.checkPermissions(context);
         }
 
         @Override
@@ -158,6 +170,10 @@ interface JetPlan extends SqlPlan {
             return planExecutor.execute(this);
         }
 
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+        }
+
         public String getJobName() {
             return jobName;
         }
@@ -185,6 +201,10 @@ interface JetPlan extends SqlPlan {
             return planExecutor.execute(this);
         }
 
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+        }
+
         public String getJobName() {
             return jobName;
         }
@@ -207,6 +227,10 @@ interface JetPlan extends SqlPlan {
             this.snapshotName = snapshotName;
             this.jobName = jobName;
             this.planExecutor = planExecutor;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
         }
 
         @Override
@@ -239,6 +263,10 @@ interface JetPlan extends SqlPlan {
             return planExecutor.execute(this);
         }
 
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+        }
+
         public String getSnapshotName() {
             return snapshotName;
         }
@@ -255,6 +283,7 @@ interface JetPlan extends SqlPlan {
         private final QueryId queryId;
         private final SqlRowMetadata rowMetadata;
         private final JetPlanExecutor planExecutor;
+        private final List<Permission> permissions;
 
         ExecutionPlan(
                 DAG dag,
@@ -262,7 +291,8 @@ interface JetPlan extends SqlPlan {
                 boolean isInsert,
                 QueryId queryId,
                 SqlRowMetadata rowMetadata,
-                JetPlanExecutor planExecutor
+                JetPlanExecutor planExecutor,
+                List<Permission> permissions
         ) {
             this.dag = dag;
             this.isStreaming = isStreaming;
@@ -270,11 +300,19 @@ interface JetPlan extends SqlPlan {
             this.queryId = queryId;
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
+            this.permissions = permissions;
         }
 
         @Override
         public SqlResult execute() {
             return planExecutor.execute(this);
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            for (Permission permission : permissions) {
+                context.checkPermission(permission);
+            }
         }
 
         DAG getDag() {
