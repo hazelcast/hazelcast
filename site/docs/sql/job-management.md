@@ -22,7 +22,7 @@ it to be fault-tolerant.
 
 ```sql
 CREATE JOB [IF NOT EXISTS] job_name
-[ OPTIONS ( option_name 'option_value' [, ...] ) ]
+[ OPTIONS ( 'option_name' = 'option_value' [, ...] ) ]
 AS query_spec
 ```
 
@@ -56,9 +56,9 @@ resource, it has to be available on the members' classpath.
 ```sql
 CREATE JOB myJob
 OPTIONS (
-    processingGuarantee 'exactlyOnce',
-    snapshotIntervalMillis '5000',
-    metricsEnabled 'true'
+    'processingGuarantee' = 'exactlyOnce',
+    'snapshotIntervalMillis' = '5000',
+    'metricsEnabled' = 'true'
 ) AS
 INSERT INTO my_sink_topic
 SELECT * FROM my_source_topic

@@ -72,7 +72,7 @@ class JetSqlResultImpl extends AbstractSqlResult {
     }
 
     @Override
-    public void close(QueryException exception) {
+    public void close(@Nonnull QueryException exception) {
         rootResultConsumer.onError(exception);
     }
 

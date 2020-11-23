@@ -63,7 +63,7 @@ public class JetSqlParserTest {
                 + ")"
                 + "TYPE mapping_type "
                 + "OPTIONS("
-                + "\"option.key\" 'option.value'"
+                + "'option.key'='option.value'"
                 + ")";
 
         // when
@@ -183,28 +183,13 @@ public class JetSqlParserTest {
                 + "mapping_name "
                 + "TYPE mapping_type "
                 + "OPTIONS("
-                + "\"option.key\" 'value1'"
-                + ", \"option.key\" 'value2'"
+                + "'option.key'='value1'"
+                + ", 'option.key'='value2'"
                 + ")";
 
         // when
         assertThatThrownBy(() -> parse(sql))
                 .hasMessageContaining("Option 'option.key' specified more than once");
-    }
-
-    @Test
-    public void test_createMappingRequiresOptionSimpleIdentifier() {
-        // given
-        String sql = "CREATE MAPPING "
-                + "mapping_name "
-                + "TYPE mapping_type "
-                + "OPTIONS ("
-                + "option.key 'value1'"
-                + ")";
-
-        // when
-        assertThatThrownBy(() -> parse(sql))
-                .hasMessageContaining("Encountered \".\" at line 1, column 62");
     }
 
     @Test

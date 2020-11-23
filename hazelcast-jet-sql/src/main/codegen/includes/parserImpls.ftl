@@ -401,12 +401,11 @@ SqlNodeList SqlOptions():
 SqlOption SqlOption() :
 {
     Span span;
-
-    SqlIdentifier key;
-    SqlNode value;
+    SqlNode key, value;
 }
 {
-    key = SimpleIdentifier() { span = span(); }
+    key = StringLiteral() { span = span(); }
+    <EQ>
     value = StringLiteral()
     {
         return new SqlOption(key, value, span.end(this));

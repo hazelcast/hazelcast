@@ -129,10 +129,10 @@ public class SqlPrimitiveTest extends SqlTestSupport {
                 + ", name VARCHAR EXTERNAL NAME this"
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_KEY_CLASS + "\" '" + Integer.class.getName() + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_CLASS + "\" '" + String.class.getName() + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''
                 + ")"
         );
 
@@ -154,11 +154,11 @@ public class SqlPrimitiveTest extends SqlTestSupport {
 
         sqlService.execute("CREATE MAPPING " + tableName + " TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '"' + OPTION_OBJECT_NAME + "\" '" + mapName + '\''
-                + ", \"" + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_KEY_CLASS + "\" '" + String.class.getName() + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_CLASS + "\" '" + String.class.getName() + '\''
+                + '\'' + OPTION_OBJECT_NAME + "'='" + mapName + '\''
+                + ", '" + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + String.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''
                 + ")"
         );
 
@@ -184,10 +184,10 @@ public class SqlPrimitiveTest extends SqlTestSupport {
                 + "this VARCHAR"
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_KEY_CLASS + "\" '" + Integer.class.getName() + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_CLASS + "\" '" + String.class.getName() + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''
                 + ")"
         );
 
@@ -203,8 +203,8 @@ public class SqlPrimitiveTest extends SqlTestSupport {
         assertThatThrownBy(
                 () -> sqlService.execute("CREATE MAPPING " + mapName + " TYPE " + IMapSqlConnector.TYPE_NAME + " "
                         + "OPTIONS ("
-                        + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + "',"
-                        + '"' + OPTION_KEY_CLASS + "\" '" + Integer.class.getName() + "'"
+                        + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',"
+                        + '\'' + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "'"
                         + ")")
         ).hasMessage("Missing 'valueFormat' option");
     }
@@ -215,8 +215,8 @@ public class SqlPrimitiveTest extends SqlTestSupport {
         assertThatThrownBy(
                 () -> sqlService.execute("CREATE MAPPING " + mapName + " TYPE " + IMapSqlConnector.TYPE_NAME + " "
                         + "OPTIONS ("
-                        + '"' + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + "',"
-                        + '"' + OPTION_VALUE_CLASS + "\" '" + String.class.getName() + "'"
+                        + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',"
+                        + '\'' + OPTION_VALUE_CLASS + "'='" + String.class.getName() + "'"
                         + ")")
         ).hasMessage("Missing 'keyFormat' option");
     }
@@ -259,10 +259,10 @@ public class SqlPrimitiveTest extends SqlTestSupport {
                         + ", field INT EXTERNAL NAME \"" + fieldName + ".field\""
                         + ") TYPE " + IMapSqlConnector.TYPE_NAME
                         + " OPTIONS ("
-                        + '"' + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + "',"
-                        + '"' + OPTION_VALUE_CLASS + "\" '" + Integer.class.getName() + "',"
-                        + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + "',"
-                        + '"' + OPTION_KEY_CLASS + "\" '" + Integer.class.getName() + "'"
+                        + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',"
+                        + '\'' + OPTION_VALUE_CLASS + "'='" + Integer.class.getName() + "',"
+                        + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',"
+                        + '\'' + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "'"
                         + ")"))
                 .hasMessage(
                         "The field '" + fieldName + "' is of type INTEGER, you can't map '" + fieldName + ".field' too");

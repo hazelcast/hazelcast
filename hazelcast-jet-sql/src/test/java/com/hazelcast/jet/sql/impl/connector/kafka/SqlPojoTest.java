@@ -82,16 +82,16 @@ public class SqlPojoTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING " + name + ' '
                 + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_KEY_CLASS + "\" '" + PersonId.class.getName() + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_CLASS + "\" '" + Person.class.getName() + '\''
-                + ", \"bootstrap.servers\" '" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", \"key.serializer\" '" + PersonIdSerializer.class.getCanonicalName() + '\''
-                + ", \"key.deserializer\" '" + PersonIdDeserializer.class.getCanonicalName() + '\''
-                + ", \"value.serializer\" '" + PersonSerializer.class.getCanonicalName() + '\''
-                + ", \"value.deserializer\" '" + PersonDeserializer.class.getCanonicalName() + '\''
-                + ", \"auto.offset.reset\" 'earliest'"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + PersonId.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + '\''
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", 'key.serializer'='" + PersonIdSerializer.class.getCanonicalName() + '\''
+                + ", 'key.deserializer'='" + PersonIdDeserializer.class.getCanonicalName() + '\''
+                + ", 'value.serializer'='" + PersonSerializer.class.getCanonicalName() + '\''
+                + ", 'value.deserializer'='" + PersonDeserializer.class.getCanonicalName() + '\''
+                + ", 'auto.offset.reset'='earliest'"
                 + ")"
         );
 
@@ -112,16 +112,16 @@ public class SqlPojoTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING " + name + ' '
                 + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_KEY_CLASS + "\" '" + PersonId.class.getName() + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_CLASS + "\" '" + Person.class.getName() + '\''
-                + ", \"bootstrap.servers\" '" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", \"key.serializer\" '" + PersonIdSerializer.class.getCanonicalName() + '\''
-                + ", \"key.deserializer\" '" + PersonIdDeserializer.class.getCanonicalName() + '\''
-                + ", \"value.serializer\" '" + PersonSerializer.class.getCanonicalName() + '\''
-                + ", \"value.deserializer\" '" + PersonDeserializer.class.getCanonicalName() + '\''
-                + ", \"auto.offset.reset\" 'earliest'"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + PersonId.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + '\''
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", 'key.serializer'='" + PersonIdSerializer.class.getCanonicalName() + '\''
+                + ", 'key.deserializer'='" + PersonIdDeserializer.class.getCanonicalName() + '\''
+                + ", 'value.serializer'='" + PersonSerializer.class.getCanonicalName() + '\''
+                + ", 'value.deserializer'='" + PersonDeserializer.class.getCanonicalName() + '\''
+                + ", 'auto.offset.reset'='earliest'"
                 + ")"
         );
 
@@ -145,16 +145,16 @@ public class SqlPojoTest extends SqlTestSupport {
                 + ", name VARCHAR"
                 + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_KEY_CLASS + "\" '" + PersonId.class.getName() + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_CLASS + "\" '" + Person.class.getName() + '\''
-                + ", \"bootstrap.servers\" '" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", \"key.serializer\" '" + PersonIdSerializer.class.getCanonicalName() + '\''
-                + ", \"key.deserializer\" '" + PersonIdDeserializer.class.getCanonicalName() + '\''
-                + ", \"value.serializer\" '" + PersonSerializer.class.getCanonicalName() + '\''
-                + ", \"value.deserializer\" '" + PersonDeserializer.class.getCanonicalName() + '\''
-                + ", \"auto.offset.reset\" 'earliest'"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + PersonId.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + '\''
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", 'key.serializer'='" + PersonIdSerializer.class.getCanonicalName() + '\''
+                + ", 'key.deserializer'='" + PersonIdDeserializer.class.getCanonicalName() + '\''
+                + ", 'value.serializer'='" + PersonSerializer.class.getCanonicalName() + '\''
+                + ", 'value.deserializer'='" + PersonDeserializer.class.getCanonicalName() + '\''
+                + ", 'auto.offset.reset'='earliest'"
                 + ")"
         );
 
@@ -178,16 +178,16 @@ public class SqlPojoTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING " + to + ' '
                 + " TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_KEY_CLASS + "\" '" + PersonId.class.getName() + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_CLASS + "\" '" + AllCanonicalTypesValue.class.getName() + '\''
-                + ", \"bootstrap.servers\" '" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", \"key.serializer\" '" + PersonIdSerializer.class.getCanonicalName() + '\''
-                + ", \"key.deserializer\" '" + PersonIdDeserializer.class.getCanonicalName() + '\''
-                + ", \"value.serializer\" '" + AllCanonicalTypesValueSerializer.class.getCanonicalName() + '\''
-                + ", \"value.deserializer\" '" + AllCanonicalTypesValueDeserializer.class.getCanonicalName() + '\''
-                + ", \"auto.offset.reset\" 'earliest'"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + PersonId.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + AllCanonicalTypesValue.class.getName() + '\''
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", 'key.serializer'='" + PersonIdSerializer.class.getCanonicalName() + '\''
+                + ", 'key.deserializer'='" + PersonIdDeserializer.class.getCanonicalName() + '\''
+                + ", 'value.serializer'='" + AllCanonicalTypesValueSerializer.class.getCanonicalName() + '\''
+                + ", 'value.deserializer'='" + AllCanonicalTypesValueDeserializer.class.getCanonicalName() + '\''
+                + ", 'auto.offset.reset'='earliest'"
                 + ")"
         );
 
@@ -269,16 +269,16 @@ public class SqlPojoTest extends SqlTestSupport {
                 "name VARCHAR)" +
                 " TYPE " + KafkaSqlConnector.TYPE_NAME + "\n"
                 + "OPTIONS (\n"
-                + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + "',\n"
-                + '"' + OPTION_KEY_CLASS + "\" '" + Integer.class.getName() + "',\n"
-                + '"' + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + "',\n"
-                + '"' + OPTION_VALUE_CLASS + "\" '" + Person.class.getName() + "'\n"
-                + ", \"bootstrap.servers\" '" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", \"key.serializer\" '" + IntegerSerializer.class.getCanonicalName() + '\''
-                + ", \"key.deserializer\" '" + IntegerDeserializer.class.getCanonicalName() + '\''
-                + ", \"value.serializer\" '" + PersonSerializer.class.getCanonicalName() + '\''
-                + ", \"value.deserializer\" '" + PersonDeserializer.class.getCanonicalName() + '\''
-                + ", \"auto.offset.reset\" 'earliest'"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',\n"
+                + '\'' + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "',\n"
+                + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',\n"
+                + '\'' + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + "'\n"
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", 'key.serializer'='" + IntegerSerializer.class.getCanonicalName() + '\''
+                + ", 'key.deserializer'='" + IntegerDeserializer.class.getCanonicalName() + '\''
+                + ", 'value.serializer'='" + PersonSerializer.class.getCanonicalName() + '\''
+                + ", 'value.deserializer'='" + PersonDeserializer.class.getCanonicalName() + '\''
+                + ", 'auto.offset.reset'='earliest'"
                 + ")");
 
         if (explicit) {
@@ -305,16 +305,16 @@ public class SqlPojoTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING " + name + ' '
                 + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_KEY_CLASS + "\" '" + PersonId.class.getName() + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_CLASS + "\" '" + Person.class.getName() + '\''
-                + ", \"bootstrap.servers\" '" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", \"key.serializer\" '" + PersonIdSerializer.class.getCanonicalName() + '\''
-                + ", \"key.deserializer\" '" + PersonIdDeserializer.class.getCanonicalName() + '\''
-                + ", \"value.serializer\" '" + PersonSerializer.class.getCanonicalName() + '\''
-                + ", \"value.deserializer\" '" + PersonDeserializer.class.getCanonicalName() + '\''
-                + ", \"auto.offset.reset\" 'earliest'"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + PersonId.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + '\''
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", 'key.serializer'='" + PersonIdSerializer.class.getCanonicalName() + '\''
+                + ", 'key.deserializer'='" + PersonIdDeserializer.class.getCanonicalName() + '\''
+                + ", 'value.serializer'='" + PersonSerializer.class.getCanonicalName() + '\''
+                + ", 'value.deserializer'='" + PersonDeserializer.class.getCanonicalName() + '\''
+                + ", 'auto.offset.reset'='earliest'"
                 + ")"
         );
         sqlService.execute("INSERT INTO " + name + " VALUES (1, 'Alice')");

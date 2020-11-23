@@ -56,14 +56,14 @@ Example mapping where both key and value are `Portable`:
 CREATE MAPPING my_map
 TYPE IMap
 OPTIONS (
-    keyFormat 'portable',
-    keyPortableFactoryId '123',
-    keyPortableClassId '456',
-    keyPortableVersion '0',  -- optional
-    valueFormat 'portable',
-    valuePortableFactoryId '123',
-    valuePortableClassId '789',
-    valuePortableVersion '0',  -- optional
+    'keyFormat' = 'portable',
+    'keyPortableFactoryId' = '123',
+    'keyPortableClassId' = '456',
+    'keyPortableVersion' = '0',  -- optional
+    'valueFormat' = 'portable',
+    'valuePortableFactoryId' = '123',
+    'valuePortableClassId' = '789',
+    'valuePortableVersion' = '0',  -- optional
 )
 ```
 
@@ -82,8 +82,8 @@ CREATE MAPPING my_map(
     amount INT)
 TYPE IMap
 OPTIONS (
-    keyFormat 'json',
-    valueFormat 'json')
+    'keyFormat' = 'json',
+    'valueFormat' = 'json')
 ```
 
 JSON's type system doesn't match SQL's exactly. For example, JSON
@@ -112,10 +112,10 @@ For this format you must specify the class name using `keyJavaClass` and
 CREATE MAPPING my_map
 TYPE IMap
 OPTIONS (
-    keyFormat 'java',
-    keyJavaClass 'java.lang.Long',
-    valueFormat 'java',
-    valueJavaClass 'com.example.Person')
+    'keyFormat' = 'java',
+    'keyJavaClass' = 'java.lang.Long',
+    'valueFormat' = 'java',
+    'valueJavaClass' = 'com.example.Person')
 ```
 
 If the Java class corresponds to one of the basic data types (numbers,

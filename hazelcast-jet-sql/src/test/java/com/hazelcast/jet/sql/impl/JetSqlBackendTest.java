@@ -131,7 +131,10 @@ public class JetSqlBackendTest {
     }
 
     private static SqlOption option(String key, String value) {
-        return new SqlOption(identifier(key), SqlLiteral.createCharString(value, SqlParserPos.ZERO), SqlParserPos.ZERO);
+        return new SqlOption(
+                SqlLiteral.createCharString(key, SqlParserPos.ZERO),
+                SqlLiteral.createCharString(value, SqlParserPos.ZERO),
+                SqlParserPos.ZERO);
     }
 
     private static SqlIdentifier identifier(String name) {

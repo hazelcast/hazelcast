@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import org.apache.calcite.sql.SqlCall;
-import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
@@ -38,17 +37,17 @@ public class SqlOption extends SqlCall {
     public static final SqlOperator OPERATOR =
             new SqlSpecialOperator("OPTION DECLARATION", SqlKind.OTHER);
 
-    private final SqlIdentifier key;
+    private final SqlNode key;
     private final SqlNode value;
 
-    public SqlOption(SqlIdentifier key, SqlNode value, SqlParserPos pos) {
+    public SqlOption(SqlNode key, SqlNode value, SqlParserPos pos) {
         super(pos);
 
         this.key = requireNonNull(key, "Option key is missing");
         this.value = requireNonNull(value, "Option value is missing");
     }
 
-    public SqlIdentifier key() {
+    public SqlNode key() {
         return key;
     }
 
@@ -57,7 +56,7 @@ public class SqlOption extends SqlCall {
     }
 
     public String keyString() {
-        return key.toString();
+        return ((NlsString) SqlLiteral.value(key)).getValue();
     }
 
     // supporting just string parameters for now

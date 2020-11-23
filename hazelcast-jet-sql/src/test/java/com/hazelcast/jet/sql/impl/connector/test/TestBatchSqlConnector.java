@@ -106,9 +106,9 @@ public class TestBatchSqlConnector implements SqlConnector {
 
         sqlService.execute("CREATE MAPPING " + tableName + " TYPE " + TYPE_NAME
                 + " OPTIONS ("
-                + OPTION_NAMES + " '" + namesStringified + "'"
-                + ", " + OPTION_TYPES + " '" + typesStringified + "'"
-                + ", \"" + OPTION_VALUES + "\" '" + valuesStringified + "'"
+                + '\'' + OPTION_NAMES + "'='" + namesStringified + "'"
+                + ", '" + OPTION_TYPES + "'='" + typesStringified + "'"
+                + ", '" + OPTION_VALUES + "'='" + valuesStringified + "'"
                 + ")"
         );
     }

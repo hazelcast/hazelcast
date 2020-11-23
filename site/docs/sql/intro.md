@@ -104,8 +104,8 @@ CREATE EXTERNAL MAPPING trades (
     amount BIGINT)
 TYPE Kafka
 OPTIONS (
-    valueFormat 'json',
-    "bootstrap.servers" '127.0.0.1:9092'
+    'valueFormat' = 'json',
+    'bootstrap.servers' = '127.0.0.1:9092'
     /* ... more configuration options for the Kafka consumer */
 )
 ```
@@ -212,10 +212,10 @@ IMap is `latest_trades`:
 CREATE MAPPING latest_trades
 TYPE IMap
 OPTIONS (
-    keyFormat 'java',
-    keyJavaClass 'java.lang.String',
-    valueFormat 'java',
-    valueJavaClass 'com.example.Trade'
+    'keyFormat' = 'java',
+    'keyJavaClass' = 'java.lang.String',
+    'valueFormat' = 'java',
+    'valueJavaClass' = 'com.example.Trade'
 )
 ```
 

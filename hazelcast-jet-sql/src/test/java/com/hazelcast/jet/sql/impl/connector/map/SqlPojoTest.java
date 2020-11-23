@@ -124,10 +124,10 @@ public class SqlPojoTest extends SqlTestSupport {
                 + ", name VARCHAR"
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_KEY_CLASS + "\" '" + PersonId.class.getName() + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_CLASS + "\" '" + Person.class.getName() + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + PersonId.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + '\''
                 + ")"
         );
 
@@ -154,10 +154,10 @@ public class SqlPojoTest extends SqlTestSupport {
         sqlService.execute("CREATE OR REPLACE MAPPING " + name + ' '
                 + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_KEY_CLASS + "\" '" + PersonId.class.getName() + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_CLASS + "\" '" + InsuredPerson.class.getName() + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + PersonId.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + InsuredPerson.class.getName() + '\''
                 + ")"
         );
 
@@ -188,10 +188,10 @@ public class SqlPojoTest extends SqlTestSupport {
                 + "ssn BIGINT"
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_KEY_CLASS + "\" '" + PersonId.class.getName() + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_CLASS + "\" '" + Person.class.getName() + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + PersonId.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + '\''
                 + ")"
         );
 
@@ -345,10 +345,10 @@ public class SqlPojoTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING " + mapName + "(__key INT)"
                 + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
                 + "OPTIONS (\n"
-                + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + "',\n"
-                + '"' + OPTION_KEY_CLASS + "\" '" + Integer.class.getName() + "',\n"
-                + '"' + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + "',\n"
-                + '"' + OPTION_VALUE_CLASS + "\" '" + ClassInitialValue.class.getName() + "'\n"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',\n"
+                + '\'' + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "',\n"
+                + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',\n"
+                + '\'' + OPTION_VALUE_CLASS + "'='" + ClassInitialValue.class.getName() + "'\n"
                 + ")");
         sqlService.execute("SINK INTO " + mapName + "(__key) VALUES (1)");
 
@@ -395,10 +395,10 @@ public class SqlPojoTest extends SqlTestSupport {
                 "name VARCHAR)" +
                 " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
                 + "OPTIONS (\n"
-                + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + "',\n"
-                + '"' + OPTION_KEY_CLASS + "\" '" + Integer.class.getName() + "',\n"
-                + '"' + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + "',\n"
-                + '"' + OPTION_VALUE_CLASS + "\" '" + Person.class.getName() + "'\n"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',\n"
+                + '\'' + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "',\n"
+                + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',\n"
+                + '\'' + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + "'\n"
                 + ")");
 
         if (explicit) {

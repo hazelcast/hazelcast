@@ -159,14 +159,14 @@ public class SqlPortableTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING " + name + ' '
                 + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '"' + OPTION_KEY_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                + ", \"" + OPTION_KEY_FACTORY_ID + "\" '" + PERSON_ID_FACTORY_ID + '\''
-                + ", \"" + OPTION_KEY_CLASS_ID + "\" '" + PERSON_ID_CLASS_ID + '\''
-                + ", \"" + OPTION_KEY_CLASS_VERSION + "\" '" + PERSON_ID_CLASS_VERSION + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_FACTORY_ID + "\" '" + PERSON_FACTORY_ID + '\''
-                + ", \"" + OPTION_VALUE_CLASS_ID + "\" '" + PERSON_CLASS_ID + '\''
-                + ", \"" + OPTION_VALUE_CLASS_VERSION + "\" '" + PERSON_CLASS_VERSION + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
                 + ")"
         );
 
@@ -192,14 +192,14 @@ public class SqlPortableTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING " + name + ' '
                 + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '"' + OPTION_KEY_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                + ", \"" + OPTION_KEY_FACTORY_ID + "\" '" + PERSON_ID_FACTORY_ID + '\''
-                + ", \"" + OPTION_KEY_CLASS_ID + "\" '" + PERSON_ID_CLASS_ID + '\''
-                + ", \"" + OPTION_KEY_CLASS_VERSION + "\" '" + PERSON_ID_CLASS_VERSION + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_FACTORY_ID + "\" '" + PERSON_FACTORY_ID + '\''
-                + ", \"" + OPTION_VALUE_CLASS_ID + "\" '" + PERSON_CLASS_ID + '\''
-                + ", \"" + OPTION_VALUE_CLASS_VERSION + "\" '" + PERSON_CLASS_VERSION + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
                 + ")"
         );
 
@@ -228,14 +228,14 @@ public class SqlPortableTest extends SqlTestSupport {
                 + ", value_id INT EXTERNAL NAME \"this.id\""
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '"' + OPTION_KEY_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                + ", \"" + OPTION_KEY_FACTORY_ID + "\" '" + PERSON_ID_FACTORY_ID + '\''
-                + ", \"" + OPTION_KEY_CLASS_ID + "\" '" + PERSON_ID_CLASS_ID + '\''
-                + ", \"" + OPTION_KEY_CLASS_VERSION + "\" '" + PERSON_ID_CLASS_VERSION + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_FACTORY_ID + "\" '" + PERSON_FACTORY_ID + '\''
-                + ", \"" + OPTION_VALUE_CLASS_ID + "\" '" + PERSON_CLASS_ID + '\''
-                + ", \"" + OPTION_VALUE_CLASS_VERSION + "\" '" + PERSON_CLASS_VERSION + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
                 + ")"
         );
 
@@ -261,14 +261,14 @@ public class SqlPortableTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING " + name + ' '
                 + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '"' + OPTION_KEY_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                + ", \"" + OPTION_KEY_FACTORY_ID + "\" '" + PERSON_ID_FACTORY_ID + '\''
-                + ", \"" + OPTION_KEY_CLASS_ID + "\" '" + PERSON_ID_CLASS_ID + '\''
-                + ", \"" + OPTION_KEY_CLASS_VERSION + "\" '" + PERSON_ID_CLASS_VERSION + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_FACTORY_ID + "\" '" + PERSON_FACTORY_ID + '\''
-                + ", \"" + OPTION_VALUE_CLASS_ID + "\" '" + PERSON_CLASS_ID + '\''
-                + ", \"" + OPTION_VALUE_CLASS_VERSION + "\" '" + PERSON_CLASS_VERSION + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
                 + ")"
         );
 
@@ -279,14 +279,14 @@ public class SqlPortableTest extends SqlTestSupport {
         sqlService.execute("CREATE OR REPLACE MAPPING " + name + ' '
                 + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '"' + OPTION_KEY_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                + ", \"" + OPTION_KEY_FACTORY_ID + "\" '" + PERSON_ID_FACTORY_ID + '\''
-                + ", \"" + OPTION_KEY_CLASS_ID + "\" '" + PERSON_ID_CLASS_ID + '\''
-                + ", \"" + OPTION_KEY_CLASS_VERSION + "\" '" + PERSON_ID_CLASS_VERSION + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_FACTORY_ID + "\" '" + PERSON_FACTORY_ID + '\''
-                + ", \"" + OPTION_VALUE_CLASS_ID + "\" '" + PERSON_CLASS_ID + '\''
-                + ", \"" + OPTION_VALUE_CLASS_VERSION + "\" '" + (PERSON_CLASS_VERSION + 1) + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + (PERSON_CLASS_VERSION + 1) + '\''
                 + ")"
         );
 
@@ -309,14 +309,14 @@ public class SqlPortableTest extends SqlTestSupport {
         sqlService.execute("CREATE OR REPLACE MAPPING " + name + ' '
                 + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '"' + OPTION_KEY_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                + ", \"" + OPTION_KEY_FACTORY_ID + "\" '" + PERSON_ID_FACTORY_ID + '\''
-                + ", \"" + OPTION_KEY_CLASS_ID + "\" '" + PERSON_ID_CLASS_ID + '\''
-                + ", \"" + OPTION_KEY_CLASS_VERSION + "\" '" + PERSON_ID_CLASS_VERSION + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_FACTORY_ID + "\" '" + PERSON_FACTORY_ID + '\''
-                + ", \"" + OPTION_VALUE_CLASS_ID + "\" '" + PERSON_CLASS_ID + '\''
-                + ", \"" + OPTION_VALUE_CLASS_VERSION + "\" '" + (PERSON_CLASS_VERSION + 1) + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + (PERSON_CLASS_VERSION + 1) + '\''
                 + ")"
         );
 
@@ -329,14 +329,14 @@ public class SqlPortableTest extends SqlTestSupport {
                 + ", ssn BIGINT"
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '"' + OPTION_KEY_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                + ", \"" + OPTION_KEY_FACTORY_ID + "\" '" + PERSON_ID_FACTORY_ID + '\''
-                + ", \"" + OPTION_KEY_CLASS_ID + "\" '" + PERSON_ID_CLASS_ID + '\''
-                + ", \"" + OPTION_KEY_CLASS_VERSION + "\" '" + PERSON_ID_CLASS_VERSION + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_FACTORY_ID + "\" '" + PERSON_FACTORY_ID + '\''
-                + ", \"" + OPTION_VALUE_CLASS_ID + "\" '" + PERSON_CLASS_ID + '\''
-                + ", \"" + OPTION_VALUE_CLASS_VERSION + "\" '" + PERSON_CLASS_VERSION + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
                 + ")"
         );
 
@@ -359,14 +359,14 @@ public class SqlPortableTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING " + name + ' '
                 + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '"' + OPTION_KEY_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                + ", \"" + OPTION_KEY_FACTORY_ID + "\" '" + PERSON_ID_FACTORY_ID + '\''
-                + ", \"" + OPTION_KEY_CLASS_ID + "\" '" + PERSON_ID_CLASS_ID + '\''
-                + ", \"" + OPTION_KEY_CLASS_VERSION + "\" '" + PERSON_ID_CLASS_VERSION + '\''
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                + ", \"" + OPTION_VALUE_FACTORY_ID + "\" '" + ALL_TYPES_FACTORY_ID + '\''
-                + ", \"" + OPTION_VALUE_CLASS_ID + "\" '" + ALL_TYPES_CLASS_ID + '\''
-                + ", \"" + OPTION_VALUE_CLASS_VERSION + "\" '" + ALL_TYPES_CLASS_VERSION + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + ALL_TYPES_FACTORY_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + ALL_TYPES_CLASS_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + ALL_TYPES_CLASS_VERSION + '\''
                 + ")"
         );
 
@@ -434,12 +434,12 @@ public class SqlPortableTest extends SqlTestSupport {
                 "name VARCHAR)" +
                 " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
                 + "OPTIONS (\n"
-                + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + "'\n"
-                + ", \"" + OPTION_KEY_CLASS + "\" '" + Integer.class.getName() + "'\n"
-                + ", \"" + OPTION_VALUE_FORMAT + "\" '" + PORTABLE_FORMAT + "'\n"
-                + ", \"" + OPTION_VALUE_FACTORY_ID + "\" '" + PERSON_FACTORY_ID + "'\n"
-                + ", \"" + OPTION_VALUE_CLASS_ID + "\" '" + PERSON_CLASS_ID + "'\n"
-                + ", \"" + OPTION_VALUE_CLASS_VERSION + "\" '" + PERSON_CLASS_VERSION + "'\n"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "'\n"
+                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "'\n"
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + "'\n"
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + "'\n"
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + "'\n"
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + "'\n"
                 + ")");
 
         if (explicit) {
@@ -470,14 +470,14 @@ public class SqlPortableTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING " + name + ' '
                            + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                            + "OPTIONS ("
-                           + '"' + OPTION_KEY_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                           + ", \"" + OPTION_KEY_FACTORY_ID + "\" '" + PERSON_ID_FACTORY_ID + '\''
-                           + ", \"" + OPTION_KEY_CLASS_ID + "\" '" + PERSON_ID_CLASS_ID + '\''
-                           + ", \"" + OPTION_KEY_CLASS_VERSION + "\" '" + PERSON_ID_CLASS_VERSION + '\''
-                           + ", \"" + OPTION_VALUE_FORMAT + "\" '" + PORTABLE_FORMAT + '\''
-                           + ", \"" + OPTION_VALUE_FACTORY_ID + "\" '" + PERSON_FACTORY_ID + '\''
-                           + ", \"" + OPTION_VALUE_CLASS_ID + "\" '" + PERSON_CLASS_ID + '\''
-                           + ", \"" + OPTION_VALUE_CLASS_VERSION + "\" '" + PERSON_CLASS_VERSION + '\''
+                           + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                           + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
+                           + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
+                           + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
+                           + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                           + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
+                           + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
+                           + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
                            + ")"
         );
         sqlService.execute("SINK INTO " + name + " (id, name) VALUES (1, 'Alice')");

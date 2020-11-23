@@ -125,10 +125,10 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     public static String javaSerializableMapDdl(String name, Class<?> keyClass, Class<?> valueClass) {
         return "CREATE MAPPING " + name + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
                 + "OPTIONS (\n"
-                + '"' + OPTION_KEY_FORMAT + "\" '" + JAVA_FORMAT + "',\n"
-                + '"' + OPTION_KEY_CLASS + "\" '" + keyClass.getName() + "',\n"
-                + '"' + OPTION_VALUE_FORMAT + "\" '" + JAVA_FORMAT + "',\n"
-                + '"' + OPTION_VALUE_CLASS + "\" '" + valueClass.getName() + "'\n"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',\n"
+                + '\'' + OPTION_KEY_CLASS + "'='" + keyClass.getName() + "',\n"
+                + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',\n"
+                + '\'' + OPTION_VALUE_CLASS + "'='" + valueClass.getName() + "'\n"
                 + ")";
     }
 
