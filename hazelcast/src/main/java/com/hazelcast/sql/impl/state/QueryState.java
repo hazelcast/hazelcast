@@ -16,16 +16,16 @@
 
 package com.hazelcast.sql.impl.state;
 
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.ClockProvider;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -190,15 +190,10 @@ public final class QueryState implements QueryStateCallback {
     }
 
     @Override
-    public void cancel(@Nullable Exception error, boolean local) {
+    public void cancel(@Nonnull Exception error, boolean local) {
         // Make sure that cancel is performed only once.
         if (!completionGuard.compareAndSet(false, true)) {
             return;
-        }
-
-        // Prepare the normalized exception object.
-        if (error == null) {
-            error = QueryException.cancelledByUser();
         }
 
         QueryException error0 = prepareCancelError(error);

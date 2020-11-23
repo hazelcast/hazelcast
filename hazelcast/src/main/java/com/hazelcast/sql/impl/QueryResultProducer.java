@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.sql.impl.row.Row;
 
+import javax.annotation.Nonnull;
+
 /**
  * Generic interface which produces iterator over results which are then delivered to users.
  * Returned iterator must provide rows which were not returned yet.
@@ -35,5 +37,5 @@ public interface QueryResultProducer {
      *
      * @param error Error.
      */
-    void onError(QueryException error);
+    void onError(@Nonnull QueryException error);
 }

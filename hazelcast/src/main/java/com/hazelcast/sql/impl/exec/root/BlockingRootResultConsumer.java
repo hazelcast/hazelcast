@@ -20,6 +20,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.row.Row;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
@@ -82,7 +83,7 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     }
 
     @Override
-    public void onError(QueryException error) {
+    public void onError(@Nonnull QueryException error) {
         synchronized (mux) {
             if (!done) {
                 done = true;
