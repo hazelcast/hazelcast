@@ -18,7 +18,7 @@ based on [Debezium](https://debezium.io/).
 That form however is not production ready:
 
 * it's **inconvenient** to use: gives you huge JSON messages which you
-  then have to interpret on your own, based on Debizium documentation
+  then have to interpret on your own, based on Debezium documentation
 
 * native **timestamps** aren't provided (due to bugs in the code); even
   if fixed their shortcomings aren't documented (mostly that timestamps
@@ -119,7 +119,7 @@ bypasses our convenience API completely.
 
 ### JSON parsing
 
-Debezium database connecters provide messages in standard JSON format
+Debezium database connectors provide messages in standard JSON format
 which can be parsed by any one of the well-known JSON parsing libraries
 out there. For backing the implementations of our [record structure
 interfaces](#record-structure) we have chosen to use [Jackson

@@ -89,7 +89,7 @@ class first.
 Spring-boot has a concept of checking if a provided service is up and
 running, this can then be plugged to various monitoring tools. We've
 created `HazelcastJetHealthIndicator` which reports the status of the
-Jet instance via `HazelcastInstance.getLifecycleservice().isRunning()`.
+Jet instance via `HazelcastInstance.getLifecycleService().isRunning()`.
 
 We've also added the auto-configuration of this health indicator
 (`HazelcastJetHealthIndicatorAutoConfiguration`) to the
@@ -119,7 +119,7 @@ project.
 ## Improvements
 
 The health indicator for Jet actually uses the wrapped
-`HazelcastInstace` to report the status. We could re-use
+`HazelcastInstance` to report the status. We could re-use
 `HazelcastHealthIndicator` which is already available in Spring Boot
 distribution instead of creating a Jet specific one. The problem is
 Spring Boot still uses IMDG `3.12.x` and `com.hazelcast.core.Endpoint`

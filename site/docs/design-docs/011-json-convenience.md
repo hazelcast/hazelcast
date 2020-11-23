@@ -89,7 +89,7 @@ classes/resources to the same location:
         <artifact>com.hazelcast:hazelcast</artifact>
         <excludes>
             <exclude>com/hazelcast/com/fasterxml/**</exclude>
-            <exclue>META-INF/services/com.hazelcast.com.fasterxml.jackson.core.JsonFactory</exclue>
+            <exclude>META-INF/services/com.hazelcast.com.fasterxml.jackson.core.JsonFactory</exclude>
         </excludes>
     </filter>
 </filters>

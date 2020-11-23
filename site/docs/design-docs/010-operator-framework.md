@@ -31,7 +31,7 @@ the Operator ships that represents the Operand or an Operation on an
 Operand (also known as primary resources)
 
 **Managed resources** - the Kubernetes objects or off-cluster services
-the Operator uses to constitute an Operand (also known as secodary
+the Operator uses to constitute an Operand (also known as secondary
 resources)
 
 **Custom Resource Definition (CRD)** - an API of the Operator, providing
@@ -106,7 +106,7 @@ cluster or reconciles the existing ones with the desired state.
 ### RedHat Certified Operators
 
 RedHat has a certification programme for Operators and certified
-Operatorswill get published to the OpenShift catalog. The criteria for
+Operators will get published to the OpenShift catalog. The criteria for
 certification can be found
 [here](https://redhat-connect.gitbook.io/certified-operator-guide/what-if-ive-already-published-a-community-operator#certification-of-a-community-operator)
 

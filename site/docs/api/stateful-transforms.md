@@ -439,7 +439,7 @@ transactions.
 
 Co-grouping allows to join any number of inputs on a common key, which
 can be anything you can calculate from the input item. This makes it
-possible to correlate data from two or more diferrent sources. In the
+possible to correlate data from two or more different sources. In the
 same transform you are able to apply an aggregate function to all the
 grouped items.
 

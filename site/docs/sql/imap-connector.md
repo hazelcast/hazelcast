@@ -72,7 +72,7 @@ For more information on `Portable` see Hazelcast IMDG Reference Manual.
 ### JSON serialization
 
 You don't have to provide any options for the JSON format, but since
-Jet can't automatically determine the column list, you must explitictly
+Jet can't automatically determine the column list, you must explicitly
 specify it:
 
 ```sql

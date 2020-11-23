@@ -396,7 +396,7 @@ The first line specifies the `hazelcast/hazelcast-jet` image as base
 image. The `ADD` command copies the `hello-world.jar` to the `/examples`
 directory inside the container image. `ENV` command defines an
 environment variable `ADDRESSES` with default value of `172.17.0.2`.
-This can be overriden via `-e` parameter of the `docker run`
+This can be overridden via `-e` parameter of the `docker run`
 command. The `CMD` command specifies what command to run.
 
 Then create the image by running the following command:

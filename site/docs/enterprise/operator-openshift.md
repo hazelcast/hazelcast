@@ -1,6 +1,6 @@
 ---
 title: Installation on Red Hat OpenShift
-description: Step-by-step guide to install Hazelcast Jet Enteprise Operator on Red Hat Openshift and deploying a sample job.
+description: Step-by-step guide to install Hazelcast Jet Enterprise Operator on Red Hat Openshift and deploying a sample job.
 ---
 
 [OpenShift](https://www.openshift.com/learn/what-is-openshift) is a
@@ -83,7 +83,7 @@ You'll need a license key to start a Hazelcast Jet Enterprise cluster.
 To pass the license key to the cluster to be started, we need to create
 a `Secret` object which holds our license key.
 
-To create a Licese Key Secret, click to `Add` link from left menu then
+To create a License Key Secret, click to `Add` link from left menu then
 click `From YAML` card.
 
 ```yaml
@@ -282,7 +282,7 @@ Service](assets/developer-jet-topology-mc-service.png)
 
 In the `Service Routing` section you can see the `LoadBalancer` location
 for the Hazelcast Jet Management Center service. Open your favorite
-browser and navigate to `http://<Location>:8081` to access Hazecast Jet
+browser and navigate to `http://<Location>:8081` to access Hazelcast Jet
 Management Center.
 
 You should see the login page at `http://<Location>:8081` like below and

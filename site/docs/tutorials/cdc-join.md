@@ -423,7 +423,7 @@ which handles and fixes event reordering that might happen due to
 parallel processing. It's based on sequence numbers specific to CDC
 sources and so can be used only for these kinds of pipelines. Hopefully
 a future version of Jet will introduce a generic solution for the
-reoreding problem.
+reordering problem.
 
 ```java
 package org.example;

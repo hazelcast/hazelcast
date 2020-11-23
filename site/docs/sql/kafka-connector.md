@@ -76,7 +76,7 @@ to quote identifiers: this way the `.` is interpreted literally.
 ### JSON serialization
 
 You don't have to provide any options for the JSON format, but since
-Jet can't automatically determine the column list, you must explitictly
+Jet can't automatically determine the column list, you must explicitly
 specify it:
 
 ```sql

@@ -317,7 +317,7 @@ hazelcast:
 ```
 
 Put the JAR containing the serializer hook and related classes in the
-`<jet_home>/lib` directory. Make sure that ecah registered serializer
+`<jet_home>/lib` directory. Make sure that each registered serializer
 has a unique type ID.
 
 The advantage of a cluster-level serializer is that it is supported in

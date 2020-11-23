@@ -65,7 +65,7 @@ of groups in the result is large, it can lead to an `OutOfMemoryError`,
 after which the cluster might be unusable. One technique to reduce the
 memory needs is to arrange for the input stream to be sorted by the
 grouping key: then you can store the aggregation state of just one key
-at a time. Once we add agregate functions to the default SQL engine, we
+at a time. Once we add aggregate functions to the default SQL engine, we
 will leverage this optimization.
 
 ### Isolation level
