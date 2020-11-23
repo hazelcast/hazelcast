@@ -749,10 +749,10 @@ For a full example, please see the [Stream Changes From IMap tutorial.](../how-t
 
 #### Map Sink
 
-By default, map sink expects items of type `Entry<Key, Value>` and will
-simply replace the previous entries, if any. However there's variants of
-this that allow you to do atomic updates to existing entries in the map
-by making use `EntryProcessor` objects.
+By default, the map sink expects items of type `Entry<Key, Value>` and
+will simply replace the previous entries, if any. However, there're
+variants of the map sink that allow you to do atomic updates to existing
+entries in the map by making use `EntryProcessor` objects.
 
 The updating sinks come in three variants:
 
@@ -810,6 +810,11 @@ static class IncrementEntryProcessor implements EntryProcessor<String, Integer, 
     }
 }
 ```
+
+> These variants above can be used to remove existing map entries by
+setting their values as null. To put it another way, if these map sink
+variants updates the existing entry’s value to a null value, this entry
+will be removed from the map.
 
 #### Predicates and Projections
 
