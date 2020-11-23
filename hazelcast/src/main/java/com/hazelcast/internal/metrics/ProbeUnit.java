@@ -24,6 +24,8 @@ public enum ProbeUnit {
     BYTES,
     /** Timestamp or duration represented in ms */
     MS,
+    /** Timestamp or duration represented in µs */
+    US,
     /** Timestamp or duration represented in nanoseconds */
     NS,
     /** An integer mostly in range 0..100 or a double mostly in range 0..1 */
