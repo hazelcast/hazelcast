@@ -18,6 +18,9 @@ package com.hazelcast.internal.config.override;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.RestServerEndpointConfig;
+import com.hazelcast.config.ServerSocketEndpointConfig;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -57,6 +60,43 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         assertEquals(40, config.getScheduledExecutorConfig("default").getCapacity());
         assertEquals(2, config.getQueueConfig("default").getMaxSize());
         assertFalse(config.getNetworkConfig().getJoin().isAutoDetectionEnabled());
+    }
+
+    @Test
+    public void shouldHandleAdvancedNetworkEndpointConfiguration() throws Exception {
+        Config config = new Config();
+        config.getAdvancedNetworkConfig().setClientEndpointConfig(new ServerSocketEndpointConfig()
+          .setPort(9000)
+          .setPublicAddress("172.29.1.1"));
+        config.getAdvancedNetworkConfig().setMemberEndpointConfig(new ServerSocketEndpointConfig()
+          .setPort(9001)
+          .setPublicAddress("172.29.1.1"));
+        config.getAdvancedNetworkConfig().setRestEndpointConfig(new RestServerEndpointConfig()
+          .setPort(9002)
+          .setPublicAddress("172.29.1.1"));
+        config.getAdvancedNetworkConfig().setMemcacheEndpointConfig(new ServerSocketEndpointConfig()
+          .setPort(9003)
+          .setPublicAddress("172.29.1.1"));
+
+        withEnvironmentVariable("HZ_ADVANCEDNETWORK_CLIENTSERVERSOCKETENDPOINTCONFIG.PUBLICADDRESS", "127.0.0.1")
+          .and("HZ_ADVANCEDNETWORK_MEMBERSERVERSOCKETENDPOINTCONFIG.PUBLICADDRESS", "127.0.0.2")
+          .and("HZ_ADVANCEDNETWORK_RESTSERVERSOCKETENDPOINTCONFIG.PUBLICADDRESS", "127.0.0.3")
+          .and("HZ_ADVANCEDNETWORK_MEMCACHESERVERSOCKETENDPOINTCONFIG.PUBLICADDRESS", "127.0.0.4")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        ServerSocketEndpointConfig clientEndpointConfig = (ServerSocketEndpointConfig) config.getAdvancedNetworkConfig().getEndpointConfigs().get(EndpointQualifier.CLIENT);
+        ServerSocketEndpointConfig memberEndpointConfig = (ServerSocketEndpointConfig) config.getAdvancedNetworkConfig().getEndpointConfigs().get(EndpointQualifier.MEMBER);
+        ServerSocketEndpointConfig restEndpointConfig = (ServerSocketEndpointConfig) config.getAdvancedNetworkConfig().getEndpointConfigs().get(EndpointQualifier.REST);
+        ServerSocketEndpointConfig memcacheEndpointConfig = (ServerSocketEndpointConfig) config.getAdvancedNetworkConfig().getEndpointConfigs().get(EndpointQualifier.MEMCACHE);
+
+        assertEquals(clientEndpointConfig.getPort(), 9000);
+        assertEquals(clientEndpointConfig.getPublicAddress(), "127.0.0.1");
+        assertEquals(memberEndpointConfig.getPort(), 9001);
+        assertEquals(memberEndpointConfig.getPublicAddress(), "127.0.0.2");
+        assertEquals(restEndpointConfig.getPort(), 9002);
+        assertEquals(restEndpointConfig.getPublicAddress(), "127.0.0.3");
+        assertEquals(memcacheEndpointConfig.getPort(), 9003);
+        assertEquals(memcacheEndpointConfig.getPublicAddress(), "127.0.0.4");
     }
 
     @Test(expected = InvalidConfigurationException.class)
