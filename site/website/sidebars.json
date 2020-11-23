@@ -96,6 +96,7 @@
     ],
     "Design Documents": [
       "design-docs/index",
+      "design-docs/015-mqtt-connector",
       "design-docs/014-batchstage-sort",
       "design-docs/013-system-time-watermarks",
       "design-docs/012-improved-job-resilience",
