@@ -99,7 +99,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         assertEquals(memcacheEndpointConfig.getPort(), 9003);
         assertEquals(memcacheEndpointConfig.getPublicAddress(), "127.0.0.4");
     }
-  
+
     @Test
     public void shouldHandleNetworkRestApiConfig() throws Exception {
         Config config = new Config();
