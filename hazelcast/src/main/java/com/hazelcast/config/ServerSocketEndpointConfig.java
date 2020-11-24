@@ -286,6 +286,7 @@ public class ServerSocketEndpointConfig
                 + ", port=" + port
                 + ", portCount=" + portCount
                 + ", portAutoIncrement=" + portAutoIncrement
+                + ", publicAddress=" + publicAddress
                 + ", interfaces=" + interfaces
                 + ", sslConfig=" + sslConfig
                 + ", socketInterceptorConfig=" + socketInterceptorConfig
