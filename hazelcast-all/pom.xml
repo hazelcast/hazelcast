@@ -73,7 +73,6 @@
                         </goals>
                         <configuration>
                             <shadedArtifactId>hazelcast-all</shadedArtifactId>
-                            <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
                             <createDependencyReducedPom>true</createDependencyReducedPom>
                             <minimizeJar>false</minimizeJar>
                             <createSourcesJar>true</createSourcesJar>

@@ -22,6 +22,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.validation.SchemaFactory;
 
@@ -80,5 +82,16 @@ public class XmlUtilTest {
         assertThrows(IllegalArgumentException.class, () -> XmlUtil.setAttribute(transformerFactory, "test://no-such-property"));
         ignoreXxeFailureProp.setOrClearProperty("true");
         XmlUtil.setAttribute(transformerFactory, "test://no-such-property");
+    }
+
+    @Test
+    public void testGetDocumentBuilderFactory() throws Exception {
+        DocumentBuilderFactory dbf = XmlUtil.getNsAwareDocumentBuilderFactory();
+        assertNotNull(dbf);
+        assertThrows(ParserConfigurationException.class, () -> XmlUtil.setFeature(dbf, "test://no-such-feature"));
+        ignoreXxeFailureProp.setOrClearProperty("false");
+        assertThrows(ParserConfigurationException.class, () -> XmlUtil.setFeature(dbf, "test://no-such-feature"));
+        ignoreXxeFailureProp.setOrClearProperty("true");
+        XmlUtil.setFeature(dbf, "test://no-such-feature");
     }
 }
