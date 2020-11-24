@@ -20,7 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -41,6 +43,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
+import static com.google.common.primitives.Ints.asList;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
 
@@ -165,6 +168,30 @@ public class MapProjectionTest extends HazelcastTestSupport {
         assertThat(result, containsInAnyOrder(5.0d, 8.0d));
     }
 
+    @Test
+    public void projection_1Node_objectValue_withPartitionSet() {
+        IMap<String, Person> map = getMapWithNodeCount(1);
+        populateMapWithPersons(map);
+        PartitionIdSet partitionSubset = new PartitionIdSet(3, asList(0, 1));
+
+        Collection<Double> result = ((MapProxyImpl<String, Person>) map)
+                .project(new ObjectValueIncrementingProjection(), Predicates.alwaysTrue(), partitionSubset);
+
+        assertThat(result, containsInAnyOrder(5.0d, 8.0d));
+    }
+
+    @Test
+    public void projection_3Nodes_objectValue_withPartitionSet() {
+        IMap<String, Person> map = getMapWithNodeCount(3);
+        populateMapWithPersons(map);
+        PartitionIdSet partitionSubset = new PartitionIdSet(3, asList(0, 1));
+
+        Collection<Double> result = ((MapProxyImpl<String, Person>) map)
+                .project(new ObjectValueIncrementingProjection(), Predicates.alwaysTrue(), partitionSubset);
+
+        assertThat(result, containsInAnyOrder(5.0d, 8.0d));
+    }
+
     public <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount) {
         if (nodeCount < 1) {
             throw new IllegalArgumentException("node count < 1");
@@ -185,6 +212,7 @@ public class MapProjectionTest extends HazelcastTestSupport {
         return instance.getMap("aggr");
     }
 
+    // used by hz-enterprise
     public void doWithConfig(Config config) {
     }
 
@@ -195,9 +223,9 @@ public class MapProjectionTest extends HazelcastTestSupport {
     }
 
     private void populateMapWithPersons(IMap<String, Person> map) {
-        map.put("key1", new Person(1.0d, "NY"));
-        map.put("key2", new Person(4.0d, "DC"));
-        map.put("key3", new Person(7.0d, "OH"));
+        map.put("key3", new Person(1.0d, "NY"));
+        map.put("key4", new Person(4.0d, "DC"));
+        map.put("key5", new Person(7.0d, "OH"));
     }
 
     public static class Person implements DataSerializable {

@@ -1392,6 +1392,9 @@ public abstract class HazelcastTestSupport {
         assertNotEquals(format(message, expected, actual), expected, actual);
     }
 
+    /**
+     * Assert that {@code actualValue >= lowerBound && actualValue <= upperBound}.
+     */
     public static void assertBetween(String label, long actualValue, long lowerBound, long upperBound) {
         assertTrue(format("Expected '%s' to be between %d and %d, but was %d", label, lowerBound, upperBound, actualValue),
                 actualValue >= lowerBound && actualValue <= upperBound);

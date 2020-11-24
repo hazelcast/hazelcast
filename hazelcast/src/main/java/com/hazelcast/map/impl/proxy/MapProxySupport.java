@@ -764,7 +764,7 @@ abstract class MapProxySupport<K, V>
                     retrySet.add(entry.getKey());
                 }
             }
-            if (retrySet.size() > 0) {
+            if (!retrySet.isEmpty()) {
                 results = retryPartitions(retrySet, operationFactory);
                 iterator = results.entrySet().iterator();
                 TimeUnit.SECONDS.sleep(1);
@@ -1358,7 +1358,7 @@ abstract class MapProxySupport<K, V>
             Data key = toData(partitionPredicate.getPartitionKey());
             int partitionId = partitionService.getPartitionId(key);
             userPredicate = partitionPredicate.getTarget();
-            target = createPartitionTarget(partitionId);
+            target = createPartitionTarget(new PartitionIdSet(partitionService.getPartitionCount(), partitionId));
         }
         handleHazelcastInstanceAwareParams(userPredicate);
 

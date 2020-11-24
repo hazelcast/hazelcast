@@ -18,11 +18,14 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.impl.predicates.InstanceOfPredicate;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,8 +36,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getSerializationService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -44,13 +52,13 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapValuesTest extends HazelcastTestSupport {
 
+    private HazelcastInstance instance;
     private IMap<String, String> map;
     private SerializationService serializationService;
 
     @Before
     public void setup() {
-        HazelcastInstance instance = createHazelcastInstance();
-
+        instance = createHazelcastInstance();
         map = instance.getMap(randomName());
         serializationService = getSerializationService(instance);
     }
@@ -109,6 +117,27 @@ public class MapValuesTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void whenSelectingPartitionSubset() {
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        PartitionIdSet partitionSubset =
+                new PartitionIdSet(partitionCount, IntStream.range(0, partitionCount / 2).boxed().collect(Collectors.toList()));
+        Set<String> matchingKeys = new HashSet<>();
+        for (int i = 0; i < 10; i++) {
+            String key = String.valueOf(i);
+            map.put(key, key);
+            if (partitionSubset.contains(nodeEngine.getPartitionService().getPartitionId(key))) {
+                matchingKeys.add(key);
+            }
+        }
+        // assert test sanity
+        assertBetween("keyCount", matchingKeys.size(), 1, map.size() - 1);
+
+        Collection<String> result = ((MapProxyImpl<String, String>) map).values(Predicates.alwaysTrue(), partitionSubset);
+        assertEquals(matchingKeys, result);
+    }
+
+    @Test
     public void testResultType() {
         map.put("1", "a");
         Collection<String> entries = map.values(Predicates.alwaysTrue());
@@ -121,7 +150,7 @@ public class MapValuesTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSerializationServiceNullClassLoaderProblem() throws Exception {
+    public void testSerializationServiceNullClassLoaderProblem() {
         // if the classloader is null the following call throws NullPointerException
         map.values(new InstanceOfPredicate(SampleTestObjects.PortableEmployee.class));
     }

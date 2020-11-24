@@ -93,9 +93,14 @@ public class QueryEngineImpl implements QueryEngine {
             case ALL_NODES:
                 return runOnAllPartitions(adjustedQuery);
             case LOCAL_NODE:
-                return runOnLocalPartitions(adjustedQuery);
+                return runOnGivenPartitions(adjustedQuery, getLocalPartitionIds());
             case PARTITION_OWNER:
-                return runOnGivenPartition(adjustedQuery, target);
+                int solePartition = target.partitions().solePartition();
+                if (solePartition >= 0) {
+                    return runOnGivenPartition(adjustedQuery, solePartition);
+                } else {
+                    return runOnGivenPartitions(adjustedQuery, target.partitions());
+                }
             default:
                 throw new IllegalArgumentException("Illegal target " + query);
         }
@@ -115,14 +120,12 @@ public class QueryEngineImpl implements QueryEngine {
     }
 
     // query thread first, fallback to partition thread
-    private Result runOnLocalPartitions(Query query) {
-        PartitionIdSet mutablePartitionIds = getLocalPartitionIds();
-
-        Result result = doRunOnQueryThreads(query, mutablePartitionIds, LOCAL_NODE);
-        if (isResultFromAnyPartitionMissing(mutablePartitionIds)) {
-            doRunOnPartitionThreads(query, mutablePartitionIds, result);
+    private Result runOnGivenPartitions(Query query, PartitionIdSet partitions) {
+        Result result = doRunOnQueryThreads(query, partitions, LOCAL_NODE);
+        if (isResultFromAnyPartitionMissing(partitions)) {
+            doRunOnPartitionThreads(query, partitions, result);
         }
-        assertAllPartitionsQueried(mutablePartitionIds);
+        assertAllPartitionsQueried(partitions);
 
         return result;
     }
@@ -141,10 +144,10 @@ public class QueryEngineImpl implements QueryEngine {
     }
 
     // partition thread ONLY (for now)
-    private Result runOnGivenPartition(Query query, Target target) {
+    private Result runOnGivenPartition(Query query, int partitionId) {
         try {
             return dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
-                    query, target.partitionId()).get();
+                    query, partitionId).get();
         } catch (Throwable t) {
             throw rethrow(t);
         }
