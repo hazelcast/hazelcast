@@ -85,9 +85,9 @@ repositories {
 }
 
 dependencies {
-    compile 'com.hazelcast.jet:hazelcast-jet:{jet-version}'
-    compile 'com.hazelcast.jet-contrib:pulsar:0.1'
-    compile 'org.apache.pulsar:pulsar-client:2.5.0'
+    implementation 'com.hazelcast.jet:hazelcast-jet:{jet-version}'
+    implementation 'com.hazelcast.jet-contrib:pulsar:0.1'
+    implementation 'org.apache.pulsar:pulsar-client:2.5.0'
 }
 
 jar {

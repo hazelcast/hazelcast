@@ -32,7 +32,7 @@ version '1.0-SNAPSHOT'
 repositories.mavenCentral()
 
 dependencies {
-  compile 'com.hazelcast.jet.contrib:hazelcast-jet-spring-boot-starter:2.0.0'
+  implementation 'com.hazelcast.jet.contrib:hazelcast-jet-spring-boot-starter:2.0.0'
 }
 ```
 

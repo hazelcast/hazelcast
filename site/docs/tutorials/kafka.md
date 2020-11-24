@@ -71,8 +71,8 @@ version '1.0-SNAPSHOT'
 repositories.mavenCentral()
 
 dependencies {
-    compile 'com.hazelcast.jet:hazelcast-jet:{jet-version}'
-    compile 'com.hazelcast.jet:hazelcast-jet-kafka:{jet-version}'
+    implementation 'com.hazelcast.jet:hazelcast-jet:{jet-version}'
+    implementation 'com.hazelcast.jet:hazelcast-jet-kafka:{jet-version}'
 }
 
 jar.manifest.attributes 'Main-Class': 'org.example.JetJob'

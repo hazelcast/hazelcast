@@ -71,8 +71,8 @@ version '1.0-SNAPSHOT'
 repositories.mavenCentral()
 
 dependencies {
-    compile 'com.hazelcast.jet:hazelcast-jet:{jet-version}'
-    compile 'com.hazelcast.jet.examples:hazelcast-jet-examples-trade-source:{jet-version}'
+    implementation 'com.hazelcast.jet:hazelcast-jet:{jet-version}'
+    implementation 'com.hazelcast.jet.examples:hazelcast-jet-examples-trade-source:{jet-version}'
 }
 
 jar {
