@@ -63,9 +63,9 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEndToEndConstructor.OPERATION_WAIT_TIMEOUT_MINUTES;
 import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.publishEntryEvent;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
+import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MINUTES;
-import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 
 
 /**
@@ -461,7 +461,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         IndexConfig config0 = getNormalizedIndexConfig(config);
 
-        indexes.addOrGetIndex(config0, null);
+        indexes.addOrGetIndex(config0);
 
         InternalSerializationService serializationService = context.getSerializationService();
 

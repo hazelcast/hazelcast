@@ -104,7 +104,7 @@ public class IndexTest {
         IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, "favoriteCity");
 
         Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        is.addOrGetIndex(config, null);
+        is.addOrGetIndex(config);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
         is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
@@ -119,7 +119,7 @@ public class IndexTest {
         IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, "favoriteCity");
 
         Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        is.addOrGetIndex(config, null);
+        is.addOrGetIndex(config);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
         is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
@@ -138,9 +138,9 @@ public class IndexTest {
     @Test
     public void testIndex() throws QueryException {
         Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        Index dIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "d"), null);
-        Index boolIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "bool"), null);
-        Index strIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "str"), null);
+        Index dIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "d"));
+        Index boolIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "bool"));
+        Index strIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "str"));
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(i % 2 == 0, -10.34d, "joe" + i));
@@ -201,7 +201,7 @@ public class IndexTest {
     @Test
     public void testIndexWithNull() throws QueryException {
         Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        Index strIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "str"), null);
+        Index strIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "str"));
 
         Data value = ss.toData(new MainPortable(false, 1, null));
         Data key1 = ss.toData(0);
@@ -471,12 +471,12 @@ public class IndexTest {
         IndexConfig config = IndexUtils.createTestIndexConfig(type, QueryConstants.THIS_ATTRIBUTE_NAME.value());
 
         IndexImpl index = new IndexImpl(
-            config,
-            ss,
-            newExtractor(),
-            copyBehavior,
-            PerIndexStats.EMPTY,
-            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
+                config,
+                ss,
+                newExtractor(),
+                copyBehavior,
+                PerIndexStats.EMPTY,
+                MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
         );
 
         assertEquals(0, index.getRecords(0L).size());

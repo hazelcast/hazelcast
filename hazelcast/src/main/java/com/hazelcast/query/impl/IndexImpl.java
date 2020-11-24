@@ -30,14 +30,14 @@ public class IndexImpl extends AbstractIndex {
     private final GlobalIndexPartitionTracker partitionTracker;
 
     public IndexImpl(
-        IndexConfig config,
-        InternalSerializationService ss,
-        Extractors extractors,
-        IndexCopyBehavior copyBehavior,
-        PerIndexStats stats,
-        int partitionCount
+            IndexConfig config,
+            InternalSerializationService ss,
+            Extractors extractors,
+            IndexCopyBehavior copyBehavior,
+            PerIndexStats stats,
+            int partitionCount
     ) {
-        super(config, ss, extractors, copyBehavior, stats, null);
+        super(config, ss, extractors, copyBehavior, stats);
 
         partitionTracker = new GlobalIndexPartitionTracker(partitionCount);
     }

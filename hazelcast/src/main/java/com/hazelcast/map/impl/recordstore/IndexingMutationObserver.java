@@ -16,11 +16,10 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
@@ -35,14 +34,12 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
 
     private final int partitionId;
     private final MapContainer mapContainer;
-    private final StoreAdapter storeAdapter;
     private final SerializationService ss;
     private final RecordStore recordStore;
 
     public IndexingMutationObserver(RecordStore recordStore, SerializationService ss) {
         this.partitionId = recordStore.getPartitionId();
         this.mapContainer = recordStore.getMapContainer();
-        this.storeAdapter = new RecordStoreAdapter(recordStore);
         this.recordStore = recordStore;
         this.ss = ss;
     }
@@ -166,7 +163,6 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
         QueryableEntry queryableEntry = mapContainer.newQueryEntry(toBackingKeyFormat(dataKey),
                 getValueOrCachedValue(record, ss));
         queryableEntry.setRecord(record);
-        queryableEntry.setStoreAdapter(storeAdapter);
 
         indexes.putEntry(queryableEntry, oldValue, operationSource);
     }

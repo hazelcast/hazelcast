@@ -27,7 +27,6 @@ import com.hazelcast.internal.monitor.impl.PartitionIndexesStats;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
@@ -132,7 +131,7 @@ public class Indexes {
         return new Builder(ss, indexCopyBehavior, inMemoryFormat);
     }
 
-    public synchronized InternalIndex addOrGetIndex(IndexConfig indexConfig, StoreAdapter partitionStoreAdapter) {
+    public synchronized InternalIndex addOrGetIndex(IndexConfig indexConfig) {
         String name = indexConfig.getName();
 
         assert name != null;
@@ -149,9 +148,7 @@ public class Indexes {
                 serializationService,
                 indexCopyBehavior,
                 stats.createPerIndexStats(indexConfig.getType() == IndexType.SORTED, usesCachedQueryableEntries),
-                partitionStoreAdapter,
-                partitionCount
-        );
+                partitionCount);
 
         indexesByName.put(name, index);
         if (index.isEvaluateOnly()) {
@@ -193,9 +190,9 @@ public class Indexes {
      * Creates indexes according to the index definitions stored inside this
      * indexes.
      */
-    public void createIndexesFromRecordedDefinitions(StoreAdapter partitionStoreAdapter) {
+    public void createIndexesFromRecordedDefinitions() {
         definitions.forEach((name, indexConfig) -> {
-            addOrGetIndex(indexConfig, partitionStoreAdapter);
+            addOrGetIndex(indexConfig);
             definitions.compute(name, (k, v) -> {
                 return indexConfig == v ? null : v;
             });

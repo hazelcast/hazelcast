@@ -145,13 +145,6 @@ public abstract class BaseIndexStore implements IndexStore {
         }
     }
 
-    void markIndexStoreExpirableIfNecessary(QueryableEntry record) {
-        // StoreAdapter is not set in plenty of internal unit tests
-        if (record.getStoreAdapter() != null) {
-            isIndexStoreExpirable = record.getStoreAdapter().isExpirable();
-        }
-    }
-
     boolean isExpirable() {
         return isIndexStoreExpirable;
     }
