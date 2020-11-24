@@ -37,6 +37,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_MET
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_OWNED_ENTRY_COUNT;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
+import static com.hazelcast.internal.metrics.ProbeUnit.US;
 
 /**
  * Default implementation of {@link com.hazelcast.internal.monitor.LocalCacheStats}
@@ -79,11 +80,11 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
     private long cacheRemovals;
     @Probe(name = CACHE_METRIC_CACHE_EVICTIONS)
     private long cacheEvictions;
-    @Probe(name = CACHE_METRIC_AVERAGE_GET_TIME, unit = MS)
+    @Probe(name = CACHE_METRIC_AVERAGE_GET_TIME, unit = US)
     private float averageGetTime;
-    @Probe(name = CACHE_METRIC_AVERAGE_PUT_TIME, unit = MS)
+    @Probe(name = CACHE_METRIC_AVERAGE_PUT_TIME, unit = US)
     private float averagePutTime;
-    @Probe(name = CACHE_METRIC_AVERAGE_REMOVAL_TIME, unit = MS)
+    @Probe(name = CACHE_METRIC_AVERAGE_REMOVAL_TIME, unit = US)
     private float averageRemoveTime;
 
     public LocalCacheStatsImpl() {

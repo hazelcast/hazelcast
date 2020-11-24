@@ -32,6 +32,7 @@ import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironment
 import static com.hazelcast.internal.config.override.ExternalConfigTestUtils.runWithSystemProperty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -98,15 +99,28 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         assertEquals(memcacheEndpointConfig.getPort(), 9003);
         assertEquals(memcacheEndpointConfig.getPublicAddress(), "127.0.0.4");
     }
+  
+    @Test
+    public void shouldHandleNetworkRestApiConfig() throws Exception {
+        Config config = new Config();
+        config.getNetworkConfig()
+          .getRestApiConfig()
+          .disableAllGroups();
+
+        withEnvironmentVariable("HZ_NETWORK_RESTAPI_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().isEmpty());
+    }
 
     @Test(expected = InvalidConfigurationException.class)
     public void shouldDisallowConflictingEntries() throws Exception {
         withEnvironmentVariable("HZ_CLUSTERNAME", "test")
           .execute(
-              () -> runWithSystemProperty("hz.cluster-name", "test2", () -> {
-                  Config config = new Config();
-                  new ExternalConfigurationOverride().overwriteMemberConfig(config);
-              })
+            () -> runWithSystemProperty("hz.cluster-name", "test2", () -> {
+                Config config = new Config();
+                new ExternalConfigurationOverride().overwriteMemberConfig(config);
+            })
           );
     }
 }
