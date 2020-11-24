@@ -23,6 +23,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,14 +34,14 @@ import java.util.Arrays;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes.FIRST_KNOWN;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType.bitWidthOf;
 import static com.hazelcast.sql.impl.expression.ExpressionTestBase.TYPE_FACTORY;
+import static junit.framework.TestCase.assertEquals;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class HazelcastInferTypesTest {
-
+public class HazelcastInferTypesTest extends InferTypesTestSupport {
     @Test
     public void testFirstKnown() {
         //@formatter:off
@@ -81,6 +82,26 @@ public class HazelcastInferTypesTest {
                 HazelcastIntegerType.of(BIGINT, false), HazelcastIntegerType.of(BIGINT, false)
         );
         //@formatter:on
+    }
+
+    @Test
+    public void testExplicit() {
+        SqlOperandTypeInference inference = HazelcastInferTypes.explicitSingle(SqlTypeName.INTEGER);
+
+        // Replace the type for single-operand calls
+        RelDataType[] operandTypes = new RelDataType[] { type(SqlTypeName.BIGINT) };
+        inference.inferOperandTypes(createBinding(), type(SqlTypeName.INTEGER), operandTypes);
+        assertEquals(type(SqlTypeName.INTEGER), operandTypes[0]);
+
+        operandTypes = new RelDataType[] { typeUnknown() };
+        inference.inferOperandTypes(createBinding(), type(SqlTypeName.INTEGER), operandTypes);
+        assertEquals(type(SqlTypeName.INTEGER), operandTypes[0]);
+
+        // Do not replace the type because operands count doesn't match
+        operandTypes = new RelDataType[] { type(SqlTypeName.BIGINT), type(SqlTypeName.DECIMAL) };
+        inference.inferOperandTypes(createBinding(), type(SqlTypeName.INTEGER), operandTypes);
+        assertEquals(type(SqlTypeName.BIGINT), operandTypes[0]);
+        assertEquals(type(SqlTypeName.DECIMAL), operandTypes[1]);
     }
 
     @SuppressWarnings("SameParameterValue")

@@ -214,6 +214,7 @@ public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTes
         checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to DECIMAL", LOCAL_DATE_TIME_VAL);
         checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to DECIMAL", OFFSET_DATE_TIME_VAL);
         checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
+        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to DECIMAL", true);
 
         // Two operands, first operand
         check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), (byte) 10);
@@ -231,6 +232,7 @@ public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTes
         checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to DECIMAL", LOCAL_DATE_TIME_VAL);
         checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to DECIMAL", OFFSET_DATE_TIME_VAL);
         checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
+        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to DECIMAL", true);
 
         // Two operands, second operand
         check_2("15", "?", SqlColumnType.TINYINT, (byte) 10, (byte) -1);
@@ -246,9 +248,16 @@ public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTes
         checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to INTEGER", LOCAL_DATE_TIME_VAL);
         checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to INTEGER", OFFSET_DATE_TIME_VAL);
         checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to INTEGER", new ExpressionValue.ObjectVal());
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to INTEGER", true);
 
         // Two operands, both
         check_2("?", "?", SqlColumnType.DECIMAL, new BigDecimal("10"), 15, -1);
+    }
+
+    @Test
+    public void test_boolean() {
+        checkColumnFailure_2(new ExpressionBiValue.BooleanIntegerVal().fields(true, 127), SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<BOOLEAN>, <INTEGER>)'");
+        checkColumnFailure_2(new ExpressionBiValue.IntegerBooleanVal().fields(127, true), SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<INTEGER>, <BOOLEAN>)'");
     }
 
     @Test
@@ -288,12 +297,14 @@ public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTes
         check_2("15.1", "field1", SqlColumnType.DECIMAL, new BigDecimal("10"));
         check_2("'15.1'", "field1", SqlColumnType.DECIMAL, new BigDecimal("10"));
         checkFailure_2("'bad'", "field1", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
+        checkFailure_2("true", "field1", SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<BOOLEAN>, <INTEGER>)'");
 
         // Second operand
         put(new IntegerVal().field1(15));
         check_2("field1", "-1", SqlColumnType.INTEGER, 10);
         check_2("field1", "'-1'", SqlColumnType.INTEGER, 10);
         checkFailure_2("field1", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
+        checkFailure_2("field1", "true", SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<INTEGER>, <BOOLEAN>)'");
     }
 
     private void checkColumn_1(ExpressionValue value, SqlColumnType expectedType, Object expectedValue) {

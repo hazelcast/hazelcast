@@ -133,6 +133,7 @@ import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
@@ -845,13 +846,15 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleMemberServerSocketEndpointConfig(Node node) throws Exception {
-        ServerSocketEndpointConfig config = new ServerSocketEndpointConfig();
+        ServerSocketEndpointConfig config = (ServerSocketEndpointConfig) this.config.getAdvancedNetworkConfig()
+          .getEndpointConfigs().getOrDefault(EndpointQualifier.MEMBER, new ServerSocketEndpointConfig());
         config.setProtocolType(ProtocolType.MEMBER);
         handleServerSocketEndpointConfig(config, node);
     }
 
     private void handleClientServerSocketEndpointConfig(Node node) throws Exception {
-        ServerSocketEndpointConfig config = new ServerSocketEndpointConfig();
+        ServerSocketEndpointConfig config = (ServerSocketEndpointConfig) this.config.getAdvancedNetworkConfig()
+          .getEndpointConfigs().getOrDefault(EndpointQualifier.CLIENT, new ServerSocketEndpointConfig());
         config.setProtocolType(ProtocolType.CLIENT);
         handleServerSocketEndpointConfig(config, node);
     }
@@ -863,7 +866,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleRestServerSocketEndpointConfig(Node node) throws Exception {
-        RestServerEndpointConfig config = new RestServerEndpointConfig();
+        RestServerEndpointConfig config = (RestServerEndpointConfig) this.config.getAdvancedNetworkConfig()
+          .getEndpointConfigs().getOrDefault(EndpointQualifier.REST, new RestServerEndpointConfig());
         handleServerSocketEndpointConfig(config, node);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
@@ -876,7 +880,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleMemcacheServerSocketEndpointConfig(Node node) throws Exception {
-        ServerSocketEndpointConfig config = new ServerSocketEndpointConfig();
+        ServerSocketEndpointConfig config = (ServerSocketEndpointConfig) this.config.getAdvancedNetworkConfig()
+          .getEndpointConfigs().getOrDefault(EndpointQualifier.MEMCACHE, new ServerSocketEndpointConfig());
         config.setProtocolType(ProtocolType.MEMCACHE);
         handleServerSocketEndpointConfig(config, node);
     }
@@ -908,18 +913,15 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleEndpointConfigCommons(child, nodeName, endpointConfig);
             }
         }
-        addEndpointConfig(endpointConfig);
-    }
 
-    private void addEndpointConfig(EndpointConfig endpointConfig) {
         switch (endpointConfig.getProtocolType()) {
             case MEMBER:
                 ensureServerSocketEndpointConfig(endpointConfig);
-                config.getAdvancedNetworkConfig().setMemberEndpointConfig((ServerSocketEndpointConfig) endpointConfig);
+                config.getAdvancedNetworkConfig().setMemberEndpointConfig(endpointConfig);
                 break;
             case CLIENT:
                 ensureServerSocketEndpointConfig(endpointConfig);
-                config.getAdvancedNetworkConfig().setClientEndpointConfig((ServerSocketEndpointConfig) endpointConfig);
+                config.getAdvancedNetworkConfig().setClientEndpointConfig(endpointConfig);
                 break;
             case REST:
                 ensureServerSocketEndpointConfig(endpointConfig);
@@ -929,7 +931,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 config.getAdvancedNetworkConfig().addWanEndpointConfig(endpointConfig);
                 break;
             case MEMCACHE:
-                config.getAdvancedNetworkConfig().setMemcacheEndpointConfig((ServerSocketEndpointConfig) endpointConfig);
+                config.getAdvancedNetworkConfig().setMemcacheEndpointConfig(endpointConfig);
                 break;
             default:
                 throw new InvalidConfigurationException("Endpoint config has invalid protocol type "
@@ -2653,8 +2655,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleRestApi(Node node) {
-        RestApiConfig restApiConfig = new RestApiConfig();
-        config.getNetworkConfig().setRestApiConfig(restApiConfig);
+        RestApiConfig restApiConfig = config.getNetworkConfig().getRestApiConfig();
         boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
         restApiConfig.setEnabled(enabled);
         handleRestApiEndpointGroups(node);

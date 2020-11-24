@@ -25,8 +25,8 @@ import com.hazelcast.partition.MigrationListener;
  */
 class MigrationListenerAdapter implements PartitionEventListener<ReplicaMigrationEvent> {
 
-    static final int MIGRATION_STARTED = -1;
-    static final int MIGRATION_FINISHED = -2;
+    static final int MIGRATION_STARTED_PARTITION_ID = -1;
+    static final int MIGRATION_FINISHED_PARTITION_ID = -2;
 
     private final MigrationListener migrationListener;
 
@@ -36,12 +36,11 @@ class MigrationListenerAdapter implements PartitionEventListener<ReplicaMigratio
 
     @Override
     public void onEvent(ReplicaMigrationEvent event) {
-
         switch (event.getPartitionId()) {
-            case MIGRATION_STARTED:
+            case MIGRATION_STARTED_PARTITION_ID:
                 migrationListener.migrationStarted(event.getMigrationState());
                 break;
-            case MIGRATION_FINISHED:
+            case MIGRATION_FINISHED_PARTITION_ID:
                 migrationListener.migrationFinished(event.getMigrationState());
                 break;
             default:
@@ -51,7 +50,6 @@ class MigrationListenerAdapter implements PartitionEventListener<ReplicaMigratio
                     migrationListener.replicaMigrationFailed(event);
                 }
         }
-
     }
 
 }

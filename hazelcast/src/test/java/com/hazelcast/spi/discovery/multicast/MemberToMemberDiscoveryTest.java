@@ -24,7 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -38,7 +38,7 @@ import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.OverridePropertyRule.set;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class MemberToMemberDiscoveryTest extends HazelcastTestSupport {
 
     @Rule
