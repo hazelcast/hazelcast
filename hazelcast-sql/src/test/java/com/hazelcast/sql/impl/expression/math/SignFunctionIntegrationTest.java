@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
+import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -32,7 +32,7 @@ import java.math.BigInteger;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SignFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
+public class SignFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testColumn() {
         checkColumn((byte) 0, SqlColumnType.TINYINT, (byte) 0);
@@ -190,12 +190,12 @@ public class SignFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
     private void checkValue(Object operand, SqlColumnType expectedType, Object expectedValue, Object... params) {
         String sql = "SELECT SIGN(" + operand + ") FROM map";
 
-        checkValueInternal(sql, expectedType, expectedValue, params);
+        checkValue0(sql, expectedType, expectedValue, params);
     }
 
     private void checkFailure(Object operand, int expectedErrorCode, String expectedErrorMessage, Object... params) {
         String sql = "SELECT SIGN(" + operand + ") FROM map";
 
-        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
+        checkFailure0(sql, expectedErrorCode, expectedErrorMessage, params);
     }
 }

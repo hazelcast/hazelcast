@@ -17,15 +17,9 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
-import com.hazelcast.sql.support.expressions.ExpressionValue;
-import com.hazelcast.sql.support.expressions.ExpressionValue.ByteVal;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.support.expressions.ExpressionValue.CharacterVal;
-import com.hazelcast.sql.support.expressions.ExpressionValue.IntegerVal;
-import com.hazelcast.sql.support.expressions.ExpressionValue.LongVal;
-import com.hazelcast.sql.support.expressions.ExpressionValue.ObjectVal;
-import com.hazelcast.sql.support.expressions.ExpressionValue.ShortVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.StringVal;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -34,96 +28,79 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
+import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class LowerFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
-    @Test
-    public void test_column() {
+public class LowerFunctionIntegrationTest extends AbstractStringFunctionTest {
+    @Override
+    protected String functionName() {
+        return "LOWER";
+    }
+
+    @Override
+    protected SqlColumnType resultType() {
+        return SqlColumnType.VARCHAR;
+    }
+
+    @Override
+    protected void checkSupportedColumns() {
+        checkColumn(new CharacterVal(), null);
         checkColumn(new StringVal(), null);
-        checkColumn(new StringVal().field1("ABCDE"), "abcde");
+
+        checkColumn(new CharacterVal().field1('a'), "a");
         checkColumn(new CharacterVal().field1('A'), "a");
 
-        checkColumnFailure(new ByteVal().field1((byte) 100), "TINYINT");
-        checkColumnFailure(new ShortVal().field1((short) 100), "SMALLINT");
-        checkColumnFailure(new IntegerVal().field1(100), "INTEGER");
-        checkColumnFailure(new LongVal().field1((long) 100), "BIGINT");
-        checkColumnFailure(new ExpressionValue.BigIntegerVal().field1(new BigInteger("100")), "DECIMAL");
-        checkColumnFailure(new ExpressionValue.BigDecimalVal().field1(new BigDecimal("100.5")), "DECIMAL");
-        checkColumnFailure(new ExpressionValue.FloatVal().field1(100.5f), "REAL");
-        checkColumnFailure(new ExpressionValue.DoubleVal().field1(100.5d), "DOUBLE");
-        checkColumnFailure(new ExpressionValue.LocalDateVal().field1(LOCAL_DATE_VAL), "DATE");
-        checkColumnFailure(new ExpressionValue.LocalTimeVal().field1(LOCAL_TIME_VAL), "TIME");
-        checkColumnFailure(new ExpressionValue.LocalDateTimeVal().field1(LOCAL_DATE_TIME_VAL), "TIMESTAMP");
-        checkColumnFailure(new ExpressionValue.OffsetDateTimeVal().field1(OFFSET_DATE_TIME_VAL), "TIMESTAMP_WITH_TIME_ZONE");
-        checkColumnFailure(new ObjectVal(), "OBJECT");
+        checkColumn(new StringVal().field1(""), "");
+        checkColumn(new StringVal().field1("a"), "a");
+        checkColumn(new StringVal().field1("A"), "a");
+        checkColumn(new StringVal().field1("abcde"), "abcde");
+        checkColumn(new StringVal().field1("AbCdE"), "abcde");
+        checkColumn(new StringVal().field1("ABCDE"), "abcde");
     }
 
-    private void checkColumn(ExpressionValue value, String expectedResult) {
-        put(value);
+    @Override
+    protected void checkSupportedLiterals() {
+        checkLiteral("null", null);
 
-        check("field1", expectedResult);
+        checkLiteral("''", "");
+
+        checkLiteral("'a'", "a");
+        checkLiteral("'A'", "a");
+
+        checkLiteral("'abcde'", "abcde");
+        checkLiteral("'AbCdE'", "abcde");
+        checkLiteral("'ABCDE'", "abcde");
     }
 
-    private void checkColumnFailure(ExpressionValue value, String expectedType) {
-        put(value);
+    @Override
+    protected void checkSupportedParameters() {
+        checkParameter(null, null);
 
-        checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply [" + expectedType + "] to the 'LOWER' function");
-    }
+        checkParameter('a', "a");
+        checkParameter('A', "a");
 
-    @Test
-    public void test_literal() {
-        put(1);
-
-        check("null", null);
-        check("'100'", "100");
-        check("'ABCDE'", "abcde");
-
-        checkFailure("100", SqlErrorCode.PARSING, "Cannot apply [TINYINT] to the 'LOWER' function");
-        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'LOWER' function");
-        checkFailure("100E0", SqlErrorCode.PARSING, "Cannot apply [DOUBLE] to the 'LOWER' function");
+        checkParameter("", "");
+        checkParameter("a", "a");
+        checkParameter("A", "a");
+        checkParameter("abcde", "abcde");
+        checkParameter("AbCdE", "abcde");
+        checkParameter("ABCDE", "abcde");
     }
 
     @Test
-    public void test_parameter() {
-        put(1);
+    public void testEquals() {
+        LowerFunction function = LowerFunction.create(ConstantExpression.create("1", VARCHAR));
 
-        check("?", null, new Object[] { null });
-
-        check("?", "", "");
-        check("?", "abc", "abc");
-        check("?", "abc", "Abc");
-        check("?", "abc", "ABC");
-
-        check("?", "a", 'A');
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", true);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", (byte) 100);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", (short) 100);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 100);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 100L);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", BigInteger.ONE);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", BigDecimal.ONE);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 100f);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 100d);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", new ObjectVal());
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_DATE_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", OFFSET_DATE_TIME_VAL);
+        checkEquals(function, LowerFunction.create(ConstantExpression.create("1", VARCHAR)), true);
+        checkEquals(function, LowerFunction.create(ConstantExpression.create("2", VARCHAR)), false);
     }
 
-    private void check(Object operand, String expectedResult, Object... params) {
-        String sql = "SELECT LOWER(" + operand + ") FROM map";
+    @Test
+    public void testSerialization() {
+        LowerFunction original = LowerFunction.create(ConstantExpression.create("1", VARCHAR));
+        LowerFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_LOWER);
 
-        checkValueInternal(sql, SqlColumnType.VARCHAR, expectedResult, params);
-    }
-
-    private void checkFailure(Object operand, int expectedErrorCode, String expectedErrorMessage, Object... params) {
-        String sql = "SELECT LOWER(" + operand + ") FROM map";
-
-        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
+        checkEquals(original, restored, true);
     }
 }

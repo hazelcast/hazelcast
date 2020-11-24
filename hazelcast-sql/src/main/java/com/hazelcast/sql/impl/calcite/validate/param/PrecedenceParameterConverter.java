@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.validate.param;
 
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -28,15 +26,7 @@ public class PrecedenceParameterConverter extends AbstractParameterConverter {
     }
 
     @Override
-    protected void validate(Object value, Converter valueConverter) {
-        if (valueConverter.getTypeFamily().getPrecedence() > type.getTypeFamily().getPrecedence()) {
-            throw QueryException.error(
-                SqlErrorCode.DATA_EXCEPTION,
-                withContext(
-                    "Cannot implicitly convert parameter at position " + ordinal + " from " + valueConverter.getTypeFamily()
-                        + " to " + type.getTypeFamily() + " (consider adding an explicit CAST)"
-                )
-            );
-        }
+    protected boolean isValid(Object value, Converter valueConverter) {
+        return valueConverter.getTypeFamily().getPrecedence() <= targetType.getTypeFamily().getPrecedence();
     }
 }

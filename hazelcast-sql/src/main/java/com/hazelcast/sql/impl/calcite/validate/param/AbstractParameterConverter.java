@@ -28,12 +28,17 @@ public abstract class AbstractParameterConverter implements ParameterConverter {
 
     protected final int ordinal;
     protected final SqlParserPos parserPos;
-    protected final QueryDataType type;
+    protected final QueryDataType targetType;
 
-    protected AbstractParameterConverter(int ordinal, SqlParserPos parserPos, QueryDataType type) {
+    protected AbstractParameterConverter(int ordinal, SqlParserPos parserPos, QueryDataType targetType) {
         this.ordinal = ordinal;
         this.parserPos = parserPos;
-        this.type = type;
+        this.targetType = targetType;
+    }
+
+    @Override
+    public QueryDataType getTargetType() {
+        return targetType;
     }
 
     @Override
@@ -46,34 +51,39 @@ public abstract class AbstractParameterConverter implements ParameterConverter {
         // Validate the value
         Converter valueConverter = Converters.getConverter(value.getClass());
 
-        validate(value, valueConverter);
+        if (!isValid(value, valueConverter)) {
+            String actualTypeName = valueConverter.getTypeFamily().getPublicType().name();
+            String targetTypeName = targetType.getTypeFamily().getPublicType().name();
+
+            String error = String.format(
+                "Parameter at position %d must be of %s type, but %s was found (consider adding an explicit CAST)",
+                ordinal,
+                targetTypeName,
+                actualTypeName
+            );
+
+            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, withContext(error));
+        }
 
         // Convert the value
         try {
-            return type.getConverter().convertToSelf(valueConverter, value);
+            return targetType.getConverter().convertToSelf(valueConverter, value);
         } catch (Exception e) {
-            String errorMessage = withContext(
-                String.format(
-                    "Failed to convert parameter at position %s from %s to %s: %s",
-                    ordinal,
-                    valueConverter.getTypeFamily().getPublicType(),
-                    type.getConverter().getTypeFamily().getPublicType(),
-                    e.getMessage()
-                )
+            String error = String.format(
+                "Failed to convert parameter at position %d from %s to %s: %s",
+                ordinal,
+                valueConverter.getTypeFamily().getPublicType(),
+                targetType.getConverter().getTypeFamily().getPublicType(),
+                e.getMessage()
             );
 
-            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, errorMessage, e);
+            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, withContext(error), e);
         }
     }
 
-    @Override
-    public QueryDataType type() {
-        return type;
-    }
+    protected abstract boolean isValid(Object value, Converter valueConverter);
 
-    protected abstract void validate(Object value, Converter valueConverter);
-
-    protected String withContext(String message) {
+    private String withContext(String message) {
         int line = parserPos.getLineNum();
         int col = parserPos.getColumnNum();
         int endLine = parserPos.getEndLineNum();

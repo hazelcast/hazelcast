@@ -23,6 +23,7 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlTestInstanceFactory;
 import com.hazelcast.sql.impl.SqlTestSupport;
+import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
 
@@ -30,17 +31,20 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+// TODO: Test all functions with integration tests
 @SuppressWarnings({"unchecked", "rawtypes"})
-public abstract class SqlExpressionIntegrationTestSupport extends SqlTestSupport {
+public abstract class ExpressionTestSupport extends SqlTestSupport {
 
     public static final LocalDate LOCAL_DATE_VAL = LocalDate.parse("2020-01-01");
     public static final LocalTime LOCAL_TIME_VAL = LocalTime.parse("00:00");
@@ -99,10 +103,22 @@ public abstract class SqlExpressionIntegrationTestSupport extends SqlTestSupport
         clearPlanCache(member);
     }
 
-    protected Object checkValueInternal(
+    protected void putAndCheckValue(
+        Object value,
         String sql,
         SqlColumnType expectedType,
-        Object expectedValue,
+        Object expectedResult,
+        Object... params
+    ) {
+        put(value);
+
+        checkValue0(sql, expectedType, expectedResult, params);
+    }
+
+    protected Object checkValue0(
+        String sql,
+        SqlColumnType expectedType,
+        Object expectedResult,
         Object... params
     ) {
         List<SqlRow> rows = execute(member, sql, params);
@@ -114,14 +130,26 @@ public abstract class SqlExpressionIntegrationTestSupport extends SqlTestSupport
 
         Object value = row.getObject(0);
 
-        if (expectedValue != SKIP_VALUE_CHECK) {
-            assertEquals(expectedValue, value);
+        if (expectedResult != SKIP_VALUE_CHECK) {
+            assertEquals(expectedResult, value);
         }
 
         return value;
     }
 
-    protected void checkFailureInternal(
+    protected void putAndCheckFailure(
+        Object value,
+        String sql,
+        int expectedErrorCode,
+        String expectedErrorMessage,
+        Object... params
+    ) {
+        put(value);
+
+        checkFailure0(sql, expectedErrorCode, expectedErrorMessage, params);
+    }
+
+    protected void checkFailure0(
         String sql,
         int expectedErrorCode,
         String expectedErrorMessage,
@@ -134,9 +162,38 @@ public abstract class SqlExpressionIntegrationTestSupport extends SqlTestSupport
         } catch (HazelcastSqlException e) {
             assertTrue(expectedErrorMessage.length() != 0);
             assertNotNull(e.getMessage());
-            assertTrue(e.getMessage(),  e.getMessage().contains(expectedErrorMessage));
+            assertTrue(e.getMessage(), e.getMessage().contains(expectedErrorMessage));
 
             assertEquals(e.getCode() + ": " + e.getMessage(), expectedErrorCode, e.getCode());
         }
+    }
+
+    protected static String signatureErrorFunction(String functionName, SqlColumnType... columnTypes) {
+        TestCase.assertNotNull(columnTypes);
+
+        StringJoiner joiner = new StringJoiner(", ");
+        Arrays.stream(columnTypes).forEach((columnType) -> joiner.add(columnType.name()));
+
+        return "Cannot apply [" + joiner.toString() + "] to the '" + functionName + "' function "
+            + "(consider adding an explicit CAST)";
+    }
+
+    protected static String signatureErrorOperator(String functionName, SqlColumnType... columnTypes) {
+        TestCase.assertNotNull(columnTypes);
+
+        StringJoiner joiner = new StringJoiner(", ");
+        Arrays.stream(columnTypes).forEach((columnType) -> joiner.add(columnType.name()));
+
+        return "Cannot apply [" + joiner.toString() + "] to the '" + functionName + "' operator "
+            + "(consider adding an explicit CAST)";
+    }
+
+    protected static String parameterError(int position, SqlColumnType expectedType, SqlColumnType actualType) {
+        return String.format(
+            "Parameter at position %d must be of %s type, but %s was found (consider adding an explicit CAST)",
+            position,
+            expectedType,
+            actualType
+        );
     }
 }

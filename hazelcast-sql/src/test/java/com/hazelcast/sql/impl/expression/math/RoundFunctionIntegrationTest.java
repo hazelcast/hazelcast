@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
+import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.ByteIntegerVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.IntegerIntegerVal;
@@ -51,7 +51,7 @@ import static com.hazelcast.sql.support.expressions.ExpressionBiValue.FloatVal;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RoundFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
+public class RoundFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void test_byte() {
         checkColumn_1(new ByteVal().field1((byte) 127), SqlColumnType.TINYINT, (byte) 127);
@@ -317,27 +317,27 @@ public class RoundFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
 
         String sql = sql("field1", "field2");
 
-        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage);
+        checkFailure0(sql, expectedErrorCode, expectedErrorMessage);
     }
 
     private void checkFailure_1(Object operand, int expectedErrorCode, String expectedErrorMessage, Object... params) {
         String sql = sql(operand);
 
-        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
+        checkFailure0(sql, expectedErrorCode, expectedErrorMessage, params);
     }
 
     private void checkFailure_2(Object operand1, Object operand2, int expectedErrorCode, String expectedErrorMessage, Object... params) {
         String sql = sql(operand1, operand2);
 
-        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
+        checkFailure0(sql, expectedErrorCode, expectedErrorMessage, params);
     }
 
     private void check_1(Object operand, SqlColumnType expectedType, Object expectedValue, Object... params) {
-        checkValueInternal(sql(operand), expectedType, expectedValue, params);
+        checkValue0(sql(operand), expectedType, expectedValue, params);
     }
 
     private void check_2(Object operand1, Object operand2, SqlColumnType expectedType, Object expectedValue, Object... params) {
-        checkValueInternal(sql(operand1, operand2), expectedType, expectedValue, params);
+        checkValue0(sql(operand1, operand2), expectedType, expectedValue, params);
     }
 
     private static String sql(Object operand1, Object... operand2) {

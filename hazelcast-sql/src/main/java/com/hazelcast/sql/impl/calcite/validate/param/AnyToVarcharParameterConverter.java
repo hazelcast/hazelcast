@@ -23,13 +23,14 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 /**
  * Converter that converts everything to string.
  */
-public class VarcharParameterConverter extends AbstractParameterConverter {
-    public VarcharParameterConverter(int ordinal, SqlParserPos parserPos) {
+public class AnyToVarcharParameterConverter extends AbstractParameterConverter {
+    public AnyToVarcharParameterConverter(int ordinal, SqlParserPos parserPos) {
         super(ordinal, parserPos, QueryDataType.VARCHAR);
     }
 
     @Override
-    protected void validate(Object value, Converter valueConverter) {
+    protected boolean isValid(Object value, Converter valueConverter) {
         // No validation, since everything could be converted to a string.
+        return true;
     }
 }

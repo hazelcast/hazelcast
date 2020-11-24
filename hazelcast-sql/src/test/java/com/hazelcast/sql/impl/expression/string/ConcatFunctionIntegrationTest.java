@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
+import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -46,7 +46,7 @@ import static com.hazelcast.sql.support.expressions.ExpressionTypes.SHORT;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ConcatFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
+public class ConcatFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void test_literal() {
         put("1");
@@ -142,13 +142,13 @@ public class ConcatFunctionIntegrationTest extends SqlExpressionIntegrationTestS
     private void check(String operands, String expectedResult, Object... params) {
         String sql = "SELECT " + operands + " FROM map";
 
-        checkValueInternal(sql, SqlColumnType.VARCHAR, expectedResult, params);
+        checkValue0(sql, SqlColumnType.VARCHAR, expectedResult, params);
     }
 
     private void checkFailure(String operands, int expectedErrorCode, String expectedErrorMessage, Object... params) {
         String sql = "SELECT " + operands + " FROM map";
 
-        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
+        checkFailure0(sql, expectedErrorCode, expectedErrorMessage, params);
     }
 
     private static List<ExpressionType<?>> supportedTypes() {

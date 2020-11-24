@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
+import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionTypes;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -41,7 +41,7 @@ import static com.hazelcast.sql.support.expressions.ExpressionBiValue.createBiVa
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegrationTestSupport {
+public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
 
     private static final int RES_EQ = 0;
     private static final int RES_LT = -1;
@@ -612,7 +612,7 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
         for (String token : mode.tokens) {
             String sql = sql(token, operand1, operand2);
 
-            checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
+            checkFailure0(sql, expectedErrorCode, expectedErrorMessage, params);
         }
     }
 
@@ -628,14 +628,14 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
         for (String token : mode.tokens) {
             String sql = sql(token, operand1, operand2);
 
-            checkValueInternal(sql, SqlColumnType.BOOLEAN, expectedValue, params);
+            checkValue0(sql, SqlColumnType.BOOLEAN, expectedValue, params);
 
             Mode inverseMode = mode.inverse();
 
             for (String inverseToken : inverseMode.tokens) {
                 String inverseSql = sql(inverseToken, operand2, operand1);
 
-                checkValueInternal(inverseSql, SqlColumnType.BOOLEAN, expectedValue, params);
+                checkValue0(inverseSql, SqlColumnType.BOOLEAN, expectedValue, params);
             }
         }
     }

@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression.math;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
+import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
+public class RandFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testNoArg() {
         put(0);
@@ -162,12 +162,12 @@ public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
     private Double checkValue(Object operand, Object expectedValue, Object... params) {
         String sql = "SELECT RAND(" + operand + ") FROM map";
 
-        return (Double) checkValueInternal(sql, SqlColumnType.DOUBLE, expectedValue, params);
+        return (Double) checkValue0(sql, SqlColumnType.DOUBLE, expectedValue, params);
     }
 
     private void checkFailure(Object operand, int expectedErrorCode, String expectedErrorMessage, Object... params) {
         String sql = "SELECT RAND(" + operand + ") FROM map";
 
-        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
+        checkFailure0(sql, expectedErrorCode, expectedErrorMessage, params);
     }
 }

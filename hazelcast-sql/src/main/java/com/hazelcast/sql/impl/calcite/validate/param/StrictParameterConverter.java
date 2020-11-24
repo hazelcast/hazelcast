@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.validate.param;
 
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -27,17 +25,8 @@ public class StrictParameterConverter extends AbstractParameterConverter {
         super(ordinal, parserPos, type);
     }
 
-    // TODO: Common error messages for all converters?
     @Override
-    protected void validate(Object value, Converter valueConverter) {
-        if (type.getTypeFamily() != valueConverter.getTypeFamily()) {
-            throw QueryException.error(
-                SqlErrorCode.DATA_EXCEPTION,
-                withContext(
-                    "Parameter at position " + ordinal + " must be of " + type.getTypeFamily().getPublicType()
-                        + " type (consider adding an explicit CAST)"
-                )
-            );
-        }
+    protected boolean isValid(Object value, Converter valueConverter) {
+        return targetType.getTypeFamily() == valueConverter.getTypeFamily();
     }
 }

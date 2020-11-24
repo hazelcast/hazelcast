@@ -22,7 +22,7 @@ import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
-import com.hazelcast.sql.impl.calcite.validate.param.VarcharParameterConverter;
+import com.hazelcast.sql.impl.calcite.validate.param.AnyToVarcharParameterConverter;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
@@ -83,7 +83,7 @@ public final class HazelcastConcatOperator extends HazelcastBinaryOperator {
             if (operand.getKind() == SqlKind.DYNAMIC_PARAM) {
                 int paramIndex = ((SqlDynamicParam) operand).getIndex();
 
-                ParameterConverter paramConverter = new VarcharParameterConverter(paramIndex, operand.getParserPosition());
+                ParameterConverter paramConverter = new AnyToVarcharParameterConverter(paramIndex, operand.getParserPosition());
 
                 validator.setParameterConverter(paramIndex, paramConverter);
             }

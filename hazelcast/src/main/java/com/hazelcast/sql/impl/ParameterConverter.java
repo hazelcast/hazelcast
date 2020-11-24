@@ -22,6 +22,16 @@ import com.hazelcast.sql.impl.type.QueryDataType;
  * A common interface to enforce a certain restriction on passed parameters.
  */
 public interface ParameterConverter {
+    /**
+     * @return target parameter type
+     */
+    QueryDataType getTargetType();
+
+    /**
+     * Convert the original value of the parameter to the value of the target type
+     *
+     * @param value original value
+     * @return converted value
+     */
     Object convert(Object value);
-    QueryDataType type();
 }
