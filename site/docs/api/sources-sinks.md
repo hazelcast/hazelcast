@@ -904,6 +904,26 @@ p.readFrom(Sources.remoteMap("inputMap", cfg));
 ...
 ```
 
+#### Compatibility
+
+When reading or writing to remote sources, Jet internally creates a
+client. This client uses the embedded IMDG version to connect to the
+remote cluster. Starting with Hazelcast 3.6, Hazelcast server & client
+versions are backward and forward compatible within the same major
+version.
+
+|Jet Version|Embedded IMDG Version|CompatibleVersions|
+|:-----|:------------------|:-----------|
+|Jet 3.0    |Hazelcast 3.12     |Hazelcast 3.y.z|
+|Jet 3.1    |Hazelcast 3.12.1   |Hazelcast 3.6+|
+|Jet 3.2    |Hazelcast 3.12.3   |Hazelcast 3.6+|
+|Jet 3.2.1  |Hazelcast 3.12.5   |Hazelcast 3.6+|
+|Jet 3.2.2  |Hazelcast 3.12.6   |Hazelcast 3.6+|
+|Jet 4.0    |Hazelcast 4.0      |Hazelcast 4.y.z|
+|Jet 4.1.1  |Hazelcast 4.0.1    |Hazelcast 4.y.z|
+|Jet 4.2    |Hazelcast 4.0.1    |Hazelcast 4.y.z|
+|Jet 4.3    |Hazelcast 4.0.3    |Hazelcast 4.y.z|
+
 ## Databases
 
 Jet supports a wide variety of relational and NoSQL databases as a data
