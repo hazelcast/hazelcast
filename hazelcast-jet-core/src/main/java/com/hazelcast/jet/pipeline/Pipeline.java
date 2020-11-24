@@ -107,4 +107,11 @@ public interface Pipeline extends Serializable {
      */
     @Nonnull
     String toDotString();
+
+    /**
+     * Returns {@code true} if there are no stages in the pipeline.
+     *
+     * @since 4.4
+     */
+    boolean isEmpty();
 }

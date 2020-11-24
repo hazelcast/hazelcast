@@ -189,6 +189,11 @@ public class PipelineImpl implements Pipeline {
         return builder.toString();
     }
 
+    @Override
+    public boolean isEmpty() {
+        return adjacencyMap.isEmpty();
+    }
+
     Map<Transform, List<Transform>> adjacencyMap() {
         Map<Transform, List<Transform>> safeCopy = new LinkedHashMap<>();
         adjacencyMap.forEach((k, v) -> safeCopy.put(k, new ArrayList<>(v)));
