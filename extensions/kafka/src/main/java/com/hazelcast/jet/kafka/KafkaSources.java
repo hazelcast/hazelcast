@@ -62,10 +62,9 @@ public final class KafkaSources {
      * The source creates a {@code KafkaConsumer} for each {@link Processor}
      * instance using the supplied {@code properties}. It assigns a subset of
      * Kafka partitions to each of them using manual partition assignment (it
-     * ignores the {@code group.id} property). Default local parallelism for
-     * this processor is 2 (or less if less CPUs are available). The Kafka's
-     * message timestamp will be used as a {@linkplain
-     * StreamSourceStage#withNativeTimestamps(long) native timestamp}.
+     * ignores the {@code group.id} property). The Kafka's message timestamp
+     * will be used as a {@linkplain StreamSourceStage#withNativeTimestamps(long)
+     * native timestamp}.
      * <p>
      * If snapshotting is enabled, partition offsets are saved to the snapshot.
      * After a restart, the source emits the events from the same offsets.
