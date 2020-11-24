@@ -83,11 +83,6 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * <p>
  * You can define as many <code>member-group</code>s as you want. Hazelcast will always store backups in a different
  * member-group to the primary partition.
- * <code>
- * <pre>
- * &lt;partition-group enabled="true" group-type="ZONE_AWARE"/&gt;
- * </pre>
- * </code>
  *
  * <h1>Zone Aware Partition Groups</h1>
  * In this scheme, groups are allocated according to the metadata provided by Discovery SPI Partitions are not
@@ -95,12 +90,27 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * zones or different racks without providing the IP addresses to the config ahead.
  * <code>
  * <pre>
- * &lt;partition-group enabled="true" group-type="SPI"/&gt;
+ * &lt;partition-group enabled="true" group-type="ZONE_AWARE"/&gt;
+ * </pre>
+ * </code>
+ *
+ * <h1>Node Aware Partition Groups</h1>
+ * In this scheme, groups are allocated according to the metadata provided by Discovery SPI Partitions are not
+ * written to the same group. This is very useful for ensuring partitions are written to different Kubernetes nodes
+ * without providing the IP addresses to the config ahead.
+ * <code>
+ * <pre>
+ * &lt;partition-group enabled="true" group-type="NODE_AWARE"/&gt;
  * </pre>
  * </code>
  *
  * <h1>SPI Aware Partition Groups</h1>
  * In this scheme, groups are allocated according to the implementation provided by Discovery SPI.
+ * <code>
+ * <pre>
+ * &lt;partition-group enabled="true" group-type="SPI"/&gt;
+ * </pre>
+ * </code>
  *
  * <h2>Overlapping Groups</h2>
  * Care should be taken when selecting overlapping groups, e.g.
@@ -151,6 +161,11 @@ public class PartitionGroupConfig {
          * If only one zone is available, backups will be created in the same zone.
          */
         ZONE_AWARE,
+        /**
+         * Node Aware. Backups will be created in other Kubernetes nodes/physical machines.
+         * If only one node is available, backups will be created in the same node.
+         */
+        NODE_AWARE,
         /**
          * MemberGroup implementation will be provided by the user via Discovery SPI.
          */

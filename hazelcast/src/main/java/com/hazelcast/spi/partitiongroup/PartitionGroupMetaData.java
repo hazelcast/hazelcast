@@ -18,13 +18,17 @@ package com.hazelcast.spi.partitiongroup;
 
 /**
  * This class contains the definition of known Discovery SPI metadata to support automatic
- * generation of zone aware backup strategies based on cloud or service discovery provided
- * information. These information are split into three different levels of granularity:
+ * generation of zone aware and Kubernetes node aware backup strategies.
+ *
+ * Zone aware backup strategies are based on cloud or service discovery provided information.
+ * These information are split into three different levels of granularity:
  * <ul>
  * <li><b>Zone:</b> A low-latency link between (virtual) data centers in the same area</li>
  * <li><b>Rack:</b> A low-latency link inside the same data center but for different racks</li>
  * <li><b>Host:</b> A low-latency link on a shared physical node, in case of virtualization being used</li>
  * </ul>
+ *
+ * Kubernetes node aware backup strategy is based on name of the node which is provided by Kubernetes API itself.
  */
 public enum PartitionGroupMetaData {
     ;
@@ -43,4 +47,10 @@ public enum PartitionGroupMetaData {
      * Metadata key definition for a low-latency link on a shared physical node, in case of virtualization being used
      */
     public static final String PARTITION_GROUP_HOST = "hazelcast.partition.group.host";
+
+    /**
+     * Kubernetes runs containers into Pods to run on Nodes.
+     * A node may be a virtual or physical machine, depending on the cluster.
+     */
+    public static final String PARTITION_GROUP_NODE = "hazelcast.partition.group.node";
 }
