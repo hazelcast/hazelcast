@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
+import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -90,14 +91,14 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         ServerSocketEndpointConfig restEndpointConfig = (ServerSocketEndpointConfig) config.getAdvancedNetworkConfig().getEndpointConfigs().get(EndpointQualifier.REST);
         ServerSocketEndpointConfig memcacheEndpointConfig = (ServerSocketEndpointConfig) config.getAdvancedNetworkConfig().getEndpointConfigs().get(EndpointQualifier.MEMCACHE);
 
-        assertEquals(clientEndpointConfig.getPort(), 9000);
-        assertEquals(clientEndpointConfig.getPublicAddress(), "127.0.0.1");
-        assertEquals(memberEndpointConfig.getPort(), 9001);
-        assertEquals(memberEndpointConfig.getPublicAddress(), "127.0.0.2");
-        assertEquals(restEndpointConfig.getPort(), 9002);
-        assertEquals(restEndpointConfig.getPublicAddress(), "127.0.0.3");
-        assertEquals(memcacheEndpointConfig.getPort(), 9003);
-        assertEquals(memcacheEndpointConfig.getPublicAddress(), "127.0.0.4");
+        assertEquals(9000, clientEndpointConfig.getPort());
+        assertEquals("127.0.0.1", clientEndpointConfig.getPublicAddress());
+        assertEquals(9001, memberEndpointConfig.getPort());
+        assertEquals("127.0.0.2", memberEndpointConfig.getPublicAddress());
+        assertEquals(9002, restEndpointConfig.getPort());
+        assertEquals("127.0.0.3", restEndpointConfig.getPublicAddress());
+        assertEquals(9003, memcacheEndpointConfig.getPort());
+        assertEquals("127.0.0.4", memcacheEndpointConfig.getPublicAddress());
     }
 
     @Test
@@ -111,6 +112,34 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
           .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
 
         assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().isEmpty());
+    }
+
+    @Test
+    public void shouldHandleHotRestartPersistenceConfig() throws Exception {
+        Config config = new Config();
+        config.getHotRestartPersistenceConfig()
+          .setEnabled(true)
+          .setParallelism(4);
+
+        withEnvironmentVariable("HZ_HOTRESTARTPERSISTENCE_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getHotRestartPersistenceConfig().isEnabled());
+        assertEquals(4, config.getHotRestartPersistenceConfig().getParallelism());
+    }
+
+    @Test
+    public void shouldHandleUserCodeDeploymentConfig() throws Exception {
+        Config config = new Config();
+        config.getUserCodeDeploymentConfig()
+          .setEnabled(true)
+          .setClassCacheMode(UserCodeDeploymentConfig.ClassCacheMode.OFF);
+
+        withEnvironmentVariable("HZ_USERCODEDEPLOYMENT_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getUserCodeDeploymentConfig().isEnabled());
+        assertEquals(UserCodeDeploymentConfig.ClassCacheMode.OFF, config.getUserCodeDeploymentConfig().getClassCacheMode());
     }
 
     @Test(expected = InvalidConfigurationException.class)

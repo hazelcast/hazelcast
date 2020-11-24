@@ -255,7 +255,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 throw new InvalidConfigurationException(
                         "Duplicate '" + nodeName + "' definition found in the configuration.");
             }
-            if (handleNode(node, nodeName)) {
+            if (handleNode(node)) {
                 continue;
             }
             if (!canOccurMultipleTimes(nodeName)) {
@@ -266,7 +266,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         validateNetworkConfig();
     }
 
-    private boolean handleNode(Node node, String nodeName) throws Exception {
+    private boolean handleNode(Node node) throws Exception {
+        String nodeName = cleanNodeName(node);
+
         if (matches(INSTANCE_NAME.getName(), nodeName)) {
             config.setInstanceName(getNonEmptyText(node, "Instance name"));
         } else if (matches(NETWORK.getName(), nodeName)) {
@@ -364,7 +366,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleUserCodeDeployment(Node dcRoot) {
-        UserCodeDeploymentConfig dcConfig = new UserCodeDeploymentConfig();
+        UserCodeDeploymentConfig dcConfig = config.getUserCodeDeploymentConfig();
         Node attrEnabled = getNamedItemNode(dcRoot, "enabled");
         boolean enabled = getBooleanValue(getTextContent(attrEnabled));
         dcConfig.setEnabled(enabled);
@@ -392,7 +394,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleHotRestartPersistence(Node hrRoot)
             throws Exception {
-        HotRestartPersistenceConfig hrConfig = new HotRestartPersistenceConfig()
+        HotRestartPersistenceConfig hrConfig = config.getHotRestartPersistenceConfig()
                 .setEnabled(getBooleanValue(getAttribute(hrRoot, "enabled")));
 
         String parallelismName = "parallelism";
