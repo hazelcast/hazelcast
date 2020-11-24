@@ -58,6 +58,7 @@ public class JetQueryResultProducer implements QueryResultProducer {
 
     @Override
     public void onError(QueryException error) {
+        assert error != null;
         done.compareAndSet(null, error);
     }
 

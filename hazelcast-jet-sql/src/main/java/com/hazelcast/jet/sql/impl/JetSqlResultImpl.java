@@ -28,6 +28,7 @@ import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.Row;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
@@ -72,7 +73,10 @@ class JetSqlResultImpl extends AbstractSqlResult {
     }
 
     @Override
-    public void close(@Nonnull QueryException exception) {
+    public void close(@Nullable QueryException exception) {
+        if (exception == null) {
+            exception = QueryException.cancelledByUser();
+        }
         rootResultConsumer.onError(exception);
     }
 
