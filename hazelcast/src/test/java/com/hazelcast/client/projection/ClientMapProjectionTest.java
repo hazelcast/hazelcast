@@ -36,7 +36,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMapProjectionTest extends MapProjectionTest {
 
-    private TestHazelcastFactory factory;
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void tearDown() {
@@ -48,8 +48,6 @@ public class ClientMapProjectionTest extends MapProjectionTest {
         if (nodeCount < 1) {
             throw new IllegalArgumentException("node count < 1");
         }
-
-        factory = new TestHazelcastFactory();
 
         MapConfig mapConfig = new MapConfig()
                 .setName("aggr")
@@ -63,5 +61,15 @@ public class ClientMapProjectionTest extends MapProjectionTest {
         HazelcastInstance client = factory.newHazelcastClient();
 
         return client.getMap("aggr");
+    }
+
+    @Override
+    public void projection_1Node_objectValue_withPartitionSet() {
+        // ignore the test on client - not implemented on client
+    }
+
+    @Override
+    public void projection_3Nodes_objectValue_withPartitionSet() {
+        // ignore the test on client - not implemented on client
     }
 }
