@@ -23,6 +23,8 @@ import java.io.StringWriter;
 
 import javax.annotation.Nullable;
 import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -56,6 +58,18 @@ public final class XmlUtil {
     private static final ILogger LOGGER = Logger.getLogger(XmlUtil.class);
 
     private XmlUtil() {
+    }
+
+    /**
+     * Returns namespace aware instance of {@link DocumentBuilderFactory} with XXE protection enabled.
+     *
+     * @throws ParserConfigurationException enabling XXE protection fail
+     */
+    public static DocumentBuilderFactory getNsAwareDocumentBuilderFactory() throws ParserConfigurationException {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        setFeature(dbf, "http://apache.org/xml/features/disallow-doctype-decl");
+        return dbf;
     }
 
     /**
@@ -165,6 +179,27 @@ public final class XmlUtil {
                         + " system property can be used to disable XML External Entity protections."
                         + " We don't recommend disabling the XXE as such the XML processor configuration is unsecure!!!", iae);
                 throw iae;
+            }
+        }
+    }
+
+    static void setFeature(DocumentBuilderFactory dbf, String featureName) throws ParserConfigurationException {
+        try {
+            dbf.setFeature(featureName, true);
+        } catch (ParserConfigurationException e) {
+            if (Boolean.getBoolean(SYSTEM_PROPERTY_IGNORE_XXE_PROTECTION_FAILURES)) {
+                LOGGER.warning("Enabling XXE protection failed. The feature " + featureName
+                        + " is not supported by the DocumentBuilderFactory. The " + SYSTEM_PROPERTY_IGNORE_XXE_PROTECTION_FAILURES
+                        + " system property is used so the XML processing continues in the UNSECURE mode"
+                        + " with XXE protection disabled!!!");
+            } else {
+                LOGGER.severe("Enabling XXE protection failed. The feature " + featureName
+                        + " is not supported by the DocumentBuilderFactory. This usually mean an outdated XML processor"
+                        + " is present on the classpath (e.g. Xerces, Xalan). If you are not able to resolve the issue by"
+                        + " fixing the classpath, the " + SYSTEM_PROPERTY_IGNORE_XXE_PROTECTION_FAILURES
+                        + " system property can be used to disable XML External Entity protections."
+                        + " We don't recommend disabling the XXE as such the XML processor configuration is unsecure!!!", e);
+                throw e;
             }
         }
     }

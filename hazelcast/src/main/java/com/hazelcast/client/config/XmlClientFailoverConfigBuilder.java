@@ -32,7 +32,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -43,6 +42,7 @@ import java.util.Properties;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.XmlUtil.getNsAwareDocumentBuilderFactory;
 
 /**
  * Loads the {@link com.hazelcast.client.config.ClientFailoverConfig} using XML.
@@ -122,10 +122,7 @@ public class XmlClientFailoverConfigBuilder extends AbstractXmlConfigBuilder {
 
     @Override
     protected Document parse(InputStream inputStream) throws Exception {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
-        dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        DocumentBuilder builder = dbf.newDocumentBuilder();
+        DocumentBuilder builder = getNsAwareDocumentBuilderFactory().newDocumentBuilder();
         try {
             return builder.parse(inputStream);
         } catch (Exception e) {
