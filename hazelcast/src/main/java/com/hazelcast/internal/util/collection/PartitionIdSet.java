@@ -39,7 +39,8 @@ import java.util.PrimitiveIterator;
  * This set's {@link PartitionIdSet#iterator() iterator} is a view of the actual
  * set, so any changes on the set will be reflected in the iterator and vice versa.
  * <p>
- * This class is not thread-safe.
+ * This class is not thread-safe. Even if used as immutable, surprisingly,
+ * the {@link #size()} method mutates the state and is not thread-safe.
  */
 public class PartitionIdSet extends AbstractSet<Integer> {
 
@@ -86,6 +87,11 @@ public class PartitionIdSet extends AbstractSet<Integer> {
         return new PartitionIdSetIterator();
     }
 
+    /**
+     * Return the number of partitions in the set.
+     * <p>
+     * The method mutates the state of this instance.
+     */
     @Override
     public int size() {
         if (size == SIZE_UNKNOWN) {

@@ -53,6 +53,7 @@ public class MapProjectionTest extends HazelcastTestSupport {
 
     @Rule
     public ExpectedException expected = ExpectedException.none();
+    private HazelcastInstance instance0;
 
     @Test(expected = NullPointerException.class)
     public void null_projection() {
@@ -177,7 +178,7 @@ public class MapProjectionTest extends HazelcastTestSupport {
         Collection<Double> result = ((MapProxyImpl<String, Person>) map)
                 .project(new ObjectValueIncrementingProjection(), Predicates.alwaysTrue(), partitionSubset);
 
-        assertThat(result, containsInAnyOrder(5.0d, 8.0d));
+        assertThat(result, containsInAnyOrder(2.0d, 5.0d));
     }
 
     @Test
@@ -189,7 +190,7 @@ public class MapProjectionTest extends HazelcastTestSupport {
         Collection<Double> result = ((MapProxyImpl<String, Person>) map)
                 .project(new ObjectValueIncrementingProjection(), Predicates.alwaysTrue(), partitionSubset);
 
-        assertThat(result, containsInAnyOrder(5.0d, 8.0d));
+        assertThat(result, containsInAnyOrder(2.0d, 5.0d));
     }
 
     public <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount) {
@@ -208,8 +209,8 @@ public class MapProjectionTest extends HazelcastTestSupport {
 
         doWithConfig(config);
 
-        HazelcastInstance instance = factory.newInstances(config)[0];
-        return instance.getMap("aggr");
+        instance0 = factory.newInstances(config)[0];
+        return instance0.getMap("aggr");
     }
 
     // used by hz-enterprise
@@ -223,9 +224,9 @@ public class MapProjectionTest extends HazelcastTestSupport {
     }
 
     private void populateMapWithPersons(IMap<String, Person> map) {
-        map.put("key3", new Person(1.0d, "NY"));
-        map.put("key4", new Person(4.0d, "DC"));
-        map.put("key5", new Person(7.0d, "OH"));
+        map.put(generateKeyForPartition(instance0, 0), new Person(1.0d, "NY"));
+        map.put(generateKeyForPartition(instance0, 1), new Person(4.0d, "DC"));
+        map.put(generateKeyForPartition(instance0, 2), new Person(7.0d, "OH"));
     }
 
     public static class Person implements DataSerializable {

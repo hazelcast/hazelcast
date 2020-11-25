@@ -688,6 +688,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         return executePredicate(predicate, IterationType.KEY, true, Target.ALL_NODES);
     }
 
+    /**
+     * Execute the {@code keySet} operation on all nodes, but only on the given
+     * {@code partitions}.
+     * <p>
+     * <b>Warning:</b> {@code partitions} is mutated during the call.
+     */
     @SuppressWarnings("unchecked")
     public Set<K> keySet(@Nonnull Predicate<K, V> predicate, PartitionIdSet partitions) {
         return executePredicate(predicate, IterationType.KEY, true, Target.createPartitionTarget(partitions));
@@ -705,6 +711,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         return executePredicate(predicate, IterationType.ENTRY, true, Target.ALL_NODES);
     }
 
+    /**
+     * Execute the {@code entrySet} operation on all nodes, but only on the
+     * given {@code partitions}.
+     * <p>
+     * <b>Warning:</b> {@code partitions} is mutated during the call.
+     */
     @SuppressWarnings("unchecked")
     public Set<Map.Entry<K, V>> entrySet(@Nonnull Predicate predicate, PartitionIdSet partitions) {
         return executePredicate(predicate, IterationType.ENTRY, true, Target.createPartitionTarget(partitions));
@@ -722,6 +734,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         return executePredicate(predicate, IterationType.VALUE, false, Target.ALL_NODES);
     }
 
+    /**
+     * Execute the {@code values} operation on all nodes, but only on the given
+     * {@code partitions}.
+     * <p>
+     * <b>Warning:</b> {@code partitions} is mutated during the call.
+     */
     @SuppressWarnings("unchecked")
     public Collection<V> values(@Nonnull Predicate predicate, PartitionIdSet partitions) {
         return executePredicate(predicate, IterationType.VALUE, false, Target.createPartitionTarget(partitions));
@@ -848,6 +866,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         return project(projection, predicate, Target.ALL_NODES);
     }
 
+    /**
+     * Execute the {@code project} operation on all nodes, but only on the
+     * given {@code partitions}.
+     * <p>
+     * <b>Warning:</b> {@code partitions} is mutated during the call.
+     */
     public <R> Collection<R> project(@Nonnull Projection<? super Map.Entry<K, V>, R> projection,
                                      @Nonnull Predicate<K, V> predicate, PartitionIdSet partitions) {
         return project(projection, predicate, Target.createPartitionTarget(partitions));
