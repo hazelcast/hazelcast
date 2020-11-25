@@ -121,6 +121,15 @@ public class LocalKeySetTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void whenPartitionPredicate() {
+        map.put(localKey1, "local");
+        map.put(remoteKey1, "remote");
+
+        Predicate<String, String> partitionPredicate = Predicates.partitionPredicate(remoteKey1, Predicates.alwaysTrue());
+        assertEquals(0, map.localKeySet(partitionPredicate).size());
+    }
+
+    @Test
     public void testResultType() {
         map.put(localKey1, "a");
         Set<String> entries = map.localKeySet(Predicates.alwaysTrue());

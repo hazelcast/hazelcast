@@ -66,6 +66,7 @@ import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.query.Result;
 import com.hazelcast.map.impl.query.Target;
+import com.hazelcast.map.impl.query.Target.TargetMode;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
@@ -127,6 +128,7 @@ import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCE
 import static com.hazelcast.map.impl.LocalMapStatsProvider.EMPTY_LOCAL_MAP_STATS;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
+import static com.hazelcast.query.Predicates.alwaysFalse;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
@@ -1351,14 +1353,22 @@ abstract class MapProxySupport<K, V>
     protected <T extends Result> T executeQueryInternal(Predicate predicate, Aggregator aggregator, Projection projection,
                                                         IterationType iterationType, Target target) {
         QueryEngine queryEngine = getMapQueryEngine();
-        Predicate userPredicate = predicate;
+        final Predicate userPredicate;
 
         if (predicate instanceof PartitionPredicate) {
             PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
             Data key = toData(partitionPredicate.getPartitionKey());
             int partitionId = partitionService.getPartitionId(key);
-            userPredicate = partitionPredicate.getTarget();
-            target = createPartitionTarget(new PartitionIdSet(partitionService.getPartitionCount(), partitionId));
+            if (target.mode() == TargetMode.LOCAL_NODE && !partitionService.isPartitionOwner(partitionId)
+                    || target.mode() == TargetMode.PARTITION_OWNER && !target.partitions().contains(partitionId)
+            ) {
+                userPredicate = alwaysFalse();
+            } else {
+                target = createPartitionTarget(new PartitionIdSet(partitionService.getPartitionCount(), partitionId));
+                userPredicate = partitionPredicate.getTarget();
+            }
+        } else {
+            userPredicate = predicate;
         }
         handleHazelcastInstanceAwareParams(userPredicate);
 

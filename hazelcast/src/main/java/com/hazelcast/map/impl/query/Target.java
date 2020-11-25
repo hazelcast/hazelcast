@@ -63,7 +63,7 @@ public class Target implements IdentifiedDataSerializable {
         return partitions;
     }
 
-    enum TargetMode {
+    public enum TargetMode {
         LOCAL_NODE,
         ALL_NODES,
         PARTITION_OWNER
