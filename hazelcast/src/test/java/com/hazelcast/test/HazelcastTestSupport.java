@@ -550,7 +550,6 @@ public abstract class HazelcastTestSupport {
         Cluster cluster = instance.getCluster();
         checkPartitionCountGreaterOrEqualMemberCount(instance);
 
-        Member localMember = cluster.getLocalMember();
         PartitionService partitionService = instance.getPartitionService();
         while (true) {
             String id = randomString();
@@ -565,7 +564,6 @@ public abstract class HazelcastTestSupport {
         Cluster cluster = instance.getCluster();
         checkPartitionCountGreaterOrEqualMemberCount(instance);
 
-        Member localMember = cluster.getLocalMember();
         PartitionService partitionService = instance.getPartitionService();
         while (true) {
             String id = prefix + randomString();
@@ -595,11 +593,8 @@ public abstract class HazelcastTestSupport {
     }
 
     private static void checkPartitionCountGreaterOrEqualMemberCount(HazelcastInstance instance) {
-        Cluster cluster = instance.getCluster();
-        int memberCount = cluster.getMembers().size();
-
-        InternalPartitionService internalPartitionService = Accessors.getPartitionService(instance);
-        int partitionCount = internalPartitionService.getPartitionCount();
+        int memberCount = instance.getCluster().getMembers().size();
+        int partitionCount = instance.getPartitionService().getPartitions().size();
 
         if (partitionCount < memberCount) {
             throw new UnsupportedOperationException("Partition count should be equal or greater than member count!");
