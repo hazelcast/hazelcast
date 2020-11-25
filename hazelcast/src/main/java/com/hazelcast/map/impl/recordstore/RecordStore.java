@@ -413,7 +413,7 @@ public interface RecordStore<R extends Record> {
      */
     boolean isExpired(R record, long now, boolean backup);
 
-    boolean isExpired(Data key);
+    boolean expireRecordOrUpdateItsAccessStats(Data key);
 
     /**
      * Does post eviction operations like sending events
