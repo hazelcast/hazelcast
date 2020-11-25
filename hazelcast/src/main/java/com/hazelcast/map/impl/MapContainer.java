@@ -168,7 +168,8 @@ public class MapContainer {
                     }
 
                     RecordStore recordStore = mapServiceContext.getExistingRecordStore(partitionId, name);
-                    return recordStore != null && !recordStore.isExpired(keyData);
+                    return !recordStore.isExpirable()
+                            || recordStore != null && !recordStore.isExpired(keyData);
                 }).build();
     }
 
