@@ -18,6 +18,7 @@ package com.hazelcast.internal.util;
 
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -70,8 +71,7 @@ public final class IterableUtil {
         Iterator<T> givenIterator = iterable.iterator();
 
         Iterator<T> filteringIterator = new Iterator<T>() {
-            private T next = null;
-
+            private T next;
             @Override
             public boolean hasNext() {
                 boolean hasNext = false;
@@ -88,6 +88,9 @@ public final class IterableUtil {
 
             @Override
             public T next() {
+                if (next == null) {
+                    throw new NoSuchElementException();
+                }
                 return next;
             }
 
@@ -135,7 +138,7 @@ public final class IterableUtil {
      * Return empty Iterable if argument is null
      **/
     public static <T> Iterable<T> nullToEmpty(Iterable<T> iterable) {
-        return iterable == null ? Collections.<T>emptyList() : iterable;
+        return iterable == null ? Collections.emptyList() : iterable;
     }
 
 
