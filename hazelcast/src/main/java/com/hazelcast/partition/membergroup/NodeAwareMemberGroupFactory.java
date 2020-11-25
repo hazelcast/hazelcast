@@ -54,6 +54,6 @@ public class NodeAwareMemberGroupFactory extends BackupSafeMemberGroupFactory im
             }
             group.addMember(member);
         }
-        return new HashSet<>(groups.values());
+        return new HashSet<MemberGroup>(groups.values());
     }
 }
