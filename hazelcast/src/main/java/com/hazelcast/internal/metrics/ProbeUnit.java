@@ -24,8 +24,6 @@ public enum ProbeUnit {
     BYTES,
     /** Timestamp or duration represented in ms */
     MS,
-    /** Timestamp or duration represented in µs */
-    US,
     /** Timestamp or duration represented in nanoseconds */
     NS,
     /** An integer mostly in range 0..100 or a double mostly in range 0..1 */
@@ -36,4 +34,26 @@ public enum ProbeUnit {
     BOOLEAN,
     /** 0..n, ordinal of an enum */
     ENUM,
+    /** Timestamp or duration represented in µs */
+    // RU_COMPAT_4_2
+    // remove constructor argument in 4.3
+    US(true);
+
+    /**
+     * Setting to {@code true} indicates that when compressing a metric with this
+     * unit, the unit should be converted to a tag to ensure backwards compatibility.
+     */
+    private final boolean newUnit;
+
+    ProbeUnit() {
+        this(false);
+    }
+
+    ProbeUnit(boolean newUnit) {
+        this.newUnit = newUnit;
+    }
+
+    public boolean isNewUnit() {
+        return newUnit;
+    }
 }
