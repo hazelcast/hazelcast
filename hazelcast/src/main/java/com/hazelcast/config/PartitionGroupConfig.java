@@ -85,9 +85,10 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * member-group to the primary partition.
  *
  * <h1>Zone Aware Partition Groups</h1>
- * In this scheme, groups are allocated according to the metadata provided by Discovery SPI Partitions are not
- * written to the same group. This is very useful for ensuring partitions are written to availability
- * zones or different racks without providing the IP addresses to the config ahead.
+ * In this scheme, groups are allocated according to the metadata provided by Discovery SPI
+ * These metadata are availability zone, rack and host. Partitions are not written to
+ * the same group so this is very useful for ensuring partitions are written to
+ * different availability zones without providing the IP addresses to the config ahead.
  * <code>
  * <pre>
  * &lt;partition-group enabled="true" group-type="ZONE_AWARE"/&gt;
@@ -95,9 +96,12 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * </code>
  *
  * <h1>Node Aware Partition Groups</h1>
- * In this scheme, groups are allocated according to the metadata provided by Discovery SPI Partitions are not
- * written to the same group. This is very useful for ensuring partitions are written to different Kubernetes nodes
- * without providing the IP addresses to the config ahead.
+ * In this scheme, groups are allocated according to node name metadata provided by Discovery SPI.
+ * For container orchestration tools like Kubernetes and Docker Swarm, node is the term used to refer
+ * machine that containers/pods run on. A node may be a virtual or physical machine.
+ * Partitions are not written to the same group so this is very useful for ensuring partitions
+ * are written to different nodes without providing the IP addresses to the config ahead.
+ *
  * <code>
  * <pre>
  * &lt;partition-group enabled="true" group-type="NODE_AWARE"/&gt;
@@ -162,7 +166,7 @@ public class PartitionGroupConfig {
          */
         ZONE_AWARE,
         /**
-         * Node Aware. Backups will be created in other Kubernetes nodes/physical machines.
+         * Node Aware. Backups will be created in other nodes.
          * If only one node is available, backups will be created in the same node.
          */
         NODE_AWARE,

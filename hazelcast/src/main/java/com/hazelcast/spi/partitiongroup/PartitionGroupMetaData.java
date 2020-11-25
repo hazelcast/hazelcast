@@ -28,7 +28,9 @@ package com.hazelcast.spi.partitiongroup;
  * <li><b>Host:</b> A low-latency link on a shared physical node, in case of virtualization being used</li>
  * </ul>
  *
- * Kubernetes node aware backup strategy is based on name of the node which is provided by Kubernetes API itself.
+ * Node aware backup strategy is based on name of the node which is provided by container orchestration tool.
+ * like Kubernetes, Docker Swarm and ECS. A node is the term used to refer machine that containers/pods run on.
+ * A node may be a virtual or physical machine.
  */
 public enum PartitionGroupMetaData {
     ;
@@ -49,8 +51,7 @@ public enum PartitionGroupMetaData {
     public static final String PARTITION_GROUP_HOST = "hazelcast.partition.group.host";
 
     /**
-     * Kubernetes runs containers into Pods to run on Nodes.
-     * A node may be a virtual or physical machine, depending on the cluster.
+     * Metadata key definition for a node machine that containers/pods run on, in case of container orchestration tools being used.
      */
     public static final String PARTITION_GROUP_NODE = "hazelcast.partition.group.node";
 }

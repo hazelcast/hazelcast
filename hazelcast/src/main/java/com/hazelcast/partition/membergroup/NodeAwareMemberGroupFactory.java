@@ -29,9 +29,12 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * NodeAwareMemberGroupFactory is responsible for MemberGroups
- * creation according to the Kubernetes Node metadata provided by
+ * creation according to name of the node metadata. For container orchestration
+ * tools like Kubernetes and Docker Swarm, node is the term used to refer
+ * machine that containers/pods run on. A node may be a virtual or physical machine.
+ * Node name metadata provided by
  * {@link DiscoveryStrategy#discoverLocalMetadata()}
- * @since 3.7
+ * @since 3.12.11
  */
 public class NodeAwareMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
@@ -42,7 +45,7 @@ public class NodeAwareMemberGroupFactory extends BackupSafeMemberGroupFactory im
             final String nodeInfo = member.getStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_NODE);
             if (nodeInfo == null) {
                 throw new IllegalArgumentException("Not enough metadata information is provided. "
-                        + "Kubernetes node name information must be provided with NODE_AWARE partition group.");
+                        + "Node name information must be provided with NODE_AWARE partition group.");
             }
             MemberGroup group = groups.get(nodeInfo);
             if (group == null) {
@@ -51,6 +54,6 @@ public class NodeAwareMemberGroupFactory extends BackupSafeMemberGroupFactory im
             }
             group.addMember(member);
         }
-        return new HashSet<MemberGroup>(groups.values());
+        return new HashSet<>(groups.values());
     }
 }
