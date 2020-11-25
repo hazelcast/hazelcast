@@ -206,7 +206,7 @@ public class TruncateFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to DECIMAL", LOCAL_TIME_VAL);
         checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to DECIMAL", LOCAL_DATE_TIME_VAL);
         checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to DECIMAL", OFFSET_DATE_TIME_VAL);
-        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
+        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", OBJECT_VAL);
         checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BOOLEAN to DECIMAL", true);
 
         // Two operands, first operand
@@ -223,7 +223,7 @@ public class TruncateFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to DECIMAL", LOCAL_TIME_VAL);
         checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to DECIMAL", LOCAL_DATE_TIME_VAL);
         checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to DECIMAL", OFFSET_DATE_TIME_VAL);
-        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
+        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", OBJECT_VAL);
         checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BOOLEAN to DECIMAL", true);
 
         // Two operands, second operand
@@ -238,7 +238,7 @@ public class TruncateFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to INTEGER", LOCAL_TIME_VAL);
         checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to INTEGER", LOCAL_DATE_TIME_VAL);
         checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to INTEGER", OFFSET_DATE_TIME_VAL);
-        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to INTEGER", new ExpressionValue.ObjectVal());
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to INTEGER", OBJECT_VAL);
         checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BOOLEAN to INTEGER", true);
 
         // Two operands, both

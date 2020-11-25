@@ -267,7 +267,7 @@ public class IsTrueFalsePredicateIntegrationTest extends ExpressionTestSupport {
         checkUnsupportedParameter(LOCAL_TIME_VAL, SqlColumnType.TIME);
         checkUnsupportedParameter(LOCAL_DATE_TIME_VAL, SqlColumnType.TIMESTAMP);
         checkUnsupportedParameter(OFFSET_DATE_TIME_VAL, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE);
-        checkUnsupportedParameter(new ExpressionValue.ObjectVal(), SqlColumnType.OBJECT);
+        checkUnsupportedParameter(OBJECT_VAL, SqlColumnType.OBJECT);
     }
 
     private void checkUnsupportedParameter(Object param, SqlColumnType paramType) {

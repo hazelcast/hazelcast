@@ -114,7 +114,7 @@ public class SubstringFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", BigDecimal.ONE);
         checkFailure0(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 1f);
         checkFailure0(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", 1d);
-        checkFailure0(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", new ExpressionValue.ObjectVal());
+        checkFailure0(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", OBJECT_VAL);
         checkFailure0(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_DATE_VAL);
         checkFailure0(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_TIME_VAL);
         checkFailure0(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of VARCHAR type", LOCAL_DATE_TIME_VAL);

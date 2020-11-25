@@ -16,12 +16,13 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
-import com.hazelcast.sql.support.expressions.ExpressionValue;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,8 +35,6 @@ import java.math.BigInteger;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Tests for NOT predicate.
@@ -45,64 +44,55 @@ import static org.junit.Assert.fail;
 public class NotPredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void test_column() {
-        // Check boolean values
-        checkColumn(true, false);
-        checkColumn(false, true);
+        putAndCheck(true, false);
+        putAndCheck(false, true);
+        putAndCheck(null, null);
 
-        // Check null
-        put(new ExpressionValue.BooleanVal());
-        check("field1", null);
+        putAndCheckFailure('t', sql("this"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.VARCHAR));
+        putAndCheckFailure("true", sql("this"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.VARCHAR));
+        putAndCheckFailure((byte) 1, sql("this"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.TINYINT));
+        putAndCheckFailure((short) 1, sql("this"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.SMALLINT));
+        putAndCheckFailure(1, sql("this"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.INTEGER));
+        putAndCheckFailure(1L, sql("this"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.BIGINT));
+        putAndCheckFailure(BigInteger.ONE, sql("this"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.DECIMAL));
+        putAndCheckFailure(BigDecimal.ONE, sql("this"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.DECIMAL));
+        putAndCheckFailure(1f, sql("this"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.REAL));
+        putAndCheckFailure(LOCAL_DATE_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.DATE));
+        putAndCheckFailure(LOCAL_TIME_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.TIME));
+        putAndCheckFailure(LOCAL_DATE_TIME_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.TIMESTAMP));
+        putAndCheckFailure(OFFSET_DATE_TIME_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(OBJECT_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.OBJECT));
+    }
 
-        // Check string
-        checkColumnFailure("true", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkColumnFailure("false", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkColumnFailure("bad", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkColumnFailure('b', SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'NOT' operator (consider adding an explicit CAST)");
+    private void putAndCheck(Boolean value, Boolean expectedResult) {
+        put(value1(value));
 
-        // Check unsupported values
-        checkColumnFailure((byte) 1, SqlErrorCode.PARSING, "Cannot apply [TINYINT] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkColumnFailure((short) 1, SqlErrorCode.PARSING, "Cannot apply [SMALLINT] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkColumnFailure(1, SqlErrorCode.PARSING, "Cannot apply [INTEGER] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkColumnFailure(1L, SqlErrorCode.PARSING, "Cannot apply [BIGINT] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkColumnFailure(BigInteger.ONE, SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkColumnFailure(BigDecimal.ONE, SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkColumnFailure(1f, SqlErrorCode.PARSING, "Cannot apply [REAL] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkColumnFailure(1d, SqlErrorCode.PARSING, "Cannot apply [DOUBLE] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply [DATE] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIME] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP_WITH_TIME_ZONE] to the 'NOT' operator (consider adding an explicit CAST)");
-
-        put(new ExpressionValue.ObjectVal());
-        checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply [OBJECT] to the 'NOT' operator (consider adding an explicit CAST)");
+        check("field1", expectedResult);
     }
 
     @Test
     public void test_parameter() {
         put(1);
 
-        check("?", null, new Object[] { null });
-
         check("?", false, true);
         check("?", true, false);
+        check("?", null, (Boolean) null);
 
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", "false");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", "true");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", "bad");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", 'b');
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", (byte) 0);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", (short) 0);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", 0);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", 0L);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", BigInteger.ZERO);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", BigDecimal.ZERO);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", 0f);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", 0d);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", LOCAL_DATE_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", LOCAL_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", LOCAL_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", OFFSET_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of BOOLEAN type", new ExpressionValue.ObjectVal());
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, SqlColumnType.BOOLEAN, SqlColumnType.VARCHAR), 't');
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, SqlColumnType.BOOLEAN, SqlColumnType.VARCHAR), "true");
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, SqlColumnType.BOOLEAN, SqlColumnType.TINYINT), (byte) 1);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, SqlColumnType.BOOLEAN, SqlColumnType.SMALLINT), (short) 1);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, SqlColumnType.BOOLEAN, SqlColumnType.INTEGER), 1);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, SqlColumnType.BOOLEAN, SqlColumnType.BIGINT), 1L);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, SqlColumnType.BOOLEAN, SqlColumnType.DECIMAL), BigInteger.ONE);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, SqlColumnType.BOOLEAN, SqlColumnType.DECIMAL), BigDecimal.ONE);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, SqlColumnType.BOOLEAN, SqlColumnType.REAL), 1f);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, SqlColumnType.BOOLEAN, SqlColumnType.DOUBLE), 1d);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, SqlColumnType.BOOLEAN, SqlColumnType.DATE), LOCAL_DATE_VAL);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, SqlColumnType.BOOLEAN, SqlColumnType.TIME), LOCAL_TIME_VAL);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, SqlColumnType.BOOLEAN, SqlColumnType.TIMESTAMP), LOCAL_DATE_TIME_VAL);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, SqlColumnType.BOOLEAN, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, SqlColumnType.BOOLEAN, SqlColumnType.OBJECT), OBJECT_VAL);
     }
 
     @Test
@@ -113,41 +103,14 @@ public class NotPredicateIntegrationTest extends ExpressionTestSupport {
         check("false", true);
         check("null", null);
 
-        checkFailure("'true'", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkFailure("'false'", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkFailure("'bad'", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkFailure("1", SqlErrorCode.PARSING, "Cannot apply [TINYINT] to the 'NOT' operator (consider adding an explicit CAST)");
-        checkFailure("1E0", SqlErrorCode.PARSING, "Cannot apply [DOUBLE] to the 'NOT' operator (consider adding an explicit CAST)");
-    }
-
-    private void checkColumn(Object value, Boolean expectedResult) {
-        put(value);
-
-        check("this", expectedResult);
-    }
-
-    private void checkColumnFailure(Object value, int expectedErrorCode, String expectedErrorMessage) {
-        put(value);
-
-        checkFailure("this", expectedErrorCode, expectedErrorMessage);
-    }
-
-    private void checkFailure(String operand, int expectedErrorCode, String expectedErrorMessage, Object... params) {
-        String sql = "SELECT NOT " + operand + " FROM map";
-
-        try {
-            execute(member, sql, params);
-
-            fail("Must fail!");
-        } catch (HazelcastSqlException e) {
-            assertTrue(expectedErrorMessage != null && !expectedErrorMessage.isEmpty());
-            assertTrue(e.getMessage(), e.getMessage().contains(expectedErrorMessage));
-            assertEquals(expectedErrorCode, e.getCode());
-        }
+        checkFailure0(sql("'true'"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.VARCHAR));
+        checkFailure0(sql("1"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.TINYINT));
+        checkFailure0(sql("1.1"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.DECIMAL));
+        checkFailure0(sql("1.1E1"), SqlErrorCode.PARSING, signatureErrorOperator("NOT", SqlColumnType.DOUBLE));
     }
 
     private void check(String operand, Boolean expectedResult, Object... params) {
-        String sql = "SELECT NOT " + operand + " FROM map";
+        String sql = sql(operand);
 
         List<SqlRow> rows = execute(member, sql, params);
         assertEquals(1, rows.size());
@@ -156,5 +119,27 @@ public class NotPredicateIntegrationTest extends ExpressionTestSupport {
         assertEquals(1, row.getMetadata().getColumnCount());
         assertEquals(SqlColumnType.BOOLEAN, row.getMetadata().getColumn(0).getType());
         assertEquals(expectedResult, row.getObject(0));
+    }
+
+    private static String sql(String operand) {
+        return "SELECT NOT " + operand + " FROM map";
+    }
+
+    @Test
+    public void testEquality() {
+        checkEquals(not(true), not(true), true);
+        checkEquals(not(true), not(false), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        NotPredicate original = not(true);
+        NotPredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_NOT);
+
+        checkEquals(original, restored, true);
+    }
+
+    private static NotPredicate not(Boolean value) {
+        return NotPredicate.create(ConstantExpression.create(value, QueryDataType.BOOLEAN));
     }
 }

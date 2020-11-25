@@ -67,7 +67,7 @@ public abstract class AbstractStringFunctionTest extends ExpressionTestSupport {
         checkColumnFailure(new ExpressionValue.LocalDateTimeVal().field1(LOCAL_DATE_TIME_VAL), TIMESTAMP);
         checkColumnFailure(new ExpressionValue.OffsetDateTimeVal().field1(OFFSET_DATE_TIME_VAL), TIMESTAMP_WITH_TIME_ZONE);
 
-        checkColumnFailure(new ExpressionValue.ObjectVal(), OBJECT);
+        checkColumnFailure(OBJECT_VAL, OBJECT);
     }
 
     protected abstract void checkSupportedColumns();
@@ -109,7 +109,7 @@ public abstract class AbstractStringFunctionTest extends ExpressionTestSupport {
         checkParameterFailure(LOCAL_DATE_TIME_VAL, TIMESTAMP);
         checkParameterFailure(OFFSET_DATE_TIME_VAL, TIMESTAMP_WITH_TIME_ZONE);
 
-        checkParameterFailure(new ExpressionValue.ObjectVal(), OBJECT);
+        checkParameterFailure(OBJECT_VAL, OBJECT);
     }
 
     protected abstract void checkSupportedParameters();

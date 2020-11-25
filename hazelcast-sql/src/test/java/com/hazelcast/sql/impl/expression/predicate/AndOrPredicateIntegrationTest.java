@@ -121,7 +121,7 @@ public class AndOrPredicateIntegrationTest extends ExpressionTestSupport {
         putCheckFailureSignatureCommute(new ExpressionValue.LocalTimeVal(), "field1", "true", SqlColumnType.TIME, SqlColumnType.BOOLEAN);
         putCheckFailureSignatureCommute(new ExpressionValue.LocalDateTimeVal(), "field1", "true", SqlColumnType.TIMESTAMP, SqlColumnType.BOOLEAN);
         putCheckFailureSignatureCommute(new ExpressionValue.OffsetDateTimeVal(), "field1", "true", SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, SqlColumnType.BOOLEAN);
-        putCheckFailureSignatureCommute(new ExpressionValue.ObjectVal(), "field1", "true", SqlColumnType.OBJECT, SqlColumnType.BOOLEAN);
+        putCheckFailureSignatureCommute(OBJECT_VAL, "field1", "true", SqlColumnType.OBJECT, SqlColumnType.BOOLEAN);
 
         // Column/parameter
         putCheckCommute(value1(true), "field1", "?", result(true, true), true);
@@ -146,7 +146,7 @@ public class AndOrPredicateIntegrationTest extends ExpressionTestSupport {
         putCheckFailureParameterCommute(value1(true), "field1", "?", 0, SqlColumnType.TIME, LOCAL_TIME_VAL);
         putCheckFailureParameterCommute(value1(true), "field1", "?", 0, SqlColumnType.TIMESTAMP, LOCAL_DATE_TIME_VAL);
         putCheckFailureParameterCommute(value1(true), "field1", "?", 0, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, OFFSET_DATE_TIME_VAL);
-        putCheckFailureParameterCommute(value1(true), "field1", "?", 0, SqlColumnType.OBJECT, new ExpressionValue.ObjectVal());
+        putCheckFailureParameterCommute(value1(true), "field1", "?", 0, SqlColumnType.OBJECT, OBJECT_VAL);
         putCheckFailureSignatureCommute("true", "this", "?", SqlColumnType.VARCHAR, SqlColumnType.BOOLEAN, true);
         putCheckFailureSignatureCommute((byte) 1, "this", "?", SqlColumnType.TINYINT, SqlColumnType.BOOLEAN, true);
         putCheckFailureSignatureCommute((short) 1, "this", "?", SqlColumnType.SMALLINT, SqlColumnType.BOOLEAN, true);
@@ -160,7 +160,7 @@ public class AndOrPredicateIntegrationTest extends ExpressionTestSupport {
         putCheckFailureSignatureCommute(LOCAL_TIME_VAL, "this", "?", SqlColumnType.TIME, SqlColumnType.BOOLEAN, true);
         putCheckFailureSignatureCommute(LOCAL_DATE_TIME_VAL, "this", "?", SqlColumnType.TIMESTAMP, SqlColumnType.BOOLEAN, true);
         putCheckFailureSignatureCommute(OFFSET_DATE_TIME_VAL, "this", "?", SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, SqlColumnType.BOOLEAN, true);
-        putCheckFailureSignatureCommute(new ExpressionValue.ObjectVal(), "field1", "?", SqlColumnType.OBJECT, SqlColumnType.BOOLEAN, true);
+        putCheckFailureSignatureCommute(OBJECT_VAL, "field1", "?", SqlColumnType.OBJECT, SqlColumnType.BOOLEAN, true);
 
         // Parameter/literal
         checkCommute("?", "true", result(true, true), true);
@@ -189,7 +189,7 @@ public class AndOrPredicateIntegrationTest extends ExpressionTestSupport {
         checkFailureParameterCommute("?", "true", 0, SqlColumnType.TIME, LOCAL_TIME_VAL);
         checkFailureParameterCommute("?", "true", 0, SqlColumnType.TIMESTAMP, LOCAL_DATE_TIME_VAL);
         checkFailureParameterCommute("?", "true", 0, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, OFFSET_DATE_TIME_VAL);
-        checkFailureParameterCommute("?", "true", 0, SqlColumnType.OBJECT, new ExpressionValue.ObjectVal());
+        checkFailureParameterCommute("?", "true", 0, SqlColumnType.OBJECT, OBJECT_VAL);
 
         // Parameter/parameter
         checkCommute("?", "?", result(true, true), true, true);
@@ -211,7 +211,7 @@ public class AndOrPredicateIntegrationTest extends ExpressionTestSupport {
         checkFailureParameterCommute("?", "?", 1, SqlColumnType.TIME, true, LOCAL_TIME_VAL);
         checkFailureParameterCommute("?", "?", 1, SqlColumnType.TIMESTAMP, true, LOCAL_DATE_TIME_VAL);
         checkFailureParameterCommute("?", "?", 1, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, true, OFFSET_DATE_TIME_VAL);
-        checkFailureParameterCommute("?", "?", 1, SqlColumnType.OBJECT, true, new ExpressionValue.ObjectVal());
+        checkFailureParameterCommute("?", "?", 1, SqlColumnType.OBJECT, true, OBJECT_VAL);
 
         // Literal/literal
         checkCommute("true", "true", result(true, true));
@@ -382,14 +382,6 @@ public class AndOrPredicateIntegrationTest extends ExpressionTestSupport {
 
             return false;
         }
-    }
-
-    private static ExpressionValue value1(Boolean first) {
-        return new ExpressionValue.BooleanVal().field1(first);
-    }
-
-    private static ExpressionBiValue value2(Boolean first, Boolean second) {
-        return new BooleanBooleanVal().fields(first, second);
     }
 
     @Test

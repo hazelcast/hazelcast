@@ -77,7 +77,7 @@ public class TrimFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(LOCAL_TIME_VAL, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIME));
         putAndCheckFailure(LOCAL_DATE_TIME_VAL, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIMESTAMP));
         putAndCheckFailure(OFFSET_DATE_TIME_VAL, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIMESTAMP_WITH_TIME_ZONE));
-        putAndCheckFailure(new ExpressionValue.ObjectVal(), "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", OBJECT));
+        putAndCheckFailure(OBJECT_VAL, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", OBJECT));
 
         // Literals
         checkValue0("SELECT TRIM(LEADING null) FROM map", VARCHAR, null);
@@ -126,7 +126,7 @@ public class TrimFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(LOCAL_TIME_VAL, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIME, VARCHAR));
         putAndCheckFailure(LOCAL_DATE_TIME_VAL, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIMESTAMP, VARCHAR));
         putAndCheckFailure(OFFSET_DATE_TIME_VAL, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIMESTAMP_WITH_TIME_ZONE, VARCHAR));
-        putAndCheckFailure(new ExpressionValue.ObjectVal(), "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", OBJECT, VARCHAR));
+        putAndCheckFailure(OBJECT_VAL, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", OBJECT, VARCHAR));
 
         // Literals
         checkValue0("SELECT TRIM(LEADING null FROM 'abab_c_abab') FROM map", VARCHAR, null);
@@ -160,7 +160,7 @@ public class TrimFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, TIME), LOCAL_TIME_VAL);
         checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, TIMESTAMP), LOCAL_DATE_TIME_VAL);
         checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
-        checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, OBJECT), new ExpressionValue.ObjectVal());
+        checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, OBJECT), OBJECT_VAL);
     }
 
     @SuppressWarnings("ConstantConditions")

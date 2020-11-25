@@ -67,7 +67,7 @@ public class CeilFunctionIntegrationTest extends ExpressionTestSupport {
         checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP] to the 'CEIL' function (consider adding an explicit CAST)");
         checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP_WITH_TIME_ZONE] to the 'CEIL' function (consider adding an explicit CAST)");
 
-        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "Cannot apply [OBJECT] to the 'CEIL' function (consider adding an explicit CAST)");
+        checkColumnFailure(OBJECT_VAL, SqlErrorCode.PARSING, "Cannot apply [OBJECT] to the 'CEIL' function (consider adding an explicit CAST)");
     }
 
     private void checkColumn(Object value, SqlColumnType expectedType, Object expectedResult) {
@@ -110,7 +110,7 @@ public class CeilFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to DECIMAL", LOCAL_DATE_TIME_VAL);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to DECIMAL", OFFSET_DATE_TIME_VAL);
 
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", OBJECT_VAL);
     }
 
     private void checkParameter(Object param, Object expectedResult) {

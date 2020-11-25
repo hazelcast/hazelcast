@@ -95,7 +95,7 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(LOCAL_TIME_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, TIME));
         putAndCheckFailure(LOCAL_DATE_TIME_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, TIMESTAMP));
         putAndCheckFailure(OFFSET_DATE_TIME_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, TIMESTAMP_WITH_TIME_ZONE));
-        putAndCheckFailure(new ExpressionValue.ObjectVal(), sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, OBJECT));
+        putAndCheckFailure(OBJECT_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, OBJECT));
     }
 
     @Test
@@ -133,7 +133,7 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, TIME), LOCAL_TIME_VAL);
         checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, TIMESTAMP), LOCAL_DATE_TIME_VAL);
         checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
-        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, OBJECT), new ExpressionValue.ObjectVal());
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, OBJECT), OBJECT_VAL);
     }
 
     private String sql(String operand) {

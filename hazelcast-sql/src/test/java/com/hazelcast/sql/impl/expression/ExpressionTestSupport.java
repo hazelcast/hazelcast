@@ -23,6 +23,8 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlTestInstanceFactory;
 import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue;
+import com.hazelcast.sql.support.expressions.ExpressionValue;
 import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
@@ -50,6 +52,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     public static final LocalTime LOCAL_TIME_VAL = LocalTime.parse("00:00");
     public static final LocalDateTime LOCAL_DATE_TIME_VAL = LocalDateTime.parse("2020-01-01T00:00");
     public static final OffsetDateTime OFFSET_DATE_TIME_VAL = OffsetDateTime.parse("2020-01-01T00:00+00:00");
+    public static final ExpressionValue OBJECT_VAL = new ExpressionValue.ObjectVal();
 
     protected static final Object SKIP_VALUE_CHECK = new Object();
     protected HazelcastInstance member;
@@ -195,5 +198,13 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
             expectedType,
             actualType
         );
+    }
+
+    protected static ExpressionValue value1(Boolean first) {
+        return new ExpressionValue.BooleanVal().field1(first);
+    }
+
+    protected static ExpressionBiValue value2(Boolean first, Boolean second) {
+        return new ExpressionBiValue.BooleanBooleanVal().fields(first, second);
     }
 }
