@@ -83,7 +83,7 @@ public class MemberGroupFactoryTest {
 
     @Test
     public void testNodeMetadataAwareMemberGroupFactoryCreateMemberGroups() {
-        MemberGroupFactory groupFactory = new ZoneAwareMemberGroupFactory();
+        MemberGroupFactory groupFactory = new NodeAwareMemberGroupFactory();
         Collection<Member> members = createMembersWithNodeAwareMetadata();
         Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
 
@@ -99,10 +99,10 @@ public class MemberGroupFactoryTest {
         member1.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_NODE, "kubernetes-node-f0bbd602-f7cw");
 
         MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), VERSION, true);
-        member2.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_NODE, "kubernetes-node-f0bbd602-f7cw");
+        member2.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_NODE, "kubernetes-node-f0bbd602-hgdl");
 
         MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), VERSION, true);
-        member3.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_NODE, "kubernetes-node-f0bbd602-hgdl");
+        member3.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_NODE, "kubernetes-node-f0bbd602-0zjs");
 
         members.add(member1);
         members.add(member2);
