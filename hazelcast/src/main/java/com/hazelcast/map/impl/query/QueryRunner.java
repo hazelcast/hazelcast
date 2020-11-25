@@ -112,7 +112,8 @@ public class QueryRunner {
     /**
      * MIGRATION SAFE QUERYING -> MIGRATION STAMPS ARE VALIDATED (does not have to run on a partition thread)
      * full query = index query (if possible), then partition-scan query
-     * @param query the query to execute
+     *
+     * @param query           the query to execute
      * @param doPartitionScan whether to run full scan ion partitions if the global index run failed.
      * @return the query result. {@code null} if the {@code doPartitionScan} is set and the execution on the
      * global index failed.
@@ -131,7 +132,7 @@ public class QueryRunner {
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
 
         // then we try to run using an index, but if that doesn't work, we'll try a full table scan
-        Collection<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer,
+        Iterable<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer,
                 migrationStamp, initialPartitions.size());
 
         if (entries == null && !doPartitionScan) {
@@ -183,7 +184,7 @@ public class QueryRunner {
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
 
         // then we try to run using an index
-        Collection<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer,
+        Iterable<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer,
                 migrationStamp, initialPartitions.size());
 
         Result result;
@@ -207,7 +208,7 @@ public class QueryRunner {
         // first we optimize the query
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
 
-        Collection<QueryableEntry> entries = null;
+        Iterable<QueryableEntry> entries = null;
         Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes != null && !indexes.isGlobal()) {
             entries = indexes.query(predicate, partitions.size());
@@ -234,15 +235,15 @@ public class QueryRunner {
                 .populateResult(query, queryResultSizeLimiter.getNodeResultLimit(initialPartitions.size()));
     }
 
-    protected Result populateNonEmptyResult(Query query, Collection<QueryableEntry> entries,
+    protected Result populateNonEmptyResult(Query query, Iterable<QueryableEntry> entries,
                                             PartitionIdSet initialPartitions) {
         ResultProcessor processor = resultProcessorRegistry.get(query.getResultType());
         return processor.populateResult(query, queryResultSizeLimiter.getNodeResultLimit(initialPartitions.size()), entries,
                 initialPartitions);
     }
 
-    protected Collection<QueryableEntry> runUsingGlobalIndexSafely(Predicate predicate, MapContainer mapContainer,
-                                                                   int migrationStamp, int ownedPartitionCount) {
+    protected Iterable<QueryableEntry> runUsingGlobalIndexSafely(Predicate predicate, MapContainer mapContainer,
+                                                                 int migrationStamp, int ownedPartitionCount) {
 
         // If a migration is in progress or migration ownership changes,
         // do not attempt to use an index as they may have not been created yet.
@@ -260,7 +261,7 @@ public class QueryRunner {
             // leverage index on this node in a global way.
             return null;
         }
-        Collection<QueryableEntry> entries = indexes.query(predicate, ownedPartitionCount);
+        Iterable<QueryableEntry> entries = indexes.query(predicate, ownedPartitionCount);
         if (entries == null) {
             return null;
         }

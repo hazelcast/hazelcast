@@ -335,7 +335,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         Set<K> resultingSet = new HashSet<>();
 
-        Set<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
+        Iterable<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
             for (QueryableEntry entry : query) {
                 K key = toObject(entry.getKeyData());
@@ -354,7 +354,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         Set<Map.Entry<K, V>> resultingSet = new HashSet<>();
 
-        Set<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
+        Iterable<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
             for (QueryableEntry entry : query) {
                 Map.Entry<K, V> copyEntry = new CachedQueryEntry<>(serializationService, entry.getKeyData(),
@@ -377,7 +377,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         List<Data> resultingList = new ArrayList<>();
 
-        Set<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
+        Iterable<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
             for (QueryableEntry entry : query) {
                 resultingList.add(entry.getValueData());

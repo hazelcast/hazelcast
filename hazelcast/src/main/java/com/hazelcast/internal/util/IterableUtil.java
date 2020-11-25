@@ -19,6 +19,7 @@ package com.hazelcast.internal.util;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Utility functions for working with {@link Iterable}
@@ -36,12 +37,16 @@ public final class IterableUtil {
         return iterator.hasNext() ? iterator.next() : defaultValue;
     }
 
-    /** Transform the Iterable by applying a function to each element  **/
+    /**
+     * Transform the Iterable by applying a function to each element
+     **/
     public static <T, R> Iterable<R> map(Iterable<T> iterable, Function<T, R> mapper) {
         return () -> map(iterable.iterator(), mapper);
     }
 
-    /** Transform the Iterator by applying a function to each element  **/
+    /**
+     * Transform the Iterator by applying a function to each element
+     **/
     public static <T, R> Iterator<R> map(Iterator<T> iterator, Function<T, R> mapper) {
         return new Iterator<R>() {
             @Override
@@ -59,6 +64,49 @@ public final class IterableUtil {
                 iterator.remove();
             }
         };
+    }
+
+    public static <T> Iterable<T> filter(Iterable<T> iterable, Predicate<T> filter) {
+        Iterator<T> givenIterator = iterable.iterator();
+
+        Iterator<T> filteringIterator = new Iterator<T>() {
+            private T next = null;
+
+            @Override
+            public boolean hasNext() {
+                boolean hasNext = false;
+                while (givenIterator.hasNext()) {
+                    T temp = givenIterator.next();
+                    if (filter.test(temp)) {
+                        next = temp;
+                        hasNext = true;
+                        break;
+                    }
+                }
+                return hasNext;
+            }
+
+            @Override
+            public T next() {
+                return next;
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+        return () -> filteringIterator;
+    }
+
+    public static int size(Iterable iterable) {
+        int size = 0;
+        Iterator iterator = iterable.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            size++;
+        }
+        return size;
     }
 
     public static <T, R> Iterator<R> limit(final Iterator<R> iterator, final int limit) {
@@ -83,7 +131,9 @@ public final class IterableUtil {
         };
     }
 
-    /** Return empty Iterable if argument is null **/
+    /**
+     * Return empty Iterable if argument is null
+     **/
     public static <T> Iterable<T> nullToEmpty(Iterable<T> iterable) {
         return iterable == null ? Collections.<T>emptyList() : iterable;
     }

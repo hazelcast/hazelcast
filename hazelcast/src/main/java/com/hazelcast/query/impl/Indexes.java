@@ -27,6 +27,7 @@ import com.hazelcast.internal.monitor.impl.PartitionIndexesStats;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.IterableUtil;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
@@ -34,7 +35,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,7 +59,7 @@ public class Indexes {
 
     private final boolean global;
     private final boolean usesCachedQueryableEntries;
-    private final java.util.function.Predicate filter;
+    private final java.util.function.Predicate<QueryableEntry> filter;
     private final IndexesStats stats;
     private final Extractors extractors;
     private final IndexProvider indexProvider;
@@ -348,7 +348,7 @@ public class Indexes {
      * performed using the indexes known to this indexes instance.
      */
     @SuppressWarnings("unchecked")
-    public Set<QueryableEntry> query(Predicate predicate, int ownedPartitionCount) {
+    public Iterable<QueryableEntry> query(Predicate predicate, int ownedPartitionCount) {
         stats.incrementQueryCount();
 
         if (!haveAtLeastOneIndex() || !(predicate instanceof IndexAwarePredicate)) {
@@ -368,13 +368,7 @@ public class Indexes {
         }
 
         if (result != null && filter != null) {
-            Set<QueryableEntry> set = new HashSet<>();
-            for (QueryableEntry queryableEntry : result) {
-                if (filter.test(queryableEntry)) {
-                    set.add(queryableEntry);
-                }
-            }
-            return set;
+            return IterableUtil.filter(result, filter);
         } else {
             return result;
         }
