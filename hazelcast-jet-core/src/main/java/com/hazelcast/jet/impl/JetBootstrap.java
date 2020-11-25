@@ -176,6 +176,7 @@ public final class JetBootstrap {
         hzConfig.getAdvancedNetworkConfig().setEnabled(false);
 
         JoinConfig join = hzConfig.getNetworkConfig().getJoin();
+        join.getAutoDetectionConfig().setEnabled(false);
         join.getMulticastConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(false);
         join.getAwsConfig().setEnabled(false);
