@@ -46,6 +46,7 @@ import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -158,7 +159,17 @@ public class MapContainer {
                 .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
                 .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
                 .partitionCount(partitionCount)
-                .build();
+                .filter(queryableEntry -> {
+                    Data keyData = queryableEntry.getKeyData();
+                    IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+                    int partitionId = partitionService.getPartitionId(keyData);
+                    if (!partitionService.isPartitionOwner(partitionId)) {
+                        return false;
+                    }
+
+                    RecordStore recordStore = mapServiceContext.getExistingRecordStore(partitionId, name);
+                    return recordStore != null && !recordStore.isExpired(keyData);
+                }).build();
     }
 
     public final void initEvictor() {
@@ -234,7 +245,7 @@ public class MapContainer {
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
         wanReplicationDelegate = wanReplicationService.getWanReplicationPublishers(wanReplicationRefName);
         wanMergePolicy = nodeEngine.getSplitBrainMergePolicyProvider()
-                                   .getMergePolicy(wanReplicationRef.getMergePolicyClassName());
+                .getMergePolicy(wanReplicationRef.getMergePolicyClassName());
 
         WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
         if (wanReplicationConfig != null) {

@@ -34,6 +34,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,6 +59,7 @@ public class Indexes {
 
     private final boolean global;
     private final boolean usesCachedQueryableEntries;
+    private final java.util.function.Predicate filter;
     private final IndexesStats stats;
     private final Extractors extractors;
     private final IndexProvider indexProvider;
@@ -78,7 +80,7 @@ public class Indexes {
 
     private Indexes(InternalSerializationService serializationService, IndexCopyBehavior indexCopyBehavior, Extractors extractors,
                     IndexProvider indexProvider, boolean usesCachedQueryableEntries, boolean statisticsEnabled, boolean global,
-                    InMemoryFormat inMemoryFormat, int partitionCount) {
+                    InMemoryFormat inMemoryFormat, int partitionCount, java.util.function.Predicate filter) {
         this.global = global;
         this.indexCopyBehavior = indexCopyBehavior;
         this.serializationService = serializationService;
@@ -88,6 +90,7 @@ public class Indexes {
         this.indexProvider = indexProvider == null ? new DefaultIndexProvider() : indexProvider;
         this.queryContextProvider = createQueryContextProvider(this, global, statisticsEnabled);
         this.partitionCount = partitionCount;
+        this.filter = filter;
     }
 
     public static void beginPartitionUpdate(InternalIndex[] indexes) {
@@ -364,7 +367,17 @@ public class Indexes {
             queryContext.applyPerQueryStats();
         }
 
-        return result;
+        if (filter != null) {
+            Set<QueryableEntry> set = new HashSet<>();
+            for (QueryableEntry queryableEntry : result) {
+                if (filter.test(queryableEntry)) {
+                    set.add(queryableEntry);
+                }
+            }
+            return set;
+        } else {
+            return result;
+        }
     }
 
     /**
@@ -488,11 +501,17 @@ public class Indexes {
         private IndexProvider indexProvider;
         private InMemoryFormat inMemoryFormat;
         private int partitionCount;
+        private java.util.function.Predicate<QueryableEntry> filter;
 
         Builder(SerializationService ss, IndexCopyBehavior indexCopyBehavior, InMemoryFormat inMemoryFormat) {
             this.serializationService = checkNotNull((InternalSerializationService) ss, "serializationService cannot be null");
             this.indexCopyBehavior = checkNotNull(indexCopyBehavior, "indexCopyBehavior cannot be null");
             this.inMemoryFormat = inMemoryFormat;
+        }
+
+        public Builder filter(java.util.function.Predicate<QueryableEntry> filter) {
+            this.filter = filter;
+            return this;
         }
 
         /**
@@ -554,7 +573,7 @@ public class Indexes {
          */
         public Indexes build() {
             return new Indexes(serializationService, indexCopyBehavior, extractors, indexProvider, usesCachedQueryableEntries,
-                    statsEnabled, global, inMemoryFormat, partitionCount);
+                    statsEnabled, global, inMemoryFormat, partitionCount, filter);
         }
 
     }
