@@ -16,18 +16,18 @@
 
 package com.hazelcast.instance.impl;
 
-import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
+import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.util.AddressUtil;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -151,7 +151,7 @@ class DefaultAddressPicker
 
         if (logger.isFineEnabled()) {
             logger.fine("Picked " + bindAddress + (endpointQualifier == null ? "" : ", for endpoint " + endpointQualifier)
-                  + ", using socket " + serverSocketChannel.socket() + ", bind any local is " + bindAny);
+                    + ", using socket " + serverSocketChannel.socket() + ", bind any local is " + bindAny);
         }
 
         return getPublicAddress(port);
@@ -269,7 +269,7 @@ class DefaultAddressPicker
     }
 
     private static void appendMatchingInterfaces(Collection<InterfaceDefinition> interfaces,
-            Map<String, String> address2DomainMap, String configInterface) {
+                                                 Map<String, String> address2DomainMap, String configInterface) {
 
         for (Entry<String, String> entry : address2DomainMap.entrySet()) {
             String address = entry.getKey();
@@ -437,9 +437,9 @@ class DefaultAddressPicker
 
     @Override
     public Map<EndpointQualifier, Address> getPublicAddressMap() {
-        return new HashMap<EndpointQualifier, Address>() {{
-            put(MEMBER, publicAddress);
-        }};
+        HashMap<EndpointQualifier, Address> publicAddressMap = new HashMap<>();
+        publicAddressMap.put(MEMBER, publicAddress);
+        return publicAddressMap;
     }
 
     void setHostnameResolver(HostnameResolver hostnameResolver) {
