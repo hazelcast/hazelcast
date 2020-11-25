@@ -22,6 +22,8 @@ import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
 /**
  * Utility functions for working with {@link Iterable}
  */
@@ -67,11 +69,18 @@ public final class IterableUtil {
         };
     }
 
+    /**
+     * Lazily filters iterated elements.
+     *
+     * @return a new iterable object which
+     * has an iterator capable of filtering elements
+     */
     public static <T> Iterable<T> filter(Iterable<T> iterable, Predicate<T> filter) {
         Iterator<T> givenIterator = iterable.iterator();
 
         Iterator<T> filteringIterator = new Iterator<T>() {
             private T next;
+
             @Override
             public boolean hasNext() {
                 boolean hasNext = false;
@@ -102,7 +111,12 @@ public final class IterableUtil {
         return () -> filteringIterator;
     }
 
+    /**
+     * @return size of iterable
+     */
     public static int size(Iterable iterable) {
+        checkNotNull(iterable, "iterable cannot be null");
+
         int size = 0;
         Iterator iterator = iterable.iterator();
         while (iterator.hasNext()) {

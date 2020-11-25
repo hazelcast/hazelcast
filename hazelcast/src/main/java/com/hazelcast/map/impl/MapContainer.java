@@ -159,7 +159,7 @@ public class MapContainer {
                 .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
                 .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
                 .partitionCount(partitionCount)
-                .filter(queryableEntry -> {
+                .resultFilter(queryableEntry -> {
                     Data keyData = queryableEntry.getKeyData();
                     IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
                     int partitionId = partitionService.getPartitionId(keyData);
