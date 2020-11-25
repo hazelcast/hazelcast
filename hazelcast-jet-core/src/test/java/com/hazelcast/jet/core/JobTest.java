@@ -684,6 +684,23 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void when_namedJobCancelledAndJoined_then_newJobWithSameNameCanBeSubmitted() {
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new TestProcessors.MockP().streaming());
+        for (int i = 0; i < 10; i++) {
+            JobConfig config = new JobConfig()
+                    .setName("job");
+            Job job = instance().newJob(dag, config);
+            assertJobStatusEventually(job, RUNNING);
+            job.cancel();
+            try {
+                job.join();
+            } catch (CancellationException ignored) {
+            }
+        }
+    }
+
+    @Test
     public void when_jobIsSubmitted_then_jobSubmissionTimeIsQueried() throws InterruptedException {
         testJobSubmissionTimeWhenJobIsRunning(instance());
     }

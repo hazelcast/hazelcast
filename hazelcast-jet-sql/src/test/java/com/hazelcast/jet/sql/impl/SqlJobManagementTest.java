@@ -262,6 +262,17 @@ public class SqlJobManagementTest extends SimpleTestInClusterSupport {
                 .hasMessageContaining("You need Hazelcast Jet Enterprise to use this feature");
     }
 
+    @Test
+    public void test_createDropJobInQuickSuccession() {
+        sqlService.execute("CREATE MAPPING src TYPE TestStream");
+        sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
+
+        for (int i = 0; i < 10; i++) {
+            sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM src");
+            sqlService.execute("DROP JOB testJob");
+        }
+    }
+
     private long countActiveJobs() {
         return instance().getJobs().stream().filter(j -> !j.getStatus().isTerminal()).count();
     }

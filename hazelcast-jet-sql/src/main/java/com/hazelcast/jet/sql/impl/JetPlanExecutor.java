@@ -33,6 +33,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlResultImpl;
 
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 
 class JetPlanExecutor {
 
@@ -104,6 +105,10 @@ class JetPlanExecutor {
             job.cancelAndExportSnapshot(plan.getWithSnapshotName());
         } else {
             job.cancel();
+        }
+        try {
+            job.join();
+        } catch (CancellationException ignored) {
         }
         return SqlResultImpl.createUpdateCountResult(0);
     }

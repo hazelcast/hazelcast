@@ -130,13 +130,13 @@ It has also `netty` and `rxjava` dependencies.
 MQTT 5 brings new features like `Shared subscriptions` and `Time to
 live` for messages and client sessions and many more. While these new
 features look promising, I couldn't find any information regarding the
-adoption rate of MQTT 5. The only java client supports MQTT 5 is
+adoption rate of MQTT 5. The only java client supporting MQTT 5 is
 `HiveMQ Client` and for other languages, I've found only a single
 library or none at all.
 
 ## MQTT Connector
 
-We choose `Paho Java Client` over `HiveMQ Client` since it is
+We chose `Paho Java Client` over `HiveMQ Client` since it is
 lightweight and without dependencies. `Paho Java Client` does not
 support MQTT 5, but the adoption rate of MQTT 5 is questionable.
 
@@ -147,7 +147,7 @@ messages. The source is not distributed, it creates a client on one of
 the members and subscribes to the topics.
 
 The subscription mechanism is push-based. We set a callback to the
-client, and it is called as the messages arrived. Since our
+client, and it is called as the messages arrive. Since our
 `SourceBuilder` is designed for pull-based systems, we buffer the
 messages to a blocking queue and drain them in the `fillBufferFn`. We
 apply the given mapping function to the binary message and keep the
@@ -176,7 +176,7 @@ MqttSources.builder()
         .build();
 ```
 
-You can also subscribe to multiple topics and can provide a
+You can also subscribe to multiple topics and provide a
 `MqttConnectOptions` function instead of configuring the options one by
 one:
 
@@ -200,9 +200,9 @@ MqttSources.builder()
 
 #### Fault Tolerance
 
-MQTT protocol defines these quality-of-services for subscribing the
-topics: `AT_MOST_ONCE`, `AT_LEAST_ONCE`, `EXACTLY_ONCE`. But I've
-confirmed a loss of message with `EXACTLY_ONCE` configuration even when
+MQTT protocol defines these levels of quality of service for subscribing
+to the topics: `AT_MOST_ONCE`, `AT_LEAST_ONCE`, `EXACTLY_ONCE`. But I've
+confirmed a loss of messages with `EXACTLY_ONCE` configuration even when
 the client restarted gracefully. I've tried both Paho client and HiveMQ
 client, the results are same.
 
@@ -213,9 +213,9 @@ serves these buffered messages once the client is re-connected. You
 need to use a unique identifier for the client.
 
 The source itself is not fault-tolerant and does not save any state. In
-case of a restart, the source does not know where it left and relies on
-the broker. If the broker keeps a session for the client (above
-situation), the source continues where it left otherwise the source
+case of a restart, the source does not know where it left off and relies
+on the broker. If the broker keeps a session for the client (the above
+situation), the source continues where it left off, otherwise the source
 emits messages after the subscription.
 
 Paho client has an `autoReconnect` option, in case of a disconnect, the
