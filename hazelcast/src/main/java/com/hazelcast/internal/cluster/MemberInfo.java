@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.cluster;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -32,12 +32,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMap;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
-import static java.util.Collections.singletonMap;
 
 public class MemberInfo implements IdentifiedDataSerializable {
 
@@ -112,7 +110,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
     }
 
     public MemberImpl toMember() {
-        return new MemberImpl.Builder(singletonMap(MEMBER, address))
+        return new MemberImpl.Builder(address)
                 .version(version)
                 .uuid(uuid)
                 .attributes(attributes)
