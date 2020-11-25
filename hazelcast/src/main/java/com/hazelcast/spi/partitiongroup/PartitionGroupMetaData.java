@@ -51,7 +51,8 @@ public enum PartitionGroupMetaData {
     public static final String PARTITION_GROUP_HOST = "hazelcast.partition.group.host";
 
     /**
-     * Metadata key definition for a node machine that containers/pods run on, in case of container orchestration tools being used.
+     * Metadata key definition for a node machine that containers/pods run on,
+     * in case of container orchestration tools being used.
      */
     public static final String PARTITION_GROUP_NODE = "hazelcast.partition.group.node";
 }
