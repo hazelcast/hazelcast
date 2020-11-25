@@ -20,7 +20,6 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.projection.MapProjectionTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -58,9 +57,9 @@ public class ClientMapProjectionTest extends MapProjectionTest {
                 .addMapConfig(mapConfig);
 
         factory.newInstances(config, nodeCount);
-        HazelcastInstance client = factory.newHazelcastClient();
+        instance0 = factory.newHazelcastClient();
 
-        return client.getMap("aggr");
+        return instance0.getMap("aggr");
     }
 
     @Override

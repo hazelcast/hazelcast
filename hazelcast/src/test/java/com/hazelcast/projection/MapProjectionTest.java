@@ -53,7 +53,8 @@ public class MapProjectionTest extends HazelcastTestSupport {
 
     @Rule
     public ExpectedException expected = ExpectedException.none();
-    private HazelcastInstance instance0;
+
+    protected HazelcastInstance instance0;
 
     @Test(expected = NullPointerException.class)
     public void null_projection() {
