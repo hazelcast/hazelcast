@@ -367,7 +367,7 @@ public class Indexes {
             queryContext.applyPerQueryStats();
         }
 
-        if (filter != null) {
+        if (result != null && filter != null) {
             Set<QueryableEntry> set = new HashSet<>();
             for (QueryableEntry queryableEntry : result) {
                 if (filter.test(queryableEntry)) {
