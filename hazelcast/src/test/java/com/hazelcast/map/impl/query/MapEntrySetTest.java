@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import static com.hazelcast.query.Predicates.partitionPredicate;
 import static com.hazelcast.test.Accessors.getSerializationService;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -124,9 +125,32 @@ public class MapEntrySetTest extends HazelcastTestSupport {
 
         Set<Entry<String, String>> result =
                 ((MapProxyImpl<String, String>) map).entrySet(Predicates.alwaysTrue(), partitionSubset);
+        assertEquals(2, result.size());
         for (String key : matchingKeys) {
             assertResultContains(result, key, key);
         }
+    }
+
+    @Test
+    public void when_selectingPartitionSubset_and_partitionPredicate() {
+        PartitionIdSet partitionSubset = new PartitionIdSet(4, asList(1, 3));
+        Set<String> matchingKeys = new HashSet<>();
+        String key1 = null;
+        for (int i = 0; i < 5; i++) {
+            String key = generateKeyForPartition(instance, i);
+            if (i == 1) {
+                key1 = key;
+            }
+            map.put(key, key);
+            if (partitionSubset.contains(i)) {
+                matchingKeys.add(key);
+            }
+        }
+
+        Set<Entry<String, String>> result = ((MapProxyImpl<String, String>) map)
+                .entrySet(partitionPredicate(key1, Predicates.alwaysTrue()), partitionSubset);
+        assertEquals(1, result.size());
+        assertResultContains(result, key1, key1);
     }
 
     @Test

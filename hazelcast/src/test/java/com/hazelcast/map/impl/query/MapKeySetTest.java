@@ -32,10 +32,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.query.Predicates.partitionPredicate;
 import static com.hazelcast.test.Accessors.getSerializationService;
 import static com.hazelcast.test.TestCollectionUtils.setOf;
 import static java.util.Arrays.asList;
@@ -117,6 +119,27 @@ public class MapKeySetTest extends HazelcastTestSupport {
 
         Set<String> result = ((MapProxyImpl<String, String>) map).keySet(Predicates.alwaysTrue(), partitionSubset);
         assertEquals(matchingKeys, result);
+    }
+
+    @Test
+    public void when_selectingPartitionSubset_and_partitionPredicate() {
+        PartitionIdSet partitionSubset = new PartitionIdSet(4, asList(1, 3));
+        Set<String> matchingKeys = new HashSet<>();
+        String key1 = null;
+        for (int i = 0; i < 5; i++) {
+            String key = generateKeyForPartition(instance, i);
+            if (i == 1) {
+                key1 = key;
+            }
+            map.put(key, key);
+            if (partitionSubset.contains(i)) {
+                matchingKeys.add(key);
+            }
+        }
+
+        Set<String> result = ((MapProxyImpl<String, String>) map)
+                .keySet(partitionPredicate(key1, Predicates.alwaysTrue()), partitionSubset);
+        assertEquals(Collections.singleton(key1), result);
     }
 
     @Test
