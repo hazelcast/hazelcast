@@ -81,8 +81,8 @@ public final class IterableUtil {
         @SuppressWarnings("checkstyle:anoninnerlength")
         Iterator<T> filteringIterator = new Iterator<T>() {
             private T next;
-            private int hasNextCallCount = 0;
-            private int nextCallCount = 0;
+            private int hasNextCallCount;
+            private int nextCallCount;
 
             @Override
             public boolean hasNext() {
