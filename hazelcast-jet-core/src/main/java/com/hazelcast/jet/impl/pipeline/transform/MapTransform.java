@@ -17,11 +17,14 @@
 package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 
 public class MapTransform<T, R> extends AbstractTransform {
@@ -42,8 +45,13 @@ public class MapTransform<T, R> extends AbstractTransform {
     }
 
     @Override
-    public void addToDag(Planner p) {
-        PlannerVertex pv = p.addVertex(this, name(), localParallelism(), mapP(mapFn()));
-        p.addEdges(this, pv.v);
+    public void addToDag(Planner p, Context context) {
+        determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, p.isPreserveOrder());
+        PlannerVertex pv = p.addVertex(this, name(), determinedLocalParallelism(), mapP(mapFn()));
+        if (p.isPreserveOrder()) {
+            p.addEdges(this, pv.v, Edge::isolated);
+        } else {
+            p.addEdges(this, pv.v);
+        }
     }
 }

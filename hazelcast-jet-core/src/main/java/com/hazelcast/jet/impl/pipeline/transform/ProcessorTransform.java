@@ -20,6 +20,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.pipeline.Planner;
@@ -27,6 +28,7 @@ import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceBatchedP;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceOrderedP;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceUnorderedP;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
@@ -149,8 +151,13 @@ public class ProcessorTransform extends AbstractTransform {
     }
 
     @Override
-    public void addToDag(Planner p) {
-        PlannerVertex pv = p.addVertex(this, name(), localParallelism(), processorSupplier);
-        p.addEdges(this, pv.v);
+    public void addToDag(Planner p, Context context) {
+        determineLocalParallelism(processorSupplier.preferredLocalParallelism(), context, p.isPreserveOrder());
+        PlannerVertex pv = p.addVertex(this, name(), determinedLocalParallelism(), processorSupplier);
+        if (p.isPreserveOrder()) {
+            p.addEdges(this, pv.v, Edge::isolated);
+        } else {
+            p.addEdges(this, pv.v);
+        }
     }
 }

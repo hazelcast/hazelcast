@@ -25,6 +25,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
@@ -123,8 +124,9 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
     }
 
     @Override
-    public void addToDag(Planner p) {
-        PlannerVertex pv = p.addVertex(this, name(), localParallelism(), processorSupplier);
+    public void addToDag(Planner p, Context context) {
+        determineLocalParallelism(processorSupplier.preferredLocalParallelism(), context, p.isPreserveOrder());
+        PlannerVertex pv = p.addVertex(this, name(), determinedLocalParallelism(), processorSupplier);
         p.addEdges(this, pv.v, e -> e.partitioned(partitionKeyFn).distributed());
     }
 }

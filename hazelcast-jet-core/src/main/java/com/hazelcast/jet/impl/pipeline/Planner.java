@@ -35,6 +35,7 @@ import com.hazelcast.jet.impl.pipeline.transform.TimestampTransform;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -74,13 +75,16 @@ public class Planner {
         this.pipeline = pipeline;
     }
 
+    public boolean isPreserveOrder() {
+        return pipeline.isPreserveOrder();
+    }
+
     @SuppressWarnings("rawtypes")
-    DAG createDag() {
+    DAG createDag(Context context) {
         pipeline.makeNamesUnique();
         Map<Transform, List<Transform>> adjacencyMap = pipeline.adjacencyMap();
         validateNoLeakage(adjacencyMap);
         checkTopologicalSort(adjacencyMap.entrySet());
-
         // Find the greatest common denominator of all frame lengths
         // appearing in the pipeline
         long frameSizeGcd = Util.gcd(adjacencyMap.keySet().stream()
@@ -131,7 +135,7 @@ public class Planner {
         }
 
         for (Transform transform : transforms) {
-            transform.addToDag(this);
+            transform.addToDag(this, context);
         }
 
         // restore original parents
@@ -259,9 +263,9 @@ public class Planner {
         for (Transform fromTransform : transform.upstream()) {
             PlannerVertex fromPv = xform2vertex.get(fromTransform);
             Edge edge = from(fromPv.v, fromPv.nextAvailableOrdinal()).to(toVertex, destOrdinal);
-            applyRebalancing(edge, transform);
             dag.edge(edge);
             configureEdgeFn.accept(edge, destOrdinal);
+            applyRebalancing(edge, transform);
             destOrdinal++;
         }
     }
@@ -275,6 +279,10 @@ public class Planner {
         FunctionEx<?, ?> keyFn = toTransform.partitionKeyFnForInput(destOrdinal);
         if (keyFn != null) {
             edge.partitioned(keyFn);
+        }
+        if (edge.getRoutingPolicy() == Edge.RoutingPolicy.ISOLATED) {
+            throw new IllegalArgumentException("Using rebalance without a key directly breaks the order. " +
+                    "When the \"preserveOrder\" property is active, rebalance without a key is not allowed to use");
         }
     }
 

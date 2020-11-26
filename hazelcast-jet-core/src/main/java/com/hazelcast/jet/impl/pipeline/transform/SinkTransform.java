@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.Partitioner;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -50,8 +51,9 @@ public class SinkTransform<T> extends AbstractTransform {
 
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public void addToDag(Planner p) {
-        PlannerVertex pv = p.addVertex(this, name(), localParallelism(),
+    public void addToDag(Planner p, Context context) {
+        determineLocalParallelism(sink.metaSupplier().preferredLocalParallelism(), context, false);
+        PlannerVertex pv = p.addVertex(this, name(), determinedLocalParallelism(),
                 adaptingMetaSupplier(sink.metaSupplier(), ordinalsToAdapt));
         p.addEdges(this, pv.v, (e, ord) -> {
             // note: have to use an all-to-one edge for the assertion sink.

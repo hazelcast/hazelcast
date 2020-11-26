@@ -18,6 +18,8 @@ package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.impl.pipeline.Planner;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
+
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
@@ -46,6 +48,10 @@ public interface Transform extends Serializable {
 
     void localParallelism(int localParallelism);
 
+    int determinedLocalParallelism();
+
+    void determinedLocalParallelism(int determinedLocalParallelism);
+
     void setRebalanceInput(int ordinal, boolean value);
 
     void setPartitionKeyFnForInput(int ordinal, FunctionEx<?, ?> keyFn);
@@ -57,7 +63,7 @@ public interface Transform extends Serializable {
     @Nonnull
     List<Transform> upstream();
 
-    void addToDag(Planner p);
+    void addToDag(Planner p, Context context);
 
     /**
      * Returns the optimal watermark stride for this windowed transform.

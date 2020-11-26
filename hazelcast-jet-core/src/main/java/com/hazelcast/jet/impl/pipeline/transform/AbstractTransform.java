@@ -17,13 +17,16 @@
 package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
+import static com.hazelcast.jet.core.Vertex.checkLocalParallelism;
+import static java.lang.Math.min;
 import static java.util.Collections.singletonList;
 
 public abstract class AbstractTransform implements Transform {
@@ -34,7 +37,9 @@ public abstract class AbstractTransform implements Transform {
     @Nonnull
     private final List<Transform> upstream;
 
-    private int localParallelism = Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
+    private int localParallelism = LOCAL_PARALLELISM_USE_DEFAULT;
+
+    private int determinedLocalParallelism = LOCAL_PARALLELISM_USE_DEFAULT;
 
     private final boolean[] upstreamRebalancingFlags;
 
@@ -69,12 +74,22 @@ public abstract class AbstractTransform implements Transform {
 
     @Override
     public void localParallelism(int localParallelism) {
-        this.localParallelism = Vertex.checkLocalParallelism(localParallelism);
+        this.localParallelism = checkLocalParallelism(localParallelism);
     }
 
     @Override
     public int localParallelism() {
         return localParallelism;
+    }
+
+    @Override
+    public void determinedLocalParallelism(int determinedLocalParallelism) {
+        this.determinedLocalParallelism = checkLocalParallelism(determinedLocalParallelism);
+    }
+
+    @Override
+    public int determinedLocalParallelism() {
+        return determinedLocalParallelism;
     }
 
     @Override
@@ -114,5 +129,51 @@ public abstract class AbstractTransform implements Transform {
             }
         }
         return false;
+    }
+
+
+    /**
+     * Determines the local parallelism of the transform by looking at
+     * its preferred local parallelism, the local parallelism of its upstream
+     * transforms, and the default local parallelism in {@code
+     * PipelineImpl.Context}.
+     * <p>
+     * If none of them is set, returns the default local parallelism provided
+     * {@code PipelineImpl.Context}.
+     */
+    protected void determineLocalParallelism(
+            int preferredLocalParallelism,
+            Context context,
+            boolean shouldMatchUpstreamParallelism
+    ) {
+        int defaultParallelism = context.defaultLocalParallelism();
+        int upstreamParallelism = -1;
+        // Get the minimum of upstream LPs as upstreamParallelism
+        if (!upstream().isEmpty()) {
+            upstreamParallelism = upstream()
+                    .stream()
+                    .mapToInt(Transform::determinedLocalParallelism)
+                    .min()
+                    .getAsInt();
+        }
+
+        if (shouldMatchUpstreamParallelism && upstreamParallelism != LOCAL_PARALLELISM_USE_DEFAULT) {
+            determinedLocalParallelism(upstreamParallelism);
+            return;
+        }
+
+        if (localParallelism() == LOCAL_PARALLELISM_USE_DEFAULT) {
+            if (preferredLocalParallelism == LOCAL_PARALLELISM_USE_DEFAULT) {
+                determinedLocalParallelism(defaultParallelism);
+            } else {
+                if (defaultParallelism == LOCAL_PARALLELISM_USE_DEFAULT) {
+                    determinedLocalParallelism(preferredLocalParallelism);
+                } else {
+                    determinedLocalParallelism(min(preferredLocalParallelism, defaultParallelism));
+                }
+            }
+        } else {
+            determinedLocalParallelism(localParallelism());
+        }
     }
 }

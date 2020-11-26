@@ -21,11 +21,13 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import java.util.HashSet;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Partitioner.HASH_CODE;
+import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
 import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
@@ -39,11 +41,12 @@ public class DistinctTransform<T, K> extends AbstractTransform {
     }
 
     @Override
-    public void addToDag(Planner p) {
+    public void addToDag(Planner p, Context context) {
         String vertexName = name();
+        determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, false);
         Vertex v1 = p.dag.newVertex(vertexName + FIRST_STAGE_VERTEX_NAME_SUFFIX, distinctP(keyFn))
-                         .localParallelism(localParallelism());
-        PlannerVertex pv2 = p.addVertex(this, vertexName, localParallelism(), distinctP(keyFn));
+                         .localParallelism(determinedLocalParallelism());
+        PlannerVertex pv2 = p.addVertex(this, vertexName, determinedLocalParallelism(), distinctP(keyFn));
         p.addEdges(this, v1, (e, ord) -> e.partitioned(keyFn, HASH_CODE));
         p.dag.edge(between(v1, pv2.v).distributed().partitioned(keyFn));
     }

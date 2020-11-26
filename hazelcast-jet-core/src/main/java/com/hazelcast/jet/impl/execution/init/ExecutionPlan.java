@@ -468,12 +468,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         final int queueSize = edge.getConfig().getQueueSize();
 
         if (edge.routingPolicy() == RoutingPolicy.ISOLATED) {
-            if (downstreamParallelism < upstreamParallelism) {
-                throw new IllegalArgumentException(String.format(
-                        "The edge %s specifies the %s routing policy, but the downstream vertex" +
-                                " parallelism (%d) is less than the upstream vertex parallelism (%d)",
-                        edge, RoutingPolicy.ISOLATED.name(), downstreamParallelism, upstreamParallelism));
-            }
             if (edge.getDistributedTo() != null) {
                 throw new IllegalArgumentException("Isolated edges must be local: " + edge);
             }

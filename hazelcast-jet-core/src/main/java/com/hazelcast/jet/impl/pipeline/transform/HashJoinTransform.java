@@ -28,12 +28,14 @@ import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.impl.processor.HashJoinCollectP;
 import com.hazelcast.jet.impl.processor.HashJoinP;
 import com.hazelcast.jet.pipeline.JoinClause;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
 import static com.hazelcast.jet.core.Edge.from;
+import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.impl.pipeline.Planner.applyRebalancing;
 import static com.hazelcast.jet.impl.pipeline.Planner.tailList;
 import static com.hazelcast.jet.impl.util.Util.toList;
@@ -117,7 +119,8 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
     //                              --------
     @Override
     @SuppressWarnings("unchecked")
-    public void addToDag(Planner p) {
+    public void addToDag(Planner p, Context context) {
+        determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, p.isPreserveOrder());
         PlannerVertex primary = p.xform2vertex.get(this.upstream().get(0));
         List keyFns = toList(this.clauses, JoinClause::leftKeyFn);
 
@@ -128,10 +131,14 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
         // must be extracted to variable, probably because of serialization bug
         BiFunctionEx<List<Tag>, Object[], ItemsByTag> tupleToItems = tupleToItemsByTag(whereNullsNotAllowed);
 
-        Vertex joiner = p.addVertex(this, name() + "-joiner", localParallelism(),
+        Vertex joiner = p.addVertex(this, name() + "-joiner", determinedLocalParallelism(),
                 () -> new HashJoinP<>(keyFns, tags, mapToOutputBiFn, mapToOutputTriFn, tupleToItems)).v;
         Edge edgeToJoiner = from(primary.v, primary.nextAvailableOrdinal()).to(joiner, 0);
-        applyRebalancing(edgeToJoiner, this);
+        if (p.isPreserveOrder()) {
+            edgeToJoiner.isolated();
+        } else {
+            applyRebalancing(edgeToJoiner, this);
+        }
         p.dag.edge(edgeToJoiner);
 
         String collectorName = name() + "-collector";

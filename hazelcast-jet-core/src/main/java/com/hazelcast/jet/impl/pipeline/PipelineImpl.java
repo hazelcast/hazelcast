@@ -55,6 +55,7 @@ public class PipelineImpl implements Pipeline {
 
     private final Map<Transform, List<Transform>> adjacencyMap = new LinkedHashMap<>();
     private final Map<String, File> attachedFiles = new HashMap<>();
+    private boolean preserveOrder;
 
     @Nonnull @Override
     @SuppressWarnings("unchecked")
@@ -72,6 +73,17 @@ public class PipelineImpl implements Pipeline {
         xform.onAssignToStage();
         register(xform);
         return new StreamSourceStageImpl<>(xform, this);
+    }
+
+    @Override
+    public boolean isPreserveOrder() {
+        return preserveOrder;
+    }
+
+    @Nonnull @Override
+    public PipelineImpl setPreserveOrder(boolean value) {
+        preserveOrder = value;
+        return this;
     }
 
     @Nonnull @Override
@@ -102,10 +114,22 @@ public class PipelineImpl implements Pipeline {
         return sinkStage;
     }
 
+    @Nonnull
+    public DAG toDag(Context context) {
+        return new Planner(this).createDag(context);
+    }
+
     @Nonnull @Override
     public DAG toDag() {
-        return new Planner(this).createDag();
+        final int localParallelismUseDefault = -1;
+        return toDag(new Context() {
+            @Override public int defaultLocalParallelism() {
+                return localParallelismUseDefault;
+            }
+        });
     }
+
+
 
     @SuppressWarnings("rawtypes")
     public void connect(
@@ -213,5 +237,12 @@ public class PipelineImpl implements Pipeline {
     private void register(Transform stage) {
         List<Transform> prev = adjacencyMap.putIfAbsent(stage, new ArrayList<>());
         assert prev == null : "Double registration of a Stage with this Pipeline: " + stage;
+    }
+
+    /**
+     * Context passed to {@link #toDag(Context)}.
+     */
+    public interface Context {
+        int defaultLocalParallelism();
     }
 }

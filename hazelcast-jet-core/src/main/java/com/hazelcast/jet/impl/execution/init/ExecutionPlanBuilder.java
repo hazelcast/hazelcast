@@ -77,6 +77,10 @@ public final class ExecutionPlanBuilder {
             final Vertex vertex = dag.getVertex(entry.getKey());
             final ProcessorMetaSupplier metaSupplier = vertex.getMetaSupplier();
             final int vertexId = entry.getValue();
+            // The local parallelism determination here is effective only
+            // in jobs submitted as DAG. Otherwise, in jobs submitted as
+            // pipeline, we are already doing this determination while
+            // converting it to DAG and there is no vertex left as LP=-1.
             final int localParallelism = vertex.determineLocalParallelism(defaultParallelism);
             final int totalParallelism = localParallelism * clusterSize;
             final List<EdgeDef> inbound = toEdgeDefs(dag.getInboundEdges(vertex.getName()), defaultEdgeConfig,

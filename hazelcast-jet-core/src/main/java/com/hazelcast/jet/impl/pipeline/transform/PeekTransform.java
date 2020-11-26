@@ -20,6 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import javax.annotation.Nonnull;
 
@@ -42,7 +43,7 @@ public class PeekTransform<T> extends AbstractTransform {
     }
 
     @Override
-    public void addToDag(Planner p) {
+    public void addToDag(Planner p, Context context) {
         PlannerVertex peekedPv = p.xform2vertex.get(this.upstream().get(0));
         // Peeking transform doesn't add a vertex, so point to the upstream
         // transform's vertex:

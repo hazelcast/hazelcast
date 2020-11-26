@@ -22,6 +22,7 @@ import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.List;
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Partitioner.HASH_CODE;
+import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.core.processor.Processors.accumulateByKeyP;
 import static com.hazelcast.jet.core.processor.Processors.aggregateByKeyP;
 import static com.hazelcast.jet.core.processor.Processors.combineByKeyP;
@@ -61,7 +63,8 @@ public class GroupTransform<K, A, R, OUT> extends AbstractTransform {
     }
 
     @Override
-    public void addToDag(Planner p) {
+    public void addToDag(Planner p, Context context) {
+        determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, false);
         if (shouldRebalanceAnyInput() || aggrOp.combineFn() == null) {
             addToDagSingleStage(p);
         } else {
@@ -83,7 +86,7 @@ public class GroupTransform<K, A, R, OUT> extends AbstractTransform {
     //                        | aggregateByKeyP |
     //                         -----------------
     private void addToDagSingleStage(Planner p) {
-        PlannerVertex pv = p.addVertex(this, name(), localParallelism(),
+        PlannerVertex pv = p.addVertex(this, name(), determinedLocalParallelism(),
                 aggregateByKeyP(groupKeyFns, aggrOp, mapToOutputFn));
         p.addEdges(this, pv.v, (e, ord) -> e.distributed().partitioned(groupKeyFns.get(ord)));
     }
@@ -108,8 +111,8 @@ public class GroupTransform<K, A, R, OUT> extends AbstractTransform {
     private void addToDagTwoStage(Planner p) {
         List<FunctionEx<?, ? extends K>> groupKeyFns = this.groupKeyFns;
         Vertex v1 = p.dag.newVertex(name() + FIRST_STAGE_VERTEX_NAME_SUFFIX, accumulateByKeyP(groupKeyFns, aggrOp))
-                .localParallelism(localParallelism());
-        PlannerVertex pv2 = p.addVertex(this, name(), localParallelism(),
+                .localParallelism(determinedLocalParallelism());
+        PlannerVertex pv2 = p.addVertex(this, name(), determinedLocalParallelism(),
                 combineByKeyP(aggrOp, mapToOutputFn));
         p.addEdges(this, v1, (e, ord) -> e.partitioned(groupKeyFns.get(ord), HASH_CODE));
         p.dag.edge(between(v1, pv2.v).distributed().partitioned(entryKey()));

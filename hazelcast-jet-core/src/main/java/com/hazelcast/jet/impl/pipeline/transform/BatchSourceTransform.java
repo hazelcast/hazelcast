@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.pipeline.transform;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.pipeline.BatchSource;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import javax.annotation.Nonnull;
 
@@ -45,7 +46,8 @@ public class BatchSourceTransform<T> extends AbstractTransform implements BatchS
     }
 
     @Override
-    public void addToDag(Planner p) {
-        p.addVertex(this, name(), localParallelism(), metaSupplier);
+    public void addToDag(Planner p, Context context) {
+        determineLocalParallelism(metaSupplier.preferredLocalParallelism(), context, false);
+        p.addVertex(this, name(), determinedLocalParallelism(), metaSupplier);
     }
 }

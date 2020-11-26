@@ -17,16 +17,20 @@
 package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.jet.aggregate.AggregateOperation;
+import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
+
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.core.processor.Processors.accumulateP;
 import static com.hazelcast.jet.core.processor.Processors.aggregateP;
 import static com.hazelcast.jet.core.processor.Processors.combineP;
@@ -52,11 +56,11 @@ public class AggregateTransform<A, R> extends AbstractTransform {
     }
 
     @Override
-    public void addToDag(Planner p) {
+    public void addToDag(Planner p, Context context) {
         if (aggrOp.combineFn() == null) {
             addToDagSingleStage(p);
         } else {
-            addToDagTwoStage(p);
+            addToDagTwoStage(p, context);
         }
     }
 
@@ -73,10 +77,12 @@ public class AggregateTransform<A, R> extends AbstractTransform {
     //                  |   aggregateP   | local parallelism = 1
     //                   ----------------
     private void addToDagSingleStage(Planner p) {
-        PlannerVertex pv = p.addVertex(this, name(), 1, aggregateP(aggrOp));
+        determinedLocalParallelism(1);
+        PlannerVertex pv = p.addVertex(this, name(), determinedLocalParallelism(), aggregateP(aggrOp));
         p.addEdges(this, pv.v, edge -> edge.distributed().allToOne(name().hashCode()));
     }
 
+    //  WHEN PRESERVE ORDER IS NOT ACTIVE
     //               ---------       ---------
     //              | source0 | ... | sourceN |
     //               ---------       ---------
@@ -94,18 +100,42 @@ public class AggregateTransform<A, R> extends AbstractTransform {
     //                   ----------------
     //                  |    combineP    | local parallelism = 1
     //                   ----------------
-    private void addToDagTwoStage(Planner p) {
+    //  WHEN PRESERVE ORDER IS ACTIVE
+    //               ---------       ---------
+    //              | source0 | ... | sourceN |
+    //               ---------       ---------
+    //                   |              |
+    //                isolated       isolated
+    //                   v              v
+    //                  -------------------
+    //                 |    accumulateP    |
+    //                  -------------------
+    //                           |
+    //                      distributed
+    //                       all-to-one
+    //                           v
+    //                   ----------------
+    //                  |    combineP    | local parallelism = 1
+    //                   ----------------
+
+    private void addToDagTwoStage(Planner p, Context context) {
         String vertexName = name();
+        determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, p.isPreserveOrder());
         Vertex v1 = p.dag.newVertex(vertexName + FIRST_STAGE_VERTEX_NAME_SUFFIX, accumulateP(aggrOp))
-                         .localParallelism(localParallelism());
-        PlannerVertex pv2 = p.addVertex(this, vertexName, 1,
+                         .localParallelism(determinedLocalParallelism());
+        if (p.isPreserveOrder()) {
+            p.addEdges(this, v1, Edge::isolated);
+        } else {
+            p.addEdges(this, v1);
+        }
+
+        determinedLocalParallelism(1);
+        PlannerVertex pv2 = p.addVertex(this, vertexName, determinedLocalParallelism(),
                 ProcessorMetaSupplier.forceTotalParallelismOne(
                         ProcessorSupplier.of(combineP(aggrOp)), vertexName));
-        p.addEdges(this, v1);
+
         p.dag.edge(between(v1, pv2.v)
                 .distributed()
                 .allToOne(vertexName));
     }
 }
-
-

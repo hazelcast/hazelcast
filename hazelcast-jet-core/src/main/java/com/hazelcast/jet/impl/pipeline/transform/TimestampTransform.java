@@ -20,10 +20,12 @@ import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 
 public class TimestampTransform<T> extends AbstractTransform {
@@ -46,11 +48,10 @@ public class TimestampTransform<T> extends AbstractTransform {
     }
 
     @Override
-    public void addToDag(Planner p) {
-        PlannerVertex upstream = p.xform2vertex.get(this.upstream().get(0));
-        int localParallelism = upstream.v.determineLocalParallelism(upstream.v.getLocalParallelism());
+    public void addToDag(Planner p, Context context) {
+        determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, true);
         PlannerVertex pv = p.addVertex(
-                this, name(), localParallelism, insertWatermarksP(eventTimePolicy)
+                this, name(), determinedLocalParallelism(), insertWatermarksP(eventTimePolicy)
         );
         p.addEdges(this, pv.v, Edge::isolated);
     }

@@ -85,6 +85,26 @@ events in every partition, or you can use `withIngestionTimestamps()`
 which doesn't have this issue because it's based on system clock on the
 member machines.
 
+#### Preserving Event Order
+
+In some use cases, the order of events with the same key should be
+preserved, in order to be able to apply stateful processing logic on
+them.
+
+`Pipeline` has a property named `preserveOrder` and enabling this
+property instructs Jet to keep the order of events with the same
+partitioning key by avoiding the usage of round-robin edges.
+
+You can enable this property as follows:
+
+```java
+Pipeline p = Pipeline.create();
+p.setPreserveOrder(true);
+```
+
+> Note that: Changing the partition keys in the different stages of the
+pipeline may cause out-of-order.
+
 #### Prefer Assigning Timestamps at the Source
 
 In some source implementations, especially partitioned ones like Kafka,

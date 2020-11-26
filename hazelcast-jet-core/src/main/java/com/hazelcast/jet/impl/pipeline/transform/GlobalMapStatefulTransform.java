@@ -22,6 +22,7 @@ import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.impl.util.ConstantFunctionEx;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import javax.annotation.Nonnull;
 
@@ -46,9 +47,10 @@ public class GlobalMapStatefulTransform<T, S, R> extends AbstractTransform {
     }
 
     @Override
-    public void addToDag(Planner p) {
+    public void addToDag(Planner p, Context context) {
+        determinedLocalParallelism(1);
         ConstantFunctionEx<T, Integer> keyFn = new ConstantFunctionEx<>(name().hashCode());
-        PlannerVertex pv = p.addVertex(this, name(), 1,
+        PlannerVertex pv = p.addVertex(this, name(), determinedLocalParallelism(),
                 mapStatefulP(Long.MAX_VALUE, keyFn, timestampFn, createFn, statefulMapFn, null));
         p.addEdges(this, pv.v, edge -> edge.partitioned(keyFn).distributed());
     }
