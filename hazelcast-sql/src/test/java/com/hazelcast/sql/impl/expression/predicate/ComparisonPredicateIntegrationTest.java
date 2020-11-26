@@ -114,10 +114,25 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         checkUnsupportedColumnParameter(true, SqlColumnType.BOOLEAN, 0, ExpressionTypes.allExcept(ExpressionTypes.BOOLEAN));
 
         // Literal/literal
+        checkCommute("true", "true", RES_EQ);
+        checkCommute("true", "false", RES_GT);
+        checkCommute("true", "null", RES_NULL);
+        checkCommute("false", "false", RES_EQ);
+        checkCommute("false", "null", RES_NULL);
+        checkFailure("null", "null", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL));
+        checkUnsupportedLiteralLiteral("true", SqlColumnType.BOOLEAN, LITERAL_VARCHAR, LITERAL_TINYINT, LITERAL_DECIMAL, LITERAL_DOUBLE);
 
         // Literal/parameter
+        checkCommute("true", "?", RES_EQ, true);
+        checkCommute("true", "?", RES_GT, false);
+        checkCommute("true", "?", RES_NULL, (Boolean) null);
+        checkCommute("false", "?", RES_LT, true);
+        checkCommute("false", "?", RES_EQ, false);
+        checkCommute("false", "?", RES_NULL, (Boolean) null);
+        checkFailure("null", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL), true);
 
         // Parameter/parameter
+        checkFailure("?", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL), true, true);
     }
 
     @Test
@@ -186,6 +201,22 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
             );
 
             checkFailure0(sql, SqlErrorCode.DATA_EXCEPTION, errorMessage, parameterType.valueFrom());
+        }
+    }
+
+    private void checkUnsupportedLiteralLiteral(String literalValue, SqlColumnType literalType, Literal... literals) {
+        for (Literal literal : literals) {
+            put(1);
+
+            String sql = sql(mode.token(), literalValue, literal.value);
+
+            String errorMessage = signatureErrorOperator(
+                mode.token(),
+                literalType,
+                literal.type
+            );
+
+            checkFailure0(sql, SqlErrorCode.PARSING, errorMessage);
         }
     }
 
