@@ -65,7 +65,7 @@ public class NotPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     private void putAndCheck(Boolean value, Boolean expectedResult) {
-        put(value1(value));
+        put(booleanValue1(value));
 
         check("field1", expectedResult);
     }

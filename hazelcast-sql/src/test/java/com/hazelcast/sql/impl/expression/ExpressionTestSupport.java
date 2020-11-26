@@ -165,7 +165,10 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         } catch (HazelcastSqlException e) {
             assertTrue(expectedErrorMessage.length() != 0);
             assertNotNull(e.getMessage());
-            assertTrue(e.getMessage(), e.getMessage().contains(expectedErrorMessage));
+            assertTrue(
+                "\nExpected: " + expectedErrorMessage + "\nActual: " + e.getMessage(),
+                e.getMessage().contains(expectedErrorMessage)
+            );
 
             assertEquals(e.getCode() + ": " + e.getMessage(), expectedErrorCode, e.getCode());
         }
@@ -200,11 +203,11 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         );
     }
 
-    protected static ExpressionValue value1(Boolean first) {
+    protected static ExpressionValue booleanValue1(Object first) {
         return new ExpressionValue.BooleanVal().field1(first);
     }
 
-    protected static ExpressionBiValue value2(Boolean first, Boolean second) {
+    protected static ExpressionBiValue booleanValue2(Boolean first, Boolean second) {
         return new ExpressionBiValue.BooleanBooleanVal().fields(first, second);
     }
 }

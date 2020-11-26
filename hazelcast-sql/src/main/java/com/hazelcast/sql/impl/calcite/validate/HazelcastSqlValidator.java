@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.calcite.validate;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.calcite.validate.param.PrecedenceParameterConverter;
+import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
@@ -234,7 +234,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             ParameterConverter converter = parameterConverterMap.get(i);
 
             if (converter == null) {
-                converter = new PrecedenceParameterConverter(
+                converter = new StrictParameterConverter(
                     i,
                     parameterPositionMap.get(i),
                     SqlToQueryType.map(rowType.getFieldList().get(i).getType().getSqlTypeName())

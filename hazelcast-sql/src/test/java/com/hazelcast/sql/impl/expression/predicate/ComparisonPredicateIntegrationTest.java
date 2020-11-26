@@ -20,6 +20,7 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
+import com.hazelcast.sql.support.expressions.ExpressionType;
 import com.hazelcast.sql.support.expressions.ExpressionTypes;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,6 +34,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import static com.hazelcast.sql.support.expressions.ExpressionBiValue.createBiClass;
 import static com.hazelcast.sql.support.expressions.ExpressionBiValue.createBiValue;
@@ -62,6 +64,161 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
             { Mode.GTE },
         });
     }
+
+    private static final Literal LITERAL_BOOLEAN = new Literal("true", SqlColumnType.BOOLEAN);
+    private static final Literal LITERAL_VARCHAR = new Literal("'true'", SqlColumnType.VARCHAR);
+    private static final Literal LITERAL_TINYINT = new Literal("1", SqlColumnType.TINYINT);
+    private static final Literal LITERAL_DECIMAL = new Literal("1.1", SqlColumnType.DECIMAL);
+    private static final Literal LITERAL_DOUBLE = new Literal("1.1E1", SqlColumnType.DOUBLE);
+
+    @Test
+    public void testString() {
+        // TODO
+        checkUnsupportedColumnColumn(ExpressionTypes.STRING, ExpressionTypes.allExcept(ExpressionTypes.STRING, ExpressionTypes.CHARACTER));
+        checkUnsupportedColumnColumn(ExpressionTypes.CHARACTER, ExpressionTypes.allExcept(ExpressionTypes.STRING, ExpressionTypes.CHARACTER));
+    }
+
+    @Test
+    public void testBoolean() {
+        // Column/column
+        putCheckCommute(booleanValue2(true, true), "field1", "field2", RES_EQ);
+        putCheckCommute(booleanValue2(true, false), "field1", "field2", RES_GT);
+        putCheckCommute(booleanValue2(true, null), "field1", "field2", RES_NULL);
+        putCheckCommute(booleanValue2(false, false), "field1", "field2", RES_EQ);
+        putCheckCommute(booleanValue2(false, null), "field1", "field2", RES_NULL);
+        putCheckCommute(booleanValue2(null, null), "field1", "field2", RES_NULL);
+        checkUnsupportedColumnColumn(ExpressionTypes.BOOLEAN, ExpressionTypes.allExcept(ExpressionTypes.BOOLEAN));
+
+        // Column/literal
+        putCheckCommute(booleanValue1(true), "field1", "true", RES_EQ);
+        putCheckCommute(booleanValue1(true), "field1", "false", RES_GT);
+        putCheckCommute(booleanValue1(true), "field1", "null", RES_NULL);
+        putCheckCommute(booleanValue1(false), "field1", "true", RES_LT);
+        putCheckCommute(booleanValue1(false), "field1", "false", RES_EQ);
+        putCheckCommute(booleanValue1(false), "field1", "null", RES_NULL);
+        putCheckCommute(booleanValue1(null), "field1", "true", RES_NULL);
+        putCheckCommute(booleanValue1(null), "field1", "false", RES_NULL);
+        putCheckCommute(booleanValue1(null), "field1", "null", RES_NULL);
+        checkUnsupportedColumnLiteral(true, SqlColumnType.BOOLEAN, LITERAL_VARCHAR, LITERAL_TINYINT, LITERAL_DECIMAL, LITERAL_DOUBLE);
+
+        // Column/parameter
+        putCheckCommute(booleanValue1(true), "field1", "?", RES_EQ, true);
+        putCheckCommute(booleanValue1(true), "field1", "?", RES_GT, false);
+        putCheckCommute(booleanValue1(true), "field1", "?", RES_NULL, (Boolean) null);
+        putCheckCommute(booleanValue1(false), "field1", "?", RES_LT, true);
+        putCheckCommute(booleanValue1(false), "field1", "?", RES_EQ, false);
+        putCheckCommute(booleanValue1(false), "field1", "?", RES_NULL, (Boolean) null);
+        putCheckCommute(booleanValue1(null), "field1", "?", RES_NULL, true);
+        putCheckCommute(booleanValue1(null), "field1", "?", RES_NULL, false);
+        putCheckCommute(booleanValue1(null), "field1", "?", RES_NULL, (Boolean) null);
+        checkUnsupportedColumnParameter(true, SqlColumnType.BOOLEAN, 0, ExpressionTypes.allExcept(ExpressionTypes.BOOLEAN));
+
+        // Literal/literal
+
+        // Literal/parameter
+
+        // Parameter/parameter
+    }
+
+    @Test
+    public void testNumeric() {
+        // TODO
+    }
+
+    @Test
+    public void testTemporal() {
+        // TODO
+    }
+
+    @Test
+    public void testObject() {
+        // TODO
+    }
+
+    private void checkUnsupportedColumnColumn(ExpressionType<?> type, List<ExpressionType<?>> excludeTypes) {
+        for (ExpressionType<?> expressionType : excludeTypes) {
+            ExpressionBiValue value = ExpressionBiValue.createBiValue(
+                ExpressionBiValue.createBiClass(type, expressionType),
+                null,
+                null
+            );
+
+            put(value);
+
+            String sql = sql(mode.token(), "field1", "field2");
+
+            String errorMessage = signatureErrorOperator(
+                mode.token(),
+                type.getFieldConverterType().getTypeFamily().getPublicType(),
+                expressionType.getFieldConverterType().getTypeFamily().getPublicType()
+            );
+
+            checkFailure0(sql, SqlErrorCode.PARSING, errorMessage);
+        }
+    }
+
+    private void checkUnsupportedColumnLiteral(Object columnValue, SqlColumnType columnType, Literal... literals) {
+        for (Literal literal : literals) {
+            put(columnValue);
+
+            String sql = sql(mode.token(), "this", literal.value);
+
+            String errorMessage = signatureErrorOperator(
+                mode.token(),
+                columnType,
+                literal.type
+            );
+
+            checkFailure0(sql, SqlErrorCode.PARSING, errorMessage);
+        }
+    }
+
+    private void checkUnsupportedColumnParameter(Object columnValue, SqlColumnType columnType, int paramPos, List<ExpressionType<?>> parameterTypes) {
+        for (ExpressionType<?> parameterType : parameterTypes) {
+            put(columnValue);
+
+            String sql = sql(mode.token(), "this", "?");
+
+            String errorMessage = parameterError(
+                paramPos,
+                columnType,
+                parameterType.getFieldConverterType().getTypeFamily().getPublicType()
+            );
+
+            checkFailure0(sql, SqlErrorCode.DATA_EXCEPTION, errorMessage, parameterType.valueFrom());
+        }
+    }
+
+    private void putCheckCommute(Object value, String operand1, String operand2, Integer expectedResult, Object... params) {
+        put(value);
+
+        checkCommute(operand1, operand2, expectedResult, params);
+    }
+
+    private void checkCommute(String operand1, String operand2, Integer expectedResult, Object... params) {
+        check(operand1, operand2, expectedResult, params);
+        check(operand2, operand1, inverse(expectedResult), params);
+    }
+
+    private void check(
+        String operand1,
+        String operand2,
+        Integer expectedRes,
+        Object... params
+    ) {
+        Boolean expectedValue = compare(expectedRes);
+
+        for (String token : mode.tokens) {
+            String sql = sql(token, operand1, operand2);
+
+            checkValue0(sql, SqlColumnType.BOOLEAN, expectedValue, params);
+        }
+    }
+
+
+
+
+
 
     @Test
     public void test_column_column() {
@@ -616,32 +773,27 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         }
     }
 
-    private void check(
-        String operand1,
-        String operand2,
-        Integer expectedRes,
-        Object... params
-    ) {
-        // Test direct
-        Boolean expectedValue = compare(expectedRes);
-
-        for (String token : mode.tokens) {
-            String sql = sql(token, operand1, operand2);
-
-            checkValue0(sql, SqlColumnType.BOOLEAN, expectedValue, params);
-
-            Mode inverseMode = mode.inverse();
-
-            for (String inverseToken : inverseMode.tokens) {
-                String inverseSql = sql(inverseToken, operand2, operand1);
-
-                checkValue0(inverseSql, SqlColumnType.BOOLEAN, expectedValue, params);
-            }
-        }
-    }
-
     private String sql(String token, String operand1, String operand2) {
         return "SELECT " + operand1 + " " + token + " " + operand2 + " FROM map";
+    }
+
+    private static Integer inverse(Integer result) {
+        if (result == null) {
+            return null;
+        }
+
+        switch (result) {
+            case RES_GT:
+                return RES_LT;
+
+            case RES_LT:
+                return RES_GT;
+
+            default:
+                assert result == RES_EQ;
+
+                return RES_EQ;
+        }
     }
 
     public Boolean compare(Integer res) {
@@ -674,7 +826,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
 
     private enum Mode {
         EQ("="),
-        NEQ("!=", "<>"),
+        NEQ("<>", "!="),
         LT("<"),
         LTE("<="),
         GT(">"),
@@ -684,6 +836,10 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
 
         Mode(String... tokens) {
             this.tokens = tokens;
+        }
+
+        String token() {
+            return tokens[0];
         }
 
         Mode inverse() {
@@ -703,6 +859,16 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
                 default:
                     return this;
             }
+        }
+    }
+
+    private static class Literal {
+        private final String value;
+        private final SqlColumnType type;
+
+        public Literal(String value, SqlColumnType type) {
+            this.value = value;
+            this.type = type;
         }
     }
 }

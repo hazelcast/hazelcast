@@ -20,6 +20,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import org.apache.calcite.sql.parser.SqlParserPos;
 
+// TODO: Delete?
 public class PrecedenceParameterConverter extends AbstractParameterConverter {
     public PrecedenceParameterConverter(int ordinal, SqlParserPos parserPos, QueryDataType type) {
         super(ordinal, parserPos, type);
