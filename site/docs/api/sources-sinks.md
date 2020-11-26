@@ -6,7 +6,397 @@ description: Birds-eye view of all pre-defined sources available in Jet.
 Hazelcast Jet comes out of the box with many different sources and sinks
 that you can work with, that are also referred to as _connectors_.
 
+## Unified File Connector API
+
+> This section describes the Unified File Connector API introduced in
+> Hazelcast Jet 4.4.
+>
+> As of version 4.4, the API provides source capability only.
+> For sinks, see the [Files](#files) section.
+
+The Unified File Connector API provides a simple way to read files,
+unified across different sources of the data. Using API this you can
+read files from the local filesystem, HDFS and cloud storage systems
+such as Amazon S3, Google Cloud Storage or Azure Blob Storage. At the
+same time the connector supports various formats of the data - text
+files, CSV, Json, Avro, etc., regardless of the source.
+
+### The Source
+
+Hazelcast Jet supports the following sources:
+
+* Local Filesystem (both shared and local to the member)
+* Hadoop Distributed File System (HDFS)
+* Amazon S3
+* Google Cloud Storage
+* Azure Cloud Storage
+* Azure Data Lake (both generation 1 and generation 2)
+
+These are the officially supported sources. However, you can read from
+any Hadoop compatible file system.
+
+Support for reading from the local filesystem is included in the base
+distribution of Hazelcast Jet. You don't need any additional
+dependencies. To access Hadoop or any of the cloud based stores use the
+separately downloadable module. See the details in the
+[Supported Storage Systems](#supported-storage-systems) section.
+
+The main entrypoint to the file connector is `FileSources.files`, which
+takes a `path` as a String parameter and returns a `FileSourceBuilder`.
+The following shows the simplest use of the file source, which reads a
+text file line by line:
+
+```java
+BatchSource<String> source = FileSources.files("/path/to/my/directory")
+                                        .build();
+```
+
+The `path` parameter takes an absolute path. It must point to a
+directory. The directory is not read recursively. The files in the
+directory can be filtered by specifying a glob parameter - a pattern
+with wildcard characters (`*`, `?`). For example, if a folder contains
+log files, named using `YYYY-MM-DD.log` pattern, you can read all the
+files from January 2020 by setting the following parameters:
+
+```java
+BatchSource<String> source = FileSources.files("/var/log/")
+                                        .glob("2020-01-*.log")
+                                        .build();
+```
+
+You can also use Hadoop based connector module to read files from a
+local filesystem. This might be beneficial when you need to parallelize
+reading from a single large file, or read only subset of columns when
+using Parquet format. You need to provide Hadoop module
+(`hazelcast-jet-hadoop`) on classpath and create the source in the
+following way:
+
+```java
+BatchSource<String> source = FileSources.files("/data")
+                                        .glob("wikipedia.txt")
+                                        .useHadoopForLocalFiles(true)
+                                        .build();
+```
+
+You can provide additional options to Hadoop via `option(String,
+String)` method. E.g. to read all files in a directory recursively:
+
+```java
+BatchSource<String> source = FileSources.files("/data")
+                                        .glob("wikipedia.txt")
+                                        .useHadoopForLocalFiles(true)
+                                        .option("mapreduce.input.fileinputformat.input.dir.recursive", "true")
+                                        .build();
+```
+
+### The Format
+
+The `FileSourceBuilder` defaults to UTF-8 encoded text with the file
+read line by line. You can specify the file format using
+`format(FileFormat)` method.  See the available formats in
+`FileFormat.*` interface.  E.g., create the source in the following way
+to read the whole file as a single String using `FileFormat.text()`:
+
+```java
+BatchSource<String> source = FileSources.files("/path/to/my/directory")
+                                        .format(FileFormat.text())
+                                        .build();
+```
+
+#### Avro
+
+Avro format allows to read data from _Avro Object Container File_
+format. To use the Avro format you additionaly need the
+`hazelcast-jet-avro` module, located in the distribution in the `opt`
+folder, or available as a dependency:
+
+<!--DOCUSAURUS_CODE_TABS-->
+
+<!--Gradle-->
+
+```groovy
+compile 'com.hazelcast.jet:hazelcast-jet-avro:{jet-version}'
+```
+
+<!--Maven-->
+
+```xml
+<dependency>
+  <groupId>com.hazelcast.jet</groupId>
+  <artifactId>hazelcast-jet-avro</artifactId>
+  <version>{jet-version}</version>
+</dependency>
+```
+
+<!--END_DOCUSAURUS_CODE_TABS-->
+
+Suppose you have a class `User`, generated from the Avro schema, you can
+read the data from an Avro file in the following way, notice that we
+don't need to provide the User class to the builder, but we need to
+satisfy the Java type system:
+
+```java
+BatchSource<User> source = FileSources.files("/data")
+                                      .glob("users.avro")
+                                      .format(FileFormat.<User>avro())
+                                      .build();
+```
+
+This will use Avro's `SpecificDatumReader` under the hood.
+
+If you don't have a class generated from the Avro schema, but the
+structure of your class matches the data you can use Java reflection to
+read the data:
+
+```java
+BatchSource<User> source = FileSources.files("/data")
+                                      .glob("users.avro")
+                                      .format(FileFormat.avro(User.class))
+                                      .build();
+```
+
+This will use Avro's `ReflectDatumReader` under the hood.
+
+#### CSV
+
+The CSV files with a header are supported. The header columns must match
+the class fields you want to deserialize into, columns not matching any
+fields are ignored, fields not having corresponding columns have null
+values.
+
+Create the file source in the following way to read from file
+`users.csv` and deserialize into a `User` class.
+
+```java
+BatchSource<User> source = FileSources.files("/data")
+                                      .glob("users.csv")
+                                      .format(FileFormat.csv(User.class))
+                                      .build();
+```
+
+#### JSON
+
+[JSON Lines](https://jsonlines.org/) files are supported. The JSON
+fields must match the class fields you want to deserialize into.
+
+Create the file source in the following way to read from file
+`users.jsonl` and deserialize into a `User` class.
+
+```java
+BatchSource<User> source = FileSources.files("/data")
+                                      .glob("users.jsonl")
+                                      .format(FileFormat.json(User.class))
+                                      .build();
+```
+
+#### Text
+
+Create the file source in the following way to read file as text, whole
+file is read as a single String:
+
+```java
+BatchSource<String> source = FileSources.files("/data")
+                                        .glob("file.txt")
+                                        .format(FileFormat.text())
+                                        .build();
+```
+
+When reading from local filesystem you can specify the character
+encoding. This is not supported when using the Hadoop based modules. If provided
+the option will be ignored.
+
+```java
+BatchSource<String> source = FileSources.files("/data")
+                                        .glob("file.txt")
+                                        .format(FileFormat.text(Charset.forName("Cp1250")));
+```
+
+You can read file line by line in the following way, this is the default
+and you can omit the `.format(FileFormat.lines())` part.
+
+```java
+BatchSource<String> source = FileSources.files("/data")
+                                        .glob("file.txt")
+                                        .format(FileFormat.lines())
+                                        .build();
+```
+
+#### Parquet
+
+Apache Parquet is a columnar storage format. It describes how the data
+is stored on disk. It doesn't specify how the data is supposed to be
+deserialized, and it uses other libraries to achieve that. Namely we
+Apache Avro for deserialization.
+
+Parquet has a dependency on Hadoop, so it can be used only with one of
+the Hadoop based modules. You can still read parquet file from local
+filesystem with the `.useHadoopForLocalFiles(true)` flag.
+
+Create the file source in the following way to read data from a parquet
+file:
+
+```java
+BatchSource<String> source = FileSources.files("/data")
+                                        .glob("users.parquet")
+                                        .format(FileFormat.<SpecificUser>parquet())
+                                        .build();
+```
+
+#### Raw Binary
+
+You can read binary files (e.g. images) in the following way:
+
+```java
+BatchSource<byte[]> source = FileSources.files("/data")
+                                        .glob("file.txt")
+                                        .format(FileFormat.bytes())
+                                        .build();
+```
+
+### Supported Storage Systems
+
+|Storage System|Module|Example path|
+|:------------|:------------------|:--------------|
+|HDFS|`hazelcast-jet-hadoop-all`|`hdfs://path/to/a/directory`|
+|Amazon S3|`hazelcast-jet-files-s3`|`s3a://example-bucket/path/in/the/bucket`|
+|Google Cloud Storage|`hazelcast-jet-files-gcs`|`gs://example-bucket/path/in/the/bucket`|
+|Windows Azure Blob Storage|`hazelcast-jet-files-azure`|`wasbs://example-container@examplestorageaccount.blob.core.windows.net/path/in/the/container`|
+|Azure Data Lake Generation 1|`hazelcast-jet-files-azure`|`adl://exampledatalake.azuredatalakestore.net/path/in/the/container`|
+|Azure Data Lake Generation 2|`hazelcast-jet-files-azure`|`abfs://example-container@exampledatalakeaccount.dfs.core.windows.net/path/in/the/container`|
+
+You can obtain the artifacts in the _Additional Modules_ section on the
+[download page](/download) or download from Maven Central repository,
+for example:
+
+<!--DOCUSAURUS_CODE_TABS-->
+
+<!--Gradle-->
+
+```groovy
+compile 'com.hazelcast.jet:hazelcast-jet-hadoop-all:{jet-version}'
+```
+
+<!--Maven-->
+
+```xml
+<dependency>
+  <groupId>com.hazelcast.jet</groupId>
+  <artifactId>hazelcast-jet-hadoop-all</artifactId>
+  <version>{jet-version}</version>
+  <classifier>jar-with-dependencies</classifier>
+</dependency>
+```
+
+<!--END_DOCUSAURUS_CODE_TABS-->
+
+#### Authentication
+
+The basic authentication mechanisms are covered here. For additional
+ways to authenticate see the linked documentation for the services.
+
+#### Amazon S3
+
+Provide your AWS access key id and secret key with required access via
+`fs.s3a.access.key` and `fs.s3a.secret.key` options, using
+`FileSourceBuilder#option` method on the source builder.
+
+For additional ways to authenticate see the
+[Hadoop-AWS documentation](https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html#Authenticating_with_S3)
+and
+[Amazon S3 documentation](https://docs.aws.amazon.com/sdk-for-java/v2/developer-guide/credentials.html)
+.
+
+#### Google Cloud Storage
+
+Provide a location of the keyfile via
+`google.cloud.auth.service.account.json.keyfile` source option, using
+`FileSourceBuilder#option` method on the source builder. Note that
+the file must be available on the node where you submit the job and on
+the cluster members.
+
+#### Windows Azure Blob Storage
+
+Provide an account key via
+`fs.azure.account.key.<your account name>.blob.core.windows.net` source
+option, using `FileSourceBuilder#option` method on the source
+builder.
+
+For additional ways to authenticate see
+[Hadoop Azure Blob Storage](https://hadoop.apache.org/docs/stable/hadoop-azure/index.html)
+support.
+
+#### Azure Data Lake Generation 1
+
+Provide the following properties using `FileSourceBuilder#option`
+method on the source builder:
+
+```text
+fs.adl.oauth2.access.token.provider.type
+fs.adl.oauth2.refresh.url
+fs.adl.oauth2.client.id
+fs.adl.oauth2.credential
+```
+
+For additional ways to authenticate see
+[Hadoop Azure Data Lake Support](https://hadoop.apache.org/docs/stable/hadoop-azure-datalake/index.html)
+
+#### Azure Data Lake Generation 2
+
+For additional ways to authenticate see
+[Hadoop Azure Data Lake Storage Gen2](https://hadoop.apache.org/docs/stable/hadoop-azure/abfs.html)
+
+### Hadoop with Custom Classpath
+
+Alternatively to using one of the modules with all the dependencies
+included, you may use `hazelcast-jet-hadoop` module and configure the
+classpath manually.
+
+Enable the module by moving the jar
+`opt/hazelcast-jet-hadoop-{jet-version}.jar` to `lib/` directory and
+configure the classpath in the following way, using the
+`hadoop classpath` command:
+
+```bash
+export CLASSPATH=$($HADOOP_HOME/bin/hadoop classpath)
+```
+
+Note that you must do these actions on both the node submitting the job
+and all Jet cluster members.
+
+### Hadoop Native Libraries
+
+The underlying Hadoop infrastructure can make a use of native libraries
+for compression/decompression and CRC checksums. When the native
+libraries are not configured you will see the following message in logs:
+
+```text
+[o.a.h.u.NativeCodeLoader]: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+```
+
+Configure the native libraries by adding the location to LD_LIBRARY_PATH
+environment variable:
+
+```bash
+export LD_LIBRARY_PATH=<path to hadoop>/lib/native:$LD_LIBRARY_PATH
+```
+
+To verify that the Hadoop native libraries were successuly configured,
+you should no longer see the message above and if you enable logging
+for `org.apache.hadoop` you should see the following log message:
+
+```text
+[o.a.h.u.NativeCodeLoader]: Loaded the native-hadoop library
+```
+
+For more detail please see the [Hadoop
+Native Libraries Guide](https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/NativeLibraries.html)
+.
+
 ## Files
+
+> This section describes our older API for file access. This API is
+> still maintained, but all new development goes into the [Unified
+> File Connector API](#unified-file-connector-api)
 
 File sources generally involve reading a set of (as in "multiple") files
 from either a local/network disk or a distributed file system such as

@@ -104,7 +104,10 @@ public class ReadHadoopPTest extends HadoopTestSupport {
 
     @After
     public void after() {
-        IOUtil.delete(directory.toFile());
+        if (directory != null) {
+            IOUtil.delete(directory.toFile());
+            directory = null;
+        }
     }
 
     private void createConfiguration() throws IOException {

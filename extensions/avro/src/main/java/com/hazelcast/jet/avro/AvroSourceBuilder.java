@@ -27,8 +27,8 @@ import java.io.File;
 import static com.hazelcast.jet.pipeline.Sources.batchFromProcessor;
 
 /**
- * Builder for an Avro file source which reads records from Avro files in a
- * directory (but not its subdirectories) and emits output object created by
+ * Builder for an Avro file source that reads records from Avro files in a
+ * directory (but not its subdirectories) and emits objects returned by
  * {@code mapOutputFn}.
  *
  * @param <D> the type of the datum read by {@code datumReaderSupplier}
@@ -60,7 +60,7 @@ public final class AvroSourceBuilder<D> {
     /**
      * Sets the globbing mask, see {@link
      * java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}.
-     * Default value is {@code "*"} which means all files.
+     * The default value is {@code "*"}, which means all files.
      */
     public AvroSourceBuilder<D> glob(@Nonnull String glob) {
         this.glob = glob;
@@ -68,13 +68,13 @@ public final class AvroSourceBuilder<D> {
     }
 
     /**
-     * Sets if files are in a shared storage visible to all members. Default
-     * value is {@code false}
+     * Sets whether files are in a shared storage visible to all members. The
+     * default value is {@code false}.
      * <p>
      * If {@code sharedFileSystem} is {@code true}, Jet will assume all members
      * see the same files. They will split the work so that each member will
      * read a part of the files. If {@code sharedFileSystem} is {@code false},
-     * each member will read all files in the directory, assuming the are
+     * each member will read all files in the directory, assuming they are
      * local.
      */
     public AvroSourceBuilder<D> sharedFileSystem(boolean sharedFileSystem) {
@@ -86,8 +86,8 @@ public final class AvroSourceBuilder<D> {
      * Builds a custom Avro file {@link BatchSource} with supplied components
      * and the output function {@code mapOutputFn}.
      * <p>
-     * The source does not save any state to snapshot. If the job is restarted,
-     * it will re-emit all entries.
+     * The source does not save any state to the snapshot. If the job is
+     * restarted, it will re-emit all entries.
      * <p>
      * Any {@code IOException} will cause the job to fail. The files must not
      * change while being read; if they do, the behavior is unspecified.
@@ -106,8 +106,8 @@ public final class AvroSourceBuilder<D> {
     }
 
     /**
-     * Convenience for {@link AvroSourceBuilder#build(BiFunctionEx)}.
-     * Source emits records read by {@code datumReader} to downstream without
+     * Convenience for {@link AvroSourceBuilder#build(BiFunctionEx)}. Builds a
+     * source that emits the records as read by {@code datumReader}, without
      * any transformation.
      */
     public BatchSource<D> build() {

@@ -78,6 +78,8 @@
                             <include>com.fasterxml.jackson.jr:jackson-jr-objects</include>
                             <include>com.fasterxml.jackson.jr:jackson-jr-annotation-support</include>
                             <include>com.fasterxml.jackson.core:jackson-core</include>
+                            <include>com.fasterxml.jackson.core:jackson-databind</include>
+                            <include>com.fasterxml.jackson.dataformat:jackson-dataformat-csv</include>
                         </includes>
                     </artifactSet>
                     <filters>
@@ -109,6 +111,14 @@
                         <relocation>
                             <pattern>com.fasterxml.jackson.core</pattern>
                             <shadedPattern>com.hazelcast.com.fasterxml.jackson.core</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.fasterxml.jackson.databind</pattern>
+                            <shadedPattern>com.hazelcast.com.fasterxml.jackson.databind</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.fasterxml.jackson.dataformat</pattern>
+                            <shadedPattern>com.hazelcast.com.fasterxml.jackson.dataformat</shadedPattern>
                         </relocation>
                     </relocations>
                     <transformers>

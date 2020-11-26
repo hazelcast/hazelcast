@@ -115,9 +115,10 @@
         <reflections.version>0.9.10</reflections.version>
         <osgi.version>4.2.0</osgi.version>
         <prometheus.version>0.13.0</prometheus.version>
-        <hadoop.version>2.10.0</hadoop.version>
+        <hadoop.version>3.2.1</hadoop.version>
         <spring.version>4.3.0.RELEASE</spring.version>
         <avro.version>1.8.2</avro.version>
+        <parquet.version>1.10.1</parquet.version>
         <scala.version>2.12</scala.version>
         <zookeeper.version>3.5.8</zookeeper.version>
         <kafka.version>2.2.0</kafka.version>
@@ -197,6 +198,13 @@
                 <groupId>com.hazelcast</groupId>
                 <artifactId>hazelcast</artifactId>
                 <version>${hazelcast.version}</version>
+            </dependency>
+
+            <!-- Overrides guava version in transitive dependencies -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>29.0-jre</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -554,18 +562,28 @@
                             BSD 3-Clause License|
                             BSD 2-Clause License|
                             The GNU General Public License, v2 with FOSS exception|
+                            CDDL|
+                            CDDL 1.1|
+                            The Go license|
                         </includedLicenses>
                         <licenseMerges>
                             <licenseMerge>
                                 Apache License, Version 2.0|Apache License v2.0|
                                 Apache Software License 2.0|The Apache Software License, Version 2.0|
                                 Apache License, version 2.0|The Apache Software License, version 2.0|
-                                Apache 2|Apache 2.0|Apache-2.0|Apache License 2.0|The Apache License, Version 2.0
+                                Apache 2|Apache 2.0|Apache-2.0|Apache License 2.0|The Apache License, Version 2.0|
+                                Apache Software License - Version 2.0|Apache License Version 2.0
                             </licenseMerge>
-                            <licenseMerge>BSD 2-Clause License|BSD-2-Clause</licenseMerge>
-                            <licenseMerge>BSD 3-Clause License|BSD License|BSD|BSD licence|The BSD License|3-Clause BSD License| New BSD License</licenseMerge>
+                            <licenseMerge>BSD 2-Clause License|BSD-2-Clause|BSD 2-Clause license</licenseMerge>
+                            <licenseMerge>
+                                BSD 3-Clause License|BSD License|BSD|BSD licence|The BSD License|3-Clause BSD License|
+                                New BSD License|New BSD license|The New BSD License|Revised BSD|BSD New license
+                            </licenseMerge>
                             <licenseMerge>CC0|CC0 1.0 Universal License</licenseMerge>
                             <licenseMerge>MIT License|MIT|The MIT License|MIT license|The MIT License (MIT)</licenseMerge>
+                            <licenseMerge>
+                                CDDL|CDDL + GPLv2 with classpath exception|CDDL License
+                            </licenseMerge>
                         </licenseMerges>
                     </configuration>
                 </plugin>

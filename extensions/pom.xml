@@ -37,11 +37,13 @@
         <module>cdc-debezium</module>
         <module>cdc-mysql</module>
         <module>cdc-postgres</module>
+        <module>csv</module>
         <module>elasticsearch/elasticsearch-5</module>
         <module>elasticsearch/elasticsearch-6</module>
         <module>elasticsearch/elasticsearch-7</module>
         <module>grpc</module>
         <module>hadoop</module>
+        <module>hadoop-dist</module>
         <module>kafka</module>
         <module>protobuf</module>
         <module>python</module>

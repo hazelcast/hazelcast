@@ -29,10 +29,12 @@ Copyright (c) 2008-2020 Hazelcast, Inc. All rights reserved.
 This product includes the following libraries with the following licenses:
 
 <#list licenseMap as e>
+<#if e.getValue()?size != 0>
 ${e.getKey()}
 <#list e.getValue() as a>
   ${a.name + ":" + a.version?trim}
 </#list>
+</#if>
 </#list>
 
 -----

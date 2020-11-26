@@ -20,8 +20,10 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -29,6 +31,8 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseStream;
@@ -49,6 +53,8 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 public final class ReadFilesP<T> extends AbstractProcessor {
 
     private static final int DEFAULT_LOCAL_PARALLELISM = 4;
+
+    private transient ILogger logger;
 
     private final Path directory;
     private final String glob;
@@ -79,13 +85,24 @@ public final class ReadFilesP<T> extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
+        logger = context.logger();
         processorIndex = sharedFileSystem ? context.globalProcessorIndex() : context.localProcessorIndex();
         parallelism = sharedFileSystem ? context.totalParallelism() : context.localParallelism();
 
-        directoryStream = Files.newDirectoryStream(directory, glob);
-        outputTraverser = Traversers.traverseIterator(directoryStream.iterator())
+        outputTraverser = Traversers.traverseIterator(pathIterator())
                                     .filter(this::shouldProcessEvent)
                                     .flatMap(this::processFile);
+    }
+
+    @Nonnull
+    private Iterator<Path> pathIterator() throws IOException {
+        if (directory.toFile().exists()) {
+            directoryStream = Files.newDirectoryStream(directory, glob);
+            return directoryStream.iterator();
+        } else {
+            logger.fine("The directory " + directory + " does not exists. This processor will emit 0 items.");
+            return Collections.emptyIterator();
+        }
     }
 
     @Override
@@ -145,6 +162,22 @@ public final class ReadFilesP<T> extends AbstractProcessor {
 
         return ProcessorMetaSupplier.of(DEFAULT_LOCAL_PARALLELISM, () -> new ReadFilesP<>(
                 directory, glob, sharedFileSystem, readFileFn)
+        );
+    }
+
+    /**
+     * Private API.
+     */
+    public static <T> Processor processor(
+            @Nonnull String directory,
+            @Nonnull String glob,
+            boolean sharedFileSystem,
+            @Nonnull FunctionEx<? super Path, ? extends Stream<T>> readFileFn
+    ) {
+        checkSerializable(readFileFn, "readFileFn");
+
+        return new ReadFilesP<>(
+                directory, glob, sharedFileSystem, readFileFn
         );
     }
 }

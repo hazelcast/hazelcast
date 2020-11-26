@@ -42,6 +42,7 @@
         <module>event-journal</module>
         <module>fault-tolerance</module>
         <module>files</module>
+        <module>files-cloud</module>
         <module>grpc</module>
         <module>hadoop</module>
         <module>hello-world</module>

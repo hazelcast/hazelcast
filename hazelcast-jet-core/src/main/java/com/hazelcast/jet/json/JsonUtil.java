@@ -78,7 +78,7 @@ public final class JsonUtil {
     }
 
     /**
-     * Converts a JSON string to a object of given type.
+     * Converts a JSON string to an object of the given type.
      */
     @Nullable
     public static <T> T beanFrom(@Nonnull String jsonString, @Nonnull Class<T> type) throws IOException {

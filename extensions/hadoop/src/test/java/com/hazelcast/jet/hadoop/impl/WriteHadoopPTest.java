@@ -100,7 +100,9 @@ public class WriteHadoopPTest extends HadoopTestSupport {
 
     @After
     public void after() {
-        IOUtil.delete(javaDir.toFile());
+        if (javaDir != null) {
+            IOUtil.delete(javaDir.toFile());
+        }
     }
 
     @Test
