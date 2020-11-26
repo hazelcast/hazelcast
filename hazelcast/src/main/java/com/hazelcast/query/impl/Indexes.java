@@ -505,7 +505,7 @@ public class Indexes {
 
         /**
          * @param filter if filter returns {@code false}, entry
-         *               is filtered out from query result, otherwise included.
+         *               is filtered out from query result, otherwise it is included.
          * @return this builder instance
          */
         public Builder resultFilter(java.util.function.Predicate<QueryableEntry> filter) {

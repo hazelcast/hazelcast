@@ -413,7 +413,16 @@ public interface RecordStore<R extends Record> {
      */
     boolean isExpired(R record, long now, boolean backup);
 
-    boolean expireRecordOrUpdateItsAccessStats(Data key);
+    /**
+     * Checks whether a key has expired, when
+     * expired, key is removed from record-store,
+     * otherwise this method updates its access stats.
+     *
+     * @param key the key
+     * @return {@code true} if key has expired or
+     * does not exist, otherwise return {@code false}
+     */
+    boolean expireOrAccess(Data key);
 
     /**
      * Does post eviction operations like sending events

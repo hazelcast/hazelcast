@@ -255,7 +255,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     @Override
-    public boolean expireRecordOrUpdateItsAccessStats(Data key) {
+    public boolean expireOrAccess(Data key) {
         long now = Clock.currentTimeMillis();
         Record record = getOrNullIfExpired(key, storage.get(key), now, false);
         boolean expired = record == null;

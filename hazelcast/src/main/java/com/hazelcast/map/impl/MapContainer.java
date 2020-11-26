@@ -159,17 +159,24 @@ public class MapContainer {
                 .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
                 .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
                 .partitionCount(partitionCount)
-                .resultFilter(queryableEntry -> {
-                    Data keyData = queryableEntry.getKeyData();
-                    IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
-                    int partitionId = partitionService.getPartitionId(keyData);
-                    if (!partitionService.isPartitionOwner(partitionId)) {
-                        return false;
-                    }
+                .resultFilter(queryableEntry -> hasNotExpired(queryableEntry)).build();
+    }
 
-                    RecordStore recordStore = mapServiceContext.getExistingRecordStore(partitionId, name);
-                    return recordStore != null && !recordStore.expireRecordOrUpdateItsAccessStats(keyData);
-                }).build();
+    /**
+     * @return {@code true} if queryableEntry has
+     * not expired, otherwise returns {@code false}
+     */
+    private boolean hasNotExpired(QueryableEntry queryableEntry) {
+        Data keyData = queryableEntry.getKeyData();
+        IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+        int partitionId = partitionService.getPartitionId(keyData);
+        if (!partitionService.isPartitionOwner(partitionId)) {
+            // throw entry out if it is not owned by this local node.
+            return false;
+        }
+
+        RecordStore recordStore = mapServiceContext.getExistingRecordStore(partitionId, name);
+        return recordStore != null && !recordStore.expireOrAccess(keyData);
     }
 
     public final void initEvictor() {
