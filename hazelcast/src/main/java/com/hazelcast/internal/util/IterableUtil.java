@@ -78,29 +78,38 @@ public final class IterableUtil {
     public static <T> Iterable<T> filter(Iterable<T> iterable, Predicate<T> filter) {
         Iterator<T> givenIterator = iterable.iterator();
 
+        @SuppressWarnings("checkstyle:anoninnerlength")
         Iterator<T> filteringIterator = new Iterator<T>() {
             private T next;
+            private int hasNextCallCount = 0;
+            private int nextCallCount = 0;
 
             @Override
             public boolean hasNext() {
-                boolean hasNext = false;
+                if (nextCallCount < hasNextCallCount) {
+                    return true;
+                }
+
                 while (givenIterator.hasNext()) {
                     T temp = givenIterator.next();
+                    hasNextCallCount++;
                     if (filter.test(temp)) {
                         next = temp;
-                        hasNext = true;
-                        break;
+                        return true;
                     }
                 }
-                return hasNext;
+                return false;
             }
 
             @Override
             public T next() {
-                if (next == null) {
-                    throw new NoSuchElementException();
+                if (nextCallCount < hasNextCallCount
+                        || hasNext()) {
+                    nextCallCount++;
+                    return next;
                 }
-                return next;
+
+                throw new NoSuchElementException();
             }
 
             @Override

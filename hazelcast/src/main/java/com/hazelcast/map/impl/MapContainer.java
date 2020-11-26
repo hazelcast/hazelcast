@@ -37,6 +37,7 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.MemoryInfoAccessor;
 import com.hazelcast.internal.util.RuntimeMemoryInfoAccessor;
+import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.map.impl.eviction.EvictionChecker;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
@@ -170,6 +171,11 @@ public class MapContainer {
         Data keyData = queryableEntry.getKeyData();
         IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         int partitionId = partitionService.getPartitionId(keyData);
+
+        if (!getIndexes(partitionId).isGlobal()) {
+            ThreadUtil.assertRunningOnPartitionThread();
+        }
+
         if (!partitionService.isPartitionOwner(partitionId)) {
             // throw entry out if it is not owned by this local node.
             return false;
