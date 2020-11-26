@@ -110,7 +110,7 @@ public class KafkaSqlConnector implements SqlConnector {
                 fields,
                 new ConstantTableStatistics(0),
                 topicName,
-                PropertiesResolver.resolveProperties(options),
+                options,
                 keyMetadata.getQueryTargetDescriptor(),
                 keyMetadata.getUpsertTargetDescriptor(),
                 valueMetadata.getQueryTargetDescriptor(),
@@ -135,7 +135,7 @@ public class KafkaSqlConnector implements SqlConnector {
         Vertex vStart = dag.newVertex(
                 table.toString(),
                 KafkaProcessors.streamKafkaP(
-                        table.kafkaProperties(),
+                        table.kafkaConsumerProperties(),
                         record -> entry(record.key(), record.value()),
                         noEventTime(),
                         table.topicName()
@@ -188,7 +188,7 @@ public class KafkaSqlConnector implements SqlConnector {
         Vertex vEnd = dag.newVertex(
                 table.toString(),
                 KafkaProcessors.<Entry<Object, Object>, Object, Object>writeKafkaP(
-                        table.kafkaProperties(),
+                        table.kafkaProducerProperties(),
                         table.topicName(),
                         Entry::getKey,
                         Entry::getValue,

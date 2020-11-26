@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 class KafkaTable extends JetTable {
@@ -38,7 +39,7 @@ class KafkaTable extends JetTable {
     private final UpsertTargetDescriptor valueUpsertDescriptor;
 
     private final String topicName;
-    private final Properties kafkaProperties;
+    private final Map<String, String> options;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     KafkaTable(
@@ -48,7 +49,7 @@ class KafkaTable extends JetTable {
             List<TableField> fields,
             TableStatistics statistics,
             String topicName,
-            Properties kafkaProperties,
+            Map<String, String> options,
             QueryTargetDescriptor keyQueryDescriptor,
             UpsertTargetDescriptor keyUpsertDescriptor,
             QueryTargetDescriptor valueQueryDescriptor,
@@ -63,15 +64,19 @@ class KafkaTable extends JetTable {
         this.valueUpsertDescriptor = valueUpsertDescriptor;
 
         this.topicName = topicName;
-        this.kafkaProperties = kafkaProperties;
+        this.options = options;
     }
 
     String topicName() {
         return topicName;
     }
 
-    Properties kafkaProperties() {
-        return kafkaProperties;
+    Properties kafkaConsumerProperties() {
+        return PropertiesResolver.resolveConsumerProperties(options);
+    }
+
+    Properties kafkaProducerProperties() {
+        return PropertiesResolver.resolveProducerProperties(options);
     }
 
     QueryTargetDescriptor keyQueryDescriptor() {

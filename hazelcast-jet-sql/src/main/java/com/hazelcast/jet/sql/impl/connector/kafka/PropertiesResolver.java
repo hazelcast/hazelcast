@@ -18,13 +18,19 @@ package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_OBJECT_NAME;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 
 final class PropertiesResolver {
@@ -33,6 +39,14 @@ final class PropertiesResolver {
     static final String KEY_DESERIALIZER = "key.deserializer";
     static final String VALUE_SERIALIZER = "value.serializer";
     static final String VALUE_DESERIALIZER = "value.deserializer";
+
+    private static final Set<String> NON_KAFKA_OPTIONS = new HashSet<String>() {{
+        add(OPTION_OBJECT_NAME);
+        add(OPTION_KEY_FORMAT);
+        add(OPTION_KEY_CLASS);
+        add(OPTION_VALUE_FORMAT);
+        add(OPTION_VALUE_CLASS);
+    }};
 
     // using strings instead of canonical names to not fail without Kafka on the classpath
 
@@ -63,55 +77,98 @@ final class PropertiesResolver {
     private PropertiesResolver() {
     }
 
-    static Properties resolveProperties(Map<String, String> options) {
-        Properties properties = new Properties();
-        properties.putAll(options);
+    static Properties resolveConsumerProperties(Map<String, String> options) {
+        Properties properties = from(options);
 
-        withSerdeProperties(true, options, properties);
-        withSerdeProperties(false, options, properties);
+        withSerdeConsumerProperties(true, options, properties);
+        withSerdeConsumerProperties(false, options, properties);
 
         return properties;
     }
 
-    private static void withSerdeProperties(
+    static Properties resolveProducerProperties(Map<String, String> options) {
+        Properties properties = from(options);
+
+        withSerdeProducerProperties(true, options, properties);
+        withSerdeProducerProperties(false, options, properties);
+
+        return properties;
+    }
+
+    private static Properties from(Map<String, String> options) {
+        Properties properties = new Properties();
+        for (Entry<String, String> entry : options.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            if (!NON_KAFKA_OPTIONS.contains(key)) {
+                properties.put(key, value);
+            }
+        }
+        return properties;
+    }
+
+    private static void withSerdeConsumerProperties(
+            boolean isKey,
+            Map<String, String> options,
+            Properties properties
+    ) {
+        String deserializer = isKey ? KEY_DESERIALIZER : VALUE_DESERIALIZER;
+
+        String format = options.get(isKey ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT);
+        if (format == null && isKey) {
+            properties.putIfAbsent(deserializer, BYTE_ARRAY_DESERIALIZER);
+        } else if (JAVA_FORMAT.equals(format)) {
+            String clazz = options.get(isKey ? SqlConnector.OPTION_KEY_CLASS : SqlConnector.OPTION_VALUE_CLASS);
+            if (Short.class.getName().equals(clazz) || short.class.getName().equals(clazz)) {
+                properties.putIfAbsent(deserializer, SHORT_DESERIALIZER);
+            } else if (Integer.class.getName().equals(clazz) || int.class.getName().equals(clazz)) {
+                properties.putIfAbsent(deserializer, INT_DESERIALIZER);
+            } else if (Long.class.getName().equals(clazz) || long.class.getName().equals(clazz)) {
+                properties.putIfAbsent(deserializer, LONG_DESERIALIZER);
+            } else if (Float.class.getName().equals(clazz) || float.class.getName().equals(clazz)) {
+                properties.putIfAbsent(deserializer, FLOAT_DESERIALIZER);
+            } else if (Double.class.getName().equals(clazz) || double.class.getName().equals(clazz)) {
+                properties.putIfAbsent(deserializer, DOUBLE_DESERIALIZER);
+            } else if (String.class.getName().equals(clazz)) {
+                properties.putIfAbsent(deserializer, STRING_DESERIALIZER);
+            }
+        } else if (AVRO_FORMAT.equals(format)) {
+            properties.putIfAbsent(deserializer, AVRO_DESERIALIZER);
+        } else if (JSON_FORMAT.equals(format)) {
+            properties.putIfAbsent(deserializer, BYTE_ARRAY_DESERIALIZER);
+        }
+    }
+
+    private static void withSerdeProducerProperties(
             boolean isKey,
             Map<String, String> options,
             Properties properties
     ) {
         String serializer = isKey ? KEY_SERIALIZER : VALUE_SERIALIZER;
-        String deserializer = isKey ? KEY_DESERIALIZER : VALUE_DESERIALIZER;
 
         String format = options.get(isKey ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT);
         if (format == null && isKey) {
             properties.putIfAbsent(serializer, BYTE_ARRAY_SERIALIZER);
-            properties.putIfAbsent(deserializer, BYTE_ARRAY_DESERIALIZER);
         } else if (JAVA_FORMAT.equals(format)) {
             String clazz = options.get(isKey ? SqlConnector.OPTION_KEY_CLASS : SqlConnector.OPTION_VALUE_CLASS);
             if (Short.class.getName().equals(clazz) || short.class.getName().equals(clazz)) {
                 properties.putIfAbsent(serializer, SHORT_SERIALIZER);
-                properties.putIfAbsent(deserializer, SHORT_DESERIALIZER);
             } else if (Integer.class.getName().equals(clazz) || int.class.getName().equals(clazz)) {
                 properties.putIfAbsent(serializer, INT_SERIALIZER);
-                properties.putIfAbsent(deserializer, INT_DESERIALIZER);
             } else if (Long.class.getName().equals(clazz) || long.class.getName().equals(clazz)) {
                 properties.putIfAbsent(serializer, LONG_SERIALIZER);
-                properties.putIfAbsent(deserializer, LONG_DESERIALIZER);
             } else if (Float.class.getName().equals(clazz) || float.class.getName().equals(clazz)) {
                 properties.putIfAbsent(serializer, FLOAT_SERIALIZER);
-                properties.putIfAbsent(deserializer, FLOAT_DESERIALIZER);
             } else if (Double.class.getName().equals(clazz) || double.class.getName().equals(clazz)) {
                 properties.putIfAbsent(serializer, DOUBLE_SERIALIZER);
-                properties.putIfAbsent(deserializer, DOUBLE_DESERIALIZER);
             } else if (String.class.getName().equals(clazz)) {
                 properties.putIfAbsent(serializer, STRING_SERIALIZER);
-                properties.putIfAbsent(deserializer, STRING_DESERIALIZER);
             }
         } else if (AVRO_FORMAT.equals(format)) {
             properties.putIfAbsent(serializer, AVRO_SERIALIZER);
-            properties.putIfAbsent(deserializer, AVRO_DESERIALIZER);
         } else if (JSON_FORMAT.equals(format)) {
             properties.putIfAbsent(serializer, BYTE_ARRAY_SERIALIZER);
-            properties.putIfAbsent(deserializer, BYTE_ARRAY_DESERIALIZER);
         }
     }
 }
