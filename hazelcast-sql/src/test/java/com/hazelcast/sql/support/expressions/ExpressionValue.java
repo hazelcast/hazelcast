@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.support.expressions;
 
+import com.hazelcast.internal.util.BiTuple;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -23,9 +25,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings({"unused", "unchecked, checkstyle:MultipleVariableDeclarations"})
 public abstract class ExpressionValue implements Serializable {
+
+    private static final ConcurrentHashMap<String, Class<? extends ExpressionValue>> CLASS_CACHE = new ConcurrentHashMap<>();
 
     public int key;
 
@@ -34,6 +39,10 @@ public abstract class ExpressionValue implements Serializable {
     }
 
     public static Class<? extends ExpressionValue> createClass(String type) {
+        return CLASS_CACHE.computeIfAbsent(type, (k) -> createClass0(type));
+    }
+
+    public static Class<? extends ExpressionValue> createClass0(String type) {
         try {
             String className = ExpressionValue.class.getName() + "$" + type + "Val";
 
@@ -50,6 +59,10 @@ public abstract class ExpressionValue implements Serializable {
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Failed to create an instance of " + clazz.getSimpleName());
         }
+    }
+
+    public static <T extends ExpressionValue> T create(Class<? extends ExpressionValue> clazz, Object field) {
+        return create(clazz, 0, field);
     }
 
     public static <T extends ExpressionValue> T create(Class<? extends ExpressionValue> clazz, int key, Object field) {

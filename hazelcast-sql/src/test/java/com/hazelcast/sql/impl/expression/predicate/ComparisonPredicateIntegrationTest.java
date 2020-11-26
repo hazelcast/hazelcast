@@ -19,9 +19,11 @@ package com.hazelcast.sql.impl.expression.predicate;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionType;
 import com.hazelcast.sql.support.expressions.ExpressionTypes;
+import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -70,6 +72,11 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     private static final Literal LITERAL_TINYINT = new Literal("1", SqlColumnType.TINYINT);
     private static final Literal LITERAL_DECIMAL = new Literal("1.1", SqlColumnType.DECIMAL);
     private static final Literal LITERAL_DOUBLE = new Literal("1.1E1", SqlColumnType.DOUBLE);
+
+    @Test
+    public void testParameterParameter() {
+        checkFailure("?", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL), true, true);
+    }
 
     @Test
     public void testString() {
@@ -130,24 +137,98 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         checkCommute("false", "?", RES_EQ, false);
         checkCommute("false", "?", RES_NULL, (Boolean) null);
         checkFailure("null", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL), true);
-
-        // Parameter/parameter
-        checkFailure("?", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL), true, true);
     }
+
+    private void checkNumeric(Object value1, Object value2) {
+        int res = compare(value1, value2);
+
+        if (res == RES_EQ && (value1 instanceof Float || value1 instanceof Double || value2 instanceof Float || value2 instanceof Double)) {
+            return;
+        }
+
+        ExpressionType<?> type1 = ExpressionTypes.resolve(value1);
+        ExpressionType<?> type2 = ExpressionTypes.resolve(value2);
+
+        Class<? extends ExpressionValue> class1 = ExpressionValue.createClass(type1);
+        Class<? extends ExpressionValue> class2 = ExpressionValue.createClass(type2);
+        Class<? extends ExpressionBiValue> biClass = ExpressionBiValue.createBiClass(type1, type2);
+
+        String literal1 = value1.toString();
+        String literal2 = value2.toString();
+
+        int precedence1 = QueryDataTypeUtils.resolveTypeForClass(value1.getClass()).getTypeFamily().getPrecedence();
+        int precedence2 = QueryDataTypeUtils.resolveTypeForClass(value2.getClass()).getTypeFamily().getPrecedence();
+
+        // TODO: Add NULLs
+
+        // Column/column
+        putCheckCommute(ExpressionBiValue.createBiValue(biClass, value1, value2), "field1", "field2", res);
+
+        // Column/literal
+        putCheckCommute(ExpressionValue.create(class1, value1), "field1", literal2, res);
+        putCheckCommute(ExpressionValue.create(class2, value2), literal1, "field1", res);
+
+        // Column/parameter
+        if (precedence1 >= precedence2) {
+            putCheckCommute(ExpressionValue.create(class1, value1), "field1", "?", res, value2);
+        } else {
+            // TODO: Parameter failure
+        }
+
+        if (precedence2 >= precedence1) {
+            putCheckCommute(ExpressionValue.create(class2, value2), "?", "field1", res, value1);
+        } else {
+            // TODO: Parameter failure
+        }
+
+        // Literal/literal
+        checkCommute(literal1, literal2, res);
+
+        // Literal/parameter
+        if (precedence1 >= precedence2) {
+            checkCommute(literal1, "?", res, value2);
+        } else {
+            // TODO: Parameter failure
+        }
+
+        if (precedence2 >= precedence1) {
+            checkCommute("?", literal2, res, value1);
+        } else {
+            // TODO: Parameter failure
+        }
+    }
+
+    private static Integer compare(Object value1, Object value2) {
+        if (value1 == null || value2 == null) {
+            return RES_NULL;
+        }
+
+        BigDecimal decimal1 = new BigDecimal(value1.toString());
+        BigDecimal decimal2 = new BigDecimal(value2.toString());
+
+        return decimal1.compareTo(decimal2);
+    }
+
+    private static final Object[] NUMERICS = new Object[] {
+        Byte.MIN_VALUE, (byte) -1, (byte) 0, (byte) 1, Byte.MAX_VALUE,
+        Short.MIN_VALUE, (short) -1, (short) 0, (short) 1, Short.MAX_VALUE,
+        Integer.MIN_VALUE, -1, 0, 1, Integer.MAX_VALUE,
+        Long.MIN_VALUE, -1L, 0L, 1L, Long.MAX_VALUE,
+        BigInteger.ONE.negate(), BigInteger.ZERO, BigInteger.ONE,
+        BigDecimal.ONE.negate(), BigDecimal.ZERO, BigDecimal.ONE,
+        Float.MIN_VALUE, -1f, 0f, 1f, Float.MAX_VALUE,
+        Double.MIN_VALUE, -1d, 0d, 1d, Double.MAX_VALUE,
+    };
 
     @Test
     public void testNumeric() {
-        // TODO
-    }
+        for (int i = 0; i < NUMERICS.length; i++) {
+            for (int j = i; j < NUMERICS.length; j++) {
+                checkNumeric(NUMERICS[i], NUMERICS[j]);
+            }
+        }
 
-    @Test
-    public void testTemporal() {
-        // TODO
-    }
-
-    @Test
-    public void testObject() {
-        // TODO
+        // TODO: Add failure checks
     }
 
     private void checkUnsupportedColumnColumn(ExpressionType<?> type, List<ExpressionType<?>> excludeTypes) {

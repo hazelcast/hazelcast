@@ -86,6 +86,19 @@ public final class ExpressionTypes {
         }
     }
 
+    public static ExpressionType<?>[] numeric() {
+        return new ExpressionType[] {
+            BYTE,
+            SHORT,
+            INTEGER,
+            LONG,
+            BIG_INTEGER,
+            BIG_DECIMAL,
+            FLOAT,
+            DOUBLE
+        };
+    }
+
     public static List<ExpressionType<?>> allExcept(ExpressionType<?>... excludeTypes) {
         if (excludeTypes == null || excludeTypes.length == 0) {
             return all();

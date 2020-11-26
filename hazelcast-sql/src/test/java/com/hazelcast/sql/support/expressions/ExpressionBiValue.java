@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.support.expressions;
 
+import com.hazelcast.internal.util.BiTuple;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -23,6 +25,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings({"unused", "unchecked", "checkstyle:MultipleVariableDeclarations"})
 public abstract class ExpressionBiValue extends ExpressionValue {
@@ -30,7 +33,13 @@ public abstract class ExpressionBiValue extends ExpressionValue {
         return createBiClass(type1.typeName(), type2.typeName());
     }
 
+    private static final ConcurrentHashMap<BiTuple<String, String>, Class<? extends ExpressionBiValue>> BI_CLASS_CACHE = new ConcurrentHashMap<>();
+
     public static Class<? extends ExpressionBiValue> createBiClass(String type1, String type2) {
+        return BI_CLASS_CACHE.computeIfAbsent(BiTuple.of(type1, type2), (k) -> createBiClass0(type1, type2));
+    }
+
+    public static Class<? extends ExpressionBiValue> createBiClass0(String type1, String type2) {
         try {
             String className = ExpressionBiValue.class.getName() + "$" + type1 + type2 + "Val";
 
