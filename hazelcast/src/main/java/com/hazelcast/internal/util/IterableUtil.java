@@ -81,18 +81,15 @@ public final class IterableUtil {
         @SuppressWarnings("checkstyle:anoninnerlength")
         Iterator<T> filteringIterator = new Iterator<T>() {
             private T next;
-            private int hasNextCallCount;
-            private int nextCallCount;
 
             @Override
             public boolean hasNext() {
-                if (nextCallCount < hasNextCallCount) {
+                if (next != null) {
                     return true;
                 }
 
                 while (givenIterator.hasNext()) {
                     T temp = givenIterator.next();
-                    hasNextCallCount++;
                     if (filter.test(temp)) {
                         next = temp;
                         return true;
@@ -103,13 +100,12 @@ public final class IterableUtil {
 
             @Override
             public T next() {
-                if (nextCallCount < hasNextCallCount
-                        || hasNext()) {
-                    nextCallCount++;
-                    return next;
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
                 }
-
-                throw new NoSuchElementException();
+                T nextLocal = next;
+                next = null;
+                return nextLocal;
             }
 
             @Override

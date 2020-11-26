@@ -95,7 +95,7 @@ public class IterableUtilTest {
             iterator.hasNext();
         }
 
-        assertEquals(numbers.size(), IterableUtil.size(filtered));
+        assertEquals(0, IterableUtil.size(filtered));
     }
 
     @Test
