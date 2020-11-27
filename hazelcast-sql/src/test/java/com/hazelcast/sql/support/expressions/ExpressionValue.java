@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.support.expressions;
 
-import com.hazelcast.internal.util.BiTuple;
-
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;

@@ -48,7 +48,8 @@ public final class ExpressionTypes {
     public static final ExpressionType<?> OBJECT = new ExpressionType.ObjectType();
 
     private static final Object MUX = new Object();
-    private static volatile List<ExpressionType<?>> ALL;
+
+    private static volatile List<ExpressionType<?>> all;
 
     public static ExpressionType<?> resolve(Object value) {
         if (value instanceof String) {
@@ -114,16 +115,16 @@ public final class ExpressionTypes {
     }
 
     public static List<ExpressionType<?>> all() {
-        List<ExpressionType<?>> res = ALL;
+        List<ExpressionType<?>> res = all;
 
         if (res == null) {
             synchronized (MUX) {
-                res = ALL;
+                res = all;
 
                 if (res == null) {
                     res = all0();
 
-                    ALL = res;
+                    all = res;
                 }
             }
         }

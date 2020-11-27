@@ -26,7 +26,6 @@ import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import junit.framework.TestCase;
-import org.apache.calcite.sql.type.SqlTypeName;
 import org.junit.After;
 import org.junit.Before;
 

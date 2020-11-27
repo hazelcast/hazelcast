@@ -978,7 +978,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         private final String value;
         private final SqlColumnType type;
 
-        public Literal(String value, SqlColumnType type) {
+        private Literal(String value, SqlColumnType type) {
             this.value = value;
             this.type = type;
         }
