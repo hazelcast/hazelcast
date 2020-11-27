@@ -19,6 +19,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -27,7 +28,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class AutoDetectionJoinTest extends AbstractJoinTest {
 
     @Before
@@ -37,6 +38,7 @@ public class AutoDetectionJoinTest extends AbstractJoinTest {
     }
 
     @Test
+    @Category(QuickTest.class)
     public void defaultConfig() throws Exception {
         testJoinEventually(new Config());
     }

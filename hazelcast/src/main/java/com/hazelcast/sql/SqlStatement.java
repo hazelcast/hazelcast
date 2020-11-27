@@ -189,7 +189,7 @@ public final class SqlStatement {
     @Nonnull
     public SqlStatement setTimeoutMillis(long timeout) {
         if (timeout < 0 && timeout != TIMEOUT_NOT_SET) {
-            throw new IllegalArgumentException("Timeout should be non-negative or -1: " + timeout);
+            throw new IllegalArgumentException("Timeout must be non-negative or -1: " + timeout);
         }
 
         this.timeout = timeout;
@@ -230,7 +230,7 @@ public final class SqlStatement {
     @Nonnull
     public SqlStatement setCursorBufferSize(int cursorBufferSize) {
         if (cursorBufferSize <= 0) {
-            throw new IllegalArgumentException("Cursor buffer size should be positive: " + cursorBufferSize);
+            throw new IllegalArgumentException("Cursor buffer size must be positive: " + cursorBufferSize);
         }
 
         this.cursorBufferSize = cursorBufferSize;

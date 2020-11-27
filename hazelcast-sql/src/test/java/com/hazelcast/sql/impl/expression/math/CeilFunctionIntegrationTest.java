@@ -61,6 +61,7 @@ public class CeilFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
         checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
 
+        checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply 'CEIL' to arguments of type 'CEIL(<BOOLEAN>)'");
         checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply 'CEIL' to arguments of type 'CEIL(<DATE>)'");
         checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'CEIL' to arguments of type 'CEIL(<TIME>)'");
         checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'CEIL' to arguments of type 'CEIL(<TIMESTAMP>)'");
@@ -100,6 +101,7 @@ public class CeilFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
 
         checkValue("?", SqlColumnType.DECIMAL, null, new Object[] { null });
 
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to DECIMAL", true);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", "bad");
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", 'b');
 
@@ -127,6 +129,7 @@ public class CeilFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkLiteral("1.1E0", SqlColumnType.DOUBLE, 2d);
 
         checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
+        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply 'CEIL' to arguments of type 'CEIL(<BOOLEAN>)'");
     }
 
     private void checkLiteral(Object literal, SqlColumnType expectedType, Object expectedResult) {

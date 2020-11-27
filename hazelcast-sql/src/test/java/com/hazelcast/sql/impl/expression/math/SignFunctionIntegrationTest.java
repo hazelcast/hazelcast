@@ -87,6 +87,7 @@ public class SignFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumnFailure("a", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
         checkColumnFailure('a', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
 
+        checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply 'SIGN' to arguments of type 'SIGN(<BOOLEAN>)'");
         checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply 'SIGN' to arguments of type 'SIGN(<DATE>)'");
         checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'SIGN' to arguments of type 'SIGN(<TIME>)'");
         checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'SIGN' to arguments of type 'SIGN(<TIMESTAMP>)'");
@@ -165,6 +166,7 @@ public class SignFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkParameter('0', zero);
         checkParameter('1', positive);
 
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to DECIMAL", true);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", "bad");
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", 'b');
 

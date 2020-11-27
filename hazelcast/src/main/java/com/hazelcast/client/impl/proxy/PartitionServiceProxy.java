@@ -17,7 +17,9 @@
 package com.hazelcast.client.impl.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientAddMigrationListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientRemoveMigrationListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientListenerService;
@@ -26,12 +28,16 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
+import com.hazelcast.internal.partition.ReplicaMigrationEventImpl;
 import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.partition.MigrationState;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.ReplicaMigrationEvent;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -44,12 +50,16 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public final class PartitionServiceProxy implements PartitionService {
 
+    public static final int MIGRATION_STARTED = 0;
+    public static final int MIGRATION_FINISHED = 1;
+
     private final ClientPartitionService partitionService;
     private final ClientListenerService listenerService;
     private final ClientClusterService clusterService;
 
     public PartitionServiceProxy(ClientPartitionService partitionService,
-                                 ClientListenerService listenerService, ClientClusterService clusterService) {
+                                 ClientListenerService listenerService,
+                                 ClientClusterService clusterService) {
         this.partitionService = partitionService;
         this.listenerService = listenerService;
         this.clusterService = clusterService;
@@ -58,7 +68,7 @@ public final class PartitionServiceProxy implements PartitionService {
     @Override
     public Set<Partition> getPartitions() {
         final int partitionCount = partitionService.getPartitionCount();
-        Set<Partition> partitions = new LinkedHashSet<Partition>(partitionCount);
+        Set<Partition> partitions = new LinkedHashSet<>(partitionCount);
         for (int i = 0; i < partitionCount; i++) {
             final Partition partition = partitionService.getPartition(i);
             partitions.add(partition);
@@ -74,19 +84,49 @@ public final class PartitionServiceProxy implements PartitionService {
     }
 
     @Override
-    public UUID addMigrationListener(MigrationListener migrationListener) {
-        throw new UnsupportedOperationException();
+    public UUID addMigrationListener(@Nonnull MigrationListener migrationListener) {
+        checkNotNull(migrationListener, "migrationListener can't be null");
+        EventHandler<ClientMessage> handler = new ClientMigrationEventHandler(migrationListener);
+        return listenerService.registerListener(createMigrationListenerCodec(), handler);
     }
 
     @Override
-    public boolean removeMigrationListener(UUID registrationId) {
-        throw new UnsupportedOperationException();
+    public boolean removeMigrationListener(@Nonnull UUID registrationId) {
+        checkNotNull(registrationId, "registrationId can't be null");
+        return listenerService.deregisterListener(registrationId);
     }
 
     @Override
-    public UUID addPartitionLostListener(PartitionLostListener partitionLostListener) {
+    public UUID addPartitionLostListener(@Nonnull PartitionLostListener partitionLostListener) {
+        checkNotNull(partitionLostListener, "migrationListener can't be null");
         EventHandler<ClientMessage> handler = new ClientPartitionLostEventHandler(partitionLostListener);
         return listenerService.registerListener(createPartitionLostListenerCodec(), handler);
+    }
+
+    @Override
+    public boolean removePartitionLostListener(@Nonnull UUID registrationId) {
+        checkNotNull(registrationId, "registrationId can't be null");
+        return listenerService.deregisterListener(registrationId);
+    }
+
+    @Override
+    public boolean isClusterSafe() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isMemberSafe(Member member) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isLocalMemberSafe() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean forceLocalMemberToBeSafe(long timeout, TimeUnit unit) {
+        throw new UnsupportedOperationException();
     }
 
     private ListenerMessageCodec createPartitionLostListenerCodec() {
@@ -113,35 +153,34 @@ public final class PartitionServiceProxy implements PartitionService {
         };
     }
 
-    @Override
-    public boolean removePartitionLostListener(UUID registrationId) {
-        return listenerService.deregisterListener(registrationId);
-    }
+    private ListenerMessageCodec createMigrationListenerCodec() {
+        return new ListenerMessageCodec() {
+            @Override
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return ClientAddMigrationListenerCodec.encodeRequest(localOnly);
+            }
 
-    @Override
-    public boolean isClusterSafe() {
-        throw new UnsupportedOperationException();
-    }
+            @Override
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
+                return ClientAddMigrationListenerCodec.decodeResponse(clientMessage);
+            }
 
-    @Override
-    public boolean isMemberSafe(Member member) {
-        throw new UnsupportedOperationException();
-    }
+            @Override
+            public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
+                return ClientRemoveMigrationListenerCodec.encodeRequest(realRegistrationId);
+            }
 
-    @Override
-    public boolean isLocalMemberSafe() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean forceLocalMemberToBeSafe(long timeout, TimeUnit unit) {
-        throw new UnsupportedOperationException();
+            @Override
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+                return ClientRemoveMigrationListenerCodec.decodeResponse(clientMessage);
+            }
+        };
     }
 
     private class ClientPartitionLostEventHandler extends ClientAddPartitionLostListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
-        private PartitionLostListener listener;
+        private final PartitionLostListener listener;
 
         ClientPartitionLostEventHandler(PartitionLostListener listener) {
             this.listener = listener;
@@ -154,4 +193,53 @@ public final class PartitionServiceProxy implements PartitionService {
         }
     }
 
+    private class ClientMigrationEventHandler extends ClientAddMigrationListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
+
+        private final MigrationListener listener;
+
+        ClientMigrationEventHandler(MigrationListener listener) {
+            this.listener = listener;
+        }
+
+        @Override
+        public void handleMigrationEvent(MigrationState migrationState, int type) {
+            switch (type) {
+                case MIGRATION_STARTED:
+                    listener.migrationStarted(migrationState);
+                    break;
+                case MIGRATION_FINISHED:
+                    listener.migrationFinished(migrationState);
+                    break;
+                default:
+                    // left empty for future type extensions instead of throwing an exception
+            }
+        }
+
+        @Override
+        public void handleReplicaMigrationEvent(MigrationState migrationState,
+                                                int partitionId,
+                                                int replicaIndex,
+                                                @Nullable UUID sourceUuid,
+                                                @Nullable UUID destUuid,
+                                                boolean success,
+                                                long elapsedTime) {
+
+            @Nullable Member source = findMember(sourceUuid);
+            @Nullable Member destination = findMember(destUuid);
+
+            ReplicaMigrationEvent event = new ReplicaMigrationEventImpl(migrationState, partitionId,
+                    replicaIndex, source, destination, success, elapsedTime);
+
+            if (event.isSuccess()) {
+                listener.replicaMigrationCompleted(event);
+            } else {
+                listener.replicaMigrationFailed(event);
+            }
+        }
+
+        private Member findMember(@Nullable UUID memberUuid) {
+            return memberUuid != null ? clusterService.getMember(memberUuid) : null;
+        }
+    }
 }

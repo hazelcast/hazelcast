@@ -146,7 +146,7 @@ public class PartitionServiceProxy implements PartitionService {
     @Override
     public boolean isMemberSafe(Member member) {
         if (member == null) {
-            throw new NullPointerException("Parameter member should not be null");
+            throw new NullPointerException("Parameter member must not be null");
         }
         final Member localMember = nodeEngine.getLocalMember();
         if (localMember.equals(member)) {

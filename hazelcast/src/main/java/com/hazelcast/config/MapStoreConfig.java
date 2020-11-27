@@ -169,7 +169,7 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      */
     public MapStoreConfig setWriteBatchSize(int writeBatchSize) {
         if (writeBatchSize < 1) {
-            throw new IllegalArgumentException("Write batch size should be at least 1");
+            throw new IllegalArgumentException("Write batch size must be at least 1");
         }
         this.writeBatchSize = writeBatchSize;
         return this;

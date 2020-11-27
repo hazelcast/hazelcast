@@ -106,7 +106,7 @@ public class DistributedObjectFuture {
 
     void set(DistributedObject o, boolean initialized) {
         if (o == null) {
-            throw new IllegalArgumentException("Proxy should not be null!");
+            throw new IllegalArgumentException("Proxy must not be null!");
         }
         synchronized (this) {
             if (error == null) {
@@ -122,7 +122,7 @@ public class DistributedObjectFuture {
 
     void setError(Throwable t) {
         if (t == null) {
-            throw new IllegalArgumentException("Error should not be null!");
+            throw new IllegalArgumentException("Error must not be null!");
         }
         if (proxy != null) {
             throw new IllegalStateException("Proxy is already set! Proxy: " + proxy + ", error: " + t);

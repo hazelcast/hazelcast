@@ -96,6 +96,8 @@ public class AbsFunctionIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'ABS' to arguments of type 'ABS(<TIMESTAMP>)'");
         checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'ABS' to arguments of type 'ABS(<TIMESTAMP_WITH_TIME_ZONE>)'");
         checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "Cannot apply 'ABS' to arguments of type 'ABS(<OBJECT>)'");
+
+        checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply 'ABS' to arguments of type 'ABS(<BOOLEAN>)'");
     }
 
     private void checkColumn(Object value, SqlColumnType expectedType, Object expectedResult) {
@@ -172,6 +174,8 @@ public class AbsFunctionIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to DECIMAL", LOCAL_DATE_TIME_VAL);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to DECIMAL", OFFSET_DATE_TIME_VAL);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
+
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to DECIMAL", true);
     }
 
     private void checkParameter(Object parameterValue, Object expectedValue) {

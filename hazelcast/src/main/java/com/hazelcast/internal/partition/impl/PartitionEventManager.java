@@ -23,6 +23,7 @@ import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.MigrationInfo.MigrationStatus;
 import com.hazelcast.internal.partition.PartitionAwareService;
+import com.hazelcast.internal.partition.PartitionEventListener;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.ReplicaMigrationEventImpl;
@@ -36,6 +37,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -43,9 +45,10 @@ import java.util.concurrent.CompletableFuture;
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
 import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
-import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_FINISHED;
-import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_STARTED;
+import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_FINISHED_PARTITION_ID;
+import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_STARTED_PARTITION_ID;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.SYSTEM_EXECUTOR;
 
 /**
@@ -79,12 +82,14 @@ public class PartitionEventManager {
     }
 
     public void sendMigrationProcessStartedEvent(MigrationState state) {
-        ReplicaMigrationEvent event = new ReplicaMigrationEventImpl(state, MIGRATION_STARTED, 0, null, null, false, 0L);
+        ReplicaMigrationEvent event =
+                new ReplicaMigrationEventImpl(state, MIGRATION_STARTED_PARTITION_ID, 0, null, null, false, 0L);
         sendMigrationEvent(event);
     }
 
     public void sendMigrationProcessCompletedEvent(MigrationState state) {
-        ReplicaMigrationEvent event = new ReplicaMigrationEventImpl(state, MIGRATION_FINISHED, 0, null, null, false, 0L);
+        ReplicaMigrationEvent event =
+                new ReplicaMigrationEventImpl(state, MIGRATION_FINISHED_PARTITION_ID, 0, null, null, false, 0L);
         sendMigrationEvent(event);
     }
 
@@ -94,10 +99,8 @@ public class PartitionEventManager {
         eventService.publishEvent(SERVICE_NAME, MIGRATION_EVENT_TOPIC, event, MIGRATION_EVENT_TOPIC.hashCode());
     }
 
-    public UUID addMigrationListener(MigrationListener listener) {
-        if (listener == null) {
-            throw new NullPointerException("listener can't be null");
-        }
+    public UUID addMigrationListener(@Nonnull MigrationListener listener) {
+        checkNotNull(listener, "listener can't be null");
 
         final MigrationListenerAdapter adapter = new MigrationListenerAdapter(listener);
 
@@ -106,19 +109,42 @@ public class PartitionEventManager {
         return registration.getId();
     }
 
-    public boolean removeMigrationListener(UUID registrationId) {
-        if (registrationId == null) {
-            throw new NullPointerException("registrationId can't be null");
-        }
+    public UUID addLocalMigrationListener(@Nonnull MigrationListener listener) {
+        checkNotNull(listener, "listener can't be null");
+
+        final MigrationListenerAdapter adapter = new MigrationListenerAdapter(listener);
+
+        return registerLocalListener(adapter, MIGRATION_EVENT_TOPIC);
+    }
+
+    public CompletableFuture<UUID> addMigrationListenerAsync(@Nonnull MigrationListener listener) {
+        checkNotNull(listener, "listener can't be null");
+
+        final MigrationListenerAdapter adapter = new MigrationListenerAdapter(listener);
 
         EventService eventService = nodeEngine.getEventService();
+        return eventService.registerListenerAsync(SERVICE_NAME, MIGRATION_EVENT_TOPIC, adapter)
+                .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
+    }
+
+    public boolean removeMigrationListener(@Nonnull UUID registrationId) {
+        checkNotNull(registrationId, "registrationId can't be null");
+
+        EventService eventService = nodeEngine.getEventService();
+
         return eventService.deregisterListener(SERVICE_NAME, MIGRATION_EVENT_TOPIC, registrationId);
     }
 
-    public UUID addPartitionLostListener(PartitionLostListener listener) {
-        if (listener == null) {
-            throw new NullPointerException("listener can't be null");
-        }
+    public CompletableFuture<Boolean> removeMigrationListenerAsync(@Nonnull UUID registrationId) {
+        checkNotNull(registrationId, "registrationId can't be null");
+
+        EventService eventService = nodeEngine.getEventService();
+
+        return eventService.deregisterListenerAsync(SERVICE_NAME, MIGRATION_EVENT_TOPIC, registrationId);
+    }
+
+    public UUID addPartitionLostListener(@Nonnull PartitionLostListener listener) {
+        checkNotNull(listener, "listener can't be null");
 
         final PartitionLostListenerAdapter adapter = new PartitionLostListenerAdapter(listener);
 
@@ -127,45 +153,31 @@ public class PartitionEventManager {
         return registration.getId();
     }
 
-    public CompletableFuture<UUID> addPartitionLostListenerAsync(PartitionLostListener listener) {
-        if (listener == null) {
-            throw new NullPointerException("listener can't be null");
-        }
+    public CompletableFuture<UUID> addPartitionLostListenerAsync(@Nonnull PartitionLostListener listener) {
+        checkNotNull(listener, "listener can't be null");
 
         final PartitionLostListenerAdapter adapter = new PartitionLostListenerAdapter(listener);
-
         EventService eventService = nodeEngine.getEventService();
         return eventService.registerListenerAsync(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, adapter)
                            .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
 
-    public UUID addLocalPartitionLostListener(PartitionLostListener listener) {
-        if (listener == null) {
-            throw new NullPointerException("listener can't be null");
-        }
+    public UUID addLocalPartitionLostListener(@Nonnull PartitionLostListener listener) {
+        checkNotNull(listener, "listener can't be null");
 
         final PartitionLostListenerAdapter adapter = new PartitionLostListenerAdapter(listener);
 
-        EventService eventService = nodeEngine.getEventService();
-        EventRegistration registration =
-                eventService.registerLocalListener(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, adapter);
-        return registration.getId();
+        return registerLocalListener(adapter, PARTITION_LOST_EVENT_TOPIC);
     }
 
-    public boolean removePartitionLostListener(UUID registrationId) {
-        if (registrationId == null) {
-            throw new NullPointerException("registrationId can't be null");
-        }
-
+    public boolean removePartitionLostListener(@Nonnull UUID registrationId) {
+        checkNotNull(registrationId, "registrationId can't be null");
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, registrationId);
     }
 
     public CompletableFuture<Boolean> removePartitionLostListenerAsync(UUID registrationId) {
-        if (registrationId == null) {
-            throw new NullPointerException("registrationId can't be null");
-        }
-
+        checkNotNull(registrationId, "registrationId can't be null");
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListenerAsync(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, registrationId);
     }
@@ -183,6 +195,13 @@ public class PartitionEventManager {
                 nodeEngine.getThisAddress());
         InternalPartitionLostEventPublisher publisher = new InternalPartitionLostEventPublisher(nodeEngine, event);
         nodeEngine.getExecutionService().execute(SYSTEM_EXECUTOR, publisher);
+    }
+
+    private UUID registerLocalListener(PartitionEventListener<?> adapter, String topic) {
+        EventService eventService = nodeEngine.getEventService();
+        EventRegistration registration =
+                eventService.registerLocalListener(SERVICE_NAME, topic, adapter);
+        return registration.getId();
     }
 
     /** Task which notifies all {@link PartitionAwareService}s that replicas have been lost. */

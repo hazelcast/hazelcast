@@ -209,11 +209,11 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertMigrationProcessCompleted(MigrationEventsPack eventsPack) {
+    public static void assertMigrationProcessCompleted(MigrationEventsPack eventsPack) {
         assertTrueEventually(() -> assertNotNull(eventsPack.migrationProcessCompleted));
     }
 
-    private void assertMigrationProcessEventsConsistent(MigrationEventsPack eventsPack) {
+    public static void assertMigrationProcessEventsConsistent(MigrationEventsPack eventsPack) {
         MigrationState migrationPlan = eventsPack.migrationProcessStarted;
         assertThat(migrationPlan.getStartTime(), greaterThan(0L));
         assertThat(migrationPlan.getPlannedMigrations(), greaterThan(0));
@@ -225,7 +225,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         assertEquals(0, migrationResult.getRemainingMigrations());
     }
 
-    private void assertMigrationEventsConsistentWithResult(MigrationEventsPack eventsPack) {
+    public static void assertMigrationEventsConsistentWithResult(MigrationEventsPack eventsPack) {
         MigrationState migrationResult = eventsPack.migrationProcessCompleted;
         List<ReplicaMigrationEvent> migrationsCompleted = eventsPack.migrationsCompleted;
 
@@ -362,7 +362,6 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         verify(listener, never()).replicaMigrationCompleted(any(ReplicaMigrationEvent.class));
     }
 
-
     @SuppressWarnings("SameParameterValue")
     private void assertAllLessThanOrEqual(AtomicInteger[] integers, int expected) {
         for (AtomicInteger integer : integers) {
@@ -413,7 +412,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
     // Migration events are published and processed in order in a single event thread.
     // So we can rely on that here...
-    private static class EventCollectingMigrationListener implements MigrationListener {
+    public static class EventCollectingMigrationListener implements MigrationListener {
         final List<MigrationEventsPack> allEventPacks = Collections.synchronizedList(new ArrayList<>());
         volatile MigrationEventsPack currentEvents;
 
@@ -449,7 +448,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
             return allEventPacks.subList(0, count);
         }
 
-        MigrationEventsPack ensureAndGetSingleEventPack() {
+        public MigrationEventsPack ensureAndGetSingleEventPack() {
             return ensureAndGetEventPacks(1).get(0);
         }
 
@@ -459,16 +458,11 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
                 assertNull(currentEvents);
             });
         }
-
-        void reset() {
-            allEventPacks.clear();
-            currentEvents = null;
-        }
     }
 
-    private static class MigrationEventsPack {
-        volatile MigrationState migrationProcessStarted;
-        volatile MigrationState migrationProcessCompleted;
-        final List<ReplicaMigrationEvent> migrationsCompleted = Collections.synchronizedList(new ArrayList<>());
+    public static class MigrationEventsPack {
+        public volatile MigrationState migrationProcessStarted;
+        public volatile MigrationState migrationProcessCompleted;
+        public final List<ReplicaMigrationEvent> migrationsCompleted = Collections.synchronizedList(new ArrayList<>());
     }
 }

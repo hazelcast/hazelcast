@@ -41,6 +41,8 @@ import org.w3c.dom.Element;
 import javax.net.ssl.SSLContext;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
 import java.io.InputStream;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
@@ -48,6 +50,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.internal.util.XmlUtil.getNsAwareDocumentBuilderFactory;
 import static com.hazelcast.test.TestCollectionUtils.setOf;
 import static org.junit.Assert.assertEquals;
 
@@ -69,10 +72,9 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
     public TestName testName = new TestName();
 
     @Before
-    public void setUp() {
+    public void setUp() throws ParserConfigurationException {
         httpClient = HttpClients.createDefault();
-        documentBuilderFactory = DocumentBuilderFactory.newInstance();
-        documentBuilderFactory.setNamespaceAware(true);
+        documentBuilderFactory = getNsAwareDocumentBuilderFactory();
         validUrlsCache = new HashSet<String>();
     }
 
@@ -90,6 +92,7 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
         Set<String> resources = reflections.getResources(Pattern.compile(".*\\.xml"));
         ClassLoader classLoader = getClass().getClassLoader();
         for (String resource : resources) {
+            System.out.println(resource);
             URL resourceUrl = classLoader.getResource(resource);
             String protocol = resourceUrl.getProtocol();
 
@@ -118,7 +121,6 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
             if (shouldSkipValidation(nameSpaceUrl)) {
                 continue;
             }
-            System.out.println("Validating " + nameSpaceUrl);
             int responseCode;
             try {
                 responseCode = getResponseCode(nameSpaceUrl);

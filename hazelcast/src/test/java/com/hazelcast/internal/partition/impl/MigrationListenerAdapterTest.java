@@ -30,8 +30,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_FINISHED;
-import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_STARTED;
+import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_FINISHED_PARTITION_ID;
+import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_STARTED_PARTITION_ID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -53,7 +53,7 @@ public class MigrationListenerAdapterTest {
     @Test
     public void test_migrationProcessStarted() {
         MigrationState migrationSchedule = new MigrationStateImpl();
-        ReplicaMigrationEvent event = new ReplicaMigrationEventImpl(migrationSchedule, MIGRATION_STARTED, 0, null, null, true, 0L);
+        ReplicaMigrationEvent event = new ReplicaMigrationEventImpl(migrationSchedule, MIGRATION_STARTED_PARTITION_ID, 0, null, null, true, 0L);
         adapter.onEvent(event);
 
         verify(listener).migrationStarted(migrationSchedule);
@@ -65,7 +65,7 @@ public class MigrationListenerAdapterTest {
     @Test
     public void test_migrationProcessCompleted() {
         MigrationState migrationSchedule = new MigrationStateImpl();
-        ReplicaMigrationEvent event = new ReplicaMigrationEventImpl(migrationSchedule, MIGRATION_FINISHED, 0, null, null, true, 0L);
+        ReplicaMigrationEvent event = new ReplicaMigrationEventImpl(migrationSchedule, MIGRATION_FINISHED_PARTITION_ID, 0, null, null, true, 0L);
         adapter.onEvent(event);
 
         verify(listener, never()).migrationStarted(any(MigrationState.class));
