@@ -16,16 +16,21 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
+import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.param.NumericPrecedenceParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlCallBinding;
+import org.apache.calcite.sql.SqlDynamicParam;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -91,14 +96,16 @@ public final class HazelcastComparisonPredicate extends HazelcastBinaryOperator 
         assert firstType.getSqlTypeName() != SqlTypeName.NULL;
         assert secondType.getSqlTypeName() != SqlTypeName.NULL;
 
-        return checkOperandTypes(binding, throwOnFailure, validator, firstType, secondType);
+        return checkOperandTypes(binding, throwOnFailure, validator, first, firstType, second, secondType);
     }
 
     private boolean checkOperandTypes(
         HazelcastCallBinding callBinding,
         boolean throwOnFailure,
         HazelcastSqlValidator validator,
+        SqlNode first,
         RelDataType firstType,
+        SqlNode second,
         RelDataType secondType
     ) {
         RelDataType winningType = HazelcastTypeSystem.withHigherPrecedence(firstType, secondType);
@@ -108,7 +115,9 @@ public final class HazelcastComparisonPredicate extends HazelcastBinaryOperator 
                 callBinding,
                 throwOnFailure,
                 validator,
+                first,
                 firstType,
+                second,
                 secondType,
                 1
             );
@@ -119,7 +128,9 @@ public final class HazelcastComparisonPredicate extends HazelcastBinaryOperator 
                 callBinding,
                 throwOnFailure,
                 validator,
+                second,
                 secondType,
+                first,
                 firstType,
                 0
             );
@@ -130,19 +141,37 @@ public final class HazelcastComparisonPredicate extends HazelcastBinaryOperator 
         HazelcastCallBinding callBinding,
         boolean throwOnFailure,
         HazelcastSqlValidator validator,
+        SqlNode high,
         RelDataType highType,
+        SqlNode low,
         RelDataType lowType,
         int lowIndex
     ) {
         QueryDataType highHZType = SqlToQueryType.map(highType.getSqlTypeName());
         QueryDataType lowHZType = SqlToQueryType.map(lowType.getSqlTypeName());
 
+        if (highHZType.getTypeFamily().isTemporal() || highHZType.getTypeFamily() == QueryDataTypeFamily.OBJECT) {
+            // Disallow comparisons for temporal and OBJECT types.
+            if (throwOnFailure) {
+                throw callBinding.newValidationSignatureError();
+            } else {
+                return false;
+            }
+        }
+
+        if (highHZType.getTypeFamily().isNumeric()) {
+            // Set flexible parameter converter that allows TINYINT/SMALLINT/INTEGER -> BIGINT conversions
+            setNumericParameterConverter(validator, high, highHZType);
+            setNumericParameterConverter(validator, low, highHZType);
+        }
+
         if (highHZType.getTypeFamily() == lowHZType.getTypeFamily()) {
             // Types are in the same family, do nothing.
             return true;
         }
 
-        if (highHZType.getTypeFamily().getGroup() != lowHZType.getTypeFamily().getGroup()) {
+        if (highHZType.getTypeFamily() != lowHZType.getTypeFamily()
+            && !(highHZType.getTypeFamily().isNumeric() && lowHZType.getTypeFamily().isNumeric())) {
             // Types cannot be converted to each other, throw.
             if (throwOnFailure) {
                 throw callBinding.newValidationSignatureError();
@@ -155,6 +184,20 @@ public final class HazelcastComparisonPredicate extends HazelcastBinaryOperator 
         validator.getTypeCoercion().coerceOperandType(callBinding.getScope(), callBinding.getCall(), lowIndex, highType);
 
         return true;
+    }
+
+    private static void setNumericParameterConverter(HazelcastSqlValidator validator, SqlNode node, QueryDataType type) {
+        if (node.getKind() == SqlKind.DYNAMIC_PARAM) {
+            SqlDynamicParam node0 = (SqlDynamicParam) node;
+
+            ParameterConverter converter = new NumericPrecedenceParameterConverter(
+                node0.getIndex(),
+                node.getParserPosition(),
+                type
+            );
+
+            validator.setParameterConverter(node0.getIndex(), converter);
+        }
     }
 
     private static final class OperandTypeInference implements SqlOperandTypeInference {
@@ -173,7 +216,7 @@ public final class HazelcastComparisonPredicate extends HazelcastBinaryOperator 
                     // Will resolve operand type at this index later.
                     unknownTypeOperandIndex = i;
                 } else {
-                    if (hasParameters && SqlNodeUtil.isExactNumericLiteral(binding.operand(i))) {
+                    if (hasParameters && SqlNodeUtil.isNumericInteger(operandType)) {
                         // If we are here, there is a parameter, and an exact numeric literal.
                         // We upcast the type of the numeric literal to BIGINT, so that an expression `1 > ?` is resolved to
                         // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`

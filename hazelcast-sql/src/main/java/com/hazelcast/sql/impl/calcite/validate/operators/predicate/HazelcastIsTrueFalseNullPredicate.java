@@ -20,9 +20,12 @@ import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPostfixOperator;
+import com.hazelcast.sql.impl.calcite.validate.param.NoOpParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastObjectType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
+import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlPostfixOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -77,6 +80,12 @@ public final class HazelcastIsTrueFalseNullPredicate extends HazelcastPostfixOpe
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         if (objectOperand) {
             // IS (NOT) NULL accept any operand types
+            SqlNode node = binding.operand(0);
+
+            if (node.getKind() == SqlKind.DYNAMIC_PARAM) {
+                binding.getValidator().setParameterConverter(0, NoOpParameterConverter.INSTANCE);
+            }
+
             return true;
         } else {
             // IS (NOT) TRUE|FALSE accept boolean operands only

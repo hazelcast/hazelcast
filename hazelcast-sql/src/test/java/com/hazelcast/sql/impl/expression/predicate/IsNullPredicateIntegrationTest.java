@@ -202,6 +202,8 @@ public class IsNullPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     private void checkParameter(int key, ExpressionType<?> type) {
+        clearPlanCache(member);
+
         Object parameter = type.valueFrom();
 
         assertNotNull(parameter);

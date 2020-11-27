@@ -16,8 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
+import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.literal.HazelcastSqlLiteral;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlDynamicParam;
@@ -84,22 +86,9 @@ public final class SqlNodeUtil {
         return null;
     }
 
-    public static boolean isExactNumericLiteral(SqlNode operand) {
-        SqlTypeName type = literalTypeName(operand);
+    public static boolean isNumericInteger(RelDataType operandType) {
+        QueryDataType type = SqlToQueryType.map(operandType.getSqlTypeName());
 
-        if (type != null) {
-            switch (type) {
-                case TINYINT:
-                case SMALLINT:
-                case INTEGER:
-                case BIGINT:
-                    return true;
-
-                default:
-                    return false;
-            }
-        }
-
-        return false;
+        return type.getTypeFamily().isNumericInteger();
     }
 }

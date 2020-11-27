@@ -34,60 +34,78 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_TIMESTAM
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_VARCHAR;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_DATE;
-import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_NULL;
-import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIMESTAMP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_DECIMAL;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_NULL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIME;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIMESTAMP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_VARCHAR;
 
 public enum QueryDataTypeFamily {
-    NULL(QueryDataTypeGroup.NULL, TYPE_LEN_NULL, PRECEDENCE_NULL, SqlColumnType.NULL),
-    VARCHAR(QueryDataTypeGroup.VARCHAR, TYPE_LEN_VARCHAR, PRECEDENCE_VARCHAR, SqlColumnType.VARCHAR),
-    BOOLEAN(QueryDataTypeGroup.BOOLEAN, 1, PRECEDENCE_BOOLEAN, SqlColumnType.BOOLEAN),
-    TINYINT(QueryDataTypeGroup.NUMERIC, 1, PRECEDENCE_TINYINT, SqlColumnType.TINYINT),
-    SMALLINT(QueryDataTypeGroup.NUMERIC, 2, PRECEDENCE_SMALLINT, SqlColumnType.SMALLINT),
-    INTEGER(QueryDataTypeGroup.NUMERIC, 4, PRECEDENCE_INTEGER, SqlColumnType.INTEGER),
-    BIGINT(QueryDataTypeGroup.NUMERIC, 8, PRECEDENCE_BIGINT, SqlColumnType.BIGINT),
-    DECIMAL(QueryDataTypeGroup.NUMERIC, TYPE_LEN_DECIMAL, PRECEDENCE_DECIMAL, SqlColumnType.DECIMAL),
-    REAL(QueryDataTypeGroup.NUMERIC, 4, PRECEDENCE_REAL, SqlColumnType.REAL),
-    DOUBLE(QueryDataTypeGroup.NUMERIC, 8, PRECEDENCE_DOUBLE, SqlColumnType.DOUBLE),
-    TIME(QueryDataTypeGroup.TIME, TYPE_LEN_TIME, PRECEDENCE_TIME, SqlColumnType.TIME),
-    DATE(QueryDataTypeGroup.DATE, TYPE_LEN_DATE, PRECEDENCE_DATE, SqlColumnType.DATE),
-    TIMESTAMP(QueryDataTypeGroup.TIMESTAMP, TYPE_LEN_TIMESTAMP, PRECEDENCE_TIMESTAMP, SqlColumnType.TIMESTAMP),
+    NULL(TYPE_LEN_NULL, PRECEDENCE_NULL, SqlColumnType.NULL),
+    VARCHAR(TYPE_LEN_VARCHAR, PRECEDENCE_VARCHAR, SqlColumnType.VARCHAR),
+    BOOLEAN(1, PRECEDENCE_BOOLEAN, SqlColumnType.BOOLEAN),
+    TINYINT(1, PRECEDENCE_TINYINT, SqlColumnType.TINYINT),
+    SMALLINT(2, PRECEDENCE_SMALLINT, SqlColumnType.SMALLINT),
+    INTEGER(4, PRECEDENCE_INTEGER, SqlColumnType.INTEGER),
+    BIGINT(8, PRECEDENCE_BIGINT, SqlColumnType.BIGINT),
+    DECIMAL(TYPE_LEN_DECIMAL, PRECEDENCE_DECIMAL, SqlColumnType.DECIMAL),
+    REAL(4, PRECEDENCE_REAL, SqlColumnType.REAL),
+    DOUBLE(8, PRECEDENCE_DOUBLE, SqlColumnType.DOUBLE),
+    TIME(TYPE_LEN_TIME, PRECEDENCE_TIME, SqlColumnType.TIME),
+    DATE(TYPE_LEN_DATE, PRECEDENCE_DATE, SqlColumnType.DATE),
+    TIMESTAMP(TYPE_LEN_TIMESTAMP, PRECEDENCE_TIMESTAMP, SqlColumnType.TIMESTAMP),
     TIMESTAMP_WITH_TIME_ZONE(
-        QueryDataTypeGroup.TIMESTAMP_WITH_TIME_ZONE,
         TYPE_LEN_TIMESTAMP_WITH_TIME_ZONE,
         PRECEDENCE_TIMESTAMP_WITH_TIME_ZONE,
         SqlColumnType.TIMESTAMP_WITH_TIME_ZONE
     ),
-    OBJECT(QueryDataTypeGroup.OBJECT, TYPE_LEN_OBJECT, PRECEDENCE_OBJECT, SqlColumnType.OBJECT);
+    OBJECT(TYPE_LEN_OBJECT, PRECEDENCE_OBJECT, SqlColumnType.OBJECT);
 
-    private final QueryDataTypeGroup group;
     private final int estimatedSize;
     private final int precedence;
     private final SqlColumnType publicType;
 
-    QueryDataTypeFamily(QueryDataTypeGroup group, int estimatedSize, int precedence, SqlColumnType publictype) {
+    QueryDataTypeFamily(int estimatedSize, int precedence, SqlColumnType publictype) {
         assert estimatedSize > 0;
 
-        this.group = group;
         this.estimatedSize = estimatedSize;
         this.precedence = precedence;
         this.publicType = publictype;
     }
 
-    public QueryDataTypeGroup getGroup() {
-        return group;
+    public boolean isNumeric() {
+        switch (this) {
+            case TINYINT:
+            case SMALLINT:
+            case INTEGER:
+            case BIGINT:
+            case DECIMAL:
+            case REAL:
+            case DOUBLE:
+                return true;
+
+            default:
+                return false;
+        }
     }
 
-    public boolean isNumeric() {
-        return group == QueryDataTypeGroup.NUMERIC;
+    public boolean isNumericInteger() {
+        switch (this) {
+            case TINYINT:
+            case SMALLINT:
+            case INTEGER:
+            case BIGINT:
+                return true;
+
+            default:
+                return false;
+        }
     }
 
     public boolean isTemporal() {
-        switch (group) {
+        switch (this) {
             case TIME:
             case DATE:
             case TIMESTAMP:

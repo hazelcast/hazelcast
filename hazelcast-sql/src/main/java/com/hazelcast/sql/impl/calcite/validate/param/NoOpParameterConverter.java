@@ -14,16 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.type;
+package com.hazelcast.sql.impl.calcite.validate.param;
 
-public enum QueryDataTypeGroup {
-    NULL,
-    BOOLEAN,
-    VARCHAR,
-    NUMERIC,
-    TIME,
-    DATE,
-    TIMESTAMP,
-    TIMESTAMP_WITH_TIME_ZONE,
-    OBJECT
+import com.hazelcast.sql.impl.ParameterConverter;
+import com.hazelcast.sql.impl.type.QueryDataType;
+
+public final class NoOpParameterConverter implements ParameterConverter {
+
+    public static final NoOpParameterConverter INSTANCE = new NoOpParameterConverter();
+
+    private NoOpParameterConverter() {
+        // No-op
+    }
+
+    @Override
+    public QueryDataType getTargetType() {
+        return QueryDataType.OBJECT;
+    }
+
+    @Override
+    public Object convert(Object value) {
+        return value;
+    }
 }

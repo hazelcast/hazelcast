@@ -209,7 +209,15 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         );
     }
 
-    protected static ExpressionValue booleanValue1(Object first) {
+    protected static ExpressionValue stringValue1(String first) {
+        return new ExpressionValue.StringVal().field1(first);
+    }
+
+    protected static ExpressionBiValue stringValue2(String first, String second) {
+        return new ExpressionBiValue.StringStringVal().fields(first, second);
+    }
+
+    protected static ExpressionValue booleanValue1(Boolean first) {
         return new ExpressionValue.BooleanVal().field1(first);
     }
 
