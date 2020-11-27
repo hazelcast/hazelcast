@@ -37,7 +37,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class CharLengthFunctionIntegrationTest extends AbstractStringFunctionTest {
+public class CharLengthFunctionIntegrationTest extends StringFunctionIntegrationTestSupport {
     @Parameterized.Parameter
     public String name;
 

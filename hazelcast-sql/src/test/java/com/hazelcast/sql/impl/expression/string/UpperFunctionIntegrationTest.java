@@ -32,7 +32,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class UpperFunctionIntegrationTest extends AbstractStringFunctionTest {
+public class UpperFunctionIntegrationTest extends StringFunctionIntegrationTestSupport {
     @Override
     protected String functionName() {
         return "UPPER";

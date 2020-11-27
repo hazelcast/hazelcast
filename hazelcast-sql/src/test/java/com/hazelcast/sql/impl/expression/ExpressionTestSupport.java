@@ -66,6 +66,12 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         member = factory.newHazelcastInstance();
 
         map = member.getMap("map");
+
+        before0();
+    }
+
+    protected void before0() {
+        // No-op
     }
 
     @After

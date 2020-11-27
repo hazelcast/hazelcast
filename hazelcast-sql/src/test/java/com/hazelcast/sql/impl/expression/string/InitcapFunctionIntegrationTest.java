@@ -32,7 +32,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class InitcapFunctionIntegrationTest extends AbstractStringFunctionTest {
+public class InitcapFunctionIntegrationTest extends StringFunctionIntegrationTestSupport {
     @Override
     protected String functionName() {
         return "INITCAP";

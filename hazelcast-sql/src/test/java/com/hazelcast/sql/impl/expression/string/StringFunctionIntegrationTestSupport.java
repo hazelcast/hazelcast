@@ -41,7 +41,7 @@ import static com.hazelcast.sql.SqlColumnType.TINYINT;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 
 
-public abstract class AbstractStringFunctionTest extends ExpressionTestSupport {
+public abstract class StringFunctionIntegrationTestSupport extends ExpressionTestSupport {
 
     protected abstract String functionName();
 

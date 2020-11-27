@@ -32,7 +32,7 @@ import java.util.Collection;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class TrimSimpleFunctionIntegrationTest extends AbstractStringFunctionTest {
+public class TrimSimpleFunctionIntegrationTest extends StringFunctionIntegrationTestSupport {
     @Parameterized.Parameter
     public Mode mode;
 
