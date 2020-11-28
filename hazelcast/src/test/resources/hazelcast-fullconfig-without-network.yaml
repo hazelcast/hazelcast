@@ -841,6 +841,11 @@ hazelcast:
           principal: "*"
           actions:
             - all
+      replicatedmap:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
       reliable-topic:
         - name: "*"
           principal: "*"

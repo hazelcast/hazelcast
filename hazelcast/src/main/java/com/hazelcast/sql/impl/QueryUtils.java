@@ -236,11 +236,7 @@ public final class QueryUtils {
         // Then add paths from table resolvers.
         if (tableResolvers != null) {
             for (TableResolver tableResolver : tableResolvers) {
-                List<List<String>> tableResolverSearchPaths = tableResolver.getDefaultSearchPaths();
-
-                if (tableResolverSearchPaths != null) {
-                    res.addAll(tableResolverSearchPaths);
-                }
+                res.addAll(tableResolver.getDefaultSearchPaths());
             }
         }
 

@@ -836,7 +836,7 @@ public class ClusterJoinManager {
             return LOCAL_NODE_SHOULD_MERGE;
         }
 
-        logger.info(joinMessage.getAddress() + " should merge to us "
+        logger.info(joinMessage.getAddress() + " should merge to us"
                 + ", both have the same data member count: " + currentDataMemberCount);
         return REMOTE_NODE_SHOULD_MERGE;
     }
@@ -931,7 +931,7 @@ public class ClusterJoinManager {
         String targetAddressStr = "[" + targetAddress.getHost() + "]:" + targetAddress.getPort();
 
         if (thisAddressStr.equals(targetAddressStr)) {
-            throw new IllegalArgumentException("Addresses should be different! This: "
+            throw new IllegalArgumentException("Addresses must be different! This: "
                     + thisAddress + ", Target: " + targetAddress);
         }
 

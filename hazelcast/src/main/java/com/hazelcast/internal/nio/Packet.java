@@ -44,7 +44,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     // 1. URGENT (bit 4)
     // 2. Packet type (bits 0, 2, 5)
     // 3. Flags specific to a given packet type (bits 1, 6)
-
+    // 4. 4.x flag (bit 7)
 
     // 1. URGENT flag
 
@@ -96,6 +96,10 @@ public final class Packet extends HeapData implements OutboundFrame {
      */
     public static final int FLAG_JET_FLOW_CONTROL = 1 << 1;
 
+    /**
+     * Marks a packet as sent by a 4.x member
+     */
+    public static final int FLAG_4_0 = 1 << 7;
 
     //            END OF HEADER FLAG SECTION
 
@@ -107,6 +111,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     private transient ServerConnection conn;
 
     public Packet() {
+        raiseFlags(FLAG_4_0);
     }
 
     public Packet(byte[] payload) {
@@ -116,6 +121,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     public Packet(byte[] payload, int partitionId) {
         super(payload);
         this.partitionId = partitionId;
+        raiseFlags(FLAG_4_0);
     }
 
     /**

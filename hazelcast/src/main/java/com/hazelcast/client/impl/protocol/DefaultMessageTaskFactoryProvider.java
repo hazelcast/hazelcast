@@ -75,6 +75,7 @@ import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAddCodec;
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorEstimateCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAddClusterViewListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAddMigrationListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
@@ -86,6 +87,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec
 import com.hazelcast.client.impl.protocol.codec.ClientLocalBackupListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientRemoveMigrationListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientTriggerPartitionAssignmentCodec;
@@ -419,6 +421,7 @@ import com.hazelcast.client.impl.protocol.codec.XATransactionRollbackCodec;
 import com.hazelcast.client.impl.protocol.task.AddBackupListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.AddClusterViewListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.AddDistributedObjectListenerMessageTask;
+import com.hazelcast.client.impl.protocol.task.AddMigrationListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.AddPartitionLostListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.AuthenticationCustomCredentialsMessageTask;
 import com.hazelcast.client.impl.protocol.task.AuthenticationMessageTask;
@@ -430,6 +433,7 @@ import com.hazelcast.client.impl.protocol.task.DestroyProxyMessageTask;
 import com.hazelcast.client.impl.protocol.task.GetDistributedObjectsMessageTask;
 import com.hazelcast.client.impl.protocol.task.PingMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemoveDistributedObjectListenerMessageTask;
+import com.hazelcast.client.impl.protocol.task.RemoveMigrationListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemovePartitionLostListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.TriggerPartitionAssignmentMessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAddEntryListenerMessageTask;
@@ -1464,6 +1468,10 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new AddPartitionLostListenerMessageTask(cm, node, con));
         factories.put(ClientRemovePartitionLostListenerCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new RemovePartitionLostListenerMessageTask(cm, node, con));
+        factories.put(ClientAddMigrationListenerCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new AddMigrationListenerMessageTask(cm, node, con));
+        factories.put(ClientRemoveMigrationListenerCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new RemoveMigrationListenerMessageTask(cm, node, con));
         factories.put(ClientCreateProxyCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new CreateProxyMessageTask(cm, node, con));
         factories.put(ClientGetDistributedObjectsCodec.REQUEST_MESSAGE_TYPE,

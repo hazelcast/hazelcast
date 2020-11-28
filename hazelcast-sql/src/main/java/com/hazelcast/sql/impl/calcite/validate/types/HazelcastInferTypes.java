@@ -85,7 +85,14 @@ public final class HazelcastInferTypes {
         // No-op.
     }
 
-    public static SqlOperandTypeInference explicit(SqlTypeName typeName) {
+    /**
+     * Inference strategy that replaces the first operand of the call binding with the provided type, or does nothing if
+     * the call has more than one operand.
+     *
+     * @param typeName type to be used for the first operand
+     * @return inference strategy
+     */
+    public static SqlOperandTypeInference explicitSingle(SqlTypeName typeName) {
         return InferTypes.explicit(Collections.singletonList(HazelcastTypeFactory.INSTANCE.createSqlType(typeName)));
     }
 }

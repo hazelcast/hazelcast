@@ -28,13 +28,13 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import static com.hazelcast.internal.config.DomConfigHelper.asElementIterable;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.internal.util.XmlUtil.getNsAwareDocumentBuilderFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -47,9 +47,7 @@ public class IterableNodeListTest {
 
     @Before
     public void setup() throws ParserConfigurationException, SAXException, IOException {
-        final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
-        final DocumentBuilder builder = dbf.newDocumentBuilder();
+        DocumentBuilder builder = getNsAwareDocumentBuilderFactory().newDocumentBuilder();
         final String testXml = "<rOOt><element></element><element></element><element></element></rOOt>";
         document = builder.parse(new ByteArrayInputStream(testXml.getBytes()));
     }

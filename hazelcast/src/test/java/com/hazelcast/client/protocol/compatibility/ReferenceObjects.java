@@ -58,6 +58,8 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
+import com.hazelcast.partition.MigrationState;
+import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -647,6 +649,7 @@ public class ReferenceObjects {
     public static Address anAddress;
     public static CPMember aCpMember;
     public static List<CPMember> aListOfCpMembers;
+    public static MigrationState aMigrationState = new MigrationStateImpl(aLong, anInt, anInt, aLong);
 
     static {
         try {

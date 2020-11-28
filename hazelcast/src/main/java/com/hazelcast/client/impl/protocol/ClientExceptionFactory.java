@@ -339,7 +339,6 @@ public class ClientExceptionFactory {
         Throwable throwable = null;
         if (exceptionFactory == null) {
             String className = errorHolder.getClassName();
-            assert checkClassNameForValidity(className) : "Exception should be defined in the protocol : " + className;
             try {
                 Class<? extends Throwable> exceptionClass =
                         (Class<? extends Throwable>) ClassLoaderUtil.loadClass(classLoader, className);
