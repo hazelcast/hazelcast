@@ -208,9 +208,9 @@ public class EvictionTest extends HazelcastTestSupport {
         IMap<Integer, Employee> map = node.getMap(mapName);
         map.addIndex(type, "city");
 
-        int entries = 5;
+        int entryCount = 5;
         Map<Integer, Long> lastAccessTimes = new HashMap<>();
-        for (int i = 0; i < entries; ++i) {
+        for (int i = 0; i < entryCount; ++i) {
             String cityName = i % 2 == 0 ? "cityname" : null;
 
             Employee emp = new Employee(i, "name" + i, cityName, 0, true, i);
@@ -229,12 +229,15 @@ public class EvictionTest extends HazelcastTestSupport {
         Predicate predicateCityNull = entryObject.get("city").isNull();
         Collection<Employee> valuesNullCity = map.values(predicateCityNull);
         Collection<Employee> valuesNotNullCity = map.values(Predicates.equal("city", "cityname"));
-        assertEquals(entries, valuesNullCity.size() + valuesNotNullCity.size());
+        assertEquals(entryCount, valuesNullCity.size() + valuesNotNullCity.size());
         // check that evaluating the predicate updated the last access time of the returned records
-        for (int i = 0; i < entries; ++i) {
+        for (int i = 0; i < entryCount; ++i) {
             EntryView view = map.getEntryView(i);
             assertNotNull(view);
-            assertTrue(view.getLastAccessTime() > lastAccessTimes.get(i));
+            long lastAccessTime = view.getLastAccessTime();
+            long prevLastAccessTime = lastAccessTimes.get(i);
+            assertTrue("lastAccessTime=" + lastAccessTime + ", prevLastAccessTime=" + prevLastAccessTime,
+                    lastAccessTime > prevLastAccessTime);
         }
     }
 

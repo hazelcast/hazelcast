@@ -38,6 +38,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
+
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_CONNECTION_CONNECTION_TYPE;
 import static com.hazelcast.internal.metrics.ProbeUnit.ENUM;
 import static com.hazelcast.internal.nio.ConnectionType.MEMBER;
@@ -246,6 +249,15 @@ public class TcpServerConnection implements ServerConnection {
 
         lifecycleListener.onConnectionClose(this, null, false);
         serverContext.onDisconnect(remoteAddress, cause);
+
+        LoginContext lc = (LoginContext) attributeMap.remove(LoginContext.class);
+        if (lc != null) {
+            try {
+                lc.logout();
+            } catch (LoginException e) {
+                logger.warning("Logout failed", e);
+            }
+        }
         if (cause != null && errorHandler != null) {
             errorHandler.onError(cause);
         }
@@ -318,6 +330,7 @@ public class TcpServerConnection implements ServerConnection {
                 + ", endpoint=" + remoteAddress
                 + ", alive=" + alive
                 + ", connectionType=" + connectionType
+                + ", planeIndex=" + planeIndex
                 + "]";
     }
 }

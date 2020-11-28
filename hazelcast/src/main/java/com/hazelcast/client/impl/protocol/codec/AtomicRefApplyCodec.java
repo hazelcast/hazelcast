@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies a function on the value
  */
-@Generated("97abf4d30262dd4fe4d52063e388b8c3")
+@Generated("d0dfb1a215a164f47bc63468a0b63144")
 public final class AtomicRefApplyCodec {
     //hex: 0x0A0100
     public static final int REQUEST_MESSAGE_TYPE = 655616;
@@ -120,8 +120,8 @@ public final class AtomicRefApplyCodec {
     }
 
     /**
-    * The result of the function application.
-    */
+     * The result of the function application.
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

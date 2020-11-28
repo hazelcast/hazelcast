@@ -16,11 +16,10 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.test.ChangeLoggingRule;
+import com.hazelcast.config.Config;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.ClassRule;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -43,6 +42,11 @@ public class PartitionAssignmentsCorrectnessTest extends AbstractPartitionAssign
         });
     }
 
-    @ClassRule
-    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug.xml");
+    @Override
+    protected Config getConfig() {
+        // Partition count is overwritten back to PartitionCorrectnessTestSupport.partitionCount
+        // in PartitionCorrectnessTestSupport.getConfig(boolean, boolean).
+        return smallInstanceConfig();
+    }
+
 }

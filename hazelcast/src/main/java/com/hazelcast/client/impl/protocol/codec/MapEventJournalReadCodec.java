@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-@Generated("589f0493b83d6899e07d62105ae6d76f")
+@Generated("e2863cdc4a6c658f758e5c8679e0cb15")
 public final class MapEventJournalReadCodec {
     //hex: 0x014200
     public static final int REQUEST_MESSAGE_TYPE = 82432;
@@ -126,18 +126,22 @@ public final class MapEventJournalReadCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
         /**
          * Number of items that have been read.
          */
         public int readCount;
+
         /**
          * List of items that have been read.
          */
         public java.util.List<com.hazelcast.internal.serialization.Data> items;
+
         /**
          * Sequence numbers of items in the event journal.
          */
         public @Nullable long[] itemSeqs;
+
         /**
          * Sequence number of the item following the last read item.
          */

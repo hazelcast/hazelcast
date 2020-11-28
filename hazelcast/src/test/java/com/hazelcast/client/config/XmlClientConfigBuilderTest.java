@@ -24,6 +24,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.PersistentMemoryConfig;
 import com.hazelcast.config.PersistentMemoryDirectoryConfig;
 import com.hazelcast.config.XMLConfigBuilderTest;
 import com.hazelcast.config.security.KerberosIdentityConfig;
@@ -56,6 +57,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Properties;
 
+import static com.hazelcast.config.PersistentMemoryMode.MOUNTED;
+import static com.hazelcast.config.PersistentMemoryMode.SYSTEM_MEMORY;
 import static com.hazelcast.internal.nio.IOUtil.delete;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -420,6 +423,8 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
                 + "<security>"
                 + "    <kerberos>\n"
                 + "        <realm>HAZELCAST.COM</realm>"
+                + "        <principal>jduke</principal>"
+                + "        <keytab-file>/opt/jduke.keytab</keytab-file>"
                 + "        <security-realm>krb5Initiator</security-realm>"
                 + "        <service-name-prefix>hz/</service-name-prefix>"
                 + "        <use-canonical-hostname>true</use-canonical-hostname>"
@@ -431,6 +436,8 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         KerberosIdentityConfig identityConfig = config.getSecurityConfig().getKerberosIdentityConfig();
         assertNotNull(identityConfig);
         assertEquals("HAZELCAST.COM", identityConfig.getRealm());
+        assertEquals("jduke", identityConfig.getPrincipal());
+        assertEquals("/opt/jduke.keytab", identityConfig.getKeytabFile());
         assertEquals("krb5Initiator", identityConfig.getSecurityRealm());
         assertEquals("hz/", identityConfig.getServiceNamePrefix());
         assertTrue(identityConfig.getUseCanonicalHostname());
@@ -534,9 +541,10 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
 
         ClientConfig xmlConfig = buildConfig(xml);
 
-        List<PersistentMemoryDirectoryConfig> directoryConfigs = xmlConfig.getNativeMemoryConfig()
-                                                                          .getPersistentMemoryConfig()
-                                                                          .getDirectoryConfigs();
+        PersistentMemoryConfig pmemConfig = xmlConfig.getNativeMemoryConfig().getPersistentMemoryConfig();
+        assertTrue(pmemConfig.isEnabled());
+
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = pmemConfig.getDirectoryConfigs();
         assertEquals(1, directoryConfigs.size());
         PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
         assertEquals("/mnt/pmem0", dir0Config.getDirectory());
@@ -600,7 +608,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "<native-memory>\n"
                 + "  <persistent-memory-directory>/mnt/optane</persistent-memory-directory>\n"
-                + "  <persistent-memory>\n"
+                + "  <persistent-memory enabled=\"false\">\n"
                 + "    <directories>\n"
                 + "      <directory>/mnt/pmem0</directory>\n"
                 + "      <directory>/mnt/pmem1</directory>\n"
@@ -610,9 +618,11 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
                 + HAZELCAST_CLIENT_END_TAG;
 
         ClientConfig config = buildConfig(xml);
-        List<PersistentMemoryDirectoryConfig> directoryConfigs = config.getNativeMemoryConfig()
-                                                                       .getPersistentMemoryConfig()
-                                                                       .getDirectoryConfigs();
+        PersistentMemoryConfig pmemConfig = config.getNativeMemoryConfig().getPersistentMemoryConfig();
+        assertFalse(pmemConfig.isEnabled());
+        assertEquals(MOUNTED, pmemConfig.getMode());
+
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = pmemConfig.getDirectoryConfigs();
         assertEquals(3, directoryConfigs.size());
         PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
         PersistentMemoryDirectoryConfig dir1Config = directoryConfigs.get(1);
@@ -623,6 +633,49 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         assertFalse(dir1Config.isNumaNodeSet());
         assertEquals("/mnt/pmem1", dir2Config.getDirectory());
         assertFalse(dir2Config.isNumaNodeSet());
+    }
+
+    @Override
+    @Test
+    public void testPersistentMemoryConfiguration_SystemMemoryMode() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<native-memory>\n"
+                + "  <persistent-memory enabled=\"true\" mode=\"SYSTEM_MEMORY\" />\n"
+                + "</native-memory>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        ClientConfig config = buildConfig(xml);
+        PersistentMemoryConfig pmemConfig = config.getNativeMemoryConfig().getPersistentMemoryConfig();
+        assertTrue(pmemConfig.isEnabled());
+        assertEquals(SYSTEM_MEMORY, pmemConfig.getMode());
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testPersistentMemoryConfiguration_NotExistingModeThrows() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<native-memory>\n"
+                + "  <persistent-memory mode=\"NOT_EXISTING_MODE\" />\n"
+                + "</native-memory>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testPersistentMemoryDirectoryConfiguration_SystemMemoryModeThrows() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<native-memory>\n"
+                + "  <persistent-memory mode=\"SYSTEM_MEMORY\">\n"
+                + "    <directories>\n"
+                + "      <directory>/mnt/pmem0</directory>\n"
+                + "    </directories>\n"
+                + "  </persistent-memory>\n"
+                + "</native-memory>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        buildConfig(xml);
     }
 
     static ClientConfig buildConfig(String xml, Properties properties) {

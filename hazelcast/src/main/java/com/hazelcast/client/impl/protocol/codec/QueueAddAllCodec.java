@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * (This implies that the behavior of this call is undefined if the specified collection is this collection,
  * and this collection is nonempty.)
  */
-@Generated("2950ff077cd645adeb1e941be94b1c8c")
+@Generated("10cf009709f4fe69b9d00c166b17228e")
 public final class QueueAddAllCodec {
     //hex: 0x031000
     public static final int REQUEST_MESSAGE_TYPE = 200704;
@@ -100,8 +100,8 @@ public final class QueueAddAllCodec {
     }
 
     /**
-    * <tt>true</tt> if this collection changed as a result of the call
-    */
+     * <tt>true</tt> if this collection changed as a result of the call
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

@@ -346,6 +346,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         return max(min(getMemberGroupsSize() - 1, InternalPartition.MAX_BACKUP_COUNT), 0);
     }
 
+    public void updateMemberGroupSize() {
+        partitionStateManager.updateMemberGroupsSize();
+    }
+
     @Override
     public void memberAdded(Member member) {
         logger.fine("Adding " + member);
@@ -457,6 +461,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
             if (node.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
                 long stamp = partitionStateManager.getStamp();
+                assert calculateStamp(partitions) == stamp : "Invalid partition stamp! Expected: "
+                        + calculateStamp(partitions) + ", Actual: " + stamp;
                 state = new PartitionRuntimeState(partitions, completedMigrations, stamp);
             } else {
                 //RU_COMPAT_4_0
@@ -636,6 +642,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         }
 
         if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
+            assert calculateStamp(partitionState.getPartitions()) == partitionState.getStamp()
+                    : "Invalid partition stamp! Expected: " + calculateStamp(partitionState.getPartitions())
+                    + ", Actual: " + partitionState.getStamp();
             return applyNewPartitionTable(partitionState.getPartitions(), partitionState.getCompletedMigrations(), sender);
         } else {
             //RU_COMPAT_4_0
@@ -780,8 +789,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
             if (newVersion < currentVersion) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Already applied partition state change. Local version: " + currentVersion
-                            + ", Master version: " + newVersion + " Master: " + sender);
+                    logger.finest("Already applied partition update. partitionId=" + partitionId
+                            + ", local version: " + currentVersion
+                            + ", master version: " + newVersion + ", master: " + sender);
                 }
                 continue;
             } else if (newVersion == currentVersion) {
@@ -790,7 +800,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                              + ", Received: " + newPartition);
                 }
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Already applied partition state change. Version: " + currentVersion + ", Master: " + sender);
+                    logger.finest("Already applied partition update. partitionId=" + partitionId
+                            + ", version: " + currentVersion + ", master: " + sender);
                 }
                 accepted = true;
                 continue;
@@ -807,11 +818,19 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                 migrationManager.scheduleActiveMigrationFinalization(migration);
             }
         }
+
+        // Manually trigger partition stamp calculation.
+        // Because partition versions are explicitly set to master's versions
+        // while applying the partition table updates.
+        partitionStateManager.updateStamp();
+
         if (logger.isFineEnabled()) {
             if (applied) {
-                logger.fine("Applied partition state update with stamp: " + calculateStamp(partitions));
+                logger.fine("Applied partition state update with stamp: " + calculateStamp(partitions)
+                        + ", Local stamp is: " + partitionStateManager.getStamp());
             } else {
-                logger.fine("Already applied partition state update with stamp: " + calculateStamp(partitions));
+                logger.fine("Already applied partition state update with stamp: " + calculateStamp(partitions)
+                        + ", Local stamp is: " + partitionStateManager.getStamp());
             }
         }
         migrationManager.retainCompletedMigrations(completedMigrations);
@@ -834,10 +853,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     private void updatePartitionsAndFinalizeMigrationsLegacy(InternalPartition[] partitions,
             int version, Collection<MigrationInfo> completedMigrations) {
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            InternalPartition partition = partitions[partitionId];
-            partitionStateManager.updateReplicas(partitionId, partition);
+            InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
+            partition.setReplicasAndVersion(partitions[partitionId]);
         }
 
+        partitionStateManager.updateStamp();
         partitionStateManager.setVersion(version);
 
         for (MigrationInfo migration : completedMigrations) {
@@ -906,7 +926,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                     applyMigration(partition, migration);
                 } else {
                     // migration failed...
-                    partition.incrementVersion(migration.getPartitionVersionIncrement());
+                    int increment = migration.getPartitionVersionIncrement();
+                    partitionStateManager.incrementPartitionVersion(partition.getPartitionId(), increment);
                 }
                 migrationManager.scheduleActiveMigrationFinalization(migration);
             }
@@ -1208,8 +1229,23 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     @Override
+    public CompletableFuture<UUID> addMigrationListenerAsync(MigrationListener migrationListener) {
+        return partitionEventManager.addMigrationListenerAsync(migrationListener);
+    }
+
+    @Override
+    public UUID addLocalMigrationListener(MigrationListener migrationListener) {
+        return partitionEventManager.addLocalMigrationListener(migrationListener);
+    }
+
+    @Override
     public boolean removeMigrationListener(UUID registrationId) {
         return partitionEventManager.removeMigrationListener(registrationId);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> removeMigrationListenerAsync(UUID registrationId) {
+        return partitionEventManager.removeMigrationListenerAsync(registrationId);
     }
 
     @Override
@@ -1442,7 +1478,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             activeMigration.setStatus(migration.getStatus());
             migrationManager.finalizeMigration(migration);
             if (logger.isFineEnabled()) {
-                logger.fine("Committed " + migration + " on destination with partition state version: " + finalVersion);
+                logger.fine("Committed " + migration + " on destination with partition version: " + finalVersion);
             }
             return true;
         } finally {

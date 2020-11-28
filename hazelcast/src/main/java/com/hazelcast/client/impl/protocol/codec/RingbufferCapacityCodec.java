@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the capacity of this Ringbuffer.
  */
-@Generated("bca68eddfa8a0db1eadfe09c3436531d")
+@Generated("171faf774475facbb89c0d70d16560d5")
 public final class RingbufferCapacityCodec {
     //hex: 0x170400
     public static final int REQUEST_MESSAGE_TYPE = 1508352;
@@ -48,12 +48,6 @@ public final class RingbufferCapacityCodec {
 
     private RingbufferCapacityCodec() {
     }
-
-    /**
-     * Name of the Ringbuffer
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -67,6 +61,9 @@ public final class RingbufferCapacityCodec {
         return clientMessage;
     }
 
+    /**
+     * Name of the Ringbuffer
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -85,8 +82,8 @@ public final class RingbufferCapacityCodec {
     }
 
     /**
-    * the capacity
-    */
+     * the capacity
+     */
     public static long decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

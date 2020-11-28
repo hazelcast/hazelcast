@@ -199,7 +199,9 @@ public class FlakeIdGeneratorProxy
      * </ul>
      */
     private int getNodeId() {
-        return getNodeId(System.nanoTime());
+        int nodeId = getNodeId(System.nanoTime());
+        assert nodeId > 0 || nodeId == NODE_ID_OUT_OF_RANGE : "getNodeId() returned invalid value: " + nodeId;
+        return nodeId;
     }
 
     // package-visible for tests
@@ -207,32 +209,35 @@ public class FlakeIdGeneratorProxy
         // Check if it is a time to check for updated nodeId. We need to recheck, because if duplicate node ID
         // is assigned during a network split, this will be resolved after a cluster merge.
         // We throttle the calls to avoid contention due to the lock+unlock call in getMemberListJoinVersion().
-        int nodeId = this.nodeId;
-        if (nodeId != NODE_ID_OUT_OF_RANGE && nextNodeIdUpdate <= nanoTime) {
+        long localNextNodeIdUpdate = this.nextNodeIdUpdate;
+        int localNodeId = this.nodeId;
+        if (localNextNodeIdUpdate <= nanoTime) {
+            if (localNodeId == NODE_ID_OUT_OF_RANGE) {
+                return localNodeId;
+            }
             int newNodeId = getNodeEngine().getClusterService().getMemberListJoinVersion();
             assert newNodeId >= 0 : "newNodeId=" + newNodeId;
             newNodeId += nodeIdOffset;
-            nextNodeIdUpdate = nanoTime + NODE_ID_UPDATE_INTERVAL_NS;
-            if (newNodeId != nodeId) {
-                nodeId = newNodeId;
+            if (newNodeId != localNodeId) {
+                localNodeId = newNodeId;
 
                 // If our node ID is out of range, assign NODE_ID_OUT_OF_RANGE to nodeId
-                if ((nodeId & -1 << bitsNodeId) != 0) {
+                if ((localNodeId & -1 << bitsNodeId) != 0) {
                     outOfRangeMembers.add(getNodeEngine().getClusterService().getLocalMember().getUuid());
-                    logger.severe("Node ID is out of range (" + nodeId + "), this member won't be able to generate IDs. "
-                            + "Cluster restart is recommended.");
-                    nodeId = NODE_ID_OUT_OF_RANGE;
+                    logger.severe("Node ID is out of range (" + localNodeId
+                            + "), this member won't be able to generate IDs. Cluster restart is recommended.");
+                    localNodeId = NODE_ID_OUT_OF_RANGE;
                 }
 
                 // we ignore possible double initialization
-                this.nodeId = nodeId;
+                this.nodeId = localNodeId;
+                this.nextNodeIdUpdate = nanoTime + NODE_ID_UPDATE_INTERVAL_NS;
                 if (logger.isFineEnabled()) {
-                    logger.fine("Node ID assigned to '" + name + "': " + nodeId);
+                    logger.fine("Node ID assigned to '" + name + "': " + localNodeId);
                 }
             }
         }
-
-        return nodeId;
+       return localNodeId;
     }
 
     private Member getRandomMember() {

@@ -33,6 +33,6 @@ public class NonTerminalJsonValue extends JsonValue {
 
     @Override
     void write(JsonWriter writer) throws IOException {
-        throw new HazelcastException("This object should not be encoded");
+        throw new HazelcastException("This object must not be encoded");
     }
 }

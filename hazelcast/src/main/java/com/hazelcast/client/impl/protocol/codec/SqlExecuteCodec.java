@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query.
  */
-@Generated("4967196f7319cc79e5e88b7e0607e219")
+@Generated("48b0f740d0f5747358df04c1c08d38db")
 public final class SqlExecuteCodec {
     //hex: 0x210100
     public static final int REQUEST_MESSAGE_TYPE = 2162944;
@@ -104,26 +104,32 @@ public final class SqlExecuteCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
         /**
          * Query ID.
          */
         public @Nullable com.hazelcast.sql.impl.QueryId queryId;
+
         /**
          * Row metadata.
          */
         public @Nullable java.util.List<com.hazelcast.sql.SqlColumnMetadata> rowMetadata;
+
         /**
          * Row page.
          */
         public @Nullable java.util.List<java.util.List<com.hazelcast.internal.serialization.Data>> rowPage;
+
         /**
          * Whether the row page is the last.
          */
         public boolean rowPageLast;
+
         /**
          * The number of updated rows.
          */
         public long updateCount;
+
         /**
          * Error object.
          */
@@ -139,7 +145,7 @@ public final class SqlExecuteCodec {
 
         CodecUtil.encodeNullable(clientMessage, queryId, SqlQueryIdCodec::encode);
         ListMultiFrameCodec.encodeNullable(clientMessage, rowMetadata, SqlColumnMetadataCodec::encode);
-        ListMultiFrameCodec.encodeNullable(clientMessage, rowPage, ListDataCodec::encode);
+        ListMultiFrameCodec.encodeNullable(clientMessage, rowPage, ListCNDataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, error, SqlErrorCodec::encode);
         return clientMessage;
     }
@@ -152,7 +158,7 @@ public final class SqlExecuteCodec {
         response.updateCount = decodeLong(initialFrame.content, RESPONSE_UPDATE_COUNT_FIELD_OFFSET);
         response.queryId = CodecUtil.decodeNullable(iterator, SqlQueryIdCodec::decode);
         response.rowMetadata = ListMultiFrameCodec.decodeNullable(iterator, SqlColumnMetadataCodec::decode);
-        response.rowPage = ListMultiFrameCodec.decodeNullable(iterator, ListDataCodec::decode);
+        response.rowPage = ListMultiFrameCodec.decodeNullable(iterator, ListCNDataCodec::decode);
         response.error = CodecUtil.decodeNullable(iterator, SqlErrorCodec::decode);
         return response;
     }

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Cancels the task running on the member that owns the partition with the given id.
  */
-@Generated("211a5b67ae88699c09e7c633883ff60f")
+@Generated("b6a7c8cb1d489cc2ae6d422b34371615")
 public final class ExecutorServiceCancelOnPartitionCodec {
     //hex: 0x080300
     public static final int REQUEST_MESSAGE_TYPE = 525056;
@@ -98,8 +98,8 @@ public final class ExecutorServiceCancelOnPartitionCodec {
     }
 
     /**
-    * True if cancelled successfully, false otherwise.
-    */
+     * True if cancelled successfully, false otherwise.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

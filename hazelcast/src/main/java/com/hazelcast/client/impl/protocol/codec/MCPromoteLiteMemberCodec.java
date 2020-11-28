@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Promotes the lite member it's called on to a data member.
  */
-@Generated("90b189c29b77a64cbb030363af69c644")
+@Generated("fa84adfdb4d2eff56f266676f0f9b94a")
 public final class MCPromoteLiteMemberCodec {
     //hex: 0x200900
     public static final int REQUEST_MESSAGE_TYPE = 2099456;
@@ -47,7 +47,6 @@ public final class MCPromoteLiteMemberCodec {
 
     private MCPromoteLiteMemberCodec() {
     }
-
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();

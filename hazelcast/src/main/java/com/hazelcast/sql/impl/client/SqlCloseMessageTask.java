@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.security.permission.SqlPermission;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlInternalService;
 
@@ -75,6 +74,6 @@ public class SqlCloseMessageTask extends SqlAbstractMessageTask<QueryId> {
 
     @Override
     public Permission getRequiredPermission() {
-        return new SqlPermission();
+        return null;
     }
 }

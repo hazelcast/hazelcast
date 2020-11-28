@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Interrupts hot restart backup
  */
-@Generated("527272b85f2299e22c245ed6a7f0da71")
+@Generated("d84ec818d75bbfe4f5cd4c38a54a9ddd")
 public final class MCInterruptHotRestartBackupCodec {
     //hex: 0x202000
     public static final int REQUEST_MESSAGE_TYPE = 2105344;
@@ -47,7 +47,6 @@ public final class MCInterruptHotRestartBackupCodec {
 
     private MCInterruptHotRestartBackupCodec() {
     }
-
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();

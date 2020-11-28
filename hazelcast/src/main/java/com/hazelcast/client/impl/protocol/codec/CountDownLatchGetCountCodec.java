@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the current count.
  */
-@Generated("aeb101fabad895cde17a2752afbc0a43")
+@Generated("79f6c9128d7ff95e91fe02219b31601b")
 public final class CountDownLatchGetCountCodec {
     //hex: 0x0B0400
     public static final int REQUEST_MESSAGE_TYPE = 721920;
@@ -97,8 +97,8 @@ public final class CountDownLatchGetCountCodec {
     }
 
     /**
-    * The current count of this CountDownLatch instance
-    */
+     * The current count of this CountDownLatch instance
+     */
     public static int decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

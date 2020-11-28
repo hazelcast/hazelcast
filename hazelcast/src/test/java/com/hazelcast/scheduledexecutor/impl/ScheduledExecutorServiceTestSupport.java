@@ -22,9 +22,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.scheduledexecutor.AutoDisposableTask;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
-import com.hazelcast.scheduledexecutor.AutoDisposableTask;
 import com.hazelcast.scheduledexecutor.NamedTask;
 import com.hazelcast.scheduledexecutor.StatefulTask;
 import com.hazelcast.test.AssertTask;
@@ -35,6 +35,8 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.System.currentTimeMillis;
@@ -281,7 +283,31 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
         @Override
         public void run() {
-           sleepSeconds(1);
+            sleepSeconds(1);
+        }
+
+    }
+
+    static class CountableRunTask implements Runnable, Serializable {
+        private final CountDownLatch progress;
+        private final Semaphore suspend;
+
+        CountableRunTask(CountDownLatch progress, Semaphore suspend) {
+            this.progress = progress;
+            this.suspend = suspend;
+        }
+
+        @Override
+        public void run() {
+            progress.countDown();
+
+            if (progress.getCount() == 0) {
+                try {
+                    suspend.acquire();
+                } catch (InterruptedException e) {
+                    Thread.interrupted();
+                }
+            }
         }
 
     }

@@ -195,6 +195,10 @@ public class MigrationInfo implements IdentifiedDataSerializable {
         throw new IllegalStateException("Initial partition version is not set!");
     }
 
+    public UUID getUid() {
+        return uuid;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         UUIDSerializationUtil.writeUUID(out, uuid);

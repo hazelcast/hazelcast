@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the element at the specified position in this list
  */
-@Generated("a08c0dfd8fdd29d21bee1574c382ce4d")
+@Generated("5297f41a49ecfc34f4a997179c0e8cb6")
 public final class ListGetCodec {
     //hex: 0x050F00
     public static final int REQUEST_MESSAGE_TYPE = 331520;
@@ -96,8 +96,8 @@ public final class ListGetCodec {
     }
 
     /**
-    * The element at the specified position in this list
-    */
+     * The element at the specified position in this list
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

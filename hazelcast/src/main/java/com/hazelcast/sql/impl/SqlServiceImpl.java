@@ -41,11 +41,14 @@ import com.hazelcast.sql.impl.schema.SqlCatalog;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.JetMapMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
+import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.state.QueryState;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Constructor;
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -148,9 +151,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         if (jetSqlCoreBackend != null) {
             jetSqlCoreBackend.reset();
         }
-        if (internalService != null) {
-            internalService.reset();
-        }
     }
 
     public void shutdown() {
@@ -185,6 +185,10 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     @Nonnull
     @Override
     public SqlResult execute(@Nonnull SqlStatement statement) {
+        return execute(statement, NoOpSqlSecurityContext.INSTANCE);
+    }
+
+    public SqlResult execute(@Nonnull SqlStatement statement, SqlSecurityContext securityContext) {
         Preconditions.checkNotNull(statement, "Query cannot be null");
 
         try {
@@ -198,7 +202,15 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
                 timeout = queryTimeout;
             }
 
-            return query0(statement.getSql(), statement.getParameters(), timeout, statement.getCursorBufferSize());
+            return query0(
+                statement.getSql(),
+                statement.getParameters(),
+                timeout,
+                statement.getCursorBufferSize(),
+                securityContext
+            );
+        } catch (AccessControlException e) {
+            throw e;
         } catch (Exception e) {
             throw QueryUtils.toPublicException(e, nodeServiceProvider.getLocalMemberId());
         }
@@ -209,8 +221,8 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         internalService.onPacket(packet);
     }
 
-    private SqlResult query0(String sql, List<Object> params, long timeout, int pageSize) {
-        // Validate and normalize.
+    private SqlResult query0(String sql, List<Object> params, long timeout, int pageSize, SqlSecurityContext securityContext) {
+        // Validate and normalize
         if (sql == null || sql.isEmpty()) {
             throw QueryException.error("SQL statement cannot be empty.");
         }
@@ -225,8 +237,12 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             throw QueryException.error("Page size must be positive: " + pageSize);
         }
 
-        // Execute.
+        // Prepare and execute
         SqlPlan plan = prepare(sql);
+
+        if (securityContext.isSecurityEnabled()) {
+            plan.checkPermissions(securityContext);
+        }
 
         return execute(plan, params0, timeout, pageSize);
     }

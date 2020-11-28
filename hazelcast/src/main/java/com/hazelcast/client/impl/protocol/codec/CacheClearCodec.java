@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Clears the contents of the cache, without notifying listeners or CacheWriters.
  */
-@Generated("527f6df7bcf1bd441b37d430bf255b48")
+@Generated("98eca89af7c7591f5b54cbe7bc1dde39")
 public final class CacheClearCodec {
     //hex: 0x130200
     public static final int REQUEST_MESSAGE_TYPE = 1245696;
@@ -47,12 +47,6 @@ public final class CacheClearCodec {
 
     private CacheClearCodec() {
     }
-
-    /**
-     * Name of the cache.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -66,6 +60,9 @@ public final class CacheClearCodec {
         return clientMessage;
     }
 
+    /**
+     * Name of the cache.
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

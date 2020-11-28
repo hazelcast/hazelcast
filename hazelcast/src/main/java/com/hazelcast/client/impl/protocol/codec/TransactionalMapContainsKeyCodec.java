@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains an entry for the specified key.
  */
-@Generated("426dd58b259c51df8e0e504f53865805")
+@Generated("bda36300ea1aa8286e91f65d6cb12c9e")
 public final class TransactionalMapContainsKeyCodec {
     //hex: 0x0E0100
     public static final int REQUEST_MESSAGE_TYPE = 917760;
@@ -112,8 +112,8 @@ public final class TransactionalMapContainsKeyCodec {
     }
 
     /**
-    * True if this map contains an entry for the specified key.
-    */
+     * True if this map contains an entry for the specified key.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

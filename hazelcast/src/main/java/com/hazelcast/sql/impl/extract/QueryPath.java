@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
@@ -53,6 +54,11 @@ public final class QueryPath implements IdentifiedDataSerializable {
         this.key = key;
     }
 
+    /**
+     * Return the field path or {@code null}, if this object represents the
+     * whole value (the whole key or the whole entry value).
+     */
+    @Nullable
     public String getPath() {
         return path;
     }

@@ -607,7 +607,7 @@
         <min-block-size>123</min-block-size>
         <page-size>123</page-size>
         <metadata-space-percentage>12.5</metadata-space-percentage>
-        <persistent-memory>
+        <persistent-memory enabled="true" mode="MOUNTED">
             <directories>
                 <directory numa-node="0">/mnt/pmem0</directory>
                 <directory numa-node="1">/mnt/pmem1</directory>
@@ -715,6 +715,21 @@
                         <service-name-prefix>hz/</service-name-prefix>
                         <use-canonical-hostname>true</use-canonical-hostname>
                         <spn>hz/127.0.0.1@HAZELCAST.COM</spn>
+                    </kerberos>
+                </identity>
+            </realm>
+            <realm name="simpleKerberosRealm">
+                <authentication>
+                    <kerberos>
+                        <principal>hz/127.0.0.1@HAZELCAST.COM</principal>
+                        <keytab-file>/opt/localhost.keytab</keytab-file>
+                    </kerberos>
+                </authentication>
+                <identity>
+                    <kerberos>
+                        <realm>HAZELCAST.COM</realm>
+                        <principal>hz/127.0.0.1@HAZELCAST.COM</principal>
+                        <keytab-file>/opt/localhost.keytab</keytab-file>
                     </kerberos>
                 </identity>
             </realm>
@@ -879,7 +894,11 @@
                     <action>all</action>
                 </actions>
             </reliable-topic-permission>
-            <sql-permission principal="dev"/>
+            <replicatedmap-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </replicatedmap-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>

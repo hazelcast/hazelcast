@@ -184,6 +184,48 @@ public class HazelcastTypeSystemTest {
         assertEquals(type(REAL), narrowestTypeFor(0.1, REAL));
     }
 
+    @Test
+    public void deriveSumTypeTest() {
+        assertEquals(type(VARCHAR), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(VARCHAR)));
+        assertEquals(type(BOOLEAN), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(BOOLEAN)));
+        assertEquals(type(BIGINT), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(TINYINT)));
+        assertEquals(type(BIGINT), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(SMALLINT)));
+        assertEquals(type(BIGINT), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(INTEGER)));
+        assertEquals(type(BIGINT), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(BIGINT)));
+        assertEquals(type(DECIMAL), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(DECIMAL)));
+        assertEquals(type(DOUBLE), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(REAL)));
+        assertEquals(type(DOUBLE), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(DOUBLE)));
+        assertEquals(type(TIME), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(TIME)));
+        assertEquals(type(DATE), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(DATE)));
+        assertEquals(type(TIMESTAMP), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(TIMESTAMP)));
+        assertEquals(
+                type(TIMESTAMP_WITH_LOCAL_TIME_ZONE),
+                HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(TIMESTAMP_WITH_LOCAL_TIME_ZONE))
+        );
+        assertEquals(type(ANY), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(ANY)));
+    }
+
+    @Test
+    public void deriveAvgAggTypeTest() {
+        assertEquals(type(VARCHAR), HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(VARCHAR)));
+        assertEquals(type(BOOLEAN), HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(BOOLEAN)));
+        assertEquals(type(DECIMAL), HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(TINYINT)));
+        assertEquals(type(DECIMAL), HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(SMALLINT)));
+        assertEquals(type(DECIMAL), HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(INTEGER)));
+        assertEquals(type(DECIMAL), HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(BIGINT)));
+        assertEquals(type(DECIMAL), HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(DECIMAL)));
+        assertEquals(type(DOUBLE), HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(REAL)));
+        assertEquals(type(DOUBLE), HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(DOUBLE)));
+        assertEquals(type(TIME), HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(TIME)));
+        assertEquals(type(DATE), HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(DATE)));
+        assertEquals(type(TIMESTAMP), HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(TIMESTAMP)));
+        assertEquals(
+                type(TIMESTAMP_WITH_LOCAL_TIME_ZONE),
+                HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(TIMESTAMP_WITH_LOCAL_TIME_ZONE))
+        );
+        assertEquals(type(ANY), HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(ANY)));
+    }
+
     private static void assertPrecedence(RelDataType expected, RelDataType other) {
         RelDataType actual = withHigherPrecedence(expected, other);
         assertSame(expected, actual);
@@ -194,5 +236,4 @@ public class HazelcastTypeSystemTest {
     private static RelDataType type(SqlTypeName typeName) {
         return TYPE_FACTORY.createSqlType(typeName);
     }
-
 }

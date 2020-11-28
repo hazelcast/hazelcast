@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * ILLEGAL_ARGUMENT. Further, the behavior of this operation is undefined if the specified collection is
  * modified while the operation is in progress.
  */
-@Generated("f154bc6c7c6a40d20b612536c91bdb33")
+@Generated("a670dba3fe81ee318495bcb886234357")
 public final class QueueDrainToMaxSizeCodec {
     //hex: 0x030A00
     public static final int REQUEST_MESSAGE_TYPE = 199168;
@@ -100,8 +100,8 @@ public final class QueueDrainToMaxSizeCodec {
     }
 
     /**
-    * list of all removed data in result of this method
-    */
+     * list of all removed data in result of this method
+     */
     public static java.util.List<com.hazelcast.internal.serialization.Data> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.annotation.Nullable;
+
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
 import static java.lang.Character.toLowerCase;
@@ -444,5 +446,21 @@ public final class StringUtil {
             startIndex = sb.indexOf(placeholderPrefix, endIndex);
         }
         return sb.toString();
+    }
+
+    /**
+     * Formats given XML String with the given indentation used. If the {@code input} XML string is {@code null}, or
+     * {@code indent} parameter is negative, or XML transformation fails, then the original value is returned unchanged. The
+     * {@link IllegalArgumentException} is thrown when {@code indent==0}.
+     *
+     * @param input the XML String
+     * @param indent indentation (number of spaces used for one indentation level)
+     * @return formatted XML String or the original String if the formatting fails.
+     * @throws IllegalArgumentException when indentation is equal to zero
+     * @deprecated Use directly {@link XmlUtil#format(String, int)}
+     */
+    @Deprecated
+    public static String formatXml(@Nullable String input, int indent) throws IllegalArgumentException {
+        return XmlUtil.format(input, indent);
     }
 }

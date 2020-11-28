@@ -315,8 +315,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int KEY_VALUE_CONSUMING_PROCESSOR = 150;
     public static final int COMPUTE_MAP_OPERATION_PROCESSOR = 151;
     public static final int MERGE_MAP_OPERATION_PROCESSOR = 152;
+    public static final int MAP_ENTRY_REPLACING_PROCESSOR = 153;
 
-    private static final int LEN = MERGE_MAP_OPERATION_PROCESSOR + 1;
+    private static final int LEN = MAP_ENTRY_REPLACING_PROCESSOR + 1;
 
     @Override
     public int getFactoryId() {
@@ -477,6 +478,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[KEY_VALUE_CONSUMING_PROCESSOR] = arg -> new KeyValueConsumingEntryProcessor<>();
         constructors[COMPUTE_MAP_OPERATION_PROCESSOR] = arg -> new ComputeEntryProcessor<>();
         constructors[MERGE_MAP_OPERATION_PROCESSOR] = arg -> new MergeEntryProcessor<>();
+        constructors[MAP_ENTRY_REPLACING_PROCESSOR] = arg -> new MapEntryReplacingEntryProcessor<>();
 
         return new ArrayDataSerializableFactory(constructors);
     }

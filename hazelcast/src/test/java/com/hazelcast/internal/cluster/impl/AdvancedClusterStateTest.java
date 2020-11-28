@@ -39,7 +39,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.mocknetwork.MockNodeContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -81,7 +81,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
     @Rule

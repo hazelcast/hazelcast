@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the set of keys in the multimap.The collection is NOT backed by the map, so changes to the map are NOT
  * reflected in the collection, and vice-versa.
  */
-@Generated("120b34722307c819e986623fe4ff0aed")
+@Generated("a5548ee2cc781d7ef3e0df8073ed08a5")
 public final class MultiMapKeySetCodec {
     //hex: 0x020400
     public static final int REQUEST_MESSAGE_TYPE = 132096;
@@ -48,12 +48,6 @@ public final class MultiMapKeySetCodec {
 
     private MultiMapKeySetCodec() {
     }
-
-    /**
-     * Name of the MultiMap
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -67,6 +61,9 @@ public final class MultiMapKeySetCodec {
         return clientMessage;
     }
 
+    /**
+     * Name of the MultiMap
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -85,8 +82,8 @@ public final class MultiMapKeySetCodec {
     }
 
     /**
-    * The set of keys in the multimap. The returned set might be modifiable but it has no effect on the multimap.
-    */
+     * The set of keys in the multimap. The returned set might be modifiable but it has no effect on the multimap.
+     */
     public static java.util.List<com.hazelcast.internal.serialization.Data> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

@@ -61,6 +61,10 @@ class ServiceAnswer extends AbstractAnswer {
             // QueueService
             Method delegateMethod = getDelegateMethod(methodName, String.class, Boolean.TYPE);
             return invoke(delegateMethod, arguments);
+        } else if (arguments.length == 1 && methodName.equals("getExistingContainerOrNull")) {
+            // QueueService
+            Method delegateMethod = getDelegateMethod(methodName, String.class);
+            return invoke(delegateMethod, arguments);
         } else if (arguments.length == 1 && (methodName.equals("getLongContainer")
                 || methodName.equals("getReferenceContainer")
                 || methodName.equals("getCardinalityEstimatorContainer"))) {

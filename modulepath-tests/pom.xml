@@ -27,7 +27,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>4.1-SNAPSHOT</version>
+        <version>4.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -35,6 +35,17 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>9</maven.compiler.source>
         <maven.compiler.target>9</maven.compiler.target>
+
+        <javaModuleArgs>
+            --add-exports java.base/jdk.internal.ref=com.hazelcast.core
+            --add-opens java.base/java.nio=com.hazelcast.core
+            --add-opens java.base/sun.nio.ch=com.hazelcast.core
+            --add-opens java.base/java.lang=com.hazelcast.core
+            --add-opens jdk.management/com.sun.management.internal=com.hazelcast.core
+            --add-opens java.management/sun.management=com.hazelcast.core
+            --add-exports java.xml/jdk.xml.internal=com.hazelcast.core
+            --illegal-access=warn
+        </javaModuleArgs>
 
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
@@ -48,40 +59,6 @@
                 <version>3.8.0</version>
                 <configuration combine.self="override">
                     <release>9</release>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.2</version>
-                <configuration combine.self="override">
-                    <!--
-                    Allow access to Operating system metrics:
-                        open jdk.management/com.sun.management.internal
-
-                    Avoid warnings caused by reflection in
-                    SelectorOptimizer:
-                        open java.base/sun.nio.ch
-                    FilteringClassLoader:
-                        open java.base/java.lang
-                    TimedMemberStateFactoryHelper:
-                        open java.management/sun.management
-
-                    Powermock issue workaround (https://github.com/powermock/powermock/issues/905):
-                        export java.xml/jdk.xml.internal
-                     -->
-                    <argLine>
-                        ${vmHeapSettings}
-                        --add-opens jdk.management/com.sun.management.internal=com.hazelcast.core
-                        --add-opens java.base/sun.nio.ch=com.hazelcast.core
-                        --add-opens java.base/java.lang=com.hazelcast.core
-                        --add-opens java.management/sun.management=com.hazelcast.core
-                        --add-exports java.xml/jdk.xml.internal=com.hazelcast.core
-                        --illegal-access=warn
-                        -Dhazelcast.phone.home.enabled=false
-                        -Dlog4j.skipJansi=true
-                        ${extraVmArgs}
-                    </argLine>
                 </configuration>
             </plugin>
 
@@ -119,4 +96,25 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>parallelTest</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven.surefire.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>default-test</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

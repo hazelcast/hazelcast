@@ -64,6 +64,14 @@ public class SqlIndexTestSupport extends SqlTestSupport {
         throw new UnsupportedOperationException("Unsupported type: " + type);
     }
 
+    protected static List<ExpressionType<?>> baseTypes() {
+        return Arrays.asList(
+            BOOLEAN,
+            INTEGER,
+            STRING
+        );
+    }
+
     protected static List<ExpressionType<?>> allTypes() {
         return Arrays.asList(
             BOOLEAN,

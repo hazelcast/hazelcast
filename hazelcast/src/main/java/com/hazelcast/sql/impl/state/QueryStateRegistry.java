@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.ClockProvider;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
@@ -35,6 +36,8 @@ public class QueryStateRegistry {
     private final ConcurrentHashMap<QueryId, QueryState> states = new ConcurrentHashMap<>();
 
     private final ClockProvider clockProvider;
+
+    private volatile boolean shutdown;
 
     public QueryStateRegistry(ClockProvider clockProvider) {
         this.clockProvider = clockProvider;
@@ -67,6 +70,13 @@ public class QueryStateRegistry {
         );
 
         states.put(queryId, state);
+
+        if (shutdown) {
+            // No members or fragments observed the state so far. So we just remove it from map and throw the proper exception.
+            states.remove(queryId);
+
+            throw shutdownException();
+        }
 
         return state;
     }
@@ -115,6 +125,12 @@ public class QueryStateRegistry {
                 if (oldState != null) {
                     state = oldState;
                 }
+
+                if (shutdown) {
+                    cancelOnShutdown(state);
+
+                    return null;
+                }
             }
 
             return state;
@@ -130,15 +146,14 @@ public class QueryStateRegistry {
         states.remove(queryId);
     }
 
-    /**
-     * Clears the registry. The method is called in case of recovery from the split brain.
-     * <p>
-     *  No additional precautions (such as forceful completion of already running queries) are needed, because a new ID
-     *  is assigned to the local member, and a member with the previous ID is declared dead. As a result,
-     *  {@link QueryStateRegistryUpdater} will detect that old queries have missing members, and will cancel them.
-     */
-    public void reset() {
-        states.clear();
+    public void shutdown() {
+        // Set shutdown flag.
+        shutdown = true;
+
+        // Cancel active queries.
+        for (QueryState state : states.values()) {
+            cancelOnShutdown(state);
+        }
     }
 
     public QueryState getState(QueryId queryId) {
@@ -147,5 +162,13 @@ public class QueryStateRegistry {
 
     public Collection<QueryState> getStates() {
         return states.values();
+    }
+
+    private static void cancelOnShutdown(QueryState state) {
+        state.cancel(shutdownException(), true);
+    }
+
+    private static QueryException shutdownException() {
+        return QueryException.error("SQL query has been cancelled due to member shutdown");
     }
 }

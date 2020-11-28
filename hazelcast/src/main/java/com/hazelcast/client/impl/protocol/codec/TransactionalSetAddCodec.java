@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Add new item to transactional set.
  */
-@Generated("d2ca7399bfa90ef798c2ad482422ecb5")
+@Generated("1fa67f865ed631436e8cc6449533493c")
 public final class TransactionalSetAddCodec {
     //hex: 0x100100
     public static final int REQUEST_MESSAGE_TYPE = 1048832;
@@ -112,8 +112,8 @@ public final class TransactionalSetAddCodec {
     }
 
     /**
-    * True if item is added successfully
-    */
+     * True if item is added successfully
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

@@ -56,7 +56,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getPartitionService;
@@ -389,15 +388,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         Config config = mapServiceContext.getNodeEngine().getConfig();
         MapContainer mapContainer = new MapContainer("anyName", config, mapServiceContext);
         Data key = mapServiceContext.toData("key");
-        final AtomicBoolean invoked = new AtomicBoolean();
-        DefaultRecordStore recordStore = new DefaultRecordStore(mapContainer, 0, mock(MapKeyLoader.class), mock(ILogger.class)) {
-            @Override
-            protected long expirationTimeToTtl(long definedExpirationTime) {
-                invoked.set(true);
-                return 0;
-            }
-        };
+        DefaultRecordStore recordStore = new DefaultRecordStore(mapContainer, 0, mock(MapKeyLoader.class), mock(ILogger.class)) ;
         assertNull(recordStore.loadRecordOrNull(key, false, null));
-        assertTrue(invoked.get());
     }
 }

@@ -167,6 +167,7 @@ public class PartitionWideEntryOperation extends MapOperation
                 outComes.add(operator.getOldValue());
                 outComes.add(operator.getByPreferringDataNewValue());
                 outComes.add(eventType);
+                outComes.add(operator.getEntry().getNewTtl());
             }
         }, false);
 
@@ -181,9 +182,10 @@ public class PartitionWideEntryOperation extends MapOperation
             Object oldValue = outComes.poll();
             Object newValue = outComes.poll();
             EntryEventType eventType = (EntryEventType) outComes.poll();
+            long newTtl = (long) outComes.poll();
 
-            operator.init(dataKey, oldValue, newValue, null, eventType, null)
-                    .doPostOperateOps();
+            operator.init(dataKey, oldValue, newValue, null, eventType,
+                    null, newTtl).doPostOperateOps();
         }
     }
 

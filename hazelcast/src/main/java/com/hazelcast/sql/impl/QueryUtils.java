@@ -25,6 +25,7 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.version.MemberVersion;
 
 import javax.annotation.Nullable;
@@ -161,7 +162,7 @@ public final class QueryUtils {
                 break;
 
             default:
-                assert columnType == QueryDataType.OBJECT;
+                assert columnType.getTypeFamily() == QueryDataTypeFamily.OBJECT;
 
                 type = SqlColumnType.OBJECT;
         }
@@ -198,7 +199,7 @@ public final class QueryUtils {
                     throw QueryException.error(
                         SqlErrorCode.PARTITION_DISTRIBUTION,
                         "Partition is not assigned to any member: " + part.getPartitionId()
-                    ).withInvalidate();
+                    ).markInvalidate();
                 } else {
                     continue;
                 }
@@ -235,11 +236,7 @@ public final class QueryUtils {
         // Then add paths from table resolvers.
         if (tableResolvers != null) {
             for (TableResolver tableResolver : tableResolvers) {
-                List<List<String>> tableResolverSearchPaths = tableResolver.getDefaultSearchPaths();
-
-                if (tableResolverSearchPaths != null) {
-                    res.addAll(tableResolverSearchPaths);
-                }
+                res.addAll(tableResolver.getDefaultSearchPaths());
             }
         }
 

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the number of available permits.
  */
-@Generated("76eec9ecf8de60561621b1f1cc89308b")
+@Generated("e1da265da7684751a6423872eac8fbe8")
 public final class SemaphoreAvailablePermitsCodec {
     //hex: 0x0C0600
     public static final int REQUEST_MESSAGE_TYPE = 787968;
@@ -97,8 +97,8 @@ public final class SemaphoreAvailablePermitsCodec {
     }
 
     /**
-    * number of available permits
-    */
+     * number of available permits
+     */
     public static int decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

@@ -30,7 +30,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.security.Permission;
 
 public class LongRegisterDecrementAndGetMessageTask
-        extends AbstractPartitionMessageTask<LongRegisterDecrementAndGetCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public LongRegisterDecrementAndGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -38,11 +38,11 @@ public class LongRegisterDecrementAndGetMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new AddAndGetOperation(parameters.name, -1);
+        return new AddAndGetOperation(parameters, -1);
     }
 
     @Override
-    protected LongRegisterDecrementAndGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return LongRegisterDecrementAndGetCodec.decodeRequest(clientMessage);
     }
 
@@ -58,12 +58,12 @@ public class LongRegisterDecrementAndGetMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new AtomicLongPermission(parameters.name, ActionConstants.ACTION_MODIFY);
+        return new AtomicLongPermission(parameters, ActionConstants.ACTION_MODIFY);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

@@ -35,6 +35,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.PersistentMemoryConfig;
 import com.hazelcast.config.PersistentMemoryDirectoryConfig;
+import com.hazelcast.config.PersistentMemoryMode;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
@@ -539,7 +540,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 if ("size".equals(nodeName)) {
                     handleMemorySizeConfig(child, nativeMemoryConfigBuilder);
                 } else if ("persistent-memory".equals(nodeName)) {
-                    handlePersistentMemoryConfig(child, directories);
+                    handlePersistentMemoryConfig(child, pmemConfigBuilder, directories);
                 }
             }
 
@@ -558,7 +559,24 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             configBuilder.addPropertyValue("nativeMemoryConfig", beanDefinition);
         }
 
-        private void handlePersistentMemoryConfig(Node pmemNode, ManagedList<BeanDefinition> directoriesList) {
+        private void handlePersistentMemoryConfig(Node pmemNode, BeanDefinitionBuilder pmemConfigBuilder,
+                                                  ManagedList<BeanDefinition> directoriesList) {
+            Node enabledNode = pmemNode.getAttributes().getNamedItem("enabled");
+            if (enabledNode != null) {
+                boolean enabled = getBooleanValue(getTextContent(enabledNode));
+                pmemConfigBuilder.addPropertyValue("enabled", enabled);
+            }
+
+            Node mode = pmemNode.getAttributes().getNamedItem("mode");
+            if (mode != null) {
+                String modeValue = getTextContent(mode);
+                try {
+                    pmemConfigBuilder.addPropertyValue("mode", PersistentMemoryMode.valueOf(modeValue));
+                } catch (Exception ex) {
+                    throw new InvalidConfigurationException("Invalid 'mode' for 'persistent-memory': " + modeValue);
+                }
+            }
+
             for (Node dirsNode : childElements(pmemNode)) {
                 String dirsNodeName = cleanNodeName(dirsNode);
                 if ("directories".equals(dirsNodeName)) {

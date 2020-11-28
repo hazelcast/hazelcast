@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a scheduled executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("5911ad8e41569ca43d6bd4f355f09ecd")
+@Generated("b3d0f4de697c454a207b3d5d5032a2f0")
 public final class DynamicConfigAddScheduledExecutorConfigCodec {
     //hex: 0x1B0A00
     public static final int REQUEST_MESSAGE_TYPE = 1772032;
@@ -104,7 +104,7 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
         /**
          * True if the statisticsEnabled is received from the client, false otherwise.
          * If this is false, statisticsEnabled has the default value for its type.
-        */
+         */
         public boolean isStatisticsEnabledExists;
     }
 

@@ -104,39 +104,6 @@ public class QueryStateRegistryTest extends SqlTestSupport {
         assertFalse(state.isInitiator());
     }
 
-    @Test
-    public void testClear() {
-        QueryStateRegistry registry = new QueryStateRegistry(TestClockProvider.createDefault());
-
-        QueryStateCompletionCallback completionCallback = new TestQueryStateCompletionCallback();
-
-        QueryId queryId = QueryId.create(UUID.randomUUID());
-
-        // Test clear on completion.
-        QueryState state = registry.onDistributedQueryStarted(UUID.randomUUID(), queryId, completionCallback);
-
-        assertEquals(1, registry.getStates().size());
-        assertSame(state, registry.getStates().iterator().next());
-        assertSame(state, registry.getState(state.getQueryId()));
-
-        registry.onQueryCompleted(queryId);
-
-        assertNull(registry.getState(queryId));
-        assertTrue(registry.getStates().isEmpty());
-
-        // Test clear on reset.
-        state = registry.onDistributedQueryStarted(UUID.randomUUID(), queryId, completionCallback);
-
-        assertEquals(1, registry.getStates().size());
-        assertSame(state, registry.getStates().iterator().next());
-        assertSame(state, registry.getState(state.getQueryId()));
-
-        registry.reset();
-
-        assertNull(registry.getState(queryId));
-        assertTrue(registry.getStates().isEmpty());
-    }
-
     private static class TestQueryStateCompletionCallback implements QueryStateCompletionCallback {
         @Override
         public void onCompleted(QueryId queryId) {

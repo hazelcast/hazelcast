@@ -16,11 +16,14 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.util.StringUtil;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 import java.util.Properties;
 
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import com.hazelcast.internal.util.StringUtil;
 
 /**
  * Configuration for Login Module
@@ -100,6 +103,23 @@ public class LoginModuleConfig {
 
     public LoginModuleConfig setProperty(String key, String value) {
         properties.setProperty(key, value);
+        return this;
+    }
+
+    /**
+     * Alternative to the {@link #setProperty(String, String)} method. This method allows to use {@code null} as {@code value}
+     * parameter. In such case is the property removed.
+     *
+     * @param key property name (must not be {@code null})
+     * @param value new value or {@code null}
+     * @return this instance
+     */
+    public LoginModuleConfig setOrClear(@Nonnull String key, @Nullable String value) {
+        if (value != null) {
+            properties.setProperty(key, value);
+        } else {
+            properties.remove(key);
+        }
         return this;
     }
 

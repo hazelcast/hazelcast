@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches specified number of entries from the specified partition starting from specified table index.
  */
-@Generated("7ec30a8d8f1b2c260f0ce0e1370ca679")
+@Generated("31a8f0820ff9f3c042b0be16cdc8b59e")
 public final class MapFetchEntriesCodec {
     //hex: 0x013800
     public static final int REQUEST_MESSAGE_TYPE = 79872;
@@ -94,10 +94,12 @@ public final class MapFetchEntriesCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
         /**
          * The index-size pairs that define the state of iteration
          */
         public java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers;
+
         /**
          * List of entries.
          */

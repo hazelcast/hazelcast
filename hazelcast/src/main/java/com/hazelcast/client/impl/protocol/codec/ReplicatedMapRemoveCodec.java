@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * null does not necessarily indicate that the map contained no mapping for the key; it's also possible that the map
  * explicitly mapped the key to null. The map will not contain a mapping for the specified key once the call returns.
  */
-@Generated("4345525d5b0a2ba1a87128af86e3dcbc")
+@Generated("49ebc2963d577fac1d81b615de21670f")
 public final class ReplicatedMapRemoveCodec {
     //hex: 0x0D0700
     public static final int REQUEST_MESSAGE_TYPE = 853760;
@@ -99,8 +99,8 @@ public final class ReplicatedMapRemoveCodec {
     }
 
     /**
-    * the previous value associated with <tt>key</tt>, or <tt>null</tt> if there was no mapping for <tt>key</tt>.
-    */
+     * the previous value associated with <tt>key</tt>, or <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

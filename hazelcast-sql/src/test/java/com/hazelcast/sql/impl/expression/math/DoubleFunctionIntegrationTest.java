@@ -84,6 +84,7 @@ public class DoubleFunctionIntegrationTest extends SqlExpressionIntegrationTestS
         checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply '" + mode.mode + "' to arguments of type '" + mode.mode + "(<TIMESTAMP>)'");
         checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply '" + mode.mode + "' to arguments of type '" + mode.mode + "(<TIMESTAMP_WITH_TIME_ZONE>)'");
         checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "Cannot apply '" + mode.mode + "' to arguments of type '" + mode.mode + "(<OBJECT>)'");
+        checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply '" + mode.mode + "' to arguments of type '" + mode.mode + "(<BOOLEAN>)'");
     }
 
     private void checkColumn(Object value, double expectedArgument) {
@@ -116,6 +117,7 @@ public class DoubleFunctionIntegrationTest extends SqlExpressionIntegrationTestS
 
         checkValue("?", null, new Object[] { null });
 
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to DOUBLE", true);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DOUBLE", "bad");
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DOUBLE", 'b');
 
@@ -141,6 +143,7 @@ public class DoubleFunctionIntegrationTest extends SqlExpressionIntegrationTestS
         checkLiteral("null", null);
 
         checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
+        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply '" + mode.mode + "' to arguments of type '" + mode.mode + "(<BOOLEAN>)'");
     }
 
     private void checkLiteral(Object literal, Double expectedArg) {

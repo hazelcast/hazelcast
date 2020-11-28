@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This includes retrieving the event journal sequences of the
  * oldest and newest event in the journal.
  */
-@Generated("7871a2d12b28714430e4589346a658bd")
+@Generated("54b05820e0f1ac3151793887b0f5b913")
 public final class MapEventJournalSubscribeCodec {
     //hex: 0x014100
     public static final int REQUEST_MESSAGE_TYPE = 82176;
@@ -52,12 +52,6 @@ public final class MapEventJournalSubscribeCodec {
     private MapEventJournalSubscribeCodec() {
     }
 
-    /**
-     * name of the map
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
-
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
@@ -70,6 +64,9 @@ public final class MapEventJournalSubscribeCodec {
         return clientMessage;
     }
 
+    /**
+     * name of the map
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -79,10 +76,12 @@ public final class MapEventJournalSubscribeCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
         /**
          * Sequence id of the oldest event in the event journal.
          */
         public long oldestSequence;
+
         /**
          * Sequence id of the newest event in the event journal.
          */

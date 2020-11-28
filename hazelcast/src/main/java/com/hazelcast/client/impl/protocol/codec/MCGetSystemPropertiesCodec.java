@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the system properties of the member it's called on.
  */
-@Generated("66700404d830fba5021ba8e352ac9134")
+@Generated("ac7d4a9d1f04bbf22f20e4b07ee81567")
 public final class MCGetSystemPropertiesCodec {
     //hex: 0x200A00
     public static final int REQUEST_MESSAGE_TYPE = 2099712;
@@ -47,7 +47,6 @@ public final class MCGetSystemPropertiesCodec {
 
     private MCGetSystemPropertiesCodec() {
     }
-
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -72,8 +71,8 @@ public final class MCGetSystemPropertiesCodec {
     }
 
     /**
-    * System properties of the member.
-    */
+     * System properties of the member.
+     */
     public static java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

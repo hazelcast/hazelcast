@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Shuts down the cluster.
  */
-@Generated("3f1cabd7ca9997b825ee49261dff49f1")
+@Generated("b1c3db76b5786426ec0abd5c6de64dc7")
 public final class MCShutdownClusterCodec {
     //hex: 0x200F00
     public static final int REQUEST_MESSAGE_TYPE = 2100992;
@@ -47,7 +47,6 @@ public final class MCShutdownClusterCodec {
 
     private MCShutdownClusterCodec() {
     }
-
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this queue contains the specified element. More formally, returns true if and only if this queue
  * contains at least one element e such that value.equals(e)
  */
-@Generated("387b0bf6802b706e3c7085072f55565e")
+@Generated("eb14ffed87653ebced8b34a2ae1d4349")
 public final class QueueContainsCodec {
     //hex: 0x030B00
     public static final int REQUEST_MESSAGE_TYPE = 199424;
@@ -98,8 +98,8 @@ public final class QueueContainsCodec {
     }
 
     /**
-    * <tt>true</tt> if this collection contains the specified element
-    */
+     * <tt>true</tt> if this collection contains the specified element
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

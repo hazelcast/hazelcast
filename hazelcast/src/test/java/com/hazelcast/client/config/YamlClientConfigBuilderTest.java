@@ -25,6 +25,7 @@ import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.PersistentMemoryConfig;
 import com.hazelcast.config.PersistentMemoryDirectoryConfig;
 import com.hazelcast.config.YamlConfigBuilderTest;
 import com.hazelcast.config.security.KerberosIdentityConfig;
@@ -52,6 +53,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Properties;
 
+import static com.hazelcast.config.PersistentMemoryMode.MOUNTED;
+import static com.hazelcast.config.PersistentMemoryMode.SYSTEM_MEMORY;
 import static com.hazelcast.internal.nio.IOUtil.delete;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -414,6 +417,8 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "  security:\n"
                 + "    kerberos:\n"
                 + "      realm: HAZELCAST.COM\n"
+                + "      principal: jduke\n"
+                + "      keytab-file: /opt/jduke.keytab\n"
                 + "      security-realm: krb5Initiator\n"
                 + "      service-name-prefix: hz/\n"
                 + "      use-canonical-hostname: true\n"
@@ -423,6 +428,8 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         KerberosIdentityConfig identityConfig = config.getSecurityConfig().getKerberosIdentityConfig();
         assertNotNull(identityConfig);
         assertEquals("HAZELCAST.COM", identityConfig.getRealm());
+        assertEquals("jduke", identityConfig.getPrincipal());
+        assertEquals("/opt/jduke.keytab", identityConfig.getKeytabFile());
         assertEquals("krb5Initiator", identityConfig.getSecurityRealm());
         assertEquals("hz/", identityConfig.getServiceNamePrefix());
         assertTrue(identityConfig.getUseCanonicalHostname());
@@ -548,8 +555,10 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "    persistent-memory-directory: /mnt/pmem0";
 
         ClientConfig config = buildConfig(yaml);
-        List<PersistentMemoryDirectoryConfig> directoryConfigs = config.getNativeMemoryConfig().getPersistentMemoryConfig()
-                                                                       .getDirectoryConfigs();
+        PersistentMemoryConfig pmemConfig = config.getNativeMemoryConfig().getPersistentMemoryConfig();
+        assertTrue(pmemConfig.isEnabled());
+
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = pmemConfig.getDirectoryConfigs();
         assertEquals(1, directoryConfigs.size());
         PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
         assertEquals("/mnt/pmem0", dir0Config.getDirectory());
@@ -611,15 +620,18 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "  native-memory:\n"
                 + "    persistent-memory-directory: /mnt/optane\n"
                 + "    persistent-memory:\n"
+                + "      enabled: false\n"
                 + "      directories:\n"
                 + "        - directory: /mnt/pmem0\n"
                 + "        - directory: /mnt/pmem1\n";
 
         ClientConfig config = buildConfig(yaml);
 
-        List<PersistentMemoryDirectoryConfig> directoryConfigs = config.getNativeMemoryConfig()
-                                                                       .getPersistentMemoryConfig()
-                                                                       .getDirectoryConfigs();
+        PersistentMemoryConfig pmemConfig = config.getNativeMemoryConfig().getPersistentMemoryConfig();
+        assertFalse(pmemConfig.isEnabled());
+        assertEquals(MOUNTED, pmemConfig.getMode());
+
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = pmemConfig.getDirectoryConfigs();
         assertEquals(3, directoryConfigs.size());
         PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
         PersistentMemoryDirectoryConfig dir1Config = directoryConfigs.get(1);
@@ -630,6 +642,46 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         assertFalse(dir1Config.isNumaNodeSet());
         assertEquals("/mnt/pmem1", dir2Config.getDirectory());
         assertFalse(dir2Config.isNumaNodeSet());
+    }
+
+    @Override
+    @Test
+    public void testPersistentMemoryConfiguration_SystemMemoryMode() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  native-memory:\n"
+                + "    persistent-memory:\n"
+                + "      mode: SYSTEM_MEMORY\n";
+
+        ClientConfig config = buildConfig(yaml);
+        PersistentMemoryConfig pmemConfig = config.getNativeMemoryConfig().getPersistentMemoryConfig();
+        assertEquals(SYSTEM_MEMORY, pmemConfig.getMode());
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testPersistentMemoryConfiguration_NotExistingModeThrows() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  native-memory:\n"
+                + "    persistent-memory:\n"
+                + "      mode: NOT_EXISTING_MODE\n";
+
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testPersistentMemoryDirectoryConfiguration_SystemMemoryModeThrows() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  native-memory:\n"
+                + "    persistent-memory:\n"
+                + "      mode: SYSTEM_MEMORY\n"
+                + "      directories:\n"
+                + "        - directory: /mnt/pmem0\n";
+
+        buildConfig(yaml);
     }
 
     public static ClientConfig buildConfig(String yaml) {

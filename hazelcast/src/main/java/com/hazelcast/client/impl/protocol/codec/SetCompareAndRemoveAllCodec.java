@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the specified collection is also a set, this operation effectively modifies this set so that its value is the
  * asymmetric set difference of the two sets.
  */
-@Generated("24b2a670c4abc32e3bba57211c70ffb8")
+@Generated("392687c1ae6396a402064ac2c1cde2f9")
 public final class SetCompareAndRemoveAllCodec {
     //hex: 0x060700
     public static final int REQUEST_MESSAGE_TYPE = 395008;
@@ -99,8 +99,8 @@ public final class SetCompareAndRemoveAllCodec {
     }
 
     /**
-    * true if at least one item in values existed and removed, false otherwise.
-    */
+     * true if at least one item in values existed and removed, false otherwise.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

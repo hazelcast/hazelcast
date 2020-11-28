@@ -17,6 +17,7 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -25,20 +26,23 @@ import javax.annotation.Nonnull;
 
 /**
  * An abstract factory that creates either JetInstances or
- * HazelcastInstances, based on the {@link #isJet} flag. Used to run SQL
- * tests on a jet cluster from Jet.
+ * HazelcastInstances, based on the 'cluster-name' system property.
+ * Used to run SQL tests on a jet cluster from Jet.
  * <p>
  * The JetInstances are created using reflection. {@code
  * JetInstance.getHazelcastInstance()} is returned.
  */
 public abstract class SqlTestInstanceFactory {
 
-    public static boolean isJet;
+    private static final String CLUSTER_NAME = "cluster-name";
+    private static final String JET_CLUSTER_NAME = "jet";
 
     private SqlTestInstanceFactory() { }
 
     public static SqlTestInstanceFactory create() {
-        return isJet ? new JetInstanceFactory() : new ImdgInstanceFactory();
+        return JET_CLUSTER_NAME.equals(System.getProperty(CLUSTER_NAME))
+                ? new JetInstanceFactory()
+                : new ImdgInstanceFactory();
     }
 
     public abstract HazelcastInstance newHazelcastInstance();
@@ -105,7 +109,7 @@ public abstract class SqlTestInstanceFactory {
         public HazelcastInstance newHazelcastInstance(@Nonnull Config config) {
             try {
                 Object jetInstance = jetFactory.getClass().getMethod("newMember", config.getClass())
-                                               .invoke(jetFactory, config);
+                                               .invoke(jetFactory, config.setClusterName(JET_CLUSTER_NAME));
                 return (HazelcastInstance) jetInstance.getClass().getMethod("getHazelcastInstance").invoke(jetInstance);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -113,12 +117,14 @@ public abstract class SqlTestInstanceFactory {
         }
 
         @Override
-        public HazelcastInstance newHazelcastClient(ClientConfig clientConfig) {
+        public HazelcastInstance newHazelcastClient(ClientConfig clientConfig0) {
             try {
-                if (clientConfig != null) {
-                    clientConfig.setClusterName("jet");
-                }
-                Object jetInstance = jetFactory.getClass().getMethod("newClient", clientConfig.getClass())
+                ClientConfig clientConfig = clientConfig0 == null
+                        ? new XmlClientConfigBuilder().build()
+                        : clientConfig0;
+                clientConfig.setClusterName(JET_CLUSTER_NAME);
+
+                Object jetInstance = jetFactory.getClass().getMethod("newClient", ClientConfig.class)
                                                .invoke(jetFactory, clientConfig);
                 return (HazelcastInstance) jetInstance.getClass().getMethod("getHazelcastInstance").invoke(jetInstance);
             } catch (Exception e) {

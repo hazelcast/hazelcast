@@ -408,7 +408,7 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
 
     @Override
     public CompletableFuture<V> exceptionally(Function<Throwable, ? extends V> fn) {
-        return  new DelegatingCompletableFuture<>(serializationService,
+        return new DelegatingCompletableFuture<>(serializationService,
                 future.exceptionally(fn));
     }
 

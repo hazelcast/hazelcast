@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Replaces the the entry for a key only if existing values equal to the testValue
  */
-@Generated("f44483e64a3ed4b76237e610f8728f7a")
+@Generated("1848a501dc912ab86f3e025eea013829")
 public final class MapReplaceIfSameCodec {
     //hex: 0x010500
     public static final int REQUEST_MESSAGE_TYPE = 66816;
@@ -118,8 +118,8 @@ public final class MapReplaceIfSameCodec {
     }
 
     /**
-    * true if value is replaced with new one, false otherwise
-    */
+     * true if value is replaced with new one, false otherwise
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

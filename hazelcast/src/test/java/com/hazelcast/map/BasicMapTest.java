@@ -47,6 +47,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import testsubjects.StaticSerializableBiConsumer;
+import testsubjects.StaticSerializableBiFunction;
 
 import java.io.File;
 import java.io.IOException;
@@ -1997,6 +1998,26 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     private void assertEntriesEqual(IMap<String, Integer> sourceMap, IMap<String, Integer> targetMap) {
         sourceMap.entrySet().forEach(e -> assertEquals(e.getValue(), targetMap.get(e.getKey())));
+    }
+
+    @Test
+    public void testReplaceAllWithLambdaFunction() {
+        final IMap<String, Integer> testMap = getInstance().getMap("test_map");
+        testMap.put("k1", 1);
+        testMap.put("k2", 2);
+        testMap.replaceAll((k, v) -> v * 10);
+        assertEquals((int) testMap.get("k1"), 10);
+        assertEquals((int) testMap.get("k2"), 20);
+    }
+
+    @Test
+    public void testReplaceAllWithStaticSerializableFunction() {
+        final IMap<String, String> testMap = getInstance().getMap("test_map");
+        testMap.put("k1", "v1");
+        testMap.put("k2", "v2");
+        testMap.replaceAll(new StaticSerializableBiFunction("v_new"));
+        assertEquals(testMap.get("k1"), "v_new");
+        assertEquals(testMap.get("k2"), "v_new");
     }
 
 }

@@ -91,6 +91,7 @@ import org.w3c.dom.NodeList;
 import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
@@ -147,8 +148,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
             if (PermissionConfig.PermissionType.CONFIG == type
                     || PermissionConfig.PermissionType.ALL == type
-                    || PermissionConfig.PermissionType.TRANSACTION == type
-                    || PermissionConfig.PermissionType.SQL == type) {
+                    || PermissionConfig.PermissionType.TRANSACTION == type) {
                 handleSecurityPermission(child, type);
             } else {
                 handleSecurityPermissionGroup(child, type);
@@ -165,7 +165,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     void handleSecurityPermissionActions(Node node, PermissionConfig permConfig) {
         for (Node child : childElements(node)) {
-            permConfig.addAction(getTextContent(child).trim());
+            permConfig.addAction(getTextContent(child));
         }
     }
 
@@ -229,15 +229,14 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
-            String value = getTextContent(att).trim();
 
             if (matches("port", att.getNodeName())) {
-                int portCount = parseInt(value);
+                int portCount = parseInt(getTextContent(att));
                 networkConfig.setPort(portCount);
             } else if (matches("auto-increment", att.getNodeName())) {
-                networkConfig.setPortAutoIncrement(getBooleanValue(value));
+                networkConfig.setPortAutoIncrement(getBooleanValue(getTextContent(att)));
             } else if (matches("port-count", att.getNodeName())) {
-                int portCount = parseInt(value);
+                int portCount = parseInt(getTextContent(att));
                 networkConfig.setPortCount(portCount);
             }
         }
@@ -451,7 +450,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         }
 
         if (classNameNode == null && sqlNode == null) {
-            throw new InvalidConfigurationException("Either class-name and sql should be defined for the predicate of map "
+            throw new InvalidConfigurationException("Either class-name and sql must be defined for the predicate of map "
                     + childNode.getParentNode().getParentNode().getNodeName());
         }
 
@@ -520,18 +519,18 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleItemListeners(Node n, Function<ItemListenerConfig, Void> configAddFunction) {
+    protected void handleItemListeners(Node n, Consumer<ItemListenerConfig> configAddFunction) {
         for (Node listenerNode : childElements(n)) {
             boolean incValue = getBooleanValue(getTextContent(
               getNamedItemNode(listenerNode, "include-value")));
             String listenerClass = getTextContent(
               getNamedItemNode(listenerNode, "class-name"));
-            configAddFunction.apply(new ItemListenerConfig(listenerClass, incValue));
+            configAddFunction.accept(new ItemListenerConfig(listenerClass, incValue));
         }
     }
 
     @Override
-    protected void handleEntryListeners(Node n, Function<EntryListenerConfig, Void> configAddFunction) {
+    protected void handleEntryListeners(Node n, Consumer<EntryListenerConfig> configAddFunction) {
         for (Node listenerNode : childElements(n)) {
             boolean incValue = getBooleanValue(getTextContent(
               getNamedItemNode(listenerNode, "include-value")));
@@ -539,7 +538,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
               getNamedItemNode(listenerNode, "local")));
             String listenerClass = getTextContent(
               getNamedItemNode(listenerNode, "class-name"));
-            configAddFunction.apply(new EntryListenerConfig(listenerClass, local, incValue));
+            configAddFunction.accept(new EntryListenerConfig(listenerClass, local, incValue));
         }
     }
 
@@ -601,19 +600,16 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
             if (matches("portable-version", name)) {
-                String value = getTextContent(child);
-                serializationConfig.setPortableVersion(getIntegerValue(name, value));
+                serializationConfig.setPortableVersion(getIntegerValue(name, getTextContent(child)));
             } else if (matches("check-class-def-errors", name)) {
-                String value = getTextContent(child);
-                serializationConfig.setCheckClassDefErrors(getBooleanValue(value));
+                serializationConfig.setCheckClassDefErrors(getBooleanValue(getTextContent(child)));
             } else if (matches("use-native-byte-order", name)) {
                 serializationConfig.setUseNativeByteOrder(getBooleanValue(getTextContent(child)));
             } else if (matches("byte-order", name)) {
-                String value = getTextContent(child);
                 ByteOrder byteOrder = null;
-                if (ByteOrder.BIG_ENDIAN.toString().equals(value)) {
+                if (ByteOrder.BIG_ENDIAN.toString().equals(getTextContent(child))) {
                     byteOrder = ByteOrder.BIG_ENDIAN;
-                } else if (ByteOrder.LITTLE_ENDIAN.toString().equals(value)) {
+                } else if (ByteOrder.LITTLE_ENDIAN.toString().equals(getTextContent(child))) {
                     byteOrder = ByteOrder.LITTLE_ENDIAN;
                 }
                 serializationConfig.setByteOrder(byteOrder != null ? byteOrder : ByteOrder.BIG_ENDIAN);
@@ -724,7 +720,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         for (Node n : childElements(node)) {
             String attributeValue = getTextContent(getNamedItemNode(n, "value"));
             String attributeName = n.getNodeName();
-            handleMemberAttributesNode(n, attributeName, attributeValue);
+            handleMemberAttributesNode(attributeName, attributeValue);
         }
     }
 
@@ -732,16 +728,14 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     protected void handleOutboundPorts(Node child) {
         NetworkConfig networkConfig = config.getNetworkConfig();
         for (Node n : childElements(child)) {
-            String value = getTextContent(n);
-            networkConfig.addOutboundPortDefinition(value);
+            networkConfig.addOutboundPortDefinition(getTextContent(n));
         }
     }
 
     @Override
     protected void handleOutboundPorts(Node child, EndpointConfig endpointConfig) {
         for (Node n : childElements(child)) {
-            String value = getTextContent(n);
-            endpointConfig.addOutboundPortDefinition(value);
+            endpointConfig.addOutboundPortDefinition(getTextContent(n));
         }
     }
 
@@ -750,8 +744,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         for (Node interfacesNode : childElements(node)) {
             if (matches("interfaces", lowerCaseInternal(cleanNodeName(interfacesNode)))) {
                 for (Node interfaceNode : childElements(interfacesNode)) {
-                    String value = getTextContent(interfaceNode).trim();
-                    interfaces.addInterface(value);
+                    interfaces.addInterface(getTextContent(interfaceNode));
                 }
             }
         }
@@ -770,8 +763,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         JoinConfig join = joinConfig(advancedNetworkConfig);
         TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
         for (Node n : childElements(node)) {
-            String value = getTextContent(n).trim();
-            tcpIpConfig.addMember(value);
+            tcpIpConfig.addMember(getTextContent(n));
         }
     }
 
@@ -832,11 +824,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             semaphoreConfig.setName(child.getNodeName());
             for (Node subChild : childElements(child)) {
                 String nodeName = cleanNodeName(subChild);
-                String value = getTextContent(subChild).trim();
                 if (matches("jdk-compatible", nodeName)) {
-                    semaphoreConfig.setJDKCompatible(Boolean.parseBoolean(value));
+                    semaphoreConfig.setJDKCompatible(Boolean.parseBoolean(getTextContent(subChild)));
                 } else if (matches("initial-permits", nodeName)) {
-                    semaphoreConfig.setInitialPermits(Integer.parseInt(value));
+                    semaphoreConfig.setInitialPermits(Integer.parseInt(getTextContent(subChild)));
                 }
             }
             cpSubsystemConfig.addSemaphoreConfig(semaphoreConfig);
@@ -850,9 +841,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             lockConfig.setName(child.getNodeName());
             for (Node subChild : childElements(child)) {
                 String nodeName = cleanNodeName(subChild);
-                String value = getTextContent(subChild).trim();
                 if (matches("lock-acquire-limit", nodeName)) {
-                    lockConfig.setLockAcquireLimit(Integer.parseInt(value));
+                    lockConfig.setLockAcquireLimit(Integer.parseInt(getTextContent(subChild)));
                 }
             }
             cpSubsystemConfig.addLockConfig(lockConfig);
@@ -883,21 +873,14 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handlePersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig, Node n) {
-        for (Node dirsNode : childElements(n)) {
-            String nodeName = cleanNodeName(dirsNode);
-            if (matches("directories", nodeName)) {
-                for (Node dirNode : childElements(dirsNode)) {
-                    String directory = getTextContent(getNamedItemNode(dirNode, "directory"));
-                    String numaNodeIdStr = getTextContent(getNamedItemNode(dirNode, "numa-node"));
-                    if (!StringUtil.isNullOrEmptyAfterTrim(numaNodeIdStr)) {
-                        int numaNodeId = getIntegerValue("numa-node", numaNodeIdStr);
-                        persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory, numaNodeId));
-                    } else {
-                        persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));
-                    }
-                }
-            }
+    protected void handlePersistentMemoryDirectory(PersistentMemoryConfig persistentMemoryConfig, Node dirNode) {
+        String directory = getTextContent(getNamedItemNode(dirNode, "directory"));
+        String numaNodeIdStr = getTextContent(getNamedItemNode(dirNode, "numa-node"));
+        if (!StringUtil.isNullOrEmptyAfterTrim(numaNodeIdStr)) {
+            int numaNodeId = getIntegerValue("numa-node", numaNodeIdStr);
+            persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory, numaNodeId));
+        } else {
+            persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));
         }
     }
 }

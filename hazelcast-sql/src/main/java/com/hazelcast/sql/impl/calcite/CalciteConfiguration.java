@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.parse;
+package com.hazelcast.sql.impl.calcite;
 
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.avatica.util.Quoting;
@@ -26,22 +26,25 @@ import org.apache.calcite.sql.parser.SqlParser;
 import java.util.Properties;
 
 /**
- * Casing configuration.
+ * Configuration passed to the Calcite.
  * <p>
  * At the moment we do only case-sensitive identifier comparison. It violates SQL standard and negatively affects usability.
  * Case insensitive processing is going to be implemented in future.
+ * <p>
+ * We also disable materializations because otherwise it leads to NPE for certain queries
+ * (see https://github.com/hazelcast/hazelcast/issues/17554).
  */
-public final class CasingConfiguration {
+public final class CalciteConfiguration {
 
-    public static final CasingConfiguration DEFAULT =
-        new CasingConfiguration(true, Casing.UNCHANGED, Casing.UNCHANGED, Quoting.DOUBLE_QUOTE);
+    public static final CalciteConfiguration DEFAULT =
+        new CalciteConfiguration(true, Casing.UNCHANGED, Casing.UNCHANGED, Quoting.DOUBLE_QUOTE);
 
     private final boolean caseSensitive;
     private final Casing unquotedCasing;
     private final Casing quotedCasing;
     private final Quoting quoting;
 
-    private CasingConfiguration(boolean caseSensitive, Casing unquotedCasing, Casing quotedCasing, Quoting quoting) {
+    private CalciteConfiguration(boolean caseSensitive, Casing unquotedCasing, Casing quotedCasing, Quoting quoting) {
         this.caseSensitive = caseSensitive;
         this.unquotedCasing = unquotedCasing;
         this.quotedCasing = quotedCasing;
@@ -62,6 +65,9 @@ public final class CasingConfiguration {
         connectionProperties.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), unquotedCasing.toString());
         connectionProperties.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), quotedCasing.toString());
         connectionProperties.put(CalciteConnectionProperty.QUOTING.camelName(), quoting.toString());
+
+        // Disable materializations to avoid NPE described in https://github.com/hazelcast/hazelcast/issues/17554
+        connectionProperties.put(CalciteConnectionProperty.MATERIALIZATIONS_ENABLED.camelName(), Boolean.toString(false));
 
         return new CalciteConnectionConfigImpl(connectionProperties);
     }
