@@ -37,6 +37,7 @@ import java.io.IOException;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.config.InMemoryFormat.values;
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -590,7 +591,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         out.writeLong(ttlEnabled ? expirationPolicy.getTtlMs() : 0);
         out.writeInt(inMemoryFormat.ordinal());
 
-        long now = System.currentTimeMillis();
+        long now = currentTimeMillis();
 
         // we only write the actual content of the ringbuffer. So we don't write empty slots.
         for (long seq = ringbuffer.headSequence(); seq <= ringbuffer.tailSequence(); seq++) {

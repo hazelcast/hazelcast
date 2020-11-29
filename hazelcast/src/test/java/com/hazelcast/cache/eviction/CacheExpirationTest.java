@@ -23,6 +23,8 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.ManageableClock;
+import com.hazelcast.test.ManageableClock.ManagedClock;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -257,15 +259,18 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     @Test
     public void test_whenEntryIsAccessedBackupIsNotCleaned() {
+        ManageableClock clock = new ManageableClock().useOnCurrentThreadInheritably();
+
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(THREE_SECONDS, Duration.ETERNAL, THREE_SECONDS));
         Cache<Integer, Integer> cache = createCache(cacheConfig);
 
+        ManagedClock managedClock = clock.manage();
         for (int i = 0; i < KEY_RANGE; i++) {
             cache.put(i, i);
             cache.get(i);
         }
 
-        sleepAtLeastSeconds(3);
+        managedClock.advanceMillis(3500);
 
         for (int i = 1; i < CLUSTER_SIZE; i++) {
             BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);
@@ -277,16 +282,18 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     @Test
     public void test_whenEntryIsUpdatedBackupIsNotCleaned() {
+        ManageableClock clock = new ManageableClock().useOnCurrentThreadInheritably();
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(new HazelcastExpiryPolicy(THREE_SECONDS, THREE_SECONDS, Duration.ETERNAL));
         Cache<Integer, Integer> cache = createCache(cacheConfig);
 
+        ManagedClock managedClock = clock.manage();
         for (int i = 0; i < KEY_RANGE; i++) {
             cache.put(i, i);
             cache.put(i, i);
         }
 
         cache.put(1, 1);
-        sleepAtLeastSeconds(3);
+        managedClock.advanceMillis(3500);
 
         for (int i = 1; i < CLUSTER_SIZE; i++) {
             BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);
@@ -298,6 +305,7 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     @Test
     public void test_whenEntryIsRemovedBackupIsCleaned() {
+        ManageableClock clock = new ManageableClock().useOnCurrentThreadInheritably();
         SimpleExpiryListener listener = new SimpleExpiryListener();
         int ttlSeconds = 3;
         Duration duration = new Duration(TimeUnit.SECONDS, ttlSeconds);
@@ -305,13 +313,14 @@ public class CacheExpirationTest extends CacheTestSupport {
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(expiryPolicy, listener);
         Cache<Integer, Integer> cache = createCache(cacheConfig);
 
+        ManagedClock managedClock = clock.manage();
         for (int i = 0; i < KEY_RANGE; i++) {
             cache.put(i, i);
             assertTrue("Expected to remove entry " + i + " but entry was not present. Expired entry count: "
                     + listener.getExpirationCount().get(), cache.remove(i));
         }
 
-        sleepAtLeastSeconds(ttlSeconds);
+        managedClock.advanceMillis(ttlSeconds * 1000);
         assertEquals(0, listener.getExpirationCount().get());
         for (int i = 1; i < CLUSTER_SIZE; i++) {
             BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);

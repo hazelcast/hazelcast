@@ -47,6 +47,9 @@ public class ClockTest extends AbstractClockTest {
 
     @Test
     public void testCreateClock_withDefaults() {
+        // we need to clear these to make sure the ManageableClock infra doesn't interfere
+        System.clearProperty(ClockProperties.HAZELCAST_CLOCK_IMPL);
+        System.clearProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET);
         Clock.ClockImpl clock = Clock.createClock();
 
         assertInstanceOf(Clock.SystemClock.class, clock);
@@ -63,6 +66,9 @@ public class ClockTest extends AbstractClockTest {
 
     @Test
     public void testCreateClock_withClockOffset() {
+        // we need to clear these to make sure the ManageableClock infra doesn't interfere
+        System.clearProperty(ClockProperties.HAZELCAST_CLOCK_IMPL);
+        System.clearProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET);
         setClockOffset(30);
 
         Clock.ClockImpl clock = Clock.createClock();
