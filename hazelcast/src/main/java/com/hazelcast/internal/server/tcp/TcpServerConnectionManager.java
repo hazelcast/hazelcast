@@ -360,7 +360,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         CountDownLatch previous = plane.connectionsInProgress.putIfAbsent(address, latch);
         if (previous != null) {
             latch = previous;
-}
+        }
         latch.await(millis, TimeUnit.MILLISECONDS);
     }
 
