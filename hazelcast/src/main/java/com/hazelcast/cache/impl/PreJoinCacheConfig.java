@@ -81,14 +81,14 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
 
     @Override
     protected void readTenant(ObjectDataInput in) throws IOException {
-        if (in.getVersion().isLessOrEqual(Versions.V4_1)) {
+        if (in.getVersion().isLessOrEqual(Versions.V4_2)) {
             in.readObject();
         }
     }
 
     @Override
     protected void writeTenant(ObjectDataOutput out) throws IOException {
-        if (out.getVersion().isLessOrEqual(Versions.V4_1)) {
+        if (out.getVersion().isLessOrEqual(Versions.V4_2)) {
             out.writeObject(TenantControl.NOOP_TENANT_CONTROL);
         }
     }

@@ -89,7 +89,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
 
         configs.addAll(segment.getCacheConfigs());
         nearCacheStateHolder.prepare(segment, namespaces);
-        classesAlwaysAvailable = getNodeEngine()
+        classesAlwaysAvailable = segment.getCacheService().getNodeEngine()
                 .getTenantControlService()
                 .getTenantControlFactory()
                 .isClassesAlwaysAvailable();
@@ -151,7 +151,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         out.writeInt(confSize);
         for (CacheConfig config : configs) {
             // RU_COMPAT_4_0
-            if (out.getVersion().isGreaterOrEqual(Versions.V4_1) && !classesAlwaysAvailable) {
+            if (out.getVersion().isGreaterOrEqual(Versions.V4_2) && !classesAlwaysAvailable) {
                 out.writeObject(PreJoinCacheConfig.of(config));
             } else {
                 out.writeObject(config);
@@ -189,7 +189,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         for (int i = 0; i < confSize; i++) {
             final CacheConfig config = in.readObject();
             // RU_COMPAT_4_0
-            if (in.getVersion().isGreaterOrEqual(Versions.V4_1) && !classesAlwaysAvailable) {
+            if (in.getVersion().isGreaterOrEqual(Versions.V4_2) && !classesAlwaysAvailable) {
                 configs.add(PreJoinCacheConfig.asCacheConfig(config));
             } else {
                 configs.add(config);
