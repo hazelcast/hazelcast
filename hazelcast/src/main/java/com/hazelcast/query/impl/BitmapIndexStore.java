@@ -319,7 +319,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public Iterator<QueryableEntry> getSqlRecordIterator() {
+    public Iterator<QueryableEntry> getSqlRecordIterator(boolean descending) {
         throw makeUnsupportedOperationException();
     }
 
@@ -329,7 +329,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value) {
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending) {
         throw makeUnsupportedOperationException();
     }
 
@@ -338,7 +338,8 @@ public final class BitmapIndexStore extends BaseIndexStore {
             Comparable from,
             boolean fromInclusive,
             Comparable to,
-            boolean toInclusive
+            boolean toInclusive,
+            boolean descending
     ) {
         throw makeUnsupportedOperationException();
     }

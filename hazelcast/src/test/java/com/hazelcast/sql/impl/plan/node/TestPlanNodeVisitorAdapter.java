@@ -17,7 +17,9 @@
 package com.hazelcast.sql.impl.plan.node;
 
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
+import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
+import com.hazelcast.sql.impl.plan.node.io.UnicastSendPlanNode;
 
 public abstract class TestPlanNodeVisitorAdapter implements PlanNodeVisitor {
     @Override
@@ -64,4 +66,16 @@ public abstract class TestPlanNodeVisitorAdapter implements PlanNodeVisitor {
     public void onOtherNode(PlanNode node) {
         // No-op.
     }
+
+    @Override
+    public void onUnicastSendNode(UnicastSendPlanNode node) {
+        // No-op.
+    }
+
+    @Override
+    public void onReceiveSortMergeNode(ReceiveSortMergePlanNode node) {
+        // No-op.
+    }
+
 }
+

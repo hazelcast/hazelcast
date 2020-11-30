@@ -54,7 +54,7 @@ import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public final class SerializationUtil {
 
-    static final PartitioningStrategy EMPTY_PARTITIONING_STRATEGY = new EmptyPartitioningStrategy();
+    public static final PartitioningStrategy EMPTY_PARTITIONING_STRATEGY = new EmptyPartitioningStrategy();
 
     private SerializationUtil() {
     }

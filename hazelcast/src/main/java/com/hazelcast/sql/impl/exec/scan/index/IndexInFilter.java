@@ -70,7 +70,7 @@ public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
     }
 
     @Override
-    public Iterator<QueryableEntry> getEntries(InternalIndex index, ExpressionEvalContext evalContext) {
+    public Iterator<QueryableEntry> getEntries(InternalIndex index, boolean descending, ExpressionEvalContext evalContext) {
         Map<Comparable, IndexFilter> canonicalFilters = new HashMap<>();
 
         for (IndexFilter filter : filters) {
@@ -168,7 +168,7 @@ public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
             while (filterIterator.hasNext()) {
                 IndexFilter filter = filterIterator.next();
 
-                Iterator<QueryableEntry> iterator = filter.getEntries(index, evalContext);
+                Iterator<QueryableEntry> iterator = filter.getEntries(index, false, evalContext);
 
                 if (iterator.hasNext()) {
                     return iterator;

@@ -24,11 +24,20 @@ import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelCollationTraitDef;
+import org.apache.calcite.rel.RelCollations;
+import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexVisitorImpl;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.PARTITIONED;
 
@@ -41,8 +50,8 @@ public final class ProjectPhysicalRule extends RelOptRule {
 
     private ProjectPhysicalRule() {
         super(
-            OptUtils.parentChild(ProjectLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
-            ProjectPhysicalRule.class.getSimpleName()
+                OptUtils.parentChild(ProjectLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
+                ProjectPhysicalRule.class.getSimpleName()
         );
     }
 
@@ -53,15 +62,15 @@ public final class ProjectPhysicalRule extends RelOptRule {
 
         RelNode convertedInput = OptUtils.toPhysicalInput(input);
 
-        Collection<InputAndTraitSet> transforms = getTransforms(convertedInput);
+        Collection<InputAndTraitSet> transforms = getTransforms(logicalProject.getProjects(), convertedInput);
 
         for (InputAndTraitSet transform : transforms) {
             ProjectPhysicalRel newProject = new ProjectPhysicalRel(
-                logicalProject.getCluster(),
-                transform.getTraitSet(),
-                transform.getInput(),
-                logicalProject.getProjects(),
-                logicalProject.getRowType()
+                    logicalProject.getCluster(),
+                    transform.getTraitSet(),
+                    transform.getInput(),
+                    logicalProject.getProjects(),
+                    logicalProject.getRowType()
             );
 
             call.transformTo(newProject);
@@ -74,18 +83,69 @@ public final class ProjectPhysicalRule extends RelOptRule {
      * @param convertedInput Input.
      * @return Conversions (converted input + trait set).
      */
-    private static Collection<InputAndTraitSet> getTransforms(RelNode convertedInput) {
+    private static Collection<InputAndTraitSet> getTransforms(List<RexNode> projects, RelNode convertedInput) {
         List<InputAndTraitSet> res = new ArrayList<>(1);
 
         Collection<RelNode> physicalInputs = OptUtils.getPhysicalRelsFromSubset(convertedInput);
 
+        // Initialize a field index to the project index map
+        Map<Integer, Integer> inputFieldIndex2ProjectIndex = new HashMap<>();
+        for (int i = 0; i < projects.size(); ++i) {
+            RexNode projectExp = projects.get(i);
+            ProjectFieldVisitor projectFieldVisitor = new ProjectFieldVisitor(inputFieldIndex2ProjectIndex, i);
+            projectExp.accept(projectFieldVisitor);
+        }
+
         for (RelNode physicalInput : physicalInputs) {
-            RelTraitSet finalTraitSet = createPhysicalTraitSet(physicalInput);
+            RelTraitSet traitSet = createPhysicalTraitSet(physicalInput);
+            RelCollation transformedCollation =
+                    convertCollation(inputFieldIndex2ProjectIndex, traitSet.getTrait(RelCollationTraitDef.INSTANCE));
+            RelTraitSet finalTraitSet = OptUtils.traitPlus(traitSet, transformedCollation);
 
             res.add(new InputAndTraitSet(physicalInput, finalTraitSet));
         }
 
         return res;
+    }
+
+    private static RelCollation convertCollation(Map<Integer, Integer> inputFieldIndex2ProjectIndex, RelCollation collation) {
+        List<RelFieldCollation> transformedFields = new ArrayList<>(collation.getFieldCollations().size());
+
+        for (RelFieldCollation fieldCollation : collation.getFieldCollations()) {
+            int fieldIndex = fieldCollation.getFieldIndex();
+            Integer projectFiledIndex = inputFieldIndex2ProjectIndex.get(fieldIndex);
+            if (projectFiledIndex == null) {
+                // Project removes the field and we loose a sorting property
+                // for the subsequent fields in collation
+                break;
+            }
+            RelFieldCollation transformedFieldCollation =
+                    new RelFieldCollation(projectFiledIndex, fieldCollation.getDirection());
+            transformedFields.add(transformedFieldCollation);
+        }
+
+        return RelCollations.of(transformedFields);
+    }
+
+    // A helper class to initialize input to project field index mapping.
+    private static final class ProjectFieldVisitor extends RexVisitorImpl<Void> {
+
+        private final Map<Integer, Integer> inputFieldToProjectField;
+        private final int projectIndex;
+
+        private ProjectFieldVisitor(Map<Integer, Integer> inputFieldToProjectField, int projectIndex) {
+            super(false);
+            this.inputFieldToProjectField = inputFieldToProjectField;
+            this.projectIndex = projectIndex;
+        }
+
+        @Override
+        public Void visitInputRef(RexInputRef projectInput) {
+
+            int inputFiledIndex = projectInput.getIndex();
+            inputFieldToProjectField.put(inputFiledIndex, projectIndex);
+            return null;
+        }
     }
 
     /**
@@ -130,10 +190,14 @@ public final class ProjectPhysicalRule extends RelOptRule {
      * A pair of input and trait set which should be used for transformation.
      */
     private static final class InputAndTraitSet {
-        /** Input of the projection. */
+        /**
+         * Input of the projection.
+         */
         private final RelNode input;
 
-        /** Trait set of the projection. */
+        /**
+         * Trait set of the projection.
+         */
         private final RelTraitSet traitSet;
 
         private InputAndTraitSet(RelNode input, RelTraitSet traitSet) {

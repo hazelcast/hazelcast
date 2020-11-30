@@ -31,13 +31,13 @@ public final class PhysicalRules {
 
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
-            RootPhysicalRule.INSTANCE,
-            FilterPhysicalRule.INSTANCE,
-            ProjectPhysicalRule.INSTANCE,
-            MapScanPhysicalRule.INSTANCE,
-            ValuesPhysicalRule.INSTANCE,
-
-            new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
+                RootPhysicalRule.INSTANCE,
+                FilterPhysicalRule.INSTANCE,
+                ProjectPhysicalRule.INSTANCE,
+                MapScanPhysicalRule.INSTANCE,
+                ValuesPhysicalRule.INSTANCE,
+                SortPhysicalRule.INSTANCE,
+                new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );
     }
 }

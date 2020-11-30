@@ -46,4 +46,14 @@ public interface Exec {
      * @return Current batch available in response to the previous {@link #advance()} call. Should never be null.
      */
     RowBatch currentBatch();
+
+    /**
+     * @return {@code true} if the input could be reset.
+     */
+    boolean canReset();
+
+    /**
+     * Perform the reset.
+     */
+    void reset();
 }

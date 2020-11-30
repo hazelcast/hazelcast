@@ -44,6 +44,10 @@ import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelCollationTraitDef;
+import org.apache.calcite.rel.RelCollations;
+import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
@@ -62,7 +66,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
+import static com.hazelcast.config.IndexType.SORTED;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
 import static java.util.Collections.singletonList;
@@ -82,22 +88,18 @@ public final class IndexResolver {
      * Analyzes the filter of the input scan operator, and produces zero, one or more {@link MapIndexScanPhysicalRel}
      * operators.
      *
-     * @param scan scan operator to be analyzed
+     * @param scan         scan operator to be analyzed
      * @param distribution distribution that will be passed to created index scan rels
-     * @param indexes indexes available on the map being scanned
+     * @param indexes      indexes available on the map being scanned
      * @return zero, one or more index scan rels
      */
     public static List<RelNode> createIndexScans(
-        MapScanLogicalRel scan,
-        DistributionTrait distribution,
-        List<MapTableIndex> indexes
+            MapScanLogicalRel scan,
+            DistributionTrait distribution,
+            List<MapTableIndex> indexes
     ) {
         // If there is no filter, no index can help speed up the query, return.
         RexNode filter = scan.getTableUnwrapped().getFilter();
-
-        if (filter == null) {
-            return Collections.emptyList();
-        }
 
         // Filter out unsupported indexes. Only SORTED and HASH indexes are supported.
         List<MapTableIndex> supportedIndexes = new ArrayList<>(indexes.size());
@@ -116,6 +118,28 @@ public final class IndexResolver {
             return Collections.emptyList();
         }
 
+        List<RelNode> rels = new ArrayList<>(supportedIndexes.size());
+
+        if (filter == null) {
+            // There is no filter, still generate index scans for
+            // possible ORDER BY clause on the upper level
+            for (MapTableIndex index : supportedIndexes) {
+
+                if (index.getType() == SORTED) {
+                    // Only for SORTED index create full index scans that might be potentially
+                    // utilized by sorting operator.
+                    RelNode rel = createFullIndexScan(scan, distribution, index, false);
+                    rels.add(rel);
+
+                    rel = createFullIndexScan(scan, distribution, index, true);
+                    rels.add(rel);
+                }
+            }
+
+            // Exclude prefix-based covered index scans
+            return excludeCoveredCollations(rels);
+        }
+
         // Convert expression into CNF. Examples:
         // - {a=1 AND b=2} is converted into {a=1}, {b=2}
         // - {a=1 OR b=2} is unchanged
@@ -126,29 +150,131 @@ public final class IndexResolver {
         // a -> {>1}, {<3}
         // b -> {=5}
         Map<Integer, List<IndexComponentCandidate>> candidates = prepareSingleColumnCandidates(
-            conjunctions,
-            OptUtils.getCluster(scan).getParameterMetadata(),
-            allIndexedFieldOrdinals
+                conjunctions,
+                OptUtils.getCluster(scan).getParameterMetadata(),
+                allIndexedFieldOrdinals
         );
 
         if (candidates.isEmpty()) {
             return Collections.emptyList();
         }
 
-        List<RelNode> rels = new ArrayList<>(supportedIndexes.size());
 
         for (MapTableIndex index : supportedIndexes) {
             // Create index scan based on candidates, if possible. Candidates could be merged into more complex
             // filters whenever possible.
-            RelNode rel = createIndexScan(scan, distribution, index, conjunctions, candidates);
 
-            if (rel != null) {
-                rels.add(rel);
+            RelNode relAscending = createIndexScan(scan, distribution, index, conjunctions, candidates, false);
+            RelNode relDescending = createIndexScan(scan, distribution, index, conjunctions, candidates, true);
+
+            if (relAscending != null) {
+                rels.add(relAscending);
+            }
+
+            if (relDescending != null) {
+                rels.add(relDescending);
             }
         }
 
         return rels;
     }
+
+
+    /**
+     * Filters out index scans which collation is covered (prefix based) by another index in the rels.
+     *
+     * @param rels the list of index scans
+     * @return the list of filtered out index scans
+     */
+    @SuppressWarnings("checkstyle:NPathComplexity")
+    private static List<RelNode> excludeCoveredCollations(List<RelNode> rels) {
+        // Order the index scans based on their collation
+        TreeMap<RelCollation, RelNode> relsTreeMap = new TreeMap<>((coll1, coll2) -> {
+            // Compare the collations field by field
+            int coll1Size = coll1.getFieldCollations().size();
+            int coll2Size = coll2.getFieldCollations().size();
+
+            for (int i = 0; i < coll1Size; ++i) {
+                if (i >= coll2Size) {
+                    // The coll1 has more fields and the prefixes are equal
+                    return 1;
+                }
+
+                RelFieldCollation fieldColl1 = coll1.getFieldCollations().get(i);
+                RelFieldCollation fieldColl2 = coll2.getFieldCollations().get(i);
+                // First, compare directions
+                int cmp = fieldColl1.getDirection().compareTo(fieldColl2.getDirection());
+                if (cmp == 0) {
+                    // Directions are the same
+                    if (fieldColl1.getFieldIndex() == fieldColl2.getFieldIndex()) {
+                        // And fieldIndex is the same, try the next field
+                        continue;
+                    } else {
+                        return fieldColl1.getFieldIndex() < fieldColl2.getFieldIndex() ? -1 : 1;
+                    }
+                }
+                return cmp;
+            }
+
+            // All the fields from coll1 are equal to the fields from coll2, compare the size
+            return coll1Size == coll2Size ? 0
+                    : (coll1Size < coll2Size ? -1 : 1);
+        });
+
+        // Put the rels into the ordered TreeMap
+        for (RelNode rel : rels) {
+            relsTreeMap.put(rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE), rel);
+        }
+
+        List<RelNode> resultRels = new ArrayList<>();
+        Map.Entry<RelCollation, RelNode> prevEntry = null;
+        // Go through the ordered collations and exclude covered ones
+        for (Map.Entry<RelCollation, RelNode> entry : relsTreeMap.descendingMap().entrySet()) {
+            RelCollation collation = entry.getKey();
+            RelNode relNode = entry.getValue();
+
+            if (prevEntry == null) {
+                resultRels.add(relNode);
+                prevEntry = entry;
+            } else {
+                RelCollation prevCollation = prevEntry.getKey();
+                if (!coveredCollation(prevCollation, collation)) {
+                    prevEntry = entry;
+                    resultRels.add(relNode);
+                }
+            }
+        }
+        return resultRels;
+    }
+
+    /**
+     * Tests whether collation1 covers (prefix based) collation2
+     *
+     * @param collation1 the collation
+     * @param collation2 the collation
+     * @return {@code true} if collation1 covers collation2, otherwise {@code false}
+     */
+    private static boolean coveredCollation(RelCollation collation1, RelCollation collation2) {
+        if (collation1.getFieldCollations().size() < collation2.getFieldCollations().size()) {
+            return false;
+        }
+        for (int i = 0; i < collation1.getFieldCollations().size(); ++i) {
+            RelFieldCollation field1 = collation1.getFieldCollations().get(i);
+            if (i >= collation2.getFieldCollations().size()) {
+                // No need to check further, the collation2 is covered
+                return true;
+            } else {
+                RelFieldCollation field2 = collation2.getFieldCollations().get(i);
+                if (!field1.equals(field2)) {
+                    // collation1 doesn't cover the tested one
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
 
     /**
      * Decompose the original scan filter into CNF components.
@@ -165,14 +291,14 @@ public final class IndexResolver {
      * Creates a map from the scan column ordinal to expressions that could be potentially used by indexes created over
      * this column.
      *
-     * @param expressions                   CNF nodes
+     * @param expressions             CNF nodes
      * @param allIndexedFieldOrdinals ordinals of all columns that have some indexes. Helps to filter out candidates that
      *                                definitely cannot be used earlier.
      */
     private static Map<Integer, List<IndexComponentCandidate>> prepareSingleColumnCandidates(
-        List<RexNode> expressions,
-        QueryParameterMetadata parameterMetadata,
-        Set<Integer> allIndexedFieldOrdinals
+            List<RexNode> expressions,
+            QueryParameterMetadata parameterMetadata,
+            Set<Integer> allIndexedFieldOrdinals
     ) {
         Map<Integer, List<IndexComponentCandidate>> res = new HashMap<>();
 
@@ -210,8 +336,8 @@ public final class IndexResolver {
      */
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     private static IndexComponentCandidate prepareSingleColumnCandidate(
-        RexNode exp,
-        QueryParameterMetadata parameterMetadata
+            RexNode exp,
+            QueryParameterMetadata parameterMetadata
     ) {
         SqlKind kind = exp.getKind();
 
@@ -226,35 +352,35 @@ public final class IndexResolver {
                 // {f_boolean IS TRUE} -> EQUALS(TRUE)
                 // {f_boolean IS NOT TRUE} -> IN(EQUALS(FALSE), EQUALS(NULL))
                 return prepareSingleColumnCandidateBooleanIsTrueFalse(
-                    exp,
-                    removeCastIfPossible(((RexCall) exp).getOperands().get(0)),
-                    kind
+                        exp,
+                        removeCastIfPossible(((RexCall) exp).getOperands().get(0)),
+                        kind
                 );
 
             case INPUT_REF:
                 // Special case for boolean columns: SELECT * FROM t WHERE f_boolean
                 // Equivalent to SELECT * FROM t WHERE f_boolean IS TRUE
                 return prepareSingleColumnCandidateBooleanIsTrueFalse(
-                    exp,
-                    exp,
-                    SqlKind.IS_TRUE
+                        exp,
+                        exp,
+                        SqlKind.IS_TRUE
                 );
 
             case NOT:
                 // Special case for boolean columns: SELECT * FROM t WHERE NOT f_boolean
                 // Equivalent to SELECT * FROM t WHERE f_boolean IS FALSE
                 return prepareSingleColumnCandidateBooleanIsTrueFalse(
-                    exp,
-                    removeCastIfPossible(((RexCall) exp).getOperands().get(0)),
-                    SqlKind.IS_FALSE
+                        exp,
+                        removeCastIfPossible(((RexCall) exp).getOperands().get(0)),
+                        SqlKind.IS_FALSE
                 );
 
             case IS_NULL:
                 // Handle SELECT * FROM WHERE column IS NULL.
                 // Internally it is converted into EQUALS(NULL) filter
                 return prepareSingleColumnCandidateIsNull(
-                    exp,
-                    removeCastIfPossible(((RexCall) exp).getOperands().get(0))
+                        exp,
+                        removeCastIfPossible(((RexCall) exp).getOperands().get(0))
                 );
 
             case GREATER_THAN:
@@ -267,11 +393,11 @@ public final class IndexResolver {
                 BiTuple<RexNode, RexNode> operands = extractComparisonOperands(exp);
 
                 return prepareSingleColumnCandidateComparison(
-                    exp,
-                    kind,
-                    operands.element1(),
-                    operands.element2(),
-                    parameterMetadata
+                        exp,
+                        kind,
+                        operands.element1(),
+                        operands.element2(),
+                        parameterMetadata
                 );
 
             case OR:
@@ -281,9 +407,9 @@ public final class IndexResolver {
                 // {a=1 OR a>2} -> null
                 // {a=1 OR b=2} -> null
                 return prepareSingleColumnCandidateOr(
-                    exp,
-                    ((RexCall) exp).getOperands(),
-                    parameterMetadata
+                        exp,
+                        ((RexCall) exp).getOperands(),
+                        parameterMetadata
                 );
 
             default:
@@ -301,15 +427,15 @@ public final class IndexResolver {
      * - IS NOT TRUE -> IN(EQUALS(FALSE), EQUALS(NULL))
      * - IS NOT FALSE -> IN(EQUALS(TRUE), EQUALS(NULL))
      *
-     * @param exp original expression, e.g. {col IS TRUE}
-     * @param operand  operand, e.g. {col}; CAST must be unwrapped before the method is invoked
-     * @param kind expression type
+     * @param exp     original expression, e.g. {col IS TRUE}
+     * @param operand operand, e.g. {col}; CAST must be unwrapped before the method is invoked
+     * @param kind    expression type
      * @return candidate or {@code null}
      */
     private static IndexComponentCandidate prepareSingleColumnCandidateBooleanIsTrueFalse(
-        RexNode exp,
-        RexNode operand,
-        SqlKind kind
+            RexNode exp,
+            RexNode operand,
+            SqlKind kind
     ) {
         if (operand.getKind() != SqlKind.INPUT_REF) {
             // The operand is not a column, e.g. {'true' IS TRUE}, index cannot be used
@@ -328,26 +454,26 @@ public final class IndexResolver {
         switch (kind) {
             case IS_TRUE:
                 filter = new IndexEqualsFilter(new IndexFilterValue(
-                    singletonList(ConstantExpression.create(true, QueryDataType.BOOLEAN)), singletonList(false)
+                        singletonList(ConstantExpression.create(true, QueryDataType.BOOLEAN)), singletonList(false)
                 ));
 
                 break;
 
             case IS_FALSE:
                 filter = new IndexEqualsFilter(new IndexFilterValue(
-                    singletonList(ConstantExpression.create(false, QueryDataType.BOOLEAN)), singletonList(false)
+                        singletonList(ConstantExpression.create(false, QueryDataType.BOOLEAN)), singletonList(false)
                 ));
 
                 break;
 
             case IS_NOT_TRUE:
                 filter = new IndexInFilter(
-                    new IndexEqualsFilter(new IndexFilterValue(
-                        singletonList(ConstantExpression.create(false, QueryDataType.BOOLEAN)), singletonList(false)
-                    )),
-                    new IndexEqualsFilter(new IndexFilterValue(
-                        singletonList(ConstantExpression.create(null, QueryDataType.BOOLEAN)), singletonList(true)
-                    ))
+                        new IndexEqualsFilter(new IndexFilterValue(
+                                singletonList(ConstantExpression.create(false, QueryDataType.BOOLEAN)), singletonList(false)
+                        )),
+                        new IndexEqualsFilter(new IndexFilterValue(
+                                singletonList(ConstantExpression.create(null, QueryDataType.BOOLEAN)), singletonList(true)
+                        ))
                 );
 
                 break;
@@ -356,12 +482,12 @@ public final class IndexResolver {
                 assert kind == SqlKind.IS_NOT_FALSE;
 
                 filter = new IndexInFilter(
-                    new IndexEqualsFilter(new IndexFilterValue(
-                        singletonList(ConstantExpression.create(true, QueryDataType.BOOLEAN)), singletonList(false)
-                    )),
-                    new IndexEqualsFilter(new IndexFilterValue(
-                        singletonList(ConstantExpression.create(null, QueryDataType.BOOLEAN)), singletonList(true)
-                    ))
+                        new IndexEqualsFilter(new IndexFilterValue(
+                                singletonList(ConstantExpression.create(true, QueryDataType.BOOLEAN)), singletonList(false)
+                        )),
+                        new IndexEqualsFilter(new IndexFilterValue(
+                                singletonList(ConstantExpression.create(null, QueryDataType.BOOLEAN)), singletonList(true)
+                        ))
                 );
         }
 
@@ -373,7 +499,7 @@ public final class IndexResolver {
      * <p>
      * Returns the filter EQUALS(null) with "allowNulls-true".
      *
-     * @param exp original expression, e.g. {col IS NULL}
+     * @param exp     original expression, e.g. {col IS NULL}
      * @param operand operand, e.g. {col}; CAST must be unwrapped before the method is invoked
      * @return candidate or {@code null}
      */
@@ -389,35 +515,35 @@ public final class IndexResolver {
 
         // Create a value with "allowNulls=true"
         IndexFilterValue filterValue = new IndexFilterValue(
-            singletonList(ConstantExpression.create(null, type)),
-            singletonList(true)
+                singletonList(ConstantExpression.create(null, type)),
+                singletonList(true)
         );
 
         IndexFilter filter = new IndexEqualsFilter(filterValue);
 
         return new IndexComponentCandidate(
-            exp,
-            columnIndex,
-            filter
+                exp,
+                columnIndex,
+                filter
         );
     }
 
     /**
      * Try creating a candidate filter for comparison operator.
      *
-     * @param exp the original expression
-     * @param kind expression kine (=, >, <, >=, <=)
-     * @param operand1 the first operand (CAST must be unwrapped before the method is invoked)
-     * @param operand2 the second operand (CAST must be unwrapped before the method is invoked)
+     * @param exp               the original expression
+     * @param kind              expression kine (=, >, <, >=, <=)
+     * @param operand1          the first operand (CAST must be unwrapped before the method is invoked)
+     * @param operand2          the second operand (CAST must be unwrapped before the method is invoked)
      * @param parameterMetadata parameter metadata for expressions like {a>?}
      * @return candidate or {@code null}
      */
     private static IndexComponentCandidate prepareSingleColumnCandidateComparison(
-        RexNode exp,
-        SqlKind kind,
-        RexNode operand1,
-        RexNode operand2,
-        QueryParameterMetadata parameterMetadata
+            RexNode exp,
+            SqlKind kind,
+            RexNode operand1,
+            RexNode operand2,
+            QueryParameterMetadata parameterMetadata
     ) {
         // Normalize operand positions, so that the column is always goes first.
         // The condition (kind) is changed accordingly (e.g. ">" to "<").
@@ -456,8 +582,8 @@ public final class IndexResolver {
         // Create the value that will be passed to filters. Not that "allowNulls=false" here, because any NULL in the comparison
         // operator never returns "TRUE" and hence always returns an empty result set.
         IndexFilterValue filterValue0 = new IndexFilterValue(
-            singletonList(filterValue),
-            singletonList(false)
+                singletonList(filterValue),
+                singletonList(false)
         );
 
         IndexFilter filter;
@@ -490,9 +616,9 @@ public final class IndexResolver {
         }
 
         return new IndexComponentCandidate(
-            exp,
-            columnIndex,
-            filter
+                exp,
+                columnIndex,
+                filter
         );
     }
 
@@ -512,15 +638,15 @@ public final class IndexResolver {
      * We support only equality conditions on the same columns. Ranges and conditions on different columns (aka "index joins")
      * are not supported.
      *
-     * @param exp the OR expression
-     * @param nodes components of the OR expression
+     * @param exp               the OR expression
+     * @param nodes             components of the OR expression
      * @param parameterMetadata parameter metadata
      * @return candidate or {code null}
      */
     private static IndexComponentCandidate prepareSingleColumnCandidateOr(
-        RexNode exp,
-        List<RexNode> nodes,
-        QueryParameterMetadata parameterMetadata
+            RexNode exp,
+            List<RexNode> nodes,
+            QueryParameterMetadata parameterMetadata
     ) {
         Integer columnIndex = null;
 
@@ -561,28 +687,29 @@ public final class IndexResolver {
         IndexInFilter inFilter = new IndexInFilter(filters);
 
         return new IndexComponentCandidate(
-            exp,
-            columnIndex,
-            inFilter
+                exp,
+                columnIndex,
+                inFilter
         );
     }
 
     /**
      * Create index scan for the given index if possible.
      *
-     * @param scan the original map scan
+     * @param scan         the original map scan
      * @param distribution the original map distribution
-     * @param index index to be considered
+     * @param index        index to be considered
      * @param conjunctions CNF components of the original map filter
-     * @param candidates resolved candidates
+     * @param candidates   resolved candidates
      * @return index scan or {@code null}.
      */
     public static RelNode createIndexScan(
-        MapScanLogicalRel scan,
-        DistributionTrait distribution,
-        MapTableIndex index,
-        List<RexNode> conjunctions,
-        Map<Integer, List<IndexComponentCandidate>> candidates
+            MapScanLogicalRel scan,
+            DistributionTrait distribution,
+            MapTableIndex index,
+            List<RexNode> conjunctions,
+            Map<Integer, List<IndexComponentCandidate>> candidates,
+            boolean descending
     ) {
         List<IndexComponentFilter> filters = new ArrayList<>(index.getFieldOrdinals().size());
 
@@ -605,9 +732,9 @@ public final class IndexResolver {
             // Consider the index {a}, and the condition "WHERE a>1 AND a<5". In this case two distinct range candidates
             // {>1} and {<5} are combined into a single RANGE filter {>1 AND <5}
             IndexComponentFilter filter = selectComponentFilter(
-                index.getType(),
-                fieldCandidates,
-                fieldConverterType
+                    index.getType(),
+                    fieldCandidates,
+                    fieldConverterType
             );
 
             if (filter == null) {
@@ -632,15 +759,16 @@ public final class IndexResolver {
         }
 
         // Now as filters are determined, construct the physical entity.
-        return createIndexScan(scan, distribution, index, conjunctions, filters);
+        return createIndexScan(scan, distribution, index, conjunctions, filters, descending);
     }
 
     private static MapIndexScanPhysicalRel createIndexScan(
-        MapScanLogicalRel scan,
-        DistributionTrait distribution,
-        MapTableIndex index,
-        List<RexNode> conjunctions,
-        List<IndexComponentFilter> filterDescriptors
+            MapScanLogicalRel scan,
+            DistributionTrait distribution,
+            MapTableIndex index,
+            List<RexNode> conjunctions,
+            List<IndexComponentFilter> filterDescriptors,
+            boolean descending
     ) {
         // Collect filters and relevant expressions
         List<IndexFilter> filters = new ArrayList<>(filterDescriptors.size());
@@ -660,19 +788,23 @@ public final class IndexResolver {
 
         List<RexNode> remainderConjunctiveExps = excludeNodes(conjunctions, exps);
         RexNode remainderExp =
-            remainderConjunctiveExps.isEmpty() ? null : RexUtil.composeConjunction(rexBuilder, remainderConjunctiveExps);
+                remainderConjunctiveExps.isEmpty() ? null : RexUtil.composeConjunction(rexBuilder, remainderConjunctiveExps);
 
         // Prepare traits
         RelTraitSet traitSet = OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution);
+
+        // Make a collation trait
+        RelCollation relCollation = buildCollationTrait(scan, index, descending);
+        traitSet = OptUtils.traitPlus(traitSet, relCollation);
 
         // Prepare table
         HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
         HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
 
         RelOptTable newRelTable = OptUtils.createRelTable(
-            originalRelTable,
-            originalHazelcastTable.withFilter(null),
-            scan.getCluster().getTypeFactory()
+                originalRelTable,
+                originalHazelcastTable.withFilter(null),
+                scan.getCluster().getTypeFactory()
         );
 
         // Try composing the final filter out of the isolated component filters if possible
@@ -684,29 +816,102 @@ public final class IndexResolver {
 
         // Construct the scan
         return new MapIndexScanPhysicalRel(
-            scan.getCluster(),
-            traitSet,
-            newRelTable,
-            index,
-            filter,
-            converterTypes,
-            exp,
-            remainderExp
+                scan.getCluster(),
+                traitSet,
+                newRelTable,
+                index,
+                filter,
+                converterTypes,
+                exp,
+                remainderExp,
+                descending
+        );
+    }
+
+    /**
+     * Builds a collation with collation fields re-mapped according with table projects
+     *
+     * @param scan       the logical map scan
+     * @param index      the index
+     * @param descending whether the collation is descending
+     * @return the new collation trait
+     */
+    private static RelCollation buildCollationTrait(MapScanLogicalRel scan,
+                                                    MapTableIndex index,
+                                                    boolean descending) {
+        List<RelFieldCollation> fields = new ArrayList<>(index.getFieldOrdinals().size());
+        HazelcastTable table = scan.getTableUnwrapped();
+        for (Integer indexFieldOrdinal : index.getFieldOrdinals()) {
+            int remappedIndexFieldOrdinal = table.getProjects().indexOf(indexFieldOrdinal);
+            if (remappedIndexFieldOrdinal == -1) {
+                // The field is not used in the query
+                break;
+            }
+            RelFieldCollation.Direction direction = descending ? RelFieldCollation.Direction.DESCENDING
+                    : RelFieldCollation.Direction.ASCENDING;
+            RelFieldCollation fieldCollation = new RelFieldCollation(remappedIndexFieldOrdinal, direction);
+            fields.add(fieldCollation);
+        }
+        return RelCollations.of(fields);
+    }
+
+    /**
+     * Creates an index scan without any filter.
+     *
+     * @param scan         the original scan operator
+     * @param distribution the original distribution
+     * @param index        available indexes
+     * @return index scan or {@code null}
+     */
+    public static RelNode createFullIndexScan(
+            MapScanLogicalRel scan,
+            DistributionTrait distribution,
+            MapTableIndex index,
+            boolean descending
+    ) {
+        assert isIndexSupported(index);
+
+        RexNode scanFilter = scan.getTableUnwrapped().getFilter();
+
+        RelTraitSet traitSet = OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution);
+
+        RelCollation relCollation = buildCollationTrait(scan, index, descending);
+        traitSet = OptUtils.traitPlus(traitSet, relCollation);
+
+        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
+        HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
+
+        RelOptTable newRelTable = OptUtils.createRelTable(
+                originalRelTable,
+                originalHazelcastTable.withFilter(null),
+                scan.getCluster().getTypeFactory()
+        );
+
+        return new MapIndexScanPhysicalRel(
+                scan.getCluster(),
+                traitSet,
+                newRelTable,
+                index,
+                null,
+                Collections.emptyList(),
+                null,
+                scanFilter,
+                descending
         );
     }
 
     /**
      * Create an index scan without any filter. Used by HD maps only.
      *
-     * @param scan the original scan operator
+     * @param scan         the original scan operator
      * @param distribution the original distribution
-     * @param indexes available indexes
+     * @param indexes      available indexes
      * @return index scan or {@code null}
      */
     public static RelNode createFullIndexScan(
-        MapScanLogicalRel scan,
-        DistributionTrait distribution,
-        List<MapTableIndex> indexes
+            MapScanLogicalRel scan,
+            DistributionTrait distribution,
+            List<MapTableIndex> indexes
     ) {
         MapTableIndex firstIndex = null;
 
@@ -722,52 +927,30 @@ public final class IndexResolver {
             return null;
         }
 
-        RexNode scanFilter = scan.getTableUnwrapped().getFilter();
-
-        RelTraitSet traitSet = OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution);
-
-        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
-        HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
-
-        RelOptTable newRelTable = OptUtils.createRelTable(
-            originalRelTable,
-            originalHazelcastTable.withFilter(null),
-            scan.getCluster().getTypeFactory()
-        );
-
-        return new MapIndexScanPhysicalRel(
-            scan.getCluster(),
-            traitSet,
-            newRelTable,
-            firstIndex,
-            null,
-            Collections.emptyList(),
-            null,
-            scanFilter
-        );
+        return createFullIndexScan(scan, distribution, firstIndex, false);
     }
 
     /**
      * This method selects the best expression to be used as index filter from the list of candidates.
      *
-     * @param type type of the index (SORTED, HASH)
-     * @param candidates candidates that might be used as a filter
+     * @param type          type of the index (SORTED, HASH)
+     * @param candidates    candidates that might be used as a filter
      * @param converterType expected converter type for the given component of the index
      * @return filter for the index component or {@code null} if no candidate could be applied
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     private static IndexComponentFilter selectComponentFilter(
-        IndexType type,
-        List<IndexComponentCandidate> candidates,
-        QueryDataType converterType
+            IndexType type,
+            List<IndexComponentCandidate> candidates,
+            QueryDataType converterType
     ) {
         // First look for equality conditions, assuming that it is the most restrictive
         for (IndexComponentCandidate candidate : candidates) {
             if (candidate.getFilter() instanceof IndexEqualsFilter) {
                 return new IndexComponentFilter(
-                    candidate.getFilter(),
-                    singletonList(candidate.getExpression()),
-                    converterType
+                        candidate.getFilter(),
+                        singletonList(candidate.getExpression()),
+                        converterType
                 );
             }
         }
@@ -776,15 +959,15 @@ public final class IndexResolver {
         for (IndexComponentCandidate candidate : candidates) {
             if (candidate.getFilter() instanceof IndexInFilter) {
                 return new IndexComponentFilter(
-                    candidate.getFilter(),
-                    singletonList(candidate.getExpression()),
-                    converterType
+                        candidate.getFilter(),
+                        singletonList(candidate.getExpression()),
+                        converterType
                 );
             }
         }
 
         // Last, look for ranges
-        if (type == IndexType.SORTED) {
+        if (type == SORTED) {
             IndexFilterValue from = null;
             boolean fromInclusive = false;
             IndexFilterValue to = null;
@@ -823,8 +1006,8 @@ public final class IndexResolver {
     /**
      * Composes the final filter from the list of single-column filters.
      *
-     * @param filters single-column filters
-     * @param indexType type of the index
+     * @param filters              single-column filters
+     * @param indexType            type of the index
      * @param indexComponentsCount number of components in the index
      * @return final filter or {@code null} if the filter could not be built for the given index type
      */
@@ -837,7 +1020,7 @@ public final class IndexResolver {
 
             IndexFilter res = filters.get(0);
 
-            assert !(res instanceof IndexRangeFilter) || indexType == IndexType.SORTED;
+            assert !(res instanceof IndexRangeFilter) || indexType == SORTED;
 
             return res;
         } else {
@@ -852,7 +1035,7 @@ public final class IndexResolver {
             } else {
                 assert lastFilter instanceof IndexRangeFilter;
 
-                assert indexType == IndexType.SORTED;
+                assert indexType == SORTED;
 
                 return composeRangeFilter(filters, (IndexRangeFilter) lastFilter, indexComponentsCount);
             }
@@ -881,10 +1064,10 @@ public final class IndexResolver {
      * @return composite filter or {@code null}
      */
     private static IndexFilter composeEqualsFilter(
-        List<IndexFilter> filters,
-        IndexEqualsFilter lastFilter,
-        IndexType indexType,
-        int indexComponentsCount
+            List<IndexFilter> filters,
+            IndexEqualsFilter lastFilter,
+            IndexType indexType,
+            int indexComponentsCount
     ) {
         // Flatten all known values.
         List<Expression> components = new ArrayList<>(filters.size());
@@ -913,10 +1096,10 @@ public final class IndexResolver {
             addInfiniteRanges(fromComponents, fromAllowNulls, true, toComponents, toAllowNulls, true, indexComponentsCount);
 
             return new IndexRangeFilter(
-                new IndexFilterValue(fromComponents, fromAllowNulls),
-                true,
-                new IndexFilterValue(toComponents, toAllowNulls),
-                true
+                    new IndexFilterValue(fromComponents, fromAllowNulls),
+                    true,
+                    new IndexFilterValue(toComponents, toAllowNulls),
+                    true
             );
         }
     }
@@ -927,16 +1110,16 @@ public final class IndexResolver {
      * Consider the expression {@code {a=1 AND b IN (2,3)}}. After the conversion, the composite filter will be
      * {@code {a,b} IN {{1, 2}, {1, 3}}}.
      *
-     * @param filters per-column filters
-     * @param lastFilter the last IN filter
+     * @param filters              per-column filters
+     * @param lastFilter           the last IN filter
      * @param indexComponentsCount the number of index components
      * @return composite IN filter
      */
     private static IndexFilter composeInFilter(
-        List<IndexFilter> filters,
-        IndexInFilter lastFilter,
-        IndexType indexType,
-        int indexComponentsCount
+            List<IndexFilter> filters,
+            IndexInFilter lastFilter,
+            IndexType indexType,
+            int indexComponentsCount
     ) {
         List<IndexFilter> newFilters = new ArrayList<>(lastFilter.getFilters().size());
 
@@ -969,8 +1152,8 @@ public final class IndexResolver {
      * If the index is defined as {@code {a, b, c}}, then the resulting filter would be
      * {@code {a=1, b>2, c>NEGATIVE_INFINITY AND a=1, b<3, c<POSITIVE_INFINITY}}.
      *
-     * @param filters all per-column filters
-     * @param lastFilter the last filter (range)
+     * @param filters         all per-column filters
+     * @param lastFilter      the last filter (range)
      * @param componentsCount number of components in the filter
      * @return range filter
      */
@@ -1012,20 +1195,20 @@ public final class IndexResolver {
 
         // Fill missing part of the range request.
         addInfiniteRanges(
-            fromComponents,
-            fromAllowNulls,
-            lastFilter.isFromInclusive(),
-            toComponents,
-            toAllowNulls,
-            lastFilter.isToInclusive(),
-            componentsCount
+                fromComponents,
+                fromAllowNulls,
+                lastFilter.isFromInclusive(),
+                toComponents,
+                toAllowNulls,
+                lastFilter.isToInclusive(),
+                componentsCount
         );
 
         return new IndexRangeFilter(
-            new IndexFilterValue(fromComponents, fromAllowNulls),
-            lastFilter.isFromInclusive(),
-            new IndexFilterValue(toComponents, toAllowNulls),
-            lastFilter.isToInclusive()
+                new IndexFilterValue(fromComponents, fromAllowNulls),
+                lastFilter.isFromInclusive(),
+                new IndexFilterValue(toComponents, toAllowNulls),
+                lastFilter.isToInclusive()
         );
     }
 
@@ -1035,14 +1218,14 @@ public final class IndexResolver {
      * The operation is performed for all filters except for the last one, because treatment of the last filter might differ
      * depending on the total number of components in the index.
      *
-     * @param filters column filters
+     * @param filters    column filters
      * @param components expressions that would form the final filter
      * @param allowNulls allow-null collection relevant to components
      */
     private static void fillNonTerminalComponents(
-        List<IndexFilter> filters,
-        List<Expression> components,
-        List<Boolean> allowNulls
+            List<IndexFilter> filters,
+            List<Expression> components,
+            List<Boolean> allowNulls
     ) {
         for (int i = 0; i < filters.size() - 1; i++) {
             IndexEqualsFilter filter0 = (IndexEqualsFilter) filters.get(i);
@@ -1071,18 +1254,18 @@ public final class IndexResolver {
      * The combination of ranges also depends on the inclusion. For example, {@code {a>1}} yields {@code NEGATIVE_INFINITY}
      * for {@code b} on the left side, while {@code {a>=1}} yields {@code POSITIVE_INFINITY}.
      *
-     * @param fromComponents expressions for the "from" part
-     * @param toComponents expressions for the "to" part
+     * @param fromComponents  expressions for the "from" part
+     * @param toComponents    expressions for the "to" part
      * @param componentsCount the number of components in the index
      */
     private static void addInfiniteRanges(
-        List<Expression> fromComponents,
-        List<Boolean> fromAllowNulls,
-        boolean fromInclusive,
-        List<Expression> toComponents,
-        List<Boolean> toAllowNulls,
-        boolean toInclusive,
-        int componentsCount
+            List<Expression> fromComponents,
+            List<Boolean> fromAllowNulls,
+            boolean fromInclusive,
+            List<Expression> toComponents,
+            List<Boolean> toAllowNulls,
+            boolean toInclusive,
+            int componentsCount
     ) {
         int count = componentsCount - fromComponents.size();
 
@@ -1137,7 +1320,7 @@ public final class IndexResolver {
      * @return {@code true} if the index could be used, {@code false} otherwise
      */
     private static boolean isIndexSupported(MapTableIndex index) {
-        return index.getType() == IndexType.SORTED || index.getType() == IndexType.HASH;
+        return index.getType() == SORTED || index.getType() == IndexType.HASH;
     }
 
     /**

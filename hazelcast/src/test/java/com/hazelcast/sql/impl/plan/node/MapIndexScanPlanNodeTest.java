@@ -62,18 +62,19 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
         Expression<Boolean> remainderFilter = new ConstantPredicateExpression(true);
 
         MapIndexScanPlanNode node = new MapIndexScanPlanNode(
-            id,
-            mapName,
-            GenericQueryTargetDescriptor.DEFAULT,
-            GenericQueryTargetDescriptor.DEFAULT,
-            fieldPaths,
-            fieldTypes,
-            projects,
-            indexName,
-            indexComponentCount,
-            indexFilter,
-            converterTypes,
-            remainderFilter
+                id,
+                mapName,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                fieldPaths,
+                fieldTypes,
+                projects,
+                indexName,
+                indexComponentCount,
+                indexFilter,
+                converterTypes,
+                remainderFilter,
+                false
         );
 
         assertEquals(id, node.getId());
@@ -123,23 +124,6 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
         Expression<Boolean> remainderFilter2 = new ConstantPredicateExpression(false);
 
         MapIndexScanPlanNode node = new MapIndexScanPlanNode(
-            id1,
-            mapName1,
-            GenericQueryTargetDescriptor.DEFAULT,
-            GenericQueryTargetDescriptor.DEFAULT,
-            fieldPaths1,
-            fieldTypes1,
-            projects1,
-            indexName1,
-            indexComponentCount1,
-            indexFilter1,
-            converterTypes1,
-            remainderFilter1
-        );
-
-        checkEquals(
-            node,
-            new MapIndexScanPlanNode(
                 id1,
                 mapName1,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -151,255 +135,287 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
                 indexComponentCount1,
                 indexFilter1,
                 converterTypes1,
-                remainderFilter1
-            ),
-            true
+                remainderFilter1,
+                false
         );
 
         checkEquals(
-            node,
-            new MapIndexScanPlanNode(
-                id2,
-                mapName1,
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                fieldPaths1,
-                fieldTypes1,
-                projects1,
-                indexName1,
-                indexComponentCount1,
-                indexFilter1,
-                converterTypes1,
-                remainderFilter1
-            ),
-            false
+                node,
+                new MapIndexScanPlanNode(
+                        id1,
+                        mapName1,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        fieldPaths1,
+                        fieldTypes1,
+                        projects1,
+                        indexName1,
+                        indexComponentCount1,
+                        indexFilter1,
+                        converterTypes1,
+                        remainderFilter1,
+                        false
+                ),
+                true
         );
 
         checkEquals(
-            node,
-            new MapIndexScanPlanNode(
-                id1,
-                mapName2,
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                fieldPaths1,
-                fieldTypes1,
-                projects1,
-                indexName1,
-                indexComponentCount1,
-                indexFilter1,
-                converterTypes1,
-                remainderFilter1
-            ),
-            false
+                node,
+                new MapIndexScanPlanNode(
+                        id2,
+                        mapName1,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        fieldPaths1,
+                        fieldTypes1,
+                        projects1,
+                        indexName1,
+                        indexComponentCount1,
+                        indexFilter1,
+                        converterTypes1,
+                        remainderFilter1,
+                        false
+                ),
+                false
         );
 
         checkEquals(
-            node,
-            new MapIndexScanPlanNode(
-                id1,
-                mapName1,
-                new TestTargetDescriptor(),
-                GenericQueryTargetDescriptor.DEFAULT,
-                fieldPaths1,
-                fieldTypes1,
-                projects1,
-                indexName1,
-                indexComponentCount1,
-                indexFilter1,
-                converterTypes1,
-                remainderFilter1
-            ),
-            false
+                node,
+                new MapIndexScanPlanNode(
+                        id1,
+                        mapName2,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        fieldPaths1,
+                        fieldTypes1,
+                        projects1,
+                        indexName1,
+                        indexComponentCount1,
+                        indexFilter1,
+                        converterTypes1,
+                        remainderFilter1,
+                        false
+                ),
+                false
         );
 
         checkEquals(
-            node,
-            new MapIndexScanPlanNode(
-                id1,
-                mapName1,
-                GenericQueryTargetDescriptor.DEFAULT,
-                new TestTargetDescriptor(),
-                fieldPaths1,
-                fieldTypes1,
-                projects1,
-                indexName1,
-                indexComponentCount1,
-                indexFilter1,
-                converterTypes1,
-                remainderFilter1
-            ),
-            false
+                node,
+                new MapIndexScanPlanNode(
+                        id1,
+                        mapName1,
+                        new TestTargetDescriptor(),
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        fieldPaths1,
+                        fieldTypes1,
+                        projects1,
+                        indexName1,
+                        indexComponentCount1,
+                        indexFilter1,
+                        converterTypes1,
+                        remainderFilter1,
+                        false
+                ),
+                false
         );
 
         checkEquals(
-            node,
-            new MapIndexScanPlanNode(
-                id1,
-                mapName1,
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                fieldPaths2,
-                fieldTypes1,
-                projects1,
-                indexName1,
-                indexComponentCount1,
-                indexFilter1,
-                converterTypes1,
-                remainderFilter1
-            ),
-            false
+                node,
+                new MapIndexScanPlanNode(
+                        id1,
+                        mapName1,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        new TestTargetDescriptor(),
+                        fieldPaths1,
+                        fieldTypes1,
+                        projects1,
+                        indexName1,
+                        indexComponentCount1,
+                        indexFilter1,
+                        converterTypes1,
+                        remainderFilter1,
+                        false
+                ),
+                false
         );
 
         checkEquals(
-            node,
-            new MapIndexScanPlanNode(
-                id1,
-                mapName1,
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                fieldPaths1,
-                fieldTypes2,
-                projects1,
-                indexName1,
-                indexComponentCount1,
-                indexFilter1,
-                converterTypes1,
-                remainderFilter1
-            ),
-            false
+                node,
+                new MapIndexScanPlanNode(
+                        id1,
+                        mapName1,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        fieldPaths2,
+                        fieldTypes1,
+                        projects1,
+                        indexName1,
+                        indexComponentCount1,
+                        indexFilter1,
+                        converterTypes1,
+                        remainderFilter1,
+                        false
+                ),
+                false
         );
 
         checkEquals(
-            node,
-            new MapIndexScanPlanNode(
-                id1,
-                mapName1,
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                fieldPaths1,
-                fieldTypes1,
-                projects2,
-                indexName1,
-                indexComponentCount1,
-                indexFilter1,
-                converterTypes1,
-                remainderFilter1
-            ),
-            false
+                node,
+                new MapIndexScanPlanNode(
+                        id1,
+                        mapName1,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        fieldPaths1,
+                        fieldTypes2,
+                        projects1,
+                        indexName1,
+                        indexComponentCount1,
+                        indexFilter1,
+                        converterTypes1,
+                        remainderFilter1,
+                        false
+                ),
+                false
         );
 
         checkEquals(
-            node,
-            new MapIndexScanPlanNode(
-                id1,
-                mapName1,
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                fieldPaths1,
-                fieldTypes1,
-                projects1,
-                indexName2,
-                indexComponentCount1,
-                indexFilter1,
-                converterTypes1,
-                remainderFilter1
-            ),
-            false
+                node,
+                new MapIndexScanPlanNode(
+                        id1,
+                        mapName1,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        fieldPaths1,
+                        fieldTypes1,
+                        projects2,
+                        indexName1,
+                        indexComponentCount1,
+                        indexFilter1,
+                        converterTypes1,
+                        remainderFilter1,
+                        false
+                ),
+                false
         );
 
         checkEquals(
-            node,
-            new MapIndexScanPlanNode(
-                id1,
-                mapName1,
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                fieldPaths1,
-                fieldTypes1,
-                projects1,
-                indexName1,
-                indexComponentCount2,
-                indexFilter1,
-                converterTypes1,
-                remainderFilter1
-            ),
-            false
+                node,
+                new MapIndexScanPlanNode(
+                        id1,
+                        mapName1,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        fieldPaths1,
+                        fieldTypes1,
+                        projects1,
+                        indexName2,
+                        indexComponentCount1,
+                        indexFilter1,
+                        converterTypes1,
+                        remainderFilter1,
+                        false
+                ),
+                false
         );
 
         checkEquals(
-            node,
-            new MapIndexScanPlanNode(
-                id1,
-                mapName1,
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                fieldPaths1,
-                fieldTypes1,
-                projects1,
-                indexName1,
-                indexComponentCount1,
-                indexFilter2,
-                converterTypes1,
-                remainderFilter1
-            ),
-            false
+                node,
+                new MapIndexScanPlanNode(
+                        id1,
+                        mapName1,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        fieldPaths1,
+                        fieldTypes1,
+                        projects1,
+                        indexName1,
+                        indexComponentCount2,
+                        indexFilter1,
+                        converterTypes1,
+                        remainderFilter1,
+                        false
+                ),
+                false
         );
 
         checkEquals(
-            node,
-            new MapIndexScanPlanNode(
-                id1,
-                mapName1,
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                fieldPaths1,
-                fieldTypes1,
-                projects1,
-                indexName1,
-                indexComponentCount1,
-                indexFilter1,
-                converterTypes2,
-                remainderFilter1
-            ),
-            false
+                node,
+                new MapIndexScanPlanNode(
+                        id1,
+                        mapName1,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        fieldPaths1,
+                        fieldTypes1,
+                        projects1,
+                        indexName1,
+                        indexComponentCount1,
+                        indexFilter2,
+                        converterTypes1,
+                        remainderFilter1,
+                        false
+                ),
+                false
         );
 
         checkEquals(
-            node,
-            new MapIndexScanPlanNode(
-                id1,
-                mapName1,
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                fieldPaths1,
-                fieldTypes1,
-                projects1,
-                indexName1,
-                indexComponentCount1,
-                indexFilter1,
-                converterTypes1,
-                remainderFilter2
-            ),
-            false
+                node,
+                new MapIndexScanPlanNode(
+                        id1,
+                        mapName1,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        fieldPaths1,
+                        fieldTypes1,
+                        projects1,
+                        indexName1,
+                        indexComponentCount1,
+                        indexFilter1,
+                        converterTypes2,
+                        remainderFilter1,
+                        false
+                ),
+                false
+        );
+
+        checkEquals(
+                node,
+                new MapIndexScanPlanNode(
+                        id1,
+                        mapName1,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        GenericQueryTargetDescriptor.DEFAULT,
+                        fieldPaths1,
+                        fieldTypes1,
+                        projects1,
+                        indexName1,
+                        indexComponentCount1,
+                        indexFilter1,
+                        converterTypes1,
+                        remainderFilter2,
+                        false
+                ),
+                false
         );
     }
 
     @Test
     public void testSerialization() {
         MapIndexScanPlanNode original = new MapIndexScanPlanNode(
-            1,
-            "map",
-            GenericQueryTargetDescriptor.DEFAULT,
-            GenericQueryTargetDescriptor.DEFAULT,
-            Collections.singletonList(valuePath("field")),
-            Collections.singletonList(QueryDataType.INT),
-            Collections.singletonList(0),
-            "index",
-            1,
-            new IndexRangeFilter(),
-            Collections.singletonList(QueryDataType.INT),
-            new ConstantPredicateExpression(true)
+                1,
+                "map",
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                Collections.singletonList(valuePath("field")),
+                Collections.singletonList(QueryDataType.INT),
+                Collections.singletonList(0),
+                "index",
+                1,
+                new IndexRangeFilter(),
+                Collections.singletonList(QueryDataType.INT),
+                new ConstantPredicateExpression(true),
+                false
         );
 
         MapIndexScanPlanNode restored = serializeAndCheck(original, SqlDataSerializerHook.NODE_MAP_INDEX_SCAN);

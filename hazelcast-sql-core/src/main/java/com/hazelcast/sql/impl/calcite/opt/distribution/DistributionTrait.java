@@ -76,6 +76,33 @@ public class DistributionTrait implements RelTrait {
         return this.equals(targetTrait);
     }
 
+    /**
+     * Check if the result set of the node having this trait is guaranteed to exist on all members that will execute a
+     * fragment with this node.
+     *
+     * @return {@code true} if the full result set exists on all participants of the fragment hosting this node.
+     */
+    @SuppressWarnings("RedundantIfStatement")
+    public boolean isFullResultSetOnAllParticipants() {
+        if (traitDef.getMemberCount() == 1) {
+            // If the plan is created for a single member, then the condition is true by definition.
+            return true;
+        }
+
+        if (type == ROOT) {
+            // Root fragment is always executed on a single member.
+            return true;
+        }
+
+        if (type == REPLICATED) {
+            // Replicated distribution assumes that the whole result set is available on all members.
+            return true;
+        }
+
+        return false;
+    }
+
+
     @Override
     public void register(RelOptPlanner planner) {
         // No-op.

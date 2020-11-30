@@ -45,16 +45,18 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
     private final List<QueryDataType> converterTypes;
     private final RexNode indexExp;
     private final RexNode remainderExp;
+    private final boolean descending;
 
     public MapIndexScanPhysicalRel(
-        RelOptCluster cluster,
-        RelTraitSet traitSet,
-        RelOptTable table,
-        MapTableIndex index,
-        IndexFilter indexFilter,
-        List<QueryDataType> converterTypes,
-        RexNode indexExp,
-        RexNode remainderExp
+            RelOptCluster cluster,
+            RelTraitSet traitSet,
+            RelOptTable table,
+            MapTableIndex index,
+            IndexFilter indexFilter,
+            List<QueryDataType> converterTypes,
+            RexNode indexExp,
+            RexNode remainderExp,
+            boolean descending
     ) {
         super(cluster, traitSet, table);
 
@@ -63,6 +65,7 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         this.converterTypes = converterTypes;
         this.indexExp = indexExp;
         this.remainderExp = remainderExp;
+        this.descending = descending;
     }
 
     public MapTableIndex getIndex() {
@@ -81,17 +84,22 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         return remainderExp;
     }
 
+    public boolean getDescending() {
+        return descending;
+    }
+
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new MapIndexScanPhysicalRel(
-            getCluster(),
-            traitSet,
-            getTable(),
-            index,
-            indexFilter,
-            converterTypes,
-            indexExp,
-            remainderExp
+                getCluster(),
+                traitSet,
+                getTable(),
+                index,
+                indexFilter,
+                converterTypes,
+                indexExp,
+                remainderExp,
+                descending
         );
     }
 

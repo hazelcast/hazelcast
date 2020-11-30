@@ -82,4 +82,28 @@ public abstract class AbstractExec implements Exec {
     protected void checkCancelled() {
         ctx.checkCancelled();
     }
+
+    @Override
+    public boolean canReset() {
+        return false;
+    }
+
+    @Override
+    public final void reset() {
+        if (!canReset()) {
+            throw new UnsupportedOperationException("Reset is not supported: " + this.getClass().getSimpleName());
+        }
+
+        reset0();
+
+        done = false;
+    }
+
+    /**
+     * Internal reset routine.
+     */
+    protected void reset0() {
+        // No-op.
+    }
+
 }

@@ -60,36 +60,36 @@ public class IndexInFilterIterationTest extends IndexFilterIteratorTestSupport {
         map.put(3, new Value(1));
 
         // No values from both filters
-        checkIterator(in(equals(2), equals(3)).getEntries(index, evalContext));
-        checkIterator(in(equals(3), equals(2)).getEntries(index, evalContext));
+        checkIterator(in(equals(2), equals(3)).getEntries(index, false, evalContext));
+        checkIterator(in(equals(3), equals(2)).getEntries(index, false, evalContext));
 
         // No values from one filter
-        checkIterator(in(equals(1), equals(2)).getEntries(index, evalContext), 3);
-        checkIterator(in(equals(2), equals(1)).getEntries(index, evalContext), 3);
+        checkIterator(in(equals(1), equals(2)).getEntries(index, false, evalContext), 3);
+        checkIterator(in(equals(2), equals(1)).getEntries(index, false, evalContext), 3);
 
-        checkIterator(in(equals(null, true), equals(2)).getEntries(index, evalContext), 1);
-        checkIterator(in(equals(2), equals(null, true)).getEntries(index, evalContext), 1);
+        checkIterator(in(equals(null, true), equals(2)).getEntries(index, false, evalContext), 1);
+        checkIterator(in(equals(2), equals(null, true)).getEntries(index, false, evalContext), 1);
 
         // Values from both filters
-        checkIterator(in(equals(0), equals(1)).getEntries(index, evalContext), 2, 3);
-        checkIterator(in(equals(1), equals(0)).getEntries(index, evalContext), 2, 3);
+        checkIterator(in(equals(0), equals(1)).getEntries(index, false, evalContext), 2, 3);
+        checkIterator(in(equals(1), equals(0)).getEntries(index, false, evalContext), 2, 3);
 
-        checkIterator(in(equals(null, true), equals(0)).getEntries(index, evalContext), 1, 2);
-        checkIterator(in(equals(0), equals(null, true)).getEntries(index, evalContext), 1, 2);
+        checkIterator(in(equals(null, true), equals(0)).getEntries(index, false, evalContext), 1, 2);
+        checkIterator(in(equals(0), equals(null, true)).getEntries(index, false, evalContext), 1, 2);
 
         // One distinct value
-        checkIterator(in(equals(0), equals(0)).getEntries(index, evalContext), 2);
-        checkIterator(in(equals(null, true), equals(null, true)).getEntries(index, evalContext), 1);
+        checkIterator(in(equals(0), equals(0)).getEntries(index, false, evalContext), 2);
+        checkIterator(in(equals(null, true), equals(null, true)).getEntries(index, false, evalContext), 1);
 
         // One null value
-        checkIterator(in(equals(0), equals(null, false)).getEntries(index, evalContext), 2);
-        checkIterator(in(equals(null, false), equals(0)).getEntries(index, evalContext), 2);
+        checkIterator(in(equals(0), equals(null, false)).getEntries(index, false, evalContext), 2);
+        checkIterator(in(equals(null, false), equals(0)).getEntries(index, false, evalContext), 2);
 
-        checkIterator(in(equals(null, false), equals(null, true)).getEntries(index, evalContext), 1);
-        checkIterator(in(equals(null, true), equals(null, false)).getEntries(index, evalContext), 1);
+        checkIterator(in(equals(null, false), equals(null, true)).getEntries(index, false, evalContext), 1);
+        checkIterator(in(equals(null, true), equals(null, false)).getEntries(index, false, evalContext), 1);
 
         // Two null values
-        checkIterator(in(equals(null, false), equals(null, false)).getEntries(index, evalContext));
+        checkIterator(in(equals(null, false), equals(null, false)).getEntries(index, false, evalContext));
     }
 
     private static IndexInFilter in(IndexEqualsFilter... filters) {

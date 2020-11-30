@@ -112,9 +112,12 @@ public interface Index {
     Set<QueryableEntry> evaluate(Predicate predicate);
 
     /**
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.
      * @return iterator over all index entries
      */
-    Iterator<QueryableEntry> getSqlRecordIterator();
+    Iterator<QueryableEntry> getSqlRecordIterator(boolean descending);
 
     /**
      * @param value value
@@ -125,18 +128,25 @@ public interface Index {
     /**
      * @param comparison comparison type
      * @param value value
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.**
      * @return iterator over index entries that are matching the given comparions type and value
      */
-    Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value);
+    Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending);
 
     /**
      * @param from lower bound
      * @param fromInclusive lower bound inclusive flag
      * @param to upper bound
      * @param toInclusive upper bound inclusive flag
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.*
      * @return iterator over index entries matching the given range
      */
-    Iterator<QueryableEntry> getSqlRecordIterator(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
+    Iterator<QueryableEntry> getSqlRecordIterator(Comparable from, boolean fromInclusive, Comparable to,
+                                                  boolean toInclusive, boolean descending);
 
     /**
      * Produces a result set containing entries whose attribute values are equal

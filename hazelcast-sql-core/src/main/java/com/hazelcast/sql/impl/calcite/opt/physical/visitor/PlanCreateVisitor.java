@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -24,19 +25,23 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.ProjectPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.ValuesPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.AbstractExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.partitioner.AllFieldsRowPartitioner;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
@@ -51,10 +56,13 @@ import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
+import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
+import com.hazelcast.sql.impl.plan.node.io.UnicastSendPlanNode;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexNode;
@@ -82,7 +90,7 @@ import java.util.UUID;
  * created, and then exchange is converted into a pair of appropriate send/receive operators. Send operator is added to the
  * previous fragment, receive operator is a starting point for the new fragment.
  */
-@SuppressWarnings({"rawtypes", "checkstyle:ClassDataAbstractionCoupling"})
+@SuppressWarnings({"rawtypes", "checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     private final UUID localMemberId;
@@ -233,24 +241,30 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
 
         MapIndexScanPlanNode scanNode = new MapIndexScanPlanNode(
-            pollId(rel),
-            table.getMapName(),
-            table.getKeyDescriptor(),
-            table.getValueDescriptor(),
-            getScanFieldPaths(table),
-            schemaBefore.getTypes(),
-            hazelcastTable.getProjects(),
-            rel.getIndex().getName(),
-            rel.getIndex().getComponentsCount(),
-            rel.getIndexFilter(),
-            rel.getConverterTypes(),
-            convertFilter(schemaBefore, rel.getRemainderExp())
+                pollId(rel),
+                table.getMapName(),
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                getScanFieldPaths(table),
+                schemaBefore.getTypes(),
+                hazelcastTable.getProjects(),
+                rel.getIndex().getName(),
+                rel.getIndex().getComponentsCount(),
+                rel.getIndexFilter(),
+                rel.getConverterTypes(),
+                convertFilter(schemaBefore, rel.getRemainderExp()),
+                rel.getDescending()
         );
 
         pushUpstream(scanNode);
 
         objectIds.add(table.getObjectKey());
         mapNames.add(table.getMapName());
+    }
+
+    @Override
+    public void onSort(SortPhysicalRel rel) {
+        throw new HazelcastException("ORDER BY clause without matching index is not supported.");
     }
 
     @Override
@@ -316,6 +330,49 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         );
 
         pushUpstream(filterNode);
+    }
+
+    @Override
+    public void onSortMergeExchange(SortMergeExchangePhysicalRel rel) {
+        PlanNode upstreamNode = pollSingleUpstream();
+        PlanNodeSchema upstreamNodeSchema = upstreamNode.getSchema();
+
+        // Create sender and push it as a fragment.
+        int edge = nextEdge();
+
+        int id = pollId(rel);
+
+        UnicastSendPlanNode sendNode = new UnicastSendPlanNode(
+                id,
+                upstreamNode,
+                edge,
+                AllFieldsRowPartitioner.INSTANCE
+        );
+
+        addFragment(sendNode, dataMemberMapping());
+
+        List<RelFieldCollation> collations = rel.getCollation().getFieldCollations();
+        List<Expression> expressions = new ArrayList<>(collations.size());
+        List<Boolean> ascs = new ArrayList<>(collations.size());
+
+        for (RelFieldCollation collation : collations) {
+            RelFieldCollation.Direction direction = collation.getDirection();
+            int idx = collation.getFieldIndex();
+
+            expressions.add(ColumnExpression.create(idx, upstreamNodeSchema.getType(idx)));
+            ascs.add(!direction.isDescending());
+        }
+
+        // Create a receiver and push it to stack.
+        ReceiveSortMergePlanNode receiveNode = new ReceiveSortMergePlanNode(
+                id,
+                edge,
+                sendNode.getSchema().getTypes(),
+                expressions,
+                ascs
+        );
+
+        pushUpstream(receiveNode);
     }
 
     @Override

@@ -82,6 +82,15 @@ public class ParserOperationsTest {
     }
 
     @Test
+    public void testOrderBy() {
+        checkSuccess("SELECT a, b FROM t ORDER BY a");
+        checkSuccess("SELECT a, b FROM t ORDER BY a ASC");
+        checkSuccess("SELECT a, b FROM t ORDER BY a DESC");
+        checkSuccess("SELECT a, b FROM t ORDER BY a DESC, b ASC");
+    }
+
+
+    @Test
     public void testUnsupportedSelectScalar() {
         checkFailure(
             "SELECT (SELECT a FROM t) FROM t",
@@ -94,14 +103,6 @@ public class ParserOperationsTest {
         checkFailure(
             "SELECT a, b FROM t WHERE (SELECT a FROM t) IS NULL",
             "SCALAR QUERY is not supported"
-        );
-    }
-
-    @Test
-    public void testUnsupportedOrderBy() {
-        checkFailure(
-            "SELECT a FROM t ORDER BY a",
-            "ORDER BY is not supported"
         );
     }
 

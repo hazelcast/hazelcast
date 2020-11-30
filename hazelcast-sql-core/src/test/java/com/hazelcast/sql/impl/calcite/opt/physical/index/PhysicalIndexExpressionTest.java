@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.schema.Table;
@@ -188,5 +189,10 @@ public class PhysicalIndexExpressionTest extends IndexOptimizerTestSupport {
         } else {
             checkNoIndex(sql, INT, INT, INT, INT, INT);
         }
+    }
+
+    @RunWith(HazelcastSerialClassRunner.class)
+    @Category({QuickTest.class, ParallelJVMTest.class})
+    public static class PhysicalSortIndexTest extends OptimizerTestSupport {
     }
 }

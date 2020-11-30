@@ -40,6 +40,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
     private int indexComponentCount;
     private IndexFilter indexFilter;
     private List<QueryDataType> converterTypes;
+    private boolean descending;
 
     public MapIndexScanPlanNode() {
         // No-op.
@@ -47,18 +48,19 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public MapIndexScanPlanNode(
-        int id,
-        String mapName,
-        QueryTargetDescriptor keyDescriptor,
-        QueryTargetDescriptor valueDescriptor,
-        List<QueryPath> fieldPaths,
-        List<QueryDataType> fieldTypes,
-        List<Integer> projects,
-        String indexName,
-        int indexComponentCount,
-        IndexFilter indexFilter,
-        List<QueryDataType> converterTypes,
-        Expression<Boolean> remainderFilter
+            int id,
+            String mapName,
+            QueryTargetDescriptor keyDescriptor,
+            QueryTargetDescriptor valueDescriptor,
+            List<QueryPath> fieldPaths,
+            List<QueryDataType> fieldTypes,
+            List<Integer> projects,
+            String indexName,
+            int indexComponentCount,
+            IndexFilter indexFilter,
+            List<QueryDataType> converterTypes,
+            Expression<Boolean> remainderFilter,
+            boolean descending
     ) {
         super(id, mapName, keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projects, remainderFilter);
 
@@ -66,6 +68,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
         this.indexComponentCount = indexComponentCount;
         this.indexFilter = indexFilter;
         this.converterTypes = converterTypes;
+        this.descending = descending;
     }
 
     public String getIndexName() {
@@ -82,6 +85,10 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
 
     public List<QueryDataType> getConverterTypes() {
         return converterTypes;
+    }
+
+    public boolean getDescending() {
+        return descending;
     }
 
     @Override
@@ -107,6 +114,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
         out.writeInt(indexComponentCount);
         out.writeObject(indexFilter);
         SerializationUtil.writeList(converterTypes, out);
+        out.writeBoolean(descending);
     }
 
     @Override
@@ -117,6 +125,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
         indexComponentCount = in.readInt();
         indexFilter = in.readObject();
         converterTypes = SerializationUtil.readList(in);
+        descending = in.readBoolean();
     }
 
     @Override
@@ -136,9 +145,10 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
         MapIndexScanPlanNode that = (MapIndexScanPlanNode) o;
 
         return indexComponentCount == that.indexComponentCount
-            && indexName.equals(that.indexName)
-            && Objects.equals(indexFilter, that.indexFilter)
-            && Objects.equals(converterTypes, that.converterTypes);
+                && indexName.equals(that.indexName)
+                && Objects.equals(indexFilter, that.indexFilter)
+                && Objects.equals(converterTypes, that.converterTypes)
+                && descending == that.descending;
     }
 
     @Override
@@ -149,13 +159,15 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
         result = 31 * result + indexComponentCount;
         result = 31 * result + (indexFilter != null ? indexFilter.hashCode() : 0);
         result = 31 * result + (converterTypes != null ? converterTypes.hashCode() : 0);
+        result = 31 * result + Boolean.hashCode(descending);
         return result;
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{id=" + id + ", mapName=" + mapName + ", fieldPaths=" + fieldPaths
-            + ", projects=" + projects + ", indexName=" + indexName + ", indexFilter=" + indexFilter
-            + ", remainderFilter=" + filter + '}';
+                + ", projects=" + projects + ", indexName=" + indexName + ", indexFilter=" + indexFilter
+                + ", remainderFilter=" + filter
+                + ", descending=" + descending + '}';
     }
 }
