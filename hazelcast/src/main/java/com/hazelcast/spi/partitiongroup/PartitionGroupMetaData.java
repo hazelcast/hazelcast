@@ -18,7 +18,7 @@ package com.hazelcast.spi.partitiongroup;
 
 /**
  * This class contains the definition of known Discovery SPI metadata to support automatic
- * generation of zone aware and Kubernetes node aware backup strategies.
+ * generation of zone aware and node aware backup strategies.
  *
  * Zone aware backup strategies are based on cloud or service discovery provided information.
  * These information are split into three different levels of granularity:

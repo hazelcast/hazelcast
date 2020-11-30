@@ -86,8 +86,8 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  *
  * <h1>Zone Aware Partition Groups</h1>
  * In this scheme, groups are allocated according to the metadata provided by Discovery SPI
- * These metadata are availability zone, rack and host. Partitions are not written to
- * the same group so this is very useful for ensuring partitions are written to
+ * These metadata are availability zone, rack and host. The backups of the partitions are not
+ * placed on the same group so this is very useful for ensuring partitions are placed on
  * different availability zones without providing the IP addresses to the config ahead.
  * <code>
  * <pre>
@@ -99,8 +99,8 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * In this scheme, groups are allocated according to node name metadata provided by Discovery SPI.
  * For container orchestration tools like Kubernetes and Docker Swarm, node is the term used to refer
  * machine that containers/pods run on. A node may be a virtual or physical machine.
- * Partitions are not written to the same group so this is very useful for ensuring partitions
- * are written to different nodes without providing the IP addresses to the config ahead.
+ * The backups of the partitions are not placed on same group so this is very useful for ensuring partitions
+ * are placed on different nodes without providing the IP addresses to the config ahead.
  *
  * <code>
  * <pre>
