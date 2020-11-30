@@ -81,6 +81,9 @@ public class Target implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        if (true) {
+            throw new UnsupportedOperationException();
+        }
         // TODO use IDS
         out.writeObject(partitions);
         out.writeUTF(mode.name());
