@@ -94,7 +94,9 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * BatchStage<Trade> sortedTrades = trades.sort(ComparatorEx.comparing(Trade::ticker));
      * }</pre>
      *
-     * @param comparator the user-provided comparator that will be used for sorting.
+     * @param comparator the user-provided comparator that will be used for
+     *     sorting. It must be stateless and {@linkplain Processor#isCooperative()
+     *     cooperative}.
      * @return the newly attached stage
      * @since 4.3
      */
@@ -318,10 +320,11 @@ public interface BatchStage<T> extends GeneralStage<T> {
      *         );
      * }</pre>
      *
-     * @see AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param <T1> type of items in {@code stage1}
      * @param <R> type of the result
+     *
+     * @see AggregateOperations AggregateOperations
      */
     @Nonnull
     <T1, R> BatchStage<R> aggregate2(
@@ -387,11 +390,12 @@ public interface BatchStage<T> extends GeneralStage<T> {
      *                 AggregateOperations.counting()));
      * }</pre>
      *
-     * @see AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param <T1> type of items in {@code stage1}
      * @param <T2> type of items in {@code stage2}
      * @param <R> type of the result
+     *
+     * @see AggregateOperations AggregateOperations
      */
     @Nonnull
     <T1, T2, R> BatchStage<R> aggregate3(

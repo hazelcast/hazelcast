@@ -15,7 +15,7 @@
  */
 
 /**
- * Contains {@code AggregateOperation} and several its variants, as well
+ * Contains {@code AggregateOperation} and its several variants, as well
  * as a builder object for the aggregate operations.
  *
  * @since 3.0

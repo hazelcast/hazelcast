@@ -19,6 +19,7 @@ package com.hazelcast.jet.aggregate;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation1Impl;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation2Impl;
@@ -63,7 +64,8 @@ public final class AggregateOperationBuilder<A> {
      * aggregate operation.
      *
      * @param accumulateFn the {@code accumulate} primitive, parameters are
-     *              {@code (accumulator, item)}
+     *              {@code (accumulator, item)}. It must be stateless and {@linkplain
+     *              Processor#isCooperative() cooperative}.
      * @param <T> the expected type of input item
      * @return a new builder object that captures the {@code T0} type parameter
      */
@@ -78,7 +80,8 @@ public final class AggregateOperationBuilder<A> {
      * primitive for stream-0. Also selects the fixed-arity variant of the
      * aggregate operation.
      *
-     * @param accumulateFn0 the {@code accumulate} primitive for stream-0
+     * @param accumulateFn0 the {@code accumulate} primitive for stream-0. It
+     *     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param <T0> the expected type of item in stream-0
      * @return a new builder object that captures the {@code T0} type parameter
      */
@@ -104,7 +107,8 @@ public final class AggregateOperationBuilder<A> {
      * variable-arity variant of the aggregate operation.
      *
      * @param tag the tag of the associated input stream
-     * @param accumulateFn the {@code accumulate} primitive
+     * @param accumulateFn the {@code accumulate} primitive. It must be
+     *     stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param <T> the expected type of input item
      * @return a new builder object for variable-arity aggregate operations which has
      *         the {@code createFn} of the current builder
@@ -146,7 +150,8 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@link AggregateOperation2#accumulateFn1()} accumulate}
          * primitive for stream-1, returning the arity-2 variant of the builder.
          *
-         * @param accumulateFn1 the {@code accumulate} primitive for stream-1
+         * @param accumulateFn1 the {@code accumulate} primitive for stream-1. It
+         *     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
          * @param <T1> the expected type of item in stream-1
          * @return a new builder object that captures the {@code T1} type parameter
          */
@@ -160,6 +165,9 @@ public final class AggregateOperationBuilder<A> {
 
         /**
          * Registers the {@link AggregateOperation#combineFn() combine} primitive.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          */
         @Nonnull
         public Arity1<T0, A, R> andCombine(@Nullable BiConsumerEx<? super A, ? super A> combineFn) {
@@ -170,6 +178,9 @@ public final class AggregateOperationBuilder<A> {
 
         /**
          * Registers the {@link AggregateOperation#deductFn() deduct} primitive.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          */
         @Nonnull
         public Arity1<T0, A, R> andDeduct(@Nullable BiConsumerEx<? super A, ? super A> deductFn) {
@@ -180,6 +191,9 @@ public final class AggregateOperationBuilder<A> {
 
         /**
          * Registers the {@link AggregateOperation#exportFn() export} primitive.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          */
         @Nonnull
         public <R_NEW> Arity1<T0, A, R_NEW> andExport(
@@ -196,6 +210,9 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@link AggregateOperation#finishFn() finish} primitive.
          * Constructs and returns an {@link AggregateOperation1} from the current
          * state of the builder.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          *
          * @throws IllegalStateException if the {@code export} primitive was
          * not registered
@@ -220,6 +237,9 @@ public final class AggregateOperationBuilder<A> {
          * export} and {@link AggregateOperation#finishFn() finish} primitive.
          * Constructs and returns an {@link AggregateOperation1} from the current
          * state of the builder.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          *
          * @throws IllegalStateException if the {@code export} primitive is
          * already registered
@@ -268,7 +288,8 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@link AggregateOperation3#accumulateFn2() accumulate}
          * primitive for stream-2, returning the arity-3 variant of the builder.
          *
-         * @param accumulateFn2 the {@code accumulate} primitive for stream-2
+         * @param accumulateFn2 the {@code accumulate} primitive for stream-2. It
+         *     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
          * @param <T2> the expected type of item in stream-2
          * @return a new builder object that captures the {@code T2} type parameter
          */
@@ -282,6 +303,9 @@ public final class AggregateOperationBuilder<A> {
 
         /**
          * Registers the {@link AggregateOperation#combineFn() combine} primitive.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          */
         @Nonnull
         public Arity2<T0, T1, A, R> andCombine(@Nullable BiConsumerEx<? super A, ? super A> combineFn) {
@@ -292,6 +316,9 @@ public final class AggregateOperationBuilder<A> {
 
         /**
          * Registers the {@link AggregateOperation#deductFn() deduct} primitive.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          */
         @Nonnull
         public Arity2<T0, T1, A, R> andDeduct(@Nullable BiConsumerEx<? super A, ? super A> deductFn) {
@@ -302,6 +329,9 @@ public final class AggregateOperationBuilder<A> {
 
         /**
          * Registers the {@link AggregateOperation#exportFn() export} primitive.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          */
         @Nonnull
         public <R_NEW> Arity2<T0, T1, A, R_NEW> andExport(
@@ -318,6 +348,9 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@link AggregateOperation#finishFn() finish} primitive.
          * Constructs and returns an {@link AggregateOperation2} from the current
          * state of the builder.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          *
          * @throws IllegalStateException if the {@code export} primitive was
          * not registered
@@ -342,6 +375,9 @@ public final class AggregateOperationBuilder<A> {
          * export} and {@link AggregateOperation#finishFn() finish} primitive.
          * Constructs and returns an {@link AggregateOperation2} from the current
          * state of the builder.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          *
          * @throws IllegalStateException if the {@code export} primitive is
          * already registered
@@ -386,6 +422,9 @@ public final class AggregateOperationBuilder<A> {
 
         /**
          * Registers the {@link AggregateOperation#combineFn() combine} primitive.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          */
         @Nonnull
         public Arity3<T0, T1, T2, A, R> andCombine(@Nullable BiConsumerEx<? super A, ? super A> combineFn) {
@@ -396,6 +435,9 @@ public final class AggregateOperationBuilder<A> {
 
         /**
          * Registers the {@link AggregateOperation#deductFn() deduct} primitive.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          */
         @Nonnull
         public Arity3<T0, T1, T2, A, R> andDeduct(@Nullable BiConsumerEx<? super A, ? super A> deductFn) {
@@ -406,6 +448,9 @@ public final class AggregateOperationBuilder<A> {
 
         /**
          * Registers the {@link AggregateOperation#exportFn() export} primitive.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          */
         @Nonnull
         public <R_NEW> Arity3<T0, T1, T2, A, R_NEW> andExport(
@@ -422,6 +467,9 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@link AggregateOperation#finishFn() finish} primitive.
          * Constructs and returns an {@link AggregateOperation3} from the current
          * state of the builder.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          *
          * @throws IllegalStateException if the {@code export} primitive was
          * not registered
@@ -447,6 +495,9 @@ public final class AggregateOperationBuilder<A> {
          * export} and {@link AggregateOperation#finishFn() finish} primitive.
          * Constructs and returns an {@link AggregateOperation3} from the current
          * state of the builder.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          *
          * @throws IllegalStateException if the {@code export} primitive is
          * already registered
@@ -496,7 +547,8 @@ public final class AggregateOperationBuilder<A> {
          * primitive for the stream tagged with the supplied tag.
          *
          * @param tag the tag of the associated input stream
-         * @param accumulateFn the {@code accumulate} primitive
+         * @param accumulateFn the {@code accumulate} primitive. It must be
+         *     stateless and {@linkplain Processor#isCooperative() cooperative}.
          * @param <T> the expected type of input item
          * @return this
          */
@@ -513,6 +565,9 @@ public final class AggregateOperationBuilder<A> {
 
         /**
          * Registers the {@link AggregateOperation#combineFn() combine} primitive.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          */
         @Nonnull
         public VarArity<A, R> andCombine(@Nullable BiConsumerEx<? super A, ? super A> combineFn) {
@@ -523,6 +578,9 @@ public final class AggregateOperationBuilder<A> {
 
         /**
          * Registers the {@link AggregateOperation#deductFn() deduct} primitive.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          */
         @Nonnull
         public VarArity<A, R> andDeduct(@Nullable BiConsumerEx<? super A, ? super A> deductFn) {
@@ -533,6 +591,9 @@ public final class AggregateOperationBuilder<A> {
 
         /**
          * Registers the {@link AggregateOperation#exportFn() export} primitive.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          */
         @Nonnull
         public <R_NEW> VarArity<A, R_NEW> andExport(
@@ -549,6 +610,9 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@link AggregateOperation#finishFn() finish} primitive.
          * Constructs and returns an {@link AggregateOperation} from the current
          * state of the builder.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          *
          * @throws IllegalStateException if the {@code export} primitive was
          * not registered
@@ -573,6 +637,9 @@ public final class AggregateOperationBuilder<A> {
          * export} and {@link AggregateOperation#finishFn() finish} primitive.
          * Constructs and returns an {@link AggregateOperation} from the current
          * state of the builder.
+         * <p>
+         * The given function must be stateless and {@linkplain
+         * Processor#isCooperative() cooperative}.
          *
          * @throws IllegalStateException if the {@code export} primitive is
          * already registered

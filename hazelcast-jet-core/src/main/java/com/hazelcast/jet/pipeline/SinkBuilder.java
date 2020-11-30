@@ -82,6 +82,7 @@ public final class SinkBuilder<C, T> {
      * </li><li>
      *     {@code destroyFn} destroys the context. This component is optional.
      * </li></ol>
+     *
      * The returned sink will be non-cooperative and will have preferred local
      * parallelism of 1. It doesn't participate in the fault-tolerance protocol,
      * which means you can't remember across a job restart which items you
@@ -89,7 +90,12 @@ public final class SinkBuilder<C, T> {
      * thus complying with the <em>at-least-once</em> processing guarantee. If
      * the sink is idempotent (suppresses duplicate items), it will also be
      * compatible with the <em>exactly-once</em> guarantee.
+     * <p>
+     * All the functions must be stateless.
      *
+     * @param name the name of the processor
+     * @param createFn the function to create the sink context, given a
+     *     processor context. It must be stateless.
      * @param <C> type of the context object
      *
      * @since 3.0
@@ -108,7 +114,8 @@ public final class SinkBuilder<C, T> {
      * #createFn} and the received item. Its job is to push the item to the
      * context.
      *
-     * @param receiveFn the "add item to the context" function
+     * @param receiveFn the "add item to the context" function. It must be
+     *     stateless.
      * @param <T_NEW> type of the items the sink will accept
      */
     @Nonnull
@@ -131,7 +138,8 @@ public final class SinkBuilder<C, T> {
      * You are not required to provide this function in case your implementation
      * doesn't need it.
      *
-     * @param flushFn the optional "flush the context" function
+     * @param flushFn the optional "flush the context" function. It must be
+     *     stateless.
      */
     @Nonnull
     public SinkBuilder<C, T> flushFn(@Nonnull ConsumerEx<? super C> flushFn) {
@@ -149,7 +157,8 @@ public final class SinkBuilder<C, T> {
      * You are not required to provide this function in case your implementation
      * doesn't need it.
      *
-     * @param destroyFn the optional "destroy the context object" function
+     * @param destroyFn the optional "destroy the context object" function. It
+     *     must be stateless.
      */
     @Nonnull
     public SinkBuilder<C, T> destroyFn(@Nonnull ConsumerEx<? super C> destroyFn) {

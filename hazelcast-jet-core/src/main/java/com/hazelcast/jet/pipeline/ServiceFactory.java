@@ -95,7 +95,7 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
     private boolean isCooperative = COOPERATIVE_DEFAULT;
 
     @Nonnull
-    private FunctionEx<? super Context, ? extends C> createContextFn;
+    private final FunctionEx<? super Context, ? extends C> createContextFn;
 
     @Nonnull
     private BiFunctionEx<? super Processor.Context, ? super C, ? extends S> createServiceFn = (ctx, svcContext) -> {
@@ -137,7 +137,8 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
      * for blocking code.
      *
      * @param createContextFn the function to create new context object, given a {@link
-     *                        ProcessorSupplier.Context}. Called once per Jet member.
+     *                        ProcessorSupplier.Context}. Called once per Jet member. It must be
+     *                        stateless.
      * @param <C> type of the service context instance
      *
      * @return a new factory instance, not yet ready to use (needs the {@code
@@ -158,7 +159,8 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
      * Jet calls this function at the end of the job for each shared context
      * object it created (one on each cluster member).
      *
-     * @param destroyContextFn the function to destroy the shared service context
+     * @param destroyContextFn the function to destroy the shared service
+     *     context. It must be stateless.
      * @return a copy of this factory with the supplied destroy-function
      */
     @Nonnull
@@ -186,7 +188,8 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
      * this method resets any pre-existing {@code destroyService} function to a
      * no-op.
      *
-     * @param createServiceFn the function that creates the service instance
+     * @param createServiceFn the function that creates the service instance.
+     *     It must be stateless.
      * @return a copy of this factory with the supplied create-service-function
      */
     @Nonnull
@@ -208,7 +211,8 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
      * created services objects.
      *
      * @param destroyServiceFn the function to destroy the service instance.
-     *                         This function is called once per processor instance
+     *                         This function is called once per processor instance. It must be
+     *                         stateless.
      * @return a copy of this factory with the supplied destroy-function
      */
     @Nonnull

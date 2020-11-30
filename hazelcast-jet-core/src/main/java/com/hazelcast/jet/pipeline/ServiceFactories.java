@@ -138,10 +138,10 @@ public final class ServiceFactories {
      * for blocking code.
      *
      * @param createServiceFn the function that creates the service. It will be called once on each
-     *                        Jet member.
+     *                        Jet member. It must be stateless.
      * @param destroyServiceFn the function that destroys the service. It will be called once on each
      *                         Jet member. It can be used to tear down any resources acquired by the
-     *                         service.
+     *                         service. It must be stateless.
      * @param <S> type of the service object
      *
      * @see #nonSharedService(FunctionEx, ConsumerEx)
@@ -199,10 +199,10 @@ public final class ServiceFactories {
      * for blocking code.
      *
      * @param createServiceFn the function that creates the service. It will be called once per
-     *                        processor instance.
+     *                        processor instance. It must be stateless.
      * @param destroyServiceFn the function that destroys the service. It will be called once per
      *                         processor instance. It can be used to tear down any resources
-     *                         acquired by the service.
+     *                         acquired by the service. It must be stateless.
      *
      * @param <S> type of the service object
      *

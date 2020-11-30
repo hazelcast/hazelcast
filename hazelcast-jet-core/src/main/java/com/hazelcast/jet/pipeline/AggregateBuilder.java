@@ -20,6 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.CoAggregateOperationBuilder;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.impl.pipeline.AggBuilder;
@@ -88,7 +89,9 @@ public class AggregateBuilder<R0> {
      * this builder in the implementation of {@code finishFn} to access the
      * results.
      *
-     * @param finishFn the finishing function for the composite aggregate operation
+     * @param finishFn the finishing function for the composite aggregate
+     *     operation. It must be stateless and {@linkplain
+     *     Processor#isCooperative() cooperative}.
      * @param <R> the output item type
      *
      * @return a new stage representing the co-aggregation

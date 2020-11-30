@@ -17,6 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.Processor;
 
 import java.io.Serializable;
 import java.util.Map.Entry;
@@ -37,12 +38,12 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  *     <em>right-hand projection function</em>: maps the enriching stream item
  *     to the item that will be in the result of the join operation.
  * </li></ol>
- *  The primary use case for the projection function is enrichment from a
- *  map source, such as {@link Sources#map}.
- *  The enriching stream consists of map entries, but the result should
- *  contain just the values. In this case the projection function should be
- *  {@code Entry::getValue}. There is direct support for this case with the
- *  method {@link #joinMapEntries(FunctionEx)}.
+ * The primary use case for the projection function is enrichment from a
+ * map source, such as {@link Sources#map}. The enriching stream consists
+ * of map entries, but the result should contain just the values. In this
+ * case the projection function should be {@code Entry::getValue}. There is
+ * direct support for this case with the method {@link
+ * #joinMapEntries(FunctionEx)}.
  *
  * @param <K> the type of the join key
  * @param <T0> the type of the left-hand stream item
@@ -73,6 +74,9 @@ public final class JoinClause<K, T0, T1, T1_OUT> implements Serializable {
      * Constructs and returns a join clause with the supplied left-hand and
      * right-hand key extractor functions, and with an identity right-hand
      * projection function.
+     * <p>
+     * The given functions must be stateless and {@linkplain
+     * Processor#isCooperative() cooperative}.
      */
     public static <K, T0, T1> JoinClause<K, T0, T1, T1> onKeys(
             FunctionEx<? super T0, ? extends K> leftKeyFn,
@@ -86,7 +90,9 @@ public final class JoinClause<K, T0, T1, T1_OUT> implements Serializable {
      * map entries. The right key extractor is {@code Map.Entry::getKey} and the
      * right-hand projection function is {@code Map.Entry::getValue}.
      *
-     * @param leftKeyFn the function to extract the key from the primary stream
+     * @param leftKeyFn the function to extract the key from the primary
+     *     stream. It must be stateless and {@linkplain Processor#isCooperative()
+     *     cooperative}.
      * @param <K> the type of the key
      * @param <T0> the type of the primary stream
      * @param <T1_OUT> the type of the enriching stream's entry value
@@ -100,6 +106,9 @@ public final class JoinClause<K, T0, T1, T1_OUT> implements Serializable {
     /**
      * Returns a copy of this join clause, but with the right-hand projection
      * function replaced with the supplied one.
+     * <p>
+     * The given function must be stateless and {@linkplain
+     * Processor#isCooperative() cooperative}.
      */
     public <T1_NEW_OUT> JoinClause<K, T0, T1, T1_NEW_OUT> projecting(
             FunctionEx<? super T1, ? extends T1_NEW_OUT> rightProjectFn

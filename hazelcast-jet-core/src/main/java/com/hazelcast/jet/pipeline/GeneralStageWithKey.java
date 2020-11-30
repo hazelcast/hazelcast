@@ -90,7 +90,8 @@ public interface GeneralStageWithKey<T, K> {
      *
      * @param createFn function that returns the state object
      * @param mapFn    function that receives the state object and the input item and
-     *                 outputs the result item. It may modify the state object.
+     *                 outputs the result item. It may modify the state object. It must be
+     *                 stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param <S>      type of the state object
      * @param <R>      type of the result
      */
@@ -121,6 +122,9 @@ public interface GeneralStageWithKey<T, K> {
      *                 }
      *         );
      * }</pre>
+     * <p>
+     * The given functions must be stateless and {@linkplain
+     * Processor#isCooperative() cooperative}.
      *
      * @param createFn function that returns the state object
      * @param filterFn predicate that receives the state object and the input item and
@@ -157,6 +161,9 @@ public interface GeneralStageWithKey<T, K> {
      *                 }
      *         );
      * }</pre>
+     * <p>
+     * The given functions must be stateless and {@linkplain
+     * Processor#isCooperative() cooperative}.
      *
      * @param createFn  function that returns the state object
      * @param flatMapFn function that receives the state object and the input item and
@@ -241,7 +248,9 @@ public interface GeneralStageWithKey<T, K> {
      * @param <S> type of service object
      * @param <R> the result type of the mapping function
      * @param serviceFactory the service factory
-     * @param mapFn a stateless mapping function
+     * @param mapFn a mapping function. It must be stateless. It must be
+     *     {@linkplain ServiceFactory#isCooperative() cooperative}, if the service
+     *     is cooperative.
      * @return the newly attached stage
      *
      * @deprecated Jet now has first-class support for data rebalancing, see
@@ -280,8 +289,9 @@ public interface GeneralStageWithKey<T, K> {
      * @param <S> type of service object
      * @param <R> the future's result type of the mapping function
      * @param serviceFactory the service factory
-     * @param mapAsyncFn a stateless mapping function. Can map to null (return
-     *      a null future)
+     * @param mapAsyncFn a mapping function. Can map to null (return a null
+     *     future). It must be stateless and {@linkplain Processor#isCooperative()
+     *     cooperative}.
      * @return the newly attached stage
      *
      * @deprecated Jet now has first-class support for data rebalancing, see
@@ -320,8 +330,9 @@ public interface GeneralStageWithKey<T, K> {
      * @param serviceFactory the service factory
      * @param maxConcurrentOps maximum number of concurrent async operations per processor
      * @param preserveOrder whether the async responses are ordered or not
-     * @param mapAsyncFn a stateless mapping function. Can map to null (return
-     *      a null future)
+     * @param mapAsyncFn a mapping function. Can map to null (return
+     *      a null future). It must be stateless and {@linkplain
+     *      Processor#isCooperative() cooperative}.
      * @return the newly attached stage
      *
      * @deprecated Jet now has first-class support for data rebalancing, see
@@ -367,7 +378,9 @@ public interface GeneralStageWithKey<T, K> {
      *
      * @param serviceFactory the service factory
      * @param maxBatchSize max size of the input list
-     * @param mapAsyncFn a stateless mapping function
+     * @param mapAsyncFn a mapping function. It must be stateless. It must be
+     *     {@linkplain ServiceFactory#isCooperative() cooperative}, if the service
+     *     is cooperative.
      * @param <S> type of service object
      * @param <R> the future result type of the mapping function
      * @return the newly attached stage
@@ -421,7 +434,8 @@ public interface GeneralStageWithKey<T, K> {
      *
      * @param serviceFactory the service factory
      * @param maxBatchSize max size of the input list
-     * @param mapAsyncFn a stateless mapping function
+     * @param mapAsyncFn a mapping function. It must be stateless and
+     *     {@linkplain Processor#isCooperative() cooperative}.
      * @param <S> type of service object
      * @param <R> the future result type of the mapping function
      * @return the newly attached stage
@@ -475,7 +489,9 @@ public interface GeneralStageWithKey<T, K> {
      *
      * @param <S> type of service object
      * @param serviceFactory the service factory
-     * @param filterFn a stateless filter predicate function
+     * @param filterFn a filter predicate function. It must be stateless. It
+     *     must be {@linkplain ServiceFactory#isCooperative() cooperative}, if the
+     *     service is cooperative.
      * @return the newly attached stage
      *
      * @deprecated Jet now has first-class support for data rebalancing, see
@@ -524,9 +540,11 @@ public interface GeneralStageWithKey<T, K> {
      * @param <S> type of service object
      * @param <R> type of the output items
      * @param serviceFactory the service factory
-     * @param flatMapFn a stateless flatmapping function. It must not return
-     *                 null traverser, but can return an {@linkplain
-     *                 Traversers#empty() empty traverser}.
+     * @param flatMapFn a flatmapping function. It must not return null
+     *     traverser, but can return an {@linkplain Traversers#empty() empty
+     *     traverser}. It must be stateless. It must be {@linkplain
+     *     ServiceFactory#isCooperative() cooperative}, if the service is
+     *     cooperative.
      * @return the newly attached stage
      *
      * @deprecated Jet now has first-class support for data rebalancing, see
@@ -569,7 +587,8 @@ public interface GeneralStageWithKey<T, K> {
      * locality will be broken.
      *
      * @param mapName name of the {@code IMap}
-     * @param mapFn the mapping function
+     * @param mapFn the mapping function. It must be stateless and {@linkplain
+     *     Processor#isCooperative() cooperative}.
      * @param <V> type of the value in the {@code IMap}
      * @param <R> type of the output item
      * @return the newly attached stage
@@ -614,7 +633,8 @@ public interface GeneralStageWithKey<T, K> {
      * data locality will be broken.
      *
      * @param iMap the {@code IMap} to use as the service
-     * @param mapFn the mapping function
+     * @param mapFn the mapping function. It must be stateless and {@linkplain
+     *     Processor#isCooperative() cooperative}.
      * @param <V> type of the value in the {@code IMap}
      * @param <R> type of the output item
      * @return the newly attached stage

@@ -18,6 +18,7 @@ package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.Processor;
 
 import javax.annotation.Nonnull;
 
@@ -38,6 +39,9 @@ import javax.annotation.Nonnull;
  *     .<Long>andAccumulate1(LongAccumulator::add)
  *     .andFinish(LongAccumulator::get);
  * }</pre>
+ * <p>
+ * All the functions must be stateless and {@linkplain
+ * Processor#isCooperative() cooperative}.
  *
  * @param <T0> the type of item in stream-0
  * @param <T1> the type of item in stream-1
@@ -51,6 +55,9 @@ public interface AggregateOperation2<T0, T1, A, R> extends AggregateOperation<A,
     /**
      * A primitive that updates the accumulator state to account for a new
      * item coming from stream-0.
+     * <p>
+     * The consumer must be stateless and {@linkplain Processor#isCooperative()
+     * cooperative}.
      */
     @Nonnull
     BiConsumerEx<? super A, ? super T0> accumulateFn0();
@@ -58,6 +65,9 @@ public interface AggregateOperation2<T0, T1, A, R> extends AggregateOperation<A,
     /**
      * A primitive that updates the accumulator state to account for a new
      * item coming from stream-1.
+     * <p>
+     * The consumer must be stateless and {@linkplain Processor#isCooperative()
+     * cooperative}.
      */
     @Nonnull
     BiConsumerEx<? super A, ? super T1> accumulateFn1();
@@ -65,6 +75,9 @@ public interface AggregateOperation2<T0, T1, A, R> extends AggregateOperation<A,
     /**
      * Returns a copy of this aggregate operation, but with the {@code
      * accumulate} primitive at index 0 replaced with the one supplied here.
+     * <p>
+     * The consumer must be stateless and {@linkplain Processor#isCooperative()
+     * cooperative}.
      */
     @Nonnull
     <T0_NEW> AggregateOperation2<T0_NEW, T1, A, R> withAccumulateFn0(
@@ -74,6 +87,9 @@ public interface AggregateOperation2<T0, T1, A, R> extends AggregateOperation<A,
     /**
      * Returns a copy of this aggregate operation, but with the {@code
      * accumulate} primitive at index 1 replaced with the one supplied here.
+     * <p>
+     * The consumer must be stateless and {@linkplain Processor#isCooperative()
+     * cooperative}.
      */
     @Nonnull
     <T1_NEW> AggregateOperation2<T0, T1_NEW, A, R> withAccumulateFn1(

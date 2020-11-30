@@ -19,6 +19,7 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.impl.pipeline.GrAggBuilder;
 
@@ -82,6 +83,8 @@ public class GroupAggregateBuilder1<T0, K> {
      * a separate mapping stage with {@code mapToOutputFn}.
      *
      * @param aggrOp the aggregate operation to perform
+     * @param mapToOutputFn the function to map the output. It must be
+     *     stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param <R> result type of the aggregate operation
      * @param <OUT> output type of the returned stage
      * @return a new stage representing the co-group-and-aggregate operation

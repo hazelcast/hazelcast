@@ -20,6 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.datamodel.WindowResult;
@@ -66,7 +67,8 @@ public interface StageWithWindow<T> {
      * job otherwise. Also make sure that it implements {@code equals()} and
      * {@code hashCode()}.
      *
-     * @param keyFn function that extracts the grouping key
+     * @param keyFn function that extracts the grouping key. It must be
+     *     stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param <K> type of the key
      */
     @Nonnull

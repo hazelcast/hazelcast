@@ -49,7 +49,8 @@ import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServic
  * stream} pipeline stages, defining those operations that apply to both.
  * <p>
  * Unless specified otherwise, all functions passed to methods of this
- * interface must be stateless.
+ * interface must be stateless and {@linkplain Processor#isCooperative()
+ * cooperative}.
  *
  * @param <T> the type of items coming out of this stage
  *
@@ -68,7 +69,8 @@ public interface GeneralStage<T> extends Stage {
      * stage.map(name -> name.toLowerCase())
      * }</pre>
      *
-     * @param mapFn a stateless mapping function
+     * @param mapFn a mapping function. It must be stateless and {@linkplain
+     *     Processor#isCooperative() cooperative}.
      * @param <R> the result type of the mapping function
      * @return the newly attached stage
      */
@@ -85,7 +87,8 @@ public interface GeneralStage<T> extends Stage {
      * stage.filter(name -> !name.isEmpty())
      * }</pre>
      *
-     * @param filterFn a stateless filter predicate function
+     * @param filterFn a filter predicate function. It must be stateless and
+     *     {@linkplain Processor#isCooperative() cooperative}.
      * @return the newly attached stage
      */
     @Nonnull
@@ -102,10 +105,10 @@ public interface GeneralStage<T> extends Stage {
      * stage.flatMap(sentence -> traverseArray(sentence.split("\\W+")))
      * }</pre>
      *
-     * @param flatMapFn a stateless flatmapping function, whose result type is
-     *                  Jet's {@link Traverser}. It must not return null
-     *                  traverser, but can return an {@linkplain
-     *                  Traversers#empty() empty traverser}.
+     * @param flatMapFn a flatmapping function, whose result type is
+     *                  Jet's {@link Traverser}. It must not return a null traverser, but can
+     *                  return an {@linkplain Traversers#empty() empty traverser}. It must be
+     *                  stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param <R> the type of items in the result's traversers
      * @return the newly attached stage
      */
@@ -141,9 +144,11 @@ public interface GeneralStage<T> extends Stage {
      * This code has the same result as {@link #rollingAggregate
      * latencies.rollingAggregate(summing())}.
      *
-     * @param createFn function that returns the state object
+     * @param createFn function that returns the state object. It must be
+     *                 stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param mapFn    function that receives the state object and the input item and
-     *                 outputs the result item. It may modify the state object.
+     *                 outputs the result item. It may modify the state object. It must be
+     *                 stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param <S>      type of the state object
      * @param <R>      type of the result
      */
@@ -172,9 +177,11 @@ public interface GeneralStage<T> extends Stage {
      * );
      * }</pre>
      *
-     * @param createFn function that returns the state object
+     * @param createFn function that returns the state object. It must be
+     *                 stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param filterFn function that receives the state object and the input item and
-     *                 produces the boolean result. It may modify the state object.
+     *                 produces the boolean result. It may modify the state object. It must be
+     *                 stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param <S>      type of the state object
      */
     @Nonnull
@@ -205,11 +212,13 @@ public interface GeneralStage<T> extends Stage {
      * );
      * }</pre>
      *
-     * @param createFn  function that returns the state object
+     * @param createFn  function that returns the state object. It must be
+     *                  stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param flatMapFn function that receives the state object and the input item and
      *                  outputs the result items. It may modify the state
      *                  object. It must not return null traverser, but can
-     *                  return an {@linkplain Traversers#empty() empty traverser}.
+     *                  return an {@linkplain Traversers#empty() empty traverser}. It must be
+     *                  stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param <S>       type of the state object
      * @param <R>       type of the result
      */
@@ -285,7 +294,9 @@ public interface GeneralStage<T> extends Stage {
      * duplicate updates.
      *
      * @param serviceFactory the service factory
-     * @param mapFn a stateless mapping function
+     * @param mapFn a mapping function. It must be stateless. It must be
+     *     {@linkplain ServiceFactory#isCooperative() cooperative}, if the service
+     *     is cooperative.
      * @param <S> type of service object
      * @param <R> the result type of the mapping function
      * @return the newly attached stage
@@ -332,8 +343,9 @@ public interface GeneralStage<T> extends Stage {
      * duplicate updates.
      *
      * @param serviceFactory the service factory
-     * @param mapAsyncFn a stateless mapping function. Can map to null (return
-     *      a null future)
+     * @param mapAsyncFn a mapping function. Can map to null (return a null
+     *     future). It must be stateless and {@linkplain Processor#isCooperative()
+     *     cooperative}.
      * @param <S> type of service object
      * @param <R> the future result type of the mapping function
      * @return the newly attached stage
@@ -378,8 +390,9 @@ public interface GeneralStage<T> extends Stage {
      * @param serviceFactory the service factory
      * @param maxConcurrentOps maximum number of concurrent async operations per processor
      * @param preserveOrder whether the ordering of the input items should be preserved
-     * @param mapAsyncFn a stateless mapping function. Can map to null (return
-     *      a null future)
+     * @param mapAsyncFn a mapping function. Can map to null (return a null
+     *     future). It must be stateless and {@linkplain Processor#isCooperative()
+     *     cooperative}.
      * @param <S> type of service object
      * @param <R> the future result type of the mapping function
      * @return the newly attached stage
@@ -435,7 +448,8 @@ public interface GeneralStage<T> extends Stage {
      *
      * @param serviceFactory the service factory
      * @param maxBatchSize max size of the input list
-     * @param mapAsyncFn a stateless mapping function
+     * @param mapAsyncFn a mapping function. It must be stateless and
+     *     {@linkplain Processor#isCooperative() cooperative}.
      * @param <S> type of service object
      * @param <R> the future result type of the mapping function
      * @return the newly attached stage
@@ -474,7 +488,8 @@ public interface GeneralStage<T> extends Stage {
      * duplicate updates.
      *
      * @param serviceFactory the service factory
-     * @param filterFn a stateless filter predicate function
+     * @param filterFn a filter predicate function. It must be stateless and
+     *     {@linkplain Processor#isCooperative() cooperative}.
      * @param <S> type of service object
      * @return the newly attached stage
      */
@@ -512,9 +527,10 @@ public interface GeneralStage<T> extends Stage {
      * duplicate updates.
      *
      * @param serviceFactory the service factory
-     * @param flatMapFn a stateless flatmapping function, whose result type is Jet's {@link
+     * @param flatMapFn a flatmapping function, whose result type is Jet's {@link
      *                  Traverser}. It must not return null traverser, but can return an
-     *                  {@linkplain Traversers#empty() empty traverser}.
+     *                  {@linkplain Traversers#empty() empty traverser}. It must be stateless
+     *                  and {@linkplain Processor#isCooperative() cooperative}.
      * @param <S> type of service object
      * @param <R> the type of items in the result's traversers
      * @return the newly attached stage
@@ -553,8 +569,10 @@ public interface GeneralStage<T> extends Stage {
      *
      * @param mapName name of the {@code ReplicatedMap}
      * @param lookupKeyFn a function which returns the key to look up in the map. Must not return
-     *                    null
-     * @param mapFn the mapping function
+     *                    null. It must be stateless and {@linkplain Processor#isCooperative()
+     *                    cooperative}.
+     * @param mapFn the mapping function. It must be stateless and {@linkplain
+     *     Processor#isCooperative() cooperative}
      * @param <K> type of the key in the {@code ReplicatedMap}
      * @param <V> type of the value in the {@code ReplicatedMap}
      * @param <R> type of the output item
@@ -599,8 +617,10 @@ public interface GeneralStage<T> extends Stage {
      *
      * @param replicatedMap the {@code ReplicatedMap} to lookup from
      * @param lookupKeyFn a function which returns the key to look up in the map. Must not return
-     *                    null.
-     * @param mapFn the mapping function
+     *                    null. It must be stateless and {@linkplain Processor#isCooperative()
+     *                    cooperative}.
+     * @param mapFn the mapping function. It must be stateless and {@linkplain
+     *     Processor#isCooperative() cooperative}
      * @param <K> type of the key in the {@code ReplicatedMap}
      * @param <V> type of the value in the {@code ReplicatedMap}
      * @param <R> type of the output item
@@ -646,8 +666,9 @@ public interface GeneralStage<T> extends Stage {
      *
      * @param mapName name of the {@code IMap}
      * @param lookupKeyFn a function which returns the key to look up in the map. Must not return
-     *                    null
-     * @param mapFn the mapping function
+     *     null. It must be stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param mapFn the mapping function. It must be stateless and {@linkplain
+     *     Processor#isCooperative() cooperative}.
      * @param <K> type of the key in the {@code IMap}
      * @param <V> type of the value in the {@code IMap}
      * @param <R> type of the output item
@@ -700,8 +721,10 @@ public interface GeneralStage<T> extends Stage {
      *
      * @param iMap the {@code IMap} to lookup from
      * @param lookupKeyFn a function which returns the key to look up in the map. Must not return
-     *                    null.
-     * @param mapFn the mapping function
+     *     null. It must be stateless and {@linkplain Processor#isCooperative()
+     *     cooperative}.
+     * @param mapFn the mapping function. It must be stateless and {@linkplain
+     *     Processor#isCooperative() cooperative}.
      * @param <K> type of the key in the {@code IMap}
      * @param <V> type of the value in the {@code IMap}
      * @param <R> type of the output item
@@ -738,7 +761,9 @@ public interface GeneralStage<T> extends Stage {
      *
      * @param stage1        the stage to hash-join with this one
      * @param joinClause1   specifies how to join the two streams
-     * @param mapToOutputFn function to map the joined items to the output value
+     * @param mapToOutputFn function to map the joined items to the output
+     *                      value. It must be stateless and {@linkplain Processor#isCooperative()
+     *                      cooperative}.
      * @param <K>           the type of the join key
      * @param <T1_IN>       the type of {@code stage1} items
      * @param <T1>          the result type of projection on {@code stage1} items
@@ -779,7 +804,9 @@ public interface GeneralStage<T> extends Stage {
      *
      * @param stage1        the stage to hash-join with this one
      * @param joinClause1   specifies how to join the two streams
-     * @param mapToOutputFn function to map the joined items to the output value
+     * @param mapToOutputFn function to map the joined items to the output
+     *                      value. It must be stateless and {@linkplain Processor#isCooperative()
+     *                      cooperative}.
      * @param <K>           the type of the join key
      * @param <T1_IN>       the type of {@code stage1} items
      * @param <T1>          the result type of projection on {@code stage1} items
@@ -821,7 +848,9 @@ public interface GeneralStage<T> extends Stage {
      * @param joinClause1   specifies how to join with {@code stage1}
      * @param stage2        the second stage to join
      * @param joinClause2   specifies how to join with {@code stage2}
-     * @param mapToOutputFn function to map the joined items to the output value
+     * @param mapToOutputFn function to map the joined items to the output
+     *                      value. It must be stateless and {@linkplain Processor#isCooperative()
+     *                      cooperative}.
      * @param <K1>          the type of key for {@code stage1}
      * @param <T1_IN>       the type of {@code stage1} items
      * @param <T1>          the result type of projection of {@code stage1} items
@@ -871,7 +900,9 @@ public interface GeneralStage<T> extends Stage {
      * @param joinClause1   specifies how to join with {@code stage1}
      * @param stage2        the second stage to join
      * @param joinClause2   specifies how to join with {@code stage2}
-     * @param mapToOutputFn function to map the joined items to the output value
+     * @param mapToOutputFn function to map the joined items to the output
+     *                      value. It must be stateless and {@linkplain Processor#isCooperative()
+     *                      cooperative}.
      * @param <K1>          the type of key for {@code stage1}
      * @param <T1_IN>       the type of {@code stage1} items
      * @param <T1>          the result type of projection of {@code stage1} items
@@ -936,7 +967,8 @@ public interface GeneralStage<T> extends Stage {
      * job otherwise. Also make sure that it implements {@code equals()} and
      * {@code hashCode()}.
      *
-     * @param keyFn function that extracts the grouping key
+     * @param keyFn function that extracts the grouping key. It must be
+     *     stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param <K> type of the key
      * @return the newly attached stage
      */
@@ -1054,7 +1086,8 @@ public interface GeneralStage<T> extends Stage {
      *     one.
      * </li></ol>
      *
-     * @param keyFn the partitioning key function
+     * @param keyFn the partitioning key function. It must be stateless and
+     *     {@linkplain Processor#isCooperative() cooperative}.
      * @param <K> type of the key
      * @return a new stage using the same transform as this one, only with a
      *         rebalancing flag raised that will affect data routing into the next
@@ -1110,7 +1143,8 @@ public interface GeneralStage<T> extends Stage {
      * timestamps and they can cause unspecified behaviour.
      *
      * @param timestampFn a function that returns the timestamp for each item,
-     *                    typically in milliseconds
+     *                    typically in milliseconds. It must be stateless and {@linkplain
+     *                    Processor#isCooperative() cooperative}.
      * @param allowedLag the allowed lag behind the top observed timestamp.
      *                   Time unit is the same as the unit used by {@code
      *                   timestampFn}
@@ -1159,11 +1193,14 @@ public interface GeneralStage<T> extends Stage {
      * }</pre>
      *
      * @param shouldLogFn a function to filter the logged items. You can use {@link
-     *                    PredicateEx#alwaysTrue()
-     *                    alwaysTrue()} as a pass-through filter when you don't need any
-     *                    filtering.
-     * @param toStringFn  a function that returns a string representation of the item
+     *                    PredicateEx#alwaysTrue() alwaysTrue()} as a pass-through filter when you
+     *                    don't need any filtering. It must be stateless and {@linkplain
+     *                    Processor#isCooperative() cooperative}.
+     * @param toStringFn  a function that returns a string representation of
+     *                    the item. It must be stateless and {@linkplain Processor#isCooperative()
+     *                    cooperative}.
      * @return the newly attached stage
+     *
      * @see #peek(FunctionEx)
      * @see #peek()
      */
@@ -1191,8 +1228,11 @@ public interface GeneralStage<T> extends Stage {
      * users.peek(User::getName)
      * }</pre>
      *
-     * @param toStringFn  a function that returns a string representation of the item
+     * @param toStringFn a function that returns a string representation of
+     *     the item. It must be stateless and {@linkplain Processor#isCooperative()
+     *     cooperative}.
      * @return the newly attached stage
+     *
      * @see #peek(PredicateEx, FunctionEx)
      * @see #peek()
      */

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 
@@ -74,7 +75,9 @@ public final class AllOfAggregationBuilder<T> {
      * call the supplied {@code exportFinishFn} to transform the {@link ItemsByTag}
      * it creates to the result type it emits as the actual result.
      *
-     * @param exportFinishFn function that converts the {@link ItemsByTag} to the target result type
+     * @param exportFinishFn function that converts the {@link ItemsByTag} to
+     *     the target result type. It must be stateless and {@linkplain
+     *     Processor#isCooperative() cooperative}.
      */
     @Nonnull
     @SuppressWarnings({"unchecked", "ConstantConditions"})

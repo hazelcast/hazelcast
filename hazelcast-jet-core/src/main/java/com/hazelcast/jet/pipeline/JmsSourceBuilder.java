@@ -58,6 +58,8 @@ public final class JmsSourceBuilder {
 
     /**
      * Use {@link Sources#jmsQueueBuilder} of {@link Sources#jmsTopicBuilder}.
+     * <p>
+     * The given function must be stateless.
      */
     JmsSourceBuilder(@Nonnull SupplierEx<? extends ConnectionFactory> factorySupplier, boolean isTopic) {
         checkSerializable(factorySupplier, "factorySupplier");
@@ -89,6 +91,8 @@ public final class JmsSourceBuilder {
      *         : factory.createConnection()
      * </pre>
      * The user name and password set with {@link #connectionParams} are used.
+     * <p>
+     * The given function must be stateless.
      *
      * @return this instance for fluent API
      */
@@ -121,6 +125,8 @@ public final class JmsSourceBuilder {
      * <p>
      * If you're consuming a topic and you create a shared consumer, make
      * sure to also call {@link #sharedConsumer(boolean) sharedConsumer(true)}.
+     * <p>
+     * The given function must be stateless.
      *
      * @return this instance for fluent API
      */
@@ -145,6 +151,8 @@ public final class JmsSourceBuilder {
      * at-least-once.
      * <p>
      * The default is to use {@code Message.getJMSMessageID()}.
+     * <p>
+     * The given function must be stateless.
      *
      * @return this instance for fluent API
      */
@@ -218,6 +226,8 @@ public final class JmsSourceBuilder {
     /**
      * Creates and returns the JMS {@link StreamSource} with the supplied
      * components and the projection function {@code projectionFn}.
+     * <p>
+     * The given function must be stateless.
      *
      * @param projectionFn the function which creates output object from each
      *                    message

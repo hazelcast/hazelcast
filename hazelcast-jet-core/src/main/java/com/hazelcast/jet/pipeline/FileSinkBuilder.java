@@ -20,6 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.core.Processor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -68,6 +69,9 @@ public final class FileSinkBuilder<T> {
      * Sets the function which converts the item to its string representation.
      * Each item is followed with a platform-specific line separator. Default
      * value is {@link Object#toString}.
+     * <p>
+     * The given function must be stateless and {@linkplain
+     * Processor#isCooperative() cooperative}.
      */
     @Nonnull
     public FileSinkBuilder<T> toStringFn(@Nonnull FunctionEx<? super T, String> toStringFn) {

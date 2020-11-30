@@ -187,7 +187,8 @@ public final class SourceBuilder<C> {
      * }</pre>
      *
      * @param name     a descriptive name for the source (for diagnostic purposes)
-     * @param createFn a function that creates the source's context object
+     * @param createFn a function that creates the source's context object. It
+     *                 must be stateless.
      * @param <C>      type of the context object
      *
      * @since 3.0
@@ -247,7 +248,8 @@ public final class SourceBuilder<C> {
      * }</pre>
      *
      * @param name     a descriptive name for the source (for diagnostic purposes)
-     * @param createFn a function that creates the source's context object
+     * @param createFn a function that creates the source's context object. It
+     *                 must be stateless.
      * @param <C>      type of the context object
      *
      * @since 3.0
@@ -330,7 +332,8 @@ public final class SourceBuilder<C> {
      * if you need to coalesce watermarks from multiple partitions.
      *
      * @param name a descriptive name for the source (for diagnostic purposes)
-     * @param createFn a function that creates the source's context object
+     * @param createFn a function that creates the source's context object. It
+     *     must be stateless.
      * @param <C> type of the context object
      *
      * @since 3.0
@@ -352,6 +355,8 @@ public final class SourceBuilder<C> {
          * an execution. It gives you the opportunity to release any resources that
          * your context object may be holding. Jet also calls this function when
          * the user cancels or restarts the job.
+         * <p>
+         * The function must be stateless.
          */
         @Nonnull
         public Base<T> destroyFn(@Nonnull ConsumerEx<? super C> destroyFn) {
@@ -416,6 +421,8 @@ public final class SourceBuilder<C> {
          *         .build();
          * }</pre>
          *
+         * @param createSnapshotFn a function to create an object to store in the
+         *     state snapshot. It must be stateless.
          * @param <S> type of the snapshot object
          *
          * @since 3.1
@@ -446,7 +453,8 @@ public final class SourceBuilder<C> {
          * it to other threads. For example, you shouldn't add to it in a
          * callback of an asynchronous operation.
          *
-         * @param fillBufferFn function that fills the buffer with source data
+         * @param fillBufferFn function that fills the buffer with source data. It
+         *     must be stateless.
          * @param <T_NEW> type of the emitted items
          * @return this builder with the item type reset to the one inferred from
          *         {@code fillBufferFn}
@@ -605,7 +613,8 @@ public final class SourceBuilder<C> {
          * shouldn't pass it to other threads. For example, you shouldn't add
          * to it in a callback of an asynchronous operation.
          *
-         * @param fillBufferFn function that fills the buffer with source data
+         * @param fillBufferFn function that fills the buffer with source data. It
+         *     must be stateless.
          * @param <T_NEW> type of the emitted items
          * @return this builder with the item type reset to the one inferred from
          *         {@code fillBufferFn}
@@ -698,6 +707,9 @@ public final class SourceBuilder<C> {
          * restoreSnapshotFn} accepts a list of snapshot objects. It should
          * figure out which part of the snapshot data pertains to it and it can
          * do so as explained {@link Base#distributed here}.
+         *
+         * @param restoreSnapshotFn the function to restore the state into the
+         *     context. It must be stateless.
          *
          * @since 3.1
          */

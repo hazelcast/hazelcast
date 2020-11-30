@@ -99,6 +99,9 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      *                         "%s:totalForSession:%d", key, time), sum.get())
      *         );
      * }</pre>
+     * <p>
+     * The given functions must be stateless and {@linkplain
+     * Processor#isCooperative() cooperative}.
      *
      * @param ttl        time-to-live for each state object, disabled if zero or less
      * @param createFn   function that returns the state object
@@ -160,6 +163,9 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      *                 }
      *         );
      * }</pre>
+     * <p>
+     * The given functions must be stateless and {@linkplain
+     * Processor#isCooperative() cooperative}.
      *
      * @param ttl      time-to-live for each state object, disabled if zero or less
      * @param createFn function that returns the state object
@@ -219,6 +225,9 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      *                 (counter, key, wm) -> Traversers.singleton("punctuation" + key)
      *         );
      * }</pre>
+     * <p>
+     * The given functions must be stateless and {@linkplain
+     * Processor#isCooperative() cooperative}.
      *
      * @param ttl        time-to-live for each state object, disabled if zero or less
      * @param createFn   function that returns the state object

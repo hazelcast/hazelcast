@@ -18,6 +18,7 @@ package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.Processor;
 
 import javax.annotation.Nonnull;
 import java.util.stream.Collector;
@@ -29,6 +30,9 @@ import java.util.stream.Collector;
  * contains factories for the built-in implementations and you can create
  * your own using the {@linkplain AggregateOperation#withCreate aggregate
  * operation builder}.
+ * <p>
+ * All the functions must be stateless and {@linkplain
+ * Processor#isCooperative() cooperative}.
  *
  * @param <T> the type of the stream item
  * @param <A> the type of the accumulator
@@ -41,6 +45,9 @@ public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
     /**
      * A primitive that updates the accumulator state to account for a new
      * item.
+     * <p>
+     * The consumer must be stateless and {@linkplain Processor#isCooperative()
+     * cooperative}.
      */
     @Nonnull
     BiConsumerEx<? super A, ? super T> accumulateFn();
@@ -48,6 +55,9 @@ public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
     /**
      * Returns a copy of this aggregate operation, but with the {@code
      * accumulate} primitive replaced with the one supplied here.
+     * <p>
+     * The consumer must be stateless and {@linkplain Processor#isCooperative()
+     * cooperative}.
      */
     @Nonnull
     <NEW_T> AggregateOperation1<NEW_T, A, R> withAccumulateFn(

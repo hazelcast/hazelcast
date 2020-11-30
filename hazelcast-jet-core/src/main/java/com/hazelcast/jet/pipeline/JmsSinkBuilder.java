@@ -93,6 +93,8 @@ public final class JmsSinkBuilder<T> {
      *                 : factory.createConnection();
      *     }
      * }</pre>
+     *
+     * The given function must be stateless.
      */
     @Nonnull
     public JmsSinkBuilder<T> connectionFn(@Nullable FunctionEx<ConnectionFactory, Connection> connectionFn) {
@@ -116,6 +118,8 @@ public final class JmsSinkBuilder<T> {
      * If not provided, the builder creates a function which wraps {@code
      * item.toString()} into a {@link javax.jms.TextMessage}, unless the item
      * is already an instance of {@code javax.jms.Message}.
+     * <p>
+     * The given function must be stateless.
      */
     @Nonnull
     public JmsSinkBuilder<T> messageFn(@Nullable BiFunctionEx<Session, T, Message> messageFn) {

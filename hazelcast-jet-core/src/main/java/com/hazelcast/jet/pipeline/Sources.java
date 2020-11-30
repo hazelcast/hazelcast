@@ -30,6 +30,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.ToResultSetFunction;
@@ -240,12 +241,13 @@ public final class Sources {
      *
      * @param mapName the name of the map
      * @param predicate the predicate to filter the events. If you want to specify just the
-     *                  projection, use {@link
-     *                  Predicates#alwaysTrue()} as a pass-through
-     *                  predicate
+     *                  projection, use {@link Predicates#alwaysTrue()} as a pass-through
+     *                  predicate. It must be stateless and {@linkplain
+     *                  Processor#isCooperative() cooperative}.
      * @param projection the projection to map the events. If the projection returns a {@code
      *                   null} for an item, that item will be filtered out. If you want to
-     *                   specify just the predicate, use {@link Projections#identity()}.
+     *                   specify just the predicate, use {@link Projections#identity()}. It must
+     *                   be stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param <T> type of emitted item
      */
     @Nonnull
@@ -306,12 +308,13 @@ public final class Sources {
      *
      * @param map        the Hazelcast map to read data from
      * @param predicate  the predicate to filter the events. If you want to specify just the
-     *                   projection, use {@link
-     *                   Predicates#alwaysTrue()} as a pass-through
-     *                   predicate
+     *                   projection, use {@link Predicates#alwaysTrue()} as a pass-through
+     *                   predicate. It must be stateless and {@linkplain
+     *                   Processor#isCooperative() cooperative}.
      * @param projection the projection to map the events. If the projection returns a {@code
      *                   null} for an item, that item will be filtered out. If you want to
-     *                   specify just the predicate, use {@link Projections#identity()}.
+     *                   specify just the predicate, use {@link Projections#identity()}. It must
+     *                   be stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param <T>        type of emitted item
      */
     @Nonnull
@@ -366,11 +369,13 @@ public final class Sources {
      * @param projectionFn the projection to map the events. If the projection returns a {@code
 *                     null} for an item, that item will be filtered out. You may use {@link
 *                     Util#mapEventToEntry()} to extract just the key and
-*                     the new value.
+*                     the new value. It must be stateless and {@linkplain
+*                     Processor#isCooperative() cooperative}.
      * @param predicateFn  the predicate to filter the events. If you want to specify just the
 *                     projection, use {@link Util#mapPutEvents} to pass
 *                     only {@link EntryEventType#ADDED ADDED} and
-*                     {@link EntryEventType#UPDATED UPDATED} events.
+*                     {@link EntryEventType#UPDATED UPDATED} events. It must be stateless and
+*                     {@linkplain Processor#isCooperative() cooperative}.
      */
     @Nonnull
     public static <T, K, V> StreamSource<T> mapJournal(
@@ -446,13 +451,14 @@ public final class Sources {
      * @param map          the map to read data from
      * @param initialPos   describes which event to start receiving from
      * @param projectionFn the projection to map the events. If the projection returns a {@code
-*                     null} for an item, that item will be filtered out. You may use {@link
-*                     Util#mapEventToEntry()} to extract just the key and
-*                     the new value.
+     *                     null} for an item, that item will be filtered out. You may use {@link
+     *                     Util#mapEventToEntry()} to extract just the key and the new value. It
+     *                     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param predicateFn  the predicate to filter the events. If you want to specify just the
-*                     projection, use {@link Util#mapPutEvents} to pass
-*                     only {@link EntryEventType#ADDED ADDED} and
-*                     {@link EntryEventType#UPDATED UPDATED} events.
+     *                     projection, use {@link Util#mapPutEvents} to pass only {@link
+     *                     EntryEventType#ADDED ADDED} and {@link EntryEventType#UPDATED UPDATED}
+     *                     events. It must be stateless and {@linkplain Processor#isCooperative()
+     *                     cooperative}.
      */
     @Nonnull
     public static <T, K, V> StreamSource<T> mapJournal(
@@ -569,11 +575,13 @@ public final class Sources {
      *
      * @param mapName the name of the map
      * @param predicate the predicate to filter the events. If you want to specify just the
-     *                  projection, use {@link Predicates#alwaysTrue()}
-     *                  as a pass-through predicate
+     *                  projection, use {@link Predicates#alwaysTrue()} as a pass-through
+     *                  predicate. It must be stateless and {@linkplain
+     *                  Processor#isCooperative() cooperative}.
      * @param projection the projection to map the events. If the projection returns a {@code
      *                   null} for an item, that item will be filtered out. If you want to
-     *                   specify just the predicate, use {@link Projections#identity()}.
+     *                   specify just the predicate, use {@link Projections#identity()}. It must
+     *                   be stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param <T> type of emitted item
      */
     @Nonnull
@@ -627,13 +635,13 @@ public final class Sources {
      * @param clientConfig configuration for the client to connect to the remote cluster
      * @param initialPos describes which event to start receiving from
      * @param projectionFn the projection to map the events. If the projection returns a {@code
-*                     null} for an item, that item will be filtered out. You may use {@link
-*                     Util#mapEventToEntry()} to extract just the key and
-*                     the new value.
+     *                     null} for an item, that item will be filtered out. You may use {@link
+     *                     Util#mapEventToEntry()} to extract just the key and the new value. It
+     *                     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param predicateFn the predicate to filter the events. You may use {@link
-*                    Util#mapPutEvents} to pass only {@link
-*                    EntryEventType#ADDED ADDED} and {@link EntryEventType#UPDATED UPDATED}
-*                    events.
+     *                    Util#mapPutEvents} to pass only {@link EntryEventType#ADDED ADDED} and
+     *                    {@link EntryEventType#UPDATED UPDATED} events. It must be stateless and
+     *                    {@linkplain Processor#isCooperative() cooperative}.
      */
     @Nonnull
     public static <T, K, V> StreamSource<T> remoteMapJournal(
@@ -725,13 +733,13 @@ public final class Sources {
      * @param cacheName the name of the cache
      * @param initialPos describes which event to start receiving from
      * @param projectionFn the projection to map the events. If the projection returns a {@code
-*                     null} for an item, that item will be filtered out. You may use {@link
-*                     Util#cacheEventToEntry()} to extract just the key
-*                     and the new value.
+     *                     null} for an item, that item will be filtered out. You may use {@link
+     *                     Util#cacheEventToEntry()} to extract just the key and the new value. It
+     *                     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param predicateFn the predicate to filter the events. You may use {@link
-*                    Util#cachePutEvents()} to pass only {@link
-*                    CacheEventType#CREATED CREATED} and {@link
-*                    CacheEventType#UPDATED UPDATED} events.
+     *                    Util#cachePutEvents()} to pass only {@link CacheEventType#CREATED
+     *                    CREATED} and {@link CacheEventType#UPDATED UPDATED} events. It must be
+     *                    stateless and {@linkplain Processor#isCooperative() cooperative}.
      */
     @Nonnull
     public static <T, K, V> StreamSource<T> cacheJournal(
@@ -821,13 +829,13 @@ public final class Sources {
      * @param clientConfig configuration for the client to connect to the remote cluster
      * @param initialPos describes which event to start receiving from
      * @param projectionFn the projection to map the events. If the projection returns a {@code
-*                     null} for an item, that item will be filtered out. You may use {@link
-*                     Util#cacheEventToEntry()} to extract just the key
-*                     and the new value.
+     *                     null} for an item, that item will be filtered out. You may use {@link
+     *                     Util#cacheEventToEntry()} to extract just the key and the new value. It
+     *                     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param predicateFn the predicate to filter the events. You may use {@link
-*                    Util#cachePutEvents()} to pass only {@link
-*                    CacheEventType#CREATED CREATED} and {@link
-*                    CacheEventType#UPDATED UPDATED} events.
+     *                    Util#cachePutEvents()} to pass only {@link CacheEventType#CREATED
+     *                    CREATED} and {@link CacheEventType#UPDATED UPDATED} events. It must be
+     *                    stateless and {@linkplain Processor#isCooperative() cooperative}.
      */
     @Nonnull
     public static <T, K, V> StreamSource<T> remoteCacheJournal(
@@ -1137,7 +1145,8 @@ public final class Sources {
      * builder} and add a projection.
      *
      * @param name            the name of the queue
-     * @param factorySupplier supplier to obtain JMS connection factory
+     * @param factorySupplier supplier to obtain JMS connection factory. It
+     *     must be stateless.
      *
      * @since 4.1
      */
@@ -1170,6 +1179,9 @@ public final class Sources {
      * provider documentation for details.
      * <p>
      * The default local parallelism for this processor is 1.
+     *
+     * @param factorySupplier supplier to obtain JMS connection factory. It
+     *     must be stateless.
      */
     @Nonnull
     public static JmsSourceBuilder jmsQueueBuilder(SupplierEx<? extends ConnectionFactory> factorySupplier) {
@@ -1206,7 +1218,8 @@ public final class Sources {
      * builder} and add a projection.
      *
      * @param name            the name of the queue
-     * @param factorySupplier supplier to obtain JMS connection factory
+     * @param factorySupplier supplier to obtain JMS connection factory. It
+     *     must be stateless.
      *
      * @since 4.1
      */
@@ -1244,6 +1257,9 @@ public final class Sources {
      * provider documentation for details.
      * <p>
      * The default local parallelism for this processor is 1.
+     *
+     * @param factorySupplier supplier to obtain JMS connection factory. It
+     *     must be stateless.
      */
     @Nonnull
     public static JmsSourceBuilder jmsTopicBuilder(SupplierEx<? extends ConnectionFactory> factorySupplier) {
@@ -1293,6 +1309,8 @@ public final class Sources {
      * Any {@code SQLException} will cause the job to fail.
      * <p>
      * The default local parallelism for this processor is 1.
+     * <p>
+     * The given functions must be stateless.
      *
      * @param newConnectionFn creates the connection
      * @param resultSetFn creates a {@link ResultSet} using the connection,
@@ -1326,6 +1344,8 @@ public final class Sources {
      *         "select ID, NAME from PERSON",
      *         resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
      * }</pre>
+     *
+     * The given function must be stateless.
      */
     public static <T> BatchSource<T> jdbc(
             @Nonnull String connectionURL,

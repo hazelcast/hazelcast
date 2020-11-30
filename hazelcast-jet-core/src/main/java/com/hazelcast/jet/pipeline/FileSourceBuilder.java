@@ -18,6 +18,7 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 
 import javax.annotation.Nonnull;
@@ -122,7 +123,8 @@ public final class FileSourceBuilder {
      * count if it is less than 4).
      *
      * @param mapOutputFn the function which creates output object from each
-     *                    line. Gets the filename and line as parameters
+     *                    line. Gets the filename and line as parameters. It must be stateless and
+     *                    {@linkplain Processor#isCooperative() cooperative}.
      * @param <T>         the type of the items the source emits
      */
     @Nonnull
@@ -153,7 +155,7 @@ public final class FileSourceBuilder {
      *
      * @param readFileFn the function to read objects from a file. Gets file
      *                   {@code Path} as parameter and returns a {@code Stream}
-     *                   of items.
+     *                   of items. The function must be stateless.
      * @param <T>        the type of items returned from file reading
      */
     @Nonnull
@@ -218,7 +220,8 @@ public final class FileSourceBuilder {
      * editor. The best way to append is to use {@code echo text >> yourFile}.
      *
      * @param mapOutputFn the function which creates output object from each
-     *                    line. Gets the filename and line as parameters
+     *                    line. Gets the filename and line as parameters. It must be stateless and
+     *                    {@linkplain Processor#isCooperative() cooperative}.
      * @param <T>         the type of the items the source emits
      */
     @Nonnull
