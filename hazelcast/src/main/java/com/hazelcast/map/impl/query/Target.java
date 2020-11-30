@@ -17,12 +17,6 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.io.IOException;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.map.impl.query.Target.TargetMode.PARTITION_OWNER;
@@ -36,7 +30,7 @@ import static com.hazelcast.map.impl.query.Target.TargetMode.PARTITION_OWNER;
  *     <li>given partition set
  * </ul>
  */
-public class Target implements IdentifiedDataSerializable {
+public class Target {
 
     public static final Target ALL_NODES = new Target(TargetMode.ALL_NODES, null);
     public static final Target LOCAL_NODE = new Target(TargetMode.LOCAL_NODE, null);
@@ -67,32 +61,6 @@ public class Target implements IdentifiedDataSerializable {
         LOCAL_NODE,
         ALL_NODES,
         PARTITION_OWNER
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getClassId() {
-        return MapDataSerializerHook.TARGET;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        if (true) {
-            throw new UnsupportedOperationException();
-        }
-        // TODO use IDS
-        out.writeObject(partitions);
-        out.writeUTF(mode.name());
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        this.partitions = in.readObject();
-        this.mode = TargetMode.valueOf(in.readUTF());
     }
 
     public static Target createPartitionTarget(PartitionIdSet partitions) {
