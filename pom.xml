@@ -98,7 +98,7 @@
         <reflections.version>0.9.10</reflections.version>
         <jmh.version>1.21</jmh.version>
         <commons-lang3.version>3.4</commons-lang3.version>
-        <felix.utils.version>1.10.0</felix.utils.version>
+        <felix.utils.version>1.11.6</felix.utils.version>
         <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
         <http.components.version>4.3.6</http.components.version>
 
