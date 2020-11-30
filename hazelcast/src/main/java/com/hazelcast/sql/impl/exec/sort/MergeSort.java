@@ -33,6 +33,11 @@ import java.util.Set;
 public class MergeSort {
 
     /**
+     * Constant for unlimited number of rows.
+     */
+    public static final int UNLIMITED = 0;
+
+    /**
      * Sources.
      */
     private final MergeSortSource[] sources;
@@ -43,19 +48,34 @@ public class MergeSort {
     private final PriorityQueue<SortKey> heap;
 
     /**
+     * Optional limit on the number of returned results.
+     */
+    private final int limit;
+
+    /**
      * Sources which are not in the heap yet.
      */
     private final Set<Integer> missingSourceIndexes = new HashSet<>();
+
+    /**
+     * Number of returned rows.
+     */
+    private int returnedCount;
 
     /**
      * Whether the sorting is finished.
      */
     private boolean done;
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
     public MergeSort(MergeSortSource[] sources, SortKeyComparator comparator) {
+        this(sources, comparator, UNLIMITED);
+    }
+
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
+    public MergeSort(MergeSortSource[] sources, SortKeyComparator comparator, int limit) {
         this.sources = sources;
         this.heap = new PriorityQueue<>(comparator);
+        this.limit = limit > 0 ? limit : UNLIMITED;
 
         for (int i = 0; i < sources.length; i++) {
             missingSourceIndexes.add(i);
@@ -123,7 +143,7 @@ public class MergeSort {
         List<Row> rows = new ArrayList<>();
 
         while (true) {
-            if (heap.isEmpty()) {
+            if (heap.isEmpty() || (limit > 0 && returnedCount == limit)) {
                 done = true;
 
                 return rows;
@@ -156,6 +176,8 @@ public class MergeSort {
                     return rows;
                 }
             }
+
+            returnedCount++;
         }
     }
 

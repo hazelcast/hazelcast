@@ -17,6 +17,13 @@
 package com.hazelcast.sql.impl.exec.sort;
 
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.UpstreamExec;
+import com.hazelcast.sql.impl.exec.IterationResult;
+import com.hazelcast.sql.impl.exec.fetch.Fetch;
+import com.hazelcast.sql.impl.exec.fetch.FetchExec;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.exec.IterationResult;
@@ -24,6 +31,11 @@ import com.hazelcast.sql.impl.exec.io.InboundBatch;
 import com.hazelcast.sql.impl.exec.io.ReceiveSortMergeExec;
 import com.hazelcast.sql.impl.exec.io.StripedInbox;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControl;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
+import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -38,6 +50,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
+import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -218,7 +231,9 @@ public class SortExecTest extends SqlTestSupport {
                 1,
                 inbox,
                 new int[]{0},
-                new boolean[]{true}
+                new boolean[]{true},
+                null,
+                null
             );
 
         MergeSortSource[] sources = receiveSortMergeExec.getMergeSort().getSources();
@@ -332,7 +347,9 @@ public class SortExecTest extends SqlTestSupport {
                 1,
                 inbox,
                 new int[]{0},
-                new boolean[]{true}
+                new boolean[]{true},
+                null,
+                null
             );
         receiveSortMergeExec.setup(emptyFragmentContext());
 
@@ -404,7 +421,9 @@ public class SortExecTest extends SqlTestSupport {
                 1,
                 inbox,
                 new int[]{0},
-                new boolean[]{true}
+                new boolean[]{true},
+                null,
+                null
             );
         exec.setup(emptyFragmentContext());
 
@@ -440,6 +459,173 @@ public class SortExecTest extends SqlTestSupport {
         assertBatch(exec.currentBatch(), 14, 13, 27, false);
     }
 
+    @Test
+    public void testLimitOffset() {
+        Fetch fetchProcessor = newFetch(2L, 5L);
+
+        RowBatch batch = fetchProcessor.apply(createMonotonicBatch(0, 10));
+        assertBatch(batch, 5, 2, 6, true);
+
+        fetchProcessor = newFetch(2L, 5L);
+        batch = fetchProcessor.apply(createMonotonicBatch(0, 0));
+        assertBatch(batch, 0, 0, 0, true);
+
+        fetchProcessor = newFetch(2L, 5L);
+        batch = fetchProcessor.apply(createMonotonicBatch(0, 1));
+        assertBatch(batch, 0, 0, 0, true);
+
+        fetchProcessor = newFetch(2L, 5L);
+        batch = fetchProcessor.apply(createMonotonicBatch(0, 4));
+        assertBatch(batch, 2, 2, 3, true);
+
+        fetchProcessor = newFetch(5L, 10L);
+        batch = fetchProcessor.apply(createMonotonicBatch(0, 12));
+        assertBatch(batch, 7, 5, 11, true);
+    }
+
+    @Test
+    public void testOffsetOnly() {
+        Fetch fetchProcessor = newFetch(2L, null);
+        RowBatch batch = fetchProcessor.apply(createMonotonicBatch(0, 12));
+        assertBatch(batch, 10, 2, 11, true);
+
+        fetchProcessor = newFetch(10L, null);
+        batch = fetchProcessor.apply(createMonotonicBatch(0, 5));
+        assertBatch(batch, 0, 0, 0, true);
+
+        fetchProcessor = newFetch(2L, null);
+        batch = fetchProcessor.apply(createMonotonicBatch(0, 20));
+        assertBatch(batch, 18, 2, 19, true);
+    }
+
+    @Test
+    public void testLimitOnly() {
+        Fetch fetchProcessor = newFetch(null, 10L);
+        RowBatch batch = fetchProcessor.apply(createMonotonicBatch(0, 12));
+        assertBatch(batch, 10, 0, 9, true);
+
+        fetchProcessor = newFetch(null, 10L);
+        batch = fetchProcessor.apply(createMonotonicBatch(5, 10));
+        assertBatch(batch, 10, 5, 14, true);
+
+        fetchProcessor = newFetch(null, 0L);
+        batch = fetchProcessor.apply(createMonotonicBatch(5, 10));
+        assertBatch(batch, 0, 0, 0, true);
+    }
+
+    @Test
+    public void testLimitOfsetInvalid() {
+        assertThrows(QueryException.class, () -> newFetch(-1L, 10L));
+        assertThrows(QueryException.class, () -> newFetch(1L, -10L));
+        assertThrows(QueryException.class, () -> newFetch(-1L, -10L));
+    }
+
+    @Test
+    public void testFetchExec() {
+        UpstreamExec upstream = new UpstreamExec(1);
+
+        Expression<?> limit = ConstantExpression.create(10, BIGINT);
+        Expression<?> offset = ConstantExpression.create(5, BIGINT);
+
+        FetchExec exec = new FetchExec(2, upstream, limit, offset);
+        exec.setup(emptyFragmentContext());
+
+        // Test empty state.
+        assertEquals(IterationResult.WAIT, exec.advance());
+
+        upstream.addResult(IterationResult.FETCHED, EmptyRowBatch.INSTANCE);
+        assertEquals(IterationResult.WAIT, exec.advance());
+
+        // Consume several batches, still insufficient to produce a result.
+        upstream.addResult(IterationResult.FETCHED, createMonotonicBatch(0, 2));
+        upstream.addResult(IterationResult.FETCHED, createMonotonicBatch(2, 2));
+
+        assertEquals(IterationResult.WAIT, exec.advance());
+
+        // One more batch, finally producing some rows.
+        upstream.addResult(IterationResult.FETCHED, createMonotonicBatch(4, 5));
+        assertEquals(IterationResult.FETCHED, exec.advance());
+        assertBatch(exec.currentBatch(), 4, 5, 8, true);
+
+        // One more batch
+        upstream.addResult(IterationResult.FETCHED, createMonotonicBatch(9, 2));
+        assertEquals(IterationResult.FETCHED, exec.advance());
+        assertBatch(exec.currentBatch(), 2, 9, 10, true);
+
+        // Final batch to finalize the result
+        upstream.addResult(IterationResult.FETCHED, createMonotonicBatch(11, 20));
+        assertEquals(IterationResult.FETCHED_DONE, exec.advance());
+        assertBatch(exec.currentBatch(), 4, 11, 14, true);
+    }
+
+    @Test
+    public void testReceiveSortMergeExecWithFetchAndOffset() {
+        UUID localMemberId = UUID.randomUUID();
+        List<UUID> senderMemberIds = Arrays.asList(localMemberId, UUID.randomUUID(), UUID.randomUUID());
+        QueryId queryId = QueryId.create(UUID.randomUUID());
+        LoggingQueryOperationHandler operationHandler = new LoggingQueryOperationHandler();
+
+        StripedInbox inbox = new StripedInbox(
+            operationHandler,
+            queryId,
+            1,
+            1000,
+            localMemberId,
+            senderMemberIds,
+            new SimpleFlowControl(1_000L, 0.5d)
+        );
+        inbox.setup();
+
+        Expression<?> fetch = ConstantExpression.create(10, BIGINT);
+        Expression<?> offset = ConstantExpression.create(2, BIGINT);
+        ReceiveSortMergeExec exec =
+            new ReceiveSortMergeExec(
+                1,
+                inbox,
+                new int[]{0},
+                new boolean[]{true},
+                fetch,
+                offset
+            );
+        exec.setup(emptyFragmentContext());
+
+        assertEquals(IterationResult.WAIT, exec.advance());
+
+        // Consume several batches, still insufficient to produce a result.
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(7, 2), false, senderMemberIds.get(0)), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(3, 2), false, senderMemberIds.get(1)), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(5, 2), false, senderMemberIds.get(2)), 100L);
+
+        assertEquals(IterationResult.WAIT, exec.advance());
+
+        // Consume more batches
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(13, 2), false, senderMemberIds.get(0)), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(11, 2), false, senderMemberIds.get(1)), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(9, 2), false, senderMemberIds.get(2)), 100L);
+
+        assertEquals(IterationResult.FETCHED, exec.advance());
+        assertBatch(exec.currentBatch(), 6, 5, 10, true);
+
+        // Consume more batches
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(15, 2), false, senderMemberIds.get(0)), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(19, 2), false, senderMemberIds.get(1)), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(17, 2), false, senderMemberIds.get(2)), 100L);
+
+        assertEquals(IterationResult.FETCHED_DONE, exec.advance());
+        assertBatch(exec.currentBatch(), 4, 11, 14, true);
+    }
+
+    private Fetch newFetch(Long offset, Long limit) {
+        Expression<?> limitExpr = limit == null ? null : ConstantExpression.create(limit, BIGINT);
+        Expression<?> offsetExpr = offset == null ? null : ConstantExpression.create(offset, BIGINT);
+        Fetch fetchProcessor = new Fetch(limitExpr, offsetExpr);
+
+        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
+
+        fetchProcessor.setup(evalContext);
+        return fetchProcessor;
+    }
+
     private void assertBatch(List<Row> batch, int low, int high, boolean less) {
         int actualLow = batch.get(0).get(0);
         int actualHigh = batch.get(batch.size() - 1).get(0);
@@ -467,6 +653,10 @@ public class SortExecTest extends SqlTestSupport {
 
     private void assertBatch(RowBatch batch, int expectedCount, int low, int high, boolean less) {
         assertEquals(expectedCount, batch.getRowCount());
+
+        if (batch.getRowCount() == 0) {
+            return;
+        }
         int actualLow = batch.getRow(0).get(0);
         int actualHigh = batch.getRow(batch.getRowCount() - 1).get(0);
         assertEquals(low, actualLow);
@@ -490,5 +680,6 @@ public class SortExecTest extends SqlTestSupport {
             }
         }
     }
+
 
 }

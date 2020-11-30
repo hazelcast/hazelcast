@@ -32,14 +32,16 @@ public class SortLogicalRel extends Sort implements LogicalRel {
             RelOptCluster cluster,
             RelTraitSet traits,
             RelNode child,
-            RelCollation collation
+            RelCollation collation,
+            RexNode offset,
+            RexNode fetch
     ) {
-        super(cluster, traits, child, collation);
+        super(cluster, traits, child, collation, offset, fetch);
     }
 
     @Override
     public final Sort copy(RelTraitSet traitSet, RelNode input, RelCollation collation, RexNode offset, RexNode fetch) {
-        return new SortLogicalRel(getCluster(), traitSet, input, collation);
+        return new SortLogicalRel(getCluster(), traitSet, input, collation, offset, fetch);
     }
 
     @Override

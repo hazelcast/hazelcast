@@ -310,14 +310,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         if (select.getGroup() != null && select.getGroup().size() > 0) {
             throw unsupported(select.getGroup(), "GROUP BY");
         }
-
-        if (select.getFetch() != null) {
-            throw unsupported(select.getFetch(), "LIMIT");
-        }
-
-        if (select.getOffset() != null) {
-            throw unsupported(select.getOffset(), "OFFSET");
-        }
     }
 
     private void processOther(SqlCall call) {

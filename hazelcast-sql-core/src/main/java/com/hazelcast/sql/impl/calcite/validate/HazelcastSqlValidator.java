@@ -31,6 +31,7 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
+import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.sql.validate.SelectScope;
@@ -144,6 +145,28 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         deriveType(scope, call);
 
         super.validateCall(call, scope);
+    }
+
+    @Override
+    public void validateQuery(SqlNode node, SqlValidatorScope scope, RelDataType targetRowType) {
+        super.validateQuery(node, scope, targetRowType);
+
+        if (node instanceof SqlSelect) {
+            // Derive the types for offset-fetch expressions, Calcite doesn't do
+            // that automatically.
+
+            SqlSelect select = (SqlSelect) node;
+
+            SqlNode offset = select.getOffset();
+            if (offset != null) {
+                deriveType(scope, offset);
+            }
+
+            SqlNode fetch = select.getFetch();
+            if (fetch != null) {
+                deriveType(scope, fetch);
+            }
+        }
     }
 
     @Override

@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
+import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
@@ -77,6 +78,11 @@ public class EdgeCollectorPlanNodeVisitor implements PlanNodeVisitor {
 
     @Override
     public void onReceiveSortMergeNode(ReceiveSortMergePlanNode node) {
+        onNode(node);
+    }
+
+    @Override
+    public void onFetchNode(FetchPlanNode node) {
         onNode(node);
     }
 

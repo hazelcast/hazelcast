@@ -18,10 +18,12 @@ package com.hazelcast.sql.impl.exec.io;
 
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
+import com.hazelcast.sql.impl.exec.fetch.Fetch;
 import com.hazelcast.sql.impl.exec.sort.MergeSort;
 import com.hazelcast.sql.impl.exec.sort.MergeSortSource;
 import com.hazelcast.sql.impl.exec.sort.SortKey;
 import com.hazelcast.sql.impl.exec.sort.SortKeyComparator;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
@@ -53,6 +55,11 @@ public class ReceiveSortMergeExec extends AbstractExec {
     private final MergeSort sorter;
 
     /**
+     * Fetch processor.
+     */
+    private final Fetch fetch;
+
+    /**
      * Current batch.
      */
     private RowBatch curBatch;
@@ -61,7 +68,9 @@ public class ReceiveSortMergeExec extends AbstractExec {
         int id,
         StripedInbox inbox,
         int[] columnIndexes,
-        boolean[] ascs
+        boolean[] ascs,
+        Expression fetch,
+        Expression offset
     ) {
         super(id);
 
@@ -75,28 +84,49 @@ public class ReceiveSortMergeExec extends AbstractExec {
         }
 
         sorter = new MergeSort(sources, new SortKeyComparator(ascs));
+
+        if (fetch != null || offset != null) {
+            this.fetch = new Fetch(fetch, offset);
+        } else {
+            this.fetch = null;
+        }
     }
 
     @Override
     protected void setup0(QueryFragmentContext ctx) {
         inbox.setup();
+
+        if (fetch != null) {
+            fetch.setup(ctx);
+        }
     }
 
     @Override
     public IterationResult advance0() {
-        List<Row> rows = sorter.nextBatch();
-        boolean done = sorter.isDone();
+        while (true) {
+            List<Row> rows = sorter.nextBatch();
+            boolean done = sorter.isDone();
 
-        if (rows == null) {
-            curBatch = EmptyRowBatch.INSTANCE;
+            if (rows == null) {
+                curBatch = EmptyRowBatch.INSTANCE;
 
-            return done ? IterationResult.FETCHED_DONE : IterationResult.WAIT;
-        } else {
-            RowBatch batch = new ListRowBatch(rows);
+                return done ? IterationResult.FETCHED_DONE : IterationResult.WAIT;
+            } else {
+                RowBatch batch = new ListRowBatch(rows);
 
-            curBatch = batch;
+                if (fetch != null) {
+                    batch = fetch.apply(batch);
+                    done |= fetch.isDone();
 
-            return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
+                    if (batch.getRowCount() == 0 && !done) {
+                        continue;
+                    }
+                }
+
+                curBatch = batch;
+
+                return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
+            }
         }
     }
 

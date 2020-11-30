@@ -151,8 +151,19 @@ public class SqlOrderByTest extends SqlTestSupport {
                 idx++;
             }
         }
-
         map.putAll(data);
+
+        // Populate stable map data
+        Map<Object, AbstractPojo> stableData = new HashMap<>();
+
+        idx = 0;
+        while (idx < DATA_SET_SIZE) {
+            stableData.put(key(idx), value(idx));
+            idx++;
+        }
+
+        IMap<Object, AbstractPojo> stableMap = getTarget().getMap(stableMapName());
+        stableMap.putAll(stableData);
     }
 
     @After
@@ -174,6 +185,10 @@ public class SqlOrderByTest extends SqlTestSupport {
 
     protected HazelcastInstance getTarget() {
         return members.get(0);
+    }
+
+    protected String stableMapName() {
+        return inMemoryFormat == InMemoryFormat.OBJECT ? MAP_OBJECT + "_stable" : MAP_BINARY + "_stable";
     }
 
     @Test
@@ -338,8 +353,97 @@ public class SqlOrderByTest extends SqlTestSupport {
         assertSqlResultOrdered(sql, Arrays.asList(realValField), Arrays.asList(false), 1);
     }
 
+    @Test
+    public void testSelectWithOrderByAndFetchOffset() {
+        String intValField = "intVal";
+        addIndex(Arrays.asList(intValField), SORTED, stableMapName());
+
+        String sql = "SELECT " + intValField + " FROM " + stableMapName()
+            + " ORDER BY " + intValField + " OFFSET 5 ROWS FETCH FIRST 10 ROWS ONLY";
+
+        assertSqlResultOrdered(sql, Arrays.asList(intValField), Arrays.asList(false), 10, 5, 14);
+    }
+
+    @Test
+    public void testSelectWithOrderByAndFetchOffsetNoResult() {
+        String intValField = "intVal";
+        addIndex(Arrays.asList(intValField), SORTED, stableMapName());
+
+        String sql = "SELECT " + intValField + " FROM " + stableMapName()
+            + " ORDER BY " + intValField + " OFFSET 4096 ROWS FETCH FIRST 10 ROWS ONLY";
+
+        assertSqlResultOrdered(sql, Arrays.asList(intValField), Arrays.asList(false), 0, 0, 0);
+    }
+
+    @Test
+    public void testSelectWithOrderByAndFetchOffsetTail() {
+        String intValField = "intVal";
+        addIndex(Arrays.asList(intValField), SORTED, stableMapName());
+
+        String sql = "SELECT " + intValField + " FROM " + stableMapName()
+            + " ORDER BY " + intValField + " OFFSET 4090 ROWS FETCH FIRST 10 ROWS ONLY";
+
+        assertSqlResultOrdered(sql, Arrays.asList(intValField), Arrays.asList(false), 6, 4090, 4095);
+    }
+
+    @Test
+    public void testSelectFetchOffsetOnly() {
+        String intValField = "intVal";
+        addIndex(Arrays.asList(intValField), SORTED, stableMapName());
+
+        String sql = "SELECT " + intValField + " FROM " + stableMapName()
+            + " OFFSET 4090 ROWS FETCH FIRST 10 ROWS ONLY";
+
+        assertSqlResultCount(sql, 6);
+
+        sql = "SELECT " + intValField + " FROM " + stableMapName()
+            + " OFFSET 10 ROWS FETCH FIRST 10 ROWS ONLY";
+
+        assertSqlResultCount(sql, 10);
+
+        sql = "SELECT " + intValField + " FROM " + stableMapName()
+            + " OFFSET 10 ROWS";
+
+        assertSqlResultCount(sql, 4086);
+
+        sql = "SELECT " + intValField + " FROM " + stableMapName()
+            + " OFFSET 4096 ROWS";
+
+        assertSqlResultCount(sql, 0);
+
+        sql = "SELECT " + intValField + " FROM " + stableMapName()
+            + " FETCH FIRST 0 ROWS ONLY";
+
+        assertSqlResultCount(sql, 0);
+
+        sql = "SELECT " + intValField + " FROM " + stableMapName()
+            + " FETCH FIRST 100 ROWS ONLY";
+
+        assertSqlResultCount(sql, 100);
+    }
+
+    @Test
+    public void testSelectFetchOffsetInvalid() {
+        String intValField = "intVal";
+        addIndex(Arrays.asList(intValField), SORTED, stableMapName());
+
+        String sql1 = "SELECT " + intValField + " FROM " + stableMapName()
+            + " OFFSET -5 ROWS FETCH FIRST 10 ROWS ONLY";
+
+        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql1, 0));
+
+        String sql2 = "SELECT " + intValField + " FROM " + stableMapName()
+            + " OFFSET 5 ROWS FETCH FIRST -10 ROWS ONLY";
+
+        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql2, 0));
+    }
+
     private void addIndex(List<String> fieldNames, IndexType type) {
-        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+        addIndex(fieldNames, type, mapName());
+    }
+
+    private void addIndex(List<String> fieldNames, IndexType type, String mapName) {
+        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName);
 
         IndexConfig indexConfig = new IndexConfig().setName("Index_" + randomName())
             .setType(type);
@@ -382,7 +486,14 @@ public class SqlOrderByTest extends SqlTestSupport {
         assertSqlResultOrdered(sql, orderFields, orderDirections, map.size());
     }
 
-    private void assertSqlResultOrdered(String sql, List<String> orderFields, List<Boolean> orderDirections, int expectedCount) {
+    private void assertSqlResultOrdered(String sql, List<String> orderFields, List<Boolean> orderDirections,
+                                        int expectedCount) {
+        assertSqlResultOrdered(sql, orderFields, orderDirections, expectedCount, null, null);
+    }
+
+    private void assertSqlResultOrdered(String sql, List<String> orderFields, List<Boolean> orderDirections,
+                                        int expectedCount,
+                                        Integer low, Integer high) {
         try (SqlResult res = query(sql)) {
 
             SqlRowMetadata rowMetadata = res.getRowMetadata();
@@ -390,22 +501,68 @@ public class SqlOrderByTest extends SqlTestSupport {
             Iterator<SqlRow> rowIterator = res.iterator();
 
             SqlRow prevRow = null;
+            SqlRow lowRow = null;
+            SqlRow highRow = null;
             int count = 0;
             while (rowIterator.hasNext()) {
                 SqlRow row = rowIterator.next();
                 assertOrdered(prevRow, row, orderFields, orderDirections, rowMetadata);
 
+                System.out.println(row);
+
                 prevRow = row;
                 count++;
+                if (count == 1) {
+                    lowRow = row;
+                }
+
+                if (!rowIterator.hasNext()) {
+                    highRow = row;
+                }
             }
             assertEquals(expectedCount, count);
+            if (lowRow != null && low != null) {
+                String fieldName = orderFields.get(0);
+                Object fieldValue = lowRow.getObject(rowMetadata.findColumn(fieldName));
+                assertEquals(low, fieldValue);
+            }
+
+            if (highRow != null && high != null) {
+                String fieldName = orderFields.get(0);
+                Object fieldValue = highRow.getObject(rowMetadata.findColumn(fieldName));
+                assertEquals(high, fieldValue);
+            }
+
             assertThrows(NoSuchElementException.class, rowIterator::next);
 
             assertThrows(IllegalStateException.class, res::iterator);
         }
     }
 
-    private void checkSelectWithOrderBy(List<String> indexAttrs, String sql, List<String> checkOrderFields, List<Boolean> orderDirections) {
+    private void assertSqlResultCount(String sql, int expectedCount) {
+        try (SqlResult res = query(sql)) {
+
+            SqlRowMetadata rowMetadata = res.getRowMetadata();
+
+            Iterator<SqlRow> rowIterator = res.iterator();
+
+            int count = 0;
+            while (rowIterator.hasNext()) {
+                rowIterator.next();
+                count++;
+
+            }
+            assertEquals(expectedCount, count);
+
+            assertThrows(NoSuchElementException.class, rowIterator::next);
+
+            assertThrows(IllegalStateException.class, res::iterator);
+        }
+    }
+
+
+    private void checkSelectWithOrderBy(List<String> indexAttrs, String
+        sql, List<String> checkOrderFields, List<Boolean> orderDirections) {
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
 
         IndexConfig indexConfig = new IndexConfig().setName("Index_" + randomName())
@@ -421,7 +578,8 @@ public class SqlOrderByTest extends SqlTestSupport {
         assertSqlResultOrdered(sql, checkOrderFields, orderDirections, map.size());
     }
 
-    private void assertOrdered(SqlRow prevRow, SqlRow row, List<String> orderFields, List<Boolean> orderDirections, SqlRowMetadata rowMetadata) {
+    private void assertOrdered(SqlRow prevRow, SqlRow
+        row, List<String> orderFields, List<Boolean> orderDirections, SqlRowMetadata rowMetadata) {
         if (prevRow == null) {
             return;
         }

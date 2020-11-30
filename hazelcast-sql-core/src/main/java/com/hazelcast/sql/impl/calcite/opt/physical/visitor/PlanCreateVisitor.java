@@ -44,6 +44,8 @@ import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
 import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
+import com.hazelcast.sql.impl.plan.node.FetchOffsetPlanNodeFieldTypeProvider;
+import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
@@ -260,9 +262,28 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onSort(SortPhysicalRel rel) {
-        StringBuilder msgBuilder = new StringBuilder("Cannot execute ORDER BY clause, because its input is not sorted. ");
-        msgBuilder.append("Consider adding a SORTED index to the data source.");
-        throw QueryException.error(msgBuilder.toString());
+        if (rel.requiresSort()) {
+            StringBuilder msgBuilder = new StringBuilder("Cannot execute ORDER BY clause, because its input is not sorted. ");
+            msgBuilder.append("Consider adding a SORTED index to the data source.");
+            throw QueryException.error(msgBuilder.toString());
+        }
+
+        // Fetch/Offset only scenario
+        if (rel.offset != null || rel.fetch != null) {
+            PlanNode input = pollSingleUpstream();
+
+            Expression fetch = convertExpression(FetchOffsetPlanNodeFieldTypeProvider.INSTANCE, rel.fetch);
+            Expression offset = convertExpression(FetchOffsetPlanNodeFieldTypeProvider.INSTANCE, rel.offset);
+
+            FetchPlanNode node = new FetchPlanNode(
+                pollId(rel),
+                input,
+                fetch,
+                offset
+            );
+
+            pushUpstream(node);
+        }
     }
 
     @Override
@@ -360,13 +381,18 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             ascs[i] = !direction.isDescending();
         }
 
+        Expression fetch = convertExpression(FetchOffsetPlanNodeFieldTypeProvider.INSTANCE, rel.getFetch());
+        Expression offset = convertExpression(FetchOffsetPlanNodeFieldTypeProvider.INSTANCE, rel.getOffset());
+
         // Create a receiver and push it to stack.
         ReceiveSortMergePlanNode receiveNode = new ReceiveSortMergePlanNode(
             id,
             edge,
             sendNode.getSchema().getTypes(),
             columnIndexes,
-            ascs
+            ascs,
+            fetch,
+            offset
         );
 
         pushUpstream(receiveNode);
