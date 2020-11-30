@@ -4,7 +4,7 @@ if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
     echo "Sends CP subsystem management operations to a Hazelcast instance."
     echo "Parameters:"
     echo "  -o, --operation   : Operation to be called."
-    echo "  -c, --group       : Name of the CP group. Must be provided for 'get-group', 'force-destroy-group', 'get-sessions', 'force-close-session'."
+    echo "  -g, --group       : Name of the CP group. Must be provided for 'get-group', 'force-destroy-group', 'get-sessions', 'force-close-session'."
     echo "  -m, --member      : UUID of the CP member. Must be provided for 'remove-member'."
     echo "  -s, --session-id  : CP Session ID. Must be provided for 'force-close-session'."
     echo "  -a, --address     : Defines which ip address hazelcast is running. Default value is '127.0.0.1'."
@@ -127,7 +127,7 @@ if [[ -z "$PORT" ]]; then
     PORT="5701"
 fi
 
-if [[ -z "CLUSTERNAME" ]]; then
+if [[ -z "$CLUSTERNAME" ]]; then
     echo "No clustername is defined, running script with default clustername: 'dev'."
     CLUSTERNAME="dev"
 fi
