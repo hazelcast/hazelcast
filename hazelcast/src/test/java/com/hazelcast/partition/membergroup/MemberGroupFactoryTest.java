@@ -110,6 +110,18 @@ public class MemberGroupFactoryTest {
         return members;
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testNodeAwareMemberGroupFactoryThrowsIllegalArgumentExceptionWhenNoMetadataIsProvided() {
+        MemberGroupFactory groupFactory = new NodeAwareMemberGroupFactory();
+        Collection<Member> members = createMembersWithNoMetadata();
+        Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
+
+        assertEquals("Member Groups: " + String.valueOf(memberGroups), 3, memberGroups.size());
+        for (MemberGroup memberGroup : memberGroups) {
+            assertEquals("Member Group: " + String.valueOf(memberGroup), 1, memberGroup.size());
+        }
+    }
+
     @Test
     public void testZoneMetadataAwareMemberGroupFactoryCreateMemberGroups() {
         MemberGroupFactory groupFactory = new ZoneAwareMemberGroupFactory();
