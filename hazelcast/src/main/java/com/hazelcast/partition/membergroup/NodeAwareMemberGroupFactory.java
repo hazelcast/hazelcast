@@ -34,7 +34,6 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  * machine that containers/pods run on. A node may be a virtual or physical machine.
  * Node name metadata provided by
  * {@link DiscoveryStrategy#discoverLocalMetadata()}
- * @since 3.12.11
  */
 public class NodeAwareMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
