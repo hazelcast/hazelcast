@@ -41,6 +41,6 @@ public class RetryStrategyImpl implements RetryStrategy {
 
     @Override
     public String toString() {
-        return "max attempt = " + maxAttempts + ", interval function = " + intervalFunction;
+        return "max attempts = " + maxAttempts + ", interval function = " + intervalFunction;
     }
 }

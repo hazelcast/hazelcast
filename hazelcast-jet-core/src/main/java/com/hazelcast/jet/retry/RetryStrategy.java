@@ -19,16 +19,16 @@ package com.hazelcast.jet.retry;
 import java.io.Serializable;
 
 /**
- * Description of a strategy to be followed when retrying a failed action, like
- * connecting to a server. A typical strategy for this scenario could be for
- * example: "attempt to reconnect 3 times, wait 5 seconds between each attempt,
- * if all of them fail, then give up".
+ * Description of a strategy to take when an action fails, like when
+ * connecting to a server. An example strategy for this scenario can be:
+ * "attempt to reconnect 3 times, wait 5 seconds between each attempt, if
+ * all of them fail, give up".
  * <p>
- * The lifecycle of a retry strategy begins whenever its covered action fails
- * and ends in one of two ways: either a retry of the action is successful (the
- * action is successfully undertaken, for example reconnect to a server
- * succeeds) or the strategy gives up (for example it had a specified maximum
- * number of retries, all of them had been attempted and none was successful).
+ * The lifecycle of a retry strategy begins whenever an action fails and
+ * ends in one of two ways: either a retry of the action is successful (for
+ * example reconnection attempt to a server succeeds) or the strategy gives
+ * up (for example it did a specified maximum number of retries, all of
+ * them failed).
  *
  * @since 4.3
  */
@@ -37,11 +37,10 @@ public interface RetryStrategy extends Serializable {
     /**
      * Maximum number of retry attempt that should be made before giving up.
      * <p>
-     * A value of 0 should be interpreted as "give up on first failure, without
-     * any retries".
+     * A value of 0 should be interpreted as "never retry". Action is performed
+     * once.
      * <p>
-     * A negative value should be interpreted as "retry indefinitely, until
-     * success".
+     * A negative value is interpreted as "retry indefinitely, until success".
      */
     int getMaxAttempts();
 

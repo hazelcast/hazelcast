@@ -346,4 +346,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
     public void setCompletionTime() {
         completionTime.set(System.currentTimeMillis());
     }
+
+    public CompletableFuture<Void> getExecutionFuture() {
+        return executionFuture;
+    }
 }
