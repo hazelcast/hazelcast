@@ -88,14 +88,14 @@ public class ClientLoggingService implements LoggingService {
     }
 
     @Override
-    public void reoveLogger(@NotNull String name) {
+    public void removeLogger(@NotNull String name) {
         checkNotNull(name, "name must not be null");
         loggerFactory.removeLogger(name);
         mapLoggers.remove(name);
     }
 
     @Override
-    public void reoveLogger(@NotNull Class clazz) {
+    public void removeLogger(@NotNull Class clazz) {
         checkNotNull(clazz, "class must not be null");
         String name = clazz.getName();
         loggerFactory.removeLogger(name);

@@ -29,7 +29,7 @@ public interface LoggingService {
 
     @Nonnull ILogger getLogger(@Nonnull Class type);
 
-    void reoveLogger(@Nonnull String name);
+    void removeLogger(@Nonnull String name);
 
-    void reoveLogger(@Nonnull Class type);
+    void removeLogger(@Nonnull Class type);
 }
