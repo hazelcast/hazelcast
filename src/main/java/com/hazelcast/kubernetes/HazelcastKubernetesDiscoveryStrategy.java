@@ -70,6 +70,7 @@ final class HazelcastKubernetesDiscoveryStrategy
     public Map<String, String> discoverLocalMetadata() {
         if (memberMetadata.isEmpty()) {
             memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, discoverZone());
+            memberMetadata.put("hazelcast.partition.group.node", discoverNodeName());
         }
         return memberMetadata;
     }
@@ -82,14 +83,7 @@ final class HazelcastKubernetesDiscoveryStrategy
     private String discoverZone() {
         if (DiscoveryMode.KUBERNETES_API.equals(config.getMode())) {
             try {
-                String podName = System.getenv("POD_NAME");
-                if (podName == null) {
-                    podName = System.getenv("HOSTNAME");
-                }
-                if (podName == null) {
-                    podName = InetAddress.getLocalHost().getHostName();
-                }
-                String zone = client.zone(podName);
+                String zone = client.zone(podName());
                 if (zone != null) {
                     getLogger().info(String.format("Kubernetes plugin discovered availability zone: %s", zone));
                     return zone;
@@ -101,6 +95,39 @@ final class HazelcastKubernetesDiscoveryStrategy
             getLogger().info("Cannot fetch the current zone, ZONE_AWARE feature is disabled");
         }
         return "unknown";
+    }
+
+    /**
+     * Discovers the name of the node which the current Hazelcast member pod is running on.
+     * <p>
+     * Note: NODE_AWARE is available only for the Kubernetes API Mode.
+     */
+    private String discoverNodeName() {
+        if (DiscoveryMode.KUBERNETES_API.equals(config.getMode())) {
+            try {
+                String nodeName = client.nodeName(podName());
+                if (nodeName != null) {
+                    getLogger().info(String.format("Kubernetes plugin discovered node name: %s", nodeName));
+                    return nodeName;
+                }
+            } catch (Exception e) {
+                // only log the exception and the message, Hazelcast should still start
+                getLogger().finest(e);
+            }
+            getLogger().warning("Cannot fetch name of the node, NODE_AWARE feature is disabled");
+        }
+        return "unknown";
+    }
+
+    private String podName() throws UnknownHostException {
+        String podName = System.getenv("POD_NAME");
+        if (podName == null) {
+            podName = System.getenv("HOSTNAME");
+        }
+        if (podName == null) {
+            podName = InetAddress.getLocalHost().getHostName();
+        }
+        return podName;
     }
 
     @Override

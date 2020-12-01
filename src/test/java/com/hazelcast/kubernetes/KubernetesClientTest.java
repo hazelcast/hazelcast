@@ -363,6 +363,28 @@ public class KubernetesClientTest {
         assertEquals("us-central1-a", zone);
     }
 
+
+    @Test
+    public void nodeName() {
+        // given
+        String podName = "pod-name";
+
+        //language=JSON
+        String podResponse = "{\n"
+                + "  \"kind\": \"Pod\",\n"
+                + "  \"spec\": {\n"
+                + "    \"nodeName\": \"kubernetes-node-f0bbd602-f7cw\"\n"
+                + "  }\n"
+                + "}";
+        stub(String.format("/api/v1/namespaces/%s/pods/%s", NAMESPACE, podName), podResponse);
+
+        // when
+        String nodeName = kubernetesClient.nodeName(podName);
+
+        // then
+        assertEquals("kubernetes-node-f0bbd602-f7cw", nodeName);
+    }
+
     @Test
     public void zone() {
         // given
