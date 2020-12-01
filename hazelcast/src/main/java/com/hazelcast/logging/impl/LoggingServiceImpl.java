@@ -16,9 +16,9 @@
 
 package com.hazelcast.logging.impl;
 
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.JetBuildInfo;
-import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.logging.AbstractLogger;
 import com.hazelcast.logging.ILogger;
@@ -27,6 +27,7 @@ import com.hazelcast.logging.LogListener;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.logging.LoggingService;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,7 +61,7 @@ public class LoggingServiceImpl implements LoggingService {
         this.detailsEnabled = detailsEnabled;
         JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
         versionMessage = "[" + clusterName + "] ["
-                + (jetBuildInfo != null ?  jetBuildInfo.getVersion() : buildInfo.getVersion()) + "] ";
+                + (jetBuildInfo != null ? jetBuildInfo.getVersion() : buildInfo.getVersion()) + "] ";
     }
 
     public void setThisMember(MemberImpl thisMember) {
@@ -81,6 +82,21 @@ public class LoggingServiceImpl implements LoggingService {
     public ILogger getLogger(@Nonnull Class clazz) {
         checkNotNull(clazz, "class must not be null");
         return getOrPutIfAbsent(mapLoggers, clazz.getName(), loggerConstructor);
+    }
+
+    @Override
+    public void reoveLogger(@NotNull String name) {
+        checkNotNull(name, "name must not be null");
+        loggerFactory.removeLogger(name);
+        mapLoggers.remove(name);
+    }
+
+    @Override
+    public void reoveLogger(@NotNull Class clazz) {
+        checkNotNull(clazz, "class must not be null");
+        String name = clazz.getName();
+        loggerFactory.removeLogger(name);
+        mapLoggers.remove(name);
     }
 
     @Override
