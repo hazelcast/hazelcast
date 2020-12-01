@@ -57,7 +57,7 @@ public final class Logger {
     /**
      * Obtains a {@link ILogger logger} for the given {@code clazz}.
      *
-     * @param clazz the class to obtain the logger for.
+     * @param clazz the class of the logger to obtain.
      * @return the obtained logger.
      */
     public static ILogger getLogger(Class clazz) {
@@ -71,16 +71,40 @@ public final class Logger {
      * @return the obtained logger.
      */
     public static ILogger getLogger(String name) {
-        // try the fast path first
         LoggerFactory existingFactory = loggerFactory;
-        if (existingFactory != null) {
+        if (loggerFactory != null) {
             return existingFactory.getLogger(name);
         }
+        return createFactoryInternal(name).getLogger(name);
+    }
 
+    /**
+     * Removes the {@link ILogger logger} for the given {@code clazz}.
+     *
+     * @param clazz the class of the logger to remove.
+     */
+    public static void removeLogger(Class clazz) {
+        removeLogger(clazz.getName());
+    }
+
+    /**
+     * Removes the {@link ILogger logger} for the given {@code name}.
+     *
+     * @param name the name of the logger to remove.
+     */
+    public static void removeLogger(String name) {
+        LoggerFactory existingFactory = loggerFactory;
+        if (loggerFactory != null) {
+            existingFactory.removeLogger(name);
+        }
+        createFactoryInternal(name).removeLogger(name);
+    }
+
+    private static LoggerFactory createFactoryInternal(String name) {
         synchronized (FACTORY_LOCK) {
-            existingFactory = loggerFactory;
+            LoggerFactory existingFactory = loggerFactory;
             if (existingFactory != null) {
-                return existingFactory.getLogger(name);
+                return existingFactory;
             }
 
             LoggerFactory createdFactory = null;
@@ -106,8 +130,7 @@ public final class Logger {
                     loggerFactoryClassOrType = loggingType;
                 }
             }
-
-            return createdFactory.getLogger(name);
+            return createdFactory;
         }
     }
 
