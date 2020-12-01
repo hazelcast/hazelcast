@@ -220,6 +220,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testPartitionGroupZoneAware();
 
     @Test
+    public abstract void testPartitionGroupNodeAware();
+
+    @Test
     public abstract void testPartitionGroupSPI();
 
     @Test
