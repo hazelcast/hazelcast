@@ -19,6 +19,10 @@ package com.hazelcast.logging;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.StringUtil;
 
+import javax.annotation.Nonnull;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
 /**
  * Provides static utilities to access the global shared logging machinery.
  * <p>
@@ -57,11 +61,12 @@ public final class Logger {
     /**
      * Obtains a {@link ILogger logger} for the given {@code clazz}.
      *
-     * @param clazz the class of the logger to obtain.
+     * @param clazz the class to obtain the logger for.
      * @return the obtained logger.
      */
-    public static ILogger getLogger(Class clazz) {
-        return getLogger(clazz.getName());
+    public static ILogger getLogger(@Nonnull Class clazz) {
+        checkNotNull(clazz, "class must not be null");
+        return getLoggerInternal(clazz.getName());
     }
 
     /**
@@ -70,9 +75,14 @@ public final class Logger {
      * @param name the name of the logger to obtain.
      * @return the obtained logger.
      */
-    public static ILogger getLogger(String name) {
+    public static ILogger getLogger(@Nonnull String name) {
+        checkNotNull(name, "name must not be null");
+        return getLoggerInternal(name);
+    }
+
+    private static ILogger getLoggerInternal(String name) {
         LoggerFactory existingFactory = loggerFactory;
-        if (loggerFactory != null) {
+        if (existingFactory != null) {
             return existingFactory.getLogger(name);
         }
         return createFactoryInternal(name).getLogger(name);
@@ -81,10 +91,11 @@ public final class Logger {
     /**
      * Removes the {@link ILogger logger} for the given {@code clazz}.
      *
-     * @param clazz the class of the logger to remove.
+     * @param clazz the class to remove the logger for.
      */
     public static void removeLogger(Class clazz) {
-        removeLogger(clazz.getName());
+        checkNotNull(clazz, "class must not be null");
+        removeLoggerInternal(clazz.getName());
     }
 
     /**
@@ -93,8 +104,13 @@ public final class Logger {
      * @param name the name of the logger to remove.
      */
     public static void removeLogger(String name) {
+        checkNotNull(name, "name must not be null");
+        removeLoggerInternal(name);
+    }
+
+    private static void removeLoggerInternal(String name) {
         LoggerFactory existingFactory = loggerFactory;
-        if (loggerFactory != null) {
+        if (existingFactory != null) {
             existingFactory.removeLogger(name);
         }
         createFactoryInternal(name).removeLogger(name);
