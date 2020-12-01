@@ -336,6 +336,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         return max(min(getMemberGroupsSize() - 1, InternalPartition.MAX_BACKUP_COUNT), 0);
     }
 
+    public void updateMemberGroupSize() {
+        partitionStateManager.updateMemberGroupsSize();
+    }
+
     @Override
     public void memberAdded(Member member) {
         logger.fine("Adding " + member);
