@@ -83,7 +83,7 @@ public interface ClientClusterService {
     long getClusterTime();
 
     /**
-     * Returns if member internal address should be translated into its public address.
+     * Returns {@code true} if member internal address should be translated into its public address.
      *
      * @return true if member address should be translated into its public address.
      */
