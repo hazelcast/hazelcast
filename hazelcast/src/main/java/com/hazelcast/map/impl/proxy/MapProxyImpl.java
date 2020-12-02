@@ -689,8 +689,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     /**
-     * Execute the {@code keySet} operation on all nodes, but only on the given
-     * {@code partitions}.
+     * Execute the {@code keySet} operation only on the given {@code
+     * partitions}.
      * <p>
      * <b>Warning:</b> {@code partitions} is mutated during the call.
      */
@@ -712,8 +712,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     /**
-     * Execute the {@code entrySet} operation on all nodes, but only on the
-     * given {@code partitions}.
+     * Execute the {@code entrySet} operation only on the given {@code
+     * partitions}.
      * <p>
      * <b>Warning:</b> {@code partitions} is mutated during the call.
      */
@@ -735,8 +735,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     /**
-     * Execute the {@code values} operation on all nodes, but only on the given
-     * {@code partitions}.
+     * Execute the {@code values} operation only on the given {@code
+     * partitions}.
      * <p>
      * <b>Warning:</b> {@code partitions} is mutated during the call.
      */
@@ -867,8 +867,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     /**
-     * Execute the {@code project} operation on all nodes, but only on the
-     * given {@code partitions}.
+     * Execute the {@code project} operation only on the given {@code
+     * partitions}.
      * <p>
      * <b>Warning:</b> {@code partitions} is mutated during the call.
      */

@@ -35,11 +35,8 @@ public class Target {
     public static final Target ALL_NODES = new Target(TargetMode.ALL_NODES, null);
     public static final Target LOCAL_NODE = new Target(TargetMode.LOCAL_NODE, null);
 
-    private TargetMode mode;
-    private PartitionIdSet partitions;
-
-    public Target() {
-    }
+    private final TargetMode mode;
+    private final PartitionIdSet partitions;
 
     private Target(TargetMode mode, PartitionIdSet partitions) {
         this.mode = checkNotNull(mode);
