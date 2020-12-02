@@ -70,7 +70,7 @@ public class SplitBrainProtectionConfig implements IdentifiedDataSerializable, N
 
     private String name;
     private boolean enabled;
-    private int minimumClusterSize;
+    private int minimumClusterSize = 2;
     private List<SplitBrainProtectionListenerConfig> listenerConfigs = new ArrayList<SplitBrainProtectionListenerConfig>();
     private SplitBrainProtectionOn protectOn = READ_WRITE;
     private String functionClassName;
