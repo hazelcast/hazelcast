@@ -808,7 +808,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (record == null) {
                 return null;
             }
-            oldValue = setTtl ? newValue : null;
+            oldValue = setTtl ? newValue : record.getValue();
         } else {
             oldValue = record == null
                     ? (load ? loadValueOf(key) : null) : record.getValue();
