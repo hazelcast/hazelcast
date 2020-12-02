@@ -139,7 +139,7 @@ public abstract class BaseIndexStore implements IndexStore {
         Object invoke(A param1, B param2);
     }
 
-    private class PassThroughFunctor implements CopyFunctor<Data, QueryableEntry> {
+    private static class PassThroughFunctor implements CopyFunctor<Data, QueryableEntry> {
 
         @Override
         public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
@@ -147,7 +147,7 @@ public abstract class BaseIndexStore implements IndexStore {
         }
     }
 
-    private class CopyInputFunctor implements CopyFunctor<Data, QueryableEntry> {
+    private static class CopyInputFunctor implements CopyFunctor<Data, QueryableEntry> {
 
         @Override
         public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
