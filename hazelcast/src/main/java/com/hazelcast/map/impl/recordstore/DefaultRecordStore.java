@@ -771,6 +771,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     /**
      * Core put method for all variants of puts/updates.
+     *
      * @return old value if this is an update operation, otherwise returns null
      */
     @SuppressWarnings({"checkstyle:npathcomplexity",
@@ -778,77 +779,79 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     private Object putInternal(Data key, Object newValue, long ttl,
                                long maxIdle, long now, boolean load, boolean store,
                                boolean putIfAbsent, boolean putIfExists, boolean putIfEqual,
-                               boolean putFromLoad, Object expectedValue, boolean useOldValueIfNoNewValue,
+                               boolean putFromLoad, Object expectedValue, boolean setTtl,
                                boolean checkIfLoaded, @Nullable UUID transactionId,
                                Address callerAddress, boolean countAsAccess, boolean backup) {
+        // If this method has to wait end of map loading.
         if (checkIfLoaded) {
             checkIfLoaded();
         }
 
-        Object oldValue;
+        Object oldValue = null;
+
         // Get record by checking expiry, if expired, evict record.
         Record record = getRecordOrNull(key, now, backup);
-        // Load oldValue
+
+        // Variants of loading oldValue
         if (putIfAbsent) {
-            oldValue = getOrLoadValueForPutIfAbsent(record, key, now, callerAddress, backup);
+            record = getOrLoadRecord(record, key, now, callerAddress, backup);
             // if this is an existing record, return existing value.
-            if (oldValue != null) {
-                return oldValue;
+            if (record != null) {
+                return record.getValue();
             }
+        } else if (putIfExists) {
+            // For methods like setTtl and replace,
+            // when no matching record, just return.
+            record = getOrLoadRecord(record, key, now, callerAddress, backup);
+            if (record == null) {
+                return null;
+            }
+            oldValue = setTtl ? newValue : null;
         } else {
             oldValue = record == null
                     ? (load ? loadValueOf(key) : null) : record.getValue();
         }
-        // For methods like setTtl and replace,
-        // when no matching record, just return.
-        if (putIfExists && oldValue == null) {
-            return null;
-        }
+
         // For method replace, if current value is not expected one, return.
         if (putIfEqual && !valueComparator.isEqual(expectedValue, oldValue, serializationService)) {
             return null;
         }
-        // If this method is called with a null newValue, this means
-        // an operation like setTtl has been called. This kind of
-        // operations don't set newValue hence we use oldValue.
-        if (useOldValueIfNoNewValue) {
-            newValue = oldValue;
-        }
+
         // Intercept put on owner partition.
         if (!backup) {
             newValue = mapServiceContext.interceptPut(interceptorRegistry, oldValue, newValue);
         }
+
         // Put new record or update existing one.
         if (record == null) {
             putNewRecord(key, oldValue, newValue, ttl, maxIdle, now,
                     transactionId, putFromLoad ? LOADED : ADDED, store, backup);
         } else {
-            updateRecord(key, record, oldValue, newValue, now, countAsAccess, ttl,
-                    maxIdle, store, transactionId, backup);
+            updateRecord(record, key, oldValue, newValue, ttl, maxIdle, now,
+                    transactionId, store, countAsAccess, backup);
         }
         return oldValue;
     }
 
-    private Object getOrLoadValueForPutIfAbsent(@Nullable Record record, Data key,
-                                                long now, Address callerAddress, boolean backup) {
+    private Record getOrLoadRecord(@Nullable Record record, Data key,
+                                   long now, Address callerAddress, boolean backup) {
         if (record != null) {
             accessRecord(record, now);
-            return record.getValue();
+            return record;
         }
 
         Record loadedRecord = loadRecordOrNull(key, backup, callerAddress);
         if (loadedRecord != null) {
-            return loadedRecord.getValue();
+            return loadedRecord;
         }
 
         return null;
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    protected void updateRecord(Data key, Record record, Object oldValue, Object newValue,
-                                long now, boolean countAsAccess,
-                                long ttl, long maxIdle, boolean store,
-                                UUID transactionId, boolean backup) {
+    protected void updateRecord(Record record, Data key, Object oldValue, Object newValue,
+                                long ttl, long maxIdle, long now, UUID transactionId, boolean store,
+                                boolean countAsAccess, boolean backup) {
         updateStatsOnPut(countAsAccess, now);
         record.onUpdate(now);
         if (countAsAccess) {
@@ -936,8 +939,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
 
             boolean persist = persistenceEnabledFor(provenance);
-            updateRecord(key, record, oldValue, newValue, now, true,
-                    UNSET, UNSET, persist, null, false);
+            updateRecord(record, key, oldValue, newValue, UNSET, UNSET, now, null, persist, true,
+                    false);
         }
 
         return newValue != null;
