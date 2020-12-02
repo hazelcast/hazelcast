@@ -660,7 +660,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 if (expirationTimeToTtl(loaderEntry.getExpirationTime()) > 0) {
                     resultMap.put(key, loaderEntry.getValue());
                 }
-                putFromLoad(key, loaderEntry.getValue(), loaderEntry.getExpirationTime(), callerAddress);
+                putFromLoad(key, loaderEntry.getValue(),
+                        loaderEntry.getExpirationTime(), callerAddress);
 
             } else {
                 resultMap.put(key, value);
@@ -671,7 +672,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (hasQueryCache()) {
             for (Data key : resultMap.keySet()) {
                 Record record = storage.get(key);
-                // here we are only publishing events for loaded entries. This is required for notifying query-caches
+                // here we are only publishing events for loaded
+                // entries. This is required for notifying query-caches
                 // otherwise query-caches cannot see loaded entries
                 addEventToQueryCache(key, record);
             }
@@ -850,8 +852,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @SuppressWarnings("checkstyle:parameternumber")
     protected void updateRecord(Record record, Data key, Object oldValue, Object newValue,
-                                long ttl, long maxIdle, long now, UUID transactionId, boolean store,
-                                boolean countAsAccess, boolean backup) {
+                                long ttl, long maxIdle, long now, UUID transactionId,
+                                boolean store, boolean countAsAccess, boolean backup) {
         updateStatsOnPut(countAsAccess, now);
         record.onUpdate(now);
         if (countAsAccess) {
@@ -886,8 +888,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return record;
     }
 
-    protected Object putIntoMapStore(Record record, Data key, Object newValue, long now, UUID transactionId) {
-        newValue = mapDataStore.add(key, newValue, record.getExpirationTime(), now, transactionId);
+    protected Object putIntoMapStore(Record record, Data key, Object newValue,
+                                     long now, UUID transactionId) {
+        newValue = mapDataStore.add(key, newValue, record.getExpirationTime(),
+                now, transactionId);
         if (mapDataStore.isPostProcessingMapStore()) {
             storage.updateRecordValue(key, record, newValue);
         }
@@ -939,8 +943,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
 
             boolean persist = persistenceEnabledFor(provenance);
-            updateRecord(record, key, oldValue, newValue, UNSET, UNSET, now, null, persist, true,
-                    false);
+            updateRecord(record, key, oldValue, newValue, UNSET, UNSET, now,
+                    null, persist, true, false);
         }
 
         return newValue != null;
