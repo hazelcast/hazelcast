@@ -60,7 +60,7 @@ class TranslateToPublicAddressProvider {
 
         // Default value of DISCOVERY_SPI_PUBLIC_IP_ENABLED is `null` intentionally.
         // if DISCOVERY_SPI_PUBLIC_IP_ENABLED is not set to true/false, we don't know the intention of the user,
-        // we will try to decide if we should use private/public address automatically int that case.
+        // we will try to decide if we should use private/public address automatically in that case.
         String publicIpEnabledProperty = properties.getString(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED);
         if (publicIpEnabledProperty == null) {
             if (members.isEmpty() || memberInternalAddressAsDefinedInClientConfig(members)) {
