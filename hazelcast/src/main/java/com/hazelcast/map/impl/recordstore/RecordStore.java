@@ -260,9 +260,6 @@ public interface RecordStore<R extends Record> {
      */
     Object putFromLoadBackup(Data key, Object value, long expirationTime);
 
-    boolean merge(MapMergeTypes<Object, Object> mergingEntry,
-                  SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy);
-
     /**
      * Merges the given {@link MapMergeTypes} via the given {@link SplitBrainMergePolicy}.
      *
