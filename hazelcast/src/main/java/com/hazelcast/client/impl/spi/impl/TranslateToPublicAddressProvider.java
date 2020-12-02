@@ -58,24 +58,24 @@ class TranslateToPublicAddressProvider {
             return false;
         }
 
+        // Default value of DISCOVERY_SPI_PUBLIC_IP_ENABLED is `null` intentionally.
+        // if DISCOVERY_SPI_PUBLIC_IP_ENABLED is not set to true/false, we don't know the intention of the user,
+        // we will try to decide if we should use private/public address automatically int that case.
         String publicIpEnabledProperty = properties.getString(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED);
-        if ("true".equalsIgnoreCase(publicIpEnabledProperty)) {
-            return true;
-        } else if ("false".equalsIgnoreCase(publicIpEnabledProperty)) {
-            return false;
-        }
+        if (publicIpEnabledProperty == null) {
+            if (members.isEmpty() || memberInternalAddressAsDefinedInClientConfig(members)) {
+                return false;
+            }
 
-        if (members.isEmpty() || memberInternalAddressAsDefinedInClientConfig(members)) {
-            return false;
+            return membersReachableOnlyViaPublicAddress(members);
         }
-
-        return membersReachableOnlyViaPublicAddress(members);
+        return properties.getBoolean(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED);
     }
 
     /**
      * Checks if any member has its internal address as configured in ClientConfig.
      * <p>
-     * If any member has its internal/private address the same as configured in ClientConfig, then it means that tje client is
+     * If any member has its internal/private address the same as configured in ClientConfig, then it means that the client is
      * able to connect to members via configured address. No need to use make any address translation.
      */
     boolean memberInternalAddressAsDefinedInClientConfig(Collection<MemberInfo> members) {
