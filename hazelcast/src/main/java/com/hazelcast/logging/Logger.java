@@ -85,7 +85,7 @@ public final class Logger {
         if (existingFactory != null) {
             return existingFactory.getLogger(name);
         }
-        return createFactoryInternal(name).getLogger(name);
+        return createFactoryInternal().getLogger(name);
     }
 
     /**
@@ -113,10 +113,10 @@ public final class Logger {
         if (existingFactory != null) {
             existingFactory.removeLogger(name);
         }
-        createFactoryInternal(name).removeLogger(name);
+        createFactoryInternal().removeLogger(name);
     }
 
-    private static LoggerFactory createFactoryInternal(String name) {
+    private static LoggerFactory createFactoryInternal() {
         synchronized (FACTORY_LOCK) {
             LoggerFactory existingFactory = loggerFactory;
             if (existingFactory != null) {
