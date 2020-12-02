@@ -408,7 +408,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 null, LOADED, false, backup);
         if (!backup && mapEventPublisher.hasEventListener(name)) {
             mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.LOADED,
-                    key, null, getRecord(key).getValue(), null);
+                    key, null, record.getValue(), null);
         }
         evictEntries(key);
         // here, we are only publishing events for loaded
