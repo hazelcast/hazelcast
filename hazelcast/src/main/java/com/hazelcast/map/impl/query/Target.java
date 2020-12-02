@@ -30,7 +30,7 @@ import static com.hazelcast.map.impl.query.Target.TargetMode.PARTITION_OWNER;
  *     <li>given partition set
  * </ul>
  */
-public class Target {
+public final class Target {
 
     public static final Target ALL_NODES = new Target(TargetMode.ALL_NODES, null);
     public static final Target LOCAL_NODE = new Target(TargetMode.LOCAL_NODE, null);
