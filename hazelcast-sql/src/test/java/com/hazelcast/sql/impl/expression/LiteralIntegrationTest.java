@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,6 +36,7 @@ import static com.hazelcast.sql.SqlColumnType.NULL;
 import static com.hazelcast.sql.SqlColumnType.SMALLINT;
 import static com.hazelcast.sql.SqlColumnType.TINYINT;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -110,4 +113,18 @@ public class LiteralIntegrationTest extends ExpressionIntegrationTestBase {
         assertParsingError("'foo", "was expecting one of");
     }
 
+    @Test
+    public void testLiteralEquality() {
+        checkEquals(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT), true);
+        checkEquals(ConstantExpression.create(1, INT), ConstantExpression.create(1, QueryDataType.BIGINT), false);
+        checkEquals(ConstantExpression.create(1, INT), ConstantExpression.create(2, INT), false);
+    }
+
+    @Test
+    public void testLiteralSerialization() {
+        ConstantExpression<?> original = ConstantExpression.create(1, INT);
+        ConstantExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_CONSTANT);
+
+        checkEquals(original, restored, true);
+    }
 }

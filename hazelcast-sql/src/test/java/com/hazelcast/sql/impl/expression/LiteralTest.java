@@ -32,25 +32,5 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LiteralTest extends SqlTestSupport {
-    @Test
-    public void testCreationAndEval() {
-        ConstantExpression<?> expression = ConstantExpression.create(1, INT);
-        assertEquals(INT, expression.getType());
-        assertEquals(1, expression.eval(row("foo"), SimpleExpressionEvalContext.create()));
-    }
 
-    @Test
-    public void testEquality() {
-        checkEquals(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT), true);
-        checkEquals(ConstantExpression.create(1, INT), ConstantExpression.create(1, BIGINT), false);
-        checkEquals(ConstantExpression.create(1, INT), ConstantExpression.create(2, INT), false);
-    }
-
-    @Test
-    public void testSerialization() {
-        ConstantExpression<?> original = ConstantExpression.create(1, INT);
-        ConstantExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_CONSTANT);
-
-        checkEquals(original, restored, true);
-    }
 }
