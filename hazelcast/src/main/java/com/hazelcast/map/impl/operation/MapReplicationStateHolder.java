@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
@@ -28,14 +29,11 @@ import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -148,14 +146,13 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                 RecordStore recordStore = operation.getRecordStore(mapName);
                 recordStore.reset();
                 recordStore.setPreMigrationLoadedStatus(loaded.get(mapName));
-                StoreAdapter storeAdapter = new RecordStoreAdapter(recordStore);
 
                 MapContainer mapContainer = recordStore.getMapContainer();
                 PartitionContainer partitionContainer = recordStore.getMapContainer().getMapServiceContext()
                         .getPartitionContainer(operation.getPartitionId());
                 for (Map.Entry<String, IndexConfig> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
                     Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-                    indexes.addOrGetIndex(indexDefinition.getValue(), indexes.isGlobal() ? null : storeAdapter);
+                    indexes.addOrGetIndex(indexDefinition.getValue());
                 }
 
                 final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
@@ -214,19 +211,17 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
             // creating global indexes on partition thread in case they do not exist
             for (IndexConfig indexConfig : indexConfigs) {
                 Indexes indexes = mapContainer.getIndexes();
-                StoreAdapter recordStoreAdapter = indexes.isGlobal() ? null : new RecordStoreAdapter(recordStore);
 
                 // optimisation not to synchronize each partition thread on the addOrGetIndex method
                 if (indexes.getIndex(indexConfig.getName()) == null) {
-                    indexes.addOrGetIndex(indexConfig, recordStoreAdapter);
+                    indexes.addOrGetIndex(indexConfig);
                 }
             }
         } else {
             Indexes indexes = mapContainer.getIndexes(operation.getPartitionId());
-            StoreAdapter recordStoreAdapter = indexes.isGlobal() ? null : new RecordStoreAdapter(recordStore);
-            indexes.createIndexesFromRecordedDefinitions(recordStoreAdapter);
+            indexes.createIndexesFromRecordedDefinitions();
             for (IndexConfig indexConfig : indexConfigs) {
-                indexes.addOrGetIndex(indexConfig, recordStoreAdapter);
+                indexes.addOrGetIndex(indexConfig);
             }
         }
     }
