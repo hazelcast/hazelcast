@@ -120,7 +120,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     private static final int DEFAULT_SMART_CLIENT_THREAD_COUNT = 3;
     private static final int EXECUTOR_CORE_POOL_SIZE = 10;
     private static final int SMALL_MACHINE_PROCESSOR_COUNT = 8;
-
+    private static final EndpointQualifier CLIENT_PUBLIC_ENDPOINT_QUALIFIER =
+            EndpointQualifier.resolve(ProtocolType.CLIENT, "public");
     protected final AtomicInteger connectionIdGen = new AtomicInteger();
 
     private final AtomicBoolean isAlive = new AtomicBoolean();
@@ -682,7 +683,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
 
     private Address translate(Member member) {
         if (client.getClientClusterService().translateToPublicAddress()) {
-            Address publicAddress = member.getAddressMap().get(EndpointQualifier.resolve(ProtocolType.CLIENT, "public"));
+            Address publicAddress = member.getAddressMap().get(CLIENT_PUBLIC_ENDPOINT_QUALIFIER);
             if (publicAddress != null) {
                 return publicAddress;
             }
