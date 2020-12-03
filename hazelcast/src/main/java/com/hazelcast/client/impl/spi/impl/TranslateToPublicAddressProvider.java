@@ -28,7 +28,9 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -93,10 +95,12 @@ class TranslateToPublicAddressProvider {
      * We check only limited number of random members to reduce the slowdown of the startup.
      */
     private boolean membersReachableOnlyViaPublicAddress(Collection<MemberInfo> members) {
-        Iterator<MemberInfo> iter = members.iterator();
+        List<MemberInfo> shuffledList = new ArrayList<>(members);
+        Collections.shuffle(shuffledList);
+        Iterator<MemberInfo> iter = shuffledList.iterator();
         for (int i = 0; i < REACHABLE_CHECK_NUMBER; i++) {
             if (!iter.hasNext()) {
-                iter = members.iterator();
+                iter = shuffledList.iterator();
             }
             MemberInfo member = iter.next();
             Address publicAddress = member.getAddressMap().get(CLIENT_PUBLIC_ENDPOINT_QUALIFIER);
