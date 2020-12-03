@@ -40,77 +40,76 @@ import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class LiteralIntegrationTest extends ExpressionIntegrationTestBase {
-    @Test
-    public void testValid() {
-        assertRow("0", EXPR0, TINYINT, (byte) 0);
-        assertRow("-0", EXPR0, TINYINT, (byte) 0);
-        assertRow("000", EXPR0, TINYINT, (byte) 0);
-        assertRow("1", EXPR0, TINYINT, (byte) 1);
-        assertRow("-1", EXPR0, TINYINT, (byte) -1);
-        assertRow("-01", EXPR0, TINYINT, (byte) -1);
-        assertRow("001", EXPR0, TINYINT, (byte) 1);
-        assertRow("100", EXPR0, TINYINT, (byte) 100);
-        assertRow(Byte.toString(Byte.MAX_VALUE), EXPR0, TINYINT, Byte.MAX_VALUE);
-        assertRow(Byte.toString(Byte.MIN_VALUE), EXPR0, TINYINT, Byte.MIN_VALUE);
-
-        assertRow(Short.toString((short) (Byte.MAX_VALUE + 1)), EXPR0, SMALLINT, (short) (Byte.MAX_VALUE + 1));
-        assertRow(Short.toString(Short.MAX_VALUE), EXPR0, SMALLINT, Short.MAX_VALUE);
-        assertRow(Short.toString(Short.MIN_VALUE), EXPR0, SMALLINT, Short.MIN_VALUE);
-
-        assertRow(Integer.toString(Short.MAX_VALUE + 1), EXPR0, INTEGER, Short.MAX_VALUE + 1);
-        assertRow(Integer.toString(Integer.MAX_VALUE), EXPR0, INTEGER, Integer.MAX_VALUE);
-        assertRow(Integer.toString(Integer.MIN_VALUE), EXPR0, INTEGER, Integer.MIN_VALUE);
-
-        assertRow(Long.toString(Integer.MAX_VALUE + 1L), EXPR0, BIGINT, Integer.MAX_VALUE + 1L);
-        assertRow(Long.toString(Long.MAX_VALUE), EXPR0, BIGINT, Long.MAX_VALUE);
-        assertRow(Long.toString(Long.MIN_VALUE), EXPR0, BIGINT, Long.MIN_VALUE);
-
-        assertRow(Long.MAX_VALUE + "0", EXPR0, DECIMAL, new BigDecimal(Long.MAX_VALUE).multiply(BigDecimal.TEN));
-
-        assertRow("0.0", EXPR0, DECIMAL, new BigDecimal("0.0"));
-        assertRow("1.0", EXPR0, DECIMAL, new BigDecimal("1.0"));
-        assertRow("1.000", EXPR0, DECIMAL, new BigDecimal("1.000"));
-        assertRow("001.000", EXPR0, DECIMAL, new BigDecimal("1.000"));
-        assertRow("1.1", EXPR0, DECIMAL, new BigDecimal("1.1"));
-        assertRow("1.100", EXPR0, DECIMAL, new BigDecimal("1.100"));
-        assertRow("001.100", EXPR0, DECIMAL, new BigDecimal("1.100"));
-        assertRow("-0.0", EXPR0, DECIMAL, new BigDecimal("0.0"));
-        assertRow("-1.0", EXPR0, DECIMAL, new BigDecimal("-1.0"));
-        assertRow("-001.100", EXPR0, DECIMAL, new BigDecimal("-1.100"));
-        assertRow(".0", EXPR0, DECIMAL, BigDecimal.valueOf(0.0));
-        assertRow(".1", EXPR0, DECIMAL, BigDecimal.valueOf(0.1));
-
-        assertRow("0e0", EXPR0, DOUBLE, 0.0);
-        assertRow("1e0", EXPR0, DOUBLE, 1.0);
-        assertRow("1e000", EXPR0, DOUBLE, 1.0);
-        assertRow("001e000", EXPR0, DOUBLE, 1.0);
-        assertRow("1.1e0", EXPR0, DOUBLE, 1.1);
-        assertRow("1.100e0", EXPR0, DOUBLE, 1.1);
-        assertRow("001.100e0", EXPR0, DOUBLE, 1.1);
-        assertRow("-0.0e0", EXPR0, DOUBLE, 0.0);
-        assertRow("-1.0e0", EXPR0, DOUBLE, -1.0);
-        assertRow("-001.100e0", EXPR0, DOUBLE, -1.1);
-        assertRow(".0e0", EXPR0, DOUBLE, 0.0);
-        assertRow(".1e0", EXPR0, DOUBLE, 0.1);
-        assertRow("1.1e1", EXPR0, DOUBLE, 11.0);
-        assertRow("1.1e-1", EXPR0, DOUBLE, 0.11);
-
-        assertRow("false", EXPR0, BOOLEAN, false);
-        assertRow("true", EXPR0, BOOLEAN, true);
-        assertRow("tRuE", EXPR0, BOOLEAN, true);
-
-        assertRow("''", EXPR0, VARCHAR, "");
-        assertRow("'foo'", EXPR0, VARCHAR, "foo");
-
-        assertRow("null", EXPR0, NULL, null);
-        assertRow("nUlL", EXPR0, NULL, null);
+public class LiteralIntegrationTest extends ExpressionTestSupport {
+    @Override
+    protected void before0() {
+        put(1);
     }
 
     @Test
-    public void testInvalid() {
-        assertParsingError("0..0", "was expecting one of");
-        assertParsingError("'foo", "was expecting one of");
+    public void testLiteral() {
+        checkValue0(sql("null"), NULL, null);
+
+        checkValue0(sql("''"), VARCHAR, "");
+        checkValue0(sql("'f'"), VARCHAR, "f");
+        checkValue0(sql("'foo'"), VARCHAR, "foo");
+
+        checkValue0(sql("false"), BOOLEAN, false);
+        checkValue0(sql("true"), BOOLEAN, true);
+
+        checkValue0(sql("0"), TINYINT, (byte) 0);
+        checkValue0(sql("-0"), TINYINT, (byte) 0);
+        checkValue0(sql("000"), TINYINT, (byte) 0);
+        checkValue0(sql("1"), TINYINT, (byte) 1);
+        checkValue0(sql("-1"), TINYINT, (byte) -1);
+        checkValue0(sql("001"), TINYINT, (byte) 1);
+        checkValue0(sql("100"), TINYINT, (byte) 100);
+        checkValue0(sql(Byte.MAX_VALUE), TINYINT, Byte.MAX_VALUE);
+        checkValue0(sql(Byte.MIN_VALUE), TINYINT, Byte.MIN_VALUE);
+
+        checkValue0(sql((short) (Byte.MAX_VALUE + 1)), SMALLINT, (short) (Byte.MAX_VALUE + 1));
+        checkValue0(sql((short) (Byte.MIN_VALUE - 1)), SMALLINT, (short) (Byte.MIN_VALUE - 1));
+        checkValue0(sql(Short.MAX_VALUE), SMALLINT, Short.MAX_VALUE);
+        checkValue0(sql(Short.MIN_VALUE), SMALLINT, Short.MIN_VALUE);
+
+        checkValue0(sql(Short.MAX_VALUE + 1), INTEGER, Short.MAX_VALUE + 1);
+        checkValue0(sql(Short.MIN_VALUE - 1), INTEGER, Short.MIN_VALUE - 1);
+        checkValue0(sql(Integer.MAX_VALUE), INTEGER, Integer.MAX_VALUE);
+        checkValue0(sql(Integer.MIN_VALUE), INTEGER, Integer.MIN_VALUE);
+
+        checkValue0(sql(Integer.MAX_VALUE + 1L), BIGINT, Integer.MAX_VALUE + 1L);
+        checkValue0(sql(Integer.MIN_VALUE - 1L), BIGINT, Integer.MIN_VALUE - 1L);
+        checkValue0(sql(Long.MAX_VALUE), BIGINT, Long.MAX_VALUE);
+        checkValue0(sql(Long.MIN_VALUE), BIGINT, Long.MIN_VALUE);
+
+        checkValue0(sql(Long.MAX_VALUE + "0"), DECIMAL, new BigDecimal(Long.MAX_VALUE).multiply(BigDecimal.TEN));
+        checkValue0(sql("0.0"), DECIMAL, new BigDecimal("0.0"));
+        checkValue0(sql("1.0"), DECIMAL, new BigDecimal("1.0"));
+        checkValue0(sql("1.000"), DECIMAL, new BigDecimal("1.000"));
+        checkValue0(sql("001.000"), DECIMAL, new BigDecimal("1.000"));
+        checkValue0(sql("1.1"), DECIMAL, new BigDecimal("1.1"));
+        checkValue0(sql("1.100"), DECIMAL, new BigDecimal("1.100"));
+        checkValue0(sql("001.100"), DECIMAL, new BigDecimal("1.100"));
+        checkValue0(sql("-0.0"), DECIMAL, new BigDecimal("0.0"));
+        checkValue0(sql("-1.0"), DECIMAL, new BigDecimal("-1.0"));
+        checkValue0(sql("-001.100"), DECIMAL, new BigDecimal("-1.100"));
+        checkValue0(sql(".0"), DECIMAL, BigDecimal.valueOf(0.0));
+        checkValue0(sql(".1"), DECIMAL, BigDecimal.valueOf(0.1));
+
+        checkValue0(sql("0e0"), DOUBLE, 0.0);
+        checkValue0(sql("1e0"), DOUBLE, 1.0);
+        checkValue0(sql("1e000"), DOUBLE, 1.0);
+        checkValue0(sql("001e000"), DOUBLE, 1.0);
+        checkValue0(sql("1.1e0"), DOUBLE, 1.1);
+        checkValue0(sql("1.100e0"), DOUBLE, 1.1);
+        checkValue0(sql("001.100e0"), DOUBLE, 1.1);
+        checkValue0(sql("-0.0e0"), DOUBLE, 0.0);
+        checkValue0(sql("-1.0e0"), DOUBLE, -1.0);
+        checkValue0(sql("-001.100e0"), DOUBLE, -1.1);
+        checkValue0(sql(".0e0"), DOUBLE, 0.0);
+        checkValue0(sql(".1e0"), DOUBLE, 0.1);
+        checkValue0(sql("1.1e1"), DOUBLE, 11.0);
+        checkValue0(sql("1.1e-1"), DOUBLE, 0.11);
     }
 
     @Test
@@ -126,5 +125,9 @@ public class LiteralIntegrationTest extends ExpressionIntegrationTestBase {
         ConstantExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_CONSTANT);
 
         checkEquals(original, restored, true);
+    }
+
+    private static String sql(Object attribute) {
+        return "SELECT " + attribute + " FROM map";
     }
 }
