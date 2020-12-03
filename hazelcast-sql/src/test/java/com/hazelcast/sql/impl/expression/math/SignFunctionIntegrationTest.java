@@ -17,8 +17,11 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,6 +31,18 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+
+import static com.hazelcast.sql.SqlColumnType.BIGINT;
+import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
+import static com.hazelcast.sql.SqlColumnType.DATE;
+import static com.hazelcast.sql.SqlColumnType.DECIMAL;
+import static com.hazelcast.sql.SqlColumnType.DOUBLE;
+import static com.hazelcast.sql.SqlColumnType.OBJECT;
+import static com.hazelcast.sql.SqlColumnType.REAL;
+import static com.hazelcast.sql.SqlColumnType.TIME;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
+import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -138,17 +153,17 @@ public class SignFunctionIntegrationTest extends ExpressionTestSupport {
         checkParameter(Long.MAX_VALUE, positive);
         checkParameter(Long.MIN_VALUE, negative);
 
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to BIGINT", "0");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BOOLEAN to BIGINT", true);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT", BigInteger.ZERO);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT", BigDecimal.ZERO);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to BIGINT", 0.0f);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to BIGINT", 0.0d);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to BIGINT", LOCAL_DATE_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to BIGINT", LOCAL_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to BIGINT", LOCAL_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to BIGINT", OFFSET_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to BIGINT", OBJECT_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), "foo");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, BOOLEAN), true);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, DECIMAL), BigInteger.ZERO);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, DECIMAL), BigDecimal.ZERO);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, REAL), 0.0f);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, DOUBLE), 0.0d);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, DATE), LOCAL_DATE_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, TIME), LOCAL_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, TIMESTAMP), LOCAL_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, OBJECT), OBJECT_VAL);
     }
 
     private void checkParameter(Object parameterValue, Object expectedValue) {
@@ -196,5 +211,22 @@ public class SignFunctionIntegrationTest extends ExpressionTestSupport {
         String sql = "SELECT SIGN(" + operand + ") FROM map";
 
         checkFailure0(sql, expectedErrorCode, expectedErrorMessage, params);
+    }
+
+    @Test
+    public void testEquals() {
+        SignFunction<?> function = SignFunction.create(ConstantExpression.create(1, QueryDataType.INT), QueryDataType.INT);
+
+        checkEquals(function, SignFunction.create(ConstantExpression.create(1, QueryDataType.INT), QueryDataType.INT), true);
+        checkEquals(function, SignFunction.create(ConstantExpression.create(2, QueryDataType.INT), QueryDataType.INT), false);
+        checkEquals(function, SignFunction.create(ConstantExpression.create(1, QueryDataType.BIGINT), QueryDataType.BIGINT), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        SignFunction<?> original = SignFunction.create(ConstantExpression.create(1, QueryDataType.INT), QueryDataType.INT);
+        SignFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_SIGN);
+
+        checkEquals(original, restored, true);
     }
 }
