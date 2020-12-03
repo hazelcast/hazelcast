@@ -17,9 +17,12 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,6 +38,17 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import static com.hazelcast.sql.SqlColumnType.BIGINT;
+import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
+import static com.hazelcast.sql.SqlColumnType.DATE;
+import static com.hazelcast.sql.SqlColumnType.DECIMAL;
+import static com.hazelcast.sql.SqlColumnType.DOUBLE;
+import static com.hazelcast.sql.SqlColumnType.OBJECT;
+import static com.hazelcast.sql.SqlColumnType.REAL;
+import static com.hazelcast.sql.SqlColumnType.TIME;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
+import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
@@ -85,18 +99,18 @@ public class RandFunctionIntegrationTest extends ExpressionTestSupport {
         double nullRes2 = checkValue("field1", SKIP_VALUE_CHECK);
         assertNotEquals(nullRes1, nullRes2);
 
-        checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'RAND' function (consider adding an explicit CAST)");
-        checkColumnFailure(1f, SqlErrorCode.PARSING, "Cannot apply [REAL] to the 'RAND' function (consider adding an explicit CAST)");
-        checkColumnFailure(1d, SqlErrorCode.PARSING, "Cannot apply [DOUBLE] to the 'RAND' function (consider adding an explicit CAST)");
-        checkColumnFailure(BigInteger.ONE, SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the 'RAND' function (consider adding an explicit CAST)");
-        checkColumnFailure(BigDecimal.ONE, SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the 'RAND' function (consider adding an explicit CAST)");
-        checkColumnFailure("1", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'RAND' function (consider adding an explicit CAST)");
-        checkColumnFailure('1', SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'RAND' function (consider adding an explicit CAST)");
-        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply [DATE] to the 'RAND' function (consider adding an explicit CAST)");
-        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIME] to the 'RAND' function (consider adding an explicit CAST)");
-        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP] to the 'RAND' function (consider adding an explicit CAST)");
-        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP_WITH_TIME_ZONE] to the 'RAND' function (consider adding an explicit CAST)");
-        checkColumnFailure(OBJECT_VAL, SqlErrorCode.PARSING, "Cannot apply [OBJECT] to the 'RAND' function (consider adding an explicit CAST)");
+        checkColumnFailure("1", SqlErrorCode.PARSING, signatureError(VARCHAR));
+        checkColumnFailure('1', SqlErrorCode.PARSING, signatureError(VARCHAR));
+        checkColumnFailure(true, SqlErrorCode.PARSING, signatureError(BOOLEAN));
+        checkColumnFailure(1f, SqlErrorCode.PARSING, signatureError(REAL));
+        checkColumnFailure(1d, SqlErrorCode.PARSING, signatureError(DOUBLE));
+        checkColumnFailure(BigInteger.ONE, SqlErrorCode.PARSING, signatureError(DECIMAL));
+        checkColumnFailure(BigDecimal.ONE, SqlErrorCode.PARSING, signatureError(DECIMAL));
+        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, signatureError(DATE));
+        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, signatureError(TIME));
+        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, signatureError(TIMESTAMP));
+        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, signatureError(TIMESTAMP_WITH_TIME_ZONE));
+        checkColumnFailure(OBJECT_VAL, SqlErrorCode.PARSING, signatureError(OBJECT));
     }
 
     private void checkColumn(Object value, long expectedSeed) {
@@ -124,18 +138,17 @@ public class RandFunctionIntegrationTest extends ExpressionTestSupport {
         checkParameter(1, 1L);
         checkParameter(1L, 1L);
 
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BOOLEAN to BIGINT", true);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT", BigInteger.ONE);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT", BigDecimal.ONE);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to BIGINT", 0.0f);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to BIGINT", 0.0d);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to BIGINT", "1");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from VARCHAR to BIGINT", '1');
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to BIGINT", LOCAL_DATE_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to BIGINT", LOCAL_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to BIGINT", LOCAL_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to BIGINT", OFFSET_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to BIGINT", OBJECT_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), "foo");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, BOOLEAN), true);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, DECIMAL), BigInteger.ZERO);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, DECIMAL), BigDecimal.ZERO);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, REAL), 0.0f);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, DOUBLE), 0.0d);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, DATE), LOCAL_DATE_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, TIME), LOCAL_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, TIMESTAMP), LOCAL_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, OBJECT), OBJECT_VAL);
     }
 
     private void checkParameter(Object param, long expectedSeed) {
@@ -153,10 +166,14 @@ public class RandFunctionIntegrationTest extends ExpressionTestSupport {
         double nullRes2 = checkValue("null", SKIP_VALUE_CHECK);
         assertNotEquals(nullRes1, nullRes2);
 
-        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'RAND' function (consider adding an explicit CAST)");
-        checkFailure("1.1", SqlErrorCode.PARSING, "Cannot apply [DECIMAL] to the 'RAND' function (consider adding an explicit CAST)");
-        checkFailure("1.1E1", SqlErrorCode.PARSING, "Cannot apply [DOUBLE] to the 'RAND' function (consider adding an explicit CAST)");
-        checkFailure("'bad'", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'RAND' function (consider adding an explicit CAST)");
+        checkFailure("'foo'", SqlErrorCode.PARSING, signatureError(VARCHAR));
+        checkFailure("true", SqlErrorCode.PARSING, signatureError(BOOLEAN));
+        checkFailure("1.1", SqlErrorCode.PARSING, signatureError(DECIMAL));
+        checkFailure("1.1E1", SqlErrorCode.PARSING, signatureError(DOUBLE));
+    }
+
+    private static String signatureError(SqlColumnType type) {
+        return signatureErrorFunction("RAND", type);
     }
 
     private Double checkValue(Object operand, Object expectedValue, Object... params) {
@@ -169,5 +186,21 @@ public class RandFunctionIntegrationTest extends ExpressionTestSupport {
         String sql = "SELECT RAND(" + operand + ") FROM map";
 
         checkFailure0(sql, expectedErrorCode, expectedErrorMessage, params);
+    }
+
+    @Test
+    public void testEquals() {
+        RandFunction function = RandFunction.create(ConstantExpression.create(1, QueryDataType.INT));
+
+        checkEquals(function, RandFunction.create(ConstantExpression.create(1, QueryDataType.INT)), true);
+        checkEquals(function, RandFunction.create(ConstantExpression.create(2, QueryDataType.INT)), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        RandFunction original = RandFunction.create(ConstantExpression.create(1, QueryDataType.INT));
+        RandFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_RAND);
+
+        checkEquals(original, restored, true);
     }
 }

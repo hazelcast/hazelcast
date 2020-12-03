@@ -95,18 +95,13 @@ public class SignFunctionIntegrationTest extends ExpressionTestSupport {
         checkColumn(Double.NEGATIVE_INFINITY, SqlColumnType.DOUBLE, -1d);
         checkColumn(Double.NaN, SqlColumnType.DOUBLE, Double.NaN);
 
-        checkColumnFailure("0", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'SIGN' function (consider adding an explicit CAST)");
-        checkColumnFailure("1.1", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'SIGN' function (consider adding an explicit CAST)");
-        checkColumnFailure("-1.1", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'SIGN' function (consider adding an explicit CAST)");
-        checkColumnFailure("a", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'SIGN' function (consider adding an explicit CAST)");
-
-        checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'SIGN' function (consider adding an explicit CAST)");
-        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply [DATE] to the 'SIGN' function (consider adding an explicit CAST)");
-        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIME] to the 'SIGN' function (consider adding an explicit CAST)");
-        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP] to the 'SIGN' function (consider adding an explicit CAST)");
-        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply [TIMESTAMP_WITH_TIME_ZONE] to the 'SIGN' function (consider adding an explicit CAST)");
-
-        checkColumnFailure(OBJECT_VAL, SqlErrorCode.PARSING, "Cannot apply [OBJECT] to the 'SIGN' function (consider adding an explicit CAST)");
+        checkColumnFailure("0", SqlErrorCode.PARSING, signatureError(VARCHAR));
+        checkColumnFailure(true, SqlErrorCode.PARSING, signatureError(BOOLEAN));
+        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, signatureError(DATE));
+        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, signatureError(TIME));
+        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, signatureError(TIMESTAMP));
+        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, signatureError(TIMESTAMP_WITH_TIME_ZONE));
+        checkColumnFailure(OBJECT_VAL, SqlErrorCode.PARSING, signatureError(OBJECT));
     }
 
     private void checkColumn(Object value, SqlColumnType expectedType, Object expectedResult) {
@@ -196,9 +191,12 @@ public class SignFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue("0.0E0", SqlColumnType.DOUBLE, 0d);
         checkValue("-1.1E0", SqlColumnType.DOUBLE, -1.0d);
 
-        checkFailure("'a'", SqlErrorCode.PARSING, "Cannot apply [VARCHAR] to the 'SIGN' function (consider adding an explicit CAST)");
-        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'SIGN' function (consider adding an explicit CAST)");
-        checkFailure("false", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN] to the 'SIGN' function (consider adding an explicit CAST)");
+        checkFailure("'\fooa'", SqlErrorCode.PARSING, signatureError(VARCHAR));
+        checkFailure("true", SqlErrorCode.PARSING, signatureError(BOOLEAN));
+    }
+
+    private static String signatureError(SqlColumnType type) {
+        return signatureErrorFunction("SIGN", type);
     }
 
     private void checkValue(Object operand, SqlColumnType expectedType, Object expectedValue, Object... params) {
