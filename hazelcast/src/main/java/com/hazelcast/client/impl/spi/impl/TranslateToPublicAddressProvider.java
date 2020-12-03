@@ -33,10 +33,11 @@ import java.util.Iterator;
 import java.util.List;
 
 class TranslateToPublicAddressProvider {
-    private static final int REACHABLE_ADDRESS_TIMEOUT = 1000;
-    private static final int NON_REACHABLE_ADDRESS_TIMEOUT = 3000;
+    private static final int REACHABLE_ADDRESS_TIMEOUT_MILLIS = 1000;
+    private static final int NON_REACHABLE_ADDRESS_TIMEOUT_MILLIS = 3000;
     private static final int REACHABLE_CHECK_NUMBER = 3;
-
+    private static final EndpointQualifier CLIENT_PUBLIC_ENDPOINT_QUALIFIER =
+            EndpointQualifier.resolve(ProtocolType.CLIENT, "public");
     private final ClientConfig config;
     private final HazelcastProperties properties;
     private final ILogger logger;
@@ -59,7 +60,7 @@ class TranslateToPublicAddressProvider {
         }
 
         // Default value of DISCOVERY_SPI_PUBLIC_IP_ENABLED is `null` intentionally.
-        // if DISCOVERY_SPI_PUBLIC_IP_ENABLED is not set to true/false, we don't know the intention of the user,
+        // If DISCOVERY_SPI_PUBLIC_IP_ENABLED is not set to true/false, we don't know the intention of the user,
         // we will try to decide if we should use private/public address automatically in that case.
         String publicIpEnabledProperty = properties.getString(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED);
         if (publicIpEnabledProperty == null) {
@@ -98,15 +99,15 @@ class TranslateToPublicAddressProvider {
                 iter = members.iterator();
             }
             MemberInfo member = iter.next();
-            Address publicAddress = member.getAddressMap().get(EndpointQualifier.resolve(ProtocolType.CLIENT, "public"));
+            Address publicAddress = member.getAddressMap().get(CLIENT_PUBLIC_ENDPOINT_QUALIFIER);
             if (publicAddress == null) {
                 return false;
             }
             Address internalAddress = member.getAddress();
-            if (isReachable(internalAddress, REACHABLE_ADDRESS_TIMEOUT)) {
+            if (isReachable(internalAddress, REACHABLE_ADDRESS_TIMEOUT_MILLIS)) {
                 return false;
             }
-            if (!isReachable(publicAddress, NON_REACHABLE_ADDRESS_TIMEOUT)) {
+            if (!isReachable(publicAddress, NON_REACHABLE_ADDRESS_TIMEOUT_MILLIS)) {
                 return false;
             }
         }
@@ -117,7 +118,10 @@ class TranslateToPublicAddressProvider {
         try (Socket s = new Socket()) {
             s.connect(new InetSocketAddress(address.getHost(), address.getPort()), timeoutMs);
         } catch (Exception e) {
-            logger.fine(e);
+            if (logger.isFineEnabled()) {
+                logger.fine("TranslateToPublicAddressProvider can not reach to address " + address
+                        + " in " + timeoutMs + " millis", e);
+            }
             return false;
         }
         return true;
