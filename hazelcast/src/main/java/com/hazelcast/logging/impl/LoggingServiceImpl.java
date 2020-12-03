@@ -86,16 +86,13 @@ public class LoggingServiceImpl implements LoggingService {
     @Override
     public void removeLogger(@Nonnull String name) {
         checkNotNull(name, "name must not be null");
-        loggerFactory.removeLogger(name);
-        mapLoggers.remove(name);
+        removeLoggerInternal(name);
     }
 
     @Override
     public void removeLogger(@Nonnull Class clazz) {
         checkNotNull(clazz, "class must not be null");
-        String name = clazz.getName();
-        loggerFactory.removeLogger(name);
-        mapLoggers.remove(name);
+        removeLoggerInternal(clazz.getName());
     }
 
     @Override
@@ -117,6 +114,14 @@ public class LoggingServiceImpl implements LoggingService {
                 logListenerRegistration.getLogListener().log(logEvent);
             }
         }
+    }
+
+    private void removeLoggerInternal(String name) {
+        mapLoggers.computeIfPresent(name, (k, v) -> {
+            loggerFactory.removeLogger(name);
+            // delete the entry
+            return null;
+        });
     }
 
     private static class LogListenerRegistration {
