@@ -142,6 +142,19 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         assertEquals(UserCodeDeploymentConfig.ClassCacheMode.OFF, config.getUserCodeDeploymentConfig().getClassCacheMode());
     }
 
+    @Test
+    public void shouldHandleCardinalityEstimatorConfig() throws Exception {
+        Config config = new Config();
+        config.getCardinalityEstimatorConfig("foo")
+          .setAsyncBackupCount(4);
+
+        withEnvironmentVariable("HZ_CARDINALITYESTIMATOR_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2,  config.getCardinalityEstimatorConfig("foo").getBackupCount());
+        assertEquals(4,  config.getCardinalityEstimatorConfig("foo").getAsyncBackupCount());
+    }
+
     @Test(expected = InvalidConfigurationException.class)
     public void shouldDisallowConflictingEntries() throws Exception {
         withEnvironmentVariable("HZ_CLUSTERNAME", "test")
