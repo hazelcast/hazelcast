@@ -16,21 +16,22 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.map.IMap;
+import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.support.expressions.ExpressionType;
+import com.hazelcast.sql.support.expressions.ExpressionTypes;
+import com.hazelcast.sql.support.expressions.ExpressionValue;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.math.BigDecimal;
-import java.util.Collection;
+import java.math.BigInteger;
 
 import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
@@ -38,6 +39,7 @@ import static com.hazelcast.sql.SqlColumnType.DATE;
 import static com.hazelcast.sql.SqlColumnType.DECIMAL;
 import static com.hazelcast.sql.SqlColumnType.DOUBLE;
 import static com.hazelcast.sql.SqlColumnType.INTEGER;
+import static com.hazelcast.sql.SqlColumnType.NULL;
 import static com.hazelcast.sql.SqlColumnType.OBJECT;
 import static com.hazelcast.sql.SqlColumnType.REAL;
 import static com.hazelcast.sql.SqlColumnType.SMALLINT;
@@ -46,179 +48,176 @@ import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
 import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.SqlColumnType.TINYINT;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
-import static java.util.Arrays.asList;
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 
-@RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ColumnIntegrationTest extends ExpressionIntegrationTestBase {
-
-    @Parameter
-    public String mapName;
-
-    @Parameters(name = "{0}")
-    public static Collection<Object[]> parameters() {
-        return asList(new Object[][]{{"serializableRecords"}, {"dataSerializableRecords"}, {"identifiedDataSerializableRecords"},
-                {"portableRecords"}});
-    }
-
+public class ColumnIntegrationTest extends ExpressionTestSupport {
     @Override
-    public String getMapName() {
-        return mapName;
+    protected void before0() {
+        put(1);
     }
 
-    @Override
-    protected Record getRecord() {
-        switch (getMapName()) {
-            case "serializableRecords":
-                return new SerializableRecord();
-            case "dataSerializableRecords":
-                return new DataSerializableRecord();
-            case "identifiedDataSerializableRecords":
-                return new IdentifiedDataSerializableRecord();
-            case "portableRecords":
-                return new PortableRecord();
-            default:
-                throw new IllegalStateException("unexpected map name");
+    @Test
+    public void testLiteral() {
+        checkValue0(sql("null"), NULL, null);
+
+        checkValue0(sql("''"), VARCHAR, "");
+        checkValue0(sql("'f'"), VARCHAR, "f");
+        checkValue0(sql("'foo'"), VARCHAR, "foo");
+
+        checkValue0(sql("false"), BOOLEAN, false);
+        checkValue0(sql("true"), BOOLEAN, true);
+
+        checkValue0(sql("0"), TINYINT, (byte) 0);
+        checkValue0(sql("-0"), TINYINT, (byte) 0);
+        checkValue0(sql("000"), TINYINT, (byte) 0);
+        checkValue0(sql("1"), TINYINT, (byte) 1);
+        checkValue0(sql("-1"), TINYINT, (byte) -1);
+        checkValue0(sql("001"), TINYINT, (byte) 1);
+        checkValue0(sql("100"), TINYINT, (byte) 100);
+        checkValue0(sql(Byte.MAX_VALUE), TINYINT, Byte.MAX_VALUE);
+        checkValue0(sql(Byte.MIN_VALUE), TINYINT, Byte.MIN_VALUE);
+
+        checkValue0(sql((short) (Byte.MAX_VALUE + 1)), SMALLINT, (short) (Byte.MAX_VALUE + 1));
+        checkValue0(sql((short) (Byte.MIN_VALUE - 1)), SMALLINT, (short) (Byte.MIN_VALUE - 1));
+        checkValue0(sql(Short.MAX_VALUE), SMALLINT, Short.MAX_VALUE);
+        checkValue0(sql(Short.MIN_VALUE), SMALLINT, Short.MIN_VALUE);
+
+        checkValue0(sql(Short.MAX_VALUE + 1), INTEGER, Short.MAX_VALUE + 1);
+        checkValue0(sql(Short.MIN_VALUE - 1), INTEGER, Short.MIN_VALUE - 1);
+        checkValue0(sql(Integer.MAX_VALUE), INTEGER, Integer.MAX_VALUE);
+        checkValue0(sql(Integer.MIN_VALUE), INTEGER, Integer.MIN_VALUE);
+
+        checkValue0(sql(Integer.MAX_VALUE + 1L), BIGINT, Integer.MAX_VALUE + 1L);
+        checkValue0(sql(Integer.MIN_VALUE - 1L), BIGINT, Integer.MIN_VALUE - 1L);
+        checkValue0(sql(Long.MAX_VALUE), BIGINT, Long.MAX_VALUE);
+        checkValue0(sql(Long.MIN_VALUE), BIGINT, Long.MIN_VALUE);
+
+        checkValue0(sql(Long.MAX_VALUE + "0"), DECIMAL, new BigDecimal(Long.MAX_VALUE).multiply(BigDecimal.TEN));
+        checkValue0(sql("0.0"), DECIMAL, new BigDecimal("0.0"));
+        checkValue0(sql("1.0"), DECIMAL, new BigDecimal("1.0"));
+        checkValue0(sql("1.000"), DECIMAL, new BigDecimal("1.000"));
+        checkValue0(sql("001.000"), DECIMAL, new BigDecimal("1.000"));
+        checkValue0(sql("1.1"), DECIMAL, new BigDecimal("1.1"));
+        checkValue0(sql("1.100"), DECIMAL, new BigDecimal("1.100"));
+        checkValue0(sql("001.100"), DECIMAL, new BigDecimal("1.100"));
+        checkValue0(sql("-0.0"), DECIMAL, new BigDecimal("0.0"));
+        checkValue0(sql("-1.0"), DECIMAL, new BigDecimal("-1.0"));
+        checkValue0(sql("-001.100"), DECIMAL, new BigDecimal("-1.100"));
+        checkValue0(sql(".0"), DECIMAL, BigDecimal.valueOf(0.0));
+        checkValue0(sql(".1"), DECIMAL, BigDecimal.valueOf(0.1));
+
+        checkValue0(sql("0e0"), DOUBLE, 0.0);
+        checkValue0(sql("1e0"), DOUBLE, 1.0);
+        checkValue0(sql("1e000"), DOUBLE, 1.0);
+        checkValue0(sql("001e000"), DOUBLE, 1.0);
+        checkValue0(sql("1.1e0"), DOUBLE, 1.1);
+        checkValue0(sql("1.100e0"), DOUBLE, 1.1);
+        checkValue0(sql("001.100e0"), DOUBLE, 1.1);
+        checkValue0(sql("-0.0e0"), DOUBLE, 0.0);
+        checkValue0(sql("-1.0e0"), DOUBLE, -1.0);
+        checkValue0(sql("-001.100e0"), DOUBLE, -1.1);
+        checkValue0(sql(".0e0"), DOUBLE, 0.0);
+        checkValue0(sql(".1e0"), DOUBLE, 0.1);
+        checkValue0(sql("1.1e1"), DOUBLE, 11.0);
+        checkValue0(sql("1.1e-1"), DOUBLE, 0.11);
+    }
+
+    @Test
+    public void testLiteralEquality() {
+        checkEquals(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT), true);
+        checkEquals(ConstantExpression.create(1, INT), ConstantExpression.create(1, QueryDataType.BIGINT), false);
+        checkEquals(ConstantExpression.create(1, INT), ConstantExpression.create(2, INT), false);
+    }
+
+    @Test
+    public void testLiteralSerialization() {
+        ConstantExpression<?> original = ConstantExpression.create(1, INT);
+        ConstantExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_CONSTANT);
+
+        checkEquals(original, restored, true);
+    }
+
+    @Test
+    public void testParameter() {
+        checkFailure0(sql("?"), SqlErrorCode.PARSING, "Illegal use of dynamic parameter", 1);
+    }
+
+    @Test
+    public void testParameterEquality() {
+        checkEquals(ParameterExpression.create(1, INT), ParameterExpression.create(1, INT), true);
+        checkEquals(ParameterExpression.create(1, INT), ParameterExpression.create(1, QueryDataType.BIGINT), false);
+        checkEquals(ParameterExpression.create(1, INT), ParameterExpression.create(2, INT), false);
+    }
+
+    @Test
+    public void testParameterSerialization() {
+        ParameterExpression<?> original = ParameterExpression.create(1, INT);
+        ParameterExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_PARAMETER);
+
+        checkEquals(original, restored, true);
+    }
+
+    @Test
+    public void testColumn_auto() {
+        for (ExpressionType<?> type : ExpressionTypes.all()) {
+            Class<? extends ExpressionValue> clazz = ExpressionValue.createClass(type.typeName());
+
+            ExpressionValue value = ExpressionValue.create(clazz, type.valueFrom());
+            ExpressionValue nullValue = ExpressionValue.create(clazz, null);
+
+            SqlColumnType expectedType = type.getFieldConverterType().getTypeFamily().getPublicType();
+            Object expectedResult = type.getFieldConverterType().getConverter().convertToSelf(
+                type.getFieldConverterType().getConverter(),
+                type.valueFrom()
+            );
+
+            putAndCheckValue(value, sql("field1"), expectedType, expectedResult);
+            putAndCheckValue(nullValue, sql("field1"), expectedType, null);
         }
     }
 
     @Test
-    public void testBoolean() {
-        assertRow("booleanTrue", "booleanTrue", BOOLEAN, true);
+    public void testColumn_manual() {
+        putAndCheckValue('f', sql("this"), VARCHAR, "f");
+        putAndCheckValue("foo", sql("this"), VARCHAR, "foo");
+
+        putAndCheckValue(true, sql("this"), BOOLEAN, true);
+
+        putAndCheckValue((byte) 1, sql("this"), TINYINT, (byte) 1);
+        putAndCheckValue((short) 1, sql("this"), SMALLINT, (short) 1);
+        putAndCheckValue(1, sql("this"), INTEGER, 1);
+        putAndCheckValue(1L, sql("this"), BIGINT, 1L);
+        putAndCheckValue(BigInteger.ONE, sql("this"), DECIMAL, BigDecimal.ONE);
+        putAndCheckValue(BigDecimal.ONE, sql("this"), DECIMAL, BigDecimal.ONE);
+        putAndCheckValue(1f, sql("this"), REAL, 1f);
+        putAndCheckValue(1d, sql("this"), DOUBLE, 1d);
+
+        putAndCheckValue(LOCAL_DATE_VAL, sql("this"), DATE, LOCAL_DATE_VAL);
+        putAndCheckValue(LOCAL_TIME_VAL, sql("this"), TIME, LOCAL_TIME_VAL);
+        putAndCheckValue(LOCAL_DATE_TIME_VAL, sql("this"), TIMESTAMP, LOCAL_DATE_TIME_VAL);
+        putAndCheckValue(OFFSET_DATE_TIME_VAL, sql("this"), TIMESTAMP_WITH_TIME_ZONE, OFFSET_DATE_TIME_VAL);
+
+        putAndCheckValue(OBJECT_VAL, sql("this"), OBJECT, OBJECT_VAL);
     }
 
     @Test
-    public void testByte() {
-        assertRow("byte1", "byte1", TINYINT, (byte) 1);
+    public void testColumnEquality() {
+        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(1, INT), true);
+        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(1, QueryDataType.BIGINT), false);
+        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(2, INT), false);
     }
 
     @Test
-    public void testShort() {
-        assertRow("short1", "short1", SMALLINT, (short) 1);
+    public void testColumnSerialization() {
+        ColumnExpression<?> original = ColumnExpression.create(1, INT);
+        ColumnExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_COLUMN);
+
+        checkEquals(original, restored, true);
     }
 
-    @Test
-    public void testInt() {
-        assertRow("int1", "int1", INTEGER, 1);
+    private static String sql(Object attribute) {
+        return "SELECT " + attribute + " FROM map";
     }
-
-    @Test
-    public void testLong() {
-        assertRow("long1", "long1", BIGINT, 1L);
-    }
-
-    @Test
-    public void testFloat() {
-        assertRow("float1", "float1", REAL, 1.0f);
-    }
-
-    @Test
-    public void testDouble() {
-        assertRow("double1", "double1", DOUBLE, 1.0d);
-    }
-
-    @Test
-    public void testDecimal() {
-        if (getMapName().equals("portableRecords")) {
-            assertParsingError("decimal1", "Column 'decimal1' not found in any table");
-        } else {
-            assertRow("decimal1", "decimal1", DECIMAL, BigDecimal.valueOf(1));
-        }
-    }
-
-    @Test
-    public void testBigInteger() {
-        if (getMapName().equals("portableRecords")) {
-            assertParsingError("bigInteger1", "Column 'bigInteger1' not found in any table");
-        } else {
-            assertRow("bigInteger1", "bigInteger1", DECIMAL, BigDecimal.valueOf(1));
-        }
-    }
-
-    @Test
-    public void testString() {
-        assertRow("string1", "string1", VARCHAR, "1");
-    }
-
-    @Test
-    public void testChar() {
-        assertRow("char1", "char1", VARCHAR, "1");
-    }
-
-    @Test
-    public void testLocalDate() {
-        if (getMapName().equals("portableRecords")) {
-            assertParsingError("dateCol", "Column 'dateCol' not found in any table");
-        } else {
-            assertRow("dateCol", "dateCol", DATE, getRecord().dateCol);
-        }
-    }
-
-    @Test
-    public void testLocalTime() {
-        if (getMapName().equals("portableRecords")) {
-            assertParsingError("timeCol", "Column 'timeCol' not found in any table");
-        } else {
-            assertRow("timeCol", "timeCol", TIME, getRecord().timeCol);
-        }
-    }
-
-    @Test
-    public void testLocalDateTime() {
-        if (getMapName().equals("portableRecords")) {
-            assertParsingError("dateTimeCol", "Column 'dateTimeCol' not found in any table");
-        } else {
-            assertRow("dateTimeCol", "dateTimeCol", TIMESTAMP, getRecord().dateTimeCol);
-        }
-    }
-
-    @Test
-    public void testOffsetDateTime() {
-        if (getMapName().equals("portableRecords")) {
-            assertParsingError("offsetDateTimeCol", "Column 'offsetDateTimeCol' not found in any table");
-        } else {
-            assertRow("offsetDateTimeCol", "offsetDateTimeCol", TIMESTAMP_WITH_TIME_ZONE, getRecord().offsetDateTimeCol);
-        }
-    }
-
-    @Test
-    public void testObject() {
-        if (getMapName().equals("portableRecords")) {
-            assertParsingError("object", "Column 'object' not found in any table");
-        } else {
-            assertRow("object", "object", OBJECT, new SerializableObject());
-        }
-    }
-
-    @Test
-    public void testKey() {
-        assertRow("__key", "__key", OBJECT, new RecordKey(0));
-        assertRow("id", "id", INTEGER, 0);
-    }
-
-    @Test
-    public void testValue() {
-        assertRow("this", "this", OBJECT, getRecord());
-    }
-
-    @Test
-    public void testMissingColumn() {
-        assertParsingError("missingColumn", "Column 'missingColumn' not found in any table");
-    }
-
-    @Test
-    public void testBrokenRecord() {
-        IMap<Object, Object> original = getMap();
-        String brokenMapName = getMapName() + "Broken";
-        IMap<Object, Object> broken = getMap(brokenMapName);
-
-        broken.put(new RecordKey(0), original.get(new RecordKey(0)));
-        assertRow("byte1", brokenMapName, "byte1", TINYINT, (byte) 1);
-
-        broken.put(new RecordKey(1), new BrokenRecord());
-        assertError("byte1", brokenMapName, SqlErrorCode.DATA_EXCEPTION,
-                "Failed to extract map entry value field \"byte1\" because of type mismatch");
-    }
-
 }

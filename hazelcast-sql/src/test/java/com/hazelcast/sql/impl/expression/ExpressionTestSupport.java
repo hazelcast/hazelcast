@@ -58,7 +58,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     protected HazelcastInstance member;
 
     private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
-    private IMap map;
+    protected IMap map;
 
     @Before
     public void before() {

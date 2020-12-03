@@ -118,5 +118,28 @@ public abstract class ExpressionValue implements Serializable {
     public static class LocalTimeVal extends ExpressionValue implements Serializable { public LocalTime field1; }
     public static class LocalDateTimeVal extends ExpressionValue implements Serializable { public LocalDateTime field1; }
     public static class OffsetDateTimeVal extends ExpressionValue implements Serializable { public OffsetDateTime field1; }
-    public static class ObjectVal extends ExpressionValue implements Serializable { public Object field1; }
+
+    public static class ObjectVal extends ExpressionValue implements Serializable {
+        public Object field1;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            ObjectVal objectVal = (ObjectVal) o;
+
+            return field1 != null ? field1.equals(objectVal.field1) : objectVal.field1 == null;
+        }
+
+        @Override
+        public int hashCode() {
+            return field1 != null ? field1.hashCode() : 0;
+        }
+    }
 }
