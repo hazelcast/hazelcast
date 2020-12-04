@@ -26,7 +26,6 @@ import com.hazelcast.logging.LogListener;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.logging.LoggingService;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;
@@ -88,13 +87,13 @@ public class ClientLoggingService implements LoggingService {
     }
 
     @Override
-    public void removeLogger(@NotNull String name) {
+    public void removeLogger(@Nonnull String name) {
         checkNotNull(name, "name must not be null");
         removeLoggerInternal(name);
     }
 
     @Override
-    public void removeLogger(@NotNull Class clazz) {
+    public void removeLogger(@Nonnull Class clazz) {
         checkNotNull(clazz, "class must not be null");
         removeLoggerInternal(clazz.getName());
     }
