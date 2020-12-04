@@ -200,23 +200,40 @@ MqttSources.builder()
 
 #### Fault Tolerance
 
-MQTT protocol defines these levels of quality of service for subscribing
-to the topics: `AT_MOST_ONCE`, `AT_LEAST_ONCE`, `EXACTLY_ONCE`. But I've
-confirmed a loss of messages with `EXACTLY_ONCE` configuration even when
-the client restarted gracefully. I've tried both Paho client and HiveMQ
-client, the results are same.
+To support fault tolerance for a source, Jet needs the remote system to
+support one of these:
+
+- provide an offset. After a failure, we'll use that offset and replay
+the messages
+
+- support manual acknowledgement. Jet will ack the messages in the
+second phase of the snapshot
+
+MQTT provides acknowledgements, however, the Paho client we use
+acknowledges the messages automatically. There are other clients that
+support manual acknowledgements, however the whole MQTT protocol is
+designed for IoT and small resource usage. Many brokers (for example
+Mosquitto) limit the number of non-acknowledged messages to a low value
+(100 in case of Mosquitto). Therefore we can't really rely on this
+feature.
+
+We've also considered an option where Jet itself would save the messages
+received since the last snapshot. We cannot save it to the snapshot
+because the snapshot stores state created _before_ the snapshot is
+taken, but we need to save messages received _after_ the snapshot. We
+could save them to an IMap and maybe we could provide a persistence
+implementation for Paho that we'll be able to "roll back". However, we
+didn't implement a PoC for this option. We decided to not support any
+fault tolerance for the MQTT source. It can be implemented in the future
+if there's demand. Currently, if a fault-tolerant job fails, the source
+will simply start where it left off and the messages acked since the
+last snapshot will be lost.
 
 If a client subscribes to a topic with quality of service `AT_LEAST_ONCE`
 or `EXACTLY_ONCE` and connects to the broker with `cleanSession=false`,
 then the broker keeps the messages in case of a disconnection. The broker
 serves these buffered messages once the client is re-connected. You
 need to use a unique identifier for the client.
-
-The source itself is not fault-tolerant and does not save any state. In
-case of a restart, the source does not know where it left off and relies
-on the broker. If the broker keeps a session for the client (the above
-situation), the source continues where it left off, otherwise the source
-emits messages after the subscription.
 
 Paho client has an `autoReconnect` option, in case of a disconnect, the
 client tries to reconnect to the broker. After the reconnection, source
@@ -282,8 +299,9 @@ MqttSinks.builder()
 
 #### Fault Tolerance
 
-The sink is not fault-tolerant and does not save any state. In case of
-a restart, some messages can be duplicated.
+The MQTT sink provides at-least-once guarantee - it sends the messages
+synchronously. If a job fails and restarts, the same messages will be
+sent again.
 
 #### Error handling
 
