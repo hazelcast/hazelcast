@@ -281,6 +281,15 @@ public class PartitionIdSetTest {
         assertNotEquals(createWithPartitionCount(11, 1, 2), set);
     }
 
+    @Test
+    public void test_solePartition() {
+        assertEquals(0, createWithPartitionCount(10, 0).solePartition());
+        assertEquals(1, createWithPartitionCount(10, 1).solePartition());
+        assertEquals(9, createWithPartitionCount(10, 9).solePartition());
+        assertEquals(-1, createWithPartitionCount(10, 0, 1).solePartition());
+        assertEquals(-1, createWithPartitionCount(10, 0, 9).solePartition());
+    }
+
     private void assertContents(PartitionIdSet set) {
         for (int i = 0; i < 5; i++) {
             assertTrue("Should contain " + i, set.contains(i));
