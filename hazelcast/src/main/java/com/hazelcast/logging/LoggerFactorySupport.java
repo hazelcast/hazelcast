@@ -26,16 +26,16 @@ public abstract class LoggerFactorySupport implements LoggerFactory {
 
     final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
 
-    final ConstructorFunction<String, ILogger> loggerConstructor
-            = new ConstructorFunction<String, ILogger>() {
-        public ILogger createNew(String key) {
-            return createLogger(key);
-        }
-    };
+    final ConstructorFunction<String, ILogger> loggerConstructor = this::createLogger;
 
     @Override
     public final ILogger getLogger(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(mapLoggers, name, loggerConstructor);
+    }
+
+    @Override
+    public void removeLogger(String name) {
+        mapLoggers.remove(name);
     }
 
     protected abstract ILogger createLogger(String name);
