@@ -362,8 +362,9 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleCardinalityEstimator(Node node) {
         for (Node estimatorNode : childElements(node)) {
-            CardinalityEstimatorConfig estimatorConfig = new CardinalityEstimatorConfig();
-            estimatorConfig.setName(estimatorNode.getNodeName());
+            CardinalityEstimatorConfig estimatorConfig = config
+              .getCardinalityEstimatorConfig(estimatorNode.getNodeName());
+
             handleCardinalityEstimatorNode(estimatorNode, estimatorConfig);
         }
     }

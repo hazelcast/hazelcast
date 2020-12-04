@@ -145,6 +145,19 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
+    public void shouldHandleCardinalityEstimatorConfig() throws Exception {
+        Config config = new Config();
+        config.getCardinalityEstimatorConfig("foo")
+          .setAsyncBackupCount(4);
+
+        withEnvironmentVariable("HZ_CARDINALITYESTIMATOR_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2,  config.getCardinalityEstimatorConfig("foo").getBackupCount());
+        assertEquals(4,  config.getCardinalityEstimatorConfig("foo").getAsyncBackupCount());
+    }
+
+    @Test
     public void shouldHandleSplitBrainProtectionConfig() throws Exception {
         Config config = new Config();
         config.getSplitBrainProtectionConfig("foo")
