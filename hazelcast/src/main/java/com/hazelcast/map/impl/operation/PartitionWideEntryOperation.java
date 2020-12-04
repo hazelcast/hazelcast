@@ -112,17 +112,17 @@ public class PartitionWideEntryOperation extends MapOperation
 
         // we use the partitioned-index to operate on the selected keys only
         Indexes indexes = mapContainer.getIndexes(getPartitionId());
-        Set<QueryableEntry> entries = indexes.query(queryOptimizer.optimize(predicate, indexes), 1);
+        Iterable<QueryableEntry> entries = indexes.query(queryOptimizer.optimize(predicate, indexes), 1);
         if (entries == null) {
             return false;
         }
 
-        responses = new MapEntries(entries.size());
+        responses = new MapEntries();
 
         // when NATIVE we can pass null as predicate since it's all
         // happening on partition thread so no data-changes may occur
         operator = operator(this, entryProcessor, null);
-        keysFromIndex = new HashSet<>(entries.size());
+        keysFromIndex = new HashSet<>();
         for (QueryableEntry entry : entries) {
             keysFromIndex.add(entry.getKeyData());
             Data response = operator.operateOnKey(entry.getKeyData()).doPostOperateOps().getResult();

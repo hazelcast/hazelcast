@@ -22,6 +22,7 @@ import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,6 +34,7 @@ import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironment
 import static com.hazelcast.internal.config.override.ExternalConfigTestUtils.runWithSystemProperty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -153,6 +155,22 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
 
         assertEquals(2,  config.getCardinalityEstimatorConfig("foo").getBackupCount());
         assertEquals(4,  config.getCardinalityEstimatorConfig("foo").getAsyncBackupCount());
+    }
+  
+    @Test
+    public void shouldHandleSplitBrainProtectionConfig() throws Exception {
+        Config config = new Config();
+        config.getSplitBrainProtectionConfig("foo")
+          .setEnabled(true)
+          .setProtectOn(SplitBrainProtectionOn.READ);
+
+        withEnvironmentVariable("HZ_SPLITBRAINPROTECTION_FOO_ENABLED", "true")
+          .and("HZ_SPLITBRAINPROTECTION_FOO_FUNCTIONCLASSNAME", "com.foo.SomeClass")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getSplitBrainProtectionConfig("foo").isEnabled());
+        assertSame(SplitBrainProtectionOn.READ, config.getSplitBrainProtectionConfig("foo").getProtectOn());
+        assertEquals("com.foo.SomeClass", config.getSplitBrainProtectionConfig("foo").getFunctionClassName());
     }
 
     @Test(expected = InvalidConfigurationException.class)

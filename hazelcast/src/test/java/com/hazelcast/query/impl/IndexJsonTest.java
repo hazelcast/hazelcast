@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import static com.hazelcast.config.MapConfig.DEFAULT_IN_MEMORY_FORMAT;
+import static com.hazelcast.internal.util.IterableUtil.size;
 import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 import static org.junit.Assert.assertEquals;
 
@@ -65,25 +66,24 @@ public class IndexJsonTest {
     @Test
     public void testJsonIndex() {
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
-        Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).extractors(Extractors.newBuilder(ss).build()).indexProvider(
+        Indexes indexes = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).extractors(Extractors.newBuilder(ss).build()).indexProvider(
                 new DefaultIndexProvider()).usesCachedQueryableEntries(true).statsEnabled(true).global(true).build();
-        Index numberIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "age"), null);
-        Index boolIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "active"), null);
-        Index stringIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"), null);
+        Index numberIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "age"));
+        Index boolIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "active"));
+        Index stringIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
 
         for (int i = 0; i < 1001; i++) {
             Data key = ss.toData(i);
             String jsonString = "{\"age\" : " + i + "  , \"name\" : \"sancar\" , \"active\" :  " + (i % 2 == 0) + " } ";
-            is.putEntry(new QueryEntry(ss, key, new HazelcastJsonValue(jsonString), Extractors.newBuilder(ss).build()), null, Index.OperationSource.USER);
+            indexes.putEntry(new QueryEntry(ss, key, new HazelcastJsonValue(jsonString), Extractors.newBuilder(ss).build()), null, Index.OperationSource.USER);
         }
 
         assertEquals(1, numberIndex.getRecords(10).size());
         assertEquals(0, numberIndex.getRecords(-1).size());
         assertEquals(1001, stringIndex.getRecords("sancar").size());
         assertEquals(501, boolIndex.getRecords(true).size());
-        assertEquals(501, is.query(new AndPredicate(new EqualPredicate("name", "sancar"), new EqualPredicate("active", "true")), SKIP_PARTITIONS_COUNT_CHECK).size());
-        assertEquals(300, is.query(Predicates.and(Predicates.greaterThan("age", 400), Predicates.equal("active", true)), SKIP_PARTITIONS_COUNT_CHECK).size());
-        assertEquals(1001, is.query(new SqlPredicate("name == sancar"), SKIP_PARTITIONS_COUNT_CHECK).size());
+        assertEquals(501, size(indexes.query(new AndPredicate(new EqualPredicate("name", "sancar"), new EqualPredicate("active", "true")), SKIP_PARTITIONS_COUNT_CHECK)));
+        assertEquals(300, size(indexes.query(Predicates.and(Predicates.greaterThan("age", 400), Predicates.equal("active", true)), SKIP_PARTITIONS_COUNT_CHECK)));
+        assertEquals(1001, size(indexes.query(new SqlPredicate("name == sancar"), SKIP_PARTITIONS_COUNT_CHECK)));
     }
-
 }

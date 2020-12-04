@@ -70,11 +70,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -92,7 +96,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
     @After
     public void cleanup() {
-        hazelcastFactory.terminateAll();
+        hazelcastFactory.shutdownAll();
     }
 
     @Test
@@ -224,12 +228,13 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         LinkedList<LifecycleState> list = new LinkedList<>();
         list.offer(LifecycleState.STARTING);
         list.offer(LifecycleState.STARTED);
-        list.offer(LifecycleState.CLIENT_CONNECTED);
-        list.offer(LifecycleState.CLIENT_DISCONNECTED);
-        list.offer(LifecycleState.CLIENT_CONNECTED);
-        list.offer(LifecycleState.CLIENT_DISCONNECTED);
         list.offer(LifecycleState.SHUTTING_DOWN);
         list.offer(LifecycleState.SHUTDOWN);
+
+        //to make sure event CONNECT/DISCONNECT order is correct
+        AtomicReference<Object> stateAtomicReference = new AtomicReference<>();
+        stateAtomicReference.set(CLIENT_DISCONNECTED);
+        Object FAILURE = new Object();
 
         hazelcastFactory.newHazelcastInstance();
         CountDownLatch latch = new CountDownLatch(list.size());
@@ -238,16 +243,25 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         LifecycleListener listener = new LifecycleListener() {
             public void stateChanged(LifecycleEvent event) {
                 Logger.getLogger(getClass()).info("stateChanged: " + event);
-                LifecycleState state = list.poll();
                 LifecycleState eventState = event.getState();
-                if (state != null && state.equals(eventState)) {
-                    latch.countDown();
-                }
-                if (LifecycleState.CLIENT_CONNECTED.equals(eventState)) {
+
+                if (CLIENT_CONNECTED.equals(eventState)) {
+                    if (!stateAtomicReference.compareAndSet(CLIENT_DISCONNECTED, CLIENT_CONNECTED)) {
+                        //fail the test
+                        stateAtomicReference.set(FAILURE);
+                    }
                     connectedLatch.countDown();
-                }
-                if (LifecycleState.CLIENT_DISCONNECTED.equals(eventState)) {
+                } else if (CLIENT_DISCONNECTED.equals(eventState)) {
+                    if (!stateAtomicReference.compareAndSet(CLIENT_CONNECTED, CLIENT_DISCONNECTED)) {
+                        //fail the test
+                        stateAtomicReference.set(FAILURE);
+                    }
                     disconnectedLatch.countDown();
+                } else {
+                    LifecycleState state = list.poll();
+                    if (state != null && state.equals(eventState)) {
+                        latch.countDown();
+                    }
                 }
             }
         };
@@ -261,16 +275,18 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
         hazelcastFactory.newHazelcastInstance();
 
-        assertOpenEventually("LifecycleState failed. Expected two CLIENT_CONNECTED events!", connectedLatch);
+        assertOpenEventually("Expected at least two CLIENT_CONNECTED events!", connectedLatch);
 
         hazelcastFactory.shutdownAllMembers();
 
         //wait for disconnect then call client.shutdown(). Otherwise shutdown could prevent firing DISCONNECTED event
-        assertOpenEventually("LifecycleState failed. Expected two CLIENT_DISCONNECTED events!", disconnectedLatch);
+        assertOpenEventually("Expected at least two CLIENT_DISCONNECTED events!", disconnectedLatch);
 
         hazelcastClient.shutdown();
 
         assertOpenEventually("LifecycleState failed", latch);
+
+        assertNotEquals("CLIENT_CONNECTED CLIENT_DISCONNECTED order was broken ", FAILURE, stateAtomicReference.get());
     }
 
     @Test
@@ -519,7 +535,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         IMap<Object, Object> map = client.getMap(randomMapName());
 
         client.getLifecycleService().addLifecycleListener(event -> {
-            if (event.getState() == LifecycleState.CLIENT_DISCONNECTED) {
+            if (event.getState() == CLIENT_DISCONNECTED) {
                 disconnectedLatch.countDown();
                 for (int i = 0; i < 1000; i++) {
                     map.get(i);
@@ -549,7 +565,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         map.get(1);
 
         client.getLifecycleService().addLifecycleListener(event -> {
-            if (event.getState() == LifecycleState.CLIENT_DISCONNECTED) {
+            if (event.getState() == CLIENT_DISCONNECTED) {
                 disconnectedLatch.countDown();
                 for (int i = 0; i < 1000; i++) {
                     map.get(i);
@@ -588,7 +604,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         IMap<Object, Object> map = client.getMap(mapName);
 
         client.getLifecycleService().addLifecycleListener(event -> {
-            if (event.getState() == LifecycleState.CLIENT_DISCONNECTED) {
+            if (event.getState() == CLIENT_DISCONNECTED) {
                 disconnectedLatch.countDown();
                 map.get(1);
                 map.get(2);
@@ -794,14 +810,15 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
         AtomicBoolean isClientDisconnected = new AtomicBoolean();
         client.getLifecycleService().addLifecycleListener(event -> {
-            if (LifecycleState.CLIENT_DISCONNECTED.equals(event.getState())) {
+            if (CLIENT_DISCONNECTED.equals(event.getState())) {
                 isClientDisconnected.set(true);
             }
         });
 
         String key = "topicName";
         ITopic<Object> topic = client.getTopic(key);
-        MessageListener<Object> listener = message -> { };
+        MessageListener<Object> listener = message -> {
+        };
         UUID id = topic.addMessageListener(listener);
 
         ITopic<Object> client2Topic = client2.getTopic(key);
