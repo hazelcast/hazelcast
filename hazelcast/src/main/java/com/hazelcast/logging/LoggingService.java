@@ -19,6 +19,9 @@ package com.hazelcast.logging;
 import javax.annotation.Nonnull;
 import java.util.logging.Level;
 
+/**
+ *
+ */
 public interface LoggingService {
 
     void addLogListener(@Nonnull Level level, @Nonnull LogListener logListener);
@@ -49,12 +52,12 @@ public interface LoggingService {
     @Nonnull ILogger getLogger(@Nonnull Class type);
 
     /**
-     * Release resources associated with the given logger.
+     * Releases resources associated with the given logger.
      */
     void removeLogger(@Nonnull String name);
 
     /**
-     * Release resources associated with the given logger.
+     * Releases resources associated with the given logger.
      */
     void removeLogger(@Nonnull Class type);
 }
