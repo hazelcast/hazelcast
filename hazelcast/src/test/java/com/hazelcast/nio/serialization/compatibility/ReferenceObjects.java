@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -157,6 +158,8 @@ class ReferenceObjects {
     static BigInteger aBigInteger = new BigInteger("1314432323232411");
     static BigDecimal aBigDecimal = new BigDecimal(31231);
     static Class aClass = BigDecimal.class;
+    static Optional<String> aFullOptional = Optional.of("SERIALIZEDSTRING");
+    static Optional<String> anEmptyOptional = Optional.empty();
     static Enum anEnum = EntryEventType.ADDED;
 
     static Serializable serializable = new AJavaSerialiazable(anInt, aFloat);
@@ -169,7 +172,7 @@ class ReferenceObjects {
             booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             aCustomStreamSerializable, aCustomByteArraySerializable,
             anIdentifiedDataSerializable, aPortable,
-            aDate, aBigInteger, aBigDecimal, aClass, anEnum, aSimpleMapEntry, aSimpleImmutableMapEntry,
+            aDate, aBigInteger, aBigDecimal, aClass, anEmptyOptional, aFullOptional, anEnum, aSimpleMapEntry, aSimpleImmutableMapEntry,
             serializable, externalizable));
 
     static ArrayList arrayList = new ArrayList(asList(aNullObject, nonNullList));
@@ -222,7 +225,7 @@ class ReferenceObjects {
             aSimpleMapEntry, aSimpleImmutableMapEntry, booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             aCustomStreamSerializable, aCustomByteArraySerializable,
             anIdentifiedDataSerializable, aPortable,
-            aDate, aBigInteger, aBigDecimal, aClass, anEnum,
+            aDate, aBigInteger, aBigDecimal, aClass, aFullOptional, anEnum,
             serializable, externalizable,
             arrayList, linkedList, copyOnWriteArrayList, concurrentSkipListMap, concurrentHashMap, linkedHashMap, treeMap,
             hashSet, treeSet, linkedHashSet, copyOnWriteArraySet, concurrentSkipListSet, arrayDeque, linkedBlockingQueue,
