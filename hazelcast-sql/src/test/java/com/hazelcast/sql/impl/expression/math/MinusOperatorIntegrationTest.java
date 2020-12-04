@@ -413,21 +413,21 @@ public class MinusOperatorIntegrationTest extends ArithmeticOperatorIntegrationT
 
     @Test
     public void testEquality() {
-        checkEquals(MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT), true);
+        checkEquals(MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+            MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT), true);
 
-        checkEquals(MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), QueryDataType.BIGINT), false);
+        checkEquals(MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+            MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), QueryDataType.BIGINT), false);
 
-        checkEquals(MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(100, INT), INT), false);
+        checkEquals(MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+            MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(100, INT), INT), false);
     }
 
     @Test
     public void testSerialization() {
-        MinusFunction<?> original =
-            MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
-        MinusFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_MINUS);
+        MultiplyFunction<?> original =
+            MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
+        MultiplyFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_MULTIPLY);
 
         checkEquals(original, restored, true);
     }
