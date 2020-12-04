@@ -70,6 +70,7 @@ public class MinusOperatorIntegrationTest extends ArithmeticOperatorIntegrationT
     public void testTinyint() {
         // NULL
         putAndCheckValue((byte) 0, sql("this", "null"), SMALLINT, null);
+        putAndCheckValue((byte) 0, sql("null", "this"), SMALLINT, null);
 
         // Columns
         checkFields((byte) 0, (byte) 1, SMALLINT, (short) -1);
@@ -116,6 +117,7 @@ public class MinusOperatorIntegrationTest extends ArithmeticOperatorIntegrationT
     public void testSmallint() {
         // NULL
         putAndCheckValue((short) 0, sql("this", "null"), INTEGER, null);
+        putAndCheckValue((short) 0, sql("null", "this"), INTEGER, null);
 
         // Columns
         checkFields((short) 0, (byte) 1, INTEGER, -1);
@@ -162,6 +164,7 @@ public class MinusOperatorIntegrationTest extends ArithmeticOperatorIntegrationT
     public void testInteger() {
         // NULL
         putAndCheckValue(0, sql("this", "null"), BIGINT, null);
+        putAndCheckValue(0, sql("null", "this"), BIGINT, null);
 
         // Columns
         checkFields(0, (byte) 1, BIGINT, -1L);
@@ -208,6 +211,7 @@ public class MinusOperatorIntegrationTest extends ArithmeticOperatorIntegrationT
     public void testBigint() {
         // NULL
         putAndCheckValue(0L, sql("this", "null"), BIGINT, null);
+        putAndCheckValue(0L, sql("null", "this"), BIGINT, null);
 
         // Columns
         checkFields(0L, (byte) 1, BIGINT, -1L);
@@ -254,6 +258,7 @@ public class MinusOperatorIntegrationTest extends ArithmeticOperatorIntegrationT
     public void testDecimal_BigInteger() {
         // NULL
         putAndCheckValue(BigInteger.ZERO, sql("this", "null"), DECIMAL, null);
+        putAndCheckValue(BigInteger.ZERO, sql("null", "this"), DECIMAL, null);
 
         // Columns
         checkFields(BigInteger.ZERO, (byte) 1, DECIMAL, decimal(-1));
@@ -300,6 +305,7 @@ public class MinusOperatorIntegrationTest extends ArithmeticOperatorIntegrationT
     public void testDecimal_BigDecimal() {
         // NULL
         putAndCheckValue(BigDecimal.ZERO, sql("this", "null"), DECIMAL, null);
+        putAndCheckValue(BigDecimal.ZERO, sql("null", "this"), DECIMAL, null);
 
         // Columns
         checkFields(BigDecimal.ZERO, (byte) 1, DECIMAL, decimal(-1));
@@ -345,6 +351,7 @@ public class MinusOperatorIntegrationTest extends ArithmeticOperatorIntegrationT
     @Test
     public void testReal() {
         putAndCheckValue(0f, sql("this", "null"), REAL, null);
+        putAndCheckValue(0f, sql("null", "this"), REAL, null);
 
         checkFields(1f, 2f, REAL, -1f);
         checkFields(1f, 2d, DOUBLE, -1d);
@@ -370,6 +377,7 @@ public class MinusOperatorIntegrationTest extends ArithmeticOperatorIntegrationT
     @Test
     public void testDouble() {
         putAndCheckValue(0d, sql("this", "null"), DOUBLE, null);
+        putAndCheckValue(0d, sql("null", "this"), DOUBLE, null);
 
         checkFields(1d, 2d, DOUBLE, -1d);
 

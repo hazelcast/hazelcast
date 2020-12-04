@@ -51,6 +51,7 @@ public class ArithmeticOperandChecker {
         switch (kind) {
             case PLUS:
             case MINUS:
+            case DIVIDE:
                 if (HazelcastTypeSystem.isInteger(type)) {
                     int bitWidth = HazelcastIntegerType.bitWidthOf(type) + 1;
 
@@ -59,7 +60,9 @@ public class ArithmeticOperandChecker {
 
                 break;
 
-            case TIMES:
+            default:
+                assert kind == SqlKind.TIMES;
+
                 if (HazelcastTypeSystem.isInteger(firstType) && HazelcastTypeSystem.isInteger(secondType)) {
                     int bitWidth = HazelcastIntegerType.bitWidthOf(firstType) + HazelcastIntegerType.bitWidthOf(secondType);
 
@@ -67,9 +70,6 @@ public class ArithmeticOperandChecker {
                 }
 
                 break;
-
-            default:
-                assert kind == SqlKind.DIVIDE;
         }
 
         TypedOperandChecker checker = TypedOperandChecker.forType(type);

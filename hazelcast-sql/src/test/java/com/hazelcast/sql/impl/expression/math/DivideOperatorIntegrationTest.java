@@ -49,10 +49,10 @@ import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MultiplyOperatorIntegrationTest extends ArithmeticOperatorIntegrationTest {
+public class DivideOperatorIntegrationTest extends ArithmeticOperatorIntegrationTest {
     @Override
     protected String operator() {
-        return "*";
+        return "/";
     }
 
     @Test
@@ -73,31 +73,39 @@ public class MultiplyOperatorIntegrationTest extends ArithmeticOperatorIntegrati
         putAndCheckValue((byte) 0, sql("null", "this"), SMALLINT, null);
 
         // Columns
-        checkFieldsCommute((byte) 2, (byte) 3, SMALLINT, (short) 6);
-        checkFieldsCommute(Byte.MAX_VALUE, Byte.MAX_VALUE, SMALLINT, (short) (Byte.MAX_VALUE * Byte.MAX_VALUE));
+        checkFields((byte) 3, (byte) 2, SMALLINT, (short) 1);
+        checkFields((byte) 3, (byte) 4, SMALLINT, (short) 0);
+        checkError((byte) 3, (byte) 0, DATA_EXCEPTION, divisionByZeroError());
+        checkFields(Byte.MIN_VALUE, (byte) -1, SMALLINT, (short) (Byte.MAX_VALUE + 1));
 
-        checkFieldsCommute((byte) 2, (short) 3, INTEGER, 6);
-        checkFieldsCommute(Byte.MAX_VALUE, Short.MAX_VALUE, INTEGER, Byte.MAX_VALUE * Short.MAX_VALUE);
+        checkFields((byte) 3, (short) 2, INTEGER, 1);
+        checkFields((byte) 3, (short) 4, INTEGER, 0);
+        checkError((byte) 3, (short) 0, DATA_EXCEPTION, divisionByZeroError());
+        checkFields(Byte.MIN_VALUE, (short) -1, INTEGER, Byte.MAX_VALUE + 1);
 
-        checkFieldsCommute((byte) 2, 3, BIGINT, 6L);
-        checkFieldsCommute(Byte.MAX_VALUE, Integer.MAX_VALUE, BIGINT, (long) Byte.MAX_VALUE * Integer.MAX_VALUE);
+        checkFields((byte) 3, 2, BIGINT, 1L);
+        checkFields((byte) 3, 4, BIGINT, 0L);
+        checkError((byte) 3, 0, DATA_EXCEPTION, divisionByZeroError());
+        checkFields(Byte.MIN_VALUE, -1, BIGINT, (long) Byte.MAX_VALUE + 1);
 
-        checkFieldsCommute((byte) 2, 3L, BIGINT, 6L);
-        checkErrorCommute(Byte.MAX_VALUE, Long.MAX_VALUE, DATA_EXCEPTION, overflowError());
+        checkFields((byte) 3, 2L, BIGINT, 1L);
+        checkFields((byte) 3, 4L, BIGINT, 0L);
+        checkError((byte) 3, 0L, DATA_EXCEPTION, divisionByZeroError());
+        checkFields(Byte.MIN_VALUE, -1L, BIGINT, (long) Byte.MAX_VALUE + 1);
 
-        checkFieldsCommute((byte) 2, new BigInteger("3"), DECIMAL, decimal("6"));
-        checkFieldsCommute((byte) 2, decimal("3.3"), DECIMAL, decimal("6.6"));
-        checkFieldsCommute((byte) 2, 3f, REAL, 6f);
-        checkFieldsCommute((byte) 2, 3d, DOUBLE, 6d);
+        checkFields((byte) 3, new BigInteger("2"), DECIMAL, decimal("1.5"));
+        checkFields((byte) 3, decimal("2"), DECIMAL, decimal("1.5"));
+        checkFields((byte) 3, 2f, REAL, 1.5f);
+        checkFields((byte) 3, 2d, DOUBLE, 1.5d);
 
         // Parameters
         putAndCheckFailure((byte) 2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), CHAR_VAL);
         putAndCheckFailure((byte) 2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), STRING_VAL);
         putAndCheckFailure((byte) 2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, BOOLEAN), BOOLEAN_VAL);
-        putAndCheckValue((byte) 2, sql("this", "?"), BIGINT, 6L, (byte) 3);
-        putAndCheckValue((byte) 2, sql("this", "?"), BIGINT, 6L, (short) 3);
-        putAndCheckValue((byte) 2, sql("this", "?"), BIGINT, 6L, 3);
-        putAndCheckValue((byte) 2, sql("this", "?"), BIGINT, 6L, 3L);
+        putAndCheckValue((byte) 3, sql("this", "?"), BIGINT, 1L, (byte) 2);
+        putAndCheckValue((byte) 3, sql("this", "?"), BIGINT, 1L, (short) 2);
+        putAndCheckValue((byte) 3, sql("this", "?"), BIGINT, 1L, 2);
+        putAndCheckValue((byte) 3, sql("this", "?"), BIGINT, 1L, 2L);
         putAndCheckFailure((byte) 2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, DECIMAL), BIG_INTEGER_VAL);
         putAndCheckFailure((byte) 2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, DECIMAL), BIG_DECIMAL_VAL);
         putAndCheckFailure((byte) 2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, REAL), FLOAT_VAL);
@@ -116,31 +124,39 @@ public class MultiplyOperatorIntegrationTest extends ArithmeticOperatorIntegrati
         putAndCheckValue((short) 0, sql("null", "this"), INTEGER, null);
 
         // Columns
-        checkFieldsCommute((short) 2, (byte) 3, INTEGER, 6);
-        checkFieldsCommute(Short.MAX_VALUE, Byte.MAX_VALUE, INTEGER, Short.MAX_VALUE * Byte.MAX_VALUE);
+        checkFields((short) 3, (byte) 2, INTEGER, 1);
+        checkFields((short) 3, (byte) 4, INTEGER, 0);
+        checkError((short) 3, (byte) 0, DATA_EXCEPTION, divisionByZeroError());
+        checkFields(Short.MIN_VALUE, (byte) -1, INTEGER, Short.MAX_VALUE + 1);
 
-        checkFieldsCommute((short) 2, (short) 3, INTEGER, 6);
-        checkFieldsCommute(Short.MAX_VALUE, Short.MAX_VALUE, INTEGER, Short.MAX_VALUE * Short.MAX_VALUE);
+        checkFields((short) 3, (short) 2, INTEGER, 1);
+        checkFields((short) 3, (short) 4, INTEGER, 0);
+        checkError((short) 3, (short) 0, DATA_EXCEPTION, divisionByZeroError());
+        checkFields(Short.MIN_VALUE, (short) -1, INTEGER, Short.MAX_VALUE + 1);
 
-        checkFieldsCommute((short) 2, 3, BIGINT, 6L);
-        checkFieldsCommute(Short.MAX_VALUE, Integer.MAX_VALUE, BIGINT, (long) Short.MAX_VALUE * Integer.MAX_VALUE);
+        checkFields((short) 3, 2, BIGINT, 1L);
+        checkFields((short) 3, 4, BIGINT, 0L);
+        checkError((short) 3, 0, DATA_EXCEPTION, divisionByZeroError());
+        checkFields(Short.MIN_VALUE, -1, BIGINT, (long) Short.MAX_VALUE + 1);
 
-        checkFieldsCommute((short) 2, 3L, BIGINT, 6L);
-        checkErrorCommute(Short.MAX_VALUE, Long.MAX_VALUE, DATA_EXCEPTION, overflowError());
+        checkFields((short) 3, 2L, BIGINT, 1L);
+        checkFields((short) 3, 4L, BIGINT, 0L);
+        checkError((short) 3, 0L, DATA_EXCEPTION, divisionByZeroError());
+        checkFields(Short.MIN_VALUE, -1L, BIGINT, (long) Short.MAX_VALUE + 1);
 
-        checkFieldsCommute((short) 2, new BigInteger("3"), DECIMAL, decimal("6"));
-        checkFieldsCommute((short) 2, decimal("3.3"), DECIMAL, decimal("6.6"));
-        checkFieldsCommute((short) 2, 3f, REAL, 6f);
-        checkFieldsCommute((short) 2, 3d, DOUBLE, 6d);
+        checkFields((short) 3, new BigInteger("2"), DECIMAL, decimal("1.5"));
+        checkFields((short) 3, decimal("2"), DECIMAL, decimal("1.5"));
+        checkFields((short) 3, 2f, REAL, 1.5f);
+        checkFields((short) 3, 2d, DOUBLE, 1.5d);
 
         // Parameters
         putAndCheckFailure((short) 2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), CHAR_VAL);
         putAndCheckFailure((short) 2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), STRING_VAL);
         putAndCheckFailure((short) 2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, BOOLEAN), BOOLEAN_VAL);
-        putAndCheckValue((short) 2, sql("this", "?"), BIGINT, 6L, (byte) 3);
-        putAndCheckValue((short) 2, sql("this", "?"), BIGINT, 6L, (short) 3);
-        putAndCheckValue((short) 2, sql("this", "?"), BIGINT, 6L, 3);
-        putAndCheckValue((short) 2, sql("this", "?"), BIGINT, 6L, 3L);
+        putAndCheckValue((short) 3, sql("this", "?"), BIGINT, 1L, (byte) 2);
+        putAndCheckValue((short) 3, sql("this", "?"), BIGINT, 1L, (short) 2);
+        putAndCheckValue((short) 3, sql("this", "?"), BIGINT, 1L, 2);
+        putAndCheckValue((short) 3, sql("this", "?"), BIGINT, 1L, 2L);
         putAndCheckFailure((short) 2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, DECIMAL), BIG_INTEGER_VAL);
         putAndCheckFailure((short) 2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, DECIMAL), BIG_DECIMAL_VAL);
         putAndCheckFailure((short) 2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, REAL), FLOAT_VAL);
@@ -159,31 +175,39 @@ public class MultiplyOperatorIntegrationTest extends ArithmeticOperatorIntegrati
         putAndCheckValue(0, sql("null", "this"), BIGINT, null);
 
         // Columns
-        checkFieldsCommute(2, (byte) 3, BIGINT, 6L);
-        checkFieldsCommute(Integer.MAX_VALUE, Byte.MAX_VALUE, BIGINT, (long) Integer.MAX_VALUE * Byte.MAX_VALUE);
+        checkFields(3, (byte) 2, BIGINT, 1L);
+        checkFields(3, (byte) 4, BIGINT, 0L);
+        checkError(3, (byte) 0, DATA_EXCEPTION, divisionByZeroError());
+        checkFields(Integer.MIN_VALUE, (byte) -1, BIGINT, (long) Integer.MAX_VALUE + 1);
 
-        checkFieldsCommute(2, (short) 3, BIGINT, 6L);
-        checkFieldsCommute(Integer.MAX_VALUE, Short.MAX_VALUE, BIGINT, (long) Integer.MAX_VALUE * Short.MAX_VALUE);
+        checkFields(3, (short) 2, BIGINT, 1L);
+        checkFields(3, (short) 4, BIGINT, 0L);
+        checkError(3, (short) 0, DATA_EXCEPTION, divisionByZeroError());
+        checkFields(Integer.MIN_VALUE, (short) -1, BIGINT, (long) Integer.MAX_VALUE + 1);
 
-        checkFieldsCommute(2, 3, BIGINT, 6L);
-        checkFieldsCommute(Integer.MAX_VALUE, Integer.MAX_VALUE, BIGINT, (long) Integer.MAX_VALUE * Integer.MAX_VALUE);
+        checkFields(3, 2, BIGINT, 1L);
+        checkFields(3, 4, BIGINT, 0L);
+        checkError(3, 0, DATA_EXCEPTION, divisionByZeroError());
+        checkFields(Integer.MIN_VALUE, -1, BIGINT, (long) Integer.MAX_VALUE + 1);
 
-        checkFieldsCommute(2, 3L, BIGINT, 6L);
-        checkErrorCommute(Integer.MAX_VALUE, Long.MAX_VALUE, DATA_EXCEPTION, overflowError());
+        checkFields(3, 2L, BIGINT, 1L);
+        checkFields(3, 4L, BIGINT, 0L);
+        checkError(3, 0L, DATA_EXCEPTION, divisionByZeroError());
+        checkFields(Integer.MIN_VALUE, -1L, BIGINT, (long) Integer.MAX_VALUE + 1);
 
-        checkFieldsCommute(2, new BigInteger("3"), DECIMAL, decimal("6"));
-        checkFieldsCommute(2, decimal("3.3"), DECIMAL, decimal("6.6"));
-        checkFieldsCommute(2, 3f, REAL, 6f);
-        checkFieldsCommute(2, 3d, DOUBLE, 6d);
+        checkFields(3, new BigInteger("2"), DECIMAL, decimal("1.5"));
+        checkFields(3, decimal("2"), DECIMAL, decimal("1.5"));
+        checkFields(3, 2f, REAL, 1.5f);
+        checkFields(3, 2d, DOUBLE, 1.5d);
 
         // Parameters
         putAndCheckFailure(2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), CHAR_VAL);
         putAndCheckFailure(2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), STRING_VAL);
         putAndCheckFailure(2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, BOOLEAN), BOOLEAN_VAL);
-        putAndCheckValue(2, sql("this", "?"), BIGINT, 6L, (byte) 3);
-        putAndCheckValue(2, sql("this", "?"), BIGINT, 6L, (short) 3);
-        putAndCheckValue(2, sql("this", "?"), BIGINT, 6L, 3);
-        putAndCheckValue(2, sql("this", "?"), BIGINT, 6L, 3L);
+        putAndCheckValue(3, sql("this", "?"), BIGINT, 1L, (byte) 2);
+        putAndCheckValue(3, sql("this", "?"), BIGINT, 1L, (short) 2);
+        putAndCheckValue(3, sql("this", "?"), BIGINT, 1L, 2);
+        putAndCheckValue(3, sql("this", "?"), BIGINT, 1L, 2L);
         putAndCheckFailure(2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, DECIMAL), BIG_INTEGER_VAL);
         putAndCheckFailure(2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, DECIMAL), BIG_DECIMAL_VAL);
         putAndCheckFailure(2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, REAL), FLOAT_VAL);
@@ -202,31 +226,39 @@ public class MultiplyOperatorIntegrationTest extends ArithmeticOperatorIntegrati
         putAndCheckValue(0L, sql("null", "this"), BIGINT, null);
 
         // Columns
-        checkFieldsCommute(2L, (byte) 3, BIGINT, 6L);
-        checkErrorCommute(Long.MAX_VALUE, Byte.MAX_VALUE, DATA_EXCEPTION, overflowError());
+        checkFields(3L, (byte) 2, BIGINT, 1L);
+        checkFields(3L, (byte) 4, BIGINT, 0L);
+        checkError(3L, (byte) 0, DATA_EXCEPTION, divisionByZeroError());
+        checkError(Long.MIN_VALUE, (byte) -1, DATA_EXCEPTION, overflowError());
 
-        checkFieldsCommute(2L, (short) 3, BIGINT, 6L);
-        checkErrorCommute(Long.MAX_VALUE, Short.MAX_VALUE, DATA_EXCEPTION, overflowError());
+        checkFields(3L, (short) 2, BIGINT, 1L);
+        checkFields(3L, (short) 4, BIGINT, 0L);
+        checkError(3L, (short) 0, DATA_EXCEPTION, divisionByZeroError());
+        checkError(Long.MIN_VALUE, (short) -1, DATA_EXCEPTION, overflowError());
 
-        checkFieldsCommute(2L, 3, BIGINT, 6L);
-        checkErrorCommute(Long.MAX_VALUE, Integer.MAX_VALUE, DATA_EXCEPTION, overflowError());
+        checkFields(3L, 2, BIGINT, 1L);
+        checkFields(3L, 4, BIGINT, 0L);
+        checkError(3L, 0, DATA_EXCEPTION, divisionByZeroError());
+        checkError(Long.MIN_VALUE, -1, DATA_EXCEPTION, overflowError());
 
-        checkFieldsCommute(2L, 3L, BIGINT, 6L);
-        checkErrorCommute(Long.MAX_VALUE, Long.MAX_VALUE, DATA_EXCEPTION, overflowError());
+        checkFields(3L, 2L, BIGINT, 1L);
+        checkFields(3L, 4L, BIGINT, 0L);
+        checkError(3L, 0L, DATA_EXCEPTION, divisionByZeroError());
+        checkError(Long.MIN_VALUE, -1L, DATA_EXCEPTION, overflowError());
 
-        checkFieldsCommute(2L, new BigInteger("3"), DECIMAL, decimal("6"));
-        checkFieldsCommute(2L, decimal("3.3"), DECIMAL, decimal("6.6"));
-        checkFieldsCommute(2L, 3f, REAL, 6f);
-        checkFieldsCommute(2L, 3d, DOUBLE, 6d);
+        checkFields(3L, new BigInteger("2"), DECIMAL, decimal("1.5"));
+        checkFields(3L, decimal("2"), DECIMAL, decimal("1.5"));
+        checkFields(3L, 2f, REAL, 1.5f);
+        checkFields(3L, 2d, DOUBLE, 1.5d);
 
         // Parameters
         putAndCheckFailure(2L, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), CHAR_VAL);
         putAndCheckFailure(2L, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), STRING_VAL);
         putAndCheckFailure(2L, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, BOOLEAN), BOOLEAN_VAL);
-        putAndCheckValue(2L, sql("this", "?"), BIGINT, 6L, (byte) 3);
-        putAndCheckValue(2L, sql("this", "?"), BIGINT, 6L, (short) 3);
-        putAndCheckValue(2L, sql("this", "?"), BIGINT, 6L, 3);
-        putAndCheckValue(2L, sql("this", "?"), BIGINT, 6L, 3L);
+        putAndCheckValue(3L, sql("this", "?"), BIGINT, 1L, (byte) 2);
+        putAndCheckValue(3L, sql("this", "?"), BIGINT, 1L, (short) 2);
+        putAndCheckValue(3L, sql("this", "?"), BIGINT, 1L, 2);
+        putAndCheckValue(3L, sql("this", "?"), BIGINT, 1L, 2L);
         putAndCheckFailure(2L, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, DECIMAL), BIG_INTEGER_VAL);
         putAndCheckFailure(2L, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, DECIMAL), BIG_DECIMAL_VAL);
         putAndCheckFailure(2L, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, REAL), FLOAT_VAL);
@@ -245,25 +277,26 @@ public class MultiplyOperatorIntegrationTest extends ArithmeticOperatorIntegrati
         putAndCheckValue(BigInteger.ZERO, sql("null", "this"), DECIMAL, null);
 
         // Columns
-        checkFieldsCommute(new BigInteger("2"), (byte) 3, DECIMAL, decimal(6));
-        checkFieldsCommute(new BigInteger("2"), (short) 3, DECIMAL, decimal(6));
-        checkFieldsCommute(new BigInteger("2"), 3, DECIMAL, decimal(6));
-        checkFieldsCommute(new BigInteger("2"), 3L, DECIMAL, decimal(6));
-        checkFieldsCommute(new BigInteger("2"), new BigInteger("3"), DECIMAL, decimal(6));
-        checkFieldsCommute(new BigInteger("2"), decimal("3.3"), DECIMAL, decimal("6.6"));
-        checkFieldsCommute(new BigInteger("2"), 3f, REAL, 6f);
-        checkFieldsCommute(new BigInteger("2"), 3d, DOUBLE, 6d);
+        checkFields(new BigInteger("3"), (byte) 2, DECIMAL, decimal("1.5"));
+        checkFields(new BigInteger("3"), (short) 2, DECIMAL, decimal("1.5"));
+        checkFields(new BigInteger("3"), 2, DECIMAL, decimal("1.5"));
+        checkFields(new BigInteger("3"), 2L, DECIMAL, decimal("1.5"));
+        checkFields(new BigInteger("3"), new BigInteger("2"), DECIMAL, decimal("1.5"));
+        checkFields(new BigInteger("3"), decimal("2"), DECIMAL, decimal("1.5"));
+        checkFields(new BigInteger("3"), 2f, REAL, 1.5f);
+        checkFields(new BigInteger("3"), 2d, DOUBLE, 1.5d);
+        checkError(new BigInteger("3"), decimal("0"), DATA_EXCEPTION, divisionByZeroError());
 
         // Parameters
         putAndCheckFailure(BigInteger.ZERO, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DECIMAL, VARCHAR), CHAR_VAL);
         putAndCheckFailure(BigInteger.ZERO, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DECIMAL, VARCHAR), STRING_VAL);
         putAndCheckFailure(BigInteger.ZERO, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DECIMAL, BOOLEAN), BOOLEAN_VAL);
-        putAndCheckValue(new BigInteger("2"), sql("this", "?"), DECIMAL, decimal(6), (byte) 3);
-        putAndCheckValue(new BigInteger("2"), sql("this", "?"), DECIMAL, decimal(6), (short) 3);
-        putAndCheckValue(new BigInteger("2"), sql("this", "?"), DECIMAL, decimal(6), 3);
-        putAndCheckValue(new BigInteger("2"), sql("this", "?"), DECIMAL, decimal(6), 3L);
-        putAndCheckValue(new BigInteger("2"), sql("this", "?"), DECIMAL, decimal(6), new BigInteger("3"));
-        putAndCheckValue(new BigInteger("2"), sql("this", "?"), DECIMAL, decimal("6.6"), decimal("3.3"));
+        putAndCheckValue(new BigInteger("3"), sql("this", "?"), DECIMAL, decimal("1.5"), (byte) 2);
+        putAndCheckValue(new BigInteger("3"), sql("this", "?"), DECIMAL, decimal("1.5"), (short) 2);
+        putAndCheckValue(new BigInteger("3"), sql("this", "?"), DECIMAL, decimal("1.5"), 2);
+        putAndCheckValue(new BigInteger("3"), sql("this", "?"), DECIMAL, decimal("1.5"), 2L);
+        putAndCheckValue(new BigInteger("3"), sql("this", "?"), DECIMAL, decimal("1.5"), new BigInteger("2"));
+        putAndCheckValue(new BigInteger("3"), sql("this", "?"), DECIMAL, decimal("1.5"), decimal("2"));
         putAndCheckFailure(BigInteger.ZERO, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DECIMAL, REAL), FLOAT_VAL);
         putAndCheckFailure(BigInteger.ZERO, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DECIMAL, DOUBLE), DOUBLE_VAL);
         putAndCheckFailure(BigInteger.ZERO, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DECIMAL, DATE), LOCAL_DATE_VAL);
@@ -280,25 +313,26 @@ public class MultiplyOperatorIntegrationTest extends ArithmeticOperatorIntegrati
         putAndCheckValue(BigDecimal.ZERO, sql("null", "this"), DECIMAL, null);
 
         // Columns
-        checkFieldsCommute(new BigDecimal("2"), (byte) 3, DECIMAL, decimal(6));
-        checkFieldsCommute(new BigDecimal("2"), (short) 3, DECIMAL, decimal(6));
-        checkFieldsCommute(new BigDecimal("2"), 3, DECIMAL, decimal(6));
-        checkFieldsCommute(new BigDecimal("2"), 3L, DECIMAL, decimal(6));
-        checkFieldsCommute(new BigDecimal("2"), new BigInteger("3"), DECIMAL, decimal(6));
-        checkFieldsCommute(new BigDecimal("2"), decimal("3.3"), DECIMAL, decimal("6.6"));
-        checkFieldsCommute(new BigDecimal("2"), 3f, REAL, 6f);
-        checkFieldsCommute(new BigDecimal("2"), 3d, DOUBLE, 6d);
+        checkFields(new BigDecimal("3"), (byte) 2, DECIMAL, decimal("1.5"));
+        checkFields(new BigDecimal("3"), (short) 2, DECIMAL, decimal("1.5"));
+        checkFields(new BigDecimal("3"), 2, DECIMAL, decimal("1.5"));
+        checkFields(new BigDecimal("3"), 2L, DECIMAL, decimal("1.5"));
+        checkFields(new BigDecimal("3"), new BigInteger("2"), DECIMAL, decimal("1.5"));
+        checkFields(new BigDecimal("3"), decimal("2"), DECIMAL, decimal("1.5"));
+        checkFields(new BigDecimal("3"), 2f, REAL, 1.5f);
+        checkFields(new BigDecimal("3"), 2d, DOUBLE, 1.5d);
+        checkError(new BigDecimal("3"), decimal("0"), DATA_EXCEPTION, divisionByZeroError());
 
         // Parameters
         putAndCheckFailure(BigDecimal.ZERO, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DECIMAL, VARCHAR), CHAR_VAL);
         putAndCheckFailure(BigDecimal.ZERO, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DECIMAL, VARCHAR), STRING_VAL);
         putAndCheckFailure(BigDecimal.ZERO, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DECIMAL, BOOLEAN), BOOLEAN_VAL);
-        putAndCheckValue(new BigDecimal("2"), sql("this", "?"), DECIMAL, decimal(6), (byte) 3);
-        putAndCheckValue(new BigDecimal("2"), sql("this", "?"), DECIMAL, decimal(6), (short) 3);
-        putAndCheckValue(new BigDecimal("2"), sql("this", "?"), DECIMAL, decimal(6), 3);
-        putAndCheckValue(new BigDecimal("2"), sql("this", "?"), DECIMAL, decimal(6), 3L);
-        putAndCheckValue(new BigDecimal("2"), sql("this", "?"), DECIMAL, decimal(6), new BigInteger("3"));
-        putAndCheckValue(new BigDecimal("2"), sql("this", "?"), DECIMAL, decimal("6.6"), decimal("3.3"));
+        putAndCheckValue(new BigDecimal("3"), sql("this", "?"), DECIMAL, decimal("1.5"), (byte) 2);
+        putAndCheckValue(new BigDecimal("3"), sql("this", "?"), DECIMAL, decimal("1.5"), (short) 2);
+        putAndCheckValue(new BigDecimal("3"), sql("this", "?"), DECIMAL, decimal("1.5"), 2);
+        putAndCheckValue(new BigDecimal("3"), sql("this", "?"), DECIMAL, decimal("1.5"), 2L);
+        putAndCheckValue(new BigDecimal("3"), sql("this", "?"), DECIMAL, decimal("1.5"), new BigInteger("2"));
+        putAndCheckValue(new BigDecimal("3"), sql("this", "?"), DECIMAL, decimal("1.5"), decimal("2"));
         putAndCheckFailure(BigDecimal.ZERO, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DECIMAL, REAL), FLOAT_VAL);
         putAndCheckFailure(BigDecimal.ZERO, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DECIMAL, DOUBLE), DOUBLE_VAL);
         putAndCheckFailure(BigDecimal.ZERO, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DECIMAL, DATE), LOCAL_DATE_VAL);
@@ -313,19 +347,22 @@ public class MultiplyOperatorIntegrationTest extends ArithmeticOperatorIntegrati
         putAndCheckValue(0f, sql("this", "null"), REAL, null);
         putAndCheckValue(0f, sql("null", "this"), REAL, null);
 
-        checkFieldsCommute(2f, 3f, REAL, 6f);
-        checkFieldsCommute(2f, 3d, DOUBLE, 6d);
+        checkFields(3f, 2f, REAL, 1.5f);
+        checkError(3f, 0.0f, DATA_EXCEPTION, divisionByZeroError());
+
+        checkFields(3f, 2d, DOUBLE, 1.5d);
+        checkError(3f, 0.0d, DATA_EXCEPTION, divisionByZeroError());
 
         putAndCheckFailure(2f, sql("this", "?"), DATA_EXCEPTION, parameterError(0, REAL, VARCHAR), CHAR_VAL);
         putAndCheckFailure(2f, sql("this", "?"), DATA_EXCEPTION, parameterError(0, REAL, VARCHAR), STRING_VAL);
         putAndCheckFailure(2f, sql("this", "?"), DATA_EXCEPTION, parameterError(0, REAL, BOOLEAN), BOOLEAN_VAL);
-        putAndCheckValue(2f, sql("this", "?"), REAL, 6f, (byte) 3);
-        putAndCheckValue(2f, sql("this", "?"), REAL, 6f, (short) 3);
-        putAndCheckValue(2f, sql("this", "?"), REAL, 6f, 3);
-        putAndCheckValue(2f, sql("this", "?"), REAL, 6f, 3L);
-        putAndCheckValue(2f, sql("this", "?"), REAL, 6f, new BigInteger("3"));
-        putAndCheckValue(2f, sql("this", "?"), REAL, 6f, decimal("3"));
-        putAndCheckValue(2f, sql("this", "?"), REAL, 6f, 3f);
+        putAndCheckValue(3f, sql("this", "?"), REAL, 1.5f, (byte) 2);
+        putAndCheckValue(3f, sql("this", "?"), REAL, 1.5f, (short) 2);
+        putAndCheckValue(3f, sql("this", "?"), REAL, 1.5f, 2);
+        putAndCheckValue(3f, sql("this", "?"), REAL, 1.5f, 2L);
+        putAndCheckValue(3f, sql("this", "?"), REAL, 1.5f, new BigInteger("2"));
+        putAndCheckValue(3f, sql("this", "?"), REAL, 1.5f, decimal("2"));
+        putAndCheckValue(3f, sql("this", "?"), REAL, 1.5f, 2f);
         putAndCheckFailure(2f, sql("this", "?"), DATA_EXCEPTION, parameterError(0, REAL, DOUBLE), DOUBLE_VAL);
         putAndCheckFailure(2f, sql("this", "?"), DATA_EXCEPTION, parameterError(0, REAL, DATE), LOCAL_DATE_VAL);
         putAndCheckFailure(2f, sql("this", "?"), DATA_EXCEPTION, parameterError(0, REAL, TIME), LOCAL_TIME_VAL);
@@ -339,19 +376,20 @@ public class MultiplyOperatorIntegrationTest extends ArithmeticOperatorIntegrati
         putAndCheckValue(0d, sql("this", "null"), DOUBLE, null);
         putAndCheckValue(0d, sql("null", "this"), DOUBLE, null);
 
-        checkFieldsCommute(2d, 3d, DOUBLE, 6d);
+        checkFields(3d, 2d, DOUBLE, 1.5d);
+        checkError(3d, 0.0d, DATA_EXCEPTION, divisionByZeroError());
 
         putAndCheckFailure(2d, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DOUBLE, VARCHAR), CHAR_VAL);
         putAndCheckFailure(2d, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DOUBLE, VARCHAR), STRING_VAL);
         putAndCheckFailure(2d, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DOUBLE, BOOLEAN), BOOLEAN_VAL);
-        putAndCheckValue(2d, sql("this", "?"), DOUBLE, 6d, (byte) 3);
-        putAndCheckValue(2d, sql("this", "?"), DOUBLE, 6d, (short) 3);
-        putAndCheckValue(2d, sql("this", "?"), DOUBLE, 6d, 3);
-        putAndCheckValue(2d, sql("this", "?"), DOUBLE, 6d, 3L);
-        putAndCheckValue(2d, sql("this", "?"), DOUBLE, 6d, new BigInteger("3"));
-        putAndCheckValue(2d, sql("this", "?"), DOUBLE, 6d, decimal("3"));
-        putAndCheckValue(2d, sql("this", "?"), DOUBLE, 6d, 3f);
-        putAndCheckValue(2d, sql("this", "?"), DOUBLE, 6d, 3d);
+        putAndCheckValue(3d, sql("this", "?"), DOUBLE, 1.5d, (byte) 2);
+        putAndCheckValue(3d, sql("this", "?"), DOUBLE, 1.5d, (short) 2);
+        putAndCheckValue(3d, sql("this", "?"), DOUBLE, 1.5d, 2);
+        putAndCheckValue(3d, sql("this", "?"), DOUBLE, 1.5d, 2L);
+        putAndCheckValue(3d, sql("this", "?"), DOUBLE, 1.5d, new BigInteger("2"));
+        putAndCheckValue(3d, sql("this", "?"), DOUBLE, 1.5d, decimal("2"));
+        putAndCheckValue(3d, sql("this", "?"), DOUBLE, 1.5d, 2f);
+        putAndCheckValue(3d, sql("this", "?"), DOUBLE, 1.5d, 2d);
         putAndCheckFailure(2d, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DOUBLE, DATE), LOCAL_DATE_VAL);
         putAndCheckFailure(2d, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DOUBLE, TIME), LOCAL_TIME_VAL);
         putAndCheckFailure(2d, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DOUBLE, TIMESTAMP), LOCAL_DATE_TIME_VAL);
@@ -381,26 +419,30 @@ public class MultiplyOperatorIntegrationTest extends ArithmeticOperatorIntegrati
 
     @Test
     public void testEquality() {
-        checkEquals(MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT), true);
+        checkEquals(DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+            DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT), true);
 
-        checkEquals(MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), QueryDataType.BIGINT), false);
+        checkEquals(DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+            DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), QueryDataType.BIGINT), false);
 
-        checkEquals(MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(100, INT), INT), false);
+        checkEquals(DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+            DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(100, INT), INT), false);
     }
 
     @Test
     public void testSerialization() {
-        MinusFunction<?> original =
-            MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
-        MinusFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_MINUS);
+        DivideFunction<?> original =
+            DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
+        DivideFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_DIVIDE);
 
         checkEquals(original, restored, true);
     }
 
+    private static String divisionByZeroError() {
+        return "Division by zero";
+    }
+
     private static String overflowError() {
-        return "BIGINT overflow in '*' operator (consider adding explicit CAST to DECIMAL)";
+        return "BIGINT overflow in '/' operator (consider adding explicit CAST to DECIMAL)";
     }
 }
