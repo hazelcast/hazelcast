@@ -20,7 +20,6 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.projection.MapProjectionTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -36,7 +35,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMapProjectionTest extends MapProjectionTest {
 
-    private TestHazelcastFactory factory;
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void tearDown() {
@@ -49,8 +48,6 @@ public class ClientMapProjectionTest extends MapProjectionTest {
             throw new IllegalArgumentException("node count < 1");
         }
 
-        factory = new TestHazelcastFactory();
-
         MapConfig mapConfig = new MapConfig()
                 .setName("aggr")
                 .setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -60,8 +57,18 @@ public class ClientMapProjectionTest extends MapProjectionTest {
                 .addMapConfig(mapConfig);
 
         factory.newInstances(config, nodeCount);
-        HazelcastInstance client = factory.newHazelcastClient();
+        instance0 = factory.newHazelcastClient();
 
-        return client.getMap("aggr");
+        return instance0.getMap("aggr");
+    }
+
+    @Override
+    public void projection_1Node_objectValue_withPartitionSet() {
+        // ignore the test on client - not implemented on client
+    }
+
+    @Override
+    public void projection_3Nodes_objectValue_withPartitionSet() {
+        // ignore the test on client - not implemented on client
     }
 }
