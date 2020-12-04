@@ -534,8 +534,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleSplitBrainProtection(Node node) {
-        SplitBrainProtectionConfig splitBrainProtectionConfig = new SplitBrainProtectionConfig();
         String name = getAttribute(node, "name");
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig(name);
         splitBrainProtectionConfig.setName(name);
         handleSplitBrainProtectionNode(node, splitBrainProtectionConfig, name);
     }
@@ -1036,8 +1036,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleCardinalityEstimator(Node node) {
-        CardinalityEstimatorConfig cardinalityEstimatorConfig = new CardinalityEstimatorConfig();
-        cardinalityEstimatorConfig.setName(getTextContent(getNamedItemNode(node, "name")));
+        CardinalityEstimatorConfig cardinalityEstimatorConfig = config.getCardinalityEstimatorConfig(
+          getTextContent(getNamedItemNode(node, "name")));
 
         handleCardinalityEstimatorNode(node, cardinalityEstimatorConfig);
     }

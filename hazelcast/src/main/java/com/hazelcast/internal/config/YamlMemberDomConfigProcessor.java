@@ -317,10 +317,9 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleSplitBrainProtection(Node node) {
         for (Node splitBrainProtectionNode : childElements(node)) {
-            SplitBrainProtectionConfig splitBrainProtectionConfig = new SplitBrainProtectionConfig();
-            String splitBrainProtectionName = splitBrainProtectionNode.getNodeName();
-            splitBrainProtectionConfig.setName(splitBrainProtectionName);
-            handleSplitBrainProtectionNode(splitBrainProtectionNode, splitBrainProtectionConfig, splitBrainProtectionName);
+            String name = splitBrainProtectionNode.getNodeName();
+            SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig(name);
+            handleSplitBrainProtectionNode(splitBrainProtectionNode, splitBrainProtectionConfig, name);
         }
     }
 
@@ -360,8 +359,9 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleCardinalityEstimator(Node node) {
         for (Node estimatorNode : childElements(node)) {
-            CardinalityEstimatorConfig estimatorConfig = new CardinalityEstimatorConfig();
-            estimatorConfig.setName(estimatorNode.getNodeName());
+            CardinalityEstimatorConfig estimatorConfig = config
+              .getCardinalityEstimatorConfig(estimatorNode.getNodeName());
+
             handleCardinalityEstimatorNode(estimatorNode, estimatorConfig);
         }
     }
