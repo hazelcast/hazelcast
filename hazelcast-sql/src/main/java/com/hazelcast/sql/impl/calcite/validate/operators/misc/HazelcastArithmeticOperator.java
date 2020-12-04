@@ -16,16 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
-import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operators.BinaryOperatorOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlBinaryOperator;
-import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlSyntax;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -33,7 +27,6 @@ import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
-import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 
 public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
 
@@ -42,7 +35,6 @@ public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
     public static final HazelcastArithmeticOperator MULTIPLY = new HazelcastArithmeticOperator(SqlStdOperatorTable.MULTIPLY);
     public static final HazelcastArithmeticOperator DIVIDE = new HazelcastArithmeticOperator(SqlStdOperatorTable.DIVIDE);
 
-    // TODO: Use custom inference, similar to comparisons
     private HazelcastArithmeticOperator(SqlBinaryOperator base) {
         super(
             base.getName(),
@@ -50,7 +42,7 @@ public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
             base.getLeftPrec(),
             true,
             wrap(ReturnTypes.ARG0),
-            new ReplaceUnknownOperandTypeInference(BIGINT)
+            BinaryOperatorOperandTypeInference.INSTANCE
         );
     }
 
@@ -66,65 +58,6 @@ public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
 
     @Override
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
-        RelDataType firstType = binding.getOperandType(0);
-        RelDataType secondType = binding.getOperandType(1);
-
-        if (!isNumeric(firstType) || !isNumeric(secondType)) {
-            if (throwOnFailure) {
-                throw binding.newValidationSignatureError();
-            } else {
-                return false;
-            }
-        }
-
-        RelDataType type = HazelcastTypeSystem.withHigherPrecedence(firstType, secondType);
-
-        switch (kind) {
-            case PLUS:
-            case MINUS:
-                if (HazelcastTypeSystem.isInteger(type)) {
-                    int bitWidth = HazelcastIntegerType.bitWidthOf(type) + 1;
-
-                    type = HazelcastIntegerType.of(bitWidth, type.isNullable());
-                }
-
-                break;
-
-            case TIMES:
-                if (HazelcastTypeSystem.isInteger(firstType) && HazelcastTypeSystem.isInteger(secondType)) {
-                    int bitWidth = HazelcastIntegerType.bitWidthOf(firstType) + HazelcastIntegerType.bitWidthOf(secondType);
-
-                    type = HazelcastIntegerType.of(bitWidth, type.isNullable());
-                }
-
-                break;
-
-            default:
-                assert kind == SqlKind.DIVIDE;
-        }
-
-        TypedOperandChecker checker = TypedOperandChecker.forType(type);
-
-        return new CompositeOperandChecker(
-            checker,
-            checker
-        ).check(binding, throwOnFailure);
-    }
-
-    private static boolean isNumeric(RelDataType type) {
-        switch (type.getSqlTypeName()) {
-            case TINYINT:
-            case SMALLINT:
-            case INTEGER:
-            case BIGINT:
-            case DECIMAL:
-            case REAL:
-            case FLOAT:
-            case DOUBLE:
-                return true;
-
-            default:
-                return false;
-        }
+        return ArithmeticOperandChecker.INSTANCE.checkOperandTypes(binding, throwOnFailure, kind);
     }
 }

@@ -135,8 +135,8 @@ public class PhysicalIndexExpressionTest extends IndexOptimizerTestSupport {
 
     @Test
     public void test_column_expressionWithoutColumns() {
-        checkIndexForCondition("f=(1+?)", "=(CAST($1):BIGINT(64), +(1, ?0))");
-        checkIndexForCondition("(1+?)=f", "=(+(1, ?0), CAST($1):BIGINT(64))");
+        checkIndexForCondition("f=(1+?)", "=(CAST($1):BIGINT(64), +(1:BIGINT(64), ?0))");
+        checkIndexForCondition("(1+?)=f", "=(+(1:BIGINT(64), ?0), CAST($1):BIGINT(64))");
     }
 
     @Test
@@ -160,7 +160,7 @@ public class PhysicalIndexExpressionTest extends IndexOptimizerTestSupport {
     @Test
     public void test_is_null() {
         checkIndexForCondition("f IS NULL", "IS NULL($1)");
-        checkNoIndexForCondition("(f+?) IS NULL", "OR(IS NULL(CAST($1):BIGINT(64)), IS NULL(?0))");
+        checkNoIndexForCondition("(f+?) IS NULL", "OR(IS NULL($1), IS NULL(?0))");
     }
 
     @Test
