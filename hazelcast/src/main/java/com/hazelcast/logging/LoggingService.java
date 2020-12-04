@@ -25,11 +25,36 @@ public interface LoggingService {
 
     void removeLogListener(@Nonnull LogListener logListener);
 
+    /**
+     * Creates a logger with the given name.
+     * <p>
+     * The returned logger must be released using {@link #removeLogger(String)}
+     * when no longer used.
+     *
+     * @param name the logger name
+     * @return the logger with the desired name
+     */
     @Nonnull ILogger getLogger(@Nonnull String name);
 
+    /**
+     * Creates a logger using the class name of the given class as the logger
+     * name.
+     * <p>
+     * The returned logger must be released using {@link #removeLogger(Class)}
+     * when no longer used.
+     *
+     * @param type the class whose name use as the logger name
+     * @return the logger with the desired name
+     */
     @Nonnull ILogger getLogger(@Nonnull Class type);
 
+    /**
+     * Release resources associated with the given logger.
+     */
     void removeLogger(@Nonnull String name);
 
+    /**
+     * Release resources associated with the given logger.
+     */
     void removeLogger(@Nonnull Class type);
 }
