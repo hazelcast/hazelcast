@@ -66,6 +66,7 @@ Using Kubernetes API requires granting certain permissions. To grant them for 'd
 Hazelcast Kubernetes Discovery requires creating a service to PODs where Hazelcast is running. In case of using Kubernetes API mode, the service can be of any type.
 
 ```yaml
+apiVersion: v1
 kind: Service
 metadata:
   name: MY-SERVICE-NAME
@@ -127,6 +128,7 @@ You can use one of `service-name`,`service-label`(`service-label-name`, `service
 Headless service is a service of type `ClusterIP` with the `clusterIP` property set to `None`.
 
 ```yaml
+apiVersion: v1
 kind: Service
 metadata:
   name: MY-SERVICE-NAME
