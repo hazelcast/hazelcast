@@ -91,7 +91,7 @@ public class QueryEngineImpl implements QueryEngine {
         Query adjustedQuery = adjustQuery(query);
         switch (target.mode()) {
             case ALL_NODES:
-                return runOnAllPartitions(adjustedQuery);
+                return runOnGivenPartitions(adjustedQuery, getAllPartitionIds(), TargetMode.ALL_NODES);
             case LOCAL_NODE:
                 return runOnGivenPartitions(adjustedQuery, getLocalPartitionIds(), TargetMode.LOCAL_NODE);
             case PARTITION_OWNER:
@@ -126,19 +126,6 @@ public class QueryEngineImpl implements QueryEngine {
             doRunOnPartitionThreads(query, partitions, result);
         }
         assertAllPartitionsQueried(partitions);
-
-        return result;
-    }
-
-    // query thread first, fallback to partition thread
-    private Result runOnAllPartitions(Query query) {
-        PartitionIdSet mutablePartitionIds = getAllPartitionIds();
-
-        Result result = doRunOnQueryThreads(query, mutablePartitionIds, TargetMode.ALL_NODES);
-        if (isResultFromAnyPartitionMissing(mutablePartitionIds)) {
-            doRunOnPartitionThreads(query, mutablePartitionIds, result);
-        }
-        assertAllPartitionsQueried(mutablePartitionIds);
 
         return result;
     }
