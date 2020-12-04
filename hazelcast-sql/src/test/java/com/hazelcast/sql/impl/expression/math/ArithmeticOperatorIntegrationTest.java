@@ -57,11 +57,23 @@ public abstract class ArithmeticOperatorIntegrationTest extends ExpressionTestSu
         checkSignatureErrorCommute(field1, OBJECT_VAL, type1, SqlColumnType.OBJECT);
     }
 
+    protected void checkFields(Object field1, Object field2, SqlColumnType expectedType, Object expectedResult) {
+        put(ExpressionBiValue.createBiValue(field1, field2));
+
+        checkValue0(sql("field1", "field2"), expectedType, expectedResult);
+    }
+
     protected void checkFieldsCommute(Object field1, Object field2, SqlColumnType expectedType, Object expectedResult) {
         put(ExpressionBiValue.createBiValue(field1, field2));
 
         checkValue0(sql("field1", "field2"), expectedType, expectedResult);
         checkValue0(sql("field2", "field1"), expectedType, expectedResult);
+    }
+
+    protected void checkError(Object field1, Object field2, int errorCode, String errorMessage) {
+        put(ExpressionBiValue.createBiValue(field1, field2));
+
+        checkFailure0(sql("field1", "field2"), errorCode, errorMessage);
     }
 
     protected void checkErrorCommute(Object field1, Object field2, int errorCode, String errorMessage) {
