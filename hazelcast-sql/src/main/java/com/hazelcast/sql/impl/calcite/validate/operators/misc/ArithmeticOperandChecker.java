@@ -26,9 +26,9 @@ import org.apache.calcite.sql.SqlKind;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isNumeric;
 
-public class ArithmeticOperandChecker {
+public final class ArithmeticOperandChecker {
 
-    public static ArithmeticOperandChecker INSTANCE = new ArithmeticOperandChecker();
+    public static final ArithmeticOperandChecker INSTANCE = new ArithmeticOperandChecker();
 
     private ArithmeticOperandChecker() {
         // No-op.

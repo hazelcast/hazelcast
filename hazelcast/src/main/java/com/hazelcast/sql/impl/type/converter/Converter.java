@@ -128,67 +128,67 @@ public abstract class Converter implements Serializable {
 
     @NotConvertible
     public boolean asBoolean(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.BOOLEAN, val);
+        throw cannotConvertError(QueryDataTypeFamily.BOOLEAN);
     }
 
     @NotConvertible
     public byte asTinyint(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
+        throw cannotConvertError(QueryDataTypeFamily.TINYINT);
     }
 
     @NotConvertible
     public short asSmallint(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
+        throw cannotConvertError(QueryDataTypeFamily.SMALLINT);
     }
 
     @NotConvertible
     public int asInt(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.INTEGER, val);
+        throw cannotConvertError(QueryDataTypeFamily.INTEGER);
     }
 
     @NotConvertible
     public long asBigint(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.BIGINT, val);
+        throw cannotConvertError(QueryDataTypeFamily.BIGINT);
     }
 
     @NotConvertible
     public BigDecimal asDecimal(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.DECIMAL, val);
+        throw cannotConvertError(QueryDataTypeFamily.DECIMAL);
     }
 
     @NotConvertible
     public float asReal(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.REAL, val);
+        throw cannotConvertError(QueryDataTypeFamily.REAL);
     }
 
     @NotConvertible
     public double asDouble(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.DOUBLE, val);
+        throw cannotConvertError(QueryDataTypeFamily.DOUBLE);
     }
 
     @NotConvertible
     public String asVarchar(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.VARCHAR, val);
+        throw cannotConvertError(QueryDataTypeFamily.VARCHAR);
     }
 
     @NotConvertible
     public LocalDate asDate(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.DATE, val);
+        throw cannotConvertError(QueryDataTypeFamily.DATE);
     }
 
     @NotConvertible
     public LocalTime asTime(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.TIME, val);
+        throw cannotConvertError(QueryDataTypeFamily.TIME);
     }
 
     @NotConvertible
     public LocalDateTime asTimestamp(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.TIMESTAMP, val);
+        throw cannotConvertError(QueryDataTypeFamily.TIMESTAMP);
     }
 
     @NotConvertible
     public OffsetDateTime asTimestampWithTimezone(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE, val);
+        throw cannotConvertError(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE);
     }
 
     public Object asObject(Object val) {
@@ -303,30 +303,26 @@ public abstract class Converter implements Serializable {
 
     public abstract Object convertToSelf(Converter converter, Object val);
 
-    protected final QueryException cannotConvert(QueryDataTypeFamily target, Object val) {
-        return cannotConvert(typeFamily, target, val);
-    }
-
-    private final QueryException cannotConvert(QueryDataTypeFamily source, QueryDataTypeFamily target, Object val) {
-        String message = "Cannot convert " + source + " to " + target;
-
-        if (source == QueryDataTypeFamily.OBJECT && val != null) {
-            message += ": " + val.getClass().getName();
-        }
+    protected final QueryException cannotConvertError(QueryDataTypeFamily target) {
+        String message = "Cannot convert " + typeFamily + " to " + target;
 
         return QueryException.error(SqlErrorCode.DATA_EXCEPTION, message);
     }
 
-    protected final QueryException numericOverflow(QueryDataTypeFamily target, Object val) {
-        return numericOverflow(typeFamily, target, val);
+    protected final QueryException numericOverflowError(QueryDataTypeFamily target) {
+        String message = "Numeric overflow while converting " + typeFamily + " to " + target;
+
+        return QueryException.error(SqlErrorCode.DATA_EXCEPTION, message);
     }
 
-    protected final QueryException numericOverflow(QueryDataTypeFamily source, QueryDataTypeFamily target, Object val) {
-        String message = "Numeric overflow while converting " + source + " to " + target;
+    protected final QueryException infiniteValueError(QueryDataTypeFamily target) {
+        String message = "Cannot convert infinite " + typeFamily + " to " + target;
 
-        if (source == QueryDataTypeFamily.OBJECT && val != null) {
-            message += ": " + val.getClass().getName();
-        }
+        return QueryException.error(SqlErrorCode.DATA_EXCEPTION, message);
+    }
+
+    protected final QueryException nanValueError(QueryDataTypeFamily target) {
+        String message = "Cannot convert NaN to " + target;
 
         return QueryException.error(SqlErrorCode.DATA_EXCEPTION, message);
     }

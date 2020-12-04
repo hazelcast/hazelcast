@@ -59,18 +59,18 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     public void testVarchar_char() {
         putAndCheckValue(new ExpressionValue.CharacterVal(), sql("field1", VARCHAR), VARCHAR, null);
         putAndCheckValue('b', sql("this", VARCHAR), VARCHAR, "b");
-        putAndCheckFailure('b', sql("this", BOOLEAN), DATA_EXCEPTION, "Cannot convert VARCHAR to BOOLEAN");
-        putAndCheckFailure('b', sql("this", TINYINT), DATA_EXCEPTION, "Cannot convert VARCHAR to TINYINT");
-        putAndCheckFailure('b', sql("this", SMALLINT), DATA_EXCEPTION, "Cannot convert VARCHAR to SMALLINT");
-        putAndCheckFailure('b', sql("this", INTEGER), DATA_EXCEPTION, "Cannot convert VARCHAR to INTEGER");
-        putAndCheckFailure('b', sql("this", BIGINT), DATA_EXCEPTION, "Cannot convert VARCHAR to BIGINT");
-        putAndCheckFailure('b', sql("this", DECIMAL), DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-        putAndCheckFailure('b', sql("this", REAL), DATA_EXCEPTION, "Cannot convert VARCHAR to REAL");
-        putAndCheckFailure('b', sql("this", DOUBLE), DATA_EXCEPTION, "Cannot convert VARCHAR to DOUBLE");
-        putAndCheckFailure('b', sql("this", DATE), DATA_EXCEPTION, "Cannot convert VARCHAR to DATE");
-        putAndCheckFailure('b', sql("this", TIME), DATA_EXCEPTION, "Cannot convert VARCHAR to TIME");
-        putAndCheckFailure('b', sql("this", TIMESTAMP), DATA_EXCEPTION, "Cannot convert VARCHAR to TIMESTAMP");
-        putAndCheckFailure('b', sql("this", TIMESTAMP_WITH_TIME_ZONE), DATA_EXCEPTION, "Cannot convert VARCHAR to TIMESTAMP_WITH_TIME_ZONE");
+        putAndCheckFailure('b', sql("this", BOOLEAN), DATA_EXCEPTION, "Cannot parse VARCHAR value to BOOLEAN");
+        putAndCheckFailure('b', sql("this", TINYINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to TINYINT");
+        putAndCheckFailure('b', sql("this", SMALLINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to SMALLINT");
+        putAndCheckFailure('b', sql("this", INTEGER), DATA_EXCEPTION, "Cannot parse VARCHAR value to INTEGER");
+        putAndCheckFailure('b', sql("this", BIGINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to BIGINT");
+        putAndCheckFailure('b', sql("this", DECIMAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to DECIMAL");
+        putAndCheckFailure('b', sql("this", REAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to REAL");
+        putAndCheckFailure('b', sql("this", DOUBLE), DATA_EXCEPTION, "Cannot parse VARCHAR value to DOUBLE");
+        putAndCheckFailure('b', sql("this", DATE), DATA_EXCEPTION, "Cannot parse VARCHAR value to DATE");
+        putAndCheckFailure('b', sql("this", TIME), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIME");
+        putAndCheckFailure('b', sql("this", TIMESTAMP), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP");
+        putAndCheckFailure('b', sql("this", TIMESTAMP_WITH_TIME_ZONE), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP_WITH_TIME_ZONE");
         putAndCheckValue('b', sql("this", OBJECT), OBJECT, "b");
     }
 
@@ -87,80 +87,80 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", BOOLEAN), BOOLEAN, null);
         putAndCheckValue("true", sql("this", BOOLEAN), BOOLEAN, true);
         putAndCheckValue("false", sql("this", BOOLEAN), BOOLEAN, false);
-        putAndCheckFailure("bad", sql("this", BOOLEAN), DATA_EXCEPTION, "Cannot convert VARCHAR to BOOLEAN");
+        putAndCheckFailure("bad", sql("this", BOOLEAN), DATA_EXCEPTION, "Cannot parse VARCHAR value to BOOLEAN");
 
         // Byte
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", TINYINT), TINYINT, null);
         putAndCheckValue(string(0), sql("this", TINYINT), TINYINT, (byte) 0);
         putAndCheckValue(string(Byte.MAX_VALUE), sql("this", TINYINT), TINYINT, Byte.MAX_VALUE);
         putAndCheckValue(string(Byte.MIN_VALUE), sql("this", TINYINT), TINYINT, Byte.MIN_VALUE);
-        putAndCheckFailure(string(Short.MAX_VALUE), sql("this", TINYINT), DATA_EXCEPTION, "Cannot convert VARCHAR to TINYINT");
-        putAndCheckFailure(string(Short.MIN_VALUE), sql("this", TINYINT), DATA_EXCEPTION, "Cannot convert VARCHAR to TINYINT");
-        putAndCheckFailure("bad", sql("this", TINYINT), DATA_EXCEPTION, "Cannot convert VARCHAR to TINYINT");
+        putAndCheckFailure(string(Short.MAX_VALUE), sql("this", TINYINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to TINYINT");
+        putAndCheckFailure(string(Short.MIN_VALUE), sql("this", TINYINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to TINYINT");
+        putAndCheckFailure("bad", sql("this", TINYINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to TINYINT");
 
         // Short
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", SMALLINT), SMALLINT, null);
         putAndCheckValue(string(0), sql("this", SMALLINT), SMALLINT, (short) 0);
         putAndCheckValue(string(Short.MAX_VALUE), sql("this", SMALLINT), SMALLINT, Short.MAX_VALUE);
         putAndCheckValue(string(Short.MIN_VALUE), sql("this", SMALLINT), SMALLINT, Short.MIN_VALUE);
-        putAndCheckFailure(string(Integer.MAX_VALUE), sql("this", SMALLINT), DATA_EXCEPTION, "Cannot convert VARCHAR to SMALLINT");
-        putAndCheckFailure(string(Integer.MIN_VALUE), sql("this", SMALLINT), DATA_EXCEPTION, "Cannot convert VARCHAR to SMALLINT");
-        putAndCheckFailure("bad", sql("this", SMALLINT), DATA_EXCEPTION, "Cannot convert VARCHAR to SMALLINT");
+        putAndCheckFailure(string(Integer.MAX_VALUE), sql("this", SMALLINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to SMALLINT");
+        putAndCheckFailure(string(Integer.MIN_VALUE), sql("this", SMALLINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to SMALLINT");
+        putAndCheckFailure("bad", sql("this", SMALLINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to SMALLINT");
 
         // Integer
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", INTEGER), INTEGER, null);
         putAndCheckValue(string(0), sql("this", INTEGER), INTEGER, 0);
         putAndCheckValue(string(Integer.MAX_VALUE), sql("this", INTEGER), INTEGER, Integer.MAX_VALUE);
         putAndCheckValue(string(Integer.MIN_VALUE), sql("this", INTEGER), INTEGER, Integer.MIN_VALUE);
-        putAndCheckFailure(string(Long.MAX_VALUE), sql("this", INTEGER), DATA_EXCEPTION, "Cannot convert VARCHAR to INTEGER");
-        putAndCheckFailure(string(Long.MIN_VALUE), sql("this", INTEGER), DATA_EXCEPTION, "Cannot convert VARCHAR to INTEGER");
-        putAndCheckFailure("bad", sql("this", INTEGER), DATA_EXCEPTION, "Cannot convert VARCHAR to INTEGER");
+        putAndCheckFailure(string(Long.MAX_VALUE), sql("this", INTEGER), DATA_EXCEPTION, "Cannot parse VARCHAR value to INTEGER");
+        putAndCheckFailure(string(Long.MIN_VALUE), sql("this", INTEGER), DATA_EXCEPTION, "Cannot parse VARCHAR value to INTEGER");
+        putAndCheckFailure("bad", sql("this", INTEGER), DATA_EXCEPTION, "Cannot parse VARCHAR value to INTEGER");
 
         // Long
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", BIGINT), BIGINT, null);
         putAndCheckValue(string(0), sql("this", BIGINT), BIGINT, 0L);
         putAndCheckValue(string(Long.MAX_VALUE), sql("this", BIGINT), BIGINT, Long.MAX_VALUE);
         putAndCheckValue(string(Long.MIN_VALUE), sql("this", BIGINT), BIGINT, Long.MIN_VALUE);
-        putAndCheckFailure(string(decimal(Long.MAX_VALUE).multiply(decimal(2))), sql("this", BIGINT), DATA_EXCEPTION, "Cannot convert VARCHAR to BIGINT");
-        putAndCheckFailure(string(decimal(Long.MIN_VALUE).multiply(decimal(2))), sql("this", BIGINT), DATA_EXCEPTION, "Cannot convert VARCHAR to BIGINT");
-        putAndCheckFailure("bad", sql("this", BIGINT), DATA_EXCEPTION, "Cannot convert VARCHAR to BIGINT");
+        putAndCheckFailure(string(decimal(Long.MAX_VALUE).multiply(decimal(2))), sql("this", BIGINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to BIGINT");
+        putAndCheckFailure(string(decimal(Long.MIN_VALUE).multiply(decimal(2))), sql("this", BIGINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to BIGINT");
+        putAndCheckFailure("bad", sql("this", BIGINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to BIGINT");
 
         // BigInteger/BigDecimal
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", DECIMAL), DECIMAL, null);
         putAndCheckValue(string(1), sql("this", DECIMAL), DECIMAL, BigDecimal.ONE);
         putAndCheckValue(string("1.1"), sql("this", DECIMAL), DECIMAL, decimal("1.1"));
-        putAndCheckFailure("bad", sql("this", DECIMAL), DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
+        putAndCheckFailure("bad", sql("this", DECIMAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to DECIMAL");
 
 
         // Float
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", REAL), REAL, null);
         putAndCheckValue(string("1.1"), sql("this", REAL), REAL, 1.1f);
-        putAndCheckFailure("bad", sql("this", REAL), DATA_EXCEPTION, "Cannot convert VARCHAR to REAL");
+        putAndCheckFailure("bad", sql("this", REAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to REAL");
 
         // Double
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", DOUBLE), DOUBLE, null);
         putAndCheckValue(string("1.1"), sql("this", DOUBLE), DOUBLE, 1.1d);
-        putAndCheckFailure("bad", sql("this", DOUBLE), DATA_EXCEPTION, "Cannot convert VARCHAR to DOUBLE");
+        putAndCheckFailure("bad", sql("this", DOUBLE), DATA_EXCEPTION, "Cannot parse VARCHAR value to DOUBLE");
 
         // LocalDate
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", DATE), DATE, null);
         putAndCheckValue(LOCAL_DATE_VAL.toString(), sql("this", DATE), DATE, LOCAL_DATE_VAL);
-        putAndCheckFailure("bad", sql("this", DATE), DATA_EXCEPTION, "Cannot convert VARCHAR to DATE");
+        putAndCheckFailure("bad", sql("this", DATE), DATA_EXCEPTION, "Cannot parse VARCHAR value to DATE");
 
         // LocalTime
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", TIME), TIME, null);
         putAndCheckValue(LOCAL_TIME_VAL.toString(), sql("this", TIME), TIME, LOCAL_TIME_VAL);
-        putAndCheckFailure("bad", sql("this", TIME), DATA_EXCEPTION, "Cannot convert VARCHAR to TIME");
+        putAndCheckFailure("bad", sql("this", TIME), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIME");
 
         // LocalDateTime
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", TIMESTAMP), TIMESTAMP, null);
         putAndCheckValue(LOCAL_DATE_TIME_VAL.toString(), sql("this", TIMESTAMP), TIMESTAMP, LOCAL_DATE_TIME_VAL);
-        putAndCheckFailure("bad", sql("this", TIMESTAMP), DATA_EXCEPTION, "Cannot convert VARCHAR to TIMESTAMP");
+        putAndCheckFailure("bad", sql("this", TIMESTAMP), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP");
 
         // OffsetDateTime
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", TIMESTAMP_WITH_TIME_ZONE), TIMESTAMP_WITH_TIME_ZONE, null);
         putAndCheckValue(OFFSET_DATE_TIME_VAL.toString(), sql("this", TIMESTAMP_WITH_TIME_ZONE), TIMESTAMP_WITH_TIME_ZONE, OFFSET_DATE_TIME_VAL);
-        putAndCheckFailure("bad", sql("this", TIMESTAMP_WITH_TIME_ZONE), DATA_EXCEPTION, "Cannot convert VARCHAR to TIMESTAMP_WITH_TIME_ZONE");
+        putAndCheckFailure("bad", sql("this", TIMESTAMP_WITH_TIME_ZONE), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP_WITH_TIME_ZONE");
 
         // Object
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", OBJECT), OBJECT, null);

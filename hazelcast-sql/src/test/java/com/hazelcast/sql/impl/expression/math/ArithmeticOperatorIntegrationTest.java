@@ -20,24 +20,12 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
-import com.hazelcast.sql.support.expressions.ExpressionType;
 
 import java.math.BigDecimal;
 
 public abstract class ArithmeticOperatorIntegrationTest extends ExpressionTestSupport {
 
     protected abstract String operator();
-
-    protected void checkUnsupportedCommute(Object field1, SqlColumnType type1, ExpressionType<?>... unsupportedTypes) {
-        for (ExpressionType<?> unsupportedType : unsupportedTypes) {
-            checkSignatureErrorCommute(
-                field1,
-                unsupportedType.valueFrom(),
-                type1,
-                unsupportedType.getFieldConverterType().getTypeFamily().getPublicType()
-            );
-        }
-    }
 
     protected void checkUnsupportedForAllTypesCommute(Object field1, SqlColumnType type1) {
         checkSignatureErrorCommute(field1, CHAR_VAL, type1, SqlColumnType.VARCHAR);
@@ -95,7 +83,7 @@ public abstract class ArithmeticOperatorIntegrationTest extends ExpressionTestSu
     }
 
     protected String signatureError(SqlColumnType type1, SqlColumnType type2) {
-        return signatureErrorOperator( operator(), type1, type2);
+        return signatureErrorOperator(operator(), type1, type2);
     }
 
     protected static BigDecimal decimal(Object value) {

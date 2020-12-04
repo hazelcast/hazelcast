@@ -30,7 +30,6 @@ import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlOperatorBinding;
@@ -40,7 +39,6 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.calcite.sql.validate.SqlValidatorImpl;
 
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 
@@ -53,7 +51,7 @@ public final class HazelcastCastFunction extends HazelcastFunction {
             "CAST",
             SqlKind.CAST,
             wrap(new CastReturnTypeInference()),
-            new CastOperandTypeInference(),  //InferTypes.FIRST_KNOWN,
+            new CastOperandTypeInference(),
             SqlFunctionCategory.SYSTEM
         );
     }
