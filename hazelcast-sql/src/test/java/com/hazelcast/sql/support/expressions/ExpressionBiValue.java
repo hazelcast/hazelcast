@@ -50,6 +50,18 @@ public abstract class ExpressionBiValue extends ExpressionValue {
         }
     }
 
+    public static <T extends ExpressionBiValue> T createBiValue(
+        Object field1,
+        Object field2
+    ) {
+        ExpressionType<?> type1 = ExpressionTypes.resolve(field1);
+        ExpressionType<?> type2 = ExpressionTypes.resolve(field2);
+
+        Class<? extends ExpressionBiValue> clazz = createBiClass(type1.typeName(), type2.typeName());
+
+        return createBiValue(clazz, field1, field2);
+    }
+
     @SuppressWarnings("unchecked")
     public static <T extends ExpressionBiValue> T createBiValue(Class<? extends ExpressionBiValue> clazz) {
         try {

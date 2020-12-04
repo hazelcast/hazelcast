@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -100,21 +101,25 @@ public final class ExpressionTypes {
         };
     }
 
-    public static List<ExpressionType<?>> allExcept(ExpressionType<?>... excludeTypes) {
+    public static ExpressionType<?>[] nonNumeric() {
+        return allExcept(numeric());
+    }
+
+    public static ExpressionType<?>[] allExcept(ExpressionType<?>... excludeTypes) {
         if (excludeTypes == null || excludeTypes.length == 0) {
             return all();
         }
 
-        List<ExpressionType<?>> res = new ArrayList<>(all());
+        List<ExpressionType<?>> res = new ArrayList<>(Arrays.asList(all()));
 
         for (ExpressionType<?> typexcludeType : excludeTypes) {
             res.remove(typexcludeType);
         }
 
-        return res;
+        return res.toArray(new ExpressionType[0]);
     }
 
-    public static List<ExpressionType<?>> all() {
+    public static ExpressionType<?>[] all() {
         List<ExpressionType<?>> res = all;
 
         if (res == null) {
@@ -129,7 +134,7 @@ public final class ExpressionTypes {
             }
         }
 
-        return res;
+        return res.toArray(new ExpressionType[0]);
     }
 
     private static List<ExpressionType<?>> all0() {

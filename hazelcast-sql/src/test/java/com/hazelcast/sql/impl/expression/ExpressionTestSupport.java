@@ -29,6 +29,8 @@ import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -44,10 +46,20 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-// TODO: Test all functions with integration tests
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class ExpressionTestSupport extends SqlTestSupport {
 
+    public static final Character CHAR_VAL = 'f';
+    public static final String STRING_VAL = "foo";
+    public static final boolean BOOLEAN_VAL = true;
+    public static final byte BYTE_VAL = (byte) 1;
+    public static final short SHORT_VAL = (short) 1;
+    public static final int INTEGER_VAL = 1;
+    public static final long LONG_VAL = 1L;
+    public static final BigInteger BIG_INTEGER_VAL = BigInteger.ONE;
+    public static final BigDecimal BIG_DECIMAL_VAL = BigDecimal.ONE;
+    public static final float FLOAT_VAL = 1f;
+    public static final double DOUBLE_VAL = 1d;
     public static final LocalDate LOCAL_DATE_VAL = LocalDate.parse("2020-01-01");
     public static final LocalTime LOCAL_TIME_VAL = LocalTime.parse("00:00");
     public static final LocalDateTime LOCAL_DATE_TIME_VAL = LocalDateTime.parse("2020-01-01T00:00");

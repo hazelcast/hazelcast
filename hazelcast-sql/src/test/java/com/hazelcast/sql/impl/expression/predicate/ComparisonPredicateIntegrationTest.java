@@ -37,7 +37,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 
 @SuppressWarnings("rawtypes")
 @RunWith(Parameterized.class)
@@ -294,7 +293,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         return decimal1.compareTo(decimal2);
     }
 
-    private void checkUnsupportedColumnColumn(ExpressionType<?> type, List<ExpressionType<?>> excludeTypes) {
+    private void checkUnsupportedColumnColumn(ExpressionType<?> type, ExpressionType<?>... excludeTypes) {
         for (ExpressionType<?> expressionType : excludeTypes) {
             ExpressionBiValue value = ExpressionBiValue.createBiValue(
                 ExpressionBiValue.createBiClass(type, expressionType),
@@ -332,7 +331,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         }
     }
 
-    private void checkUnsupportedColumnParameter(Object columnValue, SqlColumnType columnType, int paramPos, List<ExpressionType<?>> parameterTypes) {
+    private void checkUnsupportedColumnParameter(Object columnValue, SqlColumnType columnType, int paramPos, ExpressionType<?>... parameterTypes) {
         for (ExpressionType<?> parameterType : parameterTypes) {
             put(columnValue);
 
