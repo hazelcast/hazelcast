@@ -35,4 +35,7 @@ public interface HazelcastResources {
 
     @Resources.BaseMessage("Cannot apply {1} to the {0} function (consider adding an explicit CAST)")
     Resources.ExInst<SqlValidatorException> invalidFunctionOperands(String functionName, String operandTypes);
+
+    @Resources.BaseMessage("CAST function cannot convert value of type {0} to type {1}")
+    Resources.ExInst<SqlValidatorException> cannotCastValue(String sourceType, String targetType);
 }

@@ -307,7 +307,7 @@ public abstract class Converter implements Serializable {
         return cannotConvert(typeFamily, target, val);
     }
 
-    protected final QueryException cannotConvert(QueryDataTypeFamily source, QueryDataTypeFamily target, Object val) {
+    private final QueryException cannotConvert(QueryDataTypeFamily source, QueryDataTypeFamily target, Object val) {
         String message = "Cannot convert " + source + " to " + target;
 
         if (source == QueryDataTypeFamily.OBJECT && val != null) {

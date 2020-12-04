@@ -89,6 +89,10 @@ public final class RexToExpression {
     public static Expression<?> convertLiteral(RexLiteral literal) {
         SqlTypeName type = literal.getType().getSqlTypeName();
 
+        if (literal.getValue() == null) {
+            return ConstantExpression.create(null, SqlToQueryType.map(type));
+        }
+
         switch (type) {
             case BOOLEAN:
                 return convertBooleanLiteral(literal, type);
@@ -109,11 +113,6 @@ public final class RexToExpression {
 
             case NULL:
                 return ConstantExpression.create(null, QueryDataType.NULL);
-
-            case ANY:
-                // currently, the only possible literal of ANY type is NULL
-                assert literal.getValueAs(Object.class) == null;
-                return ConstantExpression.create(null, QueryDataType.OBJECT);
 
             case SYMBOL:
                 return SymbolExpression.create(literal.getValue());

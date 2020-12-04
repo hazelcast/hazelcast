@@ -16,9 +16,12 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
+import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastFunction;
+import com.hazelcast.sql.impl.calcite.validate.param.NoOpParameterConverter;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
@@ -33,13 +36,13 @@ import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlOperatorBinding;
 import org.apache.calcite.sql.SqlSyntax;
 import org.apache.calcite.sql.SqlWriter;
-import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
+import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
 
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
-import static org.apache.calcite.util.Static.RESOURCE;
 
 public final class HazelcastCastFunction extends HazelcastFunction {
 
@@ -49,8 +52,8 @@ public final class HazelcastCastFunction extends HazelcastFunction {
         super(
             "CAST",
             SqlKind.CAST,
-            wrap(new ReturnTypeInference()),
-            InferTypes.FIRST_KNOWN,
+            wrap(new CastReturnTypeInference()),
+            new CastOperandTypeInference(),  //InferTypes.FIRST_KNOWN,
             SqlFunctionCategory.SYSTEM
         );
     }
@@ -65,13 +68,23 @@ public final class HazelcastCastFunction extends HazelcastFunction {
         RelDataType sourceType = binding.getOperandType(0);
         RelDataType targetType = binding.getOperandType(1);
 
+        SqlNode sourceOperand = binding.operand(0);
+
+        if (sourceOperand.getKind() == SqlKind.DYNAMIC_PARAM) {
+            int sourceParameterIndex = ((SqlDynamicParam) sourceOperand).getIndex();
+
+            binding.getValidator().setParameterConverter(sourceParameterIndex, NoOpParameterConverter.INSTANCE);
+        }
+
         if (canCast(sourceType, targetType)) {
             return true;
         }
 
         if (throwOnFailure) {
-            // TODO: Custom error message
-            throw binding.newError(RESOURCE.cannotCastValue(sourceType.toString(), targetType.toString()));
+            SqlColumnType sourceType0 = SqlToQueryType.map(sourceType.getSqlTypeName()).getTypeFamily().getPublicType();
+            SqlColumnType targetType0 = SqlToQueryType.map(targetType.getSqlTypeName()).getTypeFamily().getPublicType();
+
+            throw binding.newError(HazelcastResources.RESOURCES.cannotCastValue(sourceType0.name(), targetType0.name()));
         } else {
             return false;
         }
@@ -115,7 +128,21 @@ public final class HazelcastCastFunction extends HazelcastFunction {
         writer.endFunCall(frame);
     }
 
-    private static final class ReturnTypeInference implements SqlReturnTypeInference {
+    private static final class CastOperandTypeInference implements SqlOperandTypeInference {
+        @Override
+        public void inferOperandTypes(SqlCallBinding binding, RelDataType returnType, RelDataType[] operandTypes) {
+            RelDataType operandType = binding.getOperandType(0);
+
+            if (operandType.getSqlTypeName() == SqlTypeName.NULL) {
+                operandType = binding.getTypeFactory().createSqlType(SqlTypeName.ANY);
+            }
+
+            operandTypes[0] = operandType;
+            operandTypes[1] = binding.getOperandType(1);
+        }
+    }
+
+    private static final class CastReturnTypeInference implements SqlReturnTypeInference {
         @Override
         public RelDataType inferReturnType(SqlOperatorBinding opBinding) {
             assert opBinding.getOperandCount() == 2;
@@ -127,21 +154,6 @@ public final class HazelcastCastFunction extends HazelcastFunction {
                 opBinding.getOperandType(1),
                 sourceType.isNullable()
             );
-
-            if (opBinding instanceof SqlCallBinding) {
-                SqlCallBinding callBinding = (SqlCallBinding) opBinding;
-                SqlNode operand0 = callBinding.operand(0);
-
-                // dynamic parameters and null constants need their types assigned
-                // to them using the type they are casted to.
-                if (((operand0 instanceof SqlLiteral)
-                    && (((SqlLiteral) operand0).getValue() == null))
-                    || (operand0 instanceof SqlDynamicParam)) {
-                    final SqlValidatorImpl validator =
-                        (SqlValidatorImpl) callBinding.getValidator();
-                    validator.setValidatedNodeType(operand0, targetType);
-                }
-            }
 
             return targetType;
         }
