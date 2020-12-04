@@ -156,7 +156,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         assertEquals(2,  config.getCardinalityEstimatorConfig("foo").getBackupCount());
         assertEquals(4,  config.getCardinalityEstimatorConfig("foo").getAsyncBackupCount());
     }
-  
+
     @Test
     public void shouldHandleSplitBrainProtectionConfig() throws Exception {
         Config config = new Config();
