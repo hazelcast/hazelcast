@@ -335,8 +335,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleExecutor(Node node) throws Exception {
         for (Node executorNode : childElements(node)) {
-            ExecutorConfig executorConfig = new ExecutorConfig();
-            executorConfig.setName(executorNode.getNodeName());
+            ExecutorConfig executorConfig = config.getExecutorConfig(executorNode.getNodeName());
             handleViaReflection(executorNode, config, executorConfig);
         }
     }
@@ -344,8 +343,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleDurableExecutor(Node node) throws Exception {
         for (Node executorNode : childElements(node)) {
-            DurableExecutorConfig executorConfig = new DurableExecutorConfig();
-            executorConfig.setName(executorNode.getNodeName());
+            DurableExecutorConfig executorConfig = config.getDurableExecutorConfig(executorNode.getNodeName());
             handleViaReflection(executorNode, config, executorConfig);
         }
     }
@@ -353,8 +351,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleScheduledExecutor(Node node) {
         for (Node executorNode : childElements(node)) {
-            ScheduledExecutorConfig executorConfig = new ScheduledExecutorConfig();
-            executorConfig.setName(executorNode.getNodeName());
+            ScheduledExecutorConfig executorConfig = config.getScheduledExecutorConfig(executorNode.getNodeName());
             handleScheduledExecutorNode(executorNode, executorConfig);
         }
     }

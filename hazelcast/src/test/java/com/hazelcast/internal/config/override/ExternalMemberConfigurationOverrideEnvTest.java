@@ -145,6 +145,54 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
+    public void shouldHandleExecutorServiceConfig() throws Exception {
+        Config config = new Config();
+        config.getExecutorConfig("foo1")
+          .setPoolSize(1)
+          .setStatisticsEnabled(true);
+
+        withEnvironmentVariable("HZ_EXECUTORSERVICE_FOO1_STATISTICSENABLED", "true")
+          .and("HZ_EXECUTORSERVICE_FOO1_QUEUECAPACITY", "17")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getExecutorConfig("foo1").isStatisticsEnabled());
+        assertEquals(17, config.getExecutorConfig("foo1").getQueueCapacity());
+        assertEquals(1, config.getExecutorConfig("foo1").getPoolSize());
+    }
+
+    @Test
+    public void shouldHandleDurableExecutorServiceConfig() throws Exception {
+        Config config = new Config();
+        config.getDurableExecutorConfig("foo1")
+          .setPoolSize(1)
+          .setStatisticsEnabled(true);
+
+        withEnvironmentVariable("HZ_DURABLEEXECUTORSERVICE_FOO1_STATISTICSENABLED", "true")
+          .and("HZ_DURABLEEXECUTORSERVICE_FOO1_CAPACITY", "17")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getDurableExecutorConfig("foo1").isStatisticsEnabled());
+        assertEquals(17, config.getDurableExecutorConfig("foo1").getCapacity());
+        assertEquals(1, config.getDurableExecutorConfig("foo1").getPoolSize());
+    }
+
+    @Test
+    public void shouldHandleScheduledServiceConfig() throws Exception {
+        Config config = new Config();
+        config.getScheduledExecutorConfig("foo1")
+          .setPoolSize(1)
+          .setStatisticsEnabled(true);
+
+        withEnvironmentVariable("HZ_SCHEDULEDEXECUTORSERVICE_FOO1_ENABLED", "true")
+          .and("HZ_SCHEDULEDEXECUTORSERVICE_FOO1_CAPACITY", "17")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getScheduledExecutorConfig("foo1").isStatisticsEnabled());
+        assertEquals(17, config.getScheduledExecutorConfig("foo1").getCapacity());
+        assertEquals(1, config.getScheduledExecutorConfig("foo1").getPoolSize());
+    }
+
+    @Test
     public void shouldHandleCardinalityEstimatorConfig() throws Exception {
         Config config = new Config();
         config.getCardinalityEstimatorConfig("foo")

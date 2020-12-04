@@ -992,18 +992,22 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleExecutor(Node node) throws Exception {
-        ExecutorConfig executorConfig = new ExecutorConfig();
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        ExecutorConfig executorConfig = config.getExecutorConfig(name);
+
         handleViaReflection(node, config, executorConfig);
     }
 
     protected void handleDurableExecutor(Node node) throws Exception {
-        DurableExecutorConfig durableExecutorConfig = new DurableExecutorConfig();
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        DurableExecutorConfig durableExecutorConfig = config.getDurableExecutorConfig(name);
+
         handleViaReflection(node, config, durableExecutorConfig);
     }
 
     protected void handleScheduledExecutor(Node node) {
-        ScheduledExecutorConfig scheduledExecutorConfig = new ScheduledExecutorConfig();
-        scheduledExecutorConfig.setName(getTextContent(getNamedItemNode(node, "name")));
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        ScheduledExecutorConfig scheduledExecutorConfig = config.getScheduledExecutorConfig(name);
 
         handleScheduledExecutorNode(node, scheduledExecutorConfig);
     }
