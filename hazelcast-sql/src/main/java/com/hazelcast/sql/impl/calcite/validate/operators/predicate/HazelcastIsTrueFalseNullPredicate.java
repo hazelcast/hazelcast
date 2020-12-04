@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.calcite.validate.param.NoOpParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastObjectType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
+import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperandCountRange;
@@ -83,7 +84,9 @@ public final class HazelcastIsTrueFalseNullPredicate extends HazelcastPostfixOpe
             SqlNode node = binding.operand(0);
 
             if (node.getKind() == SqlKind.DYNAMIC_PARAM) {
-                binding.getValidator().setParameterConverter(0, NoOpParameterConverter.INSTANCE);
+                int parameterIndex = ((SqlDynamicParam) node).getIndex();
+
+                binding.getValidator().setParameterConverter(parameterIndex, NoOpParameterConverter.INSTANCE);
             }
 
             return true;
@@ -106,20 +109,18 @@ public final class HazelcastIsTrueFalseNullPredicate extends HazelcastPostfixOpe
 
         @Override
         public void inferOperandTypes(SqlCallBinding binding, RelDataType returnType, RelDataType[] operandTypes) {
-            for (int i = 0; i < operandTypes.length; ++i) {
+            for (int i = 0; i < operandTypes.length; i++) {
                 RelDataType type = binding.getOperandType(i);
 
                 if (type.getSqlTypeName() == NULL) {
-                    RelDataType newType;
-
                     if (objectOperand) {
-                        newType = HazelcastObjectType.NULLABLE_INSTANCE;
+                        type = HazelcastObjectType.NULLABLE_INSTANCE;
                     } else {
-                        newType = SqlNodeUtil.createType(binding.getTypeFactory(), SqlTypeName.BOOLEAN, type.isNullable());
+                        type = SqlNodeUtil.createType(binding.getTypeFactory(), SqlTypeName.BOOLEAN, type.isNullable());
                     }
-
-                    operandTypes[i] = newType;
                 }
+
+                operandTypes[i] = type;
             }
         }
     }
