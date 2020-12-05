@@ -27,6 +27,10 @@ public class NoLogFactory implements LoggerFactory {
         return noLogger;
     }
 
+    @Override
+    public void removeLogger(String name) {
+    }
+
     static class NoLogger implements ILogger {
 
         @Override

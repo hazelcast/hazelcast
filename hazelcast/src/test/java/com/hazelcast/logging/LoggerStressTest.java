@@ -84,6 +84,10 @@ public class LoggerStressTest extends HazelcastTestSupport {
         public ILogger getLogger(String name) {
             return mock(ILogger.class, withSettings().stubOnly());
         }
+
+        @Override
+        public void removeLogger(String name) {
+        }
     }
 
     private static class StressThread extends Thread {

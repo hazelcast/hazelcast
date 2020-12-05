@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test.compatibility;
+package com.hazelcast.buildutils;
 
-import net.bytebuddy.agent.ByteBuddyAgent;
+import com.hazelcast.core.HazelcastException;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.ModifierAdjustment;
 import net.bytebuddy.description.modifier.MethodManifestation;
@@ -25,26 +25,30 @@ import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.jar.asm.Opcodes;
 
 import java.lang.instrument.Instrumentation;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.test.TestCollectionUtils.setOf;
 import static net.bytebuddy.matcher.ElementMatchers.nameStartsWith;
 import static net.bytebuddy.matcher.ElementMatchers.named;
 
-public final class CompatibilityTestUtils {
+public final class FinalRemovalAgent {
 
     // Class name -> List<final method names> to be processed for
     // removing final modifier
     private static final Map<String, Set<String>> FINAL_METHODS;
+
+    private FinalRemovalAgent() {
+    }
 
     static {
         Map<String, Set<String>> finalMethods = new HashMap<>();
         finalMethods.put("com.hazelcast.cp.internal.session.AbstractProxySessionManager",
                 setOf("getSession", "getSessionAcquireCount"));
         finalMethods.put("com.hazelcast.spi.impl.AbstractInvocationFuture",
-                setOf("get"));
+                setOf("get", "join"));
         finalMethods.put("com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService",
                 setOf("getRegistryOrNull"));
         finalMethods.put("com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry",
@@ -61,22 +65,22 @@ public final class CompatibilityTestUtils {
      * more details see {@link net.bytebuddy.ByteBuddy#rebase(Class)} vs
      * {@link net.bytebuddy.ByteBuddy#redefine(Class)}.
      */
-    public static void attachFinalRemovalAgent() {
-        Instrumentation instrumentation = ByteBuddyAgent.install();
-        new AgentBuilder.Default().with(AgentBuilder.TypeStrategy.Default.REDEFINE)
-                                  .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
-                                  .type(nameStartsWith("com.hazelcast"))
-                                  .transform((builder, typeDescription, classLoader, module) -> {
-                                      builder = manifestMethodAsPlain(builder, typeDescription);
-                                      int actualModifiers = typeDescription.getActualModifiers(false);
-                                      // unset final modifier
-                                      int nonFinalModifiers = actualModifiers & ~Opcodes.ACC_FINAL;
-                                      if (actualModifiers != nonFinalModifiers) {
-                                          return builder.modifiers(nonFinalModifiers);
-                                      } else {
-                                          return builder;
-                                      }
-                                  }).installOn(instrumentation);
+    public static void premain(String argument, Instrumentation instrumentation) {
+        new AgentBuilder.Default()
+                .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
+                .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
+                .type(nameStartsWith("com.hazelcast"))
+                .transform((builder, typeDescription, classLoader, module) -> {
+                    builder = manifestMethodAsPlain(builder, typeDescription);
+                    int actualModifiers = typeDescription.getActualModifiers(false);
+                    // unset final modifier
+                    int nonFinalModifiers = actualModifiers & ~Opcodes.ACC_FINAL;
+                    if (actualModifiers != nonFinalModifiers) {
+                        return builder.modifiers(nonFinalModifiers);
+                    } else {
+                        return builder;
+                    }
+                }).installOn(instrumentation);
     }
 
     /**
@@ -89,10 +93,18 @@ public final class CompatibilityTestUtils {
         if (FINAL_METHODS.containsKey(typeName)) {
             for (String methodName : FINAL_METHODS.get(typeName)) {
                 builder = builder.visit(new ModifierAdjustment()
-                                .withMethodModifiers(named(methodName), MethodManifestation.PLAIN)
+                        .withMethodModifiers(named(methodName), MethodManifestation.PLAIN)
                 );
             }
         }
         return builder;
+    }
+
+    private static <T> Set<T> setOf(T... items) {
+        Set<T> set = new HashSet<>(Arrays.asList(items));
+        if (set.size() < items.length) {
+            throw new HazelcastException("set cannot contain duplicate items");
+        }
+        return set;
     }
 }

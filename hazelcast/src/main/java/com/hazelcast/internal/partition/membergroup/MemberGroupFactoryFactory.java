@@ -43,6 +43,8 @@ public final class MemberGroupFactoryFactory {
                 return new SingleMemberGroupFactory();
             case ZONE_AWARE:
                 return new ZoneAwareMemberGroupFactory();
+            case NODE_AWARE:
+                return new NodeAwareMemberGroupFactory();
             case SPI:
                 return new SPIAwareMemberGroupFactory(discoveryService);
             default:

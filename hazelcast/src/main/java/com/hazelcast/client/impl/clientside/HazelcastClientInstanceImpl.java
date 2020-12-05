@@ -392,11 +392,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             metricsRegistry.provideMetrics(listenerService);
 
             ClientConnectionStrategyConfig connectionStrategyConfig = config.getConnectionStrategyConfig();
-            if (!connectionStrategyConfig.isAsyncStart()) {
-                // The client needs to open connections to all members before any services requiring internal listeners start
+            boolean asyncStart = connectionStrategyConfig.isAsyncStart();
+            if (!asyncStart) {
                 waitForInitialMembershipEvents();
-                connectionManager.connectToAllClusterMembers();
             }
+            connectionManager.tryConnectToAllClusterMembers(!asyncStart);
 
             listenerService.start();
             proxyManager.init(config, clientContext);

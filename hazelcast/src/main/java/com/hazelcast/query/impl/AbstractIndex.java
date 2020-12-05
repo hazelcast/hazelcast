@@ -23,7 +23,6 @@ import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
@@ -64,11 +63,6 @@ public abstract class AbstractIndex implements InternalIndex {
     private final boolean ordered;
     private final PerIndexStats stats;
 
-    /**
-     * Reference to the store if it is bound to the same partition as the index (local index), {@code null} otherwise.
-     */
-    private final StoreAdapter partitionStoreAdapter;
-
     private volatile TypeConverter converter;
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
@@ -77,16 +71,13 @@ public abstract class AbstractIndex implements InternalIndex {
         InternalSerializationService ss,
         Extractors extractors,
         IndexCopyBehavior copyBehavior,
-        PerIndexStats stats,
-        StoreAdapter partitionStoreAdapter
-    ) {
+        PerIndexStats stats) {
         this.config = config;
         this.components = IndexUtils.getComponents(config);
         this.ordered = config.getType() == IndexType.SORTED;
         this.ss = ss;
         this.extractors = extractors;
         this.copyBehavior = copyBehavior;
-        this.partitionStoreAdapter = partitionStoreAdapter;
         this.indexStore = createIndexStore(config, stats);
         this.stats = stats;
     }
@@ -117,10 +108,6 @@ public abstract class AbstractIndex implements InternalIndex {
     @Override
     public TypeConverter getConverter() {
         return converter;
-    }
-
-    public StoreAdapter getPartitionStoreAdapter() {
-        return partitionStoreAdapter;
     }
 
     @Override

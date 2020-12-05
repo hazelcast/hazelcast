@@ -23,6 +23,7 @@ import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.Evictor;
@@ -246,10 +247,22 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return null;
     }
 
+    @Override
     public boolean isExpired(Record record, long now, boolean backup) {
         return record == null
                 || isIdleExpired(record, now, backup)
                 || isTTLExpired(record, now, backup);
+    }
+
+    @Override
+    public boolean expireOrAccess(Data key) {
+        long now = Clock.currentTimeMillis();
+        Record record = getOrNullIfExpired(key, storage.get(key), now, false);
+        boolean expired = record == null;
+        if (!expired) {
+            accessRecord(record, now);
+        }
+        return expired;
     }
 
     private boolean isIdleExpired(Record record, long now, boolean backup) {

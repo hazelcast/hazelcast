@@ -106,6 +106,12 @@
                                         <include>**/Parser.jj</include>
                                     </includes>
                                 </filter>
+                                <filter>
+                                    <artifact>${project.groupId}:${project.artifactId}</artifact>
+                                    <excludes>
+                                        <exclude>org/slf4j/**</exclude>
+                                    </excludes>
+                                </filter>
                             </filters>
                         </configuration>
                     </execution>
@@ -120,21 +126,11 @@
                             <finalName>${project.build.finalName}</finalName>
                             <createSourcesJar>true</createSourcesJar>
                             <shadeSourcesContent>true</shadeSourcesContent>
-                            <createDependencyReducedPom>false</createDependencyReducedPom>
                             <shadeTestJar>false</shadeTestJar>
                             <artifactSet>
-                                <includes>
-                                    <include>com.fasterxml.jackson.core:jackson-core</include>
-                                    <include>com.google.guava:guava</include>
-                                    <include>com.jayway.jsonpath:json-path</include>
-                                    <include>org.apache.calcite.avatica:avatica-core</include>
-                                    <include>org.apache.calcite:calcite-core</include>
-                                    <include>org.apache.calcite:calcite-linq4j</include>
-                                    <include>org.codehaus.janino:commons-compiler</include>
-                                    <include>org.codehaus.janino:janino</include>
-                                    <include>org.slf4j:slf4j-api</include>
-                                    <include>commons-codec:commons-codec</include>
-                                </includes>
+                                <excludes>
+                                    <exclude>com.hazelcast:hazelcast</exclude>
+                                </excludes>
                             </artifactSet>
                             <relocations>
                                 <relocation>
@@ -221,9 +217,16 @@
                                     </excludes>
                                 </filter>
                                 <filter>
+                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
                                     <artifact>org.slf4j:slf4j-api</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <exclude>org/slf4j/impl/StaticLoggerBinder.java</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
@@ -340,6 +343,24 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.code.findbugs</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.errorprone</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.checkerframework</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.j2objc</groupId>
+                    <artifactId>j2objc-annotations</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

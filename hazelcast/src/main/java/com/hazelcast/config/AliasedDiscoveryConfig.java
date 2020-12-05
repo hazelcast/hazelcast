@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -43,14 +44,14 @@ public abstract class AliasedDiscoveryConfig<T extends AliasedDiscoveryConfig<T>
 
     protected AliasedDiscoveryConfig(String tag) {
         this.tag = tag;
-        properties = new HashMap<String, String>();
+        properties = new HashMap<>();
     }
 
     public AliasedDiscoveryConfig(AliasedDiscoveryConfig aliasedDiscoveryConfig) {
         tag = aliasedDiscoveryConfig.tag;
         enabled = aliasedDiscoveryConfig.enabled;
         usePublicIp = aliasedDiscoveryConfig.usePublicIp;
-        properties = new HashMap<String, String>();
+        properties = new HashMap<>();
         properties.putAll(aliasedDiscoveryConfig.properties);
     }
 
@@ -84,7 +85,7 @@ public abstract class AliasedDiscoveryConfig<T extends AliasedDiscoveryConfig<T>
      * @return the updated discovery config
      */
     public T setProperty(String name, String value) {
-        if (USE_PUBLIC_IP_PROPERTY.equals(name)) {
+        if (ConfigUtils.matches(USE_PUBLIC_IP_PROPERTY, name)) {
             usePublicIp = Boolean.parseBoolean(value);
         } else if (ENABLED_PROPERTY.equals(name)) {
             enabled = Boolean.parseBoolean(value);
