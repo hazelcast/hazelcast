@@ -83,42 +83,19 @@ public class HazelcastIntegerTypeTest {
             if (i < Byte.SIZE) {
                 assertType(TINYINT, i, false, type);
                 assertType(TINYINT, i, true, nullableType);
-
-                assertEquals(i, HazelcastIntegerType.noOverflowBitWidthOf(type));
-                assertEquals(i, HazelcastIntegerType.noOverflowBitWidthOf(nullableType));
             } else if (i < Short.SIZE) {
                 assertType(SMALLINT, i, false, type);
                 assertType(SMALLINT, i, true, nullableType);
-
-                assertEquals(i, HazelcastIntegerType.noOverflowBitWidthOf(type));
-                assertEquals(i, HazelcastIntegerType.noOverflowBitWidthOf(nullableType));
             } else if (i < Integer.SIZE) {
                 assertType(INTEGER, i, false, type);
                 assertType(INTEGER, i, true, nullableType);
-
-                assertEquals(i, HazelcastIntegerType.noOverflowBitWidthOf(type));
-                assertEquals(i, HazelcastIntegerType.noOverflowBitWidthOf(nullableType));
             } else if (i < Long.SIZE) {
                 assertType(BIGINT, i, false, type);
                 assertType(BIGINT, i, true, nullableType);
-
-                assertEquals(i, HazelcastIntegerType.noOverflowBitWidthOf(type));
-                assertEquals(i, HazelcastIntegerType.noOverflowBitWidthOf(nullableType));
             } else {
                 assertType(BIGINT, Long.SIZE, false, type);
                 assertType(BIGINT, Long.SIZE, true, nullableType);
-
-                assertEquals(Long.SIZE - 1, HazelcastIntegerType.noOverflowBitWidthOf(type));
-                assertEquals(Long.SIZE - 1, HazelcastIntegerType.noOverflowBitWidthOf(nullableType));
             }
-        }
-    }
-
-    @Test
-    public void testSupports() {
-        for (SqlTypeName typeName : SqlTypeName.values()) {
-            assertEquals(typeName == TINYINT || typeName == SMALLINT || typeName == INTEGER || typeName == BIGINT,
-                    HazelcastIntegerType.supports(typeName));
         }
     }
 

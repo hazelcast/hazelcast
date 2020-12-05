@@ -41,8 +41,6 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
 
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isChar;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isNumeric;
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 import static org.apache.calcite.sql.type.SqlTypeName.APPROX_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
@@ -105,7 +103,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
         // Use our to-string conversions for floating point types and BOOLEAN,
         // Calcite does conversions using its own formatting.
-        if (operand.isA(SqlKind.LITERAL) && isChar(to)) {
+        if (operand.isA(SqlKind.LITERAL) && CalciteUtils.isCharType(to)) {
             RexLiteral literal = (RexLiteral) operand;
 
             switch (from.getSqlTypeName()) {
@@ -113,7 +111,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
                 case DOUBLE:
                 case DECIMAL:
                     BigDecimal decimalValue = literal.getValueAs(BigDecimal.class);
-                    Converter fromConverter = SqlToQueryType.map(from.getSqlTypeName()).getConverter();
+                    Converter fromConverter = CalciteUtils.map(from.getSqlTypeName()).getConverter();
                     Object value = fromConverter.convertToSelf(BigDecimalConverter.INSTANCE, decimalValue);
                     Object valueAsString = StringConverter.INSTANCE.convertToSelf(fromConverter, value);
 
@@ -131,7 +129,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         // REAL/DOUBLE and back, otherwise Calcite might think two floating-point
         // values having the same REAL/DOUBLE representation are distinct since
         // their BigDecimal representations might differ.
-        if (operand.isA(SqlKind.LITERAL) && isNumeric(from) && APPROX_TYPES.contains(to.getSqlTypeName())) {
+        if (operand.isA(SqlKind.LITERAL) && CalciteUtils.isNumericType(from) && APPROX_TYPES.contains(to.getSqlTypeName())) {
             RexLiteral literal = (RexLiteral) operand;
             BigDecimal value = literal.getValueAs(BigDecimal.class);
 

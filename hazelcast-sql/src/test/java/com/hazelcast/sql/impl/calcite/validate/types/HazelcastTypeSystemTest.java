@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
+import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -27,9 +28,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isObject;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isTimestampWithTimeZone;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedence;
+import static com.hazelcast.sql.impl.calcite.CalciteUtils.isObjectIdentifier;
+import static com.hazelcast.sql.impl.calcite.CalciteUtils.isTimestampWithTimeZoneIdentifier;
 import static org.apache.calcite.sql.parser.SqlParserPos.ZERO;
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
@@ -71,16 +71,16 @@ public class HazelcastTypeSystemTest {
 
     @Test
     public void isObjectTest() {
-        assertTrue(isObject(new SqlIdentifier("object", ZERO)));
-        assertTrue(isObject(new SqlIdentifier("OBJECT", ZERO)));
-        assertFalse(isObject(new SqlIdentifier("foo", ZERO)));
+        assertTrue(isObjectIdentifier(new SqlIdentifier("object", ZERO)));
+        assertTrue(isObjectIdentifier(new SqlIdentifier("OBJECT", ZERO)));
+        assertFalse(isObjectIdentifier(new SqlIdentifier("foo", ZERO)));
     }
 
     @Test
     public void isTimestampWithTimeZoneTest() {
-        assertTrue(isTimestampWithTimeZone(new SqlIdentifier("timestamp_with_time_zone", ZERO)));
-        assertTrue(isTimestampWithTimeZone(new SqlIdentifier("TIMESTAMP_WITH_TIME_ZONE", ZERO)));
-        assertFalse(isTimestampWithTimeZone(new SqlIdentifier("foo", ZERO)));
+        assertTrue(isTimestampWithTimeZoneIdentifier(new SqlIdentifier("timestamp_with_time_zone", ZERO)));
+        assertTrue(isTimestampWithTimeZoneIdentifier(new SqlIdentifier("TIMESTAMP_WITH_TIME_ZONE", ZERO)));
+        assertFalse(isTimestampWithTimeZoneIdentifier(new SqlIdentifier("foo", ZERO)));
     }
 
     @Test
@@ -148,9 +148,9 @@ public class HazelcastTypeSystemTest {
     }
 
     private static void assertPrecedence(RelDataType expected, RelDataType other) {
-        RelDataType actual = withHigherPrecedence(expected, other);
+        RelDataType actual = CalciteUtils.withHigherPrecedence(expected, other);
         assertSame(expected, actual);
-        actual = withHigherPrecedence(other, expected);
+        actual = CalciteUtils.withHigherPrecedence(other, expected);
         assertSame(expected, actual);
     }
 

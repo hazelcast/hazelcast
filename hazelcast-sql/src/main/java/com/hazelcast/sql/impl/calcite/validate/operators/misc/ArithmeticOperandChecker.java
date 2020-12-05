@@ -16,15 +16,13 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
+import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlKind;
-
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isNumeric;
 
 public final class ArithmeticOperandChecker {
 
@@ -38,7 +36,7 @@ public final class ArithmeticOperandChecker {
         RelDataType firstType = binding.getOperandType(0);
         RelDataType secondType = binding.getOperandType(1);
 
-        if (!isNumeric(firstType) || !isNumeric(secondType)) {
+        if (!CalciteUtils.isNumericType(firstType) || !CalciteUtils.isNumericType(secondType)) {
             if (throwOnFailure) {
                 throw binding.newValidationSignatureError();
             } else {
@@ -46,13 +44,13 @@ public final class ArithmeticOperandChecker {
             }
         }
 
-        RelDataType type = HazelcastTypeSystem.withHigherPrecedence(firstType, secondType);
+        RelDataType type = CalciteUtils.withHigherPrecedence(firstType, secondType);
 
         switch (kind) {
             case PLUS:
             case MINUS:
             case DIVIDE:
-                if (HazelcastTypeSystem.isInteger(type)) {
+                if (CalciteUtils.isNumericIntegerType(type)) {
                     int bitWidth = HazelcastIntegerType.bitWidthOf(type) + 1;
 
                     type = HazelcastIntegerType.of(bitWidth, type.isNullable());
@@ -63,7 +61,7 @@ public final class ArithmeticOperandChecker {
             default:
                 assert kind == SqlKind.TIMES;
 
-                if (HazelcastTypeSystem.isInteger(firstType) && HazelcastTypeSystem.isInteger(secondType)) {
+                if (CalciteUtils.isNumericIntegerType(firstType) && CalciteUtils.isNumericIntegerType(secondType)) {
                     int bitWidth = HazelcastIntegerType.bitWidthOf(firstType) + HazelcastIntegerType.bitWidthOf(secondType);
 
                     type = HazelcastIntegerType.of(bitWidth, type.isNullable());

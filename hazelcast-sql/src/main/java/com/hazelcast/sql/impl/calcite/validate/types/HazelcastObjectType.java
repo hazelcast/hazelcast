@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.validate.types;
 
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.type.BasicSqlType;
 import org.apache.calcite.sql.type.SqlTypeName;
 
@@ -28,19 +27,9 @@ import org.apache.calcite.sql.type.SqlTypeName;
  * but has a more friendly name "OBJECT" instead of "ANY".
  */
 public final class HazelcastObjectType extends BasicSqlType {
-
-    /**
-     * Non-nullable instance of Hazelcast OBJECT type.
-     */
-    public static final RelDataType INSTANCE = new HazelcastObjectType(false);
-
-    /**
-     * Nullable instance of Hazelcast OBJECT type.
-     */
-    public static final RelDataType NULLABLE_INSTANCE = new HazelcastObjectType(true);
-
-    private HazelcastObjectType(boolean nullable) {
+    HazelcastObjectType(boolean nullable) {
         super(HazelcastTypeSystem.INSTANCE, SqlTypeName.ANY);
+
         this.isNullable = nullable;
 
         // recompute the digest to reflect the nullability of the type

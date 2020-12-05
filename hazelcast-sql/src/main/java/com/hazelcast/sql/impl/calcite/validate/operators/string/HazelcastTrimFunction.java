@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.string;
 
-import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
+import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBindingSignatureErrorAware;
 import com.hazelcast.sql.impl.calcite.validate.operand.AnyOperandChecker;
@@ -90,7 +90,7 @@ public final class HazelcastTrimFunction extends HazelcastFunction implements Ha
         SqlNode fromOperand = call.operand(1);
         SqlNode targetOperand = call.operand(2);
 
-        SqlTypeName literalType = SqlNodeUtil.literalTypeName(fromOperand);
+        SqlTypeName literalType = CalciteUtils.literalTypeName(fromOperand);
 
         if (literalType == SqlTypeName.VARCHAR && " ".equals(((SqlLiteral) fromOperand).getValueAs(String.class))) {
             // Default value for the FROM operand, report only target operand.

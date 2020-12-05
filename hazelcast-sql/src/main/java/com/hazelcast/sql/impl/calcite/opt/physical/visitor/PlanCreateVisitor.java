@@ -24,7 +24,7 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.calcite.SqlToQueryType;
+import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRel;
@@ -55,6 +55,8 @@ import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexNode;
 
 import java.security.Permission;
@@ -322,7 +324,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             throw QueryException.error("Non-empty VALUES are not supported");
         }
 
-        QueryDataType[] fieldTypes = SqlToQueryType.mapRowType(rel.getRowType());
+        QueryDataType[] fieldTypes = mapRowTypeToHazelcastTypes(rel.getRowType());
 
         EmptyPlanNode planNode = new EmptyPlanNode(
             pollId(rel),
@@ -439,5 +441,17 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         permissions.trimToSize();
 
         return permissions;
+    }
+
+    private static QueryDataType[] mapRowTypeToHazelcastTypes(RelDataType rowType) {
+        List<RelDataTypeField> fields = rowType.getFieldList();
+
+        QueryDataType[] mappedRowType = new QueryDataType[fields.size()];
+
+        for (int i = 0; i < fields.size(); ++i) {
+            mappedRowType[i] = CalciteUtils.map(fields.get(i).getType().getSqlTypeName());
+        }
+
+        return mappedRowType;
     }
 }

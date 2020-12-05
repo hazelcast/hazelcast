@@ -24,6 +24,7 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlFunction;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -34,8 +35,6 @@ import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
 
 import java.util.List;
 
-import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isParameter;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.typeName;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 
 /**
@@ -43,18 +42,15 @@ import static org.apache.calcite.sql.type.SqlTypeName.NULL;
  * and assigning more precise types comparing to the standard Calcite coercion.
  */
 public final class HazelcastTypeCoercion extends TypeCoercionImpl {
-
-    private static final HazelcastTypeFactory TYPE_FACTORY = HazelcastTypeFactory.INSTANCE;
-
     public HazelcastTypeCoercion(HazelcastSqlValidator validator) {
-        super(TYPE_FACTORY, validator);
+        super(HazelcastTypeFactory.INSTANCE, validator);
     }
 
     @Override
     public boolean coerceOperandType(SqlValidatorScope scope, SqlCall call, int index, RelDataType targetType) {
         SqlNode operand = call.getOperandList().get(index);
 
-        // just update the inferred type if casting is not needed
+        // Just update the inferred type if casting is not needed
         if (!requiresCast(scope, operand, targetType)) {
             updateInferredType(operand, targetType);
 
@@ -86,17 +82,18 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     private boolean requiresCast(SqlValidatorScope scope, SqlNode node, RelDataType to) {
         RelDataType from = validator.deriveType(scope, node);
 
-        if (typeName(from) == NULL || SqlUtil.isNullLiteral(node, false)) {
+        if (from.getSqlTypeName() == NULL || SqlUtil.isNullLiteral(node, false)) {
             // Never cast NULLs, just assign types to them
             return false;
         }
 
-        if (isParameter(node)) {
+        if (node.getKind() == SqlKind.DYNAMIC_PARAM) {
             // Never cast parameters, just assign types to them
             return false;
         }
 
-        return typeName(from) != typeName(to);
+        // CAST is only required between different types.
+        return from.getSqlTypeName() != to.getSqlTypeName();
     }
 
     @Override

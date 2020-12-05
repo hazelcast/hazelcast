@@ -17,8 +17,8 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.string;
 
 import com.hazelcast.sql.impl.ParameterConverter;
+import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
@@ -65,7 +65,7 @@ public final class HazelcastConcatOperator extends HazelcastBinaryOperator {
 
             if (operandType.getSqlTypeName() != VARCHAR) {
                 // Coerce everything to VARCHAR
-                RelDataType newOperandType = SqlNodeUtil.createType(
+                RelDataType newOperandType = CalciteUtils.createType(
                     validator.getTypeFactory(),
                     VARCHAR,
                     operandType.isNullable()

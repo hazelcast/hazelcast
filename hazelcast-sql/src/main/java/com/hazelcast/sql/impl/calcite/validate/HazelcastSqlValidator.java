@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.ParameterConverter;
-import com.hazelcast.sql.impl.calcite.SqlToQueryType;
+import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
@@ -116,7 +116,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     @Override
     public RelDataType deriveTypeImpl(SqlValidatorScope scope, SqlNode operand) {
         if (operand.getKind() == SqlKind.LITERAL) {
-            RelDataType literalType = SqlNodeUtil.literalType(operand, (HazelcastTypeFactory) typeFactory);
+            RelDataType literalType = CalciteUtils.literalType(operand, (HazelcastTypeFactory) typeFactory);
 
             if (literalType != null) {
                 return literalType;
@@ -237,7 +237,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 converter = new StrictParameterConverter(
                     i,
                     parameterPositionMap.get(i),
-                    SqlToQueryType.map(rowType.getFieldList().get(i).getType().getSqlTypeName())
+                    CalciteUtils.map(rowType.getFieldList().get(i).getType().getSqlTypeName())
                 );
             }
 

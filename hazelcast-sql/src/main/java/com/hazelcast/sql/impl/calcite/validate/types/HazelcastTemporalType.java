@@ -16,8 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
-import com.hazelcast.sql.impl.calcite.SqlToQueryType;
-import org.apache.calcite.rel.type.RelDataType;
+import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import org.apache.calcite.sql.type.BasicSqlType;
 import org.apache.calcite.sql.type.SqlTypeName;
 
@@ -25,23 +24,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
  * Class describing TIME, TIMESTAMP and TIMESTAMP_WITH_TIME_ZONE types.
  */
 public final class HazelcastTemporalType extends BasicSqlType {
-
-    public static final RelDataType TIME = new HazelcastTemporalType(SqlTypeName.TIME, false);
-    public static final RelDataType TIME_NULLABLE = new HazelcastTemporalType(SqlTypeName.TIME, true);
-
-    public static final RelDataType TIMESTAMP = new HazelcastTemporalType(SqlTypeName.TIMESTAMP, false);
-    public static final RelDataType TIMESTAMP_NULLABLE = new HazelcastTemporalType(SqlTypeName.TIMESTAMP, true);
-
-    public static final RelDataType TIMESTAMP_WITH_TIME_ZONE = new HazelcastTemporalType(
-        SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE, false
-    );
-
-    public static final RelDataType TIMESTAMP_WITH_TIME_ZONE_NULLABLE = new HazelcastTemporalType(
-        SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE,
-        true
-    );
-
-    private HazelcastTemporalType(SqlTypeName typeName, boolean nullable) {
+    HazelcastTemporalType(SqlTypeName typeName, boolean nullable) {
         super(HazelcastTypeSystem.INSTANCE, typeName);
 
         this.isNullable = nullable;
@@ -51,6 +34,6 @@ public final class HazelcastTemporalType extends BasicSqlType {
 
     @Override
     protected void generateTypeString(StringBuilder sb, boolean withDetail) {
-        sb.append(SqlToQueryType.map(typeName).getTypeFamily());
+        sb.append(CalciteUtils.map(typeName).getTypeFamily());
     }
 }

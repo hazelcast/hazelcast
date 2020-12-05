@@ -237,21 +237,6 @@ public final class HazelcastIntegerType extends BasicSqlType {
     }
 
     /**
-     * @return the bit width specified by the given integer type stripping the
-     * overflow indicator; consider 1 + CAST(1111 AS TINYINT), the cast has
-     * overflown TINYINT(8) type, but if the cast was performed successfully
-     * we know for sure its result is not overflown, so the addition operator
-     * should not take the overflow indicator into account and use TINYINT(7)
-     * instead.
-     */
-    public static int noOverflowBitWidthOf(RelDataType type) {
-        assert supports(type.getSqlTypeName());
-
-        HazelcastIntegerType integerType = (HazelcastIntegerType) type;
-        return Math.min(integerType.bitWidth, bitWidthOf(type.getSqlTypeName()));
-    }
-
-    /**
      * Finds the widest bit width integer type belonging to the same type name
      * (family) as the given target integer type from the given list of types.
      *

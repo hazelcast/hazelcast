@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
-import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
+import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -58,7 +58,7 @@ public class ReplaceUnknownOperandTypeInference implements SqlOperandTypeInferen
 
                 // Preserve nullability
                 if (operandType.isNullable()) {
-                    resolvedOperandType = SqlNodeUtil.createNullableType(callBinding.getTypeFactory(), resolvedOperandType);
+                    resolvedOperandType = CalciteUtils.createNullableType(callBinding.getTypeFactory(), resolvedOperandType);
                 }
 
                 operandType = resolvedOperandType;

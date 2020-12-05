@@ -16,9 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
-import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
+import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
@@ -33,7 +34,7 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
     @Override
     public void inferOperandTypes(SqlCallBinding binding, RelDataType returnType, RelDataType[] operandTypes) {
         // Check if we have parameters. If yes, we will upcast integer literals to BIGINT as explained below
-        boolean hasParameters = binding.operands().stream().anyMatch(SqlNodeUtil::isParameter);
+        boolean hasParameters = binding.operands().stream().anyMatch((operand) -> operand.getKind() == SqlKind.DYNAMIC_PARAM);
 
         int unknownTypeOperandIndex = -1;
         RelDataType knownType = null;
@@ -45,11 +46,11 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
                 // Will resolve operand type at this index later.
                 unknownTypeOperandIndex = i;
             } else {
-                if (hasParameters && SqlNodeUtil.isNumericInteger(operandType)) {
+                if (hasParameters && CalciteUtils.map(operandType.getSqlTypeName()).getTypeFamily().isNumericInteger()) {
                     // If we are here, there is a parameter, and an exact numeric literal.
                     // We upcast the type of the numeric literal to BIGINT, so that an expression `1 > ?` is resolved to
                     // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`
-                    RelDataType newOperandType = SqlNodeUtil.createType(
+                    RelDataType newOperandType = CalciteUtils.createType(
                         binding.getTypeFactory(),
                         SqlTypeName.BIGINT,
                         operandType.isNullable()

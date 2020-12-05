@@ -16,12 +16,12 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
+import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPrefixOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlPrefixOperator;
@@ -63,7 +63,7 @@ public final class HazelcastUnaryOperator extends HazelcastPrefixOperator {
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         RelDataType operandType = binding.getOperandType(0);
 
-        if (HazelcastTypeSystem.isInteger(operandType) && extend) {
+        if (CalciteUtils.isNumericIntegerType(operandType) && extend) {
             int bitWidth = HazelcastIntegerType.bitWidthOf(operandType);
 
             operandType = HazelcastIntegerType.of(bitWidth + 1, operandType.isNullable());

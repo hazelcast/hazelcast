@@ -27,13 +27,9 @@ import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.MAX_DECIMAL_PRECISION;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.MAX_DECIMAL_SCALE;
-import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.REAL;
-import static org.apache.calcite.sql.type.SqlTypeName.TIME;
-import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP;
-import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE;
 
 /**
  * Custom Hazelcast type factory.
@@ -43,10 +39,25 @@ import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_
  */
 public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
 
-    /**
-     * Shared Hazelcast type factory instance.
-     */
     public static final HazelcastTypeFactory INSTANCE = new HazelcastTypeFactory();
+
+    private static final RelDataType TYPE_TIME = new HazelcastTemporalType(SqlTypeName.TIME, false);
+    private static final RelDataType TYPE_TIME_NULLABLE = new HazelcastTemporalType(SqlTypeName.TIME, true);
+
+    private static final RelDataType TYPE_TIMESTAMP = new HazelcastTemporalType(SqlTypeName.TIMESTAMP, false);
+    private static final RelDataType TYPE_TIMESTAMP_NULLABLE = new HazelcastTemporalType(SqlTypeName.TIMESTAMP, true);
+
+    private static final RelDataType TYPE_TIMESTAMP_WITH_TIME_ZONE = new HazelcastTemporalType(
+        SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE, false
+    );
+
+    private static final RelDataType TYPE_TIMESTAMP_WITH_TIME_ZONE_NULLABLE = new HazelcastTemporalType(
+        SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE,
+        true
+    );
+
+    private static final RelDataType TYPE_OBJECT = new HazelcastObjectType(false);
+    private static final RelDataType TYPE_OBJECT_NULLABLE = new HazelcastObjectType(true);
 
     private HazelcastTypeFactory() {
         super(HazelcastTypeSystem.INSTANCE);
@@ -117,14 +128,14 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     private RelDataType createType(SqlTypeName typeName) {
         if (typeName == DECIMAL) {
             return super.createSqlType(DECIMAL, MAX_DECIMAL_PRECISION, MAX_DECIMAL_SCALE);
-        } else if (typeName == ANY) {
-            return HazelcastObjectType.INSTANCE;
-        } else if (typeName == TIME) {
-            return HazelcastTemporalType.TIME;
-        } else if (typeName == TIMESTAMP) {
-            return HazelcastTemporalType.TIMESTAMP;
-        } else if (typeName == TIMESTAMP_WITH_LOCAL_TIME_ZONE) {
-            return HazelcastTemporalType.TIMESTAMP_WITH_TIME_ZONE;
+        } else if (typeName == SqlTypeName.ANY) {
+            return TYPE_OBJECT;
+        } else if (typeName == SqlTypeName.TIME) {
+            return TYPE_TIME;
+        } else if (typeName == SqlTypeName.TIMESTAMP) {
+            return TYPE_TIMESTAMP;
+        } else if (typeName == SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE) {
+            return TYPE_TIMESTAMP_WITH_TIME_ZONE;
         }
 
         if (HazelcastIntegerType.supports(typeName)) {
@@ -138,15 +149,14 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     public RelDataType createTypeWithNullability(RelDataType type, boolean nullable) {
         if (HazelcastIntegerType.supports(type.getSqlTypeName())) {
             return HazelcastIntegerType.of(type, nullable);
-        } else if (type.getSqlTypeName() == ANY) {
-            return nullable ? HazelcastObjectType.NULLABLE_INSTANCE : HazelcastObjectType.INSTANCE;
-        } else if (type.getSqlTypeName() == TIME) {
-            return nullable ? HazelcastTemporalType.TIME_NULLABLE : HazelcastTemporalType.TIME;
-        } else if (type.getSqlTypeName() == TIMESTAMP) {
-            return nullable ? HazelcastTemporalType.TIMESTAMP_NULLABLE : HazelcastTemporalType.TIMESTAMP;
-        } else if (type.getSqlTypeName() == TIMESTAMP_WITH_LOCAL_TIME_ZONE) {
-            return nullable
-                ? HazelcastTemporalType.TIMESTAMP_WITH_TIME_ZONE_NULLABLE : HazelcastTemporalType.TIMESTAMP_WITH_TIME_ZONE;
+        } else if (type.getSqlTypeName() == SqlTypeName.ANY) {
+            return nullable ? TYPE_OBJECT_NULLABLE : TYPE_OBJECT;
+        } else if (type.getSqlTypeName() == SqlTypeName.TIME) {
+            return nullable ? TYPE_TIME_NULLABLE : TYPE_TIME;
+        } else if (type.getSqlTypeName() == SqlTypeName.TIMESTAMP) {
+            return nullable ? TYPE_TIMESTAMP_NULLABLE : TYPE_TIMESTAMP;
+        } else if (type.getSqlTypeName() == SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE) {
+            return nullable ? TYPE_TIMESTAMP_WITH_TIME_ZONE_NULLABLE : TYPE_TIMESTAMP_WITH_TIME_ZONE;
         }
 
         return super.createTypeWithNullability(type, nullable);

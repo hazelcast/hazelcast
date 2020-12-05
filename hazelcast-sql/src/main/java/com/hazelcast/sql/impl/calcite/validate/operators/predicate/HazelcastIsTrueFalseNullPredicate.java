@@ -16,12 +16,11 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
-import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
+import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPostfixOperator;
 import com.hazelcast.sql.impl.calcite.validate.param.NoOpParameterConverter;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastObjectType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlDynamicParam;
@@ -114,9 +113,9 @@ public final class HazelcastIsTrueFalseNullPredicate extends HazelcastPostfixOpe
 
                 if (type.getSqlTypeName() == NULL) {
                     if (objectOperand) {
-                        type = HazelcastObjectType.NULLABLE_INSTANCE;
+                        type = CalciteUtils.createType(binding.getTypeFactory(), SqlTypeName.ANY, type.isNullable());
                     } else {
-                        type = SqlNodeUtil.createType(binding.getTypeFactory(), SqlTypeName.BOOLEAN, type.isNullable());
+                        type = CalciteUtils.createType(binding.getTypeFactory(), SqlTypeName.BOOLEAN, type.isNullable());
                     }
                 }
 

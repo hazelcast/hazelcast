@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite.schema;
 
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.calcite.SqlToQueryType;
+import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -114,7 +114,7 @@ public final class HazelcastSchemaUtils {
         QueryDataType fieldType = field.getType();
         QueryDataTypeFamily fieldTypeFamily = fieldType.getTypeFamily();
 
-        SqlTypeName sqlTypeName = SqlToQueryType.map(fieldTypeFamily);
+        SqlTypeName sqlTypeName = CalciteUtils.map(fieldTypeFamily);
 
         if (sqlTypeName == null) {
             throw new IllegalStateException("Unexpected type family: " + fieldTypeFamily);
