@@ -43,7 +43,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
-import java.util.UUID;
 
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
 
@@ -152,7 +151,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
 
-        setExpirationTimes(ttlMillis, maxIdle, record, mapContainer.getMapConfig(), true);
+        setExpirationTimes(record, ttlMillis, maxIdle, mapContainer.getMapConfig());
         updateStatsOnPut(false, now);
         return record;
     }
@@ -188,41 +187,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     protected static long getNow() {
         return Clock.currentTimeMillis();
-    }
-
-    @SuppressWarnings("checkstyle:parameternumber")
-    protected void updateRecord(Data key, Record record, Object oldValue, Object newValue,
-                                long now, boolean countAsAccess,
-                                long ttl, long maxIdle, boolean mapStoreOperation,
-                                UUID transactionId, boolean backup) {
-        updateStatsOnPut(countAsAccess, now);
-        record.onUpdate(now);
-        if (countAsAccess) {
-            record.onAccess(now);
-        }
-        setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), true);
-        if (mapStoreOperation) {
-            newValue = putIntoMapStore(record, key, newValue, now, transactionId);
-        }
-        storage.updateRecordValue(key, record, newValue);
-        mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
-    }
-
-    protected Record putNewRecord(Data key, Object oldValue, Object newValue, long ttlMillis,
-                                  long maxIdleMillis, long now, UUID transactionId) {
-        Record record = createRecord(key, newValue, ttlMillis, maxIdleMillis, now);
-        putIntoMapStore(record, key, newValue, now, transactionId);
-        storage.put(key, record);
-        mutationObserver.onPutRecord(key, record, oldValue, false);
-        return record;
-    }
-
-    protected Object putIntoMapStore(Record record, Data key, Object newValue, long now, UUID transactionId) {
-        newValue = mapDataStore.add(key, newValue, record.getExpirationTime(), now, transactionId);
-        if (mapDataStore.isPostProcessingMapStore()) {
-            storage.updateRecordValue(key, record, newValue);
-        }
-        return newValue;
     }
 
     @Override

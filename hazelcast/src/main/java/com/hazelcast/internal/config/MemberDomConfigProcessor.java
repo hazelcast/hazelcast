@@ -534,8 +534,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleSplitBrainProtection(Node node) {
-        SplitBrainProtectionConfig splitBrainProtectionConfig = new SplitBrainProtectionConfig();
         String name = getAttribute(node, "name");
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig(name);
         splitBrainProtectionConfig.setName(name);
         handleSplitBrainProtectionNode(node, splitBrainProtectionConfig, name);
     }
@@ -992,18 +992,22 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleExecutor(Node node) throws Exception {
-        ExecutorConfig executorConfig = new ExecutorConfig();
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        ExecutorConfig executorConfig = config.getExecutorConfig(name);
+
         handleViaReflection(node, config, executorConfig);
     }
 
     protected void handleDurableExecutor(Node node) throws Exception {
-        DurableExecutorConfig durableExecutorConfig = new DurableExecutorConfig();
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        DurableExecutorConfig durableExecutorConfig = config.getDurableExecutorConfig(name);
+
         handleViaReflection(node, config, durableExecutorConfig);
     }
 
     protected void handleScheduledExecutor(Node node) {
-        ScheduledExecutorConfig scheduledExecutorConfig = new ScheduledExecutorConfig();
-        scheduledExecutorConfig.setName(getTextContent(getNamedItemNode(node, "name")));
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        ScheduledExecutorConfig scheduledExecutorConfig = config.getScheduledExecutorConfig(name);
 
         handleScheduledExecutorNode(node, scheduledExecutorConfig);
     }
@@ -1032,8 +1036,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleCardinalityEstimator(Node node) {
-        CardinalityEstimatorConfig cardinalityEstimatorConfig = new CardinalityEstimatorConfig();
-        cardinalityEstimatorConfig.setName(getTextContent(getNamedItemNode(node, "name")));
+        CardinalityEstimatorConfig cardinalityEstimatorConfig = config.getCardinalityEstimatorConfig(
+          getTextContent(getNamedItemNode(node, "name")));
 
         handleCardinalityEstimatorNode(node, cardinalityEstimatorConfig);
     }

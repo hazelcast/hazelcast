@@ -21,7 +21,6 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.record.Records;
-import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.Index;
@@ -83,8 +82,7 @@ public class AddIndexOperation extends MapOperation
         int partitionId = getPartitionId();
 
         Indexes indexes = mapContainer.getIndexes(partitionId);
-        RecordStoreAdapter recordStoreAdapter = new RecordStoreAdapter(recordStore);
-        InternalIndex index = indexes.addOrGetIndex(config, indexes.isGlobal() ? null : recordStoreAdapter);
+        InternalIndex index = indexes.addOrGetIndex(config);
         if (index.hasPartitionIndexed(partitionId)) {
             return;
         }
@@ -97,7 +95,6 @@ public class AddIndexOperation extends MapOperation
             Object value = Records.getValueOrCachedValue(record, serializationService);
             QueryableEntry queryEntry = mapContainer.newQueryEntry(dataKey, value);
             queryEntry.setRecord(record);
-            queryEntry.setStoreAdapter(recordStoreAdapter);
             index.putEntry(queryEntry, null, Index.OperationSource.USER);
         }, false);
 

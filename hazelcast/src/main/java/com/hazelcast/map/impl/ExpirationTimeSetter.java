@@ -94,16 +94,14 @@ public final class ExpirationTimeSetter {
     /**
      * Updates records TTL and expiration time.
      *
-     * @param operationTTLMillis user provided TTL during operation call like put with TTL
      * @param record             record to be updated
+     * @param operationTTLMillis user provided TTL during operation call like put with TTL
      * @param mapConfig          map config object
-     * @param consultMapConfig   give {@code true} if this update should consult map ttl configuration,
-     *                           otherwise give {@code false} to indicate update
      */
-    public static void setExpirationTimes(long operationTTLMillis, long operationMaxIdleMillis, Record record,
-                                          MapConfig mapConfig, boolean consultMapConfig) {
-        long ttlMillis = pickTTLMillis(operationTTLMillis, mapConfig, consultMapConfig);
-        long maxIdleMillis = pickMaxIdleMillis(operationMaxIdleMillis, mapConfig, consultMapConfig);
+    public static void setExpirationTimes(Record record, long operationTTLMillis,
+                                          long operationMaxIdleMillis, MapConfig mapConfig) {
+        long ttlMillis = pickTTLMillis(operationTTLMillis, mapConfig);
+        long maxIdleMillis = pickMaxIdleMillis(operationMaxIdleMillis, mapConfig);
 
         record.setTtl(ttlMillis);
         record.setMaxIdle(maxIdleMillis);
@@ -115,19 +113,16 @@ public final class ExpirationTimeSetter {
      *
      * @param operationTTLMillis user provided TTL during operation call like put with TTL
      * @param mapConfig          used to get configured TTL
-     * @param consultMapConfig   give {@code true} if this update should consult map ttl configuration,
-     *                           otherwise give {@code false}
      * @return TTL value in millis to set to record
      */
-    private static long pickTTLMillis(long operationTTLMillis, MapConfig mapConfig,
-                                      boolean consultMapConfig) {
+    private static long pickTTLMillis(long operationTTLMillis, MapConfig mapConfig) {
         // if user set operationTTLMillis when calling operation, use it
         if (operationTTLMillis > 0) {
             return checkedTime(operationTTLMillis);
         }
 
         // if this is the first creation of entry, try to get TTL from mapConfig
-        if (consultMapConfig && operationTTLMillis < 0 && mapConfig.getTimeToLiveSeconds() > 0) {
+        if (operationTTLMillis < 0 && mapConfig.getTimeToLiveSeconds() > 0) {
             return checkedTime(SECONDS.toMillis(mapConfig.getTimeToLiveSeconds()));
         }
 
@@ -135,15 +130,14 @@ public final class ExpirationTimeSetter {
         return Long.MAX_VALUE;
     }
 
-    private static long pickMaxIdleMillis(long operationMaxIdleMillis, MapConfig mapConfig,
-                                          boolean entryCreated) {
+    private static long pickMaxIdleMillis(long operationMaxIdleMillis, MapConfig mapConfig) {
         // if user set operationMaxIdleMillis when calling operation, use it
         if (operationMaxIdleMillis > 0) {
             return checkedTime(operationMaxIdleMillis);
         }
 
         // if this is the first creation of entry, try to get MaxIdle from mapConfig
-        if (entryCreated && operationMaxIdleMillis < 0 && mapConfig.getMaxIdleSeconds() > 0) {
+        if (operationMaxIdleMillis < 0 && mapConfig.getMaxIdleSeconds() > 0) {
             return checkedTime(SECONDS.toMillis(mapConfig.getMaxIdleSeconds()));
         }
 

@@ -37,6 +37,7 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.MemoryInfoAccessor;
 import com.hazelcast.internal.util.RuntimeMemoryInfoAccessor;
+import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.map.impl.eviction.EvictionChecker;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
@@ -46,6 +47,7 @@ import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -158,7 +160,29 @@ public class MapContainer {
                 .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
                 .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
                 .partitionCount(partitionCount)
-                .build();
+                .resultFilter(queryableEntry -> hasNotExpired(queryableEntry)).build();
+    }
+
+    /**
+     * @return {@code true} if queryableEntry has
+     * not expired, otherwise returns {@code false}
+     */
+    private boolean hasNotExpired(QueryableEntry queryableEntry) {
+        Data keyData = queryableEntry.getKeyData();
+        IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+        int partitionId = partitionService.getPartitionId(keyData);
+
+        if (!getIndexes(partitionId).isGlobal()) {
+            ThreadUtil.assertRunningOnPartitionThread();
+        }
+
+        if (!partitionService.isPartitionOwner(partitionId)) {
+            // throw entry out if it is not owned by this local node.
+            return false;
+        }
+
+        RecordStore recordStore = mapServiceContext.getExistingRecordStore(partitionId, name);
+        return recordStore != null && !recordStore.expireOrAccess(keyData);
     }
 
     public final void initEvictor() {
@@ -234,7 +258,7 @@ public class MapContainer {
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
         wanReplicationDelegate = wanReplicationService.getWanReplicationPublishers(wanReplicationRefName);
         wanMergePolicy = nodeEngine.getSplitBrainMergePolicyProvider()
-                                   .getMergePolicy(wanReplicationRef.getMergePolicyClassName());
+                .getMergePolicy(wanReplicationRef.getMergePolicyClassName());
 
         WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
         if (wanReplicationConfig != null) {

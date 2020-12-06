@@ -1177,6 +1177,21 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testPartitionGroupNodeAware() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  partition-group:\n"
+                + "    enabled: true\n"
+                + "    group-type: NODE_AWARE\n";
+
+        Config config = buildConfig(yaml);
+        PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
+        assertTrue(partitionGroupConfig.isEnabled());
+        assertEquals(PartitionGroupConfig.MemberGroupType.NODE_AWARE, partitionGroupConfig.getGroupType());
+    }
+
+    @Override
+    @Test
     public void testPartitionGroupSPI() {
         String yaml = ""
                 + "hazelcast:\n"
