@@ -19,22 +19,15 @@ package com.hazelcast.sql.impl.calcite.validate.literal;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlLiteral;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public class HazelcastSqlTypedLiteral extends HazelcastSqlLiteral {
-    public HazelcastSqlTypedLiteral(SqlLiteral original, Object value, SqlTypeName typeName) {
+public class TypedLiteral extends Literal {
+    public TypedLiteral(SqlLiteral original, Object value, SqlTypeName typeName) {
         super(original, value, typeName);
     }
 
     @Override
     public RelDataType getType(HazelcastTypeFactory typeFactory) {
         return typeFactory.createSqlType(typeName);
-    }
-
-    @Override
-    public SqlNode clone(SqlParserPos pos) {
-        return new HazelcastSqlTypedLiteral(original.clone(pos), value, typeName);
     }
 }

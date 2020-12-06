@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.validate;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
 import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
@@ -116,7 +117,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     @Override
     public RelDataType deriveTypeImpl(SqlValidatorScope scope, SqlNode operand) {
         if (operand.getKind() == SqlKind.LITERAL) {
-            RelDataType literalType = CalciteUtils.literalType(operand, (HazelcastTypeFactory) typeFactory);
+            RelDataType literalType = LiteralUtils.literalType(operand, (HazelcastTypeFactory) typeFactory);
 
             if (literalType != null) {
                 return literalType;
@@ -142,6 +143,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         // skip it if a call has a fixed type, for instance AND always has
         // BOOLEAN type, so operands may end up having no validated type.
         deriveType(scope, call);
+
         super.validateCall(call, scope);
     }
 
@@ -156,7 +158,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 // the first '+' refers to the standard Calcite SqlStdOperatorTable.PLUS
                 // operator and the second '+' refers to HazelcastSqlOperatorTable.PLUS
                 // operator.
-
                 rewritten.accept(rewriteVisitor);
             }
         }
@@ -169,8 +170,32 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         return (HazelcastTypeCoercion) super.getTypeCoercion();
     }
 
-    public void setKnownAndValidatedNodeType(SqlNode node, RelDataType type) {
-        setValidatedNodeType(node, type);
+    public void setParameterConverter(int ordinal, ParameterConverter parameterConverter) {
+        parameterConverterMap.put(ordinal, parameterConverter);
+    }
+
+    public ParameterConverter[] getParameterConverters(SqlNode node) {
+        // Get original parameter row type.
+        RelDataType rowType = getParameterRowType(node);
+
+        // Create precedence-based converters with optional override by a more specialized converters.
+        ParameterConverter[] res = new ParameterConverter[rowType.getFieldCount()];
+
+        for (int i = 0; i < res.length; i++) {
+            ParameterConverter converter = parameterConverterMap.get(i);
+
+            if (converter == null) {
+                converter = new StrictParameterConverter(
+                    i,
+                    parameterPositionMap.get(i),
+                    CalciteUtils.map(rowType.getFieldList().get(i).getType().getSqlTypeName())
+                );
+            }
+
+            res[i] = converter;
+        }
+
+        return res;
     }
 
     private boolean isHiddenColumn(SqlNode node, SelectScope scope) {
@@ -217,33 +242,5 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         }
 
         return Util.last(names);
-    }
-
-    public void setParameterConverter(int ordinal, ParameterConverter parameterConverter) {
-        parameterConverterMap.put(ordinal, parameterConverter);
-    }
-
-    public ParameterConverter[] getParameterConverters(SqlNode node) {
-        // Get original parameter row type.
-        RelDataType rowType = getParameterRowType(node);
-
-        // Create precedence-based converters with optional override by a more specialized converters.
-        ParameterConverter[] res = new ParameterConverter[rowType.getFieldCount()];
-
-        for (int i = 0; i < res.length; i++) {
-            ParameterConverter converter = parameterConverterMap.get(i);
-
-            if (converter == null) {
-                converter = new StrictParameterConverter(
-                    i,
-                    parameterPositionMap.get(i),
-                    CalciteUtils.map(rowType.getFieldList().get(i).getType().getSqlTypeName())
-                );
-            }
-
-            res[i] = converter;
-        }
-
-        return res;
     }
 }

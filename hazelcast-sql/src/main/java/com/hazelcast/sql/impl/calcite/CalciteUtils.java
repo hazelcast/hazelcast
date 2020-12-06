@@ -16,16 +16,12 @@
 
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.sql.impl.calcite.validate.literal.HazelcastSqlLiteral;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.SqlLiteral;
-import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.HashMap;
@@ -120,30 +116,6 @@ public final class CalciteUtils {
         }
 
         return type;
-    }
-
-    public static SqlTypeName literalTypeName(SqlNode operand) {
-        if (operand instanceof SqlLiteral) {
-            HazelcastSqlLiteral literal = HazelcastSqlLiteral.convert((SqlLiteral) operand);
-
-            if (literal != null) {
-                return literal.getTypeName();
-            }
-        }
-
-        return null;
-    }
-
-    public static RelDataType literalType(SqlNode operand, HazelcastTypeFactory typeFactory) {
-        if (operand instanceof SqlLiteral) {
-            HazelcastSqlLiteral literal = HazelcastSqlLiteral.convert((SqlLiteral) operand);
-
-            if (literal != null) {
-                return literal.getType(typeFactory);
-            }
-        }
-
-        return null;
     }
 
     public static boolean isObjectIdentifier(SqlIdentifier identifier) {

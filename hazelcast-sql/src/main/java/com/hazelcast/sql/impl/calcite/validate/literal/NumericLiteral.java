@@ -22,17 +22,16 @@ import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNumericLiteral;
-import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.math.BigDecimal;
 
-public final class HazelcastSqlNumericLiteral extends HazelcastSqlLiteral {
+public final class NumericLiteral extends Literal {
 
     private final Mode mode;
     private final int bitWidth;
 
-    private HazelcastSqlNumericLiteral(
+    private NumericLiteral(
         SqlLiteral original,
         Object value,
         SqlTypeName typeName,
@@ -45,7 +44,7 @@ public final class HazelcastSqlNumericLiteral extends HazelcastSqlLiteral {
         this.bitWidth = bitWidth;
     }
 
-    public static HazelcastSqlNumericLiteral create(SqlNumericLiteral original) {
+    public static NumericLiteral create(SqlNumericLiteral original) {
         BigDecimal valueDecimal = (BigDecimal) original.getValue();
 
         if (original.isExact()) {
@@ -78,7 +77,7 @@ public final class HazelcastSqlNumericLiteral extends HazelcastSqlLiteral {
                             adjustedValue = value;
                     }
 
-                    return new HazelcastSqlNumericLiteral(
+                    return new NumericLiteral(
                         original,
                         adjustedValue,
                         type.getSqlTypeName(),
@@ -91,7 +90,7 @@ public final class HazelcastSqlNumericLiteral extends HazelcastSqlLiteral {
             }
 
             // Dealing with DECIMAL
-            return new HazelcastSqlNumericLiteral(
+            return new NumericLiteral(
                 original,
                 valueDecimal,
                 SqlTypeName.DECIMAL,
@@ -101,7 +100,7 @@ public final class HazelcastSqlNumericLiteral extends HazelcastSqlLiteral {
 
         } else {
             // Dealing with DOUBLE
-            return new HazelcastSqlNumericLiteral(
+            return new NumericLiteral(
                 original,
                 valueDecimal,
                 SqlTypeName.DOUBLE,
@@ -109,11 +108,6 @@ public final class HazelcastSqlNumericLiteral extends HazelcastSqlLiteral {
                 0
             );
         }
-    }
-
-    @Override
-    public HazelcastSqlNumericLiteral clone(SqlParserPos pos) {
-        return new HazelcastSqlNumericLiteral(original.clone(pos), value, typeName, mode, bitWidth);
     }
 
     @Override
