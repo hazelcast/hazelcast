@@ -40,8 +40,6 @@ import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
-
 public final class HazelcastCastFunction extends HazelcastFunction {
 
     public static final HazelcastCastFunction INSTANCE = new HazelcastCastFunction();
@@ -50,7 +48,7 @@ public final class HazelcastCastFunction extends HazelcastFunction {
         super(
             "CAST",
             SqlKind.CAST,
-            wrap(new CastReturnTypeInference()),
+            new CastReturnTypeInference(),
             new CastOperandTypeInference(),
             SqlFunctionCategory.SYSTEM
         );

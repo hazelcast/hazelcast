@@ -32,8 +32,6 @@ import org.apache.calcite.util.Litmus;
 
 import java.util.Arrays;
 
-import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
-
 public final class HazelcastAndOrPredicate extends HazelcastBinaryOperator {
 
     public static final HazelcastAndOrPredicate AND = new HazelcastAndOrPredicate(
@@ -54,7 +52,7 @@ public final class HazelcastAndOrPredicate extends HazelcastBinaryOperator {
             kind,
             prec,
             true,
-            wrap(ReturnTypes.BOOLEAN_NULLABLE),
+            ReturnTypes.BOOLEAN_NULLABLE,
             InferTypes.BOOLEAN
         );
     }

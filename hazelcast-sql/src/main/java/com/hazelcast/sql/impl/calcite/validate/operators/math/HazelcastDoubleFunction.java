@@ -26,7 +26,6 @@ import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
-import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 
 /**
@@ -37,7 +36,7 @@ public class HazelcastDoubleFunction extends HazelcastFunction {
         super(
             name,
             SqlKind.OTHER_FUNCTION,
-            wrap(ReturnTypes.DOUBLE_NULLABLE),
+            ReturnTypes.DOUBLE_NULLABLE,
             new ReplaceUnknownOperandTypeInference(BIGINT),
             SqlFunctionCategory.NUMERIC
         );

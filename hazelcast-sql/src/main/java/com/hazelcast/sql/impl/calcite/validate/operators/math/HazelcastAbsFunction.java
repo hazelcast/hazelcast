@@ -29,7 +29,6 @@ import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
-import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 
 public final class HazelcastAbsFunction extends HazelcastFunction {
@@ -40,7 +39,7 @@ public final class HazelcastAbsFunction extends HazelcastFunction {
         super(
             "ABS",
             SqlKind.OTHER_FUNCTION,
-            wrap(ReturnTypes.ARG0),
+            ReturnTypes.ARG0,
             new ReplaceUnknownOperandTypeInference(BIGINT),
             SqlFunctionCategory.NUMERIC
         );

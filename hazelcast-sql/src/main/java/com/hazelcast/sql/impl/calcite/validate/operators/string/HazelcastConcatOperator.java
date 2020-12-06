@@ -45,7 +45,7 @@ public final class HazelcastConcatOperator extends HazelcastBinaryOperator {
             SqlKind.OTHER,
             SqlStdOperatorTable.CONCAT.getLeftPrec(),
             true,
-            wrap(ReturnTypes.DYADIC_STRING_SUM_PRECISION_NULLABLE),
+            ReturnTypes.DYADIC_STRING_SUM_PRECISION_NULLABLE,
             new ReplaceUnknownOperandTypeInference(VARCHAR)
         );
     }

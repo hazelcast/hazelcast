@@ -27,7 +27,6 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.DAY_INTERVAL_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_DAY_SECOND;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_YEAR_MONTH;
@@ -170,15 +169,23 @@ public final class CalciteUtils {
         }
     }
 
+
     /**
-     * @return {@code true} if the given type is a char type, {@code false}
+     * @return {@code true} if the given type is a numeric approximate type, {@code false}
      * otherwise.
      * <p>
-     * Char types are: CHAR and VARCHAR.
+     * Numeric approximate types are: REAL and DOUBLE.
      */
-    // TODO: Review usage
-    public static boolean isCharType(RelDataType type) {
-        return CHAR_TYPES.contains(type.getSqlTypeName());
+    public static boolean isNumericApproximateType(RelDataType type) {
+        switch (type.getSqlTypeName()) {
+            case FLOAT:
+            case REAL:
+            case DOUBLE:
+                return true;
+
+            default:
+                return false;
+        }
     }
 
     /**

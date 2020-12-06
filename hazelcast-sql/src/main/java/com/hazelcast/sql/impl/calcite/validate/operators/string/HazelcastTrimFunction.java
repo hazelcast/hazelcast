@@ -16,13 +16,12 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.string;
 
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBindingSignatureErrorAware;
 import com.hazelcast.sql.impl.calcite.validate.operand.AnyOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBindingSignatureErrorAware;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCall;
@@ -42,8 +41,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
-import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
-
 /**
  * Our own implementation of the TRIM function that has custom operand type inference to allow for dynamic parameters.
  * <p>
@@ -57,7 +54,7 @@ public final class HazelcastTrimFunction extends HazelcastFunction implements Ha
         super(
             "TRIM",
             SqlKind.TRIM,
-            wrap(ReturnTypes.ARG2_NULLABLE),
+            ReturnTypes.ARG2_NULLABLE,
             new ReplaceUnknownOperandTypeInference(SqlTypeName.VARCHAR),
             SqlFunctionCategory.STRING
         );

@@ -43,6 +43,7 @@ import java.util.Set;
 
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 import static org.apache.calcite.sql.type.SqlTypeName.APPROX_TYPES;
+import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.REAL;
 
@@ -54,7 +55,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.REAL;
  * literals and casts with more precise types assigned during the validation.
  */
 public class HazelcastSqlToRelConverter extends SqlToRelConverter {
-
+    /** See {@link #convertCall(SqlNode, Blackboard)} for more information. */
     private final Set<SqlNode> callSet = Collections.newSetFromMap(new IdentityHashMap<>());
 
     public HazelcastSqlToRelConverter(
@@ -70,6 +71,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
     @Override
     protected RexNode convertExtendedExpression(SqlNode node, Blackboard blackboard) {
+        // Hook into conversion of literals, casts and calls to execute our own logic.
         if (node.getKind() == SqlKind.LITERAL) {
             return convertLiteral((SqlLiteral) node);
         } else if (node.getKind() == SqlKind.CAST) {
@@ -81,6 +83,13 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         return null;
     }
 
+    /**
+     * Convert the literal taking in count the type that we assigned to it during validation.
+     * Otherwise Apache Calcite will try to deduce literal type again, leading to incorrect exposed types.
+     * <p>
+     * For example, {@code [x:BIGINT > 1]} is interpreted as {@code [x:BIGINT > 1:BIGINT]} during the validation.
+     * If this method is not invoked, Apache Calcite will convert it to {[@code x:BIGINT > 1:TINYINT]} instead.
+     */
     private RexNode convertLiteral(SqlLiteral literal) {
         RelDataType type = validator.getValidatedNodeType(literal);
 
@@ -103,7 +112,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
         // Use our to-string conversions for floating point types and BOOLEAN,
         // Calcite does conversions using its own formatting.
-        if (operand.isA(SqlKind.LITERAL) && CalciteUtils.isCharType(to)) {
+        if (operand.isA(SqlKind.LITERAL) && CHAR_TYPES.contains(to.getSqlTypeName())) {
             RexLiteral literal = (RexLiteral) operand;
 
             switch (from.getSqlTypeName()) {
@@ -147,12 +156,27 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         return getRexBuilder().makeCast(to, operand);
     }
 
+    /**
+     * This method overcomes a bug in Apache Calcite that ignores previously resolved return types of the expression
+     * and instead attempts to infer them again using different logic. Without this fix, we will get type resolution
+     * errors after SQL-to-rel conversion.
+     * <p>
+     * The method relies on the fact that all operators use {@link HazelcastReturnTypeInference} as a top-level return type
+     * inference method.
+     * <ul>
+     *     <li>When a call node is observed for the first time, get it's return type and save it to a thread local variable</li>
+     *     <li>Then delegate back to original converter code</li>
+     *     <li>When converter attempts to resolve the return type of a call, he will get the previously saved type from
+     *     the thread-local variable</li>
+     * </ul>
+     */
     private RexNode convertCall(SqlNode node, Blackboard blackboard) {
         if (callSet.add(node)) {
             try {
                 RelDataType type = validator.getValidatedNodeType(node);
 
                 HazelcastReturnTypeInference.push(type);
+
                 try {
                     return blackboard.convertExpression(node);
                 } finally {

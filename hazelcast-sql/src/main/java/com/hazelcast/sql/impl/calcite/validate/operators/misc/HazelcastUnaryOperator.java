@@ -29,7 +29,6 @@ import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
-import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 
 public final class HazelcastUnaryOperator extends HazelcastPrefixOperator {
@@ -47,7 +46,7 @@ public final class HazelcastUnaryOperator extends HazelcastPrefixOperator {
             base.getName(),
             base.getKind(),
             base.getLeftPrec(),
-            wrap(ReturnTypes.ARG0),
+            ReturnTypes.ARG0,
             new ReplaceUnknownOperandTypeInference(BIGINT)
         );
 

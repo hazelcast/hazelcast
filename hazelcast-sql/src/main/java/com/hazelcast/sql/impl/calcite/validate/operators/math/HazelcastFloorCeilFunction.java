@@ -31,7 +31,6 @@ import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.validate.SqlMonotonicity;
 
-import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 
 public final class HazelcastFloorCeilFunction extends HazelcastFunction {
@@ -43,7 +42,7 @@ public final class HazelcastFloorCeilFunction extends HazelcastFunction {
         super(
             kind.name(),
             kind,
-            wrap(ReturnTypes.ARG0_OR_EXACT_NO_SCALE),
+            ReturnTypes.ARG0_OR_EXACT_NO_SCALE,
             new ReplaceUnknownOperandTypeInference(DECIMAL),
             SqlFunctionCategory.NUMERIC
         );

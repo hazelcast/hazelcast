@@ -33,7 +33,6 @@ import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
@@ -45,7 +44,7 @@ public final class HazelcastSubstringFunction extends HazelcastFunction {
         super(
             "SUBSTRING",
             SqlKind.OTHER_FUNCTION,
-            wrap(ReturnTypes.ARG0_NULLABLE_VARYING),
+            ReturnTypes.ARG0_NULLABLE_VARYING,
             new ReplaceUnknownOperandTypeInference(new SqlTypeName[] { VARCHAR, INTEGER, INTEGER }),
             SqlFunctionCategory.STRING
         );

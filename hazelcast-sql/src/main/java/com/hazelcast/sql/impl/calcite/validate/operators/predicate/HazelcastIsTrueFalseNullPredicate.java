@@ -34,7 +34,6 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 
 public final class HazelcastIsTrueFalseNullPredicate extends HazelcastPostfixOperator {
@@ -64,7 +63,7 @@ public final class HazelcastIsTrueFalseNullPredicate extends HazelcastPostfixOpe
             base.getName(),
             base.getKind(),
             base.getLeftPrec(),
-            wrap(ReturnTypes.BOOLEAN_NOT_NULL),
+            ReturnTypes.BOOLEAN_NOT_NULL,
             objectOperand ? OperandTypeInference.OBJECT : OperandTypeInference.BOOLEAN
         );
 

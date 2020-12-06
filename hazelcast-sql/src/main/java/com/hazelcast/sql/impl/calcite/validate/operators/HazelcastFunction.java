@@ -23,6 +23,8 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
+import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
+
 public abstract class HazelcastFunction extends SqlFunction implements HazelcastOperandTypeCheckerAware {
     protected HazelcastFunction(
         String name,
@@ -31,7 +33,7 @@ public abstract class HazelcastFunction extends SqlFunction implements Hazelcast
         SqlOperandTypeInference operandTypeInference,
         SqlFunctionCategory category
     ) {
-        super(name, kind, returnTypeInference, operandTypeInference, null, category);
+        super(name, kind, wrap(returnTypeInference), operandTypeInference, null, category);
     }
 
     @Override

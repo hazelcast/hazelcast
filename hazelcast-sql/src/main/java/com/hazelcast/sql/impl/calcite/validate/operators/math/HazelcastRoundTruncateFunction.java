@@ -29,7 +29,6 @@ import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 
@@ -42,7 +41,7 @@ public final class HazelcastRoundTruncateFunction extends HazelcastFunction {
         super(
             name,
             SqlKind.OTHER_FUNCTION,
-            wrap(ReturnTypes.ARG0_NULLABLE),
+            ReturnTypes.ARG0_NULLABLE,
             new ReplaceUnknownOperandTypeInference(new SqlTypeName[] { DECIMAL, INTEGER }),
             SqlFunctionCategory.NUMERIC
         );

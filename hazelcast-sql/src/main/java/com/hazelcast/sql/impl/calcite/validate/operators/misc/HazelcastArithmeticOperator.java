@@ -28,8 +28,6 @@ import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.validate.SqlMonotonicity;
 
-import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
-
 public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
 
     public static final HazelcastArithmeticOperator PLUS = new HazelcastArithmeticOperator(SqlStdOperatorTable.PLUS);
@@ -43,7 +41,7 @@ public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
             base.getKind(),
             base.getLeftPrec(),
             true,
-            wrap(ReturnTypes.ARG0),
+            ReturnTypes.ARG0,
             BinaryOperatorOperandTypeInference.INSTANCE
         );
     }

@@ -49,7 +49,7 @@ public final class HazelcastLikeOperator extends HazelcastSpecialOperator {
             SqlKind.LIKE,
             PRECEDENCE,
             false,
-            wrap(ReturnTypes.BOOLEAN_NULLABLE),
+            ReturnTypes.BOOLEAN_NULLABLE,
             new ReplaceUnknownOperandTypeInference(VARCHAR)
         );
     }

@@ -26,15 +26,13 @@ import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
-import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
-
 public class HazelcastNotPredicate extends HazelcastPrefixOperator {
     public HazelcastNotPredicate() {
         super(
             "NOT",
             SqlKind.NOT,
             SqlStdOperatorTable.NOT.getLeftPrec(),
-            wrap(ReturnTypes.BOOLEAN_NULLABLE),
+            ReturnTypes.BOOLEAN_NULLABLE,
             InferTypes.BOOLEAN
         );
     }
