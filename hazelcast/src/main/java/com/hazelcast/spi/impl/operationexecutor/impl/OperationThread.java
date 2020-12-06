@@ -142,7 +142,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
             } else if (task instanceof Runnable) {
                 process((Runnable) task);
             } else if (task instanceof TaskBatch) {
-                putBackInQueue = process((TaskBatch) task);
+                process((TaskBatch) task);
             } else {
                 throw new IllegalStateException("Unhandled task:" + task);
             }
@@ -213,19 +213,11 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         completedRunnableCount.inc();
     }
 
-    /**
-     * Runs the provided task batch.
-     *
-     * @param batch the task batch to execute
-     * @return {@code true} if this task batch was not executed and should be retried at a later time,
-     * {@code false} if the task batch should not be retried, either because it
-     * timed out or has run successfully
-     */
-    private boolean process(TaskBatch batch) {
+    private void process(TaskBatch batch) {
         Object task = batch.next();
         if (task == null) {
             completedOperationBatchCount.inc();
-            return false;
+            return;
         }
 
         try {
@@ -241,7 +233,6 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         } finally {
             queue.add(batch, false);
         }
-        return true;
     }
 
     @Override
