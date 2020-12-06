@@ -170,7 +170,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         privateAddress = new Address("192.168.0.1", 5702);
 
         // private member address is correct
-        Member member = new MemberImpl(privateAddress, VERSION, false);
+        Member member = new MemberImpl(privateAddress, VERSION, false, UUID.randomUUID());
         // public member address is correct
         member.getAddressMap().put(EndpointQualifier.resolve(ProtocolType.CLIENT, "public"),
                 new Address("127.0.0.1", 5701));

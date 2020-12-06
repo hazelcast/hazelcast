@@ -151,7 +151,7 @@ public class TranslateToPublicAddressProviderTest {
 
         // when
         translateProvider.refresh(defaultAddressProvider(),
-                asList(member(REACHABLE_HOST, UNREACHABLE_HOST), member(UNREACHABLE_HOST, UNREACHABLE_HOST)));
+                asList(member(REACHABLE_HOST, UNREACHABLE_HOST), member(REACHABLE_HOST, UNREACHABLE_HOST)));
         boolean result = translateProvider.get();
 
         // then
@@ -187,7 +187,8 @@ public class TranslateToPublicAddressProviderTest {
 
     @NotNull
     private TranslateToPublicAddressProvider createTranslateProvider() {
-        return new TranslateToPublicAddressProvider(config, new HazelcastProperties(config.getProperties()), mock(ILogger.class));
+        return new TranslateToPublicAddressProvider(config.getNetworkConfig(),
+                new HazelcastProperties(config.getProperties()), mock(ILogger.class));
     }
 
     @NotNull

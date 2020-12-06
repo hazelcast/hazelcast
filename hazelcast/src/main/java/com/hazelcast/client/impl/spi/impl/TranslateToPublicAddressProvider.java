@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
-import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.cluster.Address;
@@ -40,13 +40,13 @@ class TranslateToPublicAddressProvider {
     private static final int REACHABLE_CHECK_NUMBER = 3;
     private static final EndpointQualifier CLIENT_PUBLIC_ENDPOINT_QUALIFIER =
             EndpointQualifier.resolve(ProtocolType.CLIENT, "public");
-    private final ClientConfig config;
+    private final ClientNetworkConfig config;
     private final HazelcastProperties properties;
     private final ILogger logger;
 
     private volatile boolean translateToPublicAddress;
 
-    TranslateToPublicAddressProvider(ClientConfig config, HazelcastProperties properties, ILogger logger) {
+    TranslateToPublicAddressProvider(ClientNetworkConfig config, HazelcastProperties properties, ILogger logger) {
         this.config = config;
         this.properties = properties;
         this.logger = logger;
@@ -66,7 +66,20 @@ class TranslateToPublicAddressProvider {
         // we will try to decide if we should use private/public address automatically in that case.
         String publicIpEnabledProperty = properties.getString(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED);
         if (publicIpEnabledProperty == null) {
-            if (members.isEmpty() || memberInternalAddressAsDefinedInClientConfig(members)) {
+            if (config.getSSLConfig().isEnabled()) {
+                if (logger.isFineEnabled()) {
+                    logger.info("SSL is configured. The client will use internal addresses to communicate with the cluster. If "
+                            + "members are not reachable via private addresses, "
+                            + "please set \"hazelcast.discovery.public.ip.enabled\" to true ");
+                }
+                return false;
+            }
+
+            if (memberInternalAddressAsDefinedInClientConfig(members)) {
+                if (logger.isFineEnabled()) {
+                    logger.info("There are internal addresses of members used in the config."
+                            + " The client will use internal addresses");
+                }
                 return false;
             }
 
@@ -82,7 +95,7 @@ class TranslateToPublicAddressProvider {
      * able to connect to members via configured address. No need to use make any address translation.
      */
     boolean memberInternalAddressAsDefinedInClientConfig(Collection<MemberInfo> members) {
-        List<String> addresses = config.getNetworkConfig().getAddresses();
+        List<String> addresses = config.getAddresses();
         return members.stream()
                 .map(MemberInfo::getAddress)
                 .anyMatch(a -> addresses.contains(a.getHost())
@@ -104,16 +117,29 @@ class TranslateToPublicAddressProvider {
             }
             MemberInfo member = iter.next();
             Address publicAddress = member.getAddressMap().get(CLIENT_PUBLIC_ENDPOINT_QUALIFIER);
+            Address internalAddress = member.getAddress();
             if (publicAddress == null) {
+                if (logger.isFineEnabled()) {
+                    logger.fine("The public address is not available on the member. The client will use internal addresses");
+                }
                 return false;
             }
-            Address internalAddress = member.getAddress();
             if (isReachable(internalAddress, REACHABLE_ADDRESS_TIMEOUT_MILLIS)) {
+                if (logger.isFineEnabled()) {
+                    logger.fine("The internal address is reachable. The client will use the internal addresses");
+                }
                 return false;
             }
             if (!isReachable(publicAddress, NON_REACHABLE_ADDRESS_TIMEOUT_MILLIS)) {
+                if (logger.isFineEnabled()) {
+                    logger.fine("Public address + " + publicAddress
+                            + "  is not reachable. The client will use internal addresses");
+                }
                 return false;
             }
+        }
+        if (logger.isFineEnabled()) {
+            logger.fine("Members are accessible via only public addresses. The client will use public addresses");
         }
         return true;
     }
