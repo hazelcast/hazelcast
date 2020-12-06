@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalTime;
 
 import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
@@ -168,6 +169,115 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void testVarchar_literal() {
+        put(1);
+
+        // VARCHAR -> VARCHAR
+        checkValue0(sql(stringLiteral("foo"), VARCHAR), VARCHAR, "foo");
+        checkValue0(sql(stringLiteral("true"), VARCHAR), VARCHAR, "true");
+        checkValue0(sql(stringLiteral("false"), VARCHAR), VARCHAR, "false");
+        checkValue0(sql(stringLiteral(LOCAL_DATE_VAL), VARCHAR), VARCHAR, LOCAL_DATE_VAL.toString());
+        checkValue0(sql(stringLiteral(LOCAL_TIME_VAL), VARCHAR), VARCHAR, LOCAL_TIME_VAL.toString());
+        checkValue0(sql(stringLiteral(LOCAL_DATE_TIME_VAL), VARCHAR), VARCHAR, LOCAL_DATE_TIME_VAL.toString());
+        checkValue0(sql(stringLiteral(OFFSET_DATE_TIME_VAL), VARCHAR), VARCHAR, OFFSET_DATE_TIME_VAL.toString());
+
+        // VARCHAR -> BOOLEAN
+        checkFailure0(sql(stringLiteral("foo"), BOOLEAN), DATA_EXCEPTION, "Cannot parse VARCHAR value to BOOLEAN");
+        checkFailure0(sql(stringLiteral("null"), BOOLEAN), DATA_EXCEPTION, "Cannot parse VARCHAR value to BOOLEAN");
+        checkValue0(sql(stringLiteral("true"), BOOLEAN), BOOLEAN, true);
+        checkValue0(sql(stringLiteral("True"), BOOLEAN), BOOLEAN, true);
+        checkValue0(sql(stringLiteral("false"), BOOLEAN), BOOLEAN, false);
+        checkValue0(sql(stringLiteral("False"), BOOLEAN), BOOLEAN, false);
+
+        // VARCHAR -> TINYINT
+        checkValue0(sql(stringLiteral(1), TINYINT), TINYINT, (byte) 1);
+        checkValue0(sql(stringLiteral(Byte.MAX_VALUE), TINYINT), TINYINT, Byte.MAX_VALUE);
+        checkValue0(sql(stringLiteral(Byte.MIN_VALUE), TINYINT), TINYINT, Byte.MIN_VALUE);
+        checkFailure0(sql(stringLiteral(Short.MAX_VALUE), TINYINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to TINYINT");
+        checkFailure0(sql(stringLiteral(Short.MIN_VALUE), TINYINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to TINYINT");
+        checkFailure0(sql(stringLiteral("foo"), TINYINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to TINYINT");
+        checkFailure0(sql(stringLiteral("true"), TINYINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to TINYINT");
+        checkFailure0(sql(stringLiteral("false"), TINYINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to TINYINT");
+        checkFailure0(sql(stringLiteral("1.1"), TINYINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to TINYINT");
+
+        // VARCHAR -> SMALLINT
+        checkValue0(sql(stringLiteral(1), SMALLINT), SMALLINT, (short) 1);
+        checkValue0(sql(stringLiteral(Short.MAX_VALUE), SMALLINT), SMALLINT, Short.MAX_VALUE);
+        checkValue0(sql(stringLiteral(Short.MIN_VALUE), SMALLINT), SMALLINT, Short.MIN_VALUE);
+        checkFailure0(sql(stringLiteral(Integer.MAX_VALUE), SMALLINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to SMALLINT");
+        checkFailure0(sql(stringLiteral(Integer.MIN_VALUE), SMALLINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to SMALLINT");
+        checkFailure0(sql(stringLiteral("foo"), SMALLINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to SMALLINT");
+        checkFailure0(sql(stringLiteral("true"), SMALLINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to SMALLINT");
+        checkFailure0(sql(stringLiteral("false"), SMALLINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to SMALLINT");
+        checkFailure0(sql(stringLiteral("1.1"), SMALLINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to SMALLINT");
+
+        // VARCHAR -> INTEGER
+        checkValue0(sql(stringLiteral(1), INTEGER), INTEGER, 1);
+        checkValue0(sql(stringLiteral(Integer.MAX_VALUE), INTEGER), INTEGER, Integer.MAX_VALUE);
+        checkValue0(sql(stringLiteral(Integer.MIN_VALUE), INTEGER), INTEGER, Integer.MIN_VALUE);
+        checkFailure0(sql(stringLiteral(Long.MAX_VALUE), INTEGER), DATA_EXCEPTION, "Cannot parse VARCHAR value to INTEGER");
+        checkFailure0(sql(stringLiteral(Long.MIN_VALUE), INTEGER), DATA_EXCEPTION, "Cannot parse VARCHAR value to INTEGER");
+        checkFailure0(sql(stringLiteral("foo"), INTEGER), DATA_EXCEPTION, "Cannot parse VARCHAR value to INTEGER");
+        checkFailure0(sql(stringLiteral("true"), INTEGER), DATA_EXCEPTION, "Cannot parse VARCHAR value to INTEGER");
+        checkFailure0(sql(stringLiteral("false"), INTEGER), DATA_EXCEPTION, "Cannot parse VARCHAR value to INTEGER");
+        checkFailure0(sql(stringLiteral("1.1"), INTEGER), DATA_EXCEPTION, "Cannot parse VARCHAR value to INTEGER");
+
+        // VARCHAR -> BIGINT
+        checkValue0(sql(stringLiteral(1), BIGINT), BIGINT, 1L);
+        checkValue0(sql(stringLiteral(Long.MAX_VALUE), BIGINT), BIGINT, Long.MAX_VALUE);
+        checkValue0(sql(stringLiteral(Long.MIN_VALUE), BIGINT), BIGINT, Long.MIN_VALUE);
+        checkFailure0(sql(stringLiteral(Long.MAX_VALUE + "0"), BIGINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to BIGINT");
+        checkFailure0(sql(stringLiteral(Long.MIN_VALUE + "0"), BIGINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to BIGINT");
+        checkFailure0(sql(stringLiteral("foo"), BIGINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to BIGINT");
+        checkFailure0(sql(stringLiteral("true"), BIGINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to BIGINT");
+        checkFailure0(sql(stringLiteral("false"), BIGINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to BIGINT");
+        checkFailure0(sql(stringLiteral("1.1"), BIGINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to BIGINT");
+
+        // VARCHAR -> DECIMAL
+        checkValue0(sql(stringLiteral(1), DECIMAL), DECIMAL, decimal(1));
+        checkValue0(sql(stringLiteral("1.1"), DECIMAL), DECIMAL, decimal("1.1"));
+        checkValue0(sql(stringLiteral(Long.MAX_VALUE + "0"), DECIMAL), DECIMAL, decimal(Long.MAX_VALUE + "0"));
+        checkValue0(sql(stringLiteral(Long.MIN_VALUE + "0"), DECIMAL), DECIMAL, decimal(Long.MIN_VALUE + "0"));
+        checkFailure0(sql(stringLiteral("foo"), DECIMAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to DECIMAL");
+        checkFailure0(sql(stringLiteral("true"), DECIMAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to DECIMAL");
+        checkFailure0(sql(stringLiteral("false"), DECIMAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to DECIMAL");
+
+        // VARCHAR -> REAL
+        checkValue0(sql(stringLiteral(1), REAL), REAL, 1f);
+        checkValue0(sql(stringLiteral("1.1"), REAL), REAL, 1.1f);
+        checkFailure0(sql(stringLiteral("foo"), REAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to REAL");
+        checkFailure0(sql(stringLiteral("true"), REAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to REAL");
+        checkFailure0(sql(stringLiteral("false"), REAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to REAL");
+
+        // VARCHAR -> DOUBLE
+        checkValue0(sql(stringLiteral(1), DOUBLE), DOUBLE, 1d);
+        checkValue0(sql(stringLiteral("1.1"), DOUBLE), DOUBLE, 1.1d);
+        checkFailure0(sql(stringLiteral("foo"), DOUBLE), DATA_EXCEPTION, "Cannot parse VARCHAR value to DOUBLE");
+        checkFailure0(sql(stringLiteral("true"), DOUBLE), DATA_EXCEPTION, "Cannot parse VARCHAR value to DOUBLE");
+        checkFailure0(sql(stringLiteral("false"), DOUBLE), DATA_EXCEPTION, "Cannot parse VARCHAR value to DOUBLE");
+
+        // VARCHAR -> DATE
+        checkValue0(sql(stringLiteral(LOCAL_DATE_VAL), DATE), DATE, LOCAL_DATE_VAL);
+        checkFailure0(sql(stringLiteral("foo"), DATE), DATA_EXCEPTION, "Cannot parse VARCHAR value to DATE");
+
+        // VARCHAR -> TIME
+        // TODO: Bug in Calcite simplifier - it adds wrong second. Fix when working on temporal types support
+        checkValue0(sql(stringLiteral(LOCAL_TIME_VAL), TIME), TIME, LocalTime.parse("00:00:01"));
+        checkFailure0(sql(stringLiteral("foo"), TIME), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIME");
+
+        // VARCHAR -> TIMESTAMP
+        checkValue0(sql(stringLiteral(LOCAL_DATE_TIME_VAL), TIMESTAMP), TIMESTAMP, LOCAL_DATE_TIME_VAL);
+        checkFailure0(sql(stringLiteral("foo"), TIMESTAMP), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP");
+
+        // VARCHAR -> TIMESTAMP_WITH_TIME_ZONE
+        checkValue0(sql(stringLiteral(OFFSET_DATE_TIME_VAL), TIMESTAMP_WITH_TIME_ZONE), TIMESTAMP_WITH_TIME_ZONE, OFFSET_DATE_TIME_VAL);
+        checkFailure0(sql(stringLiteral("foo"), TIMESTAMP_WITH_TIME_ZONE), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP_WITH_TIME_ZONE");
+
+        // VARCHAR -> OBJECT
+        checkValue0(sql(stringLiteral("foo"), OBJECT), OBJECT, "foo");
+    }
+
+    @Test
     public void testBoolean() {
         putAndCheckValue(new ExpressionValue.BooleanVal(), sql("field1", VARCHAR), VARCHAR, null);
         putAndCheckValue(new ExpressionValue.BooleanVal(), sql("field1", BOOLEAN), BOOLEAN, null);
@@ -188,6 +298,29 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(true, sql("this", TIME), PARSING, castError(BOOLEAN, TIME));
         putAndCheckFailure(true, sql("this", TIMESTAMP), PARSING, castError(BOOLEAN, TIMESTAMP));
         putAndCheckFailure(true, sql("this", TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(BOOLEAN, TIMESTAMP_WITH_TIME_ZONE));
+    }
+
+    @Test
+    public void testBoolean_literal() {
+        put(1);
+
+        checkValue0(sql(literal(true), VARCHAR), VARCHAR, "true");
+        checkValue0(sql(literal(false), VARCHAR), VARCHAR, "false");
+        checkValue0(sql(literal(true), BOOLEAN), BOOLEAN, true);
+        checkValue0(sql(literal(false), BOOLEAN), BOOLEAN, false);
+        checkValue0(sql(literal(true), OBJECT), OBJECT, true);
+
+        checkFailure0(sql(literal(true), TINYINT), PARSING, castError(BOOLEAN, TINYINT));
+        checkFailure0(sql(literal(true), SMALLINT), PARSING, castError(BOOLEAN, SMALLINT));
+        checkFailure0(sql(literal(true), INTEGER), PARSING, castError(BOOLEAN, INTEGER));
+        checkFailure0(sql(literal(true), BIGINT), PARSING, castError(BOOLEAN, BIGINT));
+        checkFailure0(sql(literal(true), DECIMAL), PARSING, castError(BOOLEAN, DECIMAL));
+        checkFailure0(sql(literal(true), REAL), PARSING, castError(BOOLEAN, REAL));
+        checkFailure0(sql(literal(true), DOUBLE), PARSING, castError(BOOLEAN, DOUBLE));
+        checkFailure0(sql(literal(true), DATE), PARSING, castError(BOOLEAN, DATE));
+        checkFailure0(sql(literal(true), TIME), PARSING, castError(BOOLEAN, TIME));
+        checkFailure0(sql(literal(true), TIMESTAMP), PARSING, castError(BOOLEAN, TIMESTAMP));
+        checkFailure0(sql(literal(true), TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(BOOLEAN, TIMESTAMP_WITH_TIME_ZONE));
     }
 
     @Test
@@ -240,6 +373,34 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void testTinyint_literal() {
+        put(1);
+
+        checkValue0(sql(literal(1), VARCHAR), VARCHAR, "1");
+
+        checkFailure0(sql(literal(1), BOOLEAN), PARSING, castError(TINYINT, BOOLEAN));
+
+        checkValue0(sql(literal(1), TINYINT), TINYINT, (byte) 1);
+        checkValue0(sql(literal(Byte.MIN_VALUE), TINYINT), TINYINT, Byte.MIN_VALUE);
+        checkValue0(sql(literal(Byte.MAX_VALUE), TINYINT), TINYINT, Byte.MAX_VALUE);
+
+        checkValue0(sql(literal(1), SMALLINT), SMALLINT, (short) 1);
+        checkValue0(sql(literal(1), INTEGER), INTEGER, 1);
+        checkValue0(sql(literal(1), BIGINT), BIGINT, 1L);
+        checkValue0(sql(literal(1), DECIMAL), DECIMAL, decimal(1));
+        checkValue0(sql(literal(1), REAL), REAL, 1f);
+        checkValue0(sql(literal(1), DOUBLE), DOUBLE, 1d);
+
+        checkFailure0(sql(literal(1), DATE), PARSING, castError(TINYINT, DATE));
+        checkFailure0(sql(literal(1), TIME), PARSING, castError(TINYINT, TIME));
+        checkFailure0(sql(literal(1), TIMESTAMP), PARSING, castError(TINYINT, TIMESTAMP));
+        checkFailure0(sql(literal(1), TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(TINYINT, TIMESTAMP_WITH_TIME_ZONE));
+
+        // TODO: RexSimplify guess incorrect type
+        checkValue0(sql(literal(1), OBJECT), OBJECT, 1L);
+    }
+
+    @Test
     public void testSmallint() {
         putAndCheckValue(new ExpressionValue.ShortVal(), sql("field1", VARCHAR), VARCHAR, null);
         putAndCheckValue(new ExpressionValue.ShortVal(), sql("field1", TINYINT), TINYINT, null);
@@ -286,6 +447,33 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure((short) 0, sql("this", TIME), PARSING, castError(SMALLINT, TIME));
         putAndCheckFailure((short) 0, sql("this", TIMESTAMP), PARSING, castError(SMALLINT, TIMESTAMP));
         putAndCheckFailure((short) 0, sql("this", TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(SMALLINT, TIMESTAMP_WITH_TIME_ZONE));
+    }
+
+    @Test
+    public void testSmallint_literal() {
+        put(1);
+
+        checkValue0(sql(literal(Short.MAX_VALUE), VARCHAR), VARCHAR, Short.MAX_VALUE + "");
+
+        checkFailure0(sql(literal(Short.MAX_VALUE), BOOLEAN), PARSING, castError(SMALLINT, BOOLEAN));
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal(Short.MAX_VALUE), TINYINT), TINYINT, (byte) -1);
+
+        checkValue0(sql(literal(Short.MAX_VALUE), SMALLINT), SMALLINT, Short.MAX_VALUE);
+        checkValue0(sql(literal(Short.MAX_VALUE), INTEGER), INTEGER, (int) Short.MAX_VALUE);
+        checkValue0(sql(literal(Short.MAX_VALUE), BIGINT), BIGINT, (long) Short.MAX_VALUE);
+        checkValue0(sql(literal(Short.MAX_VALUE), DECIMAL), DECIMAL, decimal(Short.MAX_VALUE));
+        checkValue0(sql(literal(Short.MAX_VALUE), REAL), REAL, (float) Short.MAX_VALUE);
+        checkValue0(sql(literal(Short.MAX_VALUE), DOUBLE), DOUBLE, (double) Short.MAX_VALUE);
+
+        checkFailure0(sql(literal(Short.MAX_VALUE), DATE), PARSING, castError(SMALLINT, DATE));
+        checkFailure0(sql(literal(Short.MAX_VALUE), TIME), PARSING, castError(SMALLINT, TIME));
+        checkFailure0(sql(literal(Short.MAX_VALUE), TIMESTAMP), PARSING, castError(SMALLINT, TIMESTAMP));
+        checkFailure0(sql(literal(Short.MAX_VALUE), TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(SMALLINT, TIMESTAMP_WITH_TIME_ZONE));
+
+        // TODO: RexSimplify guess incorrect type
+        checkValue0(sql(literal(Short.MAX_VALUE), OBJECT), OBJECT, (long) Short.MAX_VALUE);
     }
 
     @Test
@@ -338,6 +526,35 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void testInteger_literal() {
+        put(1);
+
+        checkValue0(sql(literal(Integer.MAX_VALUE), VARCHAR), VARCHAR, Integer.MAX_VALUE + "");
+
+        checkFailure0(sql(literal(Integer.MAX_VALUE), BOOLEAN), PARSING, castError(INTEGER, BOOLEAN));
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal(Integer.MAX_VALUE), TINYINT), TINYINT, (byte) -1);
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal(Integer.MAX_VALUE), SMALLINT), SMALLINT, (short) -1);
+
+        checkValue0(sql(literal(Integer.MAX_VALUE), INTEGER), INTEGER, Integer.MAX_VALUE);
+        checkValue0(sql(literal(Integer.MAX_VALUE), BIGINT), BIGINT, (long) Integer.MAX_VALUE);
+        checkValue0(sql(literal(Integer.MAX_VALUE), DECIMAL), DECIMAL, decimal(Integer.MAX_VALUE));
+        checkValue0(sql(literal(Integer.MAX_VALUE), REAL), REAL, (float) Integer.MAX_VALUE);
+        checkValue0(sql(literal(Integer.MAX_VALUE), DOUBLE), DOUBLE, (double) Integer.MAX_VALUE);
+
+        checkFailure0(sql(literal(Integer.MAX_VALUE), DATE), PARSING, castError(INTEGER, DATE));
+        checkFailure0(sql(literal(Integer.MAX_VALUE), TIME), PARSING, castError(INTEGER, TIME));
+        checkFailure0(sql(literal(Integer.MAX_VALUE), TIMESTAMP), PARSING, castError(INTEGER, TIMESTAMP));
+        checkFailure0(sql(literal(Integer.MAX_VALUE), TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(INTEGER, TIMESTAMP_WITH_TIME_ZONE));
+
+        // TODO: RexSimplify guess incorrect type
+        checkValue0(sql(literal(Integer.MAX_VALUE), OBJECT), OBJECT, (long) Integer.MAX_VALUE);
+    }
+
+    @Test
     public void testBigint() {
         putAndCheckValue(new ExpressionValue.LongVal(), sql("field1", VARCHAR), VARCHAR, null);
         putAndCheckValue(new ExpressionValue.LongVal(), sql("field1", TINYINT), TINYINT, null);
@@ -384,6 +601,36 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(0L, sql("this", TIME), PARSING, castError(BIGINT, TIME));
         putAndCheckFailure(0L, sql("this", TIMESTAMP), PARSING, castError(BIGINT, TIMESTAMP));
         putAndCheckFailure(0L, sql("this", TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(BIGINT, TIMESTAMP_WITH_TIME_ZONE));
+    }
+
+    @Test
+    public void testBigint_literal() {
+        put(1);
+
+        checkValue0(sql(literal(Long.MAX_VALUE), VARCHAR), VARCHAR, Long.MAX_VALUE + "");
+
+        checkFailure0(sql(literal(Long.MAX_VALUE), BOOLEAN), PARSING, castError(BIGINT, BOOLEAN));
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal(Long.MAX_VALUE), TINYINT), TINYINT, (byte) -1);
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal(Long.MAX_VALUE), SMALLINT), SMALLINT, (short) -1);
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal(Long.MAX_VALUE), INTEGER), INTEGER, -1);
+
+        checkValue0(sql(literal(Long.MAX_VALUE), BIGINT), BIGINT, Long.MAX_VALUE);
+        checkValue0(sql(literal(Long.MAX_VALUE), DECIMAL), DECIMAL, decimal(Long.MAX_VALUE));
+        checkValue0(sql(literal(Long.MAX_VALUE), REAL), REAL, (float) Long.MAX_VALUE);
+        checkValue0(sql(literal(Long.MAX_VALUE), DOUBLE), DOUBLE, (double) Long.MAX_VALUE);
+
+        checkFailure0(sql(literal(Long.MAX_VALUE), DATE), PARSING, castError(BIGINT, DATE));
+        checkFailure0(sql(literal(Long.MAX_VALUE), TIME), PARSING, castError(BIGINT, TIME));
+        checkFailure0(sql(literal(Long.MAX_VALUE), TIMESTAMP), PARSING, castError(BIGINT, TIMESTAMP));
+        checkFailure0(sql(literal(Long.MAX_VALUE), TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(BIGINT, TIMESTAMP_WITH_TIME_ZONE));
+
+        checkValue0(sql(literal(Long.MAX_VALUE), OBJECT), OBJECT, Long.MAX_VALUE);
     }
 
     @Test
@@ -487,6 +734,41 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void testDecimal_literal() {
+        put(1);
+
+        String literal = literal(Long.MAX_VALUE + "0.1");
+        BigDecimal decimalValue = decimal(literal);
+
+        checkValue0(sql(literal, VARCHAR), VARCHAR, literal);
+        checkFailure0(sql(literal, BOOLEAN), PARSING, castError(DECIMAL, BOOLEAN));
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal, TINYINT), TINYINT, (byte) -10);
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal, SMALLINT), SMALLINT, (short) -10);
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal, INTEGER), INTEGER, -10);
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal, BIGINT), BIGINT, -10L);
+
+        checkValue0(sql(literal, DECIMAL), DECIMAL, decimalValue);
+        checkValue0(sql(literal, REAL), REAL, decimalValue.floatValue());
+        checkValue0(sql(literal, DOUBLE), DOUBLE, decimalValue.doubleValue());
+
+        checkFailure0(sql(literal, DATE), PARSING, castError(DECIMAL, DATE));
+        checkFailure0(sql(literal, TIME), PARSING, castError(DECIMAL, TIME));
+        checkFailure0(sql(literal, TIMESTAMP), PARSING, castError(DECIMAL, TIMESTAMP));
+        checkFailure0(sql(literal, TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DECIMAL, TIMESTAMP_WITH_TIME_ZONE));
+
+        // TODO: RexSimplify guess incorrect type
+        checkValue0(sql(literal, OBJECT), OBJECT, (long) -10);
+    }
+
+    @Test
     public void testReal() {
         putAndCheckValue(new ExpressionValue.FloatVal(), sql("field1", VARCHAR), VARCHAR, null);
         putAndCheckValue(new ExpressionValue.FloatVal(), sql("field1", TINYINT), TINYINT, null);
@@ -540,6 +822,77 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(0d, sql("this", TIME), PARSING, castError(DOUBLE, TIME));
         putAndCheckFailure(0d, sql("this", TIMESTAMP), PARSING, castError(DOUBLE, TIMESTAMP));
         putAndCheckFailure(0d, sql("this", TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DOUBLE, TIMESTAMP_WITH_TIME_ZONE));
+    }
+
+    @Test
+    public void testDouble_literal_small() {
+        put(1);
+
+        String literal = literal("1.1E1");
+
+        // TODO: Make sure the literal is converted to the original form!
+//        checkValue0(sql(literal, VARCHAR), VARCHAR, literal);
+
+        checkFailure0(sql(literal, BOOLEAN), PARSING, castError(DOUBLE, BOOLEAN));
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal, TINYINT), TINYINT, (byte) 11);
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal, SMALLINT), SMALLINT, (short) 11);
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal, INTEGER), INTEGER, 11);
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal, BIGINT), BIGINT, 11L);
+
+        checkValue0(sql(literal, DECIMAL), DECIMAL, decimal("11"));
+
+        checkValue0(sql(literal, REAL), REAL, 11f);
+        checkValue0(sql(literal, DOUBLE), DOUBLE, 11d);
+
+        checkFailure0(sql(literal, DATE), PARSING, castError(DOUBLE, DATE));
+        checkFailure0(sql(literal, TIME), PARSING, castError(DOUBLE, TIME));
+        checkFailure0(sql(literal, TIMESTAMP), PARSING, castError(DOUBLE, TIMESTAMP));
+        checkFailure0(sql(literal, TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DOUBLE, TIMESTAMP_WITH_TIME_ZONE));
+
+        checkValue0(sql(literal, OBJECT), OBJECT, 11d);
+    }
+
+    @Test
+    public void testDouble_literal_big() {
+        put(1);
+
+        String literal = literal("1.1E100");
+
+        checkValue0(sql(literal, VARCHAR), VARCHAR, literal);
+        checkFailure0(sql(literal, BOOLEAN), PARSING, castError(DOUBLE, BOOLEAN));
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal, TINYINT), TINYINT, (byte) 0);
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal, SMALLINT), SMALLINT, (short) -0);
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal, INTEGER), INTEGER, -0);
+
+        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
+        checkValue0(sql(literal, BIGINT), BIGINT, -0L);
+
+        checkValue0(sql(literal, DECIMAL), DECIMAL, decimal("1.1E+100"));
+
+        // TODO: Throws "Infinite or NaN"
+//        checkValue0(sql(literal, REAL), REAL, 1.1E100);
+        checkValue0(sql(literal, DOUBLE), DOUBLE, 1.1E100d);
+
+        checkFailure0(sql(literal, DATE), PARSING, castError(DOUBLE, DATE));
+        checkFailure0(sql(literal, TIME), PARSING, castError(DOUBLE, TIME));
+        checkFailure0(sql(literal, TIMESTAMP), PARSING, castError(DOUBLE, TIMESTAMP));
+        checkFailure0(sql(literal, TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DOUBLE, TIMESTAMP_WITH_TIME_ZONE));
+
+        checkValue0(sql(literal, OBJECT), OBJECT, 1.1E100d);
     }
 
     @Test
@@ -747,5 +1100,13 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
 
     private static ExpressionValue object(Object value) {
         return new ExpressionValue.ObjectVal().field1(value);
+    }
+
+    private static String stringLiteral(Object value) {
+        return "'" + value + "'";
+    }
+
+    private static String literal(Object value) {
+        return "" + value;
     }
 }

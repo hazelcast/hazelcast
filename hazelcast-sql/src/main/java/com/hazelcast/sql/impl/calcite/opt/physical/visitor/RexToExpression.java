@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
+import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
@@ -62,8 +63,12 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.fun.SqlTrimFunction;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.util.DateString;
+import org.apache.calcite.util.TimeString;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.CHARACTER_LENGTH;
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.CHAR_LENGTH;
@@ -116,6 +121,12 @@ public final class RexToExpression {
 
             case SYMBOL:
                 return SymbolExpression.create(literal.getValue());
+
+            case DATE:
+                return convertDateLiteral(literal);
+
+            case TIME:
+                return convertTimeLiteral(literal);
 
             default:
                 throw QueryException.error("Unsupported literal: " + literal);
@@ -406,5 +417,29 @@ public final class RexToExpression {
         }
 
         return ConstantExpression.create(value, CalciteUtils.map(type));
+    }
+
+    private static Expression<?> convertDateLiteral(RexLiteral literal) {
+        String dateString = literal.getValueAs(DateString.class).toString();
+
+        try {
+            LocalDate date = LocalDate.parse(dateString);
+
+            return ConstantExpression.create(date, QueryDataType.DATE);
+        } catch (Exception e) {
+            throw QueryException.dataException("Cannot convert literal to " + SqlColumnType.DATE + ": " + dateString);
+        }
+    }
+
+    public static Expression<?> convertTimeLiteral(RexLiteral literal) {
+        String timeString = literal.getValueAs(TimeString.class).toString();
+
+        try {
+            LocalTime time = LocalTime.parse(timeString);
+
+            return ConstantExpression.create(time, QueryDataType.TIME);
+        } catch (Exception e) {
+            throw QueryException.dataException("Cannot convert literal to " + SqlColumnType.TIME + ": " + timeString);
+        }
     }
 }
