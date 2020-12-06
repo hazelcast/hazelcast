@@ -104,19 +104,6 @@ public class TranslateToPublicAddressProviderTest {
     }
 
     @Test
-    public void emptyMemberList() {
-        // given
-        TranslateToPublicAddressProvider translateProvider = createTranslateProvider();
-
-        // when
-        translateProvider.refresh(defaultAddressProvider(), emptyList());
-        boolean result = translateProvider.get();
-
-        // then
-        assertFalse(result);
-    }
-
-    @Test
     public void memberInternalAddressAsDefinedInClientConfig() {
         // given
         config.getNetworkConfig().addAddress("127.0.0.1");
@@ -124,6 +111,48 @@ public class TranslateToPublicAddressProviderTest {
 
         // when
         translateProvider.refresh(defaultAddressProvider(), asList(member("192.168.0.1"), member("127.0.0.1")));
+        boolean result = translateProvider.get();
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    public void memberInternalAddressAsDefinedInClientConfig_memberUsesHostName() {
+        // given
+        config.getNetworkConfig().addAddress("127.0.0.1");
+        TranslateToPublicAddressProvider translateProvider = createTranslateProvider();
+
+        // when
+        translateProvider.refresh(defaultAddressProvider(), asList(member("localhost")));
+        boolean result = translateProvider.get();
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    public void memberInternalAddressAsDefinedInClientConfig_clientUsesHostname() {
+        // given
+        config.getNetworkConfig().addAddress("localhost");
+        TranslateToPublicAddressProvider translateProvider = createTranslateProvider();
+
+        // when
+        translateProvider.refresh(defaultAddressProvider(), asList(member("127.0.0.1")));
+        boolean result = translateProvider.get();
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    public void memberInternalAddressAsDefinedInClientConfig_clientUsesHostnameAndIp() {
+        // given
+        config.getNetworkConfig().addAddress("localhost:5701");
+        TranslateToPublicAddressProvider translateProvider = createTranslateProvider();
+
+        // when
+        translateProvider.refresh(defaultAddressProvider(), asList(member("127.0.0.1")));
         boolean result = translateProvider.get();
 
         // then

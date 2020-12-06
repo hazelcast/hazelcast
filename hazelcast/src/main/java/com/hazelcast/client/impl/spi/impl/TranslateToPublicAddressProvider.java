@@ -20,19 +20,25 @@ import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 class TranslateToPublicAddressProvider {
     private static final int REACHABLE_ADDRESS_TIMEOUT_MILLIS = 1000;
@@ -66,7 +72,8 @@ class TranslateToPublicAddressProvider {
         // we will try to decide if we should use private/public address automatically in that case.
         String publicIpEnabledProperty = properties.getString(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED);
         if (publicIpEnabledProperty == null) {
-            if (config.getSSLConfig().isEnabled()) {
+            SSLConfig sslConfig = config.getSSLConfig();
+            if (sslConfig != null && sslConfig.isEnabled()) {
                 if (logger.isFineEnabled()) {
                     logger.info("SSL is configured. The client will use internal addresses to communicate with the cluster. If "
                             + "members are not reachable via private addresses, "
@@ -96,10 +103,21 @@ class TranslateToPublicAddressProvider {
      */
     boolean memberInternalAddressAsDefinedInClientConfig(Collection<MemberInfo> members) {
         List<String> addresses = config.getAddresses();
+        List<String> resolvedHosts = addresses.stream().map(s -> {
+            try {
+                return InetAddress.getByName(AddressUtil.getAddressHolder(s, -1).getAddress()).getHostAddress();
+            } catch (UnknownHostException e) {
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toList());
         return members.stream()
-                .map(MemberInfo::getAddress)
-                .anyMatch(a -> addresses.contains(a.getHost())
-                        || addresses.contains(String.format("%s:%s", a.getHost(), a.getPort())));
+                .map(memberInfo -> {
+                    try {
+                        return memberInfo.getAddress().getInetAddress().getHostAddress();
+                    } catch (UnknownHostException e) {
+                        return null;
+                    }
+                }).anyMatch(resolvedHosts::contains);
     }
 
     /**
