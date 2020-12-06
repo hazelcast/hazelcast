@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite;
 
+import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
@@ -76,8 +77,8 @@ public final class CalciteUtils {
         CALCITE_TO_HZ.put(SqlTypeName.TIMESTAMP, QueryDataType.TIMESTAMP);
         CALCITE_TO_HZ.put(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE, QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
 
-        HZ_TO_CALCITE.put(QueryDataTypeFamily.OBJECT, SqlTypeName.ANY);
-        CALCITE_TO_HZ.put(SqlTypeName.ANY, QueryDataType.OBJECT);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.OBJECT, SqlTypeName.OTHER);
+        CALCITE_TO_HZ.put(SqlTypeName.OTHER, QueryDataType.OBJECT);
 
         HZ_TO_CALCITE.put(QueryDataTypeFamily.NULL, SqlTypeName.NULL);
         CALCITE_TO_HZ.put(SqlTypeName.NULL, QueryDataType.NULL);
@@ -118,12 +119,12 @@ public final class CalciteUtils {
     }
 
     public static boolean isObjectIdentifier(SqlIdentifier identifier) {
-        return identifier.isSimple() && QueryDataTypeFamily.OBJECT.name().equalsIgnoreCase(identifier.getSimple());
+        return identifier.isSimple() && SqlColumnType.OBJECT.name().equalsIgnoreCase(identifier.getSimple());
     }
 
     public static boolean isTimestampWithTimeZoneIdentifier(SqlIdentifier identifier) {
         return identifier.isSimple()
-            && QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE.name().equalsIgnoreCase(identifier.getSimple());
+            && SqlColumnType.TIMESTAMP_WITH_TIME_ZONE.name().equalsIgnoreCase(identifier.getSimple());
     }
 
     /**

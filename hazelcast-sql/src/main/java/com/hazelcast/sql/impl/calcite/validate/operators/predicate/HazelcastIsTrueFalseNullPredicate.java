@@ -112,7 +112,7 @@ public final class HazelcastIsTrueFalseNullPredicate extends HazelcastPostfixOpe
 
                 if (type.getSqlTypeName() == NULL) {
                     if (objectOperand) {
-                        type = CalciteUtils.createType(binding.getTypeFactory(), SqlTypeName.ANY, type.isNullable());
+                        type = CalciteUtils.createType(binding.getTypeFactory(), SqlTypeName.OTHER, type.isNullable());
                     } else {
                         type = CalciteUtils.createType(binding.getTypeFactory(), SqlTypeName.BOOLEAN, type.isNullable());
                     }

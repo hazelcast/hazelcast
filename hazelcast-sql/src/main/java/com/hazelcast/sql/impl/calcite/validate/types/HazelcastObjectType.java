@@ -28,7 +28,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
  */
 public final class HazelcastObjectType extends BasicSqlType {
     HazelcastObjectType(boolean nullable) {
-        super(HazelcastTypeSystem.INSTANCE, SqlTypeName.ANY);
+        super(HazelcastTypeSystem.INSTANCE, SqlTypeName.OTHER);
 
         this.isNullable = nullable;
 

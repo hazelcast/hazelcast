@@ -31,7 +31,6 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.sql.impl.calcite.CalciteUtils.isObjectIdentifier;
 import static com.hazelcast.sql.impl.calcite.CalciteUtils.isTimestampWithTimeZoneIdentifier;
 import static org.apache.calcite.sql.parser.SqlParserPos.ZERO;
-import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
 import static org.apache.calcite.sql.type.SqlTypeName.DATE;
@@ -39,6 +38,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
+import static org.apache.calcite.sql.type.SqlTypeName.OTHER;
 import static org.apache.calcite.sql.type.SqlTypeName.REAL;
 import static org.apache.calcite.sql.type.SqlTypeName.SMALLINT;
 import static org.apache.calcite.sql.type.SqlTypeName.TIME;
@@ -102,7 +102,7 @@ public class HazelcastTypeSystemTest {
         assertPrecedence(type(DATE), type(TIME));
         assertPrecedence(type(TIMESTAMP), type(DATE));
         assertPrecedence(type(TIMESTAMP_WITH_LOCAL_TIME_ZONE), type(TIMESTAMP));
-        assertPrecedence(type(ANY), type(TIMESTAMP_WITH_LOCAL_TIME_ZONE));
+        assertPrecedence(type(OTHER), type(TIMESTAMP_WITH_LOCAL_TIME_ZONE));
     }
 
     @Test
@@ -123,7 +123,7 @@ public class HazelcastTypeSystemTest {
                 type(TIMESTAMP_WITH_LOCAL_TIME_ZONE),
                 HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(TIMESTAMP_WITH_LOCAL_TIME_ZONE))
         );
-        assertEquals(type(ANY), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(ANY)));
+        assertEquals(type(OTHER), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(OTHER)));
     }
 
     @Test
@@ -144,7 +144,7 @@ public class HazelcastTypeSystemTest {
                 type(TIMESTAMP_WITH_LOCAL_TIME_ZONE),
                 HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(TIMESTAMP_WITH_LOCAL_TIME_ZONE))
         );
-        assertEquals(type(ANY), HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(ANY)));
+        assertEquals(type(OTHER), HazelcastTypeSystem.INSTANCE.deriveAvgAggType(TYPE_FACTORY, type(OTHER)));
     }
 
     private static void assertPrecedence(RelDataType expected, RelDataType other) {

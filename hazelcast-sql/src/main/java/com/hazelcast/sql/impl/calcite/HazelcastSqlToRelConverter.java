@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite;
 
+import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
@@ -23,6 +24,7 @@ import com.hazelcast.sql.impl.calcite.validate.literal.Literal;
 import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;
@@ -142,6 +144,22 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
                 TimeString timeString = new TimeString(time.getHour(), time.getMinute(), time.getSecond());
 
                 return getRexBuilder().makeLiteral(timeString, to, true);
+            }
+
+            // Apache Calcite cannot handle conversion of literals to OBJECT type properly.
+            // Currently we use SqlTypeName.OTHER as a backing type name for the OBJECT data type. Calcite throws errors
+            // when attempting to invoke RexBuilder.makeCast with such a type (try commenting the lines below and then
+            // run CastFunctionIntegrationTest).
+            // If we change the backing type name to SqlTypeName.ANY, then Apache Calcite attempts to remove the cast with the
+            // invalid numeric conversions (similar to the above mentioned problem with RexToLixTranslator) what leads to
+            // incorrect value. Specifically, Calcite attempts to treat any numeric literal as Long. As a result, literals
+            // that overflow this value, are converted to the wrong value. E.g. "new BigDecimal(Long.MAX_VALUE + "0.1")" is
+            // converted to "-10L".
+            if (toType.getTypeFamily() == QueryDataTypeFamily.OBJECT) {
+                QueryException cause = QueryException.error("Conversion of literals to " + SqlColumnType.OBJECT
+                    + " type is not allowed (consider adding an explicit CAST to another expression part)");
+
+                throw literalConversionException(validator, call, literal, toType, cause);
             }
         }
 

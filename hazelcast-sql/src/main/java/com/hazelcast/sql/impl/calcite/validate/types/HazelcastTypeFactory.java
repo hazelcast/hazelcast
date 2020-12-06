@@ -128,7 +128,7 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     private RelDataType createType(SqlTypeName typeName) {
         if (typeName == DECIMAL) {
             return super.createSqlType(DECIMAL, MAX_DECIMAL_PRECISION, MAX_DECIMAL_SCALE);
-        } else if (typeName == SqlTypeName.ANY) {
+        } else if (typeName == SqlTypeName.OTHER) {
             return TYPE_OBJECT;
         } else if (typeName == SqlTypeName.TIME) {
             return TYPE_TIME;
@@ -149,7 +149,7 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     public RelDataType createTypeWithNullability(RelDataType type, boolean nullable) {
         if (HazelcastIntegerType.supports(type.getSqlTypeName())) {
             return HazelcastIntegerType.of(type, nullable);
-        } else if (type.getSqlTypeName() == SqlTypeName.ANY) {
+        } else if (type.getSqlTypeName() == SqlTypeName.OTHER) {
             return nullable ? TYPE_OBJECT_NULLABLE : TYPE_OBJECT;
         } else if (type.getSqlTypeName() == SqlTypeName.TIME) {
             return nullable ? TYPE_TIME_NULLABLE : TYPE_TIME;

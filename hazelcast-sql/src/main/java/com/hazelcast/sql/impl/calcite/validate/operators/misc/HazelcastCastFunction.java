@@ -130,7 +130,7 @@ public final class HazelcastCastFunction extends HazelcastFunction {
             RelDataType operandType = binding.getOperandType(0);
 
             if (operandType.getSqlTypeName() == SqlTypeName.NULL) {
-                operandType = binding.getTypeFactory().createSqlType(SqlTypeName.ANY);
+                operandType = binding.getTypeFactory().createSqlType(SqlTypeName.OTHER);
             }
 
             operandTypes[0] = operandType;
