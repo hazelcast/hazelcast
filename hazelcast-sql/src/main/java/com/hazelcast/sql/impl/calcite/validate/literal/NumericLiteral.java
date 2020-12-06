@@ -57,7 +57,7 @@ public final class NumericLiteral extends Literal {
 
                     RelDataType type = HazelcastIntegerType.of(bitWidth, false);
 
-                    long adjustedValue;
+                    Object adjustedValue;
 
                     switch (type.getSqlTypeName()) {
                         case TINYINT:
@@ -102,7 +102,7 @@ public final class NumericLiteral extends Literal {
             // Dealing with DOUBLE
             return new NumericLiteral(
                 original,
-                valueDecimal,
+                valueDecimal.doubleValue(),
                 SqlTypeName.DOUBLE,
                 Mode.FRACTIONAL_INEXACT,
                 0

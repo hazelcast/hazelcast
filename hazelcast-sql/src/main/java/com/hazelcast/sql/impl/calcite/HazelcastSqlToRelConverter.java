@@ -16,36 +16,43 @@
 
 package com.hazelcast.sql.impl.calcite;
 
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
+import com.hazelcast.sql.impl.calcite.validate.literal.Literal;
+import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference;
-import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
-import com.hazelcast.sql.impl.type.converter.BooleanConverter;
-import com.hazelcast.sql.impl.type.converter.Converter;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.runtime.CalciteContextException;
+import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql.validate.SqlValidatorException;
 import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
+import org.apache.calcite.util.DateString;
+import org.apache.calcite.util.TimeString;
 
-import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
 
-import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
-import static org.apache.calcite.sql.type.SqlTypeName.APPROX_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
-import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
-import static org.apache.calcite.sql.type.SqlTypeName.REAL;
+import static org.apache.calcite.sql.type.SqlTypeName.DATE;
+import static org.apache.calcite.sql.type.SqlTypeName.TIME;
+import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP;
+import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE;
 
 /**
  * Custom Hazelcast sql-to-rel converter.
@@ -96,64 +103,85 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         return getRexBuilder().makeLiteral(literal.getValue(), type, true);
     }
 
-    // TODO: Better documentation
-    @SuppressWarnings("UnpredictableBigDecimalConstructorCall")
+    /**
+     * Convert CAST exception fixing several Apache Calcite problems with literals along the way (see inline JavaDoc).
+     */
     private RexNode convertCast(SqlCall call, Blackboard blackboard) {
+        RelDataType from = validator.getValidatedNodeType(call.operand(0));
         RelDataType to = validator.getValidatedNodeType(call);
-        RexNode operand = blackboard.convertExpression(call.operand(0));
 
-        if (SqlUtil.isNullLiteral(call.operand(0), false)) {
-            // Just generate the cast without messing with the value: it's
-            // always NULL.
-            return getRexBuilder().makeCast(to, operand);
-        }
+        QueryDataType fromType = CalciteUtils.map(from.getSqlTypeName());
+        QueryDataType toType = CalciteUtils.map(to.getSqlTypeName());
 
-        RelDataType from = operand.getType();
+        Literal literal = LiteralUtils.literal(call.operand(0));
 
-        // Use our to-string conversions for floating point types and BOOLEAN,
-        // Calcite does conversions using its own formatting.
-        if (operand.isA(SqlKind.LITERAL) && CHAR_TYPES.contains(to.getSqlTypeName())) {
-            RexLiteral literal = (RexLiteral) operand;
+        if (literal != null) {
+            // Normalize BOOLEAN and DOUBLE literals when converting them to VARCHAR.
+            // BOOLEAN literals are converted to "true"/"false" instead of "TRUE"/"FALSE".
+            // DOUBLE literals are converted to a string with scientific conventions (e.g., 1.1E1 instead of 11.0);
+            if (CHAR_TYPES.contains(to.getSqlTypeName())) {
+                return getRexBuilder().makeLiteral(literal.getStringValue(), to, true);
+            }
 
-            switch (from.getSqlTypeName()) {
-                case REAL:
-                case DOUBLE:
-                case DECIMAL:
-                    BigDecimal decimalValue = literal.getValueAs(BigDecimal.class);
-                    Converter fromConverter = CalciteUtils.map(from.getSqlTypeName()).getConverter();
-                    Object value = fromConverter.convertToSelf(BigDecimalConverter.INSTANCE, decimalValue);
-                    Object valueAsString = StringConverter.INSTANCE.convertToSelf(fromConverter, value);
+            // There is a bug in RexSimplify that adds an unnecessary second. For example, the string literal "00:00" is
+            // converted to 00:00:01. The problematic code is located in DateTimeUtils.timeStringToUnixDate.
+            // To workaround the problem, we perform the conversion manually.
+            if (CHAR_TYPES.contains(from.getSqlTypeName())) {
+                if (to.getSqlTypeName() == DATE) {
+                    try {
+                        LocalDate date = StringConverter.INSTANCE.asDate(literal.getStringValue());
 
-                    return getRexBuilder().makeLiteral(valueAsString, to, true);
-                case BOOLEAN:
-                    boolean booleanValue = literal.getValueAs(Boolean.class);
-                    String booleanAsString = BooleanConverter.INSTANCE.asVarchar(booleanValue);
-                    return getRexBuilder().makeLiteral(booleanAsString, to, true);
-                default:
-                    // do nothing
+                        DateString dateString = new DateString(date.getYear(), date.getMonthValue(), date.getDayOfMonth());
+
+                        return getRexBuilder().makeLiteral(dateString, to, true);
+                    } catch (Exception e) {
+                        throw literalConversionException(validator, call, literal, toType, e);
+                    }
+                } else if (to.getSqlTypeName() == TIME) {
+                    try {
+                        LocalTime time = StringConverter.INSTANCE.asTime(literal.getStringValue());
+
+                        TimeString timeString = new TimeString(time.getHour(), time.getMinute(), time.getSecond());
+
+                        return getRexBuilder().makeLiteral(timeString, to, true);
+                    } catch (Exception e) {
+                        throw literalConversionException(validator, call, literal, toType, e);
+                    }
+                } else if (to.getSqlTypeName() == TIMESTAMP) {
+                    try {
+                        StringConverter.INSTANCE.asTimestamp(literal.getStringValue());
+                    } catch (Exception e) {
+                        throw literalConversionException(validator, call, literal, toType, e);
+                    }
+                } else if (to.getSqlTypeName() == TIMESTAMP_WITH_LOCAL_TIME_ZONE) {
+                    try {
+                        StringConverter.INSTANCE.asTimestampWithTimezone(literal.getStringValue());
+                    } catch (Exception e) {
+                        throw literalConversionException(validator, call, literal, toType, e);
+                    }
+                }
+            }
+
+            // There is a bug in RexSimplify that incorrectly converts numeric literals from one numeric type to another.
+            // The problem is located in the RexToLixTranslator.translateLiteral. To perform a conversion, it delegates
+            // to Primitive.number(Number) method, that does a conversion without checking for overflow. For example, the
+            // expression [32767 AS TINYINT] is converted to -1, which is obviously incorrect.
+            // To workaround the problem, we perform the conversion using our converters manually. If the conversion fails,
+            // we throw an error (it would have been thrown in runtime anyway), thus preventing Apache Calcite from entering
+            // the problematic simplification routine.
+            if (CalciteUtils.isNumericType(from) && CalciteUtils.isNumericType(to)) {
+                try {
+                    toType.getConverter().convertToSelf(fromType.getConverter(), literal.getValue());
+                } catch (Exception e) {
+                    throw literalConversionException(validator, call, literal, toType, e);
+                }
             }
         }
 
-        // Convert REAL/DOUBLE values from BigDecimal representation to
-        // REAL/DOUBLE and back, otherwise Calcite might think two floating-point
-        // values having the same REAL/DOUBLE representation are distinct since
-        // their BigDecimal representations might differ.
-        if (operand.isA(SqlKind.LITERAL) && CalciteUtils.isNumericType(from) && APPROX_TYPES.contains(to.getSqlTypeName())) {
-            RexLiteral literal = (RexLiteral) operand;
-            BigDecimal value = literal.getValueAs(BigDecimal.class);
+        // Delegate ot Apache Calcite.
+        RexNode convertedOperand = blackboard.convertExpression(call.operand(0));
 
-            if (to.getSqlTypeName() == DOUBLE) {
-                value = new BigDecimal(BigDecimalConverter.INSTANCE.asDouble(value), DECIMAL_MATH_CONTEXT);
-            } else {
-                assert to.getSqlTypeName() == REAL;
-                value = new BigDecimal(BigDecimalConverter.INSTANCE.asReal(value), DECIMAL_MATH_CONTEXT);
-            }
-
-            return getRexBuilder().makeLiteral(value, to, false);
-        }
-
-        // also removes the cast if it's not required
-        return getRexBuilder().makeCast(to, operand);
+        return getRexBuilder().makeCast(to, convertedOperand);
     }
 
     /**
@@ -188,5 +216,29 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         }
 
         return null;
+    }
+
+    private static QueryException literalConversionException(
+        SqlValidator validator,
+        SqlCall call,
+        Literal literal,
+        QueryDataType toType,
+        Exception e
+    ) {
+        String literalValue = literal.getStringValue();
+
+        if (CHAR_TYPES.contains(literal.getTypeName())) {
+            literalValue = "'" + literalValue + "'";
+        }
+
+        Resources.ExInst<SqlValidatorException> contextError = HazelcastResources.RESOURCES.cannotCastLiteralValue(
+            literalValue,
+            toType.getTypeFamily().getPublicType().name(),
+            e.getMessage()
+        );
+
+        CalciteContextException calciteContextError = validator.newValidationError(call, contextError);
+
+        throw QueryException.error(SqlErrorCode.PARSING, calciteContextError.getMessage(), calciteContextError);
     }
 }

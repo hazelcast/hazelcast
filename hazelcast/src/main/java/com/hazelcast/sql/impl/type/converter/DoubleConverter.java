@@ -147,7 +147,14 @@ public final class DoubleConverter extends Converter {
 
     @Override
     public float asReal(Object val) {
-        return (float) cast(val);
+        double doubleVal = cast(val);
+        float floatVal = (float) cast(val);
+
+        if (Float.isInfinite(floatVal) && !Double.isInfinite(doubleVal)) {
+            throw numericOverflowError(QueryDataTypeFamily.REAL);
+        }
+
+        return floatVal;
     }
 
     @Override

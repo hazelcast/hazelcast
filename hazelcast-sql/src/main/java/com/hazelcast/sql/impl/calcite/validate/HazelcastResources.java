@@ -38,4 +38,7 @@ public interface HazelcastResources {
 
     @Resources.BaseMessage("CAST function cannot convert value of type {0} to type {1}")
     Resources.ExInst<SqlValidatorException> cannotCastValue(String sourceType, String targetType);
+
+    @Resources.BaseMessage("CAST function cannot convert literal {0} to type {1}: {2}")
+    Resources.ExInst<SqlValidatorException> cannotCastLiteralValue(String sourceValue, String targetType, String message);
 }

@@ -18,9 +18,7 @@ package com.hazelcast.sql.impl.calcite.validate.literal;
 
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlCharStringLiteral;
 import org.apache.calcite.sql.SqlLiteral;
-import org.apache.calcite.sql.SqlNumericLiteral;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 public abstract class Literal {
@@ -35,29 +33,12 @@ public abstract class Literal {
         this.typeName = typeName;
     }
 
-    public static Literal convert(SqlLiteral original) {
-        // Do no convert symbols.
-        if (original.getTypeName() == SqlTypeName.SYMBOL) {
-            return null;
-        }
-
-        if (original instanceof SqlNumericLiteral) {
-            return NumericLiteral.create((SqlNumericLiteral) original);
-        }
-
-        if (original instanceof SqlCharStringLiteral) {
-            return new TypedLiteral(original, original.getValueAs(String.class), SqlTypeName.VARCHAR);
-        }
-
-        return new TypedLiteral(original, original.getValue(), original.getTypeName());
-    }
-
     public Object getValue() {
         return value;
     }
 
-    public SqlLiteral getOriginal() {
-        return original;
+    public String getStringValue() {
+        return original.toValue();
     }
 
     public SqlTypeName getTypeName() {

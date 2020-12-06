@@ -71,7 +71,7 @@ public class ConcatFunctionIntegrationTest extends ExpressionTestSupport {
 
         check("this || 2", "12");
         check("this || '2'", "12");
-        check("this || 2e0", "12.0");
+        check("this || 2e0", "12E0");
 
         check("this || true", "1true");
 

@@ -33,6 +33,8 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import static com.hazelcast.sql.SqlColumnType.BIGINT;
@@ -257,21 +259,35 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(stringLiteral("false"), DOUBLE), DATA_EXCEPTION, "Cannot parse VARCHAR value to DOUBLE");
 
         // VARCHAR -> DATE
-        checkValue0(sql(stringLiteral(LOCAL_DATE_VAL), DATE), DATE, LOCAL_DATE_VAL);
-        checkFailure0(sql(stringLiteral("foo"), DATE), DATA_EXCEPTION, "Cannot parse VARCHAR value to DATE");
+        checkValue0(sql(stringLiteral("2020-01-01"), DATE), DATE, LocalDate.parse("2020-01-01"));
+        checkFailure0(sql(stringLiteral("foo"), DATE), PARSING, "CAST function cannot convert literal 'foo' to type DATE: Cannot parse VARCHAR value to DATE");
 
         // VARCHAR -> TIME
-        // TODO: Bug in Calcite simplifier - it adds wrong second. Fix when working on temporal types support
-        checkValue0(sql(stringLiteral(LOCAL_TIME_VAL), TIME), TIME, LocalTime.parse("00:00:01"));
-        checkFailure0(sql(stringLiteral("foo"), TIME), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIME");
+        checkValue0(sql(stringLiteral("00:00"), TIME), TIME, LocalTime.parse("00:00"));
+        checkValue0(sql(stringLiteral("00:01"), TIME), TIME, LocalTime.parse("00:01"));
+        checkValue0(sql(stringLiteral("02:01"), TIME), TIME, LocalTime.parse("02:01"));
+        checkValue0(sql(stringLiteral("00:00:00"), TIME), TIME, LocalTime.parse("00:00:00"));
+        checkValue0(sql(stringLiteral("00:00:01"), TIME), TIME, LocalTime.parse("00:00:01"));
+        checkValue0(sql(stringLiteral("00:02:01"), TIME), TIME, LocalTime.parse("00:02:01"));
+        checkValue0(sql(stringLiteral("03:02:01"), TIME), TIME, LocalTime.parse("03:02:01"));
+
+        checkFailure0(sql(stringLiteral("00:60"), TIME), PARSING, "CAST function cannot convert literal '00:60' to type TIME: Cannot parse VARCHAR value to TIME");
+        checkFailure0(sql(stringLiteral("00:00:60"), TIME), PARSING, "CAST function cannot convert literal '00:00:60' to type TIME: Cannot parse VARCHAR value to TIME");
+        checkFailure0(sql(stringLiteral("25:00"), TIME), PARSING, "CAST function cannot convert literal '25:00' to type TIME: Cannot parse VARCHAR value to TIME");
+        checkFailure0(sql(stringLiteral("25:00:00"), TIME), PARSING, "CAST function cannot convert literal '25:00:00' to type TIME: Cannot parse VARCHAR value to TIME");
+
+        checkFailure0(sql(stringLiteral("foo"), TIME), PARSING, "CAST function cannot convert literal 'foo' to type TIME: Cannot parse VARCHAR value to TIME");
 
         // VARCHAR -> TIMESTAMP
-        checkValue0(sql(stringLiteral(LOCAL_DATE_TIME_VAL), TIMESTAMP), TIMESTAMP, LOCAL_DATE_TIME_VAL);
-        checkFailure0(sql(stringLiteral("foo"), TIMESTAMP), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP");
+        checkValue0(sql(stringLiteral("2020-02-01T00:00:00"), TIMESTAMP), TIMESTAMP, LocalDateTime.parse("2020-02-01T00:00:00"));
+        checkValue0(sql(stringLiteral("2020-02-01T00:00:01"), TIMESTAMP), TIMESTAMP, LocalDateTime.parse("2020-02-01T00:00:01"));
+        checkValue0(sql(stringLiteral("2020-02-01T00:02:01"), TIMESTAMP), TIMESTAMP, LocalDateTime.parse("2020-02-01T00:02:01"));
+        checkValue0(sql(stringLiteral("2020-02-01T03:02:01"), TIMESTAMP), TIMESTAMP, LocalDateTime.parse("2020-02-01T03:02:01"));
+        checkFailure0(sql(stringLiteral("foo"), TIMESTAMP), PARSING, "CAST function cannot convert literal 'foo' to type TIMESTAMP: Cannot parse VARCHAR value to TIMESTAMP");
 
         // VARCHAR -> TIMESTAMP_WITH_TIME_ZONE
         checkValue0(sql(stringLiteral(OFFSET_DATE_TIME_VAL), TIMESTAMP_WITH_TIME_ZONE), TIMESTAMP_WITH_TIME_ZONE, OFFSET_DATE_TIME_VAL);
-        checkFailure0(sql(stringLiteral("foo"), TIMESTAMP_WITH_TIME_ZONE), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP_WITH_TIME_ZONE");
+        checkFailure0(sql(stringLiteral("foo"), TIMESTAMP_WITH_TIME_ZONE), PARSING, "CAST function cannot convert literal 'foo' to type TIMESTAMP_WITH_TIME_ZONE: Cannot parse VARCHAR value to TIMESTAMP_WITH_TIME_ZONE");
 
         // VARCHAR -> OBJECT
         checkValue0(sql(stringLiteral("foo"), OBJECT), OBJECT, "foo");
@@ -457,8 +473,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
 
         checkFailure0(sql(literal(Short.MAX_VALUE), BOOLEAN), PARSING, castError(SMALLINT, BOOLEAN));
 
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
-        checkValue0(sql(literal(Short.MAX_VALUE), TINYINT), TINYINT, (byte) -1);
+        checkFailure0(sql(literal(Short.MAX_VALUE), TINYINT), PARSING, "CAST function cannot convert literal 32767 to type TINYINT: Numeric overflow while converting SMALLINT to TINYINT");
 
         checkValue0(sql(literal(Short.MAX_VALUE), SMALLINT), SMALLINT, Short.MAX_VALUE);
         checkValue0(sql(literal(Short.MAX_VALUE), INTEGER), INTEGER, (int) Short.MAX_VALUE);
@@ -533,11 +548,8 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
 
         checkFailure0(sql(literal(Integer.MAX_VALUE), BOOLEAN), PARSING, castError(INTEGER, BOOLEAN));
 
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
-        checkValue0(sql(literal(Integer.MAX_VALUE), TINYINT), TINYINT, (byte) -1);
-
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
-        checkValue0(sql(literal(Integer.MAX_VALUE), SMALLINT), SMALLINT, (short) -1);
+        checkFailure0(sql(literal(Integer.MAX_VALUE), TINYINT), PARSING, "CAST function cannot convert literal 2147483647 to type TINYINT: Numeric overflow while converting INTEGER to TINYINT");
+        checkFailure0(sql(literal(Integer.MAX_VALUE), SMALLINT), PARSING, "CAST function cannot convert literal 2147483647 to type SMALLINT: Numeric overflow while converting INTEGER to SMALLINT");
 
         checkValue0(sql(literal(Integer.MAX_VALUE), INTEGER), INTEGER, Integer.MAX_VALUE);
         checkValue0(sql(literal(Integer.MAX_VALUE), BIGINT), BIGINT, (long) Integer.MAX_VALUE);
@@ -611,14 +623,9 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
 
         checkFailure0(sql(literal(Long.MAX_VALUE), BOOLEAN), PARSING, castError(BIGINT, BOOLEAN));
 
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
-        checkValue0(sql(literal(Long.MAX_VALUE), TINYINT), TINYINT, (byte) -1);
-
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
-        checkValue0(sql(literal(Long.MAX_VALUE), SMALLINT), SMALLINT, (short) -1);
-
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
-        checkValue0(sql(literal(Long.MAX_VALUE), INTEGER), INTEGER, -1);
+        checkFailure0(sql(literal(Long.MAX_VALUE), TINYINT), PARSING, "CAST function cannot convert literal 9223372036854775807 to type TINYINT: Numeric overflow while converting BIGINT to TINYINT");
+        checkFailure0(sql(literal(Long.MAX_VALUE), SMALLINT), PARSING, "CAST function cannot convert literal 9223372036854775807 to type SMALLINT: Numeric overflow while converting BIGINT to SMALLINT");
+        checkFailure0(sql(literal(Long.MAX_VALUE), INTEGER), PARSING, "CAST function cannot convert literal 9223372036854775807 to type INTEGER: Numeric overflow while converting BIGINT to INTEGER");
 
         checkValue0(sql(literal(Long.MAX_VALUE), BIGINT), BIGINT, Long.MAX_VALUE);
         checkValue0(sql(literal(Long.MAX_VALUE), DECIMAL), DECIMAL, decimal(Long.MAX_VALUE));
@@ -743,17 +750,10 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql(literal, VARCHAR), VARCHAR, literal);
         checkFailure0(sql(literal, BOOLEAN), PARSING, castError(DECIMAL, BOOLEAN));
 
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
-        checkValue0(sql(literal, TINYINT), TINYINT, (byte) -10);
-
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
-        checkValue0(sql(literal, SMALLINT), SMALLINT, (short) -10);
-
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
-        checkValue0(sql(literal, INTEGER), INTEGER, -10);
-
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
-        checkValue0(sql(literal, BIGINT), BIGINT, -10L);
+        checkFailure0(sql(literal, TINYINT), PARSING, "CAST function cannot convert literal 92233720368547758070.1 to type TINYINT: Numeric overflow while converting DECIMAL to TINYINT");
+        checkFailure0(sql(literal, SMALLINT), PARSING, "CAST function cannot convert literal 92233720368547758070.1 to type SMALLINT: Numeric overflow while converting DECIMAL to SMALLINT");
+        checkFailure0(sql(literal, INTEGER), PARSING, "CAST function cannot convert literal 92233720368547758070.1 to type INTEGER: Numeric overflow while converting DECIMAL to INTEGER");
+        checkFailure0(sql(literal, BIGINT), PARSING, "CAST function cannot convert literal 92233720368547758070.1 to type BIGINT: Numeric overflow while converting DECIMAL to BIGINT");
 
         checkValue0(sql(literal, DECIMAL), DECIMAL, decimalValue);
         checkValue0(sql(literal, REAL), REAL, decimalValue.floatValue());
@@ -830,21 +830,13 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
 
         String literal = literal("1.1E1");
 
-        // TODO: Make sure the literal is converted to the original form!
-//        checkValue0(sql(literal, VARCHAR), VARCHAR, literal);
+        checkValue0(sql(literal, VARCHAR), VARCHAR, literal);
 
         checkFailure0(sql(literal, BOOLEAN), PARSING, castError(DOUBLE, BOOLEAN));
 
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
         checkValue0(sql(literal, TINYINT), TINYINT, (byte) 11);
-
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
         checkValue0(sql(literal, SMALLINT), SMALLINT, (short) 11);
-
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
         checkValue0(sql(literal, INTEGER), INTEGER, 11);
-
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
         checkValue0(sql(literal, BIGINT), BIGINT, 11L);
 
         checkValue0(sql(literal, DECIMAL), DECIMAL, decimal("11"));
@@ -869,22 +861,12 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql(literal, VARCHAR), VARCHAR, literal);
         checkFailure0(sql(literal, BOOLEAN), PARSING, castError(DOUBLE, BOOLEAN));
 
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
-        checkValue0(sql(literal, TINYINT), TINYINT, (byte) 0);
-
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
-        checkValue0(sql(literal, SMALLINT), SMALLINT, (short) -0);
-
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
-        checkValue0(sql(literal, INTEGER), INTEGER, -0);
-
-        // TODO: This should fail, but RexBulider.makeCast allows it to pass!
-        checkValue0(sql(literal, BIGINT), BIGINT, -0L);
-
+        checkFailure0(sql(literal, TINYINT), PARSING, "CAST function cannot convert literal 1.1E100 to type TINYINT: Numeric overflow while converting DOUBLE to TINYINT");
+        checkFailure0(sql(literal, SMALLINT), PARSING, "CAST function cannot convert literal 1.1E100 to type SMALLINT: Numeric overflow while converting DOUBLE to SMALLINT");
+        checkFailure0(sql(literal, INTEGER), PARSING, "CAST function cannot convert literal 1.1E100 to type INTEGER: Numeric overflow while converting DOUBLE to INTEGER");
+        checkFailure0(sql(literal, BIGINT), PARSING, "CAST function cannot convert literal 1.1E100 to type BIGINT: Numeric overflow while converting DOUBLE to BIGINT");
         checkValue0(sql(literal, DECIMAL), DECIMAL, decimal("1.1E+100"));
-
-        // TODO: Throws "Infinite or NaN"
-//        checkValue0(sql(literal, REAL), REAL, 1.1E100);
+        checkFailure0(sql(literal, REAL), PARSING, "CAST function cannot convert literal 1.1E100 to type REAL: Numeric overflow while converting DOUBLE to REAL");
         checkValue0(sql(literal, DOUBLE), DOUBLE, 1.1E100d);
 
         checkFailure0(sql(literal, DATE), PARSING, castError(DOUBLE, DATE));
