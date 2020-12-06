@@ -184,8 +184,8 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql(stringLiteral(OFFSET_DATE_TIME_VAL), VARCHAR), VARCHAR, OFFSET_DATE_TIME_VAL.toString());
 
         // VARCHAR -> BOOLEAN
-        checkFailure0(sql(stringLiteral("foo"), BOOLEAN), DATA_EXCEPTION, "Cannot parse VARCHAR value to BOOLEAN");
-        checkFailure0(sql(stringLiteral("null"), BOOLEAN), DATA_EXCEPTION, "Cannot parse VARCHAR value to BOOLEAN");
+        checkFailure0(sql(stringLiteral("foo"), BOOLEAN), PARSING, "CAST function cannot convert literal 'foo' to type BOOLEAN: Cannot parse VARCHAR value to BOOLEAN");
+        checkFailure0(sql(stringLiteral("null"), BOOLEAN), PARSING, "CAST function cannot convert literal 'null' to type BOOLEAN: Cannot parse VARCHAR value to BOOLEAN");
         checkValue0(sql(stringLiteral("true"), BOOLEAN), BOOLEAN, true);
         checkValue0(sql(stringLiteral("True"), BOOLEAN), BOOLEAN, true);
         checkValue0(sql(stringLiteral("false"), BOOLEAN), BOOLEAN, false);
@@ -195,68 +195,68 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql(stringLiteral(1), TINYINT), TINYINT, (byte) 1);
         checkValue0(sql(stringLiteral(Byte.MAX_VALUE), TINYINT), TINYINT, Byte.MAX_VALUE);
         checkValue0(sql(stringLiteral(Byte.MIN_VALUE), TINYINT), TINYINT, Byte.MIN_VALUE);
-        checkFailure0(sql(stringLiteral(Short.MAX_VALUE), TINYINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to TINYINT");
-        checkFailure0(sql(stringLiteral(Short.MIN_VALUE), TINYINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to TINYINT");
-        checkFailure0(sql(stringLiteral("foo"), TINYINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to TINYINT");
-        checkFailure0(sql(stringLiteral("true"), TINYINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to TINYINT");
-        checkFailure0(sql(stringLiteral("false"), TINYINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to TINYINT");
-        checkFailure0(sql(stringLiteral("1.1"), TINYINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to TINYINT");
+        checkFailure0(sql(stringLiteral(Short.MAX_VALUE), TINYINT), PARSING, "CAST function cannot convert literal '32767' to type TINYINT: Cannot parse VARCHAR value to TINYINT");
+        checkFailure0(sql(stringLiteral(Short.MIN_VALUE), TINYINT), PARSING, "CAST function cannot convert literal '-32768' to type TINYINT: Cannot parse VARCHAR value to TINYINT");
+        checkFailure0(sql(stringLiteral("foo"), TINYINT), PARSING, "CAST function cannot convert literal 'foo' to type TINYINT: Cannot parse VARCHAR value to TINYINT");
+        checkFailure0(sql(stringLiteral("true"), TINYINT), PARSING, "CAST function cannot convert literal 'true' to type TINYINT: Cannot parse VARCHAR value to TINYINT");
+        checkFailure0(sql(stringLiteral("false"), TINYINT), PARSING, "CAST function cannot convert literal 'false' to type TINYINT: Cannot parse VARCHAR value to TINYINT");
+        checkFailure0(sql(stringLiteral("1.1"), TINYINT), PARSING, "CAST function cannot convert literal '1.1' to type TINYINT: Cannot parse VARCHAR value to TINYINT");
 
         // VARCHAR -> SMALLINT
         checkValue0(sql(stringLiteral(1), SMALLINT), SMALLINT, (short) 1);
         checkValue0(sql(stringLiteral(Short.MAX_VALUE), SMALLINT), SMALLINT, Short.MAX_VALUE);
         checkValue0(sql(stringLiteral(Short.MIN_VALUE), SMALLINT), SMALLINT, Short.MIN_VALUE);
-        checkFailure0(sql(stringLiteral(Integer.MAX_VALUE), SMALLINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to SMALLINT");
-        checkFailure0(sql(stringLiteral(Integer.MIN_VALUE), SMALLINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to SMALLINT");
-        checkFailure0(sql(stringLiteral("foo"), SMALLINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to SMALLINT");
-        checkFailure0(sql(stringLiteral("true"), SMALLINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to SMALLINT");
-        checkFailure0(sql(stringLiteral("false"), SMALLINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to SMALLINT");
-        checkFailure0(sql(stringLiteral("1.1"), SMALLINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to SMALLINT");
+        checkFailure0(sql(stringLiteral(Integer.MAX_VALUE), SMALLINT), PARSING, "CAST function cannot convert literal '2147483647' to type SMALLINT: Cannot parse VARCHAR value to SMALLINT");
+        checkFailure0(sql(stringLiteral(Integer.MIN_VALUE), SMALLINT), PARSING, "CAST function cannot convert literal '-2147483648' to type SMALLINT: Cannot parse VARCHAR value to SMALLINT");
+        checkFailure0(sql(stringLiteral("foo"), SMALLINT), PARSING, "CAST function cannot convert literal 'foo' to type SMALLINT: Cannot parse VARCHAR value to SMALLINT");
+        checkFailure0(sql(stringLiteral("true"), SMALLINT), PARSING, "CAST function cannot convert literal 'true' to type SMALLINT: Cannot parse VARCHAR value to SMALLINT");
+        checkFailure0(sql(stringLiteral("false"), SMALLINT), PARSING, "CAST function cannot convert literal 'false' to type SMALLINT: Cannot parse VARCHAR value to SMALLINT");
+        checkFailure0(sql(stringLiteral("1.1"), SMALLINT), PARSING, "CAST function cannot convert literal '1.1' to type SMALLINT: Cannot parse VARCHAR value to SMALLINT");
 
         // VARCHAR -> INTEGER
         checkValue0(sql(stringLiteral(1), INTEGER), INTEGER, 1);
         checkValue0(sql(stringLiteral(Integer.MAX_VALUE), INTEGER), INTEGER, Integer.MAX_VALUE);
         checkValue0(sql(stringLiteral(Integer.MIN_VALUE), INTEGER), INTEGER, Integer.MIN_VALUE);
-        checkFailure0(sql(stringLiteral(Long.MAX_VALUE), INTEGER), DATA_EXCEPTION, "Cannot parse VARCHAR value to INTEGER");
-        checkFailure0(sql(stringLiteral(Long.MIN_VALUE), INTEGER), DATA_EXCEPTION, "Cannot parse VARCHAR value to INTEGER");
-        checkFailure0(sql(stringLiteral("foo"), INTEGER), DATA_EXCEPTION, "Cannot parse VARCHAR value to INTEGER");
-        checkFailure0(sql(stringLiteral("true"), INTEGER), DATA_EXCEPTION, "Cannot parse VARCHAR value to INTEGER");
-        checkFailure0(sql(stringLiteral("false"), INTEGER), DATA_EXCEPTION, "Cannot parse VARCHAR value to INTEGER");
-        checkFailure0(sql(stringLiteral("1.1"), INTEGER), DATA_EXCEPTION, "Cannot parse VARCHAR value to INTEGER");
+        checkFailure0(sql(stringLiteral(Long.MAX_VALUE), INTEGER), PARSING, "CAST function cannot convert literal '9223372036854775807' to type INTEGER: Cannot parse VARCHAR value to INTEGER");
+        checkFailure0(sql(stringLiteral(Long.MIN_VALUE), INTEGER), PARSING, "CAST function cannot convert literal '-9223372036854775808' to type INTEGER: Cannot parse VARCHAR value to INTEGER");
+        checkFailure0(sql(stringLiteral("foo"), INTEGER), PARSING, "CAST function cannot convert literal 'foo' to type INTEGER: Cannot parse VARCHAR value to INTEGER");
+        checkFailure0(sql(stringLiteral("true"), INTEGER), PARSING, "CAST function cannot convert literal 'true' to type INTEGER: Cannot parse VARCHAR value to INTEGER");
+        checkFailure0(sql(stringLiteral("false"), INTEGER), PARSING, "CAST function cannot convert literal 'false' to type INTEGER: Cannot parse VARCHAR value to INTEGER");
+        checkFailure0(sql(stringLiteral("1.1"), INTEGER), PARSING, "CAST function cannot convert literal '1.1' to type INTEGER: Cannot parse VARCHAR value to INTEGER");
 
         // VARCHAR -> BIGINT
         checkValue0(sql(stringLiteral(1), BIGINT), BIGINT, 1L);
         checkValue0(sql(stringLiteral(Long.MAX_VALUE), BIGINT), BIGINT, Long.MAX_VALUE);
         checkValue0(sql(stringLiteral(Long.MIN_VALUE), BIGINT), BIGINT, Long.MIN_VALUE);
-        checkFailure0(sql(stringLiteral(Long.MAX_VALUE + "0"), BIGINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to BIGINT");
-        checkFailure0(sql(stringLiteral(Long.MIN_VALUE + "0"), BIGINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to BIGINT");
-        checkFailure0(sql(stringLiteral("foo"), BIGINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to BIGINT");
-        checkFailure0(sql(stringLiteral("true"), BIGINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to BIGINT");
-        checkFailure0(sql(stringLiteral("false"), BIGINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to BIGINT");
-        checkFailure0(sql(stringLiteral("1.1"), BIGINT), DATA_EXCEPTION, "Cannot parse VARCHAR value to BIGINT");
+        checkFailure0(sql(stringLiteral(Long.MAX_VALUE + "0"), BIGINT), PARSING, "CAST function cannot convert literal '92233720368547758070' to type BIGINT: Cannot parse VARCHAR value to BIGINT");
+        checkFailure0(sql(stringLiteral(Long.MIN_VALUE + "0"), BIGINT), PARSING, "CAST function cannot convert literal '-92233720368547758080' to type BIGINT: Cannot parse VARCHAR value to BIGINT");
+        checkFailure0(sql(stringLiteral("foo"), BIGINT), PARSING, "CAST function cannot convert literal 'foo' to type BIGINT: Cannot parse VARCHAR value to BIGINT");
+        checkFailure0(sql(stringLiteral("true"), BIGINT), PARSING, "CAST function cannot convert literal 'true' to type BIGINT: Cannot parse VARCHAR value to BIGINT");
+        checkFailure0(sql(stringLiteral("false"), BIGINT), PARSING, "CAST function cannot convert literal 'false' to type BIGINT: Cannot parse VARCHAR value to BIGINT");
+        checkFailure0(sql(stringLiteral("1.1"), BIGINT), PARSING, "CAST function cannot convert literal '1.1' to type BIGINT: Cannot parse VARCHAR value to BIGINT");
 
         // VARCHAR -> DECIMAL
         checkValue0(sql(stringLiteral(1), DECIMAL), DECIMAL, decimal(1));
         checkValue0(sql(stringLiteral("1.1"), DECIMAL), DECIMAL, decimal("1.1"));
         checkValue0(sql(stringLiteral(Long.MAX_VALUE + "0"), DECIMAL), DECIMAL, decimal(Long.MAX_VALUE + "0"));
         checkValue0(sql(stringLiteral(Long.MIN_VALUE + "0"), DECIMAL), DECIMAL, decimal(Long.MIN_VALUE + "0"));
-        checkFailure0(sql(stringLiteral("foo"), DECIMAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to DECIMAL");
-        checkFailure0(sql(stringLiteral("true"), DECIMAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to DECIMAL");
-        checkFailure0(sql(stringLiteral("false"), DECIMAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to DECIMAL");
+        checkFailure0(sql(stringLiteral("foo"), DECIMAL), PARSING, "CAST function cannot convert literal 'foo' to type DECIMAL: Cannot parse VARCHAR value to DECIMAL");
+        checkFailure0(sql(stringLiteral("true"), DECIMAL), PARSING, "CAST function cannot convert literal 'true' to type DECIMAL: Cannot parse VARCHAR value to DECIMAL");
+        checkFailure0(sql(stringLiteral("false"), DECIMAL), PARSING, "CAST function cannot convert literal 'false' to type DECIMAL: Cannot parse VARCHAR value to DECIMAL");
 
         // VARCHAR -> REAL
         checkValue0(sql(stringLiteral(1), REAL), REAL, 1f);
         checkValue0(sql(stringLiteral("1.1"), REAL), REAL, 1.1f);
-        checkFailure0(sql(stringLiteral("foo"), REAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to REAL");
-        checkFailure0(sql(stringLiteral("true"), REAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to REAL");
-        checkFailure0(sql(stringLiteral("false"), REAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to REAL");
+        checkFailure0(sql(stringLiteral("foo"), REAL), PARSING, "CAST function cannot convert literal 'foo' to type REAL: Cannot parse VARCHAR value to REAL");
+        checkFailure0(sql(stringLiteral("true"), REAL), PARSING, "CAST function cannot convert literal 'true' to type REAL: Cannot parse VARCHAR value to REAL");
+        checkFailure0(sql(stringLiteral("false"), REAL), PARSING, "CAST function cannot convert literal 'false' to type REAL: Cannot parse VARCHAR value to REAL");
 
         // VARCHAR -> DOUBLE
         checkValue0(sql(stringLiteral(1), DOUBLE), DOUBLE, 1d);
         checkValue0(sql(stringLiteral("1.1"), DOUBLE), DOUBLE, 1.1d);
-        checkFailure0(sql(stringLiteral("foo"), DOUBLE), DATA_EXCEPTION, "Cannot parse VARCHAR value to DOUBLE");
-        checkFailure0(sql(stringLiteral("true"), DOUBLE), DATA_EXCEPTION, "Cannot parse VARCHAR value to DOUBLE");
-        checkFailure0(sql(stringLiteral("false"), DOUBLE), DATA_EXCEPTION, "Cannot parse VARCHAR value to DOUBLE");
+        checkFailure0(sql(stringLiteral("foo"), DOUBLE), PARSING, "CAST function cannot convert literal 'foo' to type DOUBLE: Cannot parse VARCHAR value to DOUBLE");
+        checkFailure0(sql(stringLiteral("true"), DOUBLE), PARSING, "CAST function cannot convert literal 'true' to type DOUBLE: Cannot parse VARCHAR value to DOUBLE");
+        checkFailure0(sql(stringLiteral("false"), DOUBLE), PARSING, "CAST function cannot convert literal 'false' to type DOUBLE: Cannot parse VARCHAR value to DOUBLE");
 
         // VARCHAR -> DATE
         checkValue0(sql(stringLiteral("2020-01-01"), DATE), DATE, LocalDate.parse("2020-01-01"));

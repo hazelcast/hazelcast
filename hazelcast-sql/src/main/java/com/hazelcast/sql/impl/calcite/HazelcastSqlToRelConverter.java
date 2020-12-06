@@ -23,7 +23,6 @@ import com.hazelcast.sql.impl.calcite.validate.literal.Literal;
 import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.converter.StringConverter;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;
@@ -39,20 +38,16 @@ import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorException;
 import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
-import org.apache.calcite.util.DateString;
 import org.apache.calcite.util.TimeString;
 
-import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
 
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
-import static org.apache.calcite.sql.type.SqlTypeName.DATE;
+import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.apache.calcite.sql.type.SqlTypeName.TIME;
-import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP;
-import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE;
 
 /**
  * Custom Hazelcast sql-to-rel converter.
@@ -115,7 +110,22 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
         Literal literal = LiteralUtils.literal(call.operand(0));
 
-        if (literal != null) {
+        if (literal != null && literal.getTypeName() != NULL) {
+            // There is a bug in RexSimplify that incorrectly converts numeric literals from one numeric type to another.
+            // The problem is located in the RexToLixTranslator.translateLiteral. To perform a conversion, it delegates
+            // to Primitive.number(Number) method, that does a conversion without checking for overflow. For example, the
+            // expression [32767 AS TINYINT] is converted to -1, which is obviously incorrect.
+            // To workaround the problem, we perform the conversion using our converters manually. If the conversion fails,
+            // we throw an error (it would have been thrown in runtime anyway), thus preventing Apache Calcite from entering
+            // the problematic simplification routine.
+            // Since this workaround moves conversion errors to the parsing phase, we conduct the conversion check for all
+            // types to ensure that we throw consistent error messages for all literal-related conversions errors.
+            try {
+                toType.getConverter().convertToSelf(fromType.getConverter(), literal.getValue());
+            } catch (Exception e) {
+                throw literalConversionException(validator, call, literal, toType, e);
+            }
+
             // Normalize BOOLEAN and DOUBLE literals when converting them to VARCHAR.
             // BOOLEAN literals are converted to "true"/"false" instead of "TRUE"/"FALSE".
             // DOUBLE literals are converted to a string with scientific conventions (e.g., 1.1E1 instead of 11.0);
@@ -126,55 +136,12 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             // There is a bug in RexSimplify that adds an unnecessary second. For example, the string literal "00:00" is
             // converted to 00:00:01. The problematic code is located in DateTimeUtils.timeStringToUnixDate.
             // To workaround the problem, we perform the conversion manually.
-            if (CHAR_TYPES.contains(from.getSqlTypeName())) {
-                if (to.getSqlTypeName() == DATE) {
-                    try {
-                        LocalDate date = StringConverter.INSTANCE.asDate(literal.getStringValue());
+            if (CHAR_TYPES.contains(from.getSqlTypeName()) && to.getSqlTypeName() == TIME) {
+                LocalTime time = fromType.getConverter().asTime(literal.getStringValue());
 
-                        DateString dateString = new DateString(date.getYear(), date.getMonthValue(), date.getDayOfMonth());
+                TimeString timeString = new TimeString(time.getHour(), time.getMinute(), time.getSecond());
 
-                        return getRexBuilder().makeLiteral(dateString, to, true);
-                    } catch (Exception e) {
-                        throw literalConversionException(validator, call, literal, toType, e);
-                    }
-                } else if (to.getSqlTypeName() == TIME) {
-                    try {
-                        LocalTime time = StringConverter.INSTANCE.asTime(literal.getStringValue());
-
-                        TimeString timeString = new TimeString(time.getHour(), time.getMinute(), time.getSecond());
-
-                        return getRexBuilder().makeLiteral(timeString, to, true);
-                    } catch (Exception e) {
-                        throw literalConversionException(validator, call, literal, toType, e);
-                    }
-                } else if (to.getSqlTypeName() == TIMESTAMP) {
-                    try {
-                        StringConverter.INSTANCE.asTimestamp(literal.getStringValue());
-                    } catch (Exception e) {
-                        throw literalConversionException(validator, call, literal, toType, e);
-                    }
-                } else if (to.getSqlTypeName() == TIMESTAMP_WITH_LOCAL_TIME_ZONE) {
-                    try {
-                        StringConverter.INSTANCE.asTimestampWithTimezone(literal.getStringValue());
-                    } catch (Exception e) {
-                        throw literalConversionException(validator, call, literal, toType, e);
-                    }
-                }
-            }
-
-            // There is a bug in RexSimplify that incorrectly converts numeric literals from one numeric type to another.
-            // The problem is located in the RexToLixTranslator.translateLiteral. To perform a conversion, it delegates
-            // to Primitive.number(Number) method, that does a conversion without checking for overflow. For example, the
-            // expression [32767 AS TINYINT] is converted to -1, which is obviously incorrect.
-            // To workaround the problem, we perform the conversion using our converters manually. If the conversion fails,
-            // we throw an error (it would have been thrown in runtime anyway), thus preventing Apache Calcite from entering
-            // the problematic simplification routine.
-            if (CalciteUtils.isNumericType(from) && CalciteUtils.isNumericType(to)) {
-                try {
-                    toType.getConverter().convertToSelf(fromType.getConverter(), literal.getValue());
-                } catch (Exception e) {
-                    throw literalConversionException(validator, call, literal, toType, e);
-                }
+                return getRexBuilder().makeLiteral(timeString, to, true);
             }
         }
 
