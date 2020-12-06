@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentMap;
  * Can be used to exchange a single or multiple tenant controls each belonging
  * to a different distributed object.
  *
- * @since 4.1
+ * @since 4.2
  */
 public class TenantControlReplicationOperation extends Operation implements IdentifiedDataSerializable {
 

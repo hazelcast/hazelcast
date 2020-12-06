@@ -67,9 +67,4 @@ public class AddCacheConfigOperation extends Operation implements IdentifiedData
     public int getClassId() {
         return CacheDataSerializerHook.ADD_CACHE_CONFIG_OPERATION;
     }
-
-    @Override
-    public boolean requiresTenantContext() {
-        return false;
-    }
 }
