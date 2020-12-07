@@ -136,7 +136,7 @@ public class TenantControlServiceImpl
         TenantControl tenantControl = tenantControlFactory.saveCurrentTenant();
         appendTenantControl(serviceName, objectName, tenantControl);
 
-        // RU_COMPAT_4_0
+        // RU_COMPAT_4_1
         if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_2)) {
             try {
                 invokeOnStableClusterSerial(
@@ -152,7 +152,7 @@ public class TenantControlServiceImpl
 
     @Override
     public void onClusterVersionChange(Version newVersion) {
-        // RU_COMPAT_4_0
+        // RU_COMPAT_4_1
         if (isTenantControlEnabled() && newVersion.isEqualTo(Versions.V4_2)) {
             // async, we should not block transaction
             InternalCompletableFuture<Object> future = invokeOnStableClusterSerial(nodeEngine,
@@ -215,7 +215,7 @@ public class TenantControlServiceImpl
     @Override
     public Operation getPreJoinOperation() {
         Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
-        // RU_COMPAT_4_0
+        // RU_COMPAT_4_1
         return isTenantControlEnabled() && clusterVersion.isGreaterOrEqual(Versions.V4_2)
                 ? new TenantControlReplicationOperation(tenantControlMap)
                 : null;

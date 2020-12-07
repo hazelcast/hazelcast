@@ -18,18 +18,21 @@ package com.hazelcast.spi.impl.tenantcontrol;
 
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.spi.tenantcontrol.TenantControl.Closeable;
+
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 /**
- * Represents a value that requires tenant control context to be accessed
+ * Represents a value that requires tenant control context to be accessed.
+ * <p>
+ * The object is initialized lazily based on the provided constructor arguments.
  *
- * @author lprimak
  * @param <T> object type
+ * @author lprimak
  */
 public final class TenantContextual<T> {
-    private static final TenantContextual<?> NOOP;
+    private static final TenantContextual<?> NOOP = new TenantContextual<>(() -> null, () -> false, new NoopTenantControl());
 
     private T contextual;
     private volatile boolean initialized;
@@ -46,7 +49,8 @@ public final class TenantContextual<T> {
 
     @SuppressWarnings("unchecked")
     public static <T> TenantContextual<T> create(Supplier<T> initFunction,
-            Supplier<Boolean> existsFunction, TenantControl tenantControl) {
+                                                 Supplier<Boolean> existsFunction,
+                                                 TenantControl tenantControl) {
         if (tenantControl == TenantControl.NOOP_TENANT_CONTROL && !existsFunction.get()) {
             return (TenantContextual<T>) NOOP;
         } else {
@@ -54,17 +58,11 @@ public final class TenantContextual<T> {
         }
     }
 
-    static {
-        NOOP = new TenantContextual<>(() -> null, () -> false, new NoopTenantControl());
-    }
-
     /**
-     *
-     * @return underlying object, initialize within Tenant Control when necessary
+     * @return the underlying object, initialized within Tenant Control when necessary
      */
     public T get() {
-        boolean localInitialized = this.initialized;
-        if (!localInitialized) {
+        if (!initialized) {
             lock.lock();
             try {
                 if (!initialized) {
@@ -83,9 +81,8 @@ public final class TenantContextual<T> {
     }
 
     /**
-     * could be called isNull() for the underlying object
-     *
-     * @return true if the underlying object exists (it not null)
+     * @return true if the underlying object exists as determined by the exists
+     * function passed to this object during construction
      */
     public Boolean exists() {
         return existsFunction.get();
@@ -96,10 +93,11 @@ public final class TenantContextual<T> {
     }
 
     /**
-     * method to return delegate having same contextual and creation methods
-     * as the current class
+     * Returns a new tenant contextual that shares the same {@link TenantControl}
+     * and other fields set when constructing this object but with the actual
+     * underlying object changed to the passed {@code delegate}.
      *
-     * @param delegate
+     * @param delegate the object to use in the returned tenant contextual
      * @return newly-created delegate
      */
     public TenantContextual<T> delegate(T delegate) {

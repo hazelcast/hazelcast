@@ -168,13 +168,8 @@ abstract class CacheProxySupport<K, V>
 
     @Override
     public DestroyEventContext getDestroyContextForTenant() {
-        return () -> {
-            reSerializeCacheConfig();
-            ((CacheService) cacheService).reSerializeCacheConfig(cacheConfig);
-        };
+        return () -> cacheConfig = ((CacheService) cacheService).reSerializeCacheConfig(cacheConfig);
     }
-
-    abstract void reSerializeCacheConfig();
 
     @Override
     protected boolean preDestroy() {

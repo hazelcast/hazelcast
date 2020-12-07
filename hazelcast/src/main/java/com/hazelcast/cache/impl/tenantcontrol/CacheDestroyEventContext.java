@@ -31,6 +31,7 @@ import java.io.IOException;
  * @author lprimak
  * @deprecated
  */
+// RU_COMPAT_4_1
 @Deprecated
 public class CacheDestroyEventContext implements DestroyEventContext, IdentifiedDataSerializable {
 
