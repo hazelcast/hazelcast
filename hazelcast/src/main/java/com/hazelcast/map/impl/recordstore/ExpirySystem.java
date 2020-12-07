@@ -27,8 +27,10 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +43,9 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.pickMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTLMillis;
 import static com.hazelcast.map.impl.record.Record.UNSET;
 
+/**
+ * Always accessed by 1 thread.
+ */
 public class ExpirySystem {
     final MapServiceContext mapServiceContext;
 
@@ -48,10 +53,10 @@ public class ExpirySystem {
     private final RecordStore recordStore;
     private final MapContainer mapContainer;
     private final ClearExpiredRecordsTask clearExpiredRecordsTask;
-    private final Map<Data, ExpiryMetadata> expireTimeByKey;
     private final InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<>();
 
     private Iterator<Data> expirationIterator;
+    private Map<Data, ExpiryMetadata> expireTimeByKey;
 
     public ExpirySystem(RecordStore recordStore,
                         MapContainer mapContainer,
@@ -63,13 +68,28 @@ public class ExpirySystem {
         this.expiryDelayMillis = hazelcastProperties.getMillis(ClusterProperty.MAP_EXPIRY_DELAY_SECONDS);
         this.mapContainer = mapContainer;
         this.mapServiceContext = mapServiceContext;
-        this.expireTimeByKey = createExpireTimeByKeyMap();
     }
 
-    protected Map<Data, ExpiryMetadata> createExpireTimeByKeyMap() {
+    protected Map<Data, ExpiryMetadata> createExpiryTimeByKeyMap() {
         // only reason we use CHM is, its iterator
         // doesn't throw concurrent modification exception.
         return new ConcurrentHashMap<>();
+    }
+
+    private Map<Data, ExpiryMetadata> getOrCreateExpireTimeByKeyMap(boolean createIfAbsent) {
+        if (expireTimeByKey != null) {
+            return expireTimeByKey;
+        }
+
+        expireTimeByKey = createIfAbsent
+                ? createExpiryTimeByKeyMap() : Collections.emptyMap();
+
+        return expireTimeByKey;
+    }
+
+    @NotNull
+    protected ExpiryMetadata createExpiryMetadata(long ttlMillis, long maxIdleMillis, long expirationTime) {
+        return new ExpiryMetadataImpl(ttlMillis, maxIdleMillis, expirationTime);
     }
 
     public void addExpiry(Data key, long ttl, long maxIdle, long now) {
@@ -79,13 +99,14 @@ public class ExpirySystem {
         long expirationTime = calculateExpirationTime(ttlMillis, maxIdleMillis, now);
 
         if (expirationTime == Long.MAX_VALUE) {
-            expireTimeByKey.remove(key);
+            getOrCreateExpireTimeByKeyMap(false).remove(key);
             return;
         }
 
+        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(true);
         ExpiryMetadata expiryMetadata = expireTimeByKey.get(key);
         if (expiryMetadata == null) {
-            expiryMetadata = new ExpiryMetadataImpl(ttlMillis, maxIdleMillis, expirationTime);
+            expiryMetadata = createExpiryMetadata(ttlMillis, maxIdleMillis, expirationTime);
             expireTimeByKey.put(key, expiryMetadata);
         } else {
             expiryMetadata.setTtl(ttlMillis)
@@ -100,6 +121,7 @@ public class ExpirySystem {
 
     // TODO add test for this.
     public void extendExpiryTime(Data dataKey, long now) {
+        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (expireTimeByKey.isEmpty()) {
             return;
         }
@@ -116,6 +138,10 @@ public class ExpirySystem {
     }
 
     public boolean hasExpired(Data key, long now) {
+        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
+        if (expireTimeByKey.isEmpty()) {
+            return false;
+        }
         ExpiryMetadata expiryMetadata = expireTimeByKey.get(key);
         //System.err.println("hasExpired --> now: " + now + ", " + expiryMetadata);
         return hasExpired0(expiryMetadata, now);
@@ -135,6 +161,7 @@ public class ExpirySystem {
      * for expiration (idle or tll) otherwise returns {@code false}.
      */
     public boolean isRecordStoreExpirable() {
+        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         return !expireTimeByKey.isEmpty();
     }
 
@@ -155,10 +182,13 @@ public class ExpirySystem {
             }
         }
 
+        System.err.println("evictedEntryCount: " + evictedEntryCount);
+
         accumulateOrSendExpiredKey(null);
     }
 
     private int evictExpiredEntriesInternal(int maxIterationCount, long now, boolean backup) {
+        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (expireTimeByKey.isEmpty()) {
             return 0;
         }
@@ -187,6 +217,10 @@ public class ExpirySystem {
     }
 
     public void informEvicted(Data key) {
+        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
+        if (expireTimeByKey.isEmpty()) {
+            return;
+        }
         expireTimeByKey.remove(key);
     }
 
