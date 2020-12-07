@@ -368,7 +368,7 @@
         <profile>
             <id>master</id>
             <properties>
-                <hazelcast.version>4.1-SNAPSHOT</hazelcast.version>
+                <hazelcast.version>4.2-SNAPSHOT</hazelcast.version>
             </properties>
             <dependencies>
                 <dependency>
