@@ -6,7 +6,7 @@ on:
       - '**.md'
 
 jobs:
-  build and test:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
