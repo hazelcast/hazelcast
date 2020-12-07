@@ -16,8 +16,25 @@
 
 package com.hazelcast.internal.metrics;
 
+import com.hazelcast.internal.metrics.impl.MetricsCompressor;
+
 /**
  * Measurement unit of a Probe. Not used on member, becomes a part of the key.
+ * <p>
+ * <b>NOTE</b>: The enum ordinals are used by {@link MetricsCompressor},
+ * therefore, the ordinal values should remain stable between versions to
+ * ensure version compatibility.
+ * <p>
+ * When modifying this enum, please be aware of the following rules
+ * <ul>
+ *     <li>do not reorder the values of this enum,
+ *     <li>do not delete any value from this enum,
+ *     <li>add new values at the end of the list,
+ *     <li>when introducing a new enum value, mark the value as new by
+ *     setting {{@link #newUnit}} to {@code true} and add the version
+ *     dependent RU_COMPAT_X_Y.
+ * </ul>
+ * <p>
  */
 public enum ProbeUnit {
     /** Size, counter, represented in bytes */
@@ -35,7 +52,7 @@ public enum ProbeUnit {
     /** 0..n, ordinal of an enum */
     ENUM,
     /** Timestamp or duration represented in µs */
-    // RU_COMPAT_4_2
+    // RU_COMPAT_4_1
     // remove constructor argument in 4.3
     US(true);
 
