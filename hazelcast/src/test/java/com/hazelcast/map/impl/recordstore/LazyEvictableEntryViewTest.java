@@ -18,11 +18,12 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -35,6 +36,8 @@ import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -60,7 +63,9 @@ public class LazyEvictableEntryViewTest {
     private EntryView createDefaultEntryView() {
         MapConfig mapConfig = new MapConfig();
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        DataRecordFactory recordFactory = new DataRecordFactory(mapConfig, serializationService);
+        MapContainer mapContainer = mock(MapContainer.class);
+        when(mapContainer.getMapConfig()).thenReturn(mapConfig);
+        DataRecordFactory recordFactory = new DataRecordFactory(mapContainer, serializationService);
         Data key = serializationService.toData(this.key);
         recordInstance = recordFactory.newRecord(value);
         return new LazyEvictableEntryView(key, recordInstance, serializationService);

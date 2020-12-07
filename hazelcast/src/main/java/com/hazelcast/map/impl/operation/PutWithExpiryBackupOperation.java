@@ -23,55 +23,38 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 
-public class PutBackupOperation
-        extends MapOperation implements BackupOperation {
+public class PutWithExpiryBackupOperation
+        extends PutBackupOperation {
 
-    protected Record<Data> record;
-    protected Data dataKey;
-    protected Data dataValue;
+    private long ttl;
+    private long maxIdle;
 
-    public PutBackupOperation(String name, Data dataKey,
-                              Record<Data> record, Data dataValue) {
-        super(name);
-        this.dataKey = dataKey;
-        this.record = record;
-        this.dataValue = dataValue;
+    public PutWithExpiryBackupOperation(String name, Data dataKey,
+                                        Record<Data> record,
+                                        Data dataValue, long ttl, long maxIdle) {
+        super(name, dataKey, record, dataValue);
+        this.ttl = ttl;
+        this.maxIdle = maxIdle;
     }
 
-    public PutBackupOperation() {
+    public PutWithExpiryBackupOperation() {
     }
 
     @Override
     protected void runInternal() {
-        // TODO performance: we can put this record directly into record-store if memory format is BINARY
-        Record currentRecord = recordStore.putBackup(dataKey, record, isPutTransient(), getCallerProvenance());
+        // TODO performance: we can put this record directly
+        // into record-store if memory format is BINARY
+        Record currentRecord = recordStore.putBackup(dataKey,
+                record, ttl, maxIdle, getCallerProvenance());
         Records.copyMetadataFrom(record, currentRecord);
-    }
-
-    protected boolean isPutTransient() {
-        return false;
-    }
-
-    @Override
-    protected void afterRunInternal() {
-        evict(dataKey);
-        publishWanUpdate(dataKey, record.getValue());
-
-        super.afterRunInternal();
-    }
-
-    @Override
-    public Object getResponse() {
-        return Boolean.TRUE;
     }
 
     @Override
     public int getClassId() {
-        return MapDataSerializerHook.PUT_BACKUP;
+        return MapDataSerializerHook.PUT_WITH_EXPIRY_BACKUP;
     }
 
     @Override
@@ -80,6 +63,9 @@ public class PutBackupOperation
 
         IOUtil.writeData(out, dataKey);
         Records.writeRecord(out, record, dataValue);
+
+        out.writeLong(ttl);
+        out.writeLong(maxIdle);
     }
 
     @Override
@@ -88,5 +74,8 @@ public class PutBackupOperation
 
         dataKey = IOUtil.readData(in);
         record = Records.readRecord(in);
+
+        ttl = in.readLong();
+        maxIdle = in.readLong();
     }
 }

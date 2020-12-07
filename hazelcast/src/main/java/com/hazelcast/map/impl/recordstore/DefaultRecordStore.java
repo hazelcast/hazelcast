@@ -89,7 +89,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     protected final MapKeyLoader keyLoader;
     /**
      * A collection of futures representing pending completion of the key and
-     * value loading tasks.
+     * value loading tasks.ois
      * The loadingFutures are modified by partition threads and can be accessed
      * by query threads.
      *
@@ -159,7 +159,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public Record putReplicatedRecord(Data dataKey, Record replicatedRecord, long nowInMillis,
                                       boolean populateIndexes) {
         Record newRecord = createRecord(dataKey, replicatedRecord, nowInMillis);
-        markRecordStoreExpirable(replicatedRecord.getTtl(), replicatedRecord.getMaxIdle());
+        // TODO expiry info must be got from expiry system
+        markRecordStoreExpirable(dataKey, replicatedRecord.getTtl(),
+                replicatedRecord.getMaxIdle(), nowInMillis);
         storage.put(dataKey, newRecord);
         mutationObserver.onReplicationPutRecord(dataKey, newRecord, populateIndexes);
         updateStatsOnPut(replicatedRecord.getHits(), nowInMillis);
@@ -171,6 +173,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                             boolean putTransient, CallerProvenance provenance) {
         return putBackupInternal(dataKey, newRecord.getValue(),
                 newRecord.getTtl(), newRecord.getMaxIdle(), putTransient, provenance, null);
+    }
+
+    @Override
+    public Record putBackup(Data dataKey, Record record, long ttl,
+                            long maxIdle, CallerProvenance provenance) {
+        return putBackupInternal(dataKey, record.getValue(),
+                ttl, maxIdle, false, provenance, null);
     }
 
     @Override
@@ -224,7 +233,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             Data key = entry.getKey();
             Record record = entry.getValue();
 
-            if (includeExpiredRecords || !isExpired(record, now, backup)) {
+            if (includeExpiredRecords || !isExpired(key, now, backup)) {
                 consumer.accept(key, record);
             }
         }
@@ -291,7 +300,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             Data key = entry.getKey();
             Record record = entry.getValue();
 
-            if (getOrNullIfExpired(key, record, now, false) == null) {
+            if (evictIfExpired(key, now, false)) {
                 continue;
             }
             if (valueComparator.isEqual(value, record.getValue(), serializationService)) {
@@ -573,9 +582,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record record = getRecordOrNull(key, now, backup);
         if (record == null) {
             record = loadRecordOrNull(key, backup, callerAddress);
-            record = getOrNullIfExpired(key, record, now, backup);
+            record = evictIfExpired(key, now, backup) ? null : record;
         } else if (touch) {
-            accessRecord(record, now);
+            accessRecord(key, record, now);
         }
         Object value = record == null ? null : record.getValue();
         value = mapServiceContext.interceptGet(interceptorRegistry, value);
@@ -622,7 +631,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             Record record = getRecordOrNull(key, now, false);
             if (record != null) {
                 addToMapEntrySet(key, record.getValue(), mapEntries);
-                accessRecord(record, now);
+                accessRecord(key, record, now);
                 iterator.remove();
             }
         }
@@ -713,7 +722,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
         boolean contains = record != null;
         if (contains) {
-            accessRecord(record, now);
+            accessRecord(key, record, now);
         }
 
         return contains;
@@ -839,7 +848,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     private Record getOrLoadRecord(@Nullable Record record, Data key,
                                    long now, Address callerAddress, boolean backup) {
         if (record != null) {
-            accessRecord(record, now);
+            accessRecord(key, record, now);
             return record;
         }
 
@@ -865,7 +874,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             newValue = putIntoMapStore(record, key, newValue, now, transactionId);
         }
         storage.updateRecordValue(key, record, newValue);
-        markRecordStoreExpirable(ttl, maxIdle);
+        markRecordStoreExpirable(key, ttl, maxIdle, now);
         mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
     }
 
@@ -880,7 +889,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             putIntoMapStore(record, key, newValue, now, transactionId);
         }
         storage.put(key, record);
-        markRecordStoreExpirable(ttlMillis, maxIdleMillis);
+        markRecordStoreExpirable(key, ttlMillis, maxIdleMillis, now);
         if (entryEventType == EntryEventType.LOADED) {
             mutationObserver.onLoadRecord(key, record, backup);
         } else {
@@ -939,7 +948,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
 
             if (valueComparator.isEqual(newValue, oldValue, serializationService)) {
-                mergeRecordExpiration(record, mergingEntry);
+                mergeRecordExpiration(key, record, mergingEntry, now);
                 return true;
             }
 
@@ -1093,7 +1102,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             return null;
         }
-        return getOrNullIfExpired(key, record, now, backup);
+        return evictIfExpired(key, now, backup) ? null : record;
     }
 
     protected void onStore(Record record) {

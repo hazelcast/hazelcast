@@ -16,10 +16,12 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 
@@ -35,6 +37,15 @@ public class PutWithExpiryOperation extends PutOperation {
         super(name, dataKey, value);
         this.ttl = ttl;
         this.maxIdle = maxIdle;
+    }
+
+    @Override
+    protected PutBackupOperation newBackupOperation(Data dataKey, Record record, Data dataValue) {
+        if (Versions.CURRENT_CLUSTER_VERSION.isGreaterOrEqual(Versions.V4_2)) {
+            return new PutWithExpiryBackupOperation(name, dataKey, record, dataValue, ttl, maxIdle);
+        } else {
+            return super.newBackupOperation(dataKey, record, dataValue);
+        }
     }
 
     @Override

@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 
@@ -90,6 +90,55 @@ public enum RecordReaderWriter {
             record.setRawExpirationTime(in.readInt());
             return record;
         }
+    },
+
+    SIMPLE_DATA_RECORD_READER_WRITER(TypeId.SIMPLE_DATA_RECORD_TYPE_ID) {
+        @Override
+        void writeRecord(ObjectDataOutput out,
+                         Record record, Data dataValue) throws IOException {
+            writeData(out, dataValue);
+        }
+
+        @Override
+        Record readRecord(ObjectDataInput in) throws IOException {
+            Record record = new SimpleRecord();
+            record.setValue(readData(in));
+            return record;
+        }
+    },
+
+    SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER(TypeId.SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_TYPE_ID) {
+        @Override
+        void writeRecord(ObjectDataOutput out,
+                         Record record, Data dataValue) throws IOException {
+            writeData(out, dataValue);
+            out.writeInt(record.getRawLastAccessTime());
+        }
+
+        @Override
+        Record readRecord(ObjectDataInput in) throws IOException {
+            Record record = new SimpleRecordWithLRUEviction();
+            record.setValue(readData(in));
+            record.setRawLastAccessTime(in.readInt());
+            return record;
+        }
+    },
+
+    SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER(TypeId.SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_TYPE_ID) {
+        @Override
+        void writeRecord(ObjectDataOutput out,
+                         Record record, Data dataValue) throws IOException {
+            writeData(out, dataValue);
+            out.writeInt(record.getHits());
+        }
+
+        @Override
+        Record readRecord(ObjectDataInput in) throws IOException {
+            Record record = new SimpleRecordWithLRUEviction();
+            record.setValue(readData(in));
+            record.setHits(in.readInt());
+            return record;
+        }
     };
 
     private byte id;
@@ -105,6 +154,9 @@ public enum RecordReaderWriter {
     private static class TypeId {
         private static final byte DATA_RECORD_TYPE_ID = 1;
         private static final byte DATA_RECORD_WITH_STATS_TYPE_ID = 2;
+        private static final byte SIMPLE_DATA_RECORD_TYPE_ID = 3;
+        private static final byte SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_TYPE_ID = 4;
+        private static final byte SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_TYPE_ID = 5;
     }
 
     public static RecordReaderWriter getById(int id) {
@@ -113,6 +165,12 @@ public enum RecordReaderWriter {
                 return DATA_RECORD_READER_WRITER;
             case TypeId.DATA_RECORD_WITH_STATS_TYPE_ID:
                 return DATA_RECORD_WITH_STATS_READER_WRITER;
+            case TypeId.SIMPLE_DATA_RECORD_TYPE_ID:
+                return SIMPLE_DATA_RECORD_READER_WRITER;
+            case TypeId.SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_TYPE_ID:
+                return SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER;
+            case TypeId.SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_TYPE_ID:
+                return SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER;
             default:
                 throw new IllegalArgumentException();
         }

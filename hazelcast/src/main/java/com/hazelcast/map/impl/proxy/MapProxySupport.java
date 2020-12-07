@@ -125,7 +125,6 @@ import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 import static com.hazelcast.internal.util.TimeUtil.timeInMsOrOneIfResultIsZero;
 import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
-import static com.hazelcast.map.impl.LocalMapStatsProvider.EMPTY_LOCAL_MAP_STATS;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
 import static com.hazelcast.query.Predicates.alwaysFalse;
@@ -1314,9 +1313,6 @@ abstract class MapProxySupport<K, V>
 
     @Override
     public LocalMapStats getLocalMapStats() {
-        if (!mapConfig.isStatisticsEnabled()) {
-            return EMPTY_LOCAL_MAP_STATS;
-        }
         return mapServiceContext.getLocalMapStatsProvider().createLocalMapStats(name);
     }
 

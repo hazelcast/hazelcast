@@ -121,7 +121,7 @@ public class MapScanExecIterator implements KeyValueIterator {
             while (currentRecordStoreIterator.hasNext()) {
                 Map.Entry<Data, Record<Object>> entry = currentRecordStoreIterator.next();
 
-                if (!currentRecordStore.isExpired(entry.getValue(), now, false)) {
+                if (!currentRecordStore.isExpired(entry.getKey(), now, false)) {
                     nextKey = entry.getKey();
                     nextValue = entry.getValue().getValue();
 

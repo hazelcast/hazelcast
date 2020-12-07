@@ -455,6 +455,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
     private <T, U> IMap<T, U> createMap() {
         String mapName = randomMapName();
         Config config = getConfig();
+        config.getMetricsConfig().setEnabled(false);
         config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat());
         return createHazelcastInstance(getConfig()).getMap(mapName);
     }
@@ -464,12 +465,20 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         String mapName = randomMapName();
 
         Config config = getConfig();
+        config.getMetricsConfig().setEnabled(false);
         config.getMapConfig(mapName)
                 .setMaxIdleSeconds(maxIdleSeconds)
                 .setInMemoryFormat(inMemoryFormat());
 
         HazelcastInstance node = createHazelcastInstance(config);
         return node.getMap(mapName);
+    }
+
+    @Override
+    protected Config getConfig() {
+        Config config = super.getConfig();
+        config.getMetricsConfig().setEnabled(false);
+        return config;
     }
 
     @SuppressWarnings("SameParameterValue")

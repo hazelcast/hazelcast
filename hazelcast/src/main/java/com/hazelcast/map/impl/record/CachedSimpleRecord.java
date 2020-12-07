@@ -24,18 +24,31 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
 /**
- * CachedDataRecordWithStats.
+ * Used when {@link com.hazelcast.config.MapConfig#statisticsEnabled}
+ * is {@code false} and {@link
+ * com.hazelcast.config.MapConfig#cacheDeserializedValues} is not
+ * {@link com.hazelcast.config.CacheDeserializedValues#NEVER}.
+ *
+ * @see CachedSimpleRecordWithLFUEviction
  */
-class CachedDataRecordWithStats extends DataRecordWithStats {
-    private static final AtomicReferenceFieldUpdater<CachedDataRecordWithStats, Object> CACHED_VALUE =
-            AtomicReferenceFieldUpdater.newUpdater(CachedDataRecordWithStats.class, Object.class, "cachedValue");
+class CachedSimpleRecord extends SimpleRecord<Data> {
+    private static final AtomicReferenceFieldUpdater<CachedSimpleRecord, Object> CACHED_VALUE =
+            AtomicReferenceFieldUpdater.newUpdater(CachedSimpleRecord.class, Object.class, "cachedValue");
 
     private static final int CACHED_VALUE_REF_COST_IN_BYTES = REFERENCE_COST_IN_BYTES;
 
     private transient volatile Object cachedValue;
 
-    CachedDataRecordWithStats(Data value) {
+    CachedSimpleRecord() {
+    }
+
+    CachedSimpleRecord(Data value) {
         super(value);
+    }
+
+    @Override
+    public long getCost() {
+        return super.getCost() + CACHED_VALUE_REF_COST_IN_BYTES;
     }
 
     @Override
@@ -55,11 +68,6 @@ class CachedDataRecordWithStats extends DataRecordWithStats {
     }
 
     @Override
-    public long getCost() {
-        return super.getCost() + CACHED_VALUE_REF_COST_IN_BYTES;
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -73,8 +81,9 @@ class CachedDataRecordWithStats extends DataRecordWithStats {
             return false;
         }
 
-        CachedDataRecordWithStats that = (CachedDataRecordWithStats) o;
+        CachedSimpleRecord that = (CachedSimpleRecord) o;
         return Objects.equals(cachedValue, that.cachedValue);
+
     }
 
     @Override
@@ -86,7 +95,7 @@ class CachedDataRecordWithStats extends DataRecordWithStats {
 
     @Override
     public String toString() {
-        return "CachedDataRecordWithStats{"
+        return "CachedDataRecord{"
                 + "cachedValue=" + cachedValue
                 + ", " + super.toString()
                 + "} ";

@@ -17,15 +17,23 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.CacheDeserializedValues;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
+
+import javax.annotation.Nonnull;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport {
@@ -104,5 +112,18 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
 
     Record<T> newRecord(RecordFactory<T> factory, Object value) {
         return factory.newRecord(value);
+    }
+
+    @Nonnull
+    protected MapContainer createMapContainer(boolean isStatisticsEnabled,
+                                            CacheDeserializedValues cacheDeserializedValues) {
+        MapConfig mapConfig = new MapConfig()
+                .setStatisticsEnabled(isStatisticsEnabled)
+                .setCacheDeserializedValues(cacheDeserializedValues);
+
+        MapContainer mapContainer = mock(MapContainer.class);
+        when(mapContainer.getMapConfig()).thenReturn(mapConfig);
+        when(mapContainer.getEvictor()).thenReturn(Evictor.NULL_EVICTOR);
+        return mapContainer;
     }
 }
