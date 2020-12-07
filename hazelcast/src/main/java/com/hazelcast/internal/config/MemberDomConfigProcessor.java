@@ -1503,10 +1503,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleQueue(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        QueueConfig qConfig = new QueueConfig();
-        qConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        QueueConfig qConfig = config.getQueueConfig(name);
         handleQueueNode(node, qConfig);
     }
 
@@ -1552,10 +1550,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleList(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        ListConfig lConfig = new ListConfig();
-        lConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        ListConfig lConfig = config.getListConfig(name);
         handleListNode(node, lConfig);
     }
 
@@ -1584,10 +1580,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleSet(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        SetConfig sConfig = new SetConfig();
-        sConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        SetConfig sConfig = config.getSetConfig(name);
         handleSetNode(node, sConfig);
     }
 
@@ -1615,10 +1609,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleMultiMap(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        MultiMapConfig multiMapConfig = new MultiMapConfig();
-        multiMapConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        MultiMapConfig multiMapConfig = config.getMultiMapConfig(name);
         handleMultiMapNode(node, multiMapConfig);
     }
 
@@ -1663,10 +1655,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleReplicatedMap(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        final ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig();
-        replicatedMapConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        final ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(name);
         handleReplicatedMapNode(node, replicatedMapConfig);
     }
 
@@ -1693,8 +1683,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleMap(Node parentNode) throws Exception {
         String name = getAttribute(parentNode, "name");
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setName(name);
+        MapConfig mapConfig = config.getMapConfig(name);
         handleMapNode(parentNode, mapConfig);
     }
 

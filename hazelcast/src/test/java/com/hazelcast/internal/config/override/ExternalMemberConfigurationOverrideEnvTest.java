@@ -249,6 +249,90 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         assertEquals(1000, config.getFlakeIdGeneratorConfig("foo").getAllowedFutureMillis());
     }
 
+    @Test
+    public void shouldHandleQueueConfig() throws Exception {
+        Config config = new Config();
+        config.getQueueConfig("foo")
+          .setBackupCount(4)
+          .setMaxSize(10);
+
+        withEnvironmentVariable("HZ_QUEUE_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getQueueConfig("foo").getBackupCount());
+        assertEquals(10, config.getQueueConfig("foo").getMaxSize());
+    }
+
+    @Test
+    public void shouldHandleListConfig() throws Exception {
+        Config config = new Config();
+        config.getListConfig("foo")
+          .setBackupCount(4)
+          .setMaxSize(10);
+
+        withEnvironmentVariable("HZ_LIST_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getListConfig("foo").getBackupCount());
+        assertEquals(10, config.getListConfig("foo").getMaxSize());
+    }
+
+    @Test
+    public void shouldHandleSetConfig() throws Exception {
+        Config config = new Config();
+        config.getSetConfig("foo")
+          .setBackupCount(4)
+          .setMaxSize(10);
+
+        withEnvironmentVariable("HZ_SET_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getSetConfig("foo").getBackupCount());
+        assertEquals(10, config.getSetConfig("foo").getMaxSize());
+    }
+
+    @Test
+    public void shouldHandleMapConfig() throws Exception {
+        Config config = new Config();
+        config.getMapConfig("foo")
+          .setBackupCount(4)
+          .setMaxIdleSeconds(100);
+
+        withEnvironmentVariable("HZ_MAP_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getMapConfig("foo").getBackupCount());
+        assertEquals(100, config.getMapConfig("foo").getMaxIdleSeconds());
+    }
+
+    @Test
+    public void shouldHandleReplicatedMapConfig() throws Exception {
+        Config config = new Config();
+        config.getReplicatedMapConfig("foo")
+          .setAsyncFillup(false)
+          .setStatisticsEnabled(false);
+
+        withEnvironmentVariable("HZ_REPLICATEDMAP_FOO_ASYNCFILLUP", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getReplicatedMapConfig("foo").isAsyncFillup());
+        assertFalse(config.getReplicatedMapConfig("foo").isStatisticsEnabled());
+    }
+
+    @Test
+    public void shouldHandleMultiMapConfig() throws Exception {
+        Config config = new Config();
+        config.getMultiMapConfig("foo")
+          .setBackupCount(4)
+          .setBinary(false);
+
+        withEnvironmentVariable("HZ_MULTIMAP_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getMultiMapConfig("foo").getBackupCount());
+        assertFalse(config.getMultiMapConfig("foo").isBinary());
+    }
+
     @Test(expected = InvalidConfigurationException.class)
     public void shouldDisallowConflictingEntries() throws Exception {
         withEnvironmentVariable("HZ_CLUSTERNAME", "test")
