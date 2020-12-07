@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastFunction;
@@ -77,8 +77,8 @@ public final class HazelcastCastFunction extends HazelcastFunction {
         }
 
         if (throwOnFailure) {
-            SqlColumnType sourceType0 = CalciteUtils.map(sourceType.getSqlTypeName()).getTypeFamily().getPublicType();
-            SqlColumnType targetType0 = CalciteUtils.map(targetType.getSqlTypeName()).getTypeFamily().getPublicType();
+            SqlColumnType sourceType0 = HazelcastTypeUtils.toHazelcastType(sourceType.getSqlTypeName()).getTypeFamily().getPublicType();
+            SqlColumnType targetType0 = HazelcastTypeUtils.toHazelcastType(targetType.getSqlTypeName()).getTypeFamily().getPublicType();
 
             throw binding.newError(HazelcastResources.RESOURCES.cannotCastValue(sourceType0.name(), targetType0.name()));
         } else {
@@ -87,8 +87,8 @@ public final class HazelcastCastFunction extends HazelcastFunction {
     }
 
     private static boolean canCast(RelDataType sourceType, RelDataType targetType) {
-        QueryDataType queryFrom = CalciteUtils.map(sourceType.getSqlTypeName());
-        QueryDataType queryTo = CalciteUtils.map(targetType.getSqlTypeName());
+        QueryDataType queryFrom = HazelcastTypeUtils.toHazelcastType(sourceType.getSqlTypeName());
+        QueryDataType queryTo = HazelcastTypeUtils.toHazelcastType(targetType.getSqlTypeName());
 
         return queryFrom.getConverter().canConvertTo(queryTo.getTypeFamily());
     }

@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -95,7 +95,7 @@ public final class RexToExpression {
         SqlTypeName type = literal.getType().getSqlTypeName();
 
         if (literal.getValue() == null) {
-            return ConstantExpression.create(null, CalciteUtils.map(type));
+            return ConstantExpression.create(null, HazelcastTypeUtils.toHazelcastType(type));
         }
 
         switch (type) {
@@ -145,7 +145,7 @@ public final class RexToExpression {
         "checkstyle:NPathComplexity"})
     public static Expression<?> convertCall(RexCall call, Expression<?>[] operands) {
         SqlOperator operator = call.getOperator();
-        QueryDataType resultType = CalciteUtils.map(call.getType().getSqlTypeName());
+        QueryDataType resultType = HazelcastTypeUtils.toHazelcastType(call.getType().getSqlTypeName());
 
         switch (operator.getKind()) {
             case DEFAULT:
@@ -362,7 +362,7 @@ public final class RexToExpression {
     private static Expression<?> convertBooleanLiteral(RexLiteral literal, SqlTypeName type) {
         assert type == SqlTypeName.BOOLEAN;
         Boolean value = literal.getValueAs(Boolean.class);
-        return ConstantExpression.create(value, CalciteUtils.map(type));
+        return ConstantExpression.create(value, HazelcastTypeUtils.toHazelcastType(type));
     }
 
     private static Expression<?> convertNumericLiteral(RexLiteral literal, SqlTypeName type) {
@@ -401,7 +401,7 @@ public final class RexToExpression {
                 throw new IllegalArgumentException("Unsupported literal type: " + type);
         }
 
-        return ConstantExpression.create(value, CalciteUtils.map(type));
+        return ConstantExpression.create(value, HazelcastTypeUtils.toHazelcastType(type));
     }
 
     private static Expression<?> convertStringLiteral(RexLiteral literal, SqlTypeName type) {
@@ -416,7 +416,7 @@ public final class RexToExpression {
                 throw new IllegalArgumentException("Unsupported literal type: " + type);
         }
 
-        return ConstantExpression.create(value, CalciteUtils.map(type));
+        return ConstantExpression.create(value, HazelcastTypeUtils.toHazelcastType(type));
     }
 
     private static Expression<?> convertDateLiteral(RexLiteral literal) {

@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite.validate.operand;
 
 import com.hazelcast.sql.impl.ParameterConverter;
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.param.NumericPrecedenceParameterConverter;
@@ -74,7 +74,7 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
         if (type != null) {
             return factory.createTypeWithNullability(type, nullable);
         } else {
-            return CalciteUtils.createType(factory, typeName, nullable);
+            return HazelcastTypeUtils.createType(factory, typeName, nullable);
         }
     }
 
@@ -87,7 +87,7 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
         int operandIndex
     ) {
         QueryDataType tartgetType0 = getTargetHazelcastType();
-        QueryDataType operandType0 = CalciteUtils.map(operandType.getSqlTypeName());
+        QueryDataType operandType0 = HazelcastTypeUtils.toHazelcastType(operandType.getSqlTypeName());
 
         if (!isNumeric() || !operandType0.getTypeFamily().isNumeric()) {
             // Do not coerce non-numeric types
@@ -133,7 +133,7 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
     }
 
     private QueryDataType getTargetHazelcastType() {
-        return CalciteUtils.map(typeName);
+        return HazelcastTypeUtils.toHazelcastType(typeName);
     }
 
     public boolean isNumeric() {

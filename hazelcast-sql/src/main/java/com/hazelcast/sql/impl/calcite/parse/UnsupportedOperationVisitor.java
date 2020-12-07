@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.schema.Table;
@@ -193,7 +193,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         if (type.getTypeNameSpec() instanceof SqlUserDefinedTypeNameSpec) {
             SqlIdentifier typeName = type.getTypeName();
 
-            if (CalciteUtils.isObjectIdentifier(typeName) || CalciteUtils.isTimestampWithTimeZoneIdentifier(typeName)) {
+            if (HazelcastTypeUtils.isObjectIdentifier(typeName) || HazelcastTypeUtils.isTimestampWithTimeZoneIdentifier(typeName)) {
                 return null;
             }
         }

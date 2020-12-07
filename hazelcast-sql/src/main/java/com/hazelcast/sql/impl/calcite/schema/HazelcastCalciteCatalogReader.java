@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.prepare.CalciteCatalogReader;
@@ -68,9 +68,9 @@ public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
 
     @Override
     public RelDataType getNamedType(SqlIdentifier typeName) {
-        if (CalciteUtils.isObjectIdentifier(typeName)) {
+        if (HazelcastTypeUtils.isObjectIdentifier(typeName)) {
             return typeFactory.createSqlType(SqlTypeName.OTHER);
-        } else if (CalciteUtils.isTimestampWithTimeZoneIdentifier(typeName)) {
+        } else if (HazelcastTypeUtils.isTimestampWithTimeZoneIdentifier(typeName)) {
             return typeFactory.createSqlType(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE);
         }
 

@@ -37,7 +37,6 @@ import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
  * HazelcastTypeCoercion} and {@link HazelcastSqlValidator}.
  */
 public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
-
     /**
      * Shared Hazelcast type system instance.
      */

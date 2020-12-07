@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
@@ -46,11 +46,11 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
                 // Will resolve operand type at this index later.
                 unknownTypeOperandIndex = i;
             } else {
-                if (hasParameters && CalciteUtils.map(operandType.getSqlTypeName()).getTypeFamily().isNumericInteger()) {
+                if (hasParameters && HazelcastTypeUtils.toHazelcastType(operandType.getSqlTypeName()).getTypeFamily().isNumericInteger()) {
                     // If we are here, there is a parameter, and an exact numeric literal.
                     // We upcast the type of the numeric literal to BIGINT, so that an expression `1 > ?` is resolved to
                     // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`
-                    RelDataType newOperandType = CalciteUtils.createType(
+                    RelDataType newOperandType = HazelcastTypeUtils.createType(
                         binding.getTypeFactory(),
                         SqlTypeName.BIGINT,
                         operandType.isNullable()

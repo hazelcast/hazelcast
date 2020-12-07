@@ -16,15 +16,14 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import org.apache.calcite.sql.type.BasicSqlType;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 /**
- * Class describing TIME, TIMESTAMP and TIMESTAMP_WITH_TIME_ZONE types.
+ * Custom Hazelcast type that maps to a well-known type name.
  */
-public final class HazelcastTemporalType extends BasicSqlType {
-    HazelcastTemporalType(SqlTypeName typeName, boolean nullable) {
+public final class HazelcastSqlType extends BasicSqlType {
+    HazelcastSqlType(SqlTypeName typeName, boolean nullable) {
         super(HazelcastTypeSystem.INSTANCE, typeName);
 
         this.isNullable = nullable;
@@ -34,6 +33,6 @@ public final class HazelcastTemporalType extends BasicSqlType {
 
     @Override
     protected void generateTypeString(StringBuilder sb, boolean withDetail) {
-        sb.append(CalciteUtils.map(typeName).getTypeFamily());
+        sb.append(HazelcastTypeUtils.toHazelcastType(typeName).getTypeFamily().getPublicType());
     }
 }

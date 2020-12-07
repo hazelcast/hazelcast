@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.ParameterConverter;
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
 import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
@@ -188,7 +188,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 converter = new StrictParameterConverter(
                     i,
                     parameterPositionMap.get(i),
-                    CalciteUtils.map(rowType.getFieldList().get(i).getType().getSqlTypeName())
+                    HazelcastTypeUtils.toHazelcastType(rowType.getFieldList().get(i).getType().getSqlTypeName())
                 );
             }
 

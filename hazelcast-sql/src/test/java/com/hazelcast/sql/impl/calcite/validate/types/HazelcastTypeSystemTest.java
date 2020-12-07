@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -28,8 +27,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.sql.impl.calcite.CalciteUtils.isObjectIdentifier;
-import static com.hazelcast.sql.impl.calcite.CalciteUtils.isTimestampWithTimeZoneIdentifier;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isObjectIdentifier;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isTimestampWithTimeZoneIdentifier;
 import static org.apache.calcite.sql.parser.SqlParserPos.ZERO;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
@@ -148,9 +147,9 @@ public class HazelcastTypeSystemTest {
     }
 
     private static void assertPrecedence(RelDataType expected, RelDataType other) {
-        RelDataType actual = CalciteUtils.withHigherPrecedence(expected, other);
+        RelDataType actual = HazelcastTypeUtils.withHigherPrecedence(expected, other);
         assertSame(expected, actual);
-        actual = CalciteUtils.withHigherPrecedence(other, expected);
+        actual = HazelcastTypeUtils.withHigherPrecedence(other, expected);
         assertSame(expected, actual);
     }
 

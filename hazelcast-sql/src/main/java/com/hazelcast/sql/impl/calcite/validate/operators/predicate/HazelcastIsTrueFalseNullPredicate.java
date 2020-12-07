@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPostfixOperator;
@@ -112,9 +112,9 @@ public final class HazelcastIsTrueFalseNullPredicate extends HazelcastPostfixOpe
 
                 if (type.getSqlTypeName() == NULL) {
                     if (objectOperand) {
-                        type = CalciteUtils.createType(binding.getTypeFactory(), SqlTypeName.OTHER, type.isNullable());
+                        type = HazelcastTypeUtils.createType(binding.getTypeFactory(), SqlTypeName.OTHER, type.isNullable());
                     } else {
-                        type = CalciteUtils.createType(binding.getTypeFactory(), SqlTypeName.BOOLEAN, type.isNullable());
+                        type = HazelcastTypeUtils.createType(binding.getTypeFactory(), SqlTypeName.BOOLEAN, type.isNullable());
                     }
                 }
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
@@ -36,7 +36,7 @@ public final class ArithmeticOperandChecker {
         RelDataType firstType = binding.getOperandType(0);
         RelDataType secondType = binding.getOperandType(1);
 
-        if (!CalciteUtils.isNumericType(firstType) || !CalciteUtils.isNumericType(secondType)) {
+        if (!HazelcastTypeUtils.isNumericType(firstType) || !HazelcastTypeUtils.isNumericType(secondType)) {
             if (throwOnFailure) {
                 throw binding.newValidationSignatureError();
             } else {
@@ -44,13 +44,13 @@ public final class ArithmeticOperandChecker {
             }
         }
 
-        RelDataType type = CalciteUtils.withHigherPrecedence(firstType, secondType);
+        RelDataType type = HazelcastTypeUtils.withHigherPrecedence(firstType, secondType);
 
         switch (kind) {
             case PLUS:
             case MINUS:
             case DIVIDE:
-                if (CalciteUtils.isNumericIntegerType(type)) {
+                if (HazelcastTypeUtils.isNumericIntegerType(type)) {
                     int bitWidth = HazelcastIntegerType.bitWidthOf(type) + 1;
 
                     type = HazelcastIntegerType.of(bitWidth, type.isNullable());
@@ -61,7 +61,7 @@ public final class ArithmeticOperandChecker {
             default:
                 assert kind == SqlKind.TIMES;
 
-                if (CalciteUtils.isNumericIntegerType(firstType) && CalciteUtils.isNumericIntegerType(secondType)) {
+                if (HazelcastTypeUtils.isNumericIntegerType(firstType) && HazelcastTypeUtils.isNumericIntegerType(secondType)) {
                     int bitWidth = HazelcastIntegerType.bitWidthOf(firstType) + HazelcastIntegerType.bitWidthOf(secondType);
 
                     type = HazelcastIntegerType.of(bitWidth, type.isNullable());

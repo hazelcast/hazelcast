@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.math;
 
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastFunction;
@@ -54,7 +54,7 @@ public final class HazelcastAbsFunction extends HazelcastFunction {
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         RelDataType operandType = binding.getOperandType(0);
 
-        if (CalciteUtils.isNumericIntegerType(operandType)) {
+        if (HazelcastTypeUtils.isNumericIntegerType(operandType)) {
             int bitWidth = HazelcastIntegerType.bitWidthOf(operandType);
 
             operandType = HazelcastIntegerType.of(bitWidth + 1, operandType.isNullable());

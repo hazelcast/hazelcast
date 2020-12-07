@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
 import com.hazelcast.sql.impl.calcite.validate.literal.Literal;
 import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.plan.RelOptCluster;
@@ -107,8 +108,8 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         RelDataType from = validator.getValidatedNodeType(call.operand(0));
         RelDataType to = validator.getValidatedNodeType(call);
 
-        QueryDataType fromType = CalciteUtils.map(from.getSqlTypeName());
-        QueryDataType toType = CalciteUtils.map(to.getSqlTypeName());
+        QueryDataType fromType = HazelcastTypeUtils.toHazelcastType(from.getSqlTypeName());
+        QueryDataType toType = HazelcastTypeUtils.toHazelcastType(to.getSqlTypeName());
 
         Literal literal = LiteralUtils.literal(call.operand(0));
 

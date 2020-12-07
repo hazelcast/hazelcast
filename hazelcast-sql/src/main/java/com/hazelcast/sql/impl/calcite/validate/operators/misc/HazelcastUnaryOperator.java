@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastPrefixOperator;
@@ -62,7 +62,7 @@ public final class HazelcastUnaryOperator extends HazelcastPrefixOperator {
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         RelDataType operandType = binding.getOperandType(0);
 
-        if (CalciteUtils.isNumericIntegerType(operandType) && extend) {
+        if (HazelcastTypeUtils.isNumericIntegerType(operandType) && extend) {
             int bitWidth = HazelcastIntegerType.bitWidthOf(operandType);
 
             operandType = HazelcastIntegerType.of(bitWidth + 1, operandType.isNullable());

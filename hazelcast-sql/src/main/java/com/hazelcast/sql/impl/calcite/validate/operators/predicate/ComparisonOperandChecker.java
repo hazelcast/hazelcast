@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
 import com.hazelcast.sql.impl.ParameterConverter;
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.param.NumericPrecedenceParameterConverter;
@@ -57,7 +57,7 @@ public final class ComparisonOperandChecker {
         SqlNode second,
         RelDataType secondType
     ) {
-        RelDataType winningType = CalciteUtils.withHigherPrecedence(firstType, secondType);
+        RelDataType winningType = HazelcastTypeUtils.withHigherPrecedence(firstType, secondType);
 
         if (winningType == firstType) {
             return checkOperandTypesWithPrecedence(
@@ -96,8 +96,8 @@ public final class ComparisonOperandChecker {
         RelDataType lowType,
         int lowIndex
     ) {
-        QueryDataType highHZType = CalciteUtils.map(highType.getSqlTypeName());
-        QueryDataType lowHZType = CalciteUtils.map(lowType.getSqlTypeName());
+        QueryDataType highHZType = HazelcastTypeUtils.toHazelcastType(highType.getSqlTypeName());
+        QueryDataType lowHZType = HazelcastTypeUtils.toHazelcastType(lowType.getSqlTypeName());
 
         if (highHZType.getTypeFamily().isTemporal() || highHZType.getTypeFamily() == QueryDataTypeFamily.OBJECT) {
             // Disallow comparisons for temporal and OBJECT types.

@@ -24,7 +24,7 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRel;
@@ -449,7 +449,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         QueryDataType[] mappedRowType = new QueryDataType[fields.size()];
 
         for (int i = 0; i < fields.size(); ++i) {
-            mappedRowType[i] = CalciteUtils.map(fields.get(i).getType().getSqlTypeName());
+            mappedRowType[i] = HazelcastTypeUtils.toHazelcastType(fields.get(i).getType().getSqlTypeName());
         }
 
         return mappedRowType;

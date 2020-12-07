@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
-import com.hazelcast.sql.impl.calcite.CalciteUtils;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
@@ -92,7 +92,7 @@ public class HazelcastCallBinding extends SqlCallBinding {
             if (calciteType.getSqlTypeName() == SqlTypeName.NULL) {
                 typeName = validator.getUnknownType().toString();
             } else {
-                QueryDataType hazelcastType = CalciteUtils.map(calciteType.getSqlTypeName());
+                QueryDataType hazelcastType = HazelcastTypeUtils.toHazelcastType(calciteType.getSqlTypeName());
 
                 typeName = hazelcastType.getTypeFamily().getPublicType().name();
             }

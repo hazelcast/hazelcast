@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite;
+package com.hazelcast.sql.impl.calcite.validate.types;
 
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
@@ -38,7 +37,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.YEAR_INTERVAL_TYPES;
  * QueryDataType}.
  */
 @SuppressWarnings("checkstyle:ExecutableStatementCount")
-public final class CalciteUtils {
+public final class HazelcastTypeUtils {
 
     private static final Map<SqlTypeName, QueryDataType> CALCITE_TO_HZ = new HashMap<>();
     private static final Map<QueryDataTypeFamily, SqlTypeName> HZ_TO_CALCITE = new HashMap<>();
@@ -84,15 +83,15 @@ public final class CalciteUtils {
         CALCITE_TO_HZ.put(SqlTypeName.NULL, QueryDataType.NULL);
     }
 
-    private CalciteUtils() {
+    private HazelcastTypeUtils() {
         // No-op.
     }
 
-    public static SqlTypeName map(QueryDataTypeFamily family) {
-        return HZ_TO_CALCITE.get(family);
+    public static SqlTypeName toCalciteType(QueryDataType type) {
+        return HZ_TO_CALCITE.get(type.getTypeFamily());
     }
 
-    public static QueryDataType map(SqlTypeName sqlTypeName) {
+    public static QueryDataType toHazelcastType(SqlTypeName sqlTypeName) {
         QueryDataType queryDataType = CALCITE_TO_HZ.get(sqlTypeName);
         if (queryDataType == null) {
             throw new IllegalArgumentException("unexpected SQL type: " + sqlTypeName);
@@ -158,7 +157,17 @@ public final class CalciteUtils {
      * Integer types are: TINYINT, SMALLINT, INTEGER and BIGINT.
      */
     public static boolean isNumericIntegerType(RelDataType type) {
-        switch (type.getSqlTypeName()) {
+        return isNumericIntegerType(type.getSqlTypeName());
+    }
+
+    /**
+     * @return {@code true} if the given type is an integer type, {@code false}
+     * otherwise.
+     * <p>
+     * Integer types are: TINYINT, SMALLINT, INTEGER and BIGINT.
+     */
+    public static boolean isNumericIntegerType(SqlTypeName typeName) {
+        switch (typeName) {
             case TINYINT:
             case SMALLINT:
             case INTEGER:
@@ -169,7 +178,6 @@ public final class CalciteUtils {
                 return false;
         }
     }
-
 
     /**
      * @return {@code true} if the given type is a numeric approximate type, {@code false}
@@ -222,7 +230,7 @@ public final class CalciteUtils {
             typeName = INTERVAL_DAY_SECOND;
         }
 
-        QueryDataType hzType = CalciteUtils.map(typeName);
+        QueryDataType hzType = HazelcastTypeUtils.toHazelcastType(typeName);
 
         return hzType.getTypeFamily().getPrecedence();
     }
