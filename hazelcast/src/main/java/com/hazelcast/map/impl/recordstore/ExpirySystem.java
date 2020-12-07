@@ -81,10 +81,12 @@ public class ExpirySystem {
             return expireTimeByKey;
         }
 
-        expireTimeByKey = createIfAbsent
-                ? createExpiryTimeByKeyMap() : Collections.emptyMap();
+        if (createIfAbsent) {
+            expireTimeByKey = createExpiryTimeByKeyMap();
+            return expireTimeByKey;
+        }
 
-        return expireTimeByKey;
+        return Collections.emptyMap();
     }
 
     @NotNull
@@ -182,7 +184,7 @@ public class ExpirySystem {
             }
         }
 
-        System.err.println("evictedEntryCount: " + evictedEntryCount);
+        //System.err.println("evictedEntryCount: " + evictedEntryCount);
 
         accumulateOrSendExpiredKey(null);
     }
