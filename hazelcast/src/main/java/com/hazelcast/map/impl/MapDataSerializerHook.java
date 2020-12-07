@@ -105,6 +105,7 @@ import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.map.impl.operation.PutTransientBackupOperation;
 import com.hazelcast.map.impl.operation.PutTransientOperation;
 import com.hazelcast.map.impl.operation.PutTransientWithExpiryOperation;
+import com.hazelcast.map.impl.operation.PutWithExpiryBackupOperation;
 import com.hazelcast.map.impl.operation.PutWithExpiryOperation;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
 import com.hazelcast.map.impl.operation.RemoveFromLoadAllOperation;
@@ -314,8 +315,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int COMPUTE_MAP_OPERATION_PROCESSOR = 151;
     public static final int MERGE_MAP_OPERATION_PROCESSOR = 152;
     public static final int MAP_ENTRY_REPLACING_PROCESSOR = 153;
+    public static final int PUT_WITH_EXPIRY_BACKUP = 154;
 
-    private static final int LEN = MAP_ENTRY_REPLACING_PROCESSOR + 1;
+    private static final int LEN = PUT_WITH_EXPIRY_BACKUP + 1;
 
     @Override
     public int getFactoryId() {
@@ -476,6 +478,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[COMPUTE_MAP_OPERATION_PROCESSOR] = arg -> new ComputeEntryProcessor<>();
         constructors[MERGE_MAP_OPERATION_PROCESSOR] = arg -> new MergeEntryProcessor<>();
         constructors[MAP_ENTRY_REPLACING_PROCESSOR] = arg -> new MapEntryReplacingEntryProcessor<>();
+        constructors[PUT_WITH_EXPIRY_BACKUP] = arg -> new PutWithExpiryBackupOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }

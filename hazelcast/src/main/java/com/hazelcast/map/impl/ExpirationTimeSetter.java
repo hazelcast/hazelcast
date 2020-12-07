@@ -39,7 +39,7 @@ public final class ExpirationTimeSetter {
         record.setExpirationTime(expirationTime);
     }
 
-    private static long calculateExpirationTime(Record record) {
+    public static long calculateExpirationTime(Record record) {
         // calculate TTL expiration time
         long ttl = checkedTime(record.getTtl());
         long ttlExpirationTime = sumForExpiration(ttl, getLifeStartTime(record));
@@ -47,6 +47,18 @@ public final class ExpirationTimeSetter {
         // calculate MaxIdle expiration time
         long maxIdle = checkedTime(record.getMaxIdle());
         long maxIdleExpirationTime = sumForExpiration(maxIdle, getIdlenessStartTime(record));
+        // select most nearest expiration time
+        return Math.min(ttlExpirationTime, maxIdleExpirationTime);
+    }
+
+    public static long calculateExpirationTime(long ttlMillis, long maxIdleMillis, long now) {
+        // calculate TTL expiration time
+        long ttl = checkedTime(ttlMillis);
+        long ttlExpirationTime = sumForExpiration(ttl, now);
+
+        // calculate MaxIdle expiration time
+        long maxIdle = checkedTime(maxIdleMillis);
+        long maxIdleExpirationTime = sumForExpiration(maxIdle, now);
         // select most nearest expiration time
         return Math.min(ttlExpirationTime, maxIdleExpirationTime);
     }
@@ -115,7 +127,7 @@ public final class ExpirationTimeSetter {
      * @param mapConfig          used to get configured TTL
      * @return TTL value in millis to set to record
      */
-    private static long pickTTLMillis(long operationTTLMillis, MapConfig mapConfig) {
+    public static long pickTTLMillis(long operationTTLMillis, MapConfig mapConfig) {
         // if user set operationTTLMillis when calling operation, use it
         if (operationTTLMillis > 0) {
             return checkedTime(operationTTLMillis);
@@ -130,7 +142,7 @@ public final class ExpirationTimeSetter {
         return Long.MAX_VALUE;
     }
 
-    private static long pickMaxIdleMillis(long operationMaxIdleMillis, MapConfig mapConfig) {
+    public static long pickMaxIdleMillis(long operationMaxIdleMillis, MapConfig mapConfig) {
         // if user set operationMaxIdleMillis when calling operation, use it
         if (operationMaxIdleMillis > 0) {
             return checkedTime(operationMaxIdleMillis);

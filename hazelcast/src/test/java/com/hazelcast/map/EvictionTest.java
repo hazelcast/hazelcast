@@ -110,6 +110,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         map.put(1, "value0", 0, SECONDS, 1, SECONDS);
 
+        sleepAtLeastSeconds(1);
         assertTrueEventually(() -> assertFalse(map.containsKey(1)));
     }
 

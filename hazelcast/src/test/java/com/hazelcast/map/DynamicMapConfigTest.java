@@ -73,6 +73,9 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
 
         boolean beforeUpdate = isRecordStoreExpirable(map) && isEvictionEnabled(map);
         updateMapConfig(mapName, node);
+        // trigger recordStore expiry system, only added/updated
+        // entries after config update will be affected.
+        map.put(1, 1);
         boolean afterUpdate = isRecordStoreExpirable(map) && isEvictionEnabled(map);
 
         assertFalse("Before MapConfig update, RecordStore should not be expirable and evictable", beforeUpdate);

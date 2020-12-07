@@ -87,6 +87,8 @@ public interface RecordStore<R extends Record> {
      */
     R putBackup(Data dataKey, Record record, boolean putTransient, CallerProvenance provenance);
 
+    R putBackup(Data dataKey, Record record, long ttl, long maxIdle, CallerProvenance provenance);
+
     /**
      * @return current record after put.
      */
@@ -130,10 +132,11 @@ public interface RecordStore<R extends Record> {
      * <p>
      * An implementation is not supposed to be thread safe.
      *
+     * @param dataKey
      * @param record the accessed record
      * @param now    the current time
      */
-    void accessRecord(Record record, long now);
+    void accessRecord(Data dataKey, Record record, long now);
 
     /**
      * Similar to {@link RecordStore#remove(Data, CallerProvenance)}
@@ -403,12 +406,12 @@ public interface RecordStore<R extends Record> {
     /**
      * Checks whether a record is expired or not.
      *
-     * @param record the record from record-store.
-     * @param now    current time in millis
-     * @param backup <code>true</code> if a backup partition, otherwise <code>false</code>.
+     * @param dataKey the record from record-store.
+     * @param now     current time in millis
+     * @param backup  <code>true</code> if a backup partition, otherwise <code>false</code>.
      * @return <code>true</code> if the record is expired, <code>false</code> otherwise.
      */
-    boolean isExpired(R record, long now, boolean backup);
+    boolean isExpired(Data dataKey, long now, boolean backup);
 
     /**
      * Checks whether a key has expired, when
@@ -424,9 +427,9 @@ public interface RecordStore<R extends Record> {
     /**
      * Does post eviction operations like sending events
      *
-     * @param record record to process
+     * @param dataValue record to process
      */
-    void doPostEvictionOperations(Data dataKey, Record record);
+    void doPostEvictionOperations(Data dataKey, Object dataValue);
 
     MapDataStore<Data, Object> getMapDataStore();
 
@@ -450,15 +453,14 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Check if record is reachable according to TTL or idle times.
-     * If not reachable return null.
      *
-     * @param record the record from record-store.
      * @param now    current time in millis
-     * @param backup <code>true</code> if a backup partition, otherwise <code>false</code>.
-     * @return null if evictable.
+     * @param backup <code>true</code> if a backup
+     *               partition, otherwise <code>false</code>.
+     * @return {@code true} if record has been evicted
+     * due to the expiry, otherwise return {@code false}.
      */
-    R getOrNullIfExpired(Data key, R record, long now, boolean backup);
-
+    boolean evictIfExpired(Data key, long now, boolean backup);
 
     /**
      * Evicts entries from this record-store.

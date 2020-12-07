@@ -91,7 +91,6 @@ public class EvictorImpl implements Evictor {
     }
 
     private void evictEntry(RecordStore recordStore, EntryView selectedEntry) {
-        Record record = getRecordFromEntryView(selectedEntry);
         Data dataKey = getDataKeyFromEntryView(selectedEntry);
 
         if (recordStore.isLocked(dataKey)) {
@@ -99,10 +98,10 @@ public class EvictorImpl implements Evictor {
         }
 
         boolean backup = isBackup(recordStore);
-        recordStore.evict(dataKey, backup);
+        Object value = recordStore.evict(dataKey, backup);
 
         if (!backup) {
-            recordStore.doPostEvictionOperations(dataKey, record);
+            recordStore.doPostEvictionOperations(dataKey, value);
         }
     }
 

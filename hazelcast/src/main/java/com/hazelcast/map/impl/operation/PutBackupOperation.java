@@ -17,12 +17,12 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
@@ -32,7 +32,7 @@ public class PutBackupOperation
 
     protected Record<Data> record;
     protected Data dataKey;
-    private Data dataValue;
+    protected Data dataValue;
 
     public PutBackupOperation(String name, Data dataKey,
                               Record<Data> record, Data dataValue) {

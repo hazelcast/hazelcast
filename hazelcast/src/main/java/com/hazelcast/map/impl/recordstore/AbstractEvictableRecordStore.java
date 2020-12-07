@@ -17,9 +17,7 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
@@ -31,143 +29,49 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
-import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.spi.properties.HazelcastProperties;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import javax.annotation.Nonnull;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.core.EntryEventType.EXPIRED;
-import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateExpirationWithDelay;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.getIdlenessStartTime;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.getLifeStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
-import static com.hazelcast.map.impl.record.Record.UNSET;
 
 /**
  * Contains eviction specific functionality.
  */
 public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
-    protected final long expiryDelayMillis;
     protected final Address thisAddress;
     protected final EventService eventService;
     protected final MapEventPublisher mapEventPublisher;
-    protected final ClearExpiredRecordsTask clearExpiredRecordsTask;
-    protected final InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<>();
-    /**
-     * Iterates over a pre-set entry count/percentage in one round.
-     * Used in expiration logic for traversing entries. Initializes lazily.
-     */
-    protected Iterator<Map.Entry<Data, Record>> expirationIterator;
-
-    protected volatile boolean hasEntryWithCustomExpiration;
+    protected final ExpirySystem expirySystem;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
-        expiryDelayMillis = hazelcastProperties.getMillis(ClusterProperty.MAP_EXPIRY_DELAY_SECONDS);
         eventService = nodeEngine.getEventService();
         mapEventPublisher = mapServiceContext.getMapEventPublisher();
         thisAddress = nodeEngine.getThisAddress();
-        clearExpiredRecordsTask = mapServiceContext.getExpirationManager().getTask();
+        expirySystem = createExpirySystem(mapContainer);
     }
 
-    /**
-     * Returns {@code true} if this record store has at least one candidate entry
-     * for expiration (idle or tll) otherwise returns {@code false}.
-     */
-    private boolean isRecordStoreExpirable() {
-        MapConfig mapConfig = mapContainer.getMapConfig();
-        return hasEntryWithCustomExpiration || mapConfig.getMaxIdleSeconds() > 0
-                || mapConfig.getTimeToLiveSeconds() > 0;
+    @Nonnull
+    protected ExpirySystem createExpirySystem(MapContainer mapContainer) {
+        return new ExpirySystem(this, mapContainer, mapServiceContext);
     }
 
     @Override
     public void evictExpiredEntries(int percentage, boolean backup) {
-        long now = getNow();
-        int size = size();
-        int maxIterationCount = getMaxIterationCount(size, percentage);
-        int maxRetry = 3;
-        int loop = 0;
-        int evictedEntryCount = 0;
-        while (true) {
-            evictedEntryCount += evictExpiredEntriesInternal(maxIterationCount, now, backup);
-            if (evictedEntryCount >= maxIterationCount) {
-                break;
-            }
-            loop++;
-            if (loop > maxRetry) {
-                break;
-            }
-        }
-
-        accumulateOrSendExpiredKey(null, null);
+        expirySystem.evictExpiredEntries(getNow(), percentage, backup);
     }
 
     @Override
     public boolean isExpirable() {
-        return isRecordStoreExpirable();
-    }
-
-    /**
-     * Intended to put an upper bound to iterations. Used in evictions.
-     *
-     * @param size       of iterate-able.
-     * @param percentage percentage of size.
-     * @return 100 If calculated iteration count is less than 100, otherwise returns calculated iteration count.
-     */
-    private int getMaxIterationCount(int size, int percentage) {
-        final int defaultMaxIterationCount = 100;
-        final float oneHundred = 100F;
-        float maxIterationCount = size * (percentage / oneHundred);
-        if (maxIterationCount <= defaultMaxIterationCount) {
-            return defaultMaxIterationCount;
-        }
-        return Math.round(maxIterationCount);
-    }
-
-    private int evictExpiredEntriesInternal(int maxIterationCount, long now, boolean backup) {
-        int evictedEntryCount = 0;
-        int checkedEntryCount = 0;
-        initExpirationIterator();
-
-        List keyValuePairs = new ArrayList<>();
-        while (expirationIterator.hasNext()) {
-            if (checkedEntryCount >= maxIterationCount) {
-                break;
-            }
-            Map.Entry<Data, Record> entry = expirationIterator.next();
-            checkedEntryCount++;
-
-            keyValuePairs.add(entry.getKey());
-            keyValuePairs.add(entry.getValue());
-        }
-
-        for (int i = 0; i < keyValuePairs.size(); i += 2) {
-            Data key = (Data) keyValuePairs.get(i);
-            Record record = (Record) keyValuePairs.get(i + 1);
-            if (getOrNullIfExpired(key, record, now, backup) == null) {
-                evictedEntryCount++;
-            }
-        }
-        return evictedEntryCount;
-    }
-
-    private void initExpirationIterator() {
-        if (expirationIterator == null || !expirationIterator.hasNext()) {
-            expirationIterator = storage.mutationTolerantIterator();
-        }
+        return expirySystem.isRecordStoreExpirable();
     }
 
     @Override
@@ -198,128 +102,52 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return evictor != NULL_EVICTOR && evictor.checkEvictable(this);
     }
 
-    protected void markRecordStoreExpirable(long ttl, long maxIdle) {
-        if (isTtlDefined(ttl) || isMaxIdleDefined(maxIdle)) {
-            hasEntryWithCustomExpiration = true;
-        }
-
-        if (isRecordStoreExpirable()) {
-            mapServiceContext.getExpirationManager().scheduleExpirationTask();
-        }
-    }
-
-    // this method is overridden on ee
-    protected boolean isTtlDefined(long ttl) {
-        return ttl > 0L && ttl < Long.MAX_VALUE;
-    }
-
-    protected boolean isMaxIdleDefined(long maxIdle) {
-        return maxIdle > 0L && maxIdle < Long.MAX_VALUE;
+    protected void markRecordStoreExpirable(Data key, long ttl, long maxIdle, long now) {
+        expirySystem.markRecordStoreExpirable(key, ttl, maxIdle, now);
     }
 
     @Override
     public boolean isTtlOrMaxIdleDefined(Record record) {
-        long ttl = record.getTtl();
-        long maxIdle = record.getMaxIdle();
-        return isTtlDefined(ttl) || isMaxIdleDefined(maxIdle);
+        return expirySystem.isTtlOrMaxIdleDefined(record);
     }
 
-
     @Override
-    public Record getOrNullIfExpired(Data key, Record record,
-                                     long now, boolean backup) {
-        if (!isRecordStoreExpirable()) {
-            return record;
-        }
-        if (record == null) {
-            return null;
-        }
+    public boolean evictIfExpired(Data key, long now, boolean backup) {
         if (isLocked(key)) {
-            return record;
+            return false;
         }
-        if (!isExpired(record, now, backup)) {
-            return record;
+        if (!isExpired(key, now, backup)) {
+            return false;
         }
-        evict(key, backup);
+        Object value = evict(key, backup);
         if (!backup) {
-            doPostEvictionOperations(key, record);
+            doPostEvictionOperations(key, value);
         }
-        return null;
+        return true;
     }
 
     @Override
-    public boolean isExpired(Record record, long now, boolean backup) {
-        return record == null
-                || isIdleExpired(record, now, backup)
-                || isTTLExpired(record, now, backup);
+    public boolean isExpired(Data dataKey, long now, boolean backup) {
+        return expirySystem.isExpired(dataKey, now, backup);
     }
 
+    // TODO optimize for HD access to read expiry metadata
     @Override
     public boolean expireOrAccess(Data key) {
         long now = Clock.currentTimeMillis();
-        Record record = getOrNullIfExpired(key, storage.get(key), now, false);
-        boolean expired = record == null;
+        boolean expired = evictIfExpired(key, now, false);
         if (!expired) {
-            accessRecord(record, now);
+            Record record = storage.get(key);
+            accessRecord(key, record, now);
         }
         return expired;
     }
 
-    private boolean isIdleExpired(Record record, long now, boolean backup) {
-        if (backup && mapServiceContext.getClearExpiredRecordsTask().canPrimaryDriveExpiration()) {
-            // don't check idle expiry on backup
-            return false;
-        }
-
-        long maxIdleMillis = getRecordMaxIdleOrConfig(record);
-        if (maxIdleMillis < 1L || maxIdleMillis == Long.MAX_VALUE) {
-            return false;
-        }
-
-        long idlenessStartTime = getIdlenessStartTime(record);
-        long idleMillis = calculateExpirationWithDelay(maxIdleMillis, expiryDelayMillis, backup);
-        long elapsedMillis = now - idlenessStartTime;
-        return elapsedMillis >= idleMillis;
-    }
-
-    private boolean isTTLExpired(Record record, long now, boolean backup) {
-        if (record == null) {
-            return false;
-        }
-        long ttl = getRecordTTLOrConfig(record);
-        // when ttl is zero or negative or Long.MAX_VALUE, entry should live forever.
-        if (ttl < 1L || ttl == Long.MAX_VALUE) {
-            return false;
-        }
-        long ttlStartTime = getLifeStartTime(record);
-        long ttlMillis = calculateExpirationWithDelay(ttl, expiryDelayMillis, backup);
-        long elapsedMillis = now - ttlStartTime;
-        return elapsedMillis >= ttlMillis;
-    }
-
-    private long getRecordMaxIdleOrConfig(Record record) {
-        if (record.getMaxIdle() != UNSET) {
-            return record.getMaxIdle();
-        }
-
-        return TimeUnit.SECONDS.toMillis(mapContainer.getMapConfig().getMaxIdleSeconds());
-    }
-
-    private long getRecordTTLOrConfig(Record record) {
-        if (record.getTtl() != UNSET) {
-            return record.getTtl();
-        }
-
-        return TimeUnit.SECONDS.toMillis(mapContainer.getMapConfig().getTimeToLiveSeconds());
-    }
-
     @Override
-    public void doPostEvictionOperations(Data dataKey, Record record) {
-        Object value = record.getValue();
-
+    public void doPostEvictionOperations(Data dataKey, Object value) {
         long now = getNow();
-        boolean idleExpired = isIdleExpired(record, now, false);
-        boolean ttlExpired = isTTLExpired(record, now, false);
+        boolean idleExpired = expirySystem.isIdleExpired(dataKey, now, false);
+        boolean ttlExpired = expirySystem.isTTLExpired(dataKey, now, false);
         boolean expired = idleExpired || ttlExpired;
 
         if (eventService.hasEventRegistration(SERVICE_NAME, name)) {
@@ -328,38 +156,34 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
 
         if (!ttlExpired && idleExpired) {
-            // only send expired key to backup if it is expired according to idleness.
-            accumulateOrSendExpiredKey(dataKey, record);
+            // only send expired key to backup if
+            // it is expired according to idleness.
+            expirySystem.accumulateOrSendExpiredKey(dataKey);
         }
+
+        expirySystem.informEvicted(dataKey);
     }
 
     @Override
     public InvalidationQueue<ExpiredKey> getExpiredKeysQueue() {
-        return expiredKeys;
+        return expirySystem.getExpiredKeys();
     }
 
-    private void accumulateOrSendExpiredKey(Data dataKey, Record record) {
-        if (mapContainer.getTotalBackupCount() == 0) {
-            return;
-        }
-
-        if (record != null) {
-            expiredKeys.offer(new ExpiredKey(toHeapData(dataKey), record.getCreationTime()));
-        }
-
-        clearExpiredRecordsTask.tryToSendBackupExpiryOp(this, true);
-    }
 
     @Override
-    public void accessRecord(Record record, long now) {
+    public void accessRecord(Data dataKey, Record record, long now) {
         record.onAccess(now);
         updateStatsOnGet(now);
+        expirySystem.extendExpiryTime(dataKey, now);
+        // TODO set same time to record also
         setExpirationTime(record);
     }
 
-    protected void mergeRecordExpiration(Record record, MapMergeTypes mergingEntry) {
+    protected void mergeRecordExpiration(Data key, Record record, MapMergeTypes mergingEntry, long now) {
         mergeRecordExpiration(record, mergingEntry.getTtl(), mergingEntry.getMaxIdle(), mergingEntry.getCreationTime(),
                 mergingEntry.getLastAccessTime(), mergingEntry.getLastUpdateTime());
+        // TODO get ttl and maxIdle from this recordstores expiry system.
+        markRecordStoreExpirable(key, record.getTtl(), record.getMaxIdle(), now);
     }
 
     private void mergeRecordExpiration(Record record, long ttlMillis, Long maxIdleMillis,
@@ -375,7 +199,5 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         record.setLastUpdateTime(lastUpdateTime);
 
         setExpirationTime(record);
-
-        markRecordStoreExpirable(record.getTtl(), record.getMaxIdle());
     }
 }

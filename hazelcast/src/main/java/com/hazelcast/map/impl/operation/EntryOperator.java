@@ -325,7 +325,7 @@ public final class EntryOperator {
         // updates access time if record exists
         Record record = recordStore.getRecord(dataKey);
         if (record != null) {
-            recordStore.accessRecord(record, Clock.currentTimeMillis());
+            recordStore.accessRecord(dataKey, record, Clock.currentTimeMillis());
         }
     }
 

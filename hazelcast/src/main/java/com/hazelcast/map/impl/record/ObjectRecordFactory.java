@@ -16,25 +16,45 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.impl.MapContainer;
+
+import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 
 public class ObjectRecordFactory implements RecordFactory<Object> {
 
-    private final boolean statisticsEnabled;
+    private final MapContainer mapContainer;
     private final SerializationService serializationService;
 
-    public ObjectRecordFactory(MapConfig config,
+    public ObjectRecordFactory(MapContainer mapContainer,
                                SerializationService serializationService) {
         this.serializationService = serializationService;
-        this.statisticsEnabled = config.isStatisticsEnabled();
+        this.mapContainer = mapContainer;
     }
 
     @Override
     public Record<Object> newRecord(Object value) {
+        MapConfig mapConfig = mapContainer.getMapConfig();
+        boolean statisticsEnabled = mapConfig.isStatisticsEnabled();
+        boolean hasEviction = mapContainer.getEvictor() != NULL_EVICTOR;
+
         Object objectValue = serializationService.toObject(value);
-        return statisticsEnabled
-                ? new ObjectRecordWithStats(objectValue)
-                : new ObjectRecord(objectValue);
+        if (statisticsEnabled) {
+            return new ObjectRecordWithStats(objectValue);
+        }
+
+        if (hasEviction) {
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LRU) {
+                return new SimpleRecordWithLRUEviction<>(objectValue);
+            }
+
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LFU) {
+                return new SimpleRecordWithLFUEviction<>(objectValue);
+            }
+        }
+
+        return new ObjectRecord(objectValue);
     }
 }

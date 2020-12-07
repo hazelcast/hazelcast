@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,61 +16,53 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class PutWithExpiryOperation extends PutOperation {
+public class PutWithExpiryBackupOperation
+        extends PutBackupOperation {
 
     private long ttl;
     private long maxIdle;
 
-    public PutWithExpiryOperation() {
-    }
-
-    public PutWithExpiryOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
-        super(name, dataKey, value);
+    public PutWithExpiryBackupOperation(String name, Data dataKey,
+                                        Record<Data> record,
+                                        Data dataValue, long ttl, long maxIdle) {
+        super(name, dataKey, record, dataValue);
         this.ttl = ttl;
         this.maxIdle = maxIdle;
     }
 
-    @Override
-    protected PutBackupOperation newBackupOperation(Data dataKey, Record record, Data dataValue) {
-        if (Versions.CURRENT_CLUSTER_VERSION.isGreaterOrEqual(Versions.V4_2)) {
-            return new PutWithExpiryBackupOperation(name, dataKey, record, dataValue, ttl, maxIdle);
-        } else {
-            return super.newBackupOperation(dataKey, record, dataValue);
-        }
+    public PutWithExpiryBackupOperation() {
     }
 
     @Override
-    protected long getTtl() {
-        return ttl;
-    }
-
-    @Override
-    protected long getMaxIdle() {
-        return maxIdle;
-    }
-
-    @Override
-    public Object getResponse() {
-        return oldValue;
+    protected void runInternal() {
+        // TODO performance: we can put this record directly
+        // into record-store if memory format is BINARY
+        Record currentRecord = recordStore.putBackup(dataKey,
+                record, ttl, maxIdle, getCallerProvenance());
+        Records.copyMetadataFrom(record, currentRecord);
     }
 
     @Override
     public int getClassId() {
-        return MapDataSerializerHook.PUT_WITH_EXPIRY;
+        return MapDataSerializerHook.PUT_WITH_EXPIRY_BACKUP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+
+        IOUtil.writeData(out, dataKey);
+        Records.writeRecord(out, record, dataValue);
 
         out.writeLong(ttl);
         out.writeLong(maxIdle);
@@ -79,6 +71,9 @@ public class PutWithExpiryOperation extends PutOperation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+
+        dataKey = IOUtil.readData(in);
+        record = Records.readRecord(in);
 
         ttl = in.readLong();
         maxIdle = in.readLong();
