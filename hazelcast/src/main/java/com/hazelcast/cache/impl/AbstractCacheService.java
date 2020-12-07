@@ -496,8 +496,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         }
     }
 
-    public <K,V> CacheConfig<K,V> reSerializeCacheConfig(CacheConfig<K,V> cacheConfig) {
-        CacheConfig<K,V> serializedCacheConfig = PreJoinCacheConfig.of(cacheConfig,
+    public <K, V> CacheConfig<K, V> reSerializeCacheConfig(CacheConfig<K, V> cacheConfig) {
+        CacheConfig<K, V> serializedCacheConfig = PreJoinCacheConfig.of(cacheConfig,
                 nodeEngine.getSerializationService()).asCacheConfig();
 
         CompletableFuture<CacheConfig> future = new CompletableFuture<>();

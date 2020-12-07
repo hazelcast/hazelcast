@@ -186,7 +186,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (cacheConfig.isStatisticsEnabled()) {
             statistics = cacheService.createCacheStatIfAbsent(cacheNameWithPrefix);
         }
-        injectDependencies(evictionPolicyEvaluator.getEvictionPolicyComparator());
+
         TenantControl tenantControl = nodeEngine
                 .getTenantControlService()
                 .getTenantControl(ICacheService.SERVICE_NAME, cacheNameWithPrefix);
