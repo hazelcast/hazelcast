@@ -60,10 +60,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         SqlDataTypeSpec targetTypeSpec;
 
         if (targetType instanceof HazelcastIntegerSqlType) {
-            HazelcastIntegerTypeNameSpec targetTypeNameSpec = new HazelcastIntegerTypeNameSpec((HazelcastIntegerSqlType) targetType);
-
             targetTypeSpec = new SqlDataTypeSpec(
-                targetTypeNameSpec,
+                new HazelcastIntegerTypeNameSpec((HazelcastIntegerSqlType) targetType),
                 SqlParserPos.ZERO
             );
         } else {

@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastFunction;
@@ -39,6 +38,8 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
+
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.toHazelcastType;
 
 public final class HazelcastCastFunction extends HazelcastFunction {
 
@@ -77,8 +78,8 @@ public final class HazelcastCastFunction extends HazelcastFunction {
         }
 
         if (throwOnFailure) {
-            SqlColumnType sourceType0 = HazelcastTypeUtils.toHazelcastType(sourceType.getSqlTypeName()).getTypeFamily().getPublicType();
-            SqlColumnType targetType0 = HazelcastTypeUtils.toHazelcastType(targetType.getSqlTypeName()).getTypeFamily().getPublicType();
+            SqlColumnType sourceType0 = toHazelcastType(sourceType.getSqlTypeName()).getTypeFamily().getPublicType();
+            SqlColumnType targetType0 = toHazelcastType(targetType.getSqlTypeName()).getTypeFamily().getPublicType();
 
             throw binding.newError(HazelcastResources.RESOURCES.cannotCastValue(sourceType0.name(), targetType0.name()));
         } else {
@@ -87,8 +88,8 @@ public final class HazelcastCastFunction extends HazelcastFunction {
     }
 
     private static boolean canCast(RelDataType sourceType, RelDataType targetType) {
-        QueryDataType queryFrom = HazelcastTypeUtils.toHazelcastType(sourceType.getSqlTypeName());
-        QueryDataType queryTo = HazelcastTypeUtils.toHazelcastType(targetType.getSqlTypeName());
+        QueryDataType queryFrom = toHazelcastType(sourceType.getSqlTypeName());
+        QueryDataType queryTo = toHazelcastType(targetType.getSqlTypeName());
 
         return queryFrom.getConverter().canConvertTo(queryTo.getTypeFamily());
     }

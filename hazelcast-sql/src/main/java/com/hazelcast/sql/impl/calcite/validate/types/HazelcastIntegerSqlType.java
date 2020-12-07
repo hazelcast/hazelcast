@@ -69,6 +69,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
  * possible to tell from the selected type alone whether overflow checking is
  * necessary while executing the operation.
  */
+@SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class HazelcastIntegerSqlType extends BasicSqlType {
 
     private static final Map<SqlTypeName, HazelcastIntegerSqlType[]> TYPES = new HashMap<>();

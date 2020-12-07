@@ -23,6 +23,8 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.toHazelcastType;
+
 public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeInference {
 
     public static final BinaryOperatorOperandTypeInference INSTANCE = new BinaryOperatorOperandTypeInference();
@@ -46,7 +48,7 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
                 // Will resolve operand type at this index later.
                 unknownTypeOperandIndex = i;
             } else {
-                if (hasParameters && HazelcastTypeUtils.toHazelcastType(operandType.getSqlTypeName()).getTypeFamily().isNumericInteger()) {
+                if (hasParameters && toHazelcastType(operandType.getSqlTypeName()).getTypeFamily().isNumericInteger()) {
                     // If we are here, there is a parameter, and an exact numeric literal.
                     // We upcast the type of the numeric literal to BIGINT, so that an expression `1 > ?` is resolved to
                     // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`

@@ -62,8 +62,8 @@ public final class ArithmeticOperandChecker {
                 assert kind == SqlKind.TIMES;
 
                 if (HazelcastTypeUtils.isNumericIntegerType(firstType) && HazelcastTypeUtils.isNumericIntegerType(secondType)) {
-                    int bitWidth =
-                        ((HazelcastIntegerSqlType) firstType).getBitWidth() + ((HazelcastIntegerSqlType) secondType).getBitWidth();
+                    int bitWidth = ((HazelcastIntegerSqlType) firstType).getBitWidth()
+                        + ((HazelcastIntegerSqlType) secondType).getBitWidth();
 
                     type = HazelcastIntegerSqlType.create(bitWidth, type.isNullable());
                 }

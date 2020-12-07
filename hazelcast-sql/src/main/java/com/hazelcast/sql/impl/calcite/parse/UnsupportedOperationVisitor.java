@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.schema.Table;
@@ -47,6 +46,9 @@ import org.apache.calcite.sql.validate.SqlValidatorTable;
 
 import java.util.HashSet;
 import java.util.Set;
+
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isObjectIdentifier;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isTimestampWithTimeZoneIdentifier;
 
 /**
  * Visitor that throws exceptions for unsupported SQL features.
@@ -193,7 +195,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         if (type.getTypeNameSpec() instanceof SqlUserDefinedTypeNameSpec) {
             SqlIdentifier typeName = type.getTypeName();
 
-            if (HazelcastTypeUtils.isObjectIdentifier(typeName) || HazelcastTypeUtils.isTimestampWithTimeZoneIdentifier(typeName)) {
+            if (isObjectIdentifier(typeName) || isTimestampWithTimeZoneIdentifier(typeName)) {
                 return null;
             }
         }
