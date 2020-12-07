@@ -154,6 +154,27 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
         assertClusterSize(2, hz1, hz2);
 
         ICache<String, Person> cache = hz2.getCacheManager().getCache(cacheName);
+        String key = generateKeyOwnedBy(hz2);
+        expect.expectCause(new RootCauseMatcher(ClassNotFoundException.class, "classloading.domain.PersonCacheLoaderFactory - "
+                + "Package excluded explicitly"));
+        cache.invoke(key, new PersonEntryProcessor());
+    }
+
+    // tests deferred resolution of factories, with context class loader set correctly
+    @Test
+    public void cacheConfigShouldBeAddedOnJoiningMember_whenCacheLoaderFactoryNotResolvableWithClassLoaderSet() throws InterruptedException {
+        HazelcastInstance hz1 = factory.newHazelcastInstance(getConfig());
+        CachingProvider cachingProvider = createServerCachingProvider(hz1);
+        CacheManager cacheManager1 = cachingProvider.getCacheManager(null, null, propertiesByInstanceItself(hz1));
+        CacheConfig cacheConfig = createCacheConfig();
+        cacheConfig.setCacheLoaderFactory(new PersonCacheLoaderFactory());
+        cacheManager1.createCache(cacheName, cacheConfig);
+
+        // joining member cannot resolve PersonCacheLoaderFactory class
+        HazelcastInstance hz2 = factory.newHazelcastInstance(getClassFilteringConfig());
+        assertClusterSize(2, hz1, hz2);
+
+        ICache<String, Person> cache = hz2.getCacheManager().getCache(cacheName);
         ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(hz2.getConfig().getClassLoader());
