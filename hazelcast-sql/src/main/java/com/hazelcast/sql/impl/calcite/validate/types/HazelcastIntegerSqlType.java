@@ -21,7 +21,6 @@ import org.apache.calcite.sql.type.BasicSqlType;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
@@ -70,43 +69,39 @@ import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
  * possible to tell from the selected type alone whether overflow checking is
  * necessary while executing the operation.
  */
-// TODO: Move statics out of here
-public final class HazelcastIntegerType extends BasicSqlType {
+public final class HazelcastIntegerSqlType extends BasicSqlType {
 
-    private static final Map<SqlTypeName, HazelcastIntegerType[]> TYPES = new HashMap<>();
-    private static final Map<SqlTypeName, HazelcastIntegerType[]> NULLABLE_TYPES = new HashMap<>();
+    private static final Map<SqlTypeName, HazelcastIntegerSqlType[]> TYPES = new HashMap<>();
+    private static final Map<SqlTypeName, HazelcastIntegerSqlType[]> NULLABLE_TYPES = new HashMap<>();
+
+    private static final HazelcastIntegerSqlType[] TYPES_BY_BIT_WIDTH = new HazelcastIntegerSqlType[Long.SIZE + 1];
+    private static final HazelcastIntegerSqlType[] NULLABLE_TYPES_BY_BIT_WIDTH = new HazelcastIntegerSqlType[Long.SIZE + 1];
 
     static {
         // Preallocate all possible types of all possible bit widths.
-        TYPES.put(TINYINT, new HazelcastIntegerType[Byte.SIZE + 1]);
-        TYPES.put(SMALLINT, new HazelcastIntegerType[Short.SIZE + 1]);
-        TYPES.put(INTEGER, new HazelcastIntegerType[Integer.SIZE + 1]);
-        TYPES.put(BIGINT, new HazelcastIntegerType[Long.SIZE + 1]);
+        TYPES.put(TINYINT, new HazelcastIntegerSqlType[Byte.SIZE + 1]);
+        TYPES.put(SMALLINT, new HazelcastIntegerSqlType[Short.SIZE + 1]);
+        TYPES.put(INTEGER, new HazelcastIntegerSqlType[Integer.SIZE + 1]);
+        TYPES.put(BIGINT, new HazelcastIntegerSqlType[Long.SIZE + 1]);
 
-        for (Map.Entry<SqlTypeName, HazelcastIntegerType[]> entry : TYPES.entrySet()) {
+        for (Map.Entry<SqlTypeName, HazelcastIntegerSqlType[]> entry : TYPES.entrySet()) {
             SqlTypeName typeName = entry.getKey();
-            HazelcastIntegerType[] types = entry.getValue();
+            HazelcastIntegerSqlType[] types = entry.getValue();
 
-            HazelcastIntegerType[] nullableTypes = new HazelcastIntegerType[types.length];
+            HazelcastIntegerSqlType[] nullableTypes = new HazelcastIntegerSqlType[types.length];
             NULLABLE_TYPES.put(typeName, nullableTypes);
 
             for (int i = 0; i < types.length; ++i) {
-                types[i] = new HazelcastIntegerType(typeName, false, i);
-                nullableTypes[i] = new HazelcastIntegerType(typeName, true, i);
+                types[i] = new HazelcastIntegerSqlType(typeName, false, i);
+                nullableTypes[i] = new HazelcastIntegerSqlType(typeName, true, i);
             }
         }
-    }
 
-    private static final HazelcastIntegerType[] TYPES_BY_BIT_WIDTH = new HazelcastIntegerType[Long.SIZE + 1];
-    private static final HazelcastIntegerType[] NULLABLE_TYPES_BY_BIT_WIDTH = new HazelcastIntegerType[Long.SIZE + 1];
-
-    static {
         // Build reverse mapping structures to map from a bit width to a
         // preferred integer type.
-
         for (int i = 0; i <= Long.SIZE; ++i) {
-            HazelcastIntegerType type;
-            HazelcastIntegerType nullableType;
+            HazelcastIntegerSqlType type;
+            HazelcastIntegerSqlType nullableType;
             if (i < Byte.SIZE) {
                 type = TYPES.get(TINYINT)[i];
                 nullableType = NULLABLE_TYPES.get(TINYINT)[i];
@@ -128,10 +123,10 @@ public final class HazelcastIntegerType extends BasicSqlType {
 
     private final int bitWidth;
 
-    private HazelcastIntegerType(SqlTypeName typeName, boolean nullable, int bitWidth) {
+    private HazelcastIntegerSqlType(SqlTypeName typeName, boolean nullable, int bitWidth) {
         super(HazelcastTypeSystem.INSTANCE, typeName);
+
         this.isNullable = nullable;
-        assert bitWidth >= 0 && bitWidth <= overflowBitWidthOf(typeName);
         this.bitWidth = bitWidth;
 
         // recompute the digest to reflect the nullability of the type
@@ -145,51 +140,25 @@ public final class HazelcastIntegerType extends BasicSqlType {
     @Override
     protected void generateTypeString(StringBuilder sb, boolean withDetail) {
         super.generateTypeString(sb, withDetail);
+
         if (withDetail) {
             sb.append('(').append(bitWidth).append(')');
         }
     }
 
-    /**
-     * @return the non-nullable integer type able to represent any integer value
-     * of given integer type name.
-     */
-    public static HazelcastIntegerType of(SqlTypeName typeName) {
-        assert HazelcastTypeUtils.isNumericIntegerType(typeName);
-        return TYPES.get(typeName)[bitWidthOf(typeName)];
-    }
-
-    /**
-     * @return the integer type able to represent any integer value of given
-     * integer type name with the given nullability.
-     */
-    public static HazelcastIntegerType of(SqlTypeName typeName, boolean nullable) {
-        assert HazelcastTypeUtils.isNumericIntegerType(typeName);
-        if (nullable) {
-            return NULLABLE_TYPES.get(typeName)[bitWidthOf(typeName)];
-        } else {
-            return TYPES.get(typeName)[bitWidthOf(typeName)];
-        }
-    }
-
-    /**
-     * @return the integer type equivalent to the given integer type with
-     * the nullability adjusted according to the given nullability.
-     */
-    public static RelDataType of(RelDataType type, boolean nullable) {
-        SqlTypeName typeName = type.getSqlTypeName();
-        assert HazelcastTypeUtils.isNumericIntegerType(typeName);
-
+    public static RelDataType create(HazelcastIntegerSqlType type, boolean nullable) {
         if (type.isNullable() == nullable) {
             return type;
         }
 
-        return HazelcastIntegerType.of(typeName, nullable, bitWidthOf(type));
+        return create0(type.getSqlTypeName(), nullable, type.getBitWidth());
     }
 
-    private static HazelcastIntegerType of(SqlTypeName typeName, boolean nullable, int bitWidth) {
-        assert bitWidth >= 0 && bitWidth <= overflowBitWidthOf(typeName);
+    public static HazelcastIntegerSqlType create(SqlTypeName typeName, boolean nullable) {
+        return create0(typeName, nullable, bitWidthOf(typeName));
+    }
 
+    private static HazelcastIntegerSqlType create0(SqlTypeName typeName, boolean nullable, int bitWidth) {
         if (nullable) {
             return NULLABLE_TYPES.get(typeName)[bitWidth];
         } else {
@@ -201,8 +170,9 @@ public final class HazelcastIntegerType extends BasicSqlType {
      * @return the narrowest integer type able to represent integer values of
      * given bit width with the given nullability.
      */
-    public static HazelcastIntegerType of(int bitWidth, boolean nullable) {
+    public static HazelcastIntegerSqlType create(int bitWidth, boolean nullable) {
         assert bitWidth >= 0;
+
         if (nullable) {
             return bitWidth > Long.SIZE ? NULLABLE_TYPES_BY_BIT_WIDTH[Long.SIZE] : NULLABLE_TYPES_BY_BIT_WIDTH[bitWidth];
         } else {
@@ -226,47 +196,15 @@ public final class HazelcastIntegerType extends BasicSqlType {
         }
 
         value = Math.abs(value);
+
         return Long.SIZE - Long.numberOfLeadingZeros(value);
-    }
-
-    /**
-     * Finds the widest bit width integer type belonging to the same type name
-     * (family) as the given target integer type from the given list of types.
-     *
-     * @param targetType the target type to find the widest instance of.
-     * @param types      the list of types to inspect.
-     * @return the found widest integer type.
-     */
-    public static RelDataType leastRestrictive(RelDataType targetType, List<RelDataType> types) {
-        SqlTypeName typeName = targetType.getSqlTypeName();
-        assert HazelcastTypeUtils.isNumericIntegerType(typeName);
-
-        int maxBitWidth = -1;
-        RelDataType maxBitWidthType = null;
-
-        for (RelDataType type : types) {
-            if (type.getSqlTypeName() != typeName) {
-                continue;
-            }
-
-            int bitWidth = bitWidthOf(type);
-
-            if (bitWidth > maxBitWidth) {
-                maxBitWidth = bitWidth;
-                maxBitWidthType = type;
-            }
-        }
-        assert maxBitWidthType != null;
-        assert maxBitWidthType.getSqlTypeName() == typeName;
-
-        return HazelcastIntegerType.of(maxBitWidthType, targetType.isNullable());
     }
 
     /**
      * @return the bit width enough to represent any integer value of the given
      * type name.
      */
-    public static int bitWidthOf(SqlTypeName typeName) {
+    static int bitWidthOf(SqlTypeName typeName) {
         switch (typeName) {
             case TINYINT:
                 return Byte.SIZE - 1;
@@ -280,28 +218,4 @@ public final class HazelcastIntegerType extends BasicSqlType {
                 throw new IllegalArgumentException("unexpected type: " + typeName);
         }
     }
-
-    /**
-     * @return the bit width of the given integer type.
-     */
-    public static int bitWidthOf(RelDataType type) {
-        assert HazelcastTypeUtils.isNumericIntegerType(type.getSqlTypeName());
-        return ((HazelcastIntegerType) type).bitWidth;
-    }
-
-    private static int overflowBitWidthOf(SqlTypeName typeName) {
-        switch (typeName) {
-            case TINYINT:
-                return Byte.SIZE;
-            case SMALLINT:
-                return Short.SIZE;
-            case INTEGER:
-                return Integer.SIZE;
-            case BIGINT:
-                return Long.SIZE;
-            default:
-                throw new IllegalArgumentException("unexpected type: " + typeName);
-        }
-    }
-
 }

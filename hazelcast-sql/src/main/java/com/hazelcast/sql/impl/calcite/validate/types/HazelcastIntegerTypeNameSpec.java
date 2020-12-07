@@ -25,7 +25,7 @@ public class HazelcastIntegerTypeNameSpec extends SqlBasicTypeNameSpec {
 
     private final RelDataType type;
 
-    public HazelcastIntegerTypeNameSpec(HazelcastIntegerType type) {
+    public HazelcastIntegerTypeNameSpec(HazelcastIntegerSqlType type) {
         super(type.getSqlTypeName(), type.getBitWidth(), SqlParserPos.ZERO);
 
         this.type = type;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerSqlType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerTypeNameSpec;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
@@ -38,7 +38,7 @@ import java.util.List;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 
 /**
- * Provides custom coercion strategies supporting {@link HazelcastIntegerType}
+ * Provides custom coercion strategies supporting {@link HazelcastIntegerSqlType}
  * and assigning more precise types comparing to the standard Calcite coercion.
  */
 public final class HazelcastTypeCoercion extends TypeCoercionImpl {
@@ -59,8 +59,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         SqlDataTypeSpec targetTypeSpec;
 
-        if (targetType instanceof HazelcastIntegerType) {
-            HazelcastIntegerTypeNameSpec targetTypeNameSpec = new HazelcastIntegerTypeNameSpec((HazelcastIntegerType) targetType);
+        if (targetType instanceof HazelcastIntegerSqlType) {
+            HazelcastIntegerTypeNameSpec targetTypeNameSpec = new HazelcastIntegerTypeNameSpec((HazelcastIntegerSqlType) targetType);
 
             targetTypeSpec = new SqlDataTypeSpec(
                 targetTypeNameSpec,

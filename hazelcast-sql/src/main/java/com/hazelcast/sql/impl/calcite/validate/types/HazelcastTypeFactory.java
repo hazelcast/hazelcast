@@ -34,7 +34,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.REAL;
 /**
  * Custom Hazelcast type factory.
  * <p>
- * The main purpose of this factory is to plug {@link HazelcastIntegerType} into
+ * The main purpose of this factory is to plug {@link HazelcastIntegerSqlType} into
  * Calcite runtime.
  */
 public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
@@ -139,7 +139,7 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
         }
 
         if (HazelcastTypeUtils.isNumericIntegerType(typeName)) {
-            return HazelcastIntegerType.of(typeName);
+            return HazelcastIntegerSqlType.create(typeName, false);
         }
 
         return null;
@@ -148,7 +148,7 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     @Override
     public RelDataType createTypeWithNullability(RelDataType type, boolean nullable) {
         if (HazelcastTypeUtils.isNumericIntegerType(type.getSqlTypeName())) {
-            return HazelcastIntegerType.of(type, nullable);
+            return HazelcastIntegerSqlType.create((HazelcastIntegerSqlType) type, nullable);
         } else if (type.getSqlTypeName() == SqlTypeName.OTHER) {
             return nullable ? TYPE_OBJECT_NULLABLE : TYPE_OBJECT;
         } else if (type.getSqlTypeName() == SqlTypeName.TIME) {
@@ -175,7 +175,7 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
         SqlTypeName selectedTypeName = selected.getSqlTypeName();
 
         if (HazelcastTypeUtils.isNumericIntegerType(selectedTypeName)) {
-            return HazelcastIntegerType.leastRestrictive(selected, types);
+            return leastRestrictive(selected, types);
         }
 
         if (selectedTypeName == DOUBLE) {
@@ -198,5 +198,38 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
         }
 
         return selected;
+    }
+
+    /**
+     * Finds the widest bit width integer type belonging to the same type name
+     * (family) as the given target integer type from the given list of types.
+     *
+     * @param targetType the target type to find the widest instance of.
+     * @param types      the list of types to inspect.
+     * @return the found widest integer type.
+     */
+    private static RelDataType leastRestrictive(RelDataType targetType, List<RelDataType> types) {
+        SqlTypeName typeName = targetType.getSqlTypeName();
+        assert HazelcastTypeUtils.isNumericIntegerType(typeName);
+
+        int maxBitWidth = -1;
+        RelDataType maxBitWidthType = null;
+
+        for (RelDataType type : types) {
+            if (type.getSqlTypeName() != typeName) {
+                continue;
+            }
+
+            int bitWidth = ((HazelcastIntegerSqlType) type).getBitWidth();
+
+            if (bitWidth > maxBitWidth) {
+                maxBitWidth = bitWidth;
+                maxBitWidthType = type;
+            }
+        }
+        assert maxBitWidthType != null;
+        assert maxBitWidthType.getSqlTypeName() == typeName;
+
+        return HazelcastIntegerSqlType.create((HazelcastIntegerSqlType) maxBitWidthType, targetType.isNullable());
     }
 }
