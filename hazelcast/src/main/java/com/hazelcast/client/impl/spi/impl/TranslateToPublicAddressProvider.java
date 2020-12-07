@@ -75,7 +75,7 @@ class TranslateToPublicAddressProvider {
             SSLConfig sslConfig = config.getSSLConfig();
             if (sslConfig != null && sslConfig.isEnabled()) {
                 if (logger.isFineEnabled()) {
-                    logger.info("SSL is configured. The client will use internal addresses to communicate with the cluster. If "
+                    logger.fine("SSL is configured. The client will use internal addresses to communicate with the cluster. If "
                             + "members are not reachable via private addresses, "
                             + "please set \"hazelcast.discovery.public.ip.enabled\" to true ");
                 }
@@ -84,7 +84,7 @@ class TranslateToPublicAddressProvider {
 
             if (memberInternalAddressAsDefinedInClientConfig(members)) {
                 if (logger.isFineEnabled()) {
-                    logger.info("There are internal addresses of members used in the config."
+                    logger.fine("There are internal addresses of members used in the config."
                             + " The client will use internal addresses");
                 }
                 return false;
