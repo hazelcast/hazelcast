@@ -236,6 +236,17 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
+    public void shouldHandleMemcachedProtocolConfig() throws Exception {
+        Config config = new Config();
+        config.getNetworkConfig().getMemcacheProtocolConfig().setEnabled(false);
+
+        withEnvironmentVariable("HZ_NETWORK_MEMCACHEPROTOCOL_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getNetworkConfig().getMemcacheProtocolConfig().isEnabled());
+    }
+
+    @Test
     public void shouldHandleFlakeIdConfig() throws Exception {
         Config config = new Config();
         config.getFlakeIdGeneratorConfig("foo")

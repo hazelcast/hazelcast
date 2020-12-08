@@ -61,7 +61,6 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberGroupConfig;
-import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MetadataPolicy;
@@ -2644,10 +2643,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleMemcacheProtocol(Node node) {
-        MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig();
-        config.getNetworkConfig().setMemcacheProtocolConfig(memcacheProtocolConfig);
-        boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
-        memcacheProtocolConfig.setEnabled(enabled);
+        config.getNetworkConfig().getMemcacheProtocolConfig()
+            .setEnabled(getBooleanValue(getAttribute(node, "enabled")));
     }
 
     private void handleRestApi(Node node) {

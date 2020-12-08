@@ -165,7 +165,8 @@ public class MetricsCompressor {
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    private void writeDescriptor(MetricDescriptor descriptor) throws IOException, LongWordException {
+    private void writeDescriptor(MetricDescriptor originalDescriptor) throws IOException, LongWordException {
+        MetricDescriptor descriptor = prepareDescriptor(originalDescriptor);
         int mask = calculateDescriptorMask(descriptor);
         tmpDos.writeByte(mask);
 
@@ -204,6 +205,18 @@ public class MetricsCompressor {
         }
         count++;
         lastDescriptor = copyDescriptor(descriptor, lastDescriptor);
+    }
+
+    private MetricDescriptor prepareDescriptor(MetricDescriptor descriptor) {
+        final ProbeUnit unit = descriptor.unit();
+        if (unit == null || !unit.isNewUnit()) {
+            return descriptor;
+        } else {
+            return descriptor
+                    .copy()
+                    .withTag("metric-unit", unit.name())
+                    .withUnit(null);
+        }
     }
 
     private int calculateDescriptorMask(MetricDescriptor descriptor) {
@@ -543,7 +556,11 @@ public class MetricsCompressor {
                 descriptor.withUnit(lastDescriptor.unit());
             } else {
                 int unitOrdinal = dis.readByte();
-                ProbeUnit unit = unitOrdinal != NULL_UNIT ? units[unitOrdinal] : null;
+                // we protect against using a unit that is introduced on the producer, meaning not in
+                // the array of the known units
+                // if the consumer doesn't know it attempting to use the unit would result
+                // in IndexOutOfBoundsException
+                ProbeUnit unit = unitOrdinal != NULL_UNIT && unitOrdinal < units.length ? units[unitOrdinal] : null;
                 descriptor.withUnit(unit);
             }
         }
