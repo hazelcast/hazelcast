@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerSqlType;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
@@ -55,9 +55,9 @@ public final class HazelcastAbsFunction extends HazelcastFunction {
         RelDataType operandType = binding.getOperandType(0);
 
         if (HazelcastTypeUtils.isNumericIntegerType(operandType)) {
-            int bitWidth = ((HazelcastIntegerSqlType) operandType).getBitWidth();
+            int bitWidth = ((HazelcastIntegerType) operandType).getBitWidth();
 
-            operandType = HazelcastIntegerSqlType.create(bitWidth + 1, operandType.isNullable());
+            operandType = HazelcastIntegerType.create(bitWidth + 1, operandType.isNullable());
         }
 
         TypedOperandChecker checker = TypedOperandChecker.forType(operandType);

@@ -20,7 +20,7 @@ import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerSqlType;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlKind;
 
@@ -51,9 +51,9 @@ public final class ArithmeticOperandChecker {
             case MINUS:
             case DIVIDE:
                 if (HazelcastTypeUtils.isNumericIntegerType(type)) {
-                    int bitWidth = ((HazelcastIntegerSqlType) type).getBitWidth() + 1;
+                    int bitWidth = ((HazelcastIntegerType) type).getBitWidth() + 1;
 
-                    type = HazelcastIntegerSqlType.create(bitWidth, type.isNullable());
+                    type = HazelcastIntegerType.create(bitWidth, type.isNullable());
                 }
 
                 break;
@@ -62,10 +62,10 @@ public final class ArithmeticOperandChecker {
                 assert kind == SqlKind.TIMES;
 
                 if (HazelcastTypeUtils.isNumericIntegerType(firstType) && HazelcastTypeUtils.isNumericIntegerType(secondType)) {
-                    int bitWidth = ((HazelcastIntegerSqlType) firstType).getBitWidth()
-                        + ((HazelcastIntegerSqlType) secondType).getBitWidth();
+                    int bitWidth = ((HazelcastIntegerType) firstType).getBitWidth()
+                        + ((HazelcastIntegerType) secondType).getBitWidth();
 
-                    type = HazelcastIntegerSqlType.create(bitWidth, type.isNullable());
+                    type = HazelcastIntegerType.create(bitWidth, type.isNullable());
                 }
 
                 break;

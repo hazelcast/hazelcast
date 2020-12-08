@@ -36,37 +36,37 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class HazelcastIntegerSqlTypeTest {
+public class HazelcastIntegerTypeTest {
     @Test
     public void testNullableIntegerTypeOfTypeName() {
-        assertType(TINYINT, Byte.SIZE - 1, false, HazelcastIntegerSqlType.create(TINYINT, false));
-        assertType(SMALLINT, Short.SIZE - 1, false, HazelcastIntegerSqlType.create(SMALLINT, false));
-        assertType(INTEGER, Integer.SIZE - 1, false, HazelcastIntegerSqlType.create(INTEGER, false));
-        assertType(BIGINT, Long.SIZE - 1, false, HazelcastIntegerSqlType.create(BIGINT, false));
+        assertType(TINYINT, Byte.SIZE - 1, false, HazelcastIntegerType.create(TINYINT, false));
+        assertType(SMALLINT, Short.SIZE - 1, false, HazelcastIntegerType.create(SMALLINT, false));
+        assertType(INTEGER, Integer.SIZE - 1, false, HazelcastIntegerType.create(INTEGER, false));
+        assertType(BIGINT, Long.SIZE - 1, false, HazelcastIntegerType.create(BIGINT, false));
 
-        assertType(TINYINT, Byte.SIZE - 1, true, HazelcastIntegerSqlType.create(TINYINT, true));
-        assertType(SMALLINT, Short.SIZE - 1, true, HazelcastIntegerSqlType.create(SMALLINT, true));
-        assertType(INTEGER, Integer.SIZE - 1, true, HazelcastIntegerSqlType.create(INTEGER, true));
-        assertType(BIGINT, Long.SIZE - 1, true, HazelcastIntegerSqlType.create(BIGINT, true));
+        assertType(TINYINT, Byte.SIZE - 1, true, HazelcastIntegerType.create(TINYINT, true));
+        assertType(SMALLINT, Short.SIZE - 1, true, HazelcastIntegerType.create(SMALLINT, true));
+        assertType(INTEGER, Integer.SIZE - 1, true, HazelcastIntegerType.create(INTEGER, true));
+        assertType(BIGINT, Long.SIZE - 1, true, HazelcastIntegerType.create(BIGINT, true));
     }
 
     @Test
     public void testNullableIntegerTypeOfType() {
-        HazelcastIntegerSqlType intType = HazelcastIntegerSqlType.create(INTEGER, false);
-        HazelcastIntegerSqlType nullableIntType = HazelcastIntegerSqlType.create(INTEGER, true);
+        HazelcastIntegerType intType = HazelcastIntegerType.create(INTEGER, false);
+        HazelcastIntegerType nullableIntType = HazelcastIntegerType.create(INTEGER, true);
 
-        assertSame(intType, HazelcastIntegerSqlType.create(intType, false));
-        assertSame(nullableIntType, HazelcastIntegerSqlType.create(intType, true));
+        assertSame(intType, HazelcastIntegerType.create(intType, false));
+        assertSame(nullableIntType, HazelcastIntegerType.create(intType, true));
 
-        assertSame(intType, HazelcastIntegerSqlType.create(nullableIntType, false));
-        assertSame(nullableIntType, HazelcastIntegerSqlType.create(nullableIntType, true));
+        assertSame(intType, HazelcastIntegerType.create(nullableIntType, false));
+        assertSame(nullableIntType, HazelcastIntegerType.create(nullableIntType, true));
     }
 
     @Test
     public void testNullableIntegerTypeOfBitWidth() {
         for (int i = 0; i < Long.SIZE + 10; ++i) {
-            RelDataType type = HazelcastIntegerSqlType.create(i, false);
-            RelDataType nullableType = HazelcastIntegerSqlType.create(i, true);
+            RelDataType type = HazelcastIntegerType.create(i, false);
+            RelDataType nullableType = HazelcastIntegerType.create(i, true);
 
             if (i < Byte.SIZE) {
                 assertType(TINYINT, i, false, type);
@@ -89,25 +89,25 @@ public class HazelcastIntegerSqlTypeTest {
 
     @Test
     public void testBitWidthOfLong() {
-        assertEquals(0, HazelcastIntegerSqlType.bitWidthOf(0));
-        assertEquals(1, HazelcastIntegerSqlType.bitWidthOf(1));
-        assertEquals(1, HazelcastIntegerSqlType.bitWidthOf(-1));
-        assertEquals(2, HazelcastIntegerSqlType.bitWidthOf(2));
-        assertEquals(2, HazelcastIntegerSqlType.bitWidthOf(-2));
-        assertEquals(10, HazelcastIntegerSqlType.bitWidthOf(555));
-        assertEquals(10, HazelcastIntegerSqlType.bitWidthOf(-555));
+        assertEquals(0, HazelcastIntegerType.bitWidthOf(0));
+        assertEquals(1, HazelcastIntegerType.bitWidthOf(1));
+        assertEquals(1, HazelcastIntegerType.bitWidthOf(-1));
+        assertEquals(2, HazelcastIntegerType.bitWidthOf(2));
+        assertEquals(2, HazelcastIntegerType.bitWidthOf(-2));
+        assertEquals(10, HazelcastIntegerType.bitWidthOf(555));
+        assertEquals(10, HazelcastIntegerType.bitWidthOf(-555));
 
-        assertEquals(Long.SIZE - 1, HazelcastIntegerSqlType.bitWidthOf(Long.MAX_VALUE));
-        assertEquals(Long.SIZE - 1, HazelcastIntegerSqlType.bitWidthOf(Long.MIN_VALUE));
+        assertEquals(Long.SIZE - 1, HazelcastIntegerType.bitWidthOf(Long.MAX_VALUE));
+        assertEquals(Long.SIZE - 1, HazelcastIntegerType.bitWidthOf(Long.MIN_VALUE));
 
-        assertEquals(Integer.SIZE - 1, HazelcastIntegerSqlType.bitWidthOf(Integer.MAX_VALUE));
-        assertEquals(Integer.SIZE - 1, HazelcastIntegerSqlType.bitWidthOf(Integer.MIN_VALUE));
+        assertEquals(Integer.SIZE - 1, HazelcastIntegerType.bitWidthOf(Integer.MAX_VALUE));
+        assertEquals(Integer.SIZE - 1, HazelcastIntegerType.bitWidthOf(Integer.MIN_VALUE));
 
-        assertEquals(Short.SIZE - 1, HazelcastIntegerSqlType.bitWidthOf(Short.MAX_VALUE));
-        assertEquals(Short.SIZE - 1, HazelcastIntegerSqlType.bitWidthOf(Short.MIN_VALUE));
+        assertEquals(Short.SIZE - 1, HazelcastIntegerType.bitWidthOf(Short.MAX_VALUE));
+        assertEquals(Short.SIZE - 1, HazelcastIntegerType.bitWidthOf(Short.MIN_VALUE));
 
-        assertEquals(Byte.SIZE - 1, HazelcastIntegerSqlType.bitWidthOf(Byte.MAX_VALUE));
-        assertEquals(Byte.SIZE - 1, HazelcastIntegerSqlType.bitWidthOf(Byte.MIN_VALUE));
+        assertEquals(Byte.SIZE - 1, HazelcastIntegerType.bitWidthOf(Byte.MAX_VALUE));
+        assertEquals(Byte.SIZE - 1, HazelcastIntegerType.bitWidthOf(Byte.MIN_VALUE));
     }
 
     @Test
@@ -115,24 +115,24 @@ public class HazelcastIntegerSqlTypeTest {
         for (SqlTypeName typeName : SqlTypeName.values()) {
             switch (typeName) {
                 case TINYINT:
-                    assertEquals(Byte.SIZE - 1, HazelcastIntegerSqlType.bitWidthOf(typeName));
+                    assertEquals(Byte.SIZE - 1, HazelcastIntegerType.bitWidthOf(typeName));
                     break;
 
                 case SMALLINT:
-                    assertEquals(Short.SIZE - 1, HazelcastIntegerSqlType.bitWidthOf(typeName));
+                    assertEquals(Short.SIZE - 1, HazelcastIntegerType.bitWidthOf(typeName));
                     break;
 
                 case INTEGER:
-                    assertEquals(Integer.SIZE - 1, HazelcastIntegerSqlType.bitWidthOf(typeName));
+                    assertEquals(Integer.SIZE - 1, HazelcastIntegerType.bitWidthOf(typeName));
                     break;
 
                 case BIGINT:
-                    assertEquals(Long.SIZE - 1, HazelcastIntegerSqlType.bitWidthOf(typeName));
+                    assertEquals(Long.SIZE - 1, HazelcastIntegerType.bitWidthOf(typeName));
                     break;
 
                 default:
                     //noinspection ResultOfMethodCallIgnored
-                    assertThrows(IllegalArgumentException.class, () -> HazelcastIntegerSqlType.bitWidthOf(typeName));
+                    assertThrows(IllegalArgumentException.class, () -> HazelcastIntegerType.bitWidthOf(typeName));
                     break;
             }
         }
@@ -145,7 +145,7 @@ public class HazelcastIntegerSqlTypeTest {
         }
 
         assertEquals(expectedTypeName, actual.getSqlTypeName());
-        assertEquals(expectedBitWidth, ((HazelcastIntegerSqlType) actual).getBitWidth());
+        assertEquals(expectedBitWidth, ((HazelcastIntegerType) actual).getBitWidth());
         assertEquals(expectedNullable, actual.isNullable());
     }
 

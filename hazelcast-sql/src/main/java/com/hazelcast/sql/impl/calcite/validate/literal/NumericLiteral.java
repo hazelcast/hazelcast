@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.literal;
 
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerSqlType;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import org.apache.calcite.rel.type.RelDataType;
@@ -53,9 +53,9 @@ public final class NumericLiteral extends Literal {
                 try {
                     long value = BigDecimalConverter.INSTANCE.asBigint(valueDecimal);
 
-                    int bitWidth = HazelcastIntegerSqlType.bitWidthOf(value);
+                    int bitWidth = HazelcastIntegerType.bitWidthOf(value);
 
-                    RelDataType type = HazelcastIntegerSqlType.create(bitWidth, false);
+                    RelDataType type = HazelcastIntegerType.create(bitWidth, false);
 
                     Object adjustedValue;
 
@@ -114,7 +114,7 @@ public final class NumericLiteral extends Literal {
     public RelDataType getType(HazelcastTypeFactory typeFactory) {
         switch (mode) {
             case INTEGER:
-                return HazelcastIntegerSqlType.create(bitWidth, false);
+                return HazelcastIntegerType.create(bitWidth, false);
 
             case FRACTIONAL_EXACT:
                 return typeFactory.createSqlType(SqlTypeName.DECIMAL);

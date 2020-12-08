@@ -213,8 +213,8 @@ public final class HazelcastTypeUtils {
         assert precedence1 != precedence2 || type1.getSqlTypeName() == type2.getSqlTypeName();
 
         if (precedence1 == precedence2 && isNumericIntegerType(type1) && isNumericIntegerType(type2)) {
-            int bitWidth1 = ((HazelcastIntegerSqlType) type1).getBitWidth();
-            int bitWidth2 = ((HazelcastIntegerSqlType) type2).getBitWidth();
+            int bitWidth1 = ((HazelcastIntegerType) type1).getBitWidth();
+            int bitWidth2 = ((HazelcastIntegerType) type2).getBitWidth();
             return bitWidth1 > bitWidth2 ? type1 : type2;
         }
 

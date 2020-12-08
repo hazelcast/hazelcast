@@ -34,30 +34,30 @@ import static org.apache.calcite.sql.type.SqlTypeName.REAL;
 /**
  * Custom Hazelcast type factory.
  * <p>
- * The main purpose of this factory is to plug {@link HazelcastIntegerSqlType} into
+ * The main purpose of this factory is to plug {@link HazelcastIntegerType} into
  * Calcite runtime.
  */
 public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
 
     public static final HazelcastTypeFactory INSTANCE = new HazelcastTypeFactory();
 
-    private static final RelDataType TYPE_TIME = new HazelcastSqlType(SqlTypeName.TIME, false);
-    private static final RelDataType TYPE_TIME_NULLABLE = new HazelcastSqlType(SqlTypeName.TIME, true);
+    private static final RelDataType TYPE_TIME = new HazelcastType(SqlTypeName.TIME, false);
+    private static final RelDataType TYPE_TIME_NULLABLE = new HazelcastType(SqlTypeName.TIME, true);
 
-    private static final RelDataType TYPE_TIMESTAMP = new HazelcastSqlType(SqlTypeName.TIMESTAMP, false);
-    private static final RelDataType TYPE_TIMESTAMP_NULLABLE = new HazelcastSqlType(SqlTypeName.TIMESTAMP, true);
+    private static final RelDataType TYPE_TIMESTAMP = new HazelcastType(SqlTypeName.TIMESTAMP, false);
+    private static final RelDataType TYPE_TIMESTAMP_NULLABLE = new HazelcastType(SqlTypeName.TIMESTAMP, true);
 
-    private static final RelDataType TYPE_TIMESTAMP_WITH_TIME_ZONE = new HazelcastSqlType(
+    private static final RelDataType TYPE_TIMESTAMP_WITH_TIME_ZONE = new HazelcastType(
         SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE, false
     );
 
-    private static final RelDataType TYPE_TIMESTAMP_WITH_TIME_ZONE_NULLABLE = new HazelcastSqlType(
+    private static final RelDataType TYPE_TIMESTAMP_WITH_TIME_ZONE_NULLABLE = new HazelcastType(
         SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE,
         true
     );
 
-    private static final RelDataType TYPE_OBJECT = new HazelcastSqlType(SqlTypeName.OTHER, false);
-    private static final RelDataType TYPE_OBJECT_NULLABLE = new HazelcastSqlType(SqlTypeName.OTHER, true);
+    private static final RelDataType TYPE_OBJECT = new HazelcastType(SqlTypeName.OTHER, false);
+    private static final RelDataType TYPE_OBJECT_NULLABLE = new HazelcastType(SqlTypeName.OTHER, true);
 
     private HazelcastTypeFactory() {
         super(HazelcastTypeSystem.INSTANCE);
@@ -139,7 +139,7 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
         }
 
         if (HazelcastTypeUtils.isNumericIntegerType(typeName)) {
-            return HazelcastIntegerSqlType.create(typeName, false);
+            return HazelcastIntegerType.create(typeName, false);
         }
 
         return null;
@@ -148,7 +148,7 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     @Override
     public RelDataType createTypeWithNullability(RelDataType type, boolean nullable) {
         if (HazelcastTypeUtils.isNumericIntegerType(type.getSqlTypeName())) {
-            return HazelcastIntegerSqlType.create((HazelcastIntegerSqlType) type, nullable);
+            return HazelcastIntegerType.create((HazelcastIntegerType) type, nullable);
         } else if (type.getSqlTypeName() == SqlTypeName.OTHER) {
             return nullable ? TYPE_OBJECT_NULLABLE : TYPE_OBJECT;
         } else if (type.getSqlTypeName() == SqlTypeName.TIME) {
@@ -220,7 +220,7 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
                 continue;
             }
 
-            int bitWidth = ((HazelcastIntegerSqlType) type).getBitWidth();
+            int bitWidth = ((HazelcastIntegerType) type).getBitWidth();
 
             if (bitWidth > maxBitWidth) {
                 maxBitWidth = bitWidth;
@@ -230,6 +230,6 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
         assert maxBitWidthType != null;
         assert maxBitWidthType.getSqlTypeName() == typeName;
 
-        return HazelcastIntegerSqlType.create((HazelcastIntegerSqlType) maxBitWidthType, targetType.isNullable());
+        return HazelcastIntegerType.create((HazelcastIntegerType) maxBitWidthType, targetType.isNullable());
     }
 }

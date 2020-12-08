@@ -87,13 +87,13 @@ public class HazelcastTypeSystemTest {
         assertPrecedence(type(VARCHAR), type(NULL));
         assertPrecedence(type(BOOLEAN), type(VARCHAR));
         assertPrecedence(type(TINYINT), type(BOOLEAN));
-        assertPrecedence(HazelcastIntegerSqlType.create(Byte.SIZE - 1, false), HazelcastIntegerSqlType.create(Byte.SIZE - 2, false));
+        assertPrecedence(HazelcastIntegerType.create(Byte.SIZE - 1, false), HazelcastIntegerType.create(Byte.SIZE - 2, false));
         assertPrecedence(type(SMALLINT), type(TINYINT));
-        assertPrecedence(HazelcastIntegerSqlType.create(Short.SIZE - 1, false), HazelcastIntegerSqlType.create(Short.SIZE - 2, false));
+        assertPrecedence(HazelcastIntegerType.create(Short.SIZE - 1, false), HazelcastIntegerType.create(Short.SIZE - 2, false));
         assertPrecedence(type(INTEGER), type(SMALLINT));
-        assertPrecedence(HazelcastIntegerSqlType.create(Integer.SIZE - 1, false), HazelcastIntegerSqlType.create(Integer.SIZE - 2, false));
+        assertPrecedence(HazelcastIntegerType.create(Integer.SIZE - 1, false), HazelcastIntegerType.create(Integer.SIZE - 2, false));
         assertPrecedence(type(BIGINT), type(INTEGER));
-        assertPrecedence(HazelcastIntegerSqlType.create(Long.SIZE - 1, false), HazelcastIntegerSqlType.create(Long.SIZE - 2, false));
+        assertPrecedence(HazelcastIntegerType.create(Long.SIZE - 1, false), HazelcastIntegerType.create(Long.SIZE - 2, false));
         assertPrecedence(type(DECIMAL), type(BIGINT));
         assertPrecedence(type(REAL), type(DECIMAL));
         assertPrecedence(type(DOUBLE), type(REAL));

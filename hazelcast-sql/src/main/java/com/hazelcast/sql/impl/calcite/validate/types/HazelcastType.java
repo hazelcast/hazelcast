@@ -22,8 +22,8 @@ import org.apache.calcite.sql.type.SqlTypeName;
 /**
  * Custom Hazelcast type that maps to a well-known type name.
  */
-public class HazelcastSqlType extends BasicSqlType {
-    HazelcastSqlType(SqlTypeName typeName, boolean nullable) {
+public class HazelcastType extends BasicSqlType {
+    HazelcastType(SqlTypeName typeName, boolean nullable) {
         super(HazelcastTypeSystem.INSTANCE, typeName);
 
         this.isNullable = nullable;

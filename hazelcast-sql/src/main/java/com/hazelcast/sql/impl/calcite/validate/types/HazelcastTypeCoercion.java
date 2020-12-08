@@ -37,7 +37,7 @@ import java.util.List;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 
 /**
- * Provides custom coercion strategies supporting {@link HazelcastIntegerSqlType}
+ * Provides custom coercion strategies supporting {@link HazelcastIntegerType}
  * and assigning more precise types comparing to the standard Calcite coercion.
  */
 public final class HazelcastTypeCoercion extends TypeCoercionImpl {
@@ -58,9 +58,9 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         SqlDataTypeSpec targetTypeSpec;
 
-        if (targetType instanceof HazelcastIntegerSqlType) {
+        if (targetType instanceof HazelcastIntegerType) {
             targetTypeSpec = new SqlDataTypeSpec(
-                new HazelcastIntegerTypeNameSpec((HazelcastIntegerSqlType) targetType),
+                new HazelcastIntegerTypeNameSpec((HazelcastIntegerType) targetType),
                 SqlParserPos.ZERO
             );
         } else {
