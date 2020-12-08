@@ -197,7 +197,7 @@ public class ExpirySystem {
 
         int evictedEntryCount = 0;
         if (expirationIterator == null || !expirationIterator.hasNext()) {
-            expirationIterator = expireTimeByKey.keySet().iterator();
+            expirationIterator = getIterator(expireTimeByKey);
         }
 
         List keyValuePairs = new ArrayList<>();
@@ -216,6 +216,11 @@ public class ExpirySystem {
             }
         }
         return evictedEntryCount;
+    }
+
+    @NotNull
+    protected Iterator<Data> getIterator(Map<Data, ExpiryMetadata> expireTimeByKey) {
+        return expireTimeByKey.keySet().iterator();
     }
 
     public void informEvicted(Data key) {
