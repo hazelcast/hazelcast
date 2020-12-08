@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.sql.impl.calcite.validate.operators.common;
 
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlPostfixOperator;
+import org.apache.calcite.sql.SqlPrefixOperator;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 
-public abstract class HazelcastPostfixOperator extends SqlPostfixOperator implements HazelcastOperandTypeCheckerAware {
-    protected HazelcastPostfixOperator(
+/**
+ * A common subclass for prefix operators.
+ * <p>
+ * See {@link HazelcastOperandTypeCheckerAware} for motivation.
+ */
+public abstract class HazelcastPrefixOperator extends SqlPrefixOperator implements HazelcastOperandTypeCheckerAware {
+    protected HazelcastPrefixOperator(
         String name,
         SqlKind kind,
         int prec,

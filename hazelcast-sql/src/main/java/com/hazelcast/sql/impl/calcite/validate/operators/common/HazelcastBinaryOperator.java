@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.sql.impl.calcite.validate.operators.common;
 
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 
-public abstract class HazelcastSpecialOperator extends SqlSpecialOperator implements HazelcastOperandTypeCheckerAware {
-    protected HazelcastSpecialOperator(
+/**
+ * A common subclass for binary operators.
+ * <p>
+ * See {@link HazelcastOperandTypeCheckerAware} for motivation.
+ */
+public abstract class HazelcastBinaryOperator extends SqlBinaryOperator implements HazelcastOperandTypeCheckerAware {
+    protected HazelcastBinaryOperator(
         String name,
         SqlKind kind,
         int prec,

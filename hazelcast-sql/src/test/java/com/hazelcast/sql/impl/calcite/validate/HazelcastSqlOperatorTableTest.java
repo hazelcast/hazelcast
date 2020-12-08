@@ -17,8 +17,12 @@
 package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.internal.util.BiTuple;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastOperandTypeCheckerAware;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastBinaryOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastPostfixOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastPrefixOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastSpecialOperator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -60,9 +64,14 @@ public class HazelcastSqlOperatorTableTest {
     @Test
     public void testOperandTypeChecker() {
         for (SqlOperator operator : HazelcastSqlOperatorTable.instance().getOperatorList()) {
-            boolean valid = operator instanceof HazelcastOperandTypeCheckerAware;
+            boolean valid = operator instanceof HazelcastFunction
+                || operator instanceof HazelcastPrefixOperator
+                || operator instanceof HazelcastPostfixOperator
+                || operator instanceof HazelcastBinaryOperator
+                || operator instanceof HazelcastSpecialOperator;
 
-            assertTrue("Operator must implement " + HazelcastOperandTypeCheckerAware.class.getSimpleName() + ": " + operator.getClass().getSimpleName(), valid);
+            assertTrue("Operator must implement one of classes from " + HazelcastFunction.class.getPackage().toString()
+                + ": " + operator.getClass().getSimpleName(), valid);
         }
     }
 

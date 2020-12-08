@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.sql.impl.calcite.validate.operators.common;
 
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
@@ -25,6 +26,11 @@ import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 
+/**
+ * A common subclass for functions.
+ * <p>
+ * See {@link HazelcastOperandTypeCheckerAware} for motivation.
+ */
 public abstract class HazelcastFunction extends SqlFunction implements HazelcastOperandTypeCheckerAware {
     protected HazelcastFunction(
         String name,

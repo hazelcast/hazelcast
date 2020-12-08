@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.sql.impl.calcite.validate.operators.common;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlOperator;
@@ -25,7 +26,22 @@ import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.Arrays;
 
-public interface HazelcastOperandTypeCheckerAware {
+/**
+ * The special interface that provides an utility method to perform a recursive operand type inference before
+ * checking the operand types. Without this logic, many expressions will fail to resolve their operand types.
+ * See the {@code NestedExpressionIntegrationTest} test: if the recursive inference is skipped, many of tests
+ * from this class will fail.
+ * <p>
+ * In addition, this class provides the custom {@link SqlCallBinding} implementation that should be used by
+ * operand checker of all operators. This overridden binding {@link HazelcastCallBinding} provides a custom
+ * error message for signature errors.
+ * <p>
+ * All operators must extend this interface and call the {@link #prepareBinding(SqlCallBinding)} method before
+ * proceeding with operand type checking. To simplify this task, we provide a set of abstract classes:
+ * {@link HazelcastFunction}, {@link HazelcastPrefixOperator}, {@link HazelcastPostfixOperator},
+ * {@link HazelcastBinaryOperator}, {@link HazelcastSpecialOperator}.
+ */
+interface HazelcastOperandTypeCheckerAware {
     default HazelcastCallBinding prepareBinding(SqlCallBinding binding) {
         SqlOperator operator = binding.getOperator();
 
