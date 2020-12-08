@@ -326,8 +326,9 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleFlakeIdGenerator(Node node) {
         for (Node genNode : childElements(node)) {
-            FlakeIdGeneratorConfig genConfig = new FlakeIdGeneratorConfig();
-            genConfig.setName(genNode.getNodeName());
+            FlakeIdGeneratorConfig genConfig = config
+              .getFlakeIdGeneratorConfig(genNode.getNodeName());
+
             handleFlakeIdGeneratorNode(genNode, genConfig);
         }
     }
@@ -369,8 +370,9 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handlePNCounter(Node node) throws Exception {
         for (Node counterNode : childElements(node)) {
-            PNCounterConfig counterConfig = new PNCounterConfig();
-            counterConfig.setName(counterNode.getNodeName());
+            PNCounterConfig counterConfig = config
+              .getPNCounterConfig(counterNode.getNodeName());
+
             handleViaReflection(counterNode, config, counterConfig);
         }
     }

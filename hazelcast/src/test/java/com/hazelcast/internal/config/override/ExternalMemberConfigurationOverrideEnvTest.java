@@ -221,6 +221,34 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         assertEquals("com.foo.SomeClass", config.getSplitBrainProtectionConfig("foo").getFunctionClassName());
     }
 
+    @Test
+    public void shouldHandlePNCounterConfig() throws Exception {
+        Config config = new Config();
+        config.getPNCounterConfig("foo")
+          .setStatisticsEnabled(false)
+          .setReplicaCount(2);
+
+        withEnvironmentVariable("HZ_PNCOUNTER_FOO_STATISTICSENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getPNCounterConfig("foo").isStatisticsEnabled());
+        assertEquals(2, config.getPNCounterConfig("foo").getReplicaCount());
+    }
+
+    @Test
+    public void shouldHandleFlakeIdConfig() throws Exception {
+        Config config = new Config();
+        config.getFlakeIdGeneratorConfig("foo")
+          .setStatisticsEnabled(false)
+          .setAllowedFutureMillis(1000);
+
+        withEnvironmentVariable("HZ_FLAKEIDGENERATOR_FOO_STATISTICSENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getFlakeIdGeneratorConfig("foo").isStatisticsEnabled());
+        assertEquals(1000, config.getFlakeIdGeneratorConfig("foo").getAllowedFutureMillis());
+    }
+
     @Test(expected = InvalidConfigurationException.class)
     public void shouldDisallowConflictingEntries() throws Exception {
         withEnvironmentVariable("HZ_CLUSTERNAME", "test")
