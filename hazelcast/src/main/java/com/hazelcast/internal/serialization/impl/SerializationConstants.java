@@ -132,8 +132,6 @@ public final class SerializationConstants {
     // NUMBER OF CONSTANT SERIALIZERS...
     public static final int CONSTANT_SERIALIZERS_LENGTH = 51;
 
-    public static final int JAVA_DEFAULT_TYPE_ENUM = -51;
-
     // ------------------------------------------------------------
     // JAVA SERIALIZATION
 
