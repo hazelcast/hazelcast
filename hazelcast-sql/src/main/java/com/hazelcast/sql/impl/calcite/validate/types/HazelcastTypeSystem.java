@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.validate.types;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastTypeCoercion;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;

@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.ParameterConverter;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;

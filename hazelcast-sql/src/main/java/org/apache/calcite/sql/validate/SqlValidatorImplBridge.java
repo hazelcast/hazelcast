@@ -21,8 +21,11 @@ import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 
+/**
+ * A class to allow for override of the {@link #deriveTypeImpl(SqlValidatorScope, SqlNode)} class, which is a package-private
+ * in the parent class.
+ */
 public class SqlValidatorImplBridge extends SqlValidatorImpl {
-
     public SqlValidatorImplBridge(
         SqlOperatorTable opTab,
         SqlValidatorCatalogReader catalogReader,
