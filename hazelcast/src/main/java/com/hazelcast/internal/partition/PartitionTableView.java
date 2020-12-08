@@ -34,18 +34,9 @@ public class PartitionTableView {
 
     private long stamp;
 
-    //RU_COMPAT_4_0
-    @Deprecated
-    private final int version;
-
-    public PartitionTableView(InternalPartition[] partitions) {
-        this(partitions, 0);
-    }
-
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public PartitionTableView(InternalPartition[] partitions, /*RU_COMPAT_4_0*/ @Deprecated int version) {
+    public PartitionTableView(InternalPartition[] partitions) {
         this.partitions = partitions;
-        this.version = version;
     }
 
     public long stamp() {
@@ -55,12 +46,6 @@ public class PartitionTableView {
             stamp = s;
         }
         return s;
-    }
-
-    //RU_COMPAT_4_0
-    @Deprecated
-    public int version() {
-        return version;
     }
 
     public int length() {
@@ -92,22 +77,17 @@ public class PartitionTableView {
 
         PartitionTableView that = (PartitionTableView) o;
 
-        if (version != that.version) {
-            return false;
-        }
         return Arrays.equals(partitions, that.partitions);
     }
 
     @Override
     public int hashCode() {
-        int result = Arrays.hashCode(partitions);
-        result = 31 * result + version;
-        return result;
+        return Arrays.hashCode(partitions);
     }
 
     @Override
     public String toString() {
         return "PartitionTableView{" + "partitions=" + Arrays.toString(partitions)
-                + ", stamp=" + stamp() + ", version=" + version + '}';
+                + ", stamp=" + stamp() + '}';
     }
 }
