@@ -35,6 +35,30 @@ import javax.annotation.Nonnull;
  * <p>
  * This is used by application servers to establish thread context for class loading,
  * CDI, EJB and JPA invocations
+ * <p>
+ * <b>Caveats</b>
+ * <ul>
+ * <li>
+ *     Tenant control context is captured on the application thread once the user
+ *     interacts with distributed data structure proxies.
+ *     In some cases, these proxies might be instantiated as a result of other,
+ *     internal, actions such as Hot Restart, WAN replication.
+ *     Proxies on the member-side might also be created as a consequence of the
+ *     user creating a proxy on a client.
+ *     In all these cases, the tenant control context is not captured correctly
+ *     and this feature will not work as expected.
+ * </li>
+ * <li>
+ *     When the tenant is not available, operations requiring tenant control
+ *     should be re-enqueued for later execution.
+ *     This only includes operations which were enqueued on the operation queue
+ *     in the first place and does not include operations which were run directly
+ *     on the thread running the operations, without being enqueued.
+ *     This includes operations that are run as a consequence of another operation,
+ *     such as a map.get blocking on a locked entry being unblocked by an unlock
+ *     operation.
+ * </li>
+ * </ul>
  *
  * @author lprimak
  */
