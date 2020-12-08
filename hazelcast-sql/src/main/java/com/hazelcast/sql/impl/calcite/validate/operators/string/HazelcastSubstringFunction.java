@@ -17,9 +17,9 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.string;
 
 import com.google.common.collect.ImmutableList;
-import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.OperandCheckerProgram;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.linq4j.Ord;
@@ -89,14 +89,14 @@ public final class HazelcastSubstringFunction extends HazelcastFunction {
     @Override
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         if (binding.getOperandCount() == 2) {
-            return new CompositeOperandChecker(
+            return new OperandCheckerProgram(
                 TypedOperandChecker.VARCHAR,
                 TypedOperandChecker.INTEGER
             ).check(binding, throwOnFailure);
         } else {
             assert binding.getOperandCount() == 3;
 
-            return new CompositeOperandChecker(
+            return new OperandCheckerProgram(
                 TypedOperandChecker.VARCHAR,
                 TypedOperandChecker.INTEGER,
                 TypedOperandChecker.INTEGER

@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.math;
 
 import com.hazelcast.sql.impl.calcite.validate.operand.NumericOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCall;

@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
 import com.hazelcast.sql.impl.calcite.validate.param.NoOpParameterConverter;
 import com.hazelcast.sql.impl.type.QueryDataType;

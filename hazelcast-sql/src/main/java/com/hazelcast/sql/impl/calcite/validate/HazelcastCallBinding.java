@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.runtime.CalciteException;

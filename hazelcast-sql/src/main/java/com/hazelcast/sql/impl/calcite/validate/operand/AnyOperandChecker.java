@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operand;
 
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 
 public final class AnyOperandChecker implements OperandChecker {
 

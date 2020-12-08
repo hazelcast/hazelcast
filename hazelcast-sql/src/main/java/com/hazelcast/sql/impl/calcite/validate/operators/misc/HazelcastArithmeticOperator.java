@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
 import com.hazelcast.sql.impl.calcite.validate.operators.BinaryOperatorOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastBinaryOperator;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlOperatorBinding;
@@ -58,7 +58,7 @@ public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
 
     @Override
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
-        return ArithmeticOperandChecker.INSTANCE.checkOperandTypes(binding, throwOnFailure, kind);
+        return HazelcastArithmeticOperatorUtils.checkOperandTypes(binding, throwOnFailure, kind);
     }
 
     @Override

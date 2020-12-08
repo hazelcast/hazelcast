@@ -17,22 +17,19 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
-import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.OperandCheckerProgram;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlKind;
 
-public final class ArithmeticOperandChecker {
-
-    public static final ArithmeticOperandChecker INSTANCE = new ArithmeticOperandChecker();
-
-    private ArithmeticOperandChecker() {
+public final class HazelcastArithmeticOperatorUtils {
+    private HazelcastArithmeticOperatorUtils() {
         // No-op.
     }
 
-    public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure, SqlKind kind) {
+    public static boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure, SqlKind kind) {
         RelDataType firstType = binding.getOperandType(0);
         RelDataType secondType = binding.getOperandType(1);
 
@@ -73,7 +70,7 @@ public final class ArithmeticOperandChecker {
 
         TypedOperandChecker checker = TypedOperandChecker.forType(type);
 
-        return new CompositeOperandChecker(
+        return new OperandCheckerProgram(
             checker,
             checker
         ).check(binding, throwOnFailure);

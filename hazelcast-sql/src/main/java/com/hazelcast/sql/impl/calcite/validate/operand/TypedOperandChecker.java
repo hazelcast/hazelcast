@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.calcite.validate.operand;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.param.NumericPrecedenceParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.type.QueryDataType;

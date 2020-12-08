@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.param.NumericPrecedenceParameterConverter;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
@@ -29,11 +29,12 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public final class ComparisonOperandChecker {
+public final class HazelcastComparisonPredicateUtils {
+    private HazelcastComparisonPredicateUtils() {
+        // No-op
+    }
 
-    public static final ComparisonOperandChecker INSTANCE = new ComparisonOperandChecker();
-
-    public boolean check(HazelcastCallBinding binding, boolean throwOnFailure) {
+    public static boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         SqlNode first = binding.operand(0);
         SqlNode second = binding.operand(1);
 
@@ -48,7 +49,7 @@ public final class ComparisonOperandChecker {
         return checkOperandTypes(binding, throwOnFailure, validator, first, firstType, second, secondType);
     }
 
-    private boolean checkOperandTypes(
+    private static boolean checkOperandTypes(
         HazelcastCallBinding callBinding,
         boolean throwOnFailure,
         HazelcastSqlValidator validator,
@@ -86,7 +87,7 @@ public final class ComparisonOperandChecker {
         }
     }
 
-    private boolean checkOperandTypesWithPrecedence(
+    private static boolean checkOperandTypesWithPrecedence(
         HazelcastCallBinding callBinding,
         boolean throwOnFailure,
         HazelcastSqlValidator validator,

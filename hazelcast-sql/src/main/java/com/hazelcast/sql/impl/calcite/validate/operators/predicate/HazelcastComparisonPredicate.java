@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
 import com.hazelcast.sql.impl.calcite.validate.operators.BinaryOperatorOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastBinaryOperator;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -69,6 +69,6 @@ public final class HazelcastComparisonPredicate extends HazelcastBinaryOperator 
 
     @Override
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
-        return ComparisonOperandChecker.INSTANCE.check(binding, throwOnFailure);
+        return HazelcastComparisonPredicateUtils.checkOperandTypes(binding, throwOnFailure);
     }
 }

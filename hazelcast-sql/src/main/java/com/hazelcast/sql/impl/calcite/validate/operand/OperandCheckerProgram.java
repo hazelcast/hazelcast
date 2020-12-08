@@ -16,13 +16,16 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operand;
 
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 
-public class CompositeOperandChecker {
+/**
+ * Composite program that invokes a separate operand checker for every operand.
+ */
+public class OperandCheckerProgram {
 
     private final OperandChecker[] checkers;
 
-    public CompositeOperandChecker(OperandChecker... checkers) {
+    public OperandCheckerProgram(OperandChecker... checkers) {
         this.checkers = checkers;
     }
 

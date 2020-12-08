@@ -16,10 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.math;
 
-import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.OperandCheckerProgram;
 import com.hazelcast.sql.impl.calcite.validate.operand.NumericOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlFunctionCategory;
@@ -59,7 +59,7 @@ public final class HazelcastRoundTruncateFunction extends HazelcastFunction {
         } else {
             assert binding.getOperandCount() == 2;
 
-            return new CompositeOperandChecker(
+            return new OperandCheckerProgram(
                 NumericOperandChecker.INSTANCE,
                 TypedOperandChecker.INTEGER
             ).check(binding, throwOnFailure);

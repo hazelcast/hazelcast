@@ -16,11 +16,11 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
-import com.hazelcast.sql.impl.calcite.validate.operand.CompositeOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operand.OperandCheckerProgram;
 import com.hazelcast.sql.impl.calcite.validate.operand.OperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastBinaryOperator;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
@@ -62,7 +62,7 @@ public final class HazelcastAndOrPredicate extends HazelcastBinaryOperator {
         OperandChecker[] checkers = new OperandChecker[binding.getOperandCount()];
         Arrays.fill(checkers, TypedOperandChecker.BOOLEAN);
 
-        return new CompositeOperandChecker(checkers).check(binding, throwOnFailure);
+        return new OperandCheckerProgram(checkers).check(binding, throwOnFailure);
     }
 
     @Override

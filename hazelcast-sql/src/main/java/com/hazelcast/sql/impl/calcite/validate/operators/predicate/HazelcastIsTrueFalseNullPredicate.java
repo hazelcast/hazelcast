@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastPostfixOperator;
 import com.hazelcast.sql.impl.calcite.validate.param.NoOpParameterConverter;
 import org.apache.calcite.rel.type.RelDataType;
