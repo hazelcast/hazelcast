@@ -1,11 +1,14 @@
 ---
-title: 000 - File Data Ingestion
+title: 017 - File Data Ingestion
 description: Unified API for reading files and improved packaging for cloud sources
 ---
 
 *Since 4.4.*
 
-= 2. Support for common formats and data sources
+> NOTE: The order of the following sections is in logical order, but
+> numbering follows the requirement document (PRD).
+
+## 2. Support for common formats and data sources
 
 Format and source of the data are seemingly orthogonal. You can read
 plain text files/csv/avro/.. etc from a local filesystem, S3 etc.
@@ -41,7 +44,7 @@ There is official Hadoop connector
 
 ** [Reading ORC files](https://orc.apache.org/docs/core-java.html#reading-orc-files)
 
-== Parquet
+### Parquet
 
 Parquet is a special case between the formats listed above - it defines
 representation in the file (as others do), but doesn't have own schema
@@ -72,7 +75,7 @@ Sources
 
 * HDFS ? not listed in the PRD
 
-== Unified approach for file data ingestion
+## Unified approach for file data ingestion
 
 We have the following possibilities
 
@@ -92,7 +95,7 @@ delegate to 2. - would be used from SQL (there already is similar logic)
 We decided to use Hadoop libraries to access all systems apart from
 local filesystem, and Hadoop can detect the source we implemented 3.
 
-== Using Hadoop libraries
+### Using Hadoop libraries
 
 Using Hadoop libraries is a must for reading data from HDFS.
 
@@ -137,7 +140,7 @@ for Hadoop)
 We decided to use Hadoop to access all sources, with option without
 hadoop for local filesystems
 
-= 1. Loading data from a file Cookbook
+## 1. Loading data from a file Cookbook
 
 There is a section in the manual describing the new API and each module.
 
@@ -147,20 +150,35 @@ There are examples how to read:
 * text files by lines
 * avro files
 
-= 3. Any other concerns?
+## 3. Any other concerns
 
-Compression
+### Compression
 
-Hadoop supports various compression formats.
+Hadoop supports various compression formats, which work with built-in
+`TextInputFormat`, used in our `FileFormat#lines()`. Other input formats
+implemented by us do not support compression, but it is possible to
+implement. It should be straightforward for e.g. the binary files, a bit
+more complicated for splittable files without clear boundaries (e.g.
+json).
 
-= 4. Overlap with Jet SQL
+Avro format has its own compression, we are able to read such compressed
+files. See [Avro documentation](https://avro.apache.org/docs/1.10.1/spec.html#Required+Codecs).
+
+Parquet format has its own compression, we are able to read such
+compressed files.
+
+### Selecting subset of columns
+
+Possible for parquet only. Available with hadoop connector via option.
+
+## 4. Overlap with Jet SQL
 
 The main difference in how SQL would use the connector is that it
 expects `Object[]` as return type.
 
 We need to provide a way to configure each format as such.
 
-= Design
+## Design
 
 Entry point - `com.hazelcast.jet.pipeline.file.FileSources`. Returns
 `com.hazelcast.jet.pipeline.file.FileSourceBuilder`
@@ -185,7 +203,7 @@ are passed to the Hadoop MR job configuration - needed for
 authentication and available to use for any options for the format or
 other needs.
 
-== Local files
+### Local files
 
 Reading from local file system is implemented in
 `com.hazelcast.jet.pipeline.file.impl.LocalFileSourceFactory`.
@@ -211,7 +229,7 @@ The `createReadFileFn` creates, for a given file format, a function
 that reads from a Path (a file on a local filesystem) and returns
 a stream of items, which are emitted from the source.
 
-== Cloud
+### Cloud
 
 Cloud storage systems are supported via Hadoop. Each storage system is
 supported by a given module, which includes all dependencies.
@@ -237,7 +255,7 @@ parameters.
 The `projectionFn` function converts `InputFormat`'s key-value result
 to the item emitted from the source.
 
-== Testing
+## Testing
 
 Tests for each format are part of the Hadoop module, which runs them in
 two modes:
@@ -255,7 +273,7 @@ Integrations tests are part of the hazelcast-qe pipeline, where the jobs
 run in a cluster inside a docker container, with the connector fat jars.
 This ensures that the fat jars contain correct dependencies.
 
-= Licensing
+## Licensing
 
 We had to add couple of aliases for apache 2, BSD, new/revised BSD,
 nothing new

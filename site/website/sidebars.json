@@ -96,6 +96,7 @@
     ],
     "Design Documents": [
       "design-docs/index",
+      "design-docs/017-file-data-ingestion",
       "design-docs/016-event-reordering",
       "design-docs/015-mqtt-connector",
       "design-docs/014-batchstage-sort",
