@@ -116,6 +116,12 @@
                                     </excludes>
                                 </filter>
                                 <filter>
+                                    <artifact>com.hazelcast:hazelcast-sql-core</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
                                     <artifact>org.apache.calcite:*</artifact>
                                     <excludes>
                                         <!-- Avoid automatic discovery of Calcite JDBC. -->
@@ -157,7 +163,7 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.google.guava:guava</artifact>
+                                    <artifact>com.google.guava:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
