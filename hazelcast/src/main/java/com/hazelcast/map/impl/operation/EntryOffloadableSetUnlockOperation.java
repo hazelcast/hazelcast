@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
@@ -156,10 +155,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         UUIDSerializationUtil.writeUUID(out, caller);
         out.writeLong(begin);
         out.writeObject(entryBackupProcessor);
-        // RU_COMPAT_4_0
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            out.writeLong(newTtl);
-        }
+        out.writeLong(newTtl);
     }
 
     @Override
@@ -173,10 +169,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         caller = UUIDSerializationUtil.readUUID(in);
         begin = in.readLong();
         entryBackupProcessor = in.readObject();
-        // RU_COMPAT_4_0
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            newTtl = in.readLong();
-        }
+        newTtl = in.readLong();
     }
 
 }
