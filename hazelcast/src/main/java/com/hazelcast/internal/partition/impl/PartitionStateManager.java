@@ -25,8 +25,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.ClusterVersionListener;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
@@ -39,7 +37,6 @@ import com.hazelcast.internal.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.internal.partition.membergroup.MemberGroupFactoryFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.partitiongroup.MemberGroup;
-import com.hazelcast.version.Version;
 
 import java.util.Collection;
 import java.util.Set;
@@ -57,7 +54,7 @@ import static com.hazelcast.internal.partition.PartitionStamp.calculateStamp;
  * Maintains the partition table state.
  */
 @SuppressWarnings({"checkstyle:methodcount"})
-public class PartitionStateManager implements ClusterVersionListener {
+public class PartitionStateManager {
 
     /**
      * Initial value of the partition table stamp.
@@ -429,16 +426,5 @@ public class PartitionStateManager implements ClusterVersionListener {
 
     PartitionTableView getPartitionTable() {
         return new PartitionTableView(getPartitionsCopy(true));
-    }
-
-    @Override
-    public void onClusterVersionChange(Version newVersion) {
-        if (newVersion.isEqualTo(Versions.V4_1) && initialized) {
-            int version = 0;
-            for (InternalPartitionImpl partition : partitions) {
-                partition.setVersion(version);
-            }
-            updateStamp();
-        }
     }
 }

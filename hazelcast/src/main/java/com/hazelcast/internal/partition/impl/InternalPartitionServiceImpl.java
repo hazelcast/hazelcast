@@ -23,8 +23,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterStateListener;
-import com.hazelcast.internal.cluster.ClusterVersionListener;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -70,7 +68,6 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -116,7 +113,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class InternalPartitionServiceImpl implements InternalPartitionService,
         EventPublishingService<PartitionEvent, PartitionEventListener<PartitionEvent>>,
-        PartitionAwareService, ClusterStateListener, ClusterVersionListener {
+        PartitionAwareService, ClusterStateListener {
 
     private static final int PARTITION_OWNERSHIP_WAIT_MILLIS = 10;
     private static final int SAFE_SHUTDOWN_MAX_AWAIT_STEP_MILLIS = 1000;
@@ -420,18 +417,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             }
         } finally {
             lock.unlock();
-        }
-    }
-
-    @Override
-    public void onClusterVersionChange(Version newVersion) {
-        if (newVersion.isEqualTo(Versions.V4_1)) {
-            lock.lock();
-            try {
-                partitionStateManager.onClusterVersionChange(newVersion);
-            } finally {
-                lock.unlock();
-            }
         }
     }
 
