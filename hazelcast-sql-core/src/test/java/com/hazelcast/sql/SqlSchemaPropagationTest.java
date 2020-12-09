@@ -84,7 +84,7 @@ public class SqlSchemaPropagationTest extends SqlTestSupport {
         // Execute the query from the target without schema.
         SqlStatement statement = new SqlStatement("SELECT __key FROM map");
 
-        List<SqlRow> rows = execute(target, statement);
+        List<SqlRow> rows = executeStatement(target, statement);
         assertEquals(1, rows.size());
         assertEquals(1, (int) rows.get(0).getObject(0));
 
@@ -95,7 +95,7 @@ public class SqlSchemaPropagationTest extends SqlTestSupport {
         // Execute the query from the target with schema.
         statement.setSchema(SCHEMA_NAME);
 
-        rows = execute(target, statement);
+        rows = executeStatement(target, statement);
         assertEquals(1, rows.size());
         assertEquals(1, (int) rows.get(0).getObject(0));
 
