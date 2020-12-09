@@ -16,15 +16,17 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.map.IMap;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.topic.ITopic;
-import com.hazelcast.collection.IQueue;
 import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.transaction.TransactionalMultiMap;
 import com.hazelcast.transaction.TransactionalQueue;
-import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
+
+import javax.annotation.Nonnull;
 
 /**
  * Base interface for all distributed objects.
@@ -77,14 +79,16 @@ public interface DistributedObject {
     void destroy();
 
     /**
-     * If a particular distributed object needs to clear any classes
-     * that are cached, possibly from the destroyed tenant, needs to be cleared
-     * to avoid class loader leaks and ClassNotFound exceptions
-     * when the tenant is destroyed
+     * Returns a hook which can be used by tenant control implementation to clean
+     * up resources once a tenant is destroyed.
+     * <p>
+     * This hook is used, for example, when a distributed object needs to clear any
+     * cached classes related to the destroyed tenant and to avoid class loader
+     * leaks and {@link ClassNotFoundException}s when the tenant is destroyed.
      *
      * @return destroy context, cannot be null
      */
-    default DestroyEventContext getDestroyContextForTenant() {
+    default @Nonnull DestroyEventContext getDestroyContextForTenant() {
         return () -> { };
     }
 }

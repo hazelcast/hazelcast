@@ -45,12 +45,12 @@ import javax.cache.integration.CacheWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
-import com.hazelcast.internal.serialization.SerializationService;
 import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -611,13 +611,13 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         }
 
         final CacheConfig that = (CacheConfig) o;
-        if (managerPrefix != null ? !managerPrefix.equals(that.managerPrefix) : that.managerPrefix != null) {
+        if (!Objects.equals(managerPrefix, that.managerPrefix)) {
             return false;
         }
-        if (name != null ? !name.equals(that.name) : that.name != null) {
+        if (!Objects.equals(name, that.name)) {
             return false;
         }
-        if (uriString != null ? !uriString.equals(that.uriString) : that.uriString != null) {
+        if (!Objects.equals(uriString, that.uriString)) {
             return false;
         }
 
@@ -688,11 +688,10 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      *                 or will be resolved to loaded classes and the actual {@code keyType} and {@code valueType} will be copied.
      *                 Otherwise, this configuration's {@code keyClassName} and {@code valueClassName} will be copied to the
      *                 target config, to be resolved at a later time.
-     * @param backupSerializationService in case serialization service isn't initialized
      * @param <T>      the target object type
      * @return the target config
      */
-    public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved, SerializationService backupSerializationService) {
+    public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved) {
         target.setAsyncBackupCount(getAsyncBackupCount());
         target.setBackupCount(getBackupCount());
         target.setDisablePerEntryInvalidationEvents(isDisablePerEntryInvalidationEvents());
@@ -708,16 +707,13 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             target.setValueClassName(getValueClassName());
         }
 
-        final SerializationService useSerializationService =
-                serializationService != null ? serializationService : backupSerializationService;
-
-        target.cacheLoaderFactory = cacheLoaderFactory.shallowCopy(resolved, useSerializationService);
-        target.cacheWriterFactory = cacheWriterFactory.shallowCopy(resolved, useSerializationService);
-        target.expiryPolicyFactory = expiryPolicyFactory.shallowCopy(resolved, useSerializationService);
+        target.cacheLoaderFactory = cacheLoaderFactory.shallowCopy(resolved, serializationService);
+        target.cacheWriterFactory = cacheWriterFactory.shallowCopy(resolved, serializationService);
+        target.expiryPolicyFactory = expiryPolicyFactory.shallowCopy(resolved, serializationService);
 
         target.listenerConfigurations = createConcurrentSet();
         for (DeferredValue<CacheEntryListenerConfiguration<K, V>> lazyEntryListenerConfig : listenerConfigurations) {
-            target.listenerConfigurations.add(lazyEntryListenerConfig.shallowCopy(resolved, useSerializationService));
+            target.listenerConfigurations.add(lazyEntryListenerConfig.shallowCopy(resolved, serializationService));
         }
 
         target.setManagementEnabled(isManagementEnabled());
@@ -733,12 +729,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         target.setWanReplicationRef(getWanReplicationRef());
         target.setWriteThrough(isWriteThrough());
         target.setClassLoader(classLoader);
-        target.serializationService = useSerializationService;
+        target.serializationService = serializationService;
         return target;
-    }
-
-    public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved) {
-        return copy(target, resolved, null);
     }
 
     private void copyListeners(CacheSimpleConfig simpleConfig)

@@ -45,6 +45,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.internal.partition.IPartitionService;
 
+import javax.annotation.Nonnull;
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -167,7 +168,7 @@ abstract class CacheProxySupport<K, V>
     }
 
     @Override
-    public DestroyEventContext getDestroyContextForTenant() {
+    public @Nonnull DestroyEventContext getDestroyContextForTenant() {
         return () -> cacheConfig = ((CacheService) cacheService).reSerializeCacheConfig(cacheConfig);
     }
 

@@ -27,6 +27,7 @@ import com.hazelcast.cache.impl.operation.OnJoinCacheOperation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheConfigAccessor;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
@@ -490,6 +491,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         try {
             // Set name explicitly, because found config might have a wildcard name.
             CacheConfig cacheConfig = new CacheConfig(cacheSimpleConfig).setName(simpleName);
+            CacheConfigAccessor.setSerializationService(cacheConfig,
+                    nodeEngine.getSerializationService());
             return cacheConfig;
         } catch (Exception e) {
             throw new CacheException(e);
@@ -497,8 +500,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     public <K, V> CacheConfig<K, V> reSerializeCacheConfig(CacheConfig<K, V> cacheConfig) {
-        CacheConfig<K, V> serializedCacheConfig = PreJoinCacheConfig.of(cacheConfig,
-                nodeEngine.getSerializationService()).asCacheConfig();
+        CacheConfig<K, V> serializedCacheConfig = PreJoinCacheConfig.of(cacheConfig).asCacheConfig();
 
         CompletableFuture<CacheConfig> future = new CompletableFuture<>();
         future.complete(serializedCacheConfig);

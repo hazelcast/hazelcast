@@ -57,12 +57,7 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
     }
 
     public PreJoinCacheConfig(CacheConfig cacheConfig, boolean resolved) {
-        this(cacheConfig, resolved, null);
-    }
-
-    public PreJoinCacheConfig(CacheConfig cacheConfig, boolean resolved,
-            SerializationService backupSerializationService) {
-        cacheConfig.copy(this, resolved, backupSerializationService);
+        cacheConfig.copy(this, resolved);
     }
 
     @Override
@@ -80,18 +75,18 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
     }
 
     @Override
-    protected void readTenant(ObjectDataInput in) throws IOException {
-        // RU_COMPAT_4_1
-        if (in.getVersion().isLessOrEqual(Versions.V4_2)) {
-            in.readObject();
-        }
-    }
-
-    @Override
     protected void writeTenant(ObjectDataOutput out) throws IOException {
         // RU_COMPAT_4_1
         if (out.getVersion().isLessOrEqual(Versions.V4_2)) {
             out.writeObject(TenantControl.NOOP_TENANT_CONTROL);
+        }
+    }
+
+    @Override
+    protected void readTenant(ObjectDataInput in) throws IOException {
+        // RU_COMPAT_4_1
+        if (in.getVersion().isLessOrEqual(Versions.V4_2)) {
+            in.readObject();
         }
     }
 
@@ -139,8 +134,8 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
     /**
      * @return this configuration as a {@link CacheConfig}
      */
-    CacheConfig asCacheConfig() {
-        return this.copy(new CacheConfig(), false);
+    CacheConfig<K, V> asCacheConfig() {
+        return this.copy(new CacheConfig<>(), false);
     }
 
     @Override
@@ -156,23 +151,19 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
     /**
      * @return an instance of {@code CacheConfig} that is not a {@code PreJoinCacheConfig}
      */
-    public static CacheConfig asCacheConfig(CacheConfig cacheConfig) {
+    public static <K, V> CacheConfig<K, V> asCacheConfig(CacheConfig<K, V> cacheConfig) {
         if (!(cacheConfig instanceof PreJoinCacheConfig)) {
             return cacheConfig;
         } else {
-            return ((PreJoinCacheConfig) cacheConfig).asCacheConfig();
+            return ((PreJoinCacheConfig<K, V>) cacheConfig).asCacheConfig();
         }
     }
 
-    public static PreJoinCacheConfig of(CacheConfig cacheConfig) {
-        return of(cacheConfig, null);
-    }
-
-    public static PreJoinCacheConfig of(CacheConfig cacheConfig, SerializationService serializationService) {
+    public static <K, V> PreJoinCacheConfig<K, V> of(CacheConfig<K, V> cacheConfig) {
         if (cacheConfig instanceof PreJoinCacheConfig) {
-            return (PreJoinCacheConfig) cacheConfig;
+            return (PreJoinCacheConfig<K, V>) cacheConfig;
         } else {
-            return new PreJoinCacheConfig(cacheConfig, false, serializationService);
+            return new PreJoinCacheConfig<>(cacheConfig, false);
         }
     }
 }

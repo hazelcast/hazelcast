@@ -83,7 +83,7 @@ public interface TenantControl extends DataSerializable {
      * This is used, for example, to delete all associated caches from the application
      * when it gets undeployed, so there are no {@link ClassCastException} afterwards.
      *
-     * @param destroyEventContext the hook to be used by the tenant control implemn
+     * @param destroyEventContext the hook to be used by the tenant control implementation
      *                            Cannot be {@code null}. This is a functional interface, so no-op lambda
      *                            can be used instead.
      */
