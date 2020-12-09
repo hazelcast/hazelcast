@@ -618,6 +618,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                 serializationConfig.setEnableSharedObject(getBooleanValue(getTextContent(child)));
             } else if (matches("allow-unsafe", name)) {
                 serializationConfig.setAllowUnsafe(getBooleanValue(getTextContent(child)));
+            } else if (matches("allow-override-default-serializers", name)) {
+                serializationConfig.setAllowUnsafe(getBooleanValue(getTextContent(child)));
             } else if (matches("data-serializable-factories", name)) {
                 fillDataSerializableFactories(child, serializationConfig);
             } else if (matches("portable-factories", name)) {
