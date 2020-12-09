@@ -2959,6 +2959,14 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="allow-override-default-serializers" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        True to allow override of embedded serializers.
+                        Default value is false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="data-serializable-factories" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
