@@ -427,8 +427,11 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     protected final boolean safeRegister(final Class type, final SerializerAdapter serializer) {
-        if (constantTypesMap.containsKey(type)) {
-            throw new IllegalArgumentException("[" + type + "] serializer cannot be overridden");
+        if (constantTypesMap.containsKey(type) && !allowOverrideDefaultSerializers) {
+            throw new IllegalArgumentException(
+                "[" + type + "] serializer cannot be overridden." +
+                " See hazelcast.serialization.allowOverrideDefaultSerializers"
+              );
         }
         SerializerAdapter current = typeMap.putIfAbsent(type, serializer);
         if (current != null && current.getImpl().getClass() != serializer.getImpl().getClass()) {
@@ -486,13 +489,13 @@ public abstract class AbstractSerializationService implements InternalSerializat
         if (object == null) {
             return nullSerializerAdapter;
         }
-        Class type = object.getClass();
+        final Class type = object.getClass();
 
         //2-Default serializers, Dataserializable, Portable, primitives, arrays, String and some helper Java types(BigInteger etc)
         SerializerAdapter serializer = lookupDefaultSerializer(type);
 
         //3-Custom registered types by user
-        if (serializer == null) {
+        if (serializer == null || allowOverrideDefaultSerializers) {
             serializer = lookupCustomSerializer(type);
         }
 
