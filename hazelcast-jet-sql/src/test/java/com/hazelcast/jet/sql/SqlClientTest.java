@@ -20,6 +20,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.sql.impl.connector.test.FailingTestSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.test.TestEmptyStreamSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -28,6 +29,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.BitSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -88,5 +91,29 @@ public class SqlClientTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING t TYPE " + FailingTestSqlConnector.TYPE_NAME);
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM t"))
                 .hasMessageContaining("mock failure");
+    }
+
+    @Test
+    public void when_resultClosed_then_jobCancelled_withNoResults() {
+        /*
+        There was an issue that RootResultConsumerSink didn't check for failures, unless
+        it had some items in the inbox.
+         */
+        JetInstance client = factory().newClient();
+        SqlService sqlService = client.getSql();
+        sqlService.execute("CREATE MAPPING t TYPE " + TestEmptyStreamSqlConnector.TYPE_NAME);
+        logger.info("before select");
+        SqlResult res = sqlService.execute("SELECT * FROM t");
+        logger.info("after execute returned");
+        List<Job> allRunningJobs = client.getJobs().stream()
+                                         .filter(job -> job.getStatus() == RUNNING)
+                                         .collect(Collectors.toList());
+        assertEquals(1, allRunningJobs.size());
+        Job job = allRunningJobs.get(0);
+        assertEquals(RUNNING, job.getStatus());
+        logger.info("Job is running.");
+        res.close();
+        logger.info("after res.close() returned");
+        assertJobStatusEventually(job, FAILED);
     }
 }

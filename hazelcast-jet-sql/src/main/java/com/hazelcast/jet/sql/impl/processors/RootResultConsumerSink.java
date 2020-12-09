@@ -51,6 +51,12 @@ public final class RootResultConsumerSink implements Processor {
     }
 
     @Override
+    public boolean tryProcess() {
+        rootResultConsumer.check();
+        return true;
+    }
+
+    @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
         rootResultConsumer.consume(inbox);
     }
