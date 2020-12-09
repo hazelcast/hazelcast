@@ -51,6 +51,7 @@ public class SerializationConfig {
     private boolean allowUnsafe;
     private final Set<ClassDefinition> classDefinitions;
     private JavaSerializationFilterConfig javaSerializationFilterConfig;
+    private boolean allowOverrideDefaultSerializers;
 
     public SerializationConfig() {
         dataSerializableFactoryClasses = new HashMap<>();
@@ -451,6 +452,20 @@ public class SerializationConfig {
      */
     public SerializationConfig setAllowUnsafe(boolean allowUnsafe) {
         this.allowUnsafe = allowUnsafe;
+        return this;
+    }
+
+    /**
+     * @return true if embedded serializers may be overridden by custom serializers
+     *
+     * @since 4.2
+     */
+    public boolean isAllowOverrideDefaultSerializers() {
+        return allowOverrideDefaultSerializers;
+    }
+
+    public SerializationConfig setAllowOverrideDefaultSerializers(final boolean allowOverrideDefaultSerializers) {
+        this.allowOverrideDefaultSerializers = allowOverrideDefaultSerializers;
         return this;
     }
 
