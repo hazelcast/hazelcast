@@ -80,7 +80,7 @@ public class TenantUnavailableTest extends TenantControlTestSupport {
         cache1.put(new KeyType(), new ValueType());
         assertInstanceOf(ValueType.class, cache1.get(new KeyType()));
 
-        HazelcastInstance hz2 = factory.newHazelcastInstance(newConfig());
+        HazelcastInstance hz2 = factory.newHazelcastInstance(newConfig(true, new SimulateNonExistantClassLoader()));
         ICacheService cacheService = getCacheService(hz2);
         disallowClassNames.add(KeyType.class.getName());
         hz1.shutdown(); // force migration
@@ -115,7 +115,8 @@ public class TenantUnavailableTest extends TenantControlTestSupport {
         cache1.put(generateKeyForPartition(hz1, 1), value);
 
         disallowClassNames.add(ValueType.class.getName());
-        HazelcastInstance hz2 = factory.newHazelcastInstance(newConfig().setLiteMember(true));
+        HazelcastInstance hz2 = factory.newHazelcastInstance(newConfig(true,
+                new SimulateNonExistantClassLoader()).setLiteMember(true));
         hz1.getPartitionService().addMigrationListener(new MigrationListenerImpl());
         CacheManager cacheManager = createServerCachingProvider(hz2).getCacheManager();
         Cache<String, ValueType> cache2 = cacheManager.getCache(cacheName);

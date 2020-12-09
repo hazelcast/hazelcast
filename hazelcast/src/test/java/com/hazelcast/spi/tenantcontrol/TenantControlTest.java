@@ -75,7 +75,7 @@ public class TenantControlTest extends TenantControlTestSupport {
     }
 
     private Config getNewConfig() {
-        return newConfig(hasTenantControl);
+        return newConfig(hasTenantControl, TenantControlTest.class.getClassLoader());
     }
 
     @Test

@@ -54,14 +54,14 @@ public abstract class TenantControlTestSupport extends HazelcastTestSupport {
     }
 
     protected Config newConfig() {
-        return newConfig(true);
+        return newConfig(true, TenantControlTest.class.getClassLoader());
     }
 
-    protected Config newConfig(boolean hasTenantControl) {
+    protected Config newConfig(boolean hasTenantControl, ClassLoader testClassLoader) {
         Config config = smallInstanceConfig();
         if (hasTenantControl) {
             ClassLoader configClassLoader = new AdditionalServiceClassLoader(new URL[0],
-                    TenantControlTest.class.getClassLoader());
+                    testClassLoader);
             config.setClassLoader(configClassLoader);
         }
         config.getCacheConfig("*");
