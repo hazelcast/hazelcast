@@ -1547,6 +1547,18 @@ public final class ClusterProperty {
             BuildInfoProvider.getBuildInfo().getSerializationVersion());
 
     /**
+     * Property allows override of default Java serializers for backward compatibility.
+     *
+     * For example application using older version of Hazelcast provides custom java.util.Optional serializer.
+     * Since version 4.2 of Hazelcast registration of any serializer for an embedded type is not possible
+     * until this flag is set to true.
+     *
+     * @since 4.2
+     */
+    public static final HazelcastProperty SERIALIZATION_ALLOW_OVERRIDE_DEFAULT_SERIALIZERS
+      = new HazelcastProperty("hazelcast.serialization.allowOverrideDefaultSerializers", false);
+
+    /**
      * By default, search for data structures config is performed within static
      * configuration first:
      * <ul>
