@@ -30,8 +30,8 @@ import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @SpringAware
-public class JCacheCacheWriter
-        implements CacheWriter, HazelcastInstanceAware, NodeAware {
+public class JCacheCacheWriter<K, V>
+        implements CacheWriter<K, V>, HazelcastInstanceAware, NodeAware {
 
     public static final AtomicBoolean HAZELCAST_INSTANCE_INJECTED = new AtomicBoolean();
     public static final AtomicBoolean NODE_INJECTED = new AtomicBoolean();
