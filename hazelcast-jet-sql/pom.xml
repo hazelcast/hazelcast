@@ -194,6 +194,13 @@
             <classifier>test</classifier>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.googlecode.junit-toolbox</groupId>
+            <artifactId>junit-toolbox</artifactId>
+            <version>2.4</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -206,20 +213,15 @@
                         <id>unpack-parser-template</id>
                         <phase>initialize</phase>
                         <goals>
-                            <goal>unpack</goal>
+                            <goal>unpack-dependencies</goal>
                         </goals>
                         <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>com.hazelcast</groupId>
-                                    <artifactId>hazelcast-sql</artifactId>
-                                    <classifier>original</classifier>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}</outputDirectory>
-                                    <includes>**/Parser.jj</includes>
-                                </artifactItem>
-                            </artifactItems>
+                            <includeGroupIds>org.apache.calcite</includeGroupIds>
+                            <includeArtifactIds>calcite-core</includeArtifactIds>
+                            <includes>**/Parser.jj</includes>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <overWriteReleases>true</overWriteReleases>
+                            <overWriteSnapshots>true</overWriteSnapshots>
                         </configuration>
                     </execution>
                 </executions>
@@ -354,7 +356,7 @@
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>com.hazelcast</groupId>
-                                            <artifactId>hazelcast-sql</artifactId>
+                                            <artifactId>hazelcast-sql-core</artifactId>
                                             <version>${hazelcast.version}</version>
                                             <classifier>tests</classifier>
                                             <overWrite>true</overWrite>
