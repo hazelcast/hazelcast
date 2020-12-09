@@ -473,17 +473,16 @@ public abstract class AbstractSerializationService implements InternalSerializat
         return idMap.get(typeId);
     }
 
-    public SerializerAdapter serializerFor(Object object) {
-        /*
-            Searches for a serializer for the provided object
-            Serializers will be  searched in this order;
-
-            1-NULL serializer
-            2-Default serializers, like primitives, arrays, String and some Java types
-            3-Custom registered types by user
-            4-JDK serialization ( Serializable and Externalizable ) if a global serializer with Java serialization not registered
-            5-Global serializer if registered by user
-         */
+    public SerializerAdapter serializerFor(final Object object) {
+        // Searches for a serializer for the provided object
+        // Serializers will be  searched in this order;
+        //
+        // 1-NULL serializer
+        // 2-Default serializers, like primitives, arrays, String and some Java types
+        //   (overridden in step 3 if allowOverrideDefaultSerializers=true and custom serializer is registered)
+        // 3-Custom registered types by user
+        // 4-JDK serialization ( Serializable and Externalizable ) if a global serializer with Java serialization not registered
+        // 5-Global serializer if registered by user
 
         //1-NULL serializer
         if (object == null) {
