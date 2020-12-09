@@ -85,16 +85,39 @@
                                 </excludes>
                             </artifactSet>
                             <relocations>
+                                <!--
+                                    List relocations for every product explicitly, instead of definining "com" and "org"
+                                    wildcards. Otherwise, the "shade" plugin breaks the generated source code. For example,
+                                    for the wildcard "com." the package "com.google.common" is replaced with the shaded
+                                    pattern twice: "[com].google.[com]mon".
+                                 -->
                                 <relocation>
-                                    <pattern>com.</pattern>
-                                    <shadedPattern>${relocation.root}.com.</shadedPattern>
-                                    <excludes>
-                                        <exclude>com.hazelcast.**</exclude>
-                                    </excludes>
+                                    <pattern>com.fasterxml</pattern>
+                                    <shadedPattern>${relocation.root}.com.fasterxml</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.</pattern>
-                                    <shadedPattern>${relocation.root}.org.</shadedPattern>
+                                    <pattern>com.google</pattern>
+                                    <shadedPattern>${relocation.root}.com.google</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.jayway</pattern>
+                                    <shadedPattern>${relocation.root}.com.jayway</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache</pattern>
+                                    <shadedPattern>${relocation.root}.org.apache</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.codehaus</pattern>
+                                    <shadedPattern>${relocation.root}.org.codehaus</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.slf4</pattern>
+                                    <shadedPattern>${relocation.root}.org.slf4</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.snakeyaml</pattern>
+                                    <shadedPattern>${relocation.root}.org.snakeyaml</shadedPattern>
                                 </relocation>
                             </relocations>
                             <transformers>
