@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query.
  */
-@Generated("48b0f740d0f5747358df04c1c08d38db")
+@Generated("cf3a28f72607287496a30d05b1a184e6")
 public final class SqlExecuteCodec {
     //hex: 0x210100
     public static final int REQUEST_MESSAGE_TYPE = 2162944;
@@ -74,9 +74,20 @@ public final class SqlExecuteCodec {
          * Cursor buffer size.
          */
         public int cursorBufferSize;
+
+        /**
+         * Schema name.
+         */
+        public @Nullable java.lang.String schema;
+
+        /**
+         * True if the schema is received from the client, false otherwise.
+         * If this is false, schema has the default value for its type.
+         */
+        public boolean isSchemaExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String sql, java.util.Collection<com.hazelcast.internal.serialization.Data> parameters, long timeoutMillis, int cursorBufferSize) {
+    public static ClientMessage encodeRequest(java.lang.String sql, java.util.Collection<com.hazelcast.internal.serialization.Data> parameters, long timeoutMillis, int cursorBufferSize, @Nullable java.lang.String schema) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Sql.Execute");
@@ -88,6 +99,7 @@ public final class SqlExecuteCodec {
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, sql);
         ListMultiFrameCodec.encode(clientMessage, parameters, DataCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, schema, StringCodec::encode);
         return clientMessage;
     }
 
@@ -99,6 +111,12 @@ public final class SqlExecuteCodec {
         request.cursorBufferSize = decodeInt(initialFrame.content, REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET);
         request.sql = StringCodec.decode(iterator);
         request.parameters = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
+        if (iterator.hasNext()) {
+            request.schema = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            request.isSchemaExists = true;
+        } else {
+            request.isSchemaExists = false;
+        }
         return request;
     }
 

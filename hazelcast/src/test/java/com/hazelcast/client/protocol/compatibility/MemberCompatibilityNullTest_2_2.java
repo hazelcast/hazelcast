@@ -7406,6 +7406,8 @@ public class MemberCompatibilityNullTest_2_2 {
         assertTrue(isEqual(aListOfData, parameters.parameters));
         assertTrue(isEqual(aLong, parameters.timeoutMillis));
         assertTrue(isEqual(anInt, parameters.cursorBufferSize));
+        assertTrue(parameters.isSchemaExists);
+        assertTrue(isEqual(null, parameters.schema));
     }
 
     @Test

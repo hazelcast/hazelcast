@@ -47,6 +47,7 @@ public final class SqlStatement {
     private List<Object> parameters = new ArrayList<>();
     private long timeout = DEFAULT_TIMEOUT;
     private int cursorBufferSize = DEFAULT_CURSOR_BUFFER_SIZE;
+    private String schema;
 
     public SqlStatement(@Nonnull String sql) {
         setSql(sql);
@@ -55,11 +56,12 @@ public final class SqlStatement {
     /**
      * Copying constructor.
      */
-    private SqlStatement(String sql, List<Object> parameters, long timeout, int cursorBufferSize) {
+    private SqlStatement(String sql, List<Object> parameters, long timeout, int cursorBufferSize, String schema) {
         this.sql = sql;
         this.parameters = parameters;
         this.timeout = timeout;
         this.cursorBufferSize = cursorBufferSize;
+        this.schema = schema;
     }
 
     /**
@@ -91,6 +93,27 @@ public final class SqlStatement {
         }
 
         this.sql = sql;
+
+        return this;
+    }
+
+    /**
+     * Gets the current schema name.
+     *
+     * @return the current schema name or {@code null} if there is none
+     */
+    public String getSchema() {
+        return schema;
+    }
+
+    /**
+     * Sets the current schema name.
+     *
+     * @param schema the current schema name
+     * @return this instance for chaining
+     */
+    public SqlStatement setSchema(String schema) {
+        this.schema = schema;
 
         return this;
     }
@@ -245,7 +268,7 @@ public final class SqlStatement {
      */
     @Nonnull
     public SqlStatement copy() {
-        return new SqlStatement(sql, new ArrayList<>(parameters), timeout, cursorBufferSize);
+        return new SqlStatement(sql, new ArrayList<>(parameters), timeout, cursorBufferSize, schema);
     }
 
     @Override
@@ -263,7 +286,8 @@ public final class SqlStatement {
         return Objects.equals(sql, sqlStatement.sql)
             && Objects.equals(parameters, sqlStatement.parameters)
             && timeout == sqlStatement.timeout
-            && cursorBufferSize == sqlStatement.cursorBufferSize;
+            && cursorBufferSize == sqlStatement.cursorBufferSize
+            && Objects.equals(schema, sqlStatement.schema);
     }
 
     @Override
@@ -273,6 +297,7 @@ public final class SqlStatement {
         result = 31 * result + parameters.hashCode();
         result = 31 * result + (int) (timeout ^ (timeout >>> 32));
         result = 31 * result + cursorBufferSize;
+        result = 31 * result + (schema != null ? schema.hashCode() : 0);
 
         return result;
     }
@@ -280,7 +305,8 @@ public final class SqlStatement {
     @Override
     public String toString() {
         return "SqlStatement{"
-            + "sql=" + sql
+            + "schema=" + schema
+            + ", sql=" + sql
             + ", parameters=" + parameters
             + ", timeout=" + timeout
             + ", cursorBufferSize=" + cursorBufferSize

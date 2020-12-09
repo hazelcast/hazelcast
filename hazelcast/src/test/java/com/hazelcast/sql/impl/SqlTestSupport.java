@@ -216,6 +216,10 @@ public class SqlTestSupport extends HazelcastTestSupport {
             query.setParameters(Arrays.asList(params));
         }
 
+        return execute(member, query);
+    }
+
+    public static List<SqlRow> execute(HazelcastInstance member, SqlStatement query) {
         List<SqlRow> rows = new ArrayList<>();
 
         try (SqlResult result = member.getSql().execute(query)) {

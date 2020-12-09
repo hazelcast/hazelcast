@@ -53,6 +53,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
                 query.addParameter(serializationService.toObject(param));
             }
 
+            query.setSchema(parameters.schema);
             query.setTimeoutMillis(parameters.timeoutMillis);
             query.setCursorBufferSize(parameters.cursorBufferSize);
 
@@ -130,7 +131,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
             parameters.sql,
             parameters.parameters,
             parameters.timeoutMillis,
-            parameters.cursorBufferSize
+            parameters.cursorBufferSize,
+            parameters.schema
         } ;
     }
 
