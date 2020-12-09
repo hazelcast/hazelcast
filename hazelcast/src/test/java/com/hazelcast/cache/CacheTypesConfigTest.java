@@ -166,7 +166,7 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance(getConfig());
         CachingProvider cachingProvider = createServerCachingProvider(hz1);
         CacheManager cacheManager1 = cachingProvider.getCacheManager(null, null, propertiesByInstanceItself(hz1));
-        CacheConfig cacheConfig = createCacheConfig();
+        CacheConfig<String, Person> cacheConfig = createCacheConfig();
         cacheConfig.setCacheLoaderFactory(new PersonCacheLoaderFactory());
         cacheManager1.createCache(cacheName, cacheConfig);
 
@@ -178,7 +178,7 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
         ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(hz2.getConfig().getClassLoader());
-            CacheProxy cacheProxy = (CacheProxy) cache;
+            CacheProxy<String, Person> cacheProxy = (CacheProxy<String, Person>) cache;
             CacheService cacheService = (CacheService) cacheProxy.getService();
             expect.expectCause(new RootCauseMatcher(ClassNotFoundException.class, "classloading.domain.PersonCacheLoaderFactory - "
                     + "Package excluded explicitly"));

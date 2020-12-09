@@ -14,25 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache;
+package com.hazelcast.spi.tenantcontrol;
 
+import com.hazelcast.cache.CacheUtil;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.AdditionalServiceClassLoader;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
-import com.hazelcast.spi.tenantcontrol.TenantControl;
-import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
-import com.hazelcast.spi.tenantcontrol.Tenantable;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,17 +37,11 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import javax.annotation.Nonnull;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
-import java.io.IOException;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.getCacheService;
@@ -66,18 +54,7 @@ import static org.junit.Assume.assumeTrue;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(QuickTest.class)
-public class TenantControlTest extends HazelcastTestSupport {
-    private static final ThreadLocal<TenantControl> savedTenant = new ThreadLocal<>();
-    private static final AtomicBoolean tenantFactoryInitialized = new AtomicBoolean();
-    private static final AtomicInteger setTenantCount = new AtomicInteger();
-    private static final AtomicInteger closeTenantCount = new AtomicInteger();
-    private static final AtomicInteger registerTenantCount = new AtomicInteger();
-    private static final AtomicInteger unregisterTenantCount = new AtomicInteger();
-    private static final AtomicInteger clearedThreadInfoCount = new AtomicInteger();
-
-    static final AtomicReference<DestroyEventContext> destroyEventContext = new AtomicReference<>(null);
-    static volatile boolean classesAlwaysAvailable;
-
+public class TenantControlTest extends TenantControlTestSupport {
     @Parameter
     public boolean hasTenantControl;
 
@@ -101,39 +78,14 @@ public class TenantControlTest extends HazelcastTestSupport {
         return newConfig(hasTenantControl);
     }
 
-    static Config newConfig() {
-        return newConfig(true);
-    }
-
-    static Config newConfig(boolean hasTenantControl) {
-        Config config = smallInstanceConfig();
-        if (hasTenantControl) {
-            ClassLoader configClassLoader = new AdditionalServiceClassLoader(new URL[0],
-                    TenantControlTest.class.getClassLoader());
-            config.setClassLoader(configClassLoader);
-        }
-        config.getCacheConfig("*");
-        return config;
-    }
-
-    static void initState() {
-        tenantFactoryInitialized.set(false);
-        savedTenant.remove();
-        setTenantCount.set(0);
-        closeTenantCount.set(0);
-        registerTenantCount.set(0);
-        unregisterTenantCount.set(0);
-        clearedThreadInfoCount.set(0);
-        classesAlwaysAvailable = false;
-    }
-
     @Test
     public void testTenantControl_whenCacheCreatedViaCacheManager() {
         HazelcastInstance hz = createHazelcastInstance(getNewConfig());
 
         CachingProvider provider = createServerCachingProvider(hz);
         CacheManager cacheManager = provider.getCacheManager(null, null, propertiesByInstanceItself(hz));
-        Cache cache = cacheManager.createCache(cacheName, new CacheConfig());
+        @SuppressWarnings("unused")
+        Cache<?, ?> cache = cacheManager.createCache(cacheName, new CacheConfig<>());
 
         assertTenantControlCreated(hz);
     }
@@ -144,7 +96,9 @@ public class TenantControlTest extends HazelcastTestSupport {
 
         CachingProvider provider = createServerCachingProvider(hz);
         CacheManager cacheManager = provider.getCacheManager(null, null, propertiesByInstanceItself(hz));
-        Cache cache = cacheManager.getCache(cacheName);
+
+        @SuppressWarnings("unused")
+        Cache<?, ?> cache = cacheManager.getCache(cacheName);
 
         assertTenantControlCreated(hz);
     }
@@ -152,6 +106,8 @@ public class TenantControlTest extends HazelcastTestSupport {
     @Test
     public void testTenantControl_whenCacheObtainedAsDistributedObject() {
         HazelcastInstance hz = createHazelcastInstance(getNewConfig());
+
+        @SuppressWarnings("unused")
         ICache<Integer, Integer> cache = hz.getCacheManager().getCache(cacheName);
 
         assertTenantControlCreated(hz);
@@ -226,71 +182,6 @@ public class TenantControlTest extends HazelcastTestSupport {
             assertInstanceOf(CountingTenantControl.class, getTenantControl(instance, cacheConfig));
         } else {
             assertEquals(TenantControl.NOOP_TENANT_CONTROL, getTenantControl(instance, cacheConfig));
-        }
-    }
-
-    public static class CountingTenantControl implements TenantControl {
-        @Override
-        public Closeable setTenant() {
-            if (!isAvailable(null)) {
-                throw new IllegalStateException("Tenant Not Available");
-            }
-            setTenantCount.incrementAndGet();
-            return closeTenantCount::incrementAndGet;
-        }
-
-        @Override
-        public void registerObject(@Nonnull DestroyEventContext event) {
-            destroyEventContext.set(event);
-            registerTenantCount.incrementAndGet();
-        }
-
-        @Override
-        public void unregisterObject() {
-            unregisterTenantCount.incrementAndGet();
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-        }
-
-        @Override
-        public boolean isAvailable(@Nonnull Tenantable tenantable) {
-            return true;
-        }
-
-        @Override
-        public void clearThreadContext() {
-            clearedThreadInfoCount.incrementAndGet();
-        }
-    }
-
-    public static class CountingTenantControlFactory implements TenantControlFactory {
-        @Override
-        public TenantControl saveCurrentTenant() {
-            if (tenantFactoryInitialized.compareAndSet(false, true)) {
-                TenantControl tenantControl;
-                if (savedTenant.get() == null) {
-                    tenantControl = new CountingTenantControl();
-                    savedTenant.set(tenantControl);
-                } else {
-                    tenantControl = savedTenant.get();
-                }
-                return tenantControl;
-            } else if (savedTenant.get() != null) {
-                return savedTenant.get();
-            } else {
-                return TenantControl.NOOP_TENANT_CONTROL;
-            }
-        }
-
-        @Override
-        public boolean isClassesAlwaysAvailable() {
-            return classesAlwaysAvailable;
         }
     }
 }

@@ -1,1 +1,1 @@
-com.hazelcast.cache.TenantControlTest$CountingTenantControlFactory
+com.hazelcast.spi.tenantcontrol.TenantControlTestSupport$CountingTenantControlFactory

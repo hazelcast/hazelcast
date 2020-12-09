@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache;
+package com.hazelcast.spi.tenantcontrol;
 
 import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.cache.impl.ICacheService;
@@ -25,7 +25,6 @@ import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.MigrationState;
 import com.hazelcast.partition.ReplicaMigrationEvent;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
@@ -44,14 +43,9 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.cache.CachePartitionIteratorMigrationTest.putValuesToPartition;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.getCacheService;
 import static com.hazelcast.cache.HazelcastCacheManager.CACHE_MANAGER_PREFIX;
-import static com.hazelcast.cache.TenantControlTest.classesAlwaysAvailable;
-import static com.hazelcast.cache.TenantControlTest.destroyEventContext;
-import static com.hazelcast.cache.TenantControlTest.initState;
-import static com.hazelcast.cache.TenantControlTest.newConfig;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -61,7 +55,7 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class TenantUnavailableTest extends HazelcastTestSupport {
+public class TenantUnavailableTest extends TenantControlTestSupport {
     private String cacheName;
     private static final Set<String> disallowClassNames = new HashSet<>();
     private static final CountDownLatch latch = new CountDownLatch(1);
@@ -72,7 +66,6 @@ public class TenantUnavailableTest extends HazelcastTestSupport {
         cacheName = randomName();
         classLoadingFailed = false;
         initState();
-        classesAlwaysAvailable = false;
     }
 
     @Test
@@ -117,8 +110,9 @@ public class TenantUnavailableTest extends HazelcastTestSupport {
         CacheProxy<String, ValueType> cache1 = (CacheProxy) createServerCachingProvider(hz1)
                 .getCacheManager().createCache(cacheName, cacheConfig);
         ValueType value = new ValueType();
-        putValuesToPartition(hz1, cache1, value, 0, 1);
-        putValuesToPartition(hz1, cache1, value, 1, 1);
+
+        cache1.put(generateKeyForPartition(hz1, 0), value);
+        cache1.put(generateKeyForPartition(hz1, 1), value);
 
         disallowClassNames.add(ValueType.class.getName());
         HazelcastInstance hz2 = factory.newHazelcastInstance(newConfig().setLiteMember(true));
