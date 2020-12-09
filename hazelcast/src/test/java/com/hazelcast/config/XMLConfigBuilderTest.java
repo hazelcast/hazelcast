@@ -2799,6 +2799,22 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testAllowOverrideDefaultSerializers() {
+        String xml = HAZELCAST_START_TAG
+          + "  <serialization>\n"
+          + "      <allow-override-default-serializers>true</allow-override-default-serializers>\n"
+          + "  </serialization>\n"
+          + HAZELCAST_END_TAG;
+
+        final Config config = new InMemoryXmlConfig(xml);
+        final boolean isAllowOverrideDefaultSerializers
+          = config.getSerializationConfig().isAllowOverrideDefaultSerializers();
+        assertTrue(isAllowOverrideDefaultSerializers);
+    }
+
+
+    @Override
+    @Test
     public void testHotRestart() {
         String dir = "/mnt/hot-restart-root/";
         String backupDir = "/mnt/hot-restart-backup/";
