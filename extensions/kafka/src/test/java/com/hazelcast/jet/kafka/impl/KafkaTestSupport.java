@@ -175,8 +175,8 @@ public class KafkaTestSupport {
         return getProducer().send(new ProducerRecord<>(topic, key, value));
     }
 
-    void produce(String topic, int partition, Long timestamp, Integer key, String value) {
-        getProducer().send(new ProducerRecord<>(topic, partition, timestamp, key, value));
+    Future<RecordMetadata> produce(String topic, int partition, Long timestamp, Integer key, String value) {
+        return getProducer().send(new ProducerRecord<>(topic, partition, timestamp, key, value));
     }
 
     private KafkaProducer<Integer, String> getProducer() {

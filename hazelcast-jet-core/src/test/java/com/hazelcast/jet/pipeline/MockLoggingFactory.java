@@ -66,5 +66,6 @@ public class MockLoggingFactory implements LoggerFactory {
 
     @Override
     public void removeLogger(String name) {
+
     }
 }
