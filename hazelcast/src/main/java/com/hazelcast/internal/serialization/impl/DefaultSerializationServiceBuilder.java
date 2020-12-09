@@ -83,6 +83,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     protected boolean enableSharedObject;
     protected boolean allowUnsafe;
 
+    protected boolean allowOverrideDefaultSerializers;
+
     protected int initialOutputBufferSize = DEFAULT_OUT_BUFFER_SIZE;
 
     protected PartitioningStrategy partitioningStrategy;
@@ -131,6 +133,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         enableCompression = config.isEnableCompression();
         enableSharedObject = config.isEnableSharedObject();
         allowUnsafe = config.isAllowUnsafe();
+        allowOverrideDefaultSerializers = config.isAllowOverrideDefaultSerializers();
         JavaSerializationFilterConfig filterConfig = config.getJavaSerializationFilterConfig();
         classNameFilter = filterConfig == null ? null : new SerializationClassNameFilter(filterConfig);
         return this;
@@ -199,6 +202,12 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     @Override
     public SerializationServiceBuilder setAllowUnsafe(boolean allowUnsafe) {
         this.allowUnsafe = allowUnsafe;
+        return this;
+    }
+
+    @Override
+    public SerializationServiceBuilder setAllowOverrideDefaultSerializers(final boolean allowOverrideDefaultSerializers) {
+        this.allowOverrideDefaultSerializers = allowOverrideDefaultSerializers;
         return this;
     }
 
@@ -297,6 +306,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                     .withNotActiveExceptionSupplier(notActiveExceptionSupplier)
                     .withClassNameFilter(classNameFilter)
                     .withCheckClassDefErrors(checkClassDefErrors)
+                    .withAllowOverrideDefaultSerializers(allowOverrideDefaultSerializers)
                     .build();
                 serializationServiceV1.registerClassDefinitions(classDefinitions);
                 return serializationServiceV1;

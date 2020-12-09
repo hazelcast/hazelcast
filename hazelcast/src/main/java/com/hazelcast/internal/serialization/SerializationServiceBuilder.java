@@ -59,6 +59,8 @@ public interface SerializationServiceBuilder {
 
     SerializationServiceBuilder setAllowUnsafe(boolean allowUnsafe);
 
+    SerializationServiceBuilder setAllowOverrideDefaultSerializers(boolean allowUnsafe);
+
     SerializationServiceBuilder setPartitioningStrategy(PartitioningStrategy partitionStrategy);
 
     SerializationServiceBuilder setNotActiveExceptionSupplier(Supplier<RuntimeException> notActiveExceptionSupplier);

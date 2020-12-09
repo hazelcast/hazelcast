@@ -90,6 +90,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private volatile boolean active = true;
     private final byte version;
     private final ILogger logger = Logger.getLogger(InternalSerializationService.class);
+    private boolean allowOverrideDefaultSerializers;
 
     AbstractSerializationService(Builder<?> builder) {
         this.inputOutputFactory = builder.inputOutputFactory;
@@ -102,6 +103,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, builder.bufferPoolFactory,
                 builder.notActiveExceptionSupplier);
         this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer());
+        this.allowOverrideDefaultSerializers = builder.allowOverrideDefaultSerializers;
     }
 
     // used by jet
@@ -595,6 +597,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         private int initialOutputBufferSize;
         private BufferPoolFactory bufferPoolFactory;
         private Supplier<RuntimeException> notActiveExceptionSupplier;
+        private boolean allowOverrideDefaultSerializers;
 
         protected Builder() {
         }
@@ -642,6 +645,11 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
         public final T withNotActiveExceptionSupplier(Supplier<RuntimeException> notActiveExceptionSupplier) {
             this.notActiveExceptionSupplier = notActiveExceptionSupplier;
+            return self();
+        }
+
+        public final T withAllowOverrideDefaultSerializers(final boolean allowOverrideDefaultSerializers) {
+            this.allowOverrideDefaultSerializers = allowOverrideDefaultSerializers;
             return self();
         }
     }
