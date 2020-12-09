@@ -57,9 +57,8 @@
 
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-sql</artifactId>
+            <artifactId>hazelcast-sql-core</artifactId>
             <version>${hazelcast.version}</version>
-            <classifier>original</classifier>
             <exclusions>
                 <exclusion>
                     <groupId>com.hazelcast</groupId>
