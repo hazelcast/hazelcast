@@ -21,6 +21,7 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ConstantSerializers.IntegerSerializer;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -41,6 +42,18 @@ public class CustomSerializationOverrideDefaultTest {
 
   @Test
   public void testSerializerDefaultOverridden() {
+    testSerializer(true);
+  }
+
+  @Test
+  public void testSerializerDefaultOverridden_systemPropertyTrue() {
+    ClusterProperty.SERIALIZATION_ALLOW_OVERRIDE_DEFAULT_SERIALIZERS.setSystemProperty("true");
+    testSerializer(false);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testSerializerDefaultOverridden_systemPropertyFalse() {
+    ClusterProperty.SERIALIZATION_ALLOW_OVERRIDE_DEFAULT_SERIALIZERS.setSystemProperty("false");
     testSerializer(true);
   }
 

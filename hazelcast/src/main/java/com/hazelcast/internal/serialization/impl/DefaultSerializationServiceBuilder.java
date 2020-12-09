@@ -288,6 +288,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
 
     protected InternalSerializationService createSerializationService(InputOutputFactory inputOutputFactory,
                                                                       Supplier<RuntimeException> notActiveExceptionSupplier) {
+        overrideAllowOverrideDefaultSerializers();
+
         switch (version) {
             case 1:
                 SerializationServiceV1 serializationServiceV1 = SerializationServiceV1.builder()
@@ -314,6 +316,20 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
             // future version note: add new versions here by adding cases for each version and instantiate it properly
             default:
                 throw new IllegalArgumentException("Serialization version is not supported!");
+        }
+    }
+
+    /**
+     * 1) Use system property as override
+     * 2) If not set then use configuration file (xml/yaml)
+     */
+    private void overrideAllowOverrideDefaultSerializers() {
+        final String systemPropertyOverrideAllowOverrideDefaultSerializers
+          = ClusterProperty.SERIALIZATION_ALLOW_OVERRIDE_DEFAULT_SERIALIZERS.getSystemProperty();
+
+        if (systemPropertyOverrideAllowOverrideDefaultSerializers != null) {
+            this.allowOverrideDefaultSerializers
+              = Boolean.parseBoolean(systemPropertyOverrideAllowOverrideDefaultSerializers);
         }
     }
 
