@@ -34,4 +34,13 @@ public class RawBytesFileFormatTest extends BaseFileFormatTest {
         byte[] expectedBytes = "Raw contents of the file.".getBytes(UTF_8);
         assertItemsInSource(source, expectedBytes);
     }
+
+    @Test
+    public void shouldReadEmptyFile() throws Exception {
+        FileSourceBuilder<byte[]> source = FileSources.files(currentDir + "/src/test/resources")
+                                                      .glob("file-empty.txt")
+                                                      .format(FileFormat.bytes());
+
+        assertItemsInSource(source, new byte[0]);
+    }
 }

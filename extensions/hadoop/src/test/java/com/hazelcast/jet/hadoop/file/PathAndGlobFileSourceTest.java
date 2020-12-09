@@ -60,6 +60,37 @@ public class PathAndGlobFileSourceTest extends BaseFileFormatTest {
     }
 
     @Test
+    public void shouldReadFilesMatchingGlobInPath_moreDirs() {
+        assumeThat(useHadoop).isTrue();
+        // src/test/resources/globpath1/globpath and src/test/resources/globpath2/globpath
+        FileSourceBuilder<String> source = FileSources.files(currentDir + "/src/test/resources/*/globpath")
+                                                      .glob("file")
+                                                      .format(FileFormat.text());
+
+        assertItemsInSource(source, "fileA", "fileB");
+    }
+
+    @Test
+    public void shouldNotReadFilesMatchingGlobInPathForDirChain() {
+        assumeThat(useHadoop).isTrue();
+        FileSourceBuilder<String> source = FileSources.files(currentDir + "/src/*/glob") // src/test/resources/glob
+                                                      .glob("file")
+                                                      .format(FileFormat.text());
+
+        assertItemsInSource(source, items -> assertThat(items).isEmpty());
+    }
+
+    @Test
+    public void shouldReadFilesMatchingGlobInPathAndGlob() {
+        assumeThat(useHadoop).isTrue();
+        FileSourceBuilder<String> source = FileSources.files(currentDir + "/src/test/*/glob") // src/test/resources/glob
+                                                      .glob("file*")
+                                                      .format(FileFormat.text());
+
+        assertItemsInSource(source, "file", "file1");
+    }
+
+    @Test
     public void shouldReadFileWithEscapedGlob() throws IOException {
         assumeThatNoWindowsOS(); // * is not allowed in filename
 

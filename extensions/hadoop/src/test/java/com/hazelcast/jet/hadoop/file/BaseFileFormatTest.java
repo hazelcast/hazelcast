@@ -17,9 +17,11 @@
 package com.hazelcast.jet.hadoop.file;
 
 import com.hazelcast.function.ConsumerEx;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.test.Assertions;
 import org.junit.Before;
@@ -33,6 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 
 @RunWith(Parameterized.class)
@@ -80,10 +83,36 @@ public abstract class BaseFileFormatTest extends JetTestSupport {
          .apply(Assertions.assertCollected(assertion));
 
         JetInstance[] jets = createJetMembers(memberCount);
-        jets[0].newJob(p).join();
+        try {
+            jets[0].newJob(p).join();
+        } finally {
+            for (JetInstance jet : jets) {
+                jet.shutdown();
+            }
+        }
+    }
 
-        for (JetInstance jet : jets) {
-            jet.shutdown();
+    protected void assertJobFailed(FileSourceBuilder source, Class expectedRootException, String expectedMessage) {
+        if (useHadoop) {
+            source.useHadoopForLocalFiles(true);
+        }
+
+        Pipeline p = Pipeline.create();
+
+        p.readFrom(source.build())
+         .writeTo(Sinks.logger());
+
+        JetInstance[] jets = createJetMembers(1);
+
+        try {
+            assertThatThrownBy(() -> jets[0].newJob(p).join())
+                    .hasCauseInstanceOf(JetException.class)
+                    .hasRootCauseInstanceOf(expectedRootException)
+                    .hasMessageContaining(expectedMessage);
+        } finally {
+            for (JetInstance jet : jets) {
+                jet.shutdown();
+            }
         }
     }
 }

@@ -16,7 +16,13 @@
 
 package com.hazelcast.jet.hadoop.file;
 
+import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.hadoop.file.generated.SpecificUser;
+import com.hazelcast.jet.hadoop.file.model.IncorrectUser;
+import com.hazelcast.jet.hadoop.file.model.User;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.file.FileSources;
@@ -31,6 +37,9 @@ import org.junit.runners.Parameterized.Parameters;
 
 import java.io.IOException;
 import java.util.Arrays;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ParquetFileFormatTest extends BaseFileFormatTest {
 
@@ -53,11 +62,75 @@ public class ParquetFileFormatTest extends BaseFileFormatTest {
         );
     }
 
+    @Test
+    public void shouldReadEmptyParquetFile() throws Exception {
+        createEmptyParquetFile();
+
+        FileSourceBuilder<User> source = FileSources.files(currentDir + "/target/parquet")
+                                                    .glob("file-empty.parquet")
+                                                    .format(FileFormat.parquet());
+
+        assertItemsInSource(source, items -> assertThat(items).isEmpty());
+    }
+
+    @Test
+    public void shouldThrowWhenInvalidFileType() throws Exception {
+        FileSourceBuilder<SpecificUser> source = FileSources.files(currentDir + "/src/test/resources")
+                                                            .glob("invalid-data.png")
+                                                            .format(FileFormat.parquet());
+
+        assertJobFailed(source, RuntimeException.class, "is not a Parquet file");
+    }
+
+    @Test
+    public void shouldThrowWhenIncorrectSchema() throws Exception {
+        createParquetFile();
+
+        FileSourceBuilder<IncorrectUser> source = FileSources.files(currentDir + "/target/parquet")
+                                                             .glob("file.parquet")
+                                                             .format(FileFormat.parquet());
+
+        if (useHadoop) {
+            source.useHadoopForLocalFiles(true);
+        }
+
+        Pipeline p = Pipeline.create();
+
+        // The type of the objects in the pipeline is not enforced at runtime.
+        // Adding a mapping step causes explicit cast, resulting in a failed
+        // job.
+        p.readFrom(source.build())
+         .map(IncorrectUser::getSurname)
+         .writeTo(Sinks.logger());
+
+        JetInstance[] jets = createJetMembers(1);
+
+        try {
+            assertThatThrownBy(() -> jets[0].newJob(p).join())
+                    .hasCauseInstanceOf(JetException.class)
+                    .hasRootCauseInstanceOf(ClassCastException.class)
+                    .hasMessageContaining("com.hazelcast.jet.hadoop.file.generated.SpecificUser cannot be cast to "
+                            + "com.hazelcast.jet.hadoop.file.model.IncorrectUser");
+        } finally {
+            for (JetInstance jet : jets) {
+                jet.shutdown();
+            }
+        }
+    }
+
     private void createParquetFile() throws IOException {
+        createParquetFile("file.parquet", new SpecificUser("Frantisek", 7), new SpecificUser("Ali", 42));
+    }
+
+    private void createEmptyParquetFile() throws IOException {
+        createParquetFile("file-empty.parquet");
+    }
+
+    private void createParquetFile(String filename, SpecificUser... users) throws IOException {
         Path inputPath = new Path("target/parquet");
         FileSystem fs = FileSystem.get(new Configuration());
         fs.delete(inputPath, true);
-        Path filePath = new Path(inputPath, "file.parquet");
+        Path filePath = new Path(inputPath, filename);
 
         ParquetWriter<SpecificUser> writer = AvroParquetWriter.
                 <SpecificUser>builder(filePath)
@@ -70,8 +143,9 @@ public class ParquetFileFormatTest extends BaseFileFormatTest {
                 .withDictionaryEncoding(false)
                 .build();
 
-        writer.write(new SpecificUser("Frantisek", 7));
-        writer.write(new SpecificUser("Ali", 42));
+        for (SpecificUser user : users) {
+            writer.write(user);
+        }
         writer.close();
         fs.close();
     }

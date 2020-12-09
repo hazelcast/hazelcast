@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import java.nio.charset.Charset;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 
 
@@ -50,6 +51,24 @@ public class TextFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
+    public void shouldReadEmptyTextFile() throws Exception {
+        FileSourceBuilder<String> source = FileSources.files(currentDir + "/src/test/resources")
+                                                      .glob("file-empty.txt")
+                                                      .format(FileFormat.text());
+
+        assertItemsInSource(source, "");
+    }
+
+    @Test
+    public void shouldReadEmptyLinesTextFile() throws Exception {
+        FileSourceBuilder<String> source = FileSources.files(currentDir + "/src/test/resources")
+                                                      .glob("file-empty.txt")
+                                                      .format(FileFormat.lines());
+
+        assertItemsInSource(source, items -> assertThat(items).isEmpty());
+    }
+
+    @Test
     public void shouldReadTextFileWithCharset() {
         // Charset isn't available on Hadoop - all text is in UTF-8
         assumeThat(useHadoop).isFalse();
@@ -64,7 +83,7 @@ public class TextFileFormatTest extends BaseFileFormatTest {
     @Test
     public void defaultFileFormatShouldReadFileAsLines() {
         FileSourceBuilder<String> source = FileSources.files(currentDir + "/src/test/resources")
-                .glob("file.txt");
+                                                      .glob("file.txt");
 
         assertItemsInSource(source, "Text contents of", "the file.");
     }

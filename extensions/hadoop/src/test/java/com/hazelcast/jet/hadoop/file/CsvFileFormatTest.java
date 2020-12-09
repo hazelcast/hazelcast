@@ -16,11 +16,16 @@
 
 package com.hazelcast.jet.hadoop.file;
 
+import com.fasterxml.jackson.dataformat.csv.CsvMappingException;
 import com.hazelcast.jet.hadoop.file.model.User;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.file.FileSources;
 import org.junit.Test;
+
+import java.io.CharConversionException;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class CsvFileFormatTest extends BaseFileFormatTest {
 
@@ -48,5 +53,46 @@ public class CsvFileFormatTest extends BaseFileFormatTest {
                 new User("Frantisek", 7),
                 new User("Ali", 42)
         );
+    }
+
+    @Test
+    public void shouldReadCsvFileWithLessColumnsThanTargetClass() throws Exception {
+
+        FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
+                                                    .glob("file-less-columns.csv")
+                                                    .format(FileFormat.csv(User.class));
+
+        assertItemsInSource(source,
+                new User("Frantisek", 0),
+                new User("Ali", 0)
+        );
+    }
+
+    @Test
+    public void shouldReadEmptyCsvFile() throws Exception {
+
+        FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
+                                                    .glob("file-empty.csv")
+                                                    .format(FileFormat.csv(User.class));
+
+        assertItemsInSource(source, items -> assertThat(items).isEmpty());
+    }
+
+    @Test
+    public void shouldThrowWhenInvalidFileType() throws Exception {
+        FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
+                                                    .glob("invalid-data.png")
+                                                    .format(FileFormat.csv(User.class));
+
+        assertJobFailed(source, CharConversionException.class, "Invalid UTF-8");
+    }
+
+    @Test
+    public void shouldThrowWhenWrongFormatting() throws Exception {
+        FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
+                                                    .glob("file-invalid.csv")
+                                                    .format(FileFormat.csv(User.class));
+
+        assertJobFailed(source, CsvMappingException.class, "Too many entries");
     }
 }
