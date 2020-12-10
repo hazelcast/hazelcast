@@ -105,9 +105,9 @@ Internally, we store all JSON values in the string form.
 ### Java Serialization
 
 Java serialization is the last-resort serialization option. It uses the
-Java object exactly as `IMap.get()` returns it. You can use it for
-objects serialized using the Java serialization or Hazelcast custom
-serialization (`DataSerializable` or `IdentifiedDataSerializable`).
+Java objects exactly as `KafkaConsumer.poll()` returns them. You can use
+it for objects serialized using the Java serialization or any other
+serialization method.
 
 For this format you must specify the class name using `keyJavaClass` and
 `valueJavaClass` options, for example:
