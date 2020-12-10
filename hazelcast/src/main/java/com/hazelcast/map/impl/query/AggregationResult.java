@@ -32,7 +32,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNu
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullablePartitionIdSet;
 
 /**
- * Contains the result of the evaluation of an aggregation on a specific Partition or Node.
+ * Contains the result of the evaluation of an aggregation on a specific partition or node.
  * <p>
  * At the end of the aggregation execution path all AggregationResults are merged into one AggregationResult.
  */
