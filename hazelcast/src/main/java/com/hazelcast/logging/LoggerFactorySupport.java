@@ -33,11 +33,6 @@ public abstract class LoggerFactorySupport implements LoggerFactory {
         return ConcurrencyUtil.getOrPutIfAbsent(mapLoggers, name, loggerConstructor);
     }
 
-    @Override
-    public void removeLogger(String name) {
-        mapLoggers.remove(name);
-    }
-
     protected abstract ILogger createLogger(String name);
 
     public void clearLoadedLoggers() {
