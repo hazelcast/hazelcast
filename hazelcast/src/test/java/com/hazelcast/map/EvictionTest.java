@@ -48,6 +48,7 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -667,8 +668,8 @@ public class EvictionTest extends HazelcastTestSupport {
             map.put(i, i);
         }
         // wait until eviction is complete
-        assertSizeEventually(0, map, 300);
-        assertTrueEventually(() -> assertEquals(size, entryEvictedEventCount.get()), 300);
+        assertSizeEventually(0, map, 20);
+        assertTrueEventually(() -> assertEquals(size, entryEvictedEventCount.get()), 20);
     }
 
     @Test
@@ -779,7 +780,7 @@ public class EvictionTest extends HazelcastTestSupport {
         }
 
         // wait until eviction is complete
-        assertOpenEventually(latch, TimeUnit.MINUTES.toSeconds(10));
+        assertOpenEventually(latch, 20);
     }
 
     /**
@@ -1038,7 +1039,7 @@ public class EvictionTest extends HazelcastTestSupport {
             map.get(i);
         }
 
-        assertOpenEventually(evictedEntryLatch, 600);
+        assertOpenEventually(evictedEntryLatch, 20);
         // sleep some seconds to be sure that
         // we did not receive more than expected number of events
         sleepAtLeastSeconds(10);
@@ -1061,17 +1062,20 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     @Category(NightlyTest.class)
     public void testBackupExpirationDelay_onPromotedReplica() {
         // cluster size should be at least 2 since we are testing a scenario with backups
         int clusterSize = 2;
         int ttlSeconds = 3;
-        int numberOfItemsToBeAdded = 1000;
+        int numberOfItemsToBeAdded = 1_000;
         String mapName = randomMapName();
 
         Config config = newConfigWithTTL(mapName, ttlSeconds)
                 // use a long delay for testing purposes
-                .setProperty(ClusterProperty.MAP_EXPIRY_DELAY_SECONDS.getName(), String.valueOf(TimeUnit.HOURS.toSeconds(1)));
+                .setProperty(ClusterProperty.MAP_EXPIRY_DELAY_SECONDS.getName(),
+                        String.valueOf(TimeUnit.HOURS.toSeconds(1)));
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(),"1");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
         HazelcastInstance[] instances = factory.newInstances(config);
@@ -1083,7 +1087,7 @@ public class EvictionTest extends HazelcastTestSupport {
             map1.put(i, i);
         }
 
-        instances[0].shutdown();
+        //instances[0].shutdown();
 
         sleepAtLeastSeconds(3);
 
@@ -1113,7 +1117,7 @@ public class EvictionTest extends HazelcastTestSupport {
         map.put(key, 1, 3, SECONDS);
 
         // 2. wait for expiration on owner node
-        assertOpenEventually(evictedEntryCounterLatch, 240);
+        assertOpenEventually(evictedEntryCounterLatch, 20);
 
         HazelcastInstance joinerNode = factory.newHazelcastInstance(config);
         waitAllForSafeState(factory.getAllHazelcastInstances());
@@ -1130,19 +1134,21 @@ public class EvictionTest extends HazelcastTestSupport {
     public void testExpiration_onBackupPartitions_whenPuttingWithTTL() {
         String mapName = randomMapName();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance[] nodes = factory.newInstances(getConfig());
+        Config config = getConfig();
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(),"1");
+        HazelcastInstance[] nodes = factory.newInstances(config);
         IMap<Integer, Integer> map = nodes[0].getMap(mapName);
 
         // 1. put keys with TTL
-        for (int i = 0; i < 60; i++) {
-            map.put(i, i, 5, SECONDS);
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i, 10, SECONDS);
         }
 
         // 2. shutdown one node (since we want to see previous backup partitions as owners)
         nodes[1].shutdown();
 
         // 3. background task should sweep all keys
-        assertSizeEventually(0, map, 240);
+        assertSizeEventually(0, map, 20);
     }
 
     private void assertExpirationOccurredOnJoinerNode(String mapName, String key, HazelcastInstance joinerNode) {

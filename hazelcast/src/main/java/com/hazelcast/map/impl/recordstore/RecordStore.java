@@ -51,6 +51,8 @@ import java.util.function.BiConsumer;
  */
 public interface RecordStore<R extends Record> {
 
+    ExpirySystem getExpirySystem();
+
     LocalRecordStoreStats getLocalRecordStoreStats();
 
     String getName();
@@ -133,8 +135,8 @@ public interface RecordStore<R extends Record> {
      * An implementation is not supposed to be thread safe.
      *
      * @param dataKey
-     * @param record the accessed record
-     * @param now    the current time
+     * @param record  the accessed record
+     * @param now     the current time
      */
     void accessRecord(Data dataKey, Record record, long now);
 
@@ -288,6 +290,7 @@ public interface RecordStore<R extends Record> {
      * @return current record after put
      * @see com.hazelcast.map.impl.operation.MapReplicationOperation
      */
+    R putReplicatedRecordLegacy(Data dataKey, R record, long nowInMillis, boolean indexesMustBePopulated);
     R putReplicatedRecord(Data dataKey, R record, long nowInMillis, boolean indexesMustBePopulated);
 
     void forEach(BiConsumer<Data, R> consumer, boolean backup);
@@ -461,6 +464,10 @@ public interface RecordStore<R extends Record> {
      * due to the expiry, otherwise return {@code false}.
      */
     boolean evictIfExpired(Data key, long now, boolean backup);
+
+    void evictAndDoPostEvictionOps(Data key, boolean backup);
+
+    boolean hasExpired(Data key, long now, boolean backup);
 
     /**
      * Evicts entries from this record-store.
