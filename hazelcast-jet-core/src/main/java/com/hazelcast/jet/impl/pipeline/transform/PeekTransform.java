@@ -24,6 +24,7 @@ import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekOutputP;
 
 public class PeekTransform<T> extends AbstractTransform {
@@ -44,6 +45,7 @@ public class PeekTransform<T> extends AbstractTransform {
 
     @Override
     public void addToDag(Planner p, Context context) {
+        determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, p.isPreserveOrder());
         PlannerVertex peekedPv = p.xform2vertex.get(this.upstream().get(0));
         // Peeking transform doesn't add a vertex, so point to the upstream
         // transform's vertex:

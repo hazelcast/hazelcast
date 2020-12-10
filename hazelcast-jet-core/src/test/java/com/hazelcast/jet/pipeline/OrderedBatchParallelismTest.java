@@ -162,6 +162,15 @@ public class OrderedBatchParallelismTest {
                         Arrays.asList("map", "aggregate-prepare", "aggregate", "flat-map"),
                         Arrays.asList(UPSTREAM_PARALLELISM, UPSTREAM_PARALLELISM, 1, 1),
                         "map+aggregate+flat-map"
+                ),
+                createParamSet(
+                        stage -> stage
+                                .peek()
+                                .map(x -> x)
+                                .setLocalParallelism(LOCAL_PARALLELISM),
+                        Collections.singletonList("map"),
+                        Collections.singletonList(UPSTREAM_PARALLELISM),
+                        "map-after-peek"
                 )
         );
     }

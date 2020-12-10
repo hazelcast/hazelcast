@@ -89,6 +89,15 @@ public class OrderedStreamParallelismTest {
                         Collections.singletonList("map-stateful-global"),
                         Collections.singletonList(1),
                         "map-stateful-global"
+                ),
+                createParamSet(
+                        stage -> stage
+                                .peek()
+                                .map(x -> x)
+                                .setLocalParallelism(LOCAL_PARALLELISM),
+                        Collections.singletonList("map"),
+                        Collections.singletonList(UPSTREAM_PARALLELISM),
+                        "map-after-peek"
                 )
         );
     }
