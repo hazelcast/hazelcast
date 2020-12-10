@@ -88,34 +88,6 @@ public final class Logger {
         return createFactoryInternal().getLogger(name);
     }
 
-    /**
-     * Removes the {@link ILogger logger} for the given {@code clazz}.
-     *
-     * @param clazz the class to remove the logger for.
-     */
-    public static void removeLogger(Class clazz) {
-        checkNotNull(clazz, "class must not be null");
-        removeLoggerInternal(clazz.getName());
-    }
-
-    /**
-     * Removes the {@link ILogger logger} for the given {@code name}.
-     *
-     * @param name the name of the logger to remove.
-     */
-    public static void removeLogger(String name) {
-        checkNotNull(name, "name must not be null");
-        removeLoggerInternal(name);
-    }
-
-    private static void removeLoggerInternal(String name) {
-        LoggerFactory existingFactory = loggerFactory;
-        if (existingFactory != null) {
-            existingFactory.removeLogger(name);
-        }
-        createFactoryInternal().removeLogger(name);
-    }
-
     private static LoggerFactory createFactoryInternal() {
         synchronized (FACTORY_LOCK) {
             LoggerFactory existingFactory = loggerFactory;
