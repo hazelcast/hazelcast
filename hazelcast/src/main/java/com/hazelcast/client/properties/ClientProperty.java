@@ -118,7 +118,7 @@ public final class ClientProperty {
      * <p>Discovery SPI is <b>disabled</b> by default</p>
      */
     public static final HazelcastProperty DISCOVERY_SPI_PUBLIC_IP_ENABLED
-            = new HazelcastProperty("hazelcast.discovery.public.ip.enabled", false);
+            = new HazelcastProperty("hazelcast.discovery.public.ip.enabled");
 
     /**
      * Controls the number of IO input threads. Defaults to -1, so the system will decide.
