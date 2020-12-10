@@ -31,10 +31,25 @@ import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffix
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 
 /**
- * Config class to configure multiple client configs to be used by single client instance
- * The client will try to connect them in given order.
- * When the connected cluster fails or the client blacklisted from the cluster via the management center, the client will
+ * Config class to configure multiple client configs to be used by single client instance.
+ * The client will try to connect them in given order. When the connected cluster fails
+ * or the client blacklisted from the cluster via the Management Center, the client will
  * search for alternative clusters with given configs.
+ * <p>
+ * The client configurations must be exactly the same except the following configuration options:
+ * <ul>
+ * <li>{@code SecurityConfig}</li>
+ * <li>{@code NetworkConfig.Addresses}</li>
+ * <li>{@code NetworkConfig.SocketInterceptorConfig}</li>
+ * <li>{@code NetworkConfig.SSLConfig}</li>
+ * <li>{@code NetworkConfig.AwsConfig}</li>
+ * <li>{@code NetworkConfig.GcpConfig}</li>
+ * <li>{@code NetworkConfig.AzureConfig}</li>
+ * <li>{@code NetworkConfig.KubernetesConfig}</li>
+ * <li>{@code NetworkConfig.EurekaConfig}</li>
+ * <li>{@code NetworkConfig.CloudConfig}</li>
+ * <li>{@code NetworkConfig.DiscoveryConfig}</li>
+ * </ul>
  */
 public class ClientFailoverConfig {
 
@@ -42,7 +57,6 @@ public class ClientFailoverConfig {
     private List<ClientConfig> clientConfigs = new LinkedList<>();
 
     public ClientFailoverConfig() {
-
     }
 
     /**
@@ -79,27 +93,62 @@ public class ClientFailoverConfig {
         }
     }
 
+    /**
+     * Adds the client config to the end of the alternative client configurations list.
+     *
+     * @param clientConfig the ClientConfig to add
+     * @return this for chaining
+     */
     public ClientFailoverConfig addClientConfig(ClientConfig clientConfig) {
         validateClientConfig(clientConfig);
         clientConfigs.add(clientConfig);
         return this;
     }
 
+    /**
+     * Sets the count of connection retries by the client to the alternative clusters.
+     * <p>
+     * When this value is reached and the client still could not connect to a cluster,
+     * the client shuts down. Note that this value applies to the alternative clusters
+     * whose configurations are provided with the client element.
+     *
+     * @param tryCount the number of attempts
+     * @return this for chaining
+     */
     public ClientFailoverConfig setTryCount(int tryCount) {
         this.tryCount = tryCount;
         return this;
     }
 
+    /**
+     * Gets the configured list of alternative client configurations.
+     *
+     * @return the list of configured ClientConfigs
+     */
     public List<ClientConfig> getClientConfigs() {
         return clientConfigs;
     }
 
+    /**
+     * Sets the configured list of alternative client configurations.
+     * <p>
+     * Note: this method replaces previously configured alternative client
+     * configurations with the given list.
+     *
+     * @param clientConfigs the list of ClientConfigs to be used
+     * @return this for chaining
+     */
     public ClientFailoverConfig setClientConfigs(List<ClientConfig> clientConfigs) {
         clientConfigs.forEach(this::validateClientConfig);
         this.clientConfigs = clientConfigs;
         return this;
     }
 
+    /**
+     * Returns the count of connection retries by the client to the alternative clusters.
+     *
+     * @return the count of connection retries
+     */
     public int getTryCount() {
         return tryCount;
     }
