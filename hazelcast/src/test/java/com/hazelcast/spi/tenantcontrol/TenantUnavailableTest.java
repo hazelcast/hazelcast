@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.map.IMap;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.MigrationState;
 import com.hazelcast.partition.ReplicaMigrationEvent;
@@ -46,6 +47,7 @@ import java.util.concurrent.CountDownLatch;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.getCacheService;
 import static com.hazelcast.cache.HazelcastCacheManager.CACHE_MANAGER_PREFIX;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -59,13 +61,24 @@ public class TenantUnavailableTest extends TenantControlTestSupport {
     private String cacheName;
     private static final Set<String> disallowClassNames = new HashSet<>();
     private static final CountDownLatch latch = new CountDownLatch(1);
-    private static boolean classLoadingFailed;
+    private static boolean classLoadingFailed = false;
 
     @Before
     public void setup() {
         cacheName = randomName();
-        classLoadingFailed = false;
         initState();
+    }
+
+    @Test
+    public void testOperationDelayedWhenTenantUnavailable() {
+        tenantAvailable.set(false);
+        HazelcastInstance hz = createHazelcastInstance(newConfig());
+        IMap<String, Integer> map = hz.getMap(randomName());
+        spawn(() -> map.put("key", 1));
+        assertTrueEventually(() -> assertTrue(tenantAvailableCount.get() > 50));
+
+        tenantAvailable.set(true);
+        assertTrueEventually(() -> assertEquals((Integer) 1, map.get("key")));
     }
 
     @Test
@@ -100,7 +113,6 @@ public class TenantUnavailableTest extends TenantControlTestSupport {
 
     @Test
     public void testMigrationWithUnavailableClasses() throws InterruptedException {
-        classesAlwaysAvailable = false;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = factory.newHazelcastInstance(newConfig());
         CacheConfig<String, ValueType> cacheConfig = new CacheConfig<>();

@@ -19,13 +19,17 @@ package com.hazelcast.spi.tenantcontrol;
 import com.hazelcast.cache.CacheUtil;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -55,6 +59,8 @@ import static org.junit.Assume.assumeTrue;
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(QuickTest.class)
 public class TenantControlTest extends TenantControlTestSupport {
+    private static final ILogger LOGGER = Logger.getLogger(TenantControlTest.class);
+
     @Parameter
     public boolean hasTenantControl;
 
@@ -87,7 +93,7 @@ public class TenantControlTest extends TenantControlTestSupport {
         @SuppressWarnings("unused")
         Cache<?, ?> cache = cacheManager.createCache(cacheName, new CacheConfig<>());
 
-        assertTenantControlCreated(hz);
+        assertCacheTenantControlCreated(hz);
     }
 
     @Test
@@ -100,7 +106,7 @@ public class TenantControlTest extends TenantControlTestSupport {
         @SuppressWarnings("unused")
         Cache<?, ?> cache = cacheManager.getCache(cacheName);
 
-        assertTenantControlCreated(hz);
+        assertCacheTenantControlCreated(hz);
     }
 
     @Test
@@ -110,7 +116,7 @@ public class TenantControlTest extends TenantControlTestSupport {
         @SuppressWarnings("unused")
         ICache<Integer, Integer> cache = hz.getCacheManager().getCache(cacheName);
 
-        assertTenantControlCreated(hz);
+        assertCacheTenantControlCreated(hz);
     }
 
     @Test
@@ -159,10 +165,10 @@ public class TenantControlTest extends TenantControlTestSupport {
     @Test
     public void basicMapTest() {
         assumeTrue("Requires CountingTenantControl explicitly configured", hasTenantControl);
-        HazelcastInstance hz = createHazelcastInstance(getNewConfig().setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1"));
-        IMap<String, Integer> map = hz.getMap("MyMap");
+        HazelcastInstance hz = createHazelcastInstance(getNewConfig());
+        IMap<String, Integer> map = hz.getMap(randomName());
         map.addEntryListener((EntryAddedListener<String, Integer>)
-                (EntryEvent<String, Integer> event) -> System.out.format("Added: %s\n", event.getValue()), true);
+                (EntryEvent<String, Integer> event) -> LOGGER.info("Added: " + event.getValue()), true);
         map.put("oneKey", 1);
         map.destroy();
         assertNotNull(savedTenant.get());
@@ -174,14 +180,67 @@ public class TenantControlTest extends TenantControlTestSupport {
         assertEquals(1, unregisterTenantCount.get());
     }
 
-    private void assertTenantControlCreated(HazelcastInstance instance) {
+    @Test
+    public void basicSetTest() {
+        assumeTrue("Requires CountingTenantControl explicitly configured", hasTenantControl);
+        HazelcastInstance hz = createHazelcastInstance(getNewConfig());
+        ISet<Integer> set = hz.getSet(randomName());
+        set.add(1);
+        set.add(1);
+        set.remove(1);
+        set.clear();
+        set.destroy();
+        assertNotNull(savedTenant.get());
+        // set tenant is called twice for add, once for remove and clear
+        assertEquals(4, setTenantCount.get());
+        assertEquals(1, registerTenantCount.get());
+        assertEquals(1, unregisterTenantCount.get());
+    }
+
+    @Test
+    public void basicQueueTest() {
+        assumeTrue("Requires CountingTenantControl explicitly configured", hasTenantControl);
+        HazelcastInstance hz = createHazelcastInstance(getNewConfig());
+        IQueue<Integer> q = hz.getQueue(randomName());
+        q.add(1);
+        q.add(1);
+        q.remove(1);
+        q.clear();
+        q.destroy();
+        assertNotNull(savedTenant.get());
+        // set tenant is called twice for add, once for remove and clear
+        assertEquals(4, setTenantCount.get());
+        assertEquals(1, registerTenantCount.get());
+        assertEquals(1, unregisterTenantCount.get());
+    }
+
+    @Test
+    public void basicListTest() {
+        assumeTrue("Requires CountingTenantControl explicitly configured", hasTenantControl);
+        HazelcastInstance hz = createHazelcastInstance(getNewConfig());
+        IList<Integer> l = hz.getList(randomName());
+        l.add(1);
+        l.add(1);
+        l.remove(1);
+        l.clear();
+        l.destroy();
+        assertNotNull(savedTenant.get());
+        // set tenant is called twice for add, once for remove and clear
+        assertEquals(4, setTenantCount.get());
+        assertEquals(1, registerTenantCount.get());
+        assertEquals(1, unregisterTenantCount.get());
+    }
+
+    private void assertCacheTenantControlCreated(HazelcastInstance instance) {
         ICacheService cacheService = getCacheService(instance);
-        CacheConfig<?, ?> cacheConfig = cacheService.getCacheConfig(CacheUtil.getDistributedObjectName(cacheName));
-        assertNotNull("TenantControl should not be null", getTenantControl(instance, cacheConfig));
+        CacheConfig<?, ?> cacheConfig
+                = cacheService.getCacheConfig(CacheUtil.getDistributedObjectName(cacheName));
+        TenantControl tc = getTenantControl(instance, cacheConfig);
+        assertNotNull("TenantControl should not be null", tc);
         if (hasTenantControl) {
-            assertInstanceOf(CountingTenantControl.class, getTenantControl(instance, cacheConfig));
+            assertInstanceOf(CountingTenantControl.class, tc);
         } else {
-            assertEquals(TenantControl.NOOP_TENANT_CONTROL, getTenantControl(instance, cacheConfig));
+            assertEquals(TenantControl.NOOP_TENANT_CONTROL, tc);
         }
     }
 }

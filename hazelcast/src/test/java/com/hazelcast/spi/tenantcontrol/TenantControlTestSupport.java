@@ -18,6 +18,8 @@ package com.hazelcast.spi.tenantcontrol;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.util.AdditionalServiceClassLoader;
+import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
+import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -29,6 +31,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 public abstract class TenantControlTestSupport extends HazelcastTestSupport {
     protected static final ThreadLocal<TenantControl> savedTenant = new ThreadLocal<>();
     protected static final AtomicBoolean tenantFactoryInitialized = new AtomicBoolean();
@@ -37,8 +41,9 @@ public abstract class TenantControlTestSupport extends HazelcastTestSupport {
     protected static final AtomicInteger registerTenantCount = new AtomicInteger();
     protected static final AtomicInteger unregisterTenantCount = new AtomicInteger();
     protected static final AtomicInteger clearedThreadInfoCount = new AtomicInteger();
-    protected static final AtomicReference<DestroyEventContext> destroyEventContext
-            = new AtomicReference<>(null);
+    protected static final AtomicInteger tenantAvailableCount = new AtomicInteger();
+    protected static final AtomicBoolean tenantAvailable = new AtomicBoolean();
+    protected static final AtomicReference<DestroyEventContext> destroyEventContext = new AtomicReference<>(null);
 
     protected static volatile boolean classesAlwaysAvailable;
 
@@ -50,6 +55,7 @@ public abstract class TenantControlTestSupport extends HazelcastTestSupport {
         registerTenantCount.set(0);
         unregisterTenantCount.set(0);
         clearedThreadInfoCount.set(0);
+        tenantAvailable.set(true);
         classesAlwaysAvailable = false;
     }
 
@@ -89,11 +95,14 @@ public abstract class TenantControlTestSupport extends HazelcastTestSupport {
 
         @Override
         public boolean isClassesAlwaysAvailable() {
-            return classesAlwaysAvailable;
+            return false;
         }
     }
 
     public static class CountingTenantControl implements TenantControl {
+        private final IdleStrategy idleStrategy = new BackoffIdleStrategy(1, 1, MILLISECONDS.toNanos(1), MILLISECONDS.toNanos(100));
+        private int idleCount = 0;
+
         @Override
         public Closeable setTenant() {
             if (!isAvailable(null)) {
@@ -124,7 +133,14 @@ public abstract class TenantControlTestSupport extends HazelcastTestSupport {
 
         @Override
         public boolean isAvailable(@Nonnull Tenantable tenantable) {
-            return true;
+            tenantAvailableCount.incrementAndGet();
+            boolean available = tenantAvailable.get();
+            if (!available) {
+                idleStrategy.idle(idleCount++);
+            } else {
+                idleCount = 0;
+            }
+            return available;
         }
 
         @Override
