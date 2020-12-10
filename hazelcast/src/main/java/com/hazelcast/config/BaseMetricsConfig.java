@@ -35,7 +35,7 @@ public abstract class BaseMetricsConfig<T extends BaseMetricsConfig> {
      * Default collection interval for metrics
      */
     private static final int DEFAULT_METRICS_COLLECTION_SECONDS = 5;
-    protected boolean enabled = true;
+    protected boolean enabled = false;
     protected MetricsJmxConfig jmxConfig = new MetricsJmxConfig();
     protected int collectionFrequencySeconds = DEFAULT_METRICS_COLLECTION_SECONDS;
 

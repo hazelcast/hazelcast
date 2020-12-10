@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -31,6 +32,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
+import com.hazelcast.map.impl.recordstore.ExpirySystem;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -39,13 +41,16 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.MapIndexInfo;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -62,6 +67,9 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
 
     // data for each map
     protected transient Map<String, List> data;
+
+    // data for each map
+    protected transient Map<String, Queue> expiryMetaData;
 
     // propagates the information if the given record store has been already loaded with map-loaded
     // if so, the loading won't be triggered again after a migration to avoid duplicate loading.
@@ -89,7 +97,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
 
     void prepare(PartitionContainer container, Collection<ServiceNamespace> namespaces, int replicaIndex) {
         storesByMapName = createHashMap(namespaces.size());
-
+        expiryMetaData = createHashMap(namespaces.size());
         loaded = createHashMap(namespaces.size());
         mapIndexInfos = new ArrayList<>(namespaces.size());
         for (ServiceNamespace namespace : namespaces) {
@@ -171,11 +179,16 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
 
                 long nowInMillis = Clock.currentTimeMillis();
 
+                NodeEngine nodeEngine = mapContainer.getMapServiceContext().getNodeEngine();
                 for (int i = 0; i < keyRecord.size(); i += 2) {
                     Data dataKey = (Data) keyRecord.get(i);
                     Record record = (Record) keyRecord.get(i + 1);
 
-                    recordStore.putReplicatedRecord(dataKey, record, nowInMillis, populateIndexes);
+                    if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_2)) {
+                        recordStore.putReplicatedRecord(dataKey, record, nowInMillis, populateIndexes);
+                    } else {
+                        recordStore.putReplicatedRecordLegacy(dataKey, record, nowInMillis, populateIndexes);
+                    }
 
                     if (recordStore.shouldEvict()) {
                         // No need to continue replicating records anymore.
@@ -188,6 +201,23 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
 
                 if (populateIndexes) {
                     Indexes.markPartitionAsIndexed(partitionContainer.getPartitionId(), indexesSnapshot);
+                }
+
+                if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_2)) {
+                    Queue metadata = expiryMetaData.get(mapName);
+                    do {
+                        if (metadata.isEmpty()) {
+                            break;
+                        }
+                        Data key = (Data) metadata.poll();
+                        long ttl = (long) metadata.poll();
+                        long maxIdle = (long) metadata.poll();
+                        long expiryTime = (long) metadata.poll();
+
+                        if (recordStore.existInMemory(key)) {
+                            recordStore.getExpirySystem().addExpiry0(key, ttl, maxIdle, expiryTime);
+                        }
+                    } while (true);
                 }
             }
         }
@@ -246,6 +276,22 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                     throw ExceptionUtil.rethrow(e);
                 }
             }, operation.getReplicaIndex() != 0, true);
+
+            if (out.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+                ExpirySystem expirySystem = recordStore.getExpirySystem();
+                Map<Data, ExpirySystem.ExpiryMetadata> expireTimeByKey = expirySystem.getExpireTimeByKey();
+
+                out.writeInt(expireTimeByKey.size());
+                for (Map.Entry<Data, ExpirySystem.ExpiryMetadata> metadataEntry : expireTimeByKey.entrySet()) {
+                    Data key = metadataEntry.getKey();
+                    ExpirySystem.ExpiryMetadata expiryMetadata = metadataEntry.getValue();
+
+                    IOUtil.writeData(out, key);
+                    out.writeLong(expiryMetadata.getTtl());
+                    out.writeLong(expiryMetadata.getMaxIdle());
+                    out.writeLong(expiryMetadata.getExpirationTime());
+                }
+            }
         }
 
         out.writeInt(loaded.size());
@@ -258,6 +304,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         for (MapIndexInfo mapIndexInfo : mapIndexInfos) {
             out.writeObject(mapIndexInfo);
         }
+
+
     }
 
     private static SerializationService getSerializationService(MapContainer mapContainer) {
@@ -282,6 +330,27 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                 keyRecord.add(record);
             }
             data.put(name, keyRecord);
+
+            if (in.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+                int expirySize = in.readInt();
+                if (expirySize != 0) {
+                    Queue metadata = new ArrayDeque<>(expirySize);
+                    for (int j = 0; j < expirySize; j++) {
+                        Data key = IOUtil.readData(in);
+                        long ttl = in.readLong();
+                        long maxIdle = in.readLong();
+                        long expiryTime = in.readLong();
+
+                        metadata.add(key);
+                        metadata.add(ttl);
+                        metadata.add(maxIdle);
+                        metadata.add(expiryTime);
+                    }
+
+                    expiryMetaData.put(name, metadata);
+
+                }
+            }
         }
 
         int loadedSize = in.readInt();

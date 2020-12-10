@@ -59,6 +59,11 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         expirySystem = createExpirySystem(mapContainer);
     }
 
+    @Override
+    public ExpirySystem getExpirySystem() {
+        return expirySystem;
+    }
+
     @Nonnull
     protected ExpirySystem createExpirySystem(MapContainer mapContainer) {
         return new ExpirySystem(this, mapContainer, mapServiceContext);
@@ -113,17 +118,24 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     @Override
     public boolean evictIfExpired(Data key, long now, boolean backup) {
-        if (isLocked(key)) {
+        if (!hasExpired(key, now, backup)) {
             return false;
         }
-        if (!isExpired(key, now, backup)) {
-            return false;
-        }
+        evictAndDoPostEvictionOps(key, backup);
+        return true;
+    }
+
+    @Override
+    public void evictAndDoPostEvictionOps(Data key, boolean backup) {
         Object value = evict(key, backup);
         if (!backup) {
             doPostEvictionOperations(key, value);
         }
-        return true;
+    }
+
+    @Override
+    public boolean hasExpired(Data key, long now, boolean backup) {
+        return !isLocked(key) && isExpired(key, now, backup);
     }
 
     @Override
@@ -160,8 +172,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             // it is expired according to idleness.
             expirySystem.accumulateOrSendExpiredKey(dataKey);
         }
-
-        expirySystem.informEvicted(dataKey);
     }
 
     @Override

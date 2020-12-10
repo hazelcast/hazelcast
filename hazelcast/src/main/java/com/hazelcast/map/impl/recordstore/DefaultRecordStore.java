@@ -157,12 +157,22 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Record putReplicatedRecord(Data dataKey, Record replicatedRecord, long nowInMillis,
+    public Record putReplicatedRecordLegacy(Data dataKey, Record replicatedRecord, long nowInMillis,
                                       boolean populateIndexes) {
         Record newRecord = createRecord(dataKey, replicatedRecord, nowInMillis);
         // TODO expiry info must be got from expiry system
+        storage.put(dataKey, newRecord);
         markRecordStoreExpirable(dataKey, replicatedRecord.getTtl(),
                 replicatedRecord.getMaxIdle(), nowInMillis);
+        mutationObserver.onReplicationPutRecord(dataKey, newRecord, populateIndexes);
+        updateStatsOnPut(replicatedRecord.getHits(), nowInMillis);
+        return newRecord;
+    }
+
+    @Override
+    public Record putReplicatedRecord(Data dataKey, Record replicatedRecord, long nowInMillis,
+                                      boolean populateIndexes) {
+        Record newRecord = createRecord(dataKey, replicatedRecord, nowInMillis);
         storage.put(dataKey, newRecord);
         mutationObserver.onReplicationPutRecord(dataKey, newRecord, populateIndexes);
         updateStatsOnPut(replicatedRecord.getHits(), nowInMillis);
@@ -458,6 +468,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } else {
             mutationObserver.onRemoveRecord(dataKey, record);
         }
+        informEvicted(dataKey);
         storage.removeRecord(dataKey, record);
     }
 
@@ -469,12 +480,19 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             value = record.getValue();
             mapDataStore.flush(key, value, backup);
             mutationObserver.onEvictRecord(key, record);
+            key = informEvicted(key);
             storage.removeRecord(key, record);
             if (!backup) {
                 mapServiceContext.interceptRemove(interceptorRegistry, value);
             }
         }
         return value;
+    }
+
+    private Data informEvicted(Data key) {
+        Data backingDataKeyFormat = storage.toBackingDataKeyFormat(key);
+        expirySystem.informEvicted(backingDataKeyFormat);
+        return backingDataKeyFormat;
     }
 
     @Override
@@ -495,6 +513,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return;
         }
         mutationObserver.onRemoveRecord(key, record);
+        informEvicted(key);
         storage.removeRecord(key, record);
         if (persistenceEnabledFor(provenance)) {
             mapDataStore.removeBackup(key, now, transactionId);
@@ -570,6 +589,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (record != null) {
                 onStore(record);
                 mutationObserver.onRemoveRecord(key, record);
+                informEvicted(key);
                 storage.removeRecord(key, record);
                 updateStatsOnRemove(now);
             }
@@ -947,6 +967,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 }
                 onStore(record);
                 mutationObserver.onRemoveRecord(key, record);
+                informEvicted(key);
                 storage.removeRecord(key, record);
                 return true;
             }
@@ -1091,6 +1112,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             onStore(record);
         }
         mutationObserver.onRemoveRecord(key, record);
+        informEvicted(key);
         storage.removeRecord(key, record);
         return oldValue;
     }
