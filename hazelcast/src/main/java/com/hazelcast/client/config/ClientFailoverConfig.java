@@ -38,6 +38,7 @@ import static com.hazelcast.client.config.ClientConnectionStrategyConfig.Reconne
  * <p>
  * The client configurations must be exactly the same except the following configuration options:
  * <ul>
+ * <li>{@code clusterName}</li>
  * <li>{@code SecurityConfig}</li>
  * <li>{@code NetworkConfig.Addresses}</li>
  * <li>{@code NetworkConfig.SocketInterceptorConfig}</li>
