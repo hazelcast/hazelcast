@@ -154,6 +154,45 @@ public class RoutingPolicyTest extends SimpleTestInClusterSupport {
         assertEquals(setOf(NUMBERS_HIGH), setOf(list1, list3));
     }
 
+    @Test
+    public void when_isolated_downstreamLowerThanUpstream() throws Throwable {
+        DAG dag = new DAG();
+        Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH);
+        Vertex consumer = consumer(1);
+
+        dag.vertex(producer)
+           .vertex(consumer)
+           .edge(between(producer, consumer)
+                   .isolated());
+
+        execute(dag);
+
+        List<Object> list = consumerSup.getListAt(0);
+        assertEquals(setOf(NUMBERS_LOW, NUMBERS_HIGH), setOf(list));
+    }
+
+    @Test
+    public void when_isolated_downstreamLowerThanUpstream_2() throws Throwable {
+
+        final List<Integer> numbersHighest = IntStream.range(8192, 16384).boxed().collect(toList());
+
+        DAG dag = new DAG();
+        Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH, numbersHighest);
+        Vertex consumer = consumer(2);
+
+        dag.vertex(producer)
+           .vertex(consumer)
+           .edge(between(producer, consumer)
+                   .isolated());
+
+        execute(dag);
+
+        List<Object> list1 = consumerSup.getListAt(0);
+        List<Object> list2 = consumerSup.getListAt(1);
+        assertEquals(setOf(NUMBERS_LOW, numbersHighest), setOf(list1));
+        assertEquals(setOf(NUMBERS_HIGH), setOf(list2));
+    }
+
     private void execute(DAG dag) throws Throwable {
         executeAndPeel(instance().newJob(dag));
     }
