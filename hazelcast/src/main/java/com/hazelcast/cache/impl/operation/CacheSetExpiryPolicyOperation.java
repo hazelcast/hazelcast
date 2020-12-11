@@ -111,4 +111,9 @@ public class CacheSetExpiryPolicyOperation extends CacheOperation
     public Operation getBackupOperation() {
         return new CacheSetExpiryPolicyBackupOperation(name, keys, expiryPolicy);
     }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }

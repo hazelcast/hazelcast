@@ -19,11 +19,11 @@ package com.hazelcast.query;
 import com.hazelcast.internal.serialization.BinaryInterface;
 
 /**
- * A {@link Predicate} that restricts the execution of a Predicate to a single Partition.
+ * A {@link Predicate} that restricts the execution of a {@link Predicate} to a single partition.
  *
  * This can help to speed up query execution since only a single instead of all partitions needs to be queried.
  *
- * This predicate can only be used as an outer predicate.
+ * This predicate only has effect if used as an outermost predicate.
  *
  * @param <K> type of the entry key
  * @param <V> type of the entry value
@@ -33,17 +33,15 @@ import com.hazelcast.internal.serialization.BinaryInterface;
 public interface PartitionPredicate<K, V> extends Predicate<K, V> {
 
     /**
-     * Returns the partition key that determines the partition the target {@link Predicate} is going to execute on.
+     * Returns the partition key that determines the partition the {@linkplain
+     * #getTarget() target} {@link Predicate} is going to execute on.
      *
-     * @return the partition ID
+     * @return the partition key
      */
     Object getPartitionKey();
 
     /**
      * Returns the target {@link Predicate}.
-     *
-     * @return the target {@link Predicate}.
      */
     Predicate<K, V> getTarget();
-
 }

@@ -112,4 +112,8 @@ public class CacheBackupEntryProcessorOperation
         }
     }
 
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }

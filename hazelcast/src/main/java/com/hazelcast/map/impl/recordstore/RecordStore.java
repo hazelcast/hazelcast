@@ -260,9 +260,6 @@ public interface RecordStore<R extends Record> {
      */
     Object putFromLoadBackup(Data key, Object value, long expirationTime);
 
-    boolean merge(MapMergeTypes<Object, Object> mergingEntry,
-                  SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy);
-
     /**
      * Merges the given {@link MapMergeTypes} via the given {@link SplitBrainMergePolicy}.
      *
@@ -412,6 +409,17 @@ public interface RecordStore<R extends Record> {
      * @return <code>true</code> if the record is expired, <code>false</code> otherwise.
      */
     boolean isExpired(R record, long now, boolean backup);
+
+    /**
+     * Checks whether a key has expired, when
+     * expired, key is removed from record-store,
+     * otherwise this method updates its access stats.
+     *
+     * @param key the key
+     * @return {@code true} if key has expired or
+     * does not exist, otherwise return {@code false}
+     */
+    boolean expireOrAccess(Data key);
 
     /**
      * Does post eviction operations like sending events

@@ -18,7 +18,11 @@ package com.hazelcast.internal.util;
 
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.function.Function;
+import java.util.function.Predicate;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Utility functions for working with {@link Iterable}
@@ -36,12 +40,16 @@ public final class IterableUtil {
         return iterator.hasNext() ? iterator.next() : defaultValue;
     }
 
-    /** Transform the Iterable by applying a function to each element  **/
+    /**
+     * Transform the Iterable by applying a function to each element
+     **/
     public static <T, R> Iterable<R> map(Iterable<T> iterable, Function<T, R> mapper) {
         return () -> map(iterable.iterator(), mapper);
     }
 
-    /** Transform the Iterator by applying a function to each element  **/
+    /**
+     * Transform the Iterator by applying a function to each element
+     **/
     public static <T, R> Iterator<R> map(Iterator<T> iterator, Function<T, R> mapper) {
         return new Iterator<R>() {
             @Override
@@ -59,6 +67,68 @@ public final class IterableUtil {
                 iterator.remove();
             }
         };
+    }
+
+    /**
+     * Lazily filters iterated elements.
+     *
+     * @return a new iterable object which
+     * has an iterator capable of filtering elements
+     */
+    public static <T> Iterable<T> filter(Iterable<T> iterable, Predicate<T> filter) {
+        Iterator<T> givenIterator = iterable.iterator();
+
+        @SuppressWarnings("checkstyle:anoninnerlength")
+        Iterator<T> filteringIterator = new Iterator<T>() {
+            private T next;
+
+            @Override
+            public boolean hasNext() {
+                if (next != null) {
+                    return true;
+                }
+
+                while (givenIterator.hasNext()) {
+                    T temp = givenIterator.next();
+                    if (filter.test(temp)) {
+                        next = temp;
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public T next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                T nextLocal = next;
+                next = null;
+                return nextLocal;
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+        return () -> filteringIterator;
+    }
+
+    /**
+     * @return size of iterable
+     */
+    public static int size(Iterable iterable) {
+        checkNotNull(iterable, "iterable cannot be null");
+
+        int size = 0;
+        Iterator iterator = iterable.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            size++;
+        }
+        return size;
     }
 
     public static <T, R> Iterator<R> limit(final Iterator<R> iterator, final int limit) {
@@ -83,9 +153,11 @@ public final class IterableUtil {
         };
     }
 
-    /** Return empty Iterable if argument is null **/
+    /**
+     * Return empty Iterable if argument is null
+     **/
     public static <T> Iterable<T> nullToEmpty(Iterable<T> iterable) {
-        return iterable == null ? Collections.<T>emptyList() : iterable;
+        return iterable == null ? Collections.emptyList() : iterable;
     }
 
 

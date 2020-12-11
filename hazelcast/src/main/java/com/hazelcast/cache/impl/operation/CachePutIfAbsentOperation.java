@@ -99,4 +99,8 @@ public class CachePutIfAbsentOperation extends MutatingCacheOperation {
         return CacheDataSerializerHook.PUT_IF_ABSENT;
     }
 
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }

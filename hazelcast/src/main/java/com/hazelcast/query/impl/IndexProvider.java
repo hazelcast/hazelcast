@@ -18,7 +18,6 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.query.impl.getters.Extractors;
 
@@ -48,7 +47,5 @@ public interface IndexProvider {
             InternalSerializationService ss,
             IndexCopyBehavior copyBehavior,
             PerIndexStats stats,
-            StoreAdapter storeAdapter,
-            int partitionCount
-    );
+            int partitionCount);
 }

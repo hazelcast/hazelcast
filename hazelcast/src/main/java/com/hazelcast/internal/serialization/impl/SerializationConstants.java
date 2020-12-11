@@ -127,10 +127,10 @@ public final class SerializationConstants {
 
     public static final int JAVA_DEFAULT_TYPE_PRIORITY_QUEUE = -49;
 
-    // NUMBER OF CONSTANT SERIALIZERS...
-    public static final int CONSTANT_SERIALIZERS_LENGTH = 50;
+    public static final int JAVA_DEFAULT_TYPE_OPTIONAL = -50;
 
-    public static final int JAVA_DEFAULT_TYPE_ENUM = -50;
+    // NUMBER OF CONSTANT SERIALIZERS...
+    public static final int CONSTANT_SERIALIZERS_LENGTH = 51;
 
     // ------------------------------------------------------------
     // JAVA SERIALIZATION

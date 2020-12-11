@@ -103,7 +103,6 @@ public final class FailoverClientConfigSupport {
         for (ClientConfig alternativeClientConfig : alternativeClientConfigs.subList(1, alternativeClientConfigs.size())) {
             checkValidAlternative(mainConfig, alternativeClientConfig);
         }
-
     }
 
     private static void throwInvalidConfigurationException(String rootClusterName, String clusterName, String configName) {
@@ -225,7 +224,7 @@ public final class FailoverClientConfigSupport {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:outboundPortDefinitions");
         }
         if (notEqual(mainNetworkConfig.getOutboundPorts(), alternativeNetworkConfig.getOutboundPorts())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:smartRouting");
+            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:outboundPorts");
         }
         if (notEqual(mainNetworkConfig.getClientIcmpPingConfig(), alternativeNetworkConfig.getClientIcmpPingConfig())) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:clientIcmp");

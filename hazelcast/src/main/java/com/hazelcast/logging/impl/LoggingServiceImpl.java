@@ -16,9 +16,9 @@
 
 package com.hazelcast.logging.impl;
 
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.JetBuildInfo;
-import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.logging.AbstractLogger;
 import com.hazelcast.logging.ILogger;
@@ -60,7 +60,7 @@ public class LoggingServiceImpl implements LoggingService {
         this.detailsEnabled = detailsEnabled;
         JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
         versionMessage = "[" + clusterName + "] ["
-                + (jetBuildInfo != null ?  jetBuildInfo.getVersion() : buildInfo.getVersion()) + "] ";
+                + (jetBuildInfo != null ? jetBuildInfo.getVersion() : buildInfo.getVersion()) + "] ";
     }
 
     public void setThisMember(MemberImpl thisMember) {

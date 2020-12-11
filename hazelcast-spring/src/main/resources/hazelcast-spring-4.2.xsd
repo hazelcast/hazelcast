@@ -4593,7 +4593,7 @@
             </xs:element>
             <xs:element name="socket-options" type="endpoint-socket-options" minOccurs="0"/>
         </xs:all>
-        <xs:attribute name="name" type="xs:string" use="optional" default=""/>
+        <xs:attribute name="name" type="xs:string" use="optional"/>
         <xs:attribute name="public-address" type="xs:string"/>
         <xs:attribute name="port" type="xs:string" use="required"/>
         <xs:attribute name="port-auto-increment" type="xs:string" default="true"/>

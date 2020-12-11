@@ -24,6 +24,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -37,8 +38,7 @@ public class IterableUtilTest {
     private List<Integer> numbers = asList(1, 2, 3);
 
     @Test
-    public void testElementsConverted_whenIterableMapped() throws Exception {
-
+    public void testElementsConverted_whenIterableMapped() {
         Iterable<String> strings = IterableUtil.map(numbers, Object::toString);
 
         Iterator<String> iter = strings.iterator();
@@ -48,7 +48,7 @@ public class IterableUtilTest {
     }
 
     @Test
-    public void testUpToNElement_whenIteratorLimited() throws Exception {
+    public void testUpToNElement_whenIteratorLimited() {
         Iterator<Integer> limitedIterator = IterableUtil.limit(numbers.iterator(), 2);
 
         assertEquals(Integer.valueOf(1), limitedIterator.next());
@@ -57,8 +57,64 @@ public class IterableUtilTest {
     }
 
     @Test
-    public void testIterableIsEmpty_whenNullUsed() throws Exception {
+    public void testIterableIsEmpty_whenNullUsed() {
         assertEquals(emptyList(), IterableUtil.nullToEmpty(null));
         assertEquals(numbers, IterableUtil.nullToEmpty(numbers));
+    }
+
+    @Test
+    public void testIterableFilter_when_filter_true() {
+        Iterable<Integer> filtered = IterableUtil.filter(numbers, integer -> true);
+
+        assertEquals(numbers.size(), IterableUtil.size(filtered));
+    }
+
+    @Test
+    public void testIterableFilter_when_filter_false() {
+        Iterable<Integer> filtered = IterableUtil.filter(numbers, integer -> false);
+
+        assertEquals(0, IterableUtil.size(filtered));
+    }
+
+    @Test
+    public void testIterableFilter_calling_iterator_next_advances_state() {
+        Iterable<Integer> filtered = IterableUtil.filter(numbers, integer -> true);
+        Iterator<Integer> iterator = filtered.iterator();
+        for (int i = 0; i < numbers.size(); i++) {
+            iterator.next();
+        }
+
+        assertEquals(0, IterableUtil.size(filtered));
+    }
+
+    @Test
+    public void testIterableFilter_calling_iterator_hasNext_not_advances_state_with_false_predicate() {
+        Iterable<Integer> filtered = IterableUtil.filter(numbers, integer -> false);
+        Iterator<Integer> iterator = filtered.iterator();
+        for (int i = 0; i < 2 * numbers.size(); i++) {
+            iterator.hasNext();
+        }
+
+        assertEquals(0, IterableUtil.size(filtered));
+    }
+
+    @Test
+    public void testIterableFilter_calling_iterator_hasNext_not_advances_state_with_true_predicate() {
+        Iterable<Integer> filtered = IterableUtil.filter(numbers, integer -> true);
+        Iterator<Integer> iterator = filtered.iterator();
+        for (int i = 0; i < 2 * numbers.size(); i++) {
+            iterator.hasNext();
+        }
+
+        assertEquals(numbers.size(), IterableUtil.size(filtered));
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void testIterableFilter_calling_iterator_next_more_than_number_of_elements_time() {
+        Iterable<Integer> filtered = IterableUtil.filter(numbers, integer -> true);
+        Iterator<Integer> iterator = filtered.iterator();
+        for (int i = 0; i < numbers.size() + 1; i++) {
+            iterator.next();
+        }
     }
 }

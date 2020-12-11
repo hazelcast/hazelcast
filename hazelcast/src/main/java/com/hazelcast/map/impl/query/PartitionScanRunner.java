@@ -28,11 +28,9 @@ import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Metadata;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
@@ -87,7 +85,6 @@ public class PartitionScanRunner {
         boolean nativeMemory = recordStore.getInMemoryFormat() == InMemoryFormat.NATIVE;
         boolean useCachedValues = isUseCachedDeserializedValuesEnabled(mapContainer, partitionId);
         Extractors extractors = mapServiceContext.getExtractors(mapName);
-        StoreAdapter storeAdapter = new RecordStoreAdapter(recordStore);
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry =
                 pagingPredicate == null ? null : pagingPredicate.getNearestAnchorEntry();
 
@@ -104,7 +101,6 @@ public class PartitionScanRunner {
 
                 queryEntry.init(ss, key, value, extractors);
                 queryEntry.setRecord(record);
-                queryEntry.setStoreAdapter(storeAdapter);
                 queryEntry.setMetadata(PartitionScanRunner.this.getMetadataFromRecord(recordStore, key, record));
 
                 if (predicate.apply(queryEntry)

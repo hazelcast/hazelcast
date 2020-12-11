@@ -49,11 +49,28 @@ public abstract class OperationRunner {
 
     public abstract long executedOperationsCount();
 
-    public abstract void run(Packet packet) throws Exception;
+    /**
+     * Runs the provided packet.
+     *
+     * @param packet the packet to execute
+     * @return {@code true} if this packet was not executed and should be retried at a later time,
+     * {@code false} if the packet should not be retried, either because it
+     * timed out or has run successfully
+     * @throws Exception if there was an exception raised while processing the packet
+     */
+    public abstract boolean run(Packet packet) throws Exception;
 
     public abstract void run(Runnable task);
 
-    public abstract void run(Operation task);
+    /**
+     * Runs the provided operation.
+     *
+     * @param task the operation to execute
+     * @return {@code true} if this operation was not executed and should be retried at a later time,
+     * {@code false} if the operation should not be retried, either because it
+     * timed out or has run successfully
+     */
+    public abstract boolean run(Operation task);
 
     /**
      * Returns the current task that is executing. This value could be null
@@ -146,8 +163,13 @@ public abstract class OperationRunner {
      * @throws Exception when one of the operation phases fails with an exception
      */
     public static void runDirect(Operation operation) throws Exception {
-        operation.beforeRun();
-        operation.call();
-        operation.afterRun();
+        try {
+            operation.pushThreadContext();
+            operation.beforeRun();
+            operation.call();
+            operation.afterRun();
+        } finally {
+            operation.popThreadContext();
+        }
     }
 }
