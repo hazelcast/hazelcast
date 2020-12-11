@@ -20,13 +20,18 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.defaultserializers.ConstantSerializers.IntegerSerializer;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.io.IOException;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -36,40 +41,82 @@ public class CustomSerializationOverrideDefaultTest {
 
 
   @Test(expected = IllegalArgumentException.class)
-  public void testSerializerDefault() {
-    testSerializer(false);
+  public void testSerializerDefault_canNotOverride() {
+    testUsageOfCustomSerializer(false);
   }
 
   @Test
-  public void testSerializerDefaultOverridden() {
-    testSerializer(true);
+  public void testSerializerDefault_canOverride() {
+    testUsageOfCustomSerializer(true);
   }
 
   @Test
-  public void testSerializerDefaultOverridden_systemPropertyTrue() {
+  public void testSerializerDefaultOverridden_systemPropertyTrue_canOverride() {
     ClusterProperty.SERIALIZATION_ALLOW_OVERRIDE_DEFAULT_SERIALIZERS.setSystemProperty("true");
-    testSerializer(false);
+    testUsageOfCustomSerializer(false);
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testSerializerDefaultOverridden_systemPropertyFalse() {
+  public void testSerializerDefaultOverridden_systemPropertyFalse_canNotOverride() {
     ClusterProperty.SERIALIZATION_ALLOW_OVERRIDE_DEFAULT_SERIALIZERS.setSystemProperty("false");
-    testSerializer(true);
+    testUsageOfCustomSerializer(true);
   }
 
-  private void testSerializer(final boolean allowOverrideDefaultSerializers) {
+  @Test
+  public void testSerializerDefaultPreserved_allowOverrideSetToTrue() {
+    testUsageOfEmbeddedSerializer(true);
+  }
+
+  @Test
+  public void testSerializerDefaultPreserved_allowOverrideSetToFalse() {
+    testUsageOfEmbeddedSerializer(false);
+  }
+
+  private void testUsageOfEmbeddedSerializer(final boolean allowOverride) {
+    final SerializationConfig config = new SerializationConfig().setAllowOverrideDefaultSerializers(allowOverride);
+    final SerializationService ss = new DefaultSerializationServiceBuilder().setConfig(config).build();
+
+    final Optional<Integer> answer = Optional.of(42);
+    final Data d = ss.toData(answer);
+    final Optional<Integer> deserializedAnswer = ss.toObject(d);
+
+    assertEquals(answer, deserializedAnswer);
+  }
+
+
+  private void testUsageOfCustomSerializer(final boolean allowOverrideDefaultSerializers) {
     final SerializationConfig config = new SerializationConfig().setAllowOverrideDefaultSerializers(allowOverrideDefaultSerializers);
     final SerializerConfig sc = new SerializerConfig()
-      .setImplementation(new IntegerSerializer())
-      .setTypeClass(Integer.class);
+      .setImplementation(new TestOptionalSerializer())
+      .setTypeClass(Optional.class);
     config.addSerializerConfig(sc);
 
     final SerializationService ss = new DefaultSerializationServiceBuilder().setConfig(config).build();
 
-    final Integer answer = 42;
+    final Optional<Integer> answer = Optional.of(42);
     final Data d = ss.toData(answer);
-    final Integer deserializedAnswer = ss.toObject(d);
+    final Optional<Integer> deserializedAnswer = ss.toObject(d);
 
-    assertEquals(answer, deserializedAnswer);
+    assertEquals(Optional.of(Integer.MAX_VALUE), deserializedAnswer);
+  }
+
+
+  private static class TestOptionalSerializer implements StreamSerializer<Optional> {
+
+    @Override
+    public int getTypeId() {
+      return 9000;
+    }
+
+    @Override
+    public void write(final ObjectDataOutput out, final Optional object) throws IOException {
+      // dummy code
+      out.writeObject(object.toString());
+    }
+
+    @Override
+    public Optional read(final ObjectDataInput in) throws IOException {
+      return Optional.of(Integer.MAX_VALUE);
+    }
   }
 }
