@@ -31,10 +31,26 @@ import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffix
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 
 /**
- * Config class to configure multiple client configs to be used by single client instance
- * The client will try to connect them in given order.
- * When the connected cluster fails or the client blacklisted from the cluster via the management center, the client will
+ * Config class to configure multiple client configs to be used by single client instance.
+ * The client will try to connect them in given order. When the connected cluster fails
+ * or the client blacklisted from the cluster via the Management Center, the client will
  * search for alternative clusters with given configs.
+ * <p>
+ * The client configurations must be exactly the same except the following configuration options:
+ * <ul>
+ * <li>{@code clusterName}</li>
+ * <li>{@code SecurityConfig}</li>
+ * <li>{@code NetworkConfig.Addresses}</li>
+ * <li>{@code NetworkConfig.SocketInterceptorConfig}</li>
+ * <li>{@code NetworkConfig.SSLConfig}</li>
+ * <li>{@code NetworkConfig.AwsConfig}</li>
+ * <li>{@code NetworkConfig.GcpConfig}</li>
+ * <li>{@code NetworkConfig.AzureConfig}</li>
+ * <li>{@code NetworkConfig.KubernetesConfig}</li>
+ * <li>{@code NetworkConfig.EurekaConfig}</li>
+ * <li>{@code NetworkConfig.CloudConfig}</li>
+ * <li>{@code NetworkConfig.DiscoveryConfig}</li>
+ * </ul>
  */
 public class ClientFailoverConfig {
 
@@ -42,7 +58,6 @@ public class ClientFailoverConfig {
     private List<ClientConfig> clientConfigs = new LinkedList<>();
 
     public ClientFailoverConfig() {
-
     }
 
     /**
@@ -79,27 +94,70 @@ public class ClientFailoverConfig {
         }
     }
 
+    /**
+     * Adds the client config to the end of the alternative client configurations list.
+     *
+     * @param clientConfig the ClientConfig to add
+     * @return this for chaining
+     */
     public ClientFailoverConfig addClientConfig(ClientConfig clientConfig) {
         validateClientConfig(clientConfig);
         clientConfigs.add(clientConfig);
         return this;
     }
 
+    /**
+     * Sets the count of attempts to connect to a cluster. For each alternative cluster,
+     * the client will try to connect to the cluster respecting related ConnectionRetryConfig.
+     * <p>
+     * When the client can not connect a cluster, it will try to connect tryCount times going
+     * over the alternative client configs in a round-robin fashion. This is triggered at the
+     * start and also when the client disconnects from the cluster and can not connect back
+     * to it by exhausting attempts described in ConnectionRetryConfig. In that case,
+     * the client will continue from where it is left off in ClientConfig lists, and try
+     * the next one again in round-robin tryCount times.
+     * <p>
+     * For example, if two alternative clusters are given in the ClientConfig list and
+     * the tryCount is set as 4, the maximum number of subsequent connection attempts done
+     * by the client is 4 x 2 = 8.
+     *
+     * @param tryCount the count of attempts
+     * @return this for chaining
+     */
     public ClientFailoverConfig setTryCount(int tryCount) {
         this.tryCount = tryCount;
         return this;
     }
 
+    /**
+     * Gets the configured list of alternative client configurations.
+     *
+     * @return the list of configured ClientConfigs
+     */
     public List<ClientConfig> getClientConfigs() {
         return clientConfigs;
     }
 
+    /**
+     * Sets the configured list of alternative client configurations.
+     * <p>
+     * Note: this method replaces previously configured alternative client
+     * configurations with the given list.
+     *
+     * @param clientConfigs the list of ClientConfigs to be used
+     * @return this for chaining
+     */
     public ClientFailoverConfig setClientConfigs(List<ClientConfig> clientConfigs) {
         clientConfigs.forEach(this::validateClientConfig);
         this.clientConfigs = clientConfigs;
         return this;
     }
 
+    /**
+     * Returns the count of attempts to connect to a cluster.
+     *
+     * @return the count of attempts
+     */
     public int getTryCount() {
         return tryCount;
     }

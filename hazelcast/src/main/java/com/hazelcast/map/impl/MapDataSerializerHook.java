@@ -130,7 +130,6 @@ import com.hazelcast.map.impl.query.QueryPartitionOperation;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
-import com.hazelcast.map.impl.query.Target;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.accumulator.ConsumeAccumulatorOperation;
 import com.hazelcast.map.impl.querycache.subscriber.operation.DestroyQueryCacheOperation;
@@ -269,7 +268,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int WRITE_BEHIND_STATE_HOLDER = 104;
     public static final int AGGREGATION_RESULT = 105;
     public static final int QUERY = 106;
-    public static final int TARGET = 107;
     public static final int MAP_INVALIDATION_METADATA = 108;
     public static final int MAP_INVALIDATION_METADATA_RESPONSE = 109;
     public static final int MAP_NEAR_CACHE_STATE_HOLDER = 110;
@@ -432,7 +430,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[WRITE_BEHIND_STATE_HOLDER] = arg -> new WriteBehindStateHolder();
         constructors[AGGREGATION_RESULT] = arg -> new AggregationResult();
         constructors[QUERY] = arg -> new Query();
-        constructors[TARGET] = arg -> new Target();
         constructors[MAP_INVALIDATION_METADATA] = arg -> new MapGetInvalidationMetaDataOperation();
         constructors[MAP_INVALIDATION_METADATA_RESPONSE] = arg -> new MapGetInvalidationMetaDataOperation.MetaDataResponse();
         constructors[MAP_NEAR_CACHE_STATE_HOLDER] = arg -> new MapNearCacheStateHolder();

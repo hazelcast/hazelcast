@@ -126,4 +126,8 @@ public class CachePutAllOperation extends CacheOperation
         }
     }
 
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }

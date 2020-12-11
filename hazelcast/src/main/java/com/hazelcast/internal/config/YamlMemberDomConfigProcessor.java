@@ -245,8 +245,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleQueue(Node node) {
         for (Node queueNode : childElements(node)) {
-            QueueConfig queueConfig = new QueueConfig();
-            queueConfig.setName(queueNode.getNodeName());
+            QueueConfig queueConfig = config.getQueueConfig(queueNode.getNodeName());
             handleQueueNode(queueNode, queueConfig);
         }
     }
@@ -254,8 +253,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleList(Node node) {
         for (Node listNode : childElements(node)) {
-            ListConfig listConfig = new ListConfig();
-            listConfig.setName(listNode.getNodeName());
+            ListConfig listConfig = config.getListConfig(listNode.getNodeName());
             handleListNode(listNode, listConfig);
         }
     }
@@ -263,8 +261,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleSet(Node node) {
         for (Node setNode : childElements(node)) {
-            SetConfig setConfig = new SetConfig();
-            setConfig.setName(setNode.getNodeName());
+            SetConfig setConfig = config.getSetConfig(setNode.getNodeName());
             handleSetNode(setNode, setConfig);
         }
     }
@@ -299,8 +296,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleMap(Node parentNode) throws Exception {
         for (Node mapNode : childElements(parentNode)) {
-            MapConfig mapConfig = new MapConfig();
-            mapConfig.setName(mapNode.getNodeName());
+            MapConfig mapConfig = config.getMapConfig(mapNode.getNodeName());
             handleMapNode(mapNode, mapConfig);
         }
     }
@@ -380,8 +376,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleMultiMap(Node node) {
         for (Node multiMapNode : childElements(node)) {
-            MultiMapConfig multiMapConfig = new MultiMapConfig();
-            multiMapConfig.setName(multiMapNode.getNodeName());
+            MultiMapConfig multiMapConfig = config.getMultiMapConfig(multiMapNode.getNodeName());
             handleMultiMapNode(multiMapNode, multiMapConfig);
         }
     }
@@ -389,8 +384,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleReplicatedMap(Node node) {
         for (Node replicatedMapNode : childElements(node)) {
-            ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig();
-            replicatedMapConfig.setName(replicatedMapNode.getNodeName());
+            ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(replicatedMapNode.getNodeName());
             handleReplicatedMapNode(replicatedMapNode, replicatedMapConfig);
         }
     }

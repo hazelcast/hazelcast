@@ -19,9 +19,9 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.BackupAwareEntryProcessor;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.cache.processor.EntryProcessor;
@@ -136,4 +136,8 @@ public class CacheEntryProcessorOperation
         }
     }
 
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }

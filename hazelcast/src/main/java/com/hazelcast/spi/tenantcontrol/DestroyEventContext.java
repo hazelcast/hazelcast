@@ -20,33 +20,12 @@ import com.hazelcast.spi.annotation.Beta;
 
 /**
  * Hook to decouple Hazelcast object from the tenant
- * @param <T> context type
  */
 @Beta
-public interface DestroyEventContext<T> {
-
+@FunctionalInterface
+public interface DestroyEventContext {
     /**
      * Called to decouple Hazelcast object from the tenant
-     *
-     * @param context to use to destroy the Hazelcast object
      */
-    void destroy(T context);
-
-    /**
-     * @return context type so the tenant control implementor knows
-     * what context to send to the destroy() method
-     */
-    Class<? extends T> getContextType();
-
-    /**
-     *
-     * @return the name of the distributed object
-     */
-    String getDistributedObjectName();
-
-    /**
-     *
-     * @return the service name
-     */
-    String getServiceName();
+    void tenantUnavailable();
 }

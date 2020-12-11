@@ -25,27 +25,26 @@ import com.hazelcast.spring.context.SpringAware;
 import javax.annotation.Resource;
 import javax.cache.configuration.Factory;
 import javax.cache.integration.CacheWriter;
+import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 @SpringAware
-public class JCacheCacheWriterFactory
-        implements Factory<CacheWriter>, HazelcastInstanceAware, NodeAware {
+public class JCacheCacheWriterFactory<K, V>
+        implements Factory<CacheWriter<K, V>>, HazelcastInstanceAware, NodeAware, Serializable {
 
     public static final AtomicBoolean HAZELCAST_INSTANCE_INJECTED = new AtomicBoolean();
     public static final AtomicBoolean NODE_INJECTED = new AtomicBoolean();
+    public static final AtomicReference<IJCacheDummyBean> INJECTED_DUMMY_BEAN = new AtomicReference<>();
 
-    public static JCacheCacheWriterFactory instance;
-
-    @Resource(name = "dummy")
     private IJCacheDummyBean dummyBean;
 
     public JCacheCacheWriterFactory() {
-        instance = this;
     }
 
     @Override
-    public CacheWriter create() {
-        return new JCacheCacheWriter();
+    public CacheWriter<K, V> create() {
+        return new JCacheCacheWriter<>();
     }
 
     @Override
@@ -62,7 +61,9 @@ public class JCacheCacheWriterFactory
         return dummyBean;
     }
 
+    @Resource(name = "dummy")
     public void setDummyBean(IJCacheDummyBean dummyBean) {
+        INJECTED_DUMMY_BEAN.set(dummyBean);
         this.dummyBean = dummyBean;
     }
 }

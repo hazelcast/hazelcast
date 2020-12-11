@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.query.Predicate;
@@ -122,7 +123,7 @@ public class QueryEngineImplTest extends HazelcastTestSupport {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(ENTRY).build();
 
-        QueryResult result = queryEngine.execute(query, createPartitionTarget(partitionId));
+        QueryResult result = queryEngine.execute(query, createPartitionTarget(new PartitionIdSet(271, partitionId)));
 
         assertEquals(1, result.size());
         assertEquals(key, toObject(((Map.Entry) result.iterator().next()).getKey()));

@@ -35,6 +35,7 @@ import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.Optional;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -44,6 +45,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.J
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_CLASS;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_DATE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_OPTIONAL;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE;
 import static com.hazelcast.internal.nio.IOUtil.newObjectInputStream;
 import static java.lang.Math.max;
@@ -294,6 +296,34 @@ public final class JavaDefaultSerializers {
         @Override
         public void write(final ObjectDataOutput out, final Class obj) throws IOException {
             out.writeUTF(obj.getName());
+        }
+    }
+
+    public static final class OptionalSerializer extends SingletonSerializer<Optional> {
+
+        @Override
+        public int getTypeId() {
+            return JAVA_DEFAULT_TYPE_OPTIONAL;
+        }
+
+        @Override
+        public Optional read(final ObjectDataInput in) throws IOException {
+            final boolean present = in.readBoolean();
+            if (present) {
+                return Optional.of(in.readObject());
+            }
+
+            return Optional.empty();
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final Optional obj) throws IOException {
+            if (obj.isPresent()) {
+                out.writeBoolean(true);
+                out.writeObject(obj.get());
+            } else {
+                out.writeBoolean(false);
+            }
         }
     }
 

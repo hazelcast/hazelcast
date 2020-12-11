@@ -185,4 +185,9 @@ public class CacheLoadAllOperation
             }
         }
     }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }

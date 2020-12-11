@@ -95,4 +95,9 @@ public class CacheSetExpiryPolicyBackupOperation
         expiryPolicy = IOUtil.readData(in);
 
     }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }
