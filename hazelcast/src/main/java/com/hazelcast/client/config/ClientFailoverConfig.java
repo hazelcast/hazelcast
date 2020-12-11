@@ -106,13 +106,21 @@ public class ClientFailoverConfig {
     }
 
     /**
-     * Sets the count of connection retries by the client to the alternative clusters.
+     * Sets the count of attempts to connect to a cluster. For each alternative cluster,
+     * the client will try to connect to the cluster respecting related ConnectionRetryConfig.
      * <p>
-     * When this value is reached and the client still could not connect to a cluster,
-     * the client shuts down. Note that this value applies to the alternative clusters
-     * whose configurations are provided with the client element.
+     * When the client can not connect a cluster, it will try to connect tryCount times going
+     * over the alternative client configs in a round-robin fashion. This is triggered at the
+     * start and also when the client disconnects from the cluster and can not connect back
+     * to it by exhausting attempts described in ConnectionRetryConfig. In that case,
+     * the client will continue from where it is left off in ClientConfig lists, and try
+     * the next one again in round-robin tryCount times.
+     * <p>
+     * For example, if two alternative clusters are given in the ClientConfig list and
+     * the tryCount is set as 4, the maximum number of subsequent connection attempts done
+     * by the client is 4 x 2 = 8.
      *
-     * @param tryCount the number of attempts
+     * @param tryCount the count of attempts
      * @return this for chaining
      */
     public ClientFailoverConfig setTryCount(int tryCount) {
@@ -145,9 +153,9 @@ public class ClientFailoverConfig {
     }
 
     /**
-     * Returns the count of connection retries by the client to the alternative clusters.
+     * Returns the count of attempts to connect to a cluster.
      *
-     * @return the count of connection retries
+     * @return the count of attempts
      */
     public int getTryCount() {
         return tryCount;
