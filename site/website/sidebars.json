@@ -48,6 +48,7 @@
       "sql/ddl",
       "sql/job-management",
       "sql/imap-connector",
+      "sql/file-connector",
       "sql/kafka-connector"
     ],
     "How-To Guides": [

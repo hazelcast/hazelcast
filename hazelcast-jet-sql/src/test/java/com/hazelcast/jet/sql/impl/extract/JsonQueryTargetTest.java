@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.extract;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.TreeNode;
+import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import junitparams.JUnitParamsRunner;
@@ -73,8 +73,9 @@ public class JsonQueryTargetTest {
                 + ", \"object\": {}"
                 + "}";
         return new Object[]{
+                new Object[]{json},
                 new Object[]{json.getBytes(StandardCharsets.UTF_8)},
-                new Object[]{new ObjectMapper().readTree(json)}
+                new Object[]{JsonUtil.treeFrom(json)}
         };
     }
 
@@ -102,7 +103,7 @@ public class JsonQueryTargetTest {
 
         target.setTarget(value);
 
-        assertThat(topExtractor.get()).isInstanceOf(JsonNode.class);
+        assertThat(topExtractor.get()).isInstanceOf(TreeNode.class);
         assertThat(nonExistingExtractor.get()).isNull();
         assertThat(stringExtractor.get()).isEqualTo("string");
         assertThat(booleanExtractor.get()).isEqualTo(true);

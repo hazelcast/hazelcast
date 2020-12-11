@@ -16,14 +16,17 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.pipeline.file.impl.FileProcessorMetaSupplier;
+import com.hazelcast.jet.pipeline.file.impl.FileTraverser;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -33,10 +36,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.Traversers.traverseIterator;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 /**
  * Private API, use {@link SourceProcessors#readFilesP}.
@@ -54,28 +62,43 @@ public final class ReadFilesP<T> extends AbstractProcessor {
 
     private static final int DEFAULT_LOCAL_PARALLELISM = 4;
 
-    private transient ILogger logger;
-
-    private final Path directory;
+    private final String directory;
     private final String glob;
     private final boolean sharedFileSystem;
     private final FunctionEx<? super Path, ? extends Stream<T>> readFileFn;
 
-    private int processorIndex;
-    private int parallelism;
-    private DirectoryStream<Path> directoryStream;
-    private Traverser<? extends T> outputTraverser;
-    private Stream<T> currentStream;
+    private LocalFileTraverser<T> traverser;
 
     private ReadFilesP(
             @Nonnull String directory,
-            @Nonnull String glob, boolean sharedFileSystem,
+            @Nonnull String glob,
+            boolean sharedFileSystem,
             @Nonnull FunctionEx<? super Path, ? extends Stream<T>> readFileFn
     ) {
-        this.directory = Paths.get(directory);
+        this.directory = directory;
         this.glob = glob;
-        this.readFileFn = readFileFn;
         this.sharedFileSystem = sharedFileSystem;
+        this.readFileFn = readFileFn;
+    }
+
+    @Override
+    protected void init(@Nonnull Context context) {
+        ILogger logger = context.logger();
+        int processorIndex = sharedFileSystem ? context.globalProcessorIndex() : context.localProcessorIndex();
+        int parallelism = sharedFileSystem ? context.totalParallelism() : context.localParallelism();
+
+        traverser = new LocalFileTraverser<>(
+                logger,
+                directory,
+                glob,
+                path -> shouldProcessEvent(path, parallelism, processorIndex),
+                readFileFn
+        );
+    }
+
+    private static boolean shouldProcessEvent(Path path, int parallelism, int processorIndex) {
+        int hashCode = path.hashCode();
+        return ((hashCode & Integer.MAX_VALUE) % parallelism) == processorIndex;
     }
 
     @Override
@@ -84,68 +107,14 @@ public final class ReadFilesP<T> extends AbstractProcessor {
     }
 
     @Override
-    protected void init(@Nonnull Context context) throws Exception {
-        logger = context.logger();
-        processorIndex = sharedFileSystem ? context.globalProcessorIndex() : context.localProcessorIndex();
-        parallelism = sharedFileSystem ? context.totalParallelism() : context.localParallelism();
-
-        outputTraverser = Traversers.traverseIterator(pathIterator())
-                                    .filter(this::shouldProcessEvent)
-                                    .flatMap(this::processFile);
-    }
-
-    @Nonnull
-    private Iterator<Path> pathIterator() throws IOException {
-        if (directory.toFile().exists()) {
-            directoryStream = Files.newDirectoryStream(directory, glob);
-            return directoryStream.iterator();
-        } else {
-            logger.fine("The directory " + directory + " does not exists. This processor will emit 0 items.");
-            return Collections.emptyIterator();
-        }
-    }
-
-    @Override
     public boolean complete() {
-        return emitFromTraverser(outputTraverser);
-    }
-
-    private boolean shouldProcessEvent(Path file) {
-        if (Files.isDirectory(file)) {
-            return false;
-        }
-        int hashCode = file.hashCode();
-        return ((hashCode & Integer.MAX_VALUE) % parallelism) == processorIndex;
-    }
-
-    private Traverser<? extends T> processFile(Path file) {
-        if (getLogger().isFinestEnabled()) {
-            getLogger().finest("Processing file " + file);
-        }
-        assert currentStream == null : "currentStream != null";
-        currentStream = readFileFn.apply(file);
-        return traverseStream(currentStream)
-                .onFirstNull(() -> {
-                    currentStream.close();
-                    currentStream = null;
-                });
+        return emitFromTraverser(traverser);
     }
 
     @Override
     public void close() throws IOException {
-        IOException ex = null;
-        if (directoryStream != null) {
-            try {
-                directoryStream.close();
-            } catch (IOException e) {
-                ex = e;
-            }
-        }
-        if (currentStream != null) {
-            currentStream.close();
-        }
-        if (ex != null) {
-            throw ex;
+        if (traverser != null) {
+            traverser.close();
         }
     }
 
@@ -160,24 +129,120 @@ public final class ReadFilesP<T> extends AbstractProcessor {
     ) {
         checkSerializable(readFileFn, "readFileFn");
 
-        return ProcessorMetaSupplier.of(DEFAULT_LOCAL_PARALLELISM, () -> new ReadFilesP<>(
-                directory, glob, sharedFileSystem, readFileFn)
-        );
+        return new MetaSupplier<>(DEFAULT_LOCAL_PARALLELISM, directory, glob, sharedFileSystem, readFileFn);
     }
 
-    /**
-     * Private API.
-     */
-    public static <T> Processor processor(
-            @Nonnull String directory,
-            @Nonnull String glob,
-            boolean sharedFileSystem,
-            @Nonnull FunctionEx<? super Path, ? extends Stream<T>> readFileFn
-    ) {
-        checkSerializable(readFileFn, "readFileFn");
+    private static final class MetaSupplier<T> implements FileProcessorMetaSupplier<T> {
 
-        return new ReadFilesP<>(
-                directory, glob, sharedFileSystem, readFileFn
-        );
+        private static final ILogger LOGGER = Logger.getLogger(MetaSupplier.class);
+
+        private final int localParallelism;
+        private final String directory;
+        private final String glob;
+        private final boolean sharedFileSystem;
+        private final FunctionEx<? super Path, ? extends Stream<T>> readFileFn;
+
+        private MetaSupplier(
+                int localParallelism,
+                String directory,
+                String glob,
+                boolean sharedFileSystem,
+                FunctionEx<? super Path, ? extends Stream<T>> readFileFn
+        ) {
+            this.localParallelism = localParallelism;
+            this.directory = directory;
+            this.glob = glob;
+            this.sharedFileSystem = sharedFileSystem;
+            this.readFileFn = readFileFn;
+        }
+
+        @Nonnull
+        @Override
+        public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            return address -> ProcessorSupplier.of(() -> new ReadFilesP<>(directory, glob, sharedFileSystem, readFileFn));
+        }
+
+        @Override
+        public int preferredLocalParallelism() {
+            return localParallelism;
+        }
+
+        @Override
+        public FileTraverser<T> traverser() {
+            return new LocalFileTraverser<>(LOGGER, directory, glob, path -> true, readFileFn);
+        }
+    }
+
+    private static final class LocalFileTraverser<T> implements FileTraverser<T> {
+
+        private final ILogger logger;
+        private final Path directory;
+        private final String glob;
+        private final FunctionEx<? super Path, ? extends Stream<T>> readFileFn;
+        private final Traverser<T> delegate;
+
+        private DirectoryStream<Path> directoryStream;
+        private Stream<T> fileStream;
+
+        private LocalFileTraverser(
+                ILogger logger,
+                String directory,
+                String glob,
+                Predicate<Path> pathFilterFn,
+                FunctionEx<? super Path, ? extends Stream<T>> readFileFn
+        ) {
+            this.logger = logger;
+            this.directory = Paths.get(directory);
+            this.glob = glob;
+            this.readFileFn = readFileFn;
+            this.delegate = traverseIterator(uncheckCall(this::paths))
+                    .filter(path -> !Files.isDirectory(path) && pathFilterFn.test(path))
+                    .flatMap(this::processFile);
+        }
+
+        private Iterator<Path> paths() throws IOException {
+            if (directory.toFile().exists()) {
+                directoryStream = Files.newDirectoryStream(directory, glob);
+                return directoryStream.iterator();
+            } else {
+                logger.fine("The directory " + directory + " does not exists. This processor will emit 0 items.");
+                return Collections.emptyIterator();
+            }
+        }
+
+        private Traverser<T> processFile(Path file) {
+            logger.finest("Processing file " + file);
+
+            assert fileStream == null : "fileStream != null";
+            fileStream = readFileFn.apply(file);
+            return traverseStream(fileStream)
+                    .onFirstNull(() -> {
+                        fileStream.close();
+                        fileStream = null;
+                    });
+        }
+
+        @Override
+        public T next() {
+            return delegate.next();
+        }
+
+        @Override
+        public void close() throws IOException {
+            IOException exception = null;
+            if (directoryStream != null) {
+                try {
+                    directoryStream.close();
+                } catch (IOException ioe) {
+                    exception = ioe;
+                }
+            }
+            if (fileStream != null) {
+                fileStream.close();
+            }
+            if (exception != null) {
+                throw exception;
+            }
+        }
     }
 }

@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.extract;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.jr.stree.JrsBoolean;
+import com.fasterxml.jackson.jr.stree.JrsNumber;
+import com.fasterxml.jackson.jr.stree.JrsObject;
+import com.fasterxml.jackson.jr.stree.JrsValue;
+import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -31,15 +33,12 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 @NotThreadSafe
 public class JsonQueryTarget implements QueryTarget {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-
-    private JsonNode json;
+    private JrsObject json;
 
     @Override
     public void setTarget(Object target) {
         try {
-            json = target instanceof ObjectNode ? (ObjectNode) target
-                    : MAPPER.readTree((byte[]) target);
+            json = target instanceof JrsObject ? (JrsObject) target : JsonUtil.treeFrom(target);
         } catch (IOException e) {
             throw sneakyThrow(e);
         }
@@ -58,19 +57,15 @@ public class JsonQueryTarget implements QueryTarget {
         return () -> type.convert(extractValue(json, path));
     }
 
-    private static Object extractValue(JsonNode json, String path) {
-        JsonNode value = json.get(path);
+    private static Object extractValue(JrsObject json, String path) {
+        JrsValue value = json.get(path);
         if (value == null || value.isNull()) {
             return null;
-        } else if (value.isBoolean()) {
-            return value.asBoolean();
-        } else if (value.isInt()) {
-            return value.asInt();
-        } else if (value.isLong()) {
-            return value.asLong();
-        } else if (value.isFloat() || value.isDouble()) {
-            return value.asDouble();
-        } else if (value.isTextual()) {
+        } else if (value instanceof JrsBoolean) {
+            return ((JrsBoolean) value).booleanValue();
+        } else if (value.isNumber()) {
+            return ((JrsNumber) value).getValue();
+        } else if (value.isValueNode()) {
             return value.asText();
         } else {
             return value;

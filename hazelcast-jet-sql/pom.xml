@@ -15,9 +15,8 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <packaging>jar</packaging>
     <name>hazelcast-jet-sql</name>
@@ -33,7 +32,7 @@
     </parent>
 
     <properties>
-        <confluent.version>4.1.0</confluent.version>
+        <confluent.version>4.1.4</confluent.version>
         <jaxb.version>2.3.1</jaxb.version>
     </properties>
 
@@ -129,10 +128,45 @@
         </dependency>
 
         <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-sql</artifactId>
-            <version>${hazelcast.version}</version>
-            <classifier>tests</classifier>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-avro</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-csv</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-hadoop-core</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro-mapred</artifactId>
+            <version>${avro.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.mortbay.jetty</groupId>
+                    <artifactId>servlet-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.parquet</groupId>
+            <artifactId>parquet-avro</artifactId>
+            <version>${parquet.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-minicluster</artifactId>
+            <version>${hadoop.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -192,6 +226,19 @@
             <artifactId>kafka-clients</artifactId>
             <version>${kafka.version}</version>
             <classifier>test</classifier>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+        HDFS (via hadoop-minicluster) and kafka-schema-registry depend on different versions of jetty.
+        Listing hadoop-common here brings it further up the dependency tree (it is a transitive dependency of
+        hadoop-client and hadoop-minicluster), therefore preferring its version of jetty.
+        Easier than specifying jetty artifacts directly.
+        -->
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-common</artifactId>
+            <version>${hadoop.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -299,23 +346,71 @@
                 </executions>
             </plugin>
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>${maven.assembly.plugin.version}</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>distro-assembly</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>single</goal>
+                            <goal>shade</goal>
                         </goals>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>src/main/resources/assemblies/jar-with-dependencies.xml</descriptor>
-                            </descriptors>
-                            <tarLongFileMode>posix</tarLongFileMode>
-                        </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <createSourcesJar>true</createSourcesJar>
+                    <shadeSourcesContent>true</shadeSourcesContent>
+                    <createDependencyReducedPom>true</createDependencyReducedPom>
+                    <shadedArtifactAttached>true</shadedArtifactAttached>
+                    <shadedClassifierName>jar-with-dependencies</shadedClassifierName>
+                    <!--
+                    We actually don't shade these in here in Hadoop module, they are already part of core
+                    But we need to relocate the usage in the Hadoop module
+                    -->
+                    <relocations>
+                        <relocation>
+                            <pattern>com.fasterxml.jackson.jr</pattern>
+                            <shadedPattern>com.hazelcast.com.fasterxml.jackson.jr</shadedPattern>
+                        </relocation>
+                    </relocations>
+                    <transformers>
+                        <transformer
+                            implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer" />
+                        <transformer
+                            implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer" />
+                        <transformer
+                            implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                    </transformers>
+                    <filters>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <!-- Exclude signatures -->
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
+                                <exclude>META-INF/MANIFEST.MF</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>org.apache.calcite:*</artifact>
+                            <excludes>
+                                <!-- Avoid automatic discovery of Calcite JDBC. -->
+                                <exclude>META-INF/services/java.sql.Driver</exclude>
+                                <exclude>codegen/**</exclude>
+                                <exclude>**/package-info.java</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>org.apache.calcite.avatica:*</artifact>
+                            <excludes>
+                                <!-- Avoid automatic discovery of Avatica JDBC. -->
+                                <exclude>META-INF/services/java.sql.Driver</exclude>
+                                <!-- Exclude Avatica ProtoBuf definitions, since Avatica is not used. -->
+                                <exclude>*.proto</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -337,6 +432,7 @@
             </plugin>
         </plugins>
     </build>
+
     <profiles>
         <profile>
             <id>all</id>

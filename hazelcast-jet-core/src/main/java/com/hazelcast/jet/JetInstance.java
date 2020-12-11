@@ -284,6 +284,7 @@ public interface JetInstance {
      * <ul>
      *     <li>local IMaps (writing only)
      *     <li>Apache Kafka topics
+     *     <li>Files (local and remote, reading only)
      * </ul>
      *
      * Each connector specifies its own serialization formats and a way of

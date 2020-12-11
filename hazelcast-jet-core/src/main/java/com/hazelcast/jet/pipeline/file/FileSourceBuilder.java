@@ -17,7 +17,9 @@
 package com.hazelcast.jet.pipeline.file;
 
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.BatchSource;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.file.impl.FileSourceConfiguration;
 import com.hazelcast.jet.pipeline.file.impl.FileSourceFactory;
 import com.hazelcast.jet.pipeline.file.impl.LocalFileSourceFactory;
@@ -26,6 +28,7 @@ import javax.annotation.Nonnull;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -190,6 +193,17 @@ public class FileSourceBuilder<T> {
      */
     @Nonnull
     public BatchSource<T> build() {
+        ProcessorMetaSupplier metaSupplier = buildMetaSupplier();
+
+        return Sources.batchFromProcessor("files(path=" + path + ", glob=" + glob + ", hadoop=" + shouldUseHadoop(),
+                metaSupplier);
+    }
+
+    /**
+     * Builds a {@link com.hazelcast.jet.core.ProcessorMetaSupplier} based on the current state of the builder.
+     */
+    @Nonnull
+    public ProcessorMetaSupplier buildMetaSupplier() {
         if (path == null) {
             throw new IllegalStateException("Parameter 'path' is required");
         }
@@ -201,16 +215,25 @@ public class FileSourceBuilder<T> {
                 path, glob, format, sharedFileSystem, options
         );
 
-        if (useHadoop || hasHadoopPrefix(path)) {
+        if (shouldUseHadoop()) {
             ServiceLoader<FileSourceFactory> loader = ServiceLoader.load(FileSourceFactory.class);
             // Only one implementation is expected to be present on classpath
-            for (FileSourceFactory fileSourceFactory : loader) {
-                return fileSourceFactory.create(fsc);
+            Iterator<FileSourceFactory> iterator = loader.iterator();
+            if (!iterator.hasNext()) {
+                throw new JetException("No suitable FileSourceFactory found. " +
+                                       "Do you have Jet's Hadoop module on classpath?");
             }
-            throw new JetException("No suitable FileSourceFactory found. " +
-                    "Do you have Jet's Hadoop module on classpath?");
+            FileSourceFactory fileSourceFactory = iterator.next();
+            if (iterator.hasNext()) {
+                throw new JetException("Multiple FileSourceFactory implementations found");
+            }
+            return fileSourceFactory.create(fsc);
         }
         return new LocalFileSourceFactory().create(fsc);
+    }
+
+    private boolean shouldUseHadoop() {
+        return useHadoop || hasHadoopPrefix(path);
     }
 
     private static boolean hasHadoopPrefix(String path) {

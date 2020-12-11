@@ -16,10 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.jr.stree.JrsNumber;
+import com.fasterxml.jackson.jr.stree.JrsObject;
+import com.fasterxml.jackson.jr.stree.JrsString;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.AllTypesSqlConnector;
@@ -47,6 +46,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlJsonTest extends SqlTestSupport {
@@ -264,11 +264,11 @@ public class SqlJsonTest extends SqlTestSupport {
         );
         sqlService.execute("INSERT INTO " + name + " VALUES (1, 'Alice')");
 
-        assertRowsEventuallyInAnyOrder(
+        assertComparingFieldByFieldRowsEventuallyInAnyOrder(
                 "SELECT __key, this FROM " + name,
                 singletonList(new Row(
-                        new ObjectNode(JsonNodeFactory.instance).set("id", new IntNode(1)),
-                        new ObjectNode(JsonNodeFactory.instance).set("name", new TextNode("Alice"))
+                        new JrsObject(singletonMap("id", new JrsNumber(1))),
+                        new JrsObject(singletonMap("name", new JrsString("Alice")))
                 ))
         );
     }

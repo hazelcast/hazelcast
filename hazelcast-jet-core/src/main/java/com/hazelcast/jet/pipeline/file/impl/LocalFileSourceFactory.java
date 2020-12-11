@@ -18,10 +18,10 @@ package com.hazelcast.jet.pipeline.file.impl;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.impl.util.IOUtil;
 import com.hazelcast.jet.json.JsonUtil;
-import com.hazelcast.jet.pipeline.BatchSource;
-import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.pipeline.file.JsonFileFormat;
 import com.hazelcast.jet.pipeline.file.LinesTextFileFormat;
@@ -43,7 +43,6 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -77,7 +76,7 @@ public class LocalFileSourceFactory implements FileSourceFactory {
     }
 
     @Nonnull @Override
-    public <T> BatchSource<T> create(@Nonnull FileSourceConfiguration<T> fsc) {
+    public <T> ProcessorMetaSupplier create(@Nonnull FileSourceConfiguration<T> fsc) {
         FileFormat<T> format = requireNonNull(fsc.getFormat());
         ReadFileFnProvider readFileFnProvider = readFileFnProviders.get(format.format());
         if (readFileFnProvider == null) {
@@ -85,10 +84,7 @@ public class LocalFileSourceFactory implements FileSourceFactory {
                     "Did you provide correct modules on classpath?");
         }
         FunctionEx<Path, Stream<T>> mapFn = readFileFnProvider.createReadFileFn(format);
-        return Sources.filesBuilder(fsc.getPath())
-                      .glob(fsc.getGlob())
-                      .sharedFileSystem(fsc.isSharedFileSystem())
-                      .build(mapFn);
+        return SourceProcessors.readFilesP(fsc.getPath(), fsc.getGlob(), fsc.isSharedFileSystem(), mapFn);
     }
 
     @SuppressFBWarnings("OBL_UNSATISFIED_OBLIGATION")
@@ -109,23 +105,28 @@ public class LocalFileSourceFactory implements FileSourceFactory {
 
     private static class JsonReadFileFnProvider extends AbstractReadFileFnProvider {
 
-        @Nonnull
-        @Override
+        @Nonnull @Override
         <T> FunctionEx<InputStream, Stream<T>> mapInputStreamFn(FileFormat<T> format) {
             JsonFileFormat<T> jsonFileFormat = (JsonFileFormat<T>) format;
-            Class<T> thisClazz = jsonFileFormat.clazz();
+            Class<T> formatClazz = jsonFileFormat.clazz();
+
             return is -> {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is, UTF_8));
-
                 return reader.lines()
-                             .map(line -> uncheckCall(() -> JsonUtil.beanFrom(line, thisClazz)))
+                             .map(mapper(formatClazz))
                              .onClose(() -> uncheckRun(reader::close));
             };
         }
 
+        private static <T> FunctionEx<? super String, T> mapper(Class<T> clazz) {
+            return clazz == null
+                    ? JsonUtil::treeFrom
+                    : line -> JsonUtil.beanFrom(line, clazz);
+        }
+
         @Nonnull @Override
         public String format() {
-            return JsonFileFormat.FORMAT_JSONL;
+            return JsonFileFormat.FORMAT_JSON;
         }
     }
 

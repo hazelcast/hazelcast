@@ -75,6 +75,7 @@
                             <include>com.hazelcast:*</include>
                             <include>info.picocli:picocli</include>
                             <include>io.github.classgraph:classgraph</include>
+                            <include>com.fasterxml.jackson.jr:jackson-jr-stree</include>
                             <include>com.fasterxml.jackson.jr:jackson-jr-objects</include>
                             <include>com.fasterxml.jackson.jr:jackson-jr-annotation-support</include>
                             <include>com.fasterxml.jackson.core:jackson-core</include>

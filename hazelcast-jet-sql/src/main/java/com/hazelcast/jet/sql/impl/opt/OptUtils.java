@@ -16,10 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.opt;
 
+import com.google.common.collect.ImmutableList;
+import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpression;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
@@ -28,15 +31,20 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.ConventionTraitDef;
+import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleOperand;
+import org.apache.calcite.plan.RelOptSchema;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.RelSubset;
+import org.apache.calcite.prepare.RelOptTableImpl;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Values;
+import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexVisitor;
 
@@ -110,6 +118,39 @@ public final class OptUtils {
      */
     public static RelTraitSet traitPlus(RelTraitSet traitSet, RelTrait trait) {
         return traitSet.plus(trait).simplify();
+    }
+
+    public static LogicalTableScan createLogicalScan(
+            RelOptCluster cluster,
+            HazelcastTable hazelcastTable
+    ) {
+        JetTable table = hazelcastTable.getTarget();
+
+        HazelcastRelOptTable relTable = createRelTable(
+                null,
+                table.getQualifiedName(),
+                hazelcastTable,
+                cluster.getTypeFactory()
+        );
+        return LogicalTableScan.create(cluster, relTable, ImmutableList.of());
+    }
+
+    private static HazelcastRelOptTable createRelTable(
+            RelOptSchema relOptSchema,
+            List<String> names,
+            HazelcastTable hazelcastTable,
+            RelDataTypeFactory typeFactory
+    ) {
+        RelDataType rowType = hazelcastTable.getRowType(typeFactory);
+
+        RelOptTableImpl relTable = RelOptTableImpl.create(
+                relOptSchema,
+                rowType,
+                names,
+                hazelcastTable,
+                null
+        );
+        return new HazelcastRelOptTable(relTable);
     }
 
     public static Collection<RelNode> extractPhysicalRelsFromSubset(RelNode node) {

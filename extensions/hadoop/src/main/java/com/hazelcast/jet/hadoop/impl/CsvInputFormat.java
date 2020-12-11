@@ -35,6 +35,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 public class CsvInputFormat extends FileInputFormat<NullWritable, Object> {
 
@@ -50,20 +51,15 @@ public class CsvInputFormat extends FileInputFormat<NullWritable, Object> {
 
             @Override
             public void initialize(InputSplit split, TaskAttemptContext context) throws IOException {
-
                 FileSplit fileSplit = (FileSplit) split;
                 Configuration conf = context.getConfiguration();
 
                 Configuration configuration = context.getConfiguration();
                 String className = configuration.get(CSV_INPUT_FORMAT_BEAN_CLASS);
-                Class<?> clazz = ReflectionUtils.loadClass(className);
-
-                CsvMapper mapper = new CsvMapper();
-
-                CsvSchema schema = CsvSchema.emptySchema().withHeader();
-                ObjectReader reader = mapper.readerFor(clazz)
-                                            .withoutFeatures(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                                            .with(schema);
+                Class<?> clazz = className == null ? null : ReflectionUtils.loadClass(className);
+                ObjectReader reader = new CsvMapper().readerFor(clazz != null ? clazz : Map.class)
+                                                     .withoutFeatures(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                                                     .with(CsvSchema.emptySchema().withHeader());
 
                 Path file = fileSplit.getPath();
                 FileSystem fs = file.getFileSystem(conf);

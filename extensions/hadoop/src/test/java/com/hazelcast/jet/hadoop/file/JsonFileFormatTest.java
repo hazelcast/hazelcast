@@ -16,8 +16,12 @@
 
 package com.hazelcast.jet.hadoop.file;
 
-import com.hazelcast.com.fasterxml.jackson.core.JsonParseException;
-import com.hazelcast.com.fasterxml.jackson.core.io.JsonEOFException;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.io.JsonEOFException;
+import com.fasterxml.jackson.jr.stree.JrsNumber;
+import com.fasterxml.jackson.jr.stree.JrsObject;
+import com.fasterxml.jackson.jr.stree.JrsString;
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.hadoop.file.model.User;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
@@ -30,20 +34,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class JsonFileFormatTest extends BaseFileFormatTest {
 
     @Test
-    @Ignore("It's an issue, remove this @Ignore once it will be fixed")
-    public void shouldReadPrettyPrintedJsonFile() throws Exception {
-        FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
-                                                    .glob("pretty-printed-file-*.json")
-                                                    .format(FileFormat.json(User.class));
+    public void shouldReadJsonFile() {
+        FileSourceBuilder<JrsObject> source = FileSources.files(currentDir + "/src/test/resources")
+                                                         .glob("file.jsonl")
+                                                         .format(FileFormat.json());
 
         assertItemsInSource(source,
-                new User("Frantisek", 7),
-                new User("Ali", 42)
+                collected -> assertThat(collected).usingRecursiveFieldByFieldElementComparator()
+                                                  .containsOnly(
+                                                          new JrsObject(ImmutableMap.of(
+                                                                  "name", new JrsString("Frantisek"),
+                                                                  "favoriteNumber", new JrsNumber(7))
+                                                          ),
+                                                          new JrsObject(ImmutableMap.of(
+                                                                  "name", new JrsString("Ali"),
+                                                                  "favoriteNumber", new JrsNumber(42))
+                                                          )
+                                                  )
         );
     }
 
     @Test
-    public void shouldReadJsonLinesFile() throws Exception {
+    public void shouldReadJsonFileToObject() {
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
                                                     .glob("file.jsonl")
                                                     .format(FileFormat.json(User.class));
@@ -55,7 +67,20 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    public void shouldReadJsonLinesFileWithMoreAttributesThanTargetClass() throws Exception {
+    @Ignore("It's an issue, remove this @Ignore once it will be fixed")
+    public void shouldReadPrettyPrintedJsonFile() {
+        FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
+                                                    .glob("pretty-printed-file-*.json")
+                                                    .format(FileFormat.json(User.class));
+
+        assertItemsInSource(source,
+                new User("Frantisek", 7),
+                new User("Ali", 42)
+        );
+    }
+
+    @Test
+    public void shouldReadJsonFileWithMoreAttributesThanTargetClass() {
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
                                                     .glob("file-more-attributes.jsonl")
                                                     .format(FileFormat.json(User.class));
@@ -67,7 +92,7 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    public void shouldReadJsonLinesFileWithLessColumnsThanTargetClass() throws Exception {
+    public void shouldReadJsonFileWithLessColumnsThanTargetClass() {
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
                                                     .glob("file-less-attributes.jsonl")
                                                     .format(FileFormat.json(User.class));
@@ -79,7 +104,7 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    public void shouldReadEmptyJsonFile() throws Exception {
+    public void shouldReadEmptyJsonFile() {
 
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
                                                     .glob("file-empty.json")
@@ -89,7 +114,7 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    public void shouldThrowWhenInvalidFileType() throws Exception {
+    public void shouldThrowWhenInvalidFileType() {
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
                                                     .glob("invalid-data.png")
                                                     .format(FileFormat.json(User.class));
@@ -98,7 +123,7 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    public void shouldThrowWhenWrongFormatting() throws Exception {
+    public void shouldThrowWhenWrongFormatting() {
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
                                                     .glob("file-invalid.jsonl")
                                                     .format(FileFormat.json(User.class));

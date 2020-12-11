@@ -105,7 +105,7 @@ advantages and disadvantages.
 
 Using Hadoop libs
 
-* `-` Complicated to setup, lot’s of dependencies, possible dependency
+* `-` Complicated to setup, lots of dependencies, possible dependency
   conflicts.
 
 * `+` Supports advanced features - can take advantage of the structure

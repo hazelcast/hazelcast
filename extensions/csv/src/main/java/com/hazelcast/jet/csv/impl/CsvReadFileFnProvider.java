@@ -29,6 +29,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.annotation.Nonnull;
 import java.io.FileInputStream;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -37,8 +38,8 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.Spliterator.ORDERED;
 
 /**
- * ReadFileFnProvider for CSV files, reading given path and deserializing using
- * Jackson CsvMapper
+ * {@link ReadFileFnProvider} for CSV files, reading the given path and
+ * deserializing using Jackson {@link CsvMapper}.
  */
 @SuppressFBWarnings(
         value = "OBL_UNSATISFIED_OBLIGATION",
@@ -51,15 +52,12 @@ public class CsvReadFileFnProvider implements ReadFileFnProvider {
     public <T> FunctionEx<Path, Stream<T>> createReadFileFn(@Nonnull FileFormat<T> format) {
         CsvFileFormat<T> csvFileFormat = (CsvFileFormat<T>) format;
         Class<?> formatClazz = csvFileFormat.clazz(); // Format is not Serializable
+
         return path -> {
-            CsvSchema schema = CsvSchema.emptySchema().withHeader();
-            CsvMapper mapper = new CsvMapper();
-            ObjectReader reader = mapper.readerFor(formatClazz)
-                                        .withoutFeatures(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                                        .with(schema);
-
+            ObjectReader reader = new CsvMapper().readerFor(formatClazz != null ? formatClazz : Map.class)
+                                                 .withoutFeatures(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                                                 .with(CsvSchema.emptySchema().withHeader());
             FileInputStream fis = new FileInputStream(path.toFile());
-
             return StreamSupport.<T>stream(Spliterators.spliteratorUnknownSize(reader.readValues(fis), ORDERED), false)
                     .onClose(() -> uncheckRun(fis::close));
         };

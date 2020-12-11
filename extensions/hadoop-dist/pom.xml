@@ -37,6 +37,7 @@
         <module>files-azure</module>
         <module>files-gcs</module>
         <module>files-s3</module>
+        <module>hadoop</module>
         <module>hadoop-all</module>
     </modules>
 
@@ -84,6 +85,10 @@
                         -->
                         <relocations>
                             <relocation>
+                                <pattern>com.fasterxml.jackson.jr</pattern>
+                                <shadedPattern>com.hazelcast.com.fasterxml.jackson.jr</shadedPattern>
+                            </relocation>
+                            <relocation>
                                 <pattern>com.fasterxml.jackson.core</pattern>
                                 <shadedPattern>com.hazelcast.com.fasterxml.jackson.core</shadedPattern>
                             </relocation>
@@ -119,7 +124,7 @@
     <dependencies>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-hadoop</artifactId>
+            <artifactId>hazelcast-jet-hadoop-core</artifactId>
             <version>4.4-SNAPSHOT</version>
         </dependency>
         <dependency>

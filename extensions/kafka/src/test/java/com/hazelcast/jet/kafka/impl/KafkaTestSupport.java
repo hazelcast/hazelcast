@@ -104,7 +104,7 @@ public class KafkaTestSupport {
         brokerProps.setProperty("transaction.state.log.num.partitions", "1");
         brokerProps.setProperty("transaction.state.log.min.isr", "1");
         brokerProps.setProperty("transaction.abort.timed.out.transaction.cleanup.interval.ms", "200");
-        brokerProps.setProperty("group.initial.rebalance.delay.ms", "10");
+        brokerProps.setProperty("group.initial.rebalance.delay.ms", "0");
         KafkaConfig config = new KafkaConfig(brokerProps);
         Time mock = new MockTime();
         kafkaServer = TestUtils.createServer(config, mock);

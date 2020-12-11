@@ -33,7 +33,7 @@ import java.nio.file.Paths;
  * Demonstrates usage of {@link FileSources#files(String)} and various file formats from {@link FileFormat}
  * <p>
  * Usage:
- * com.hazelcast.jet.examples.files.unifiedapi.TradeAnalyzerJob <csv|jsonl|avro|parquet> <sourceDir>
+ * com.hazelcast.jet.examples.files.unifiedapi.TradeAnalyzerJob <csv|json|avro|parquet> <sourceDir>
  * <p>
  * Reads files of given type, expecting corresponding format, and sums the quantity sold for each trade instrument and
  * prints to result to the log.
@@ -65,9 +65,9 @@ public class TradeAnalyzerJob {
                 trades = p.readFrom(source);
                 break;
 
-            case "jsonl":
+            case "json":
                 source = FileSources.files(sourceDir)
-                                    .glob("*." + type)
+                                    .glob("*." + type + "*")
                                     .format(FileFormat.json(Trade.class))
                                     .build();
                 trades = p.readFrom(source);
@@ -108,7 +108,7 @@ public class TradeAnalyzerJob {
     public static void main(String[] args) {
         if (args.length != 2) {
             System.err.println("Usage:");
-            System.err.println("  " + TradeAnalyzerJob.class.getSimpleName() + " <csv|jsonl|avro|parquet> <sourceDir>");
+            System.err.println("  " + TradeAnalyzerJob.class.getSimpleName() + " <csv|json|avro|parquet> <sourceDir>");
             System.exit(1);
         }
         final String type = args[0];

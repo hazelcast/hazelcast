@@ -15,8 +15,8 @@ or patch releases._
 
 In the first release, Jet SQL supports the following features:
 
-- SQL queries over [Apache Kafka topics](kafka-connector.md) and files
-(local and remote) (TODO)
+- SQL queries over [Apache Kafka topics](kafka-connector.md) and
+[files (local and remote)](file-connector.md)
 - Joining Kafka or file data with local IMaps (enrichment)
 - Filtering and projection using [SQL
 expressions](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#expressions)

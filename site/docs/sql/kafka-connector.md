@@ -114,7 +114,7 @@ For this format you must specify the class name using `keyJavaClass` and
 
 ```sql
 CREATE MAPPING my_topic
-TYPE IMap
+TYPE Kafka
 OPTIONS (
     'keyFormat' = 'java',
     'keyJavaClass' = 'java.lang.Long',

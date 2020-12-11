@@ -102,6 +102,13 @@ public class SqlMappingTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_emptyColumnList_then_fails() {
+        assertThatThrownBy(() -> sqlService.execute("create mapping t () type TestBatch"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageStartingWith("Encountered \")\" at line 1, column 19.");
+    }
+
+    @Test
     public void when_badType_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING m TYPE TooBad"))
                 .hasMessageContaining("Unknown connector type: TooBad");

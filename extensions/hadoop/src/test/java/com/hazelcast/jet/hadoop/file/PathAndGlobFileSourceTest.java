@@ -162,7 +162,7 @@ public class PathAndGlobFileSourceTest extends BaseFileFormatTest {
                                                       .format(FileFormat.text());
 
         assertItemsInSource(source, (collected) ->
-                assertThat(collected).anyMatch(s -> s.contains("<artifactId>hazelcast-jet-hadoop</artifactId>"))
+                assertThat(collected).anyMatch(s -> s.contains("<artifactId>hazelcast-jet-hadoop-core</artifactId>"))
         );
     }
 

@@ -91,15 +91,6 @@
             <artifactId>avro</artifactId>
             <version>${avro.version}</version>
         </dependency>
-
-        <!-- TEST -->
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-core</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>test</scope>
-            <classifier>tests</classifier>
-        </dependency>
     </dependencies>
 
 </project>

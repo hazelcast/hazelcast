@@ -18,8 +18,7 @@ package com.hazelcast.jet.hadoop.impl;
 
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.hadoop.HadoopSources;
-import com.hazelcast.jet.pipeline.BatchSource;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.file.AvroFileFormat;
 import com.hazelcast.jet.pipeline.file.CsvFileFormat;
 import com.hazelcast.jet.pipeline.file.FileFormat;
@@ -31,10 +30,15 @@ import com.hazelcast.jet.pipeline.file.TextFileFormat;
 import com.hazelcast.jet.pipeline.file.impl.FileSourceConfiguration;
 import com.hazelcast.jet.pipeline.file.impl.FileSourceFactory;
 import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericContainer;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.mapreduce.AvroJob;
 import org.apache.avro.mapreduce.AvroKeyInputFormat;
 import org.apache.avro.reflect.ReflectData;
+import org.apache.avro.specific.SpecificData;
+import org.apache.avro.specific.SpecificRecord;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
@@ -54,6 +58,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.ServiceLoader;
 
+import static com.hazelcast.jet.hadoop.HadoopProcessors.readHadoopP;
+import static com.hazelcast.jet.hadoop.HadoopSources.COPY_ON_READ;
 import static com.hazelcast.jet.hadoop.impl.CsvInputFormat.CSV_INPUT_FORMAT_BEAN_CLASS;
 import static com.hazelcast.jet.hadoop.impl.JsonInputFormat.JSON_INPUT_FORMAT_BEAN_CLASS;
 import static java.util.Objects.requireNonNull;
@@ -91,9 +97,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     @Nonnull
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> BatchSource<T> create(@Nonnull FileSourceConfiguration<T> fsc) {
-
+    public <T> ProcessorMetaSupplier create(@Nonnull FileSourceConfiguration<T> fsc) {
         try {
             Job job = Job.getInstance();
 
@@ -115,7 +119,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
             }
             configurer.configure(job, fileFormat);
 
-            return HadoopSources.inputFormat(configuration, (BiFunctionEx<?, ?, T>) configurer.projectionFn());
+            return readHadoopP(SerializableConfiguration.asSerializable(configuration), configurer.projectionFn());
         } catch (IOException e) {
             throw new JetException("Could not create a source", e);
         }
@@ -144,12 +148,17 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
             if (reflectClass != null) {
                 Schema schema = ReflectData.get().getSchema(reflectClass);
                 AvroJob.setInputKeySchema(job, schema);
+            } else {
+                job.getConfiguration().setBoolean(COPY_ON_READ, Boolean.FALSE);
             }
         }
 
         @Override
         public BiFunctionEx<AvroKey<?>, NullWritable, ?> projectionFn() {
-            return (k, v) -> k.datum();
+            return (k, v) -> {
+                Object record = k.datum();
+                return record instanceof GenericContainer ? copy((GenericContainer) record) : record;
+            };
         }
 
         @Nonnull
@@ -184,7 +193,12 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
         public <T> void configure(Job job, FileFormat<T> format) {
             CsvFileFormat<T> csvFileFormat = (CsvFileFormat<T>) format;
             job.setInputFormatClass(CsvInputFormat.class);
-            job.getConfiguration().set(CSV_INPUT_FORMAT_BEAN_CLASS, csvFileFormat.clazz().getCanonicalName());
+            job.getConfiguration().setBoolean(COPY_ON_READ, Boolean.FALSE);
+
+            Class<?> clazz = csvFileFormat.clazz();
+            if (clazz != null) {
+                job.getConfiguration().set(CSV_INPUT_FORMAT_BEAN_CLASS, clazz.getCanonicalName());
+            }
         }
 
         @Override
@@ -205,7 +219,12 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
         public <T> void configure(Job job, FileFormat<T> format) {
             JsonFileFormat<T> jsonFileFormat = (JsonFileFormat<T>) format;
             job.setInputFormatClass(JsonInputFormat.class);
-            job.getConfiguration().set(JSON_INPUT_FORMAT_BEAN_CLASS, jsonFileFormat.clazz().getCanonicalName());
+            job.getConfiguration().setBoolean(COPY_ON_READ, Boolean.FALSE);
+
+            Class<?> clazz = jsonFileFormat.clazz();
+            if (clazz != null) {
+                job.getConfiguration().set(JSON_INPUT_FORMAT_BEAN_CLASS, clazz.getCanonicalName());
+            }
         }
 
         @Override
@@ -216,7 +235,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
         @Nonnull
         @Override
         public String format() {
-            return JsonFileFormat.FORMAT_JSONL;
+            return JsonFileFormat.FORMAT_JSON;
         }
     }
 
@@ -244,11 +263,20 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
         @Override
         public <T> void configure(Job job, FileFormat<T> format) {
             job.setInputFormatClass(AvroParquetInputFormat.class);
+            job.getConfiguration().setBoolean(COPY_ON_READ, Boolean.FALSE);
         }
 
         @Override
         public BiFunctionEx<String, ?, ?> projectionFn() {
-            return (k, v) -> v;
+            return (k, record) -> {
+                if (record == null) {
+                    return null;
+                } else if (record instanceof GenericContainer) {
+                    return copy((GenericContainer) record);
+                } else {
+                    throw new IllegalArgumentException("Unexpected record type: " + record.getClass());
+                }
+            };
         }
 
         @Nonnull
@@ -277,4 +305,19 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
         }
     }
 
+    /**
+     * Copies Avro record.
+     */
+    @SuppressWarnings("unchecked")
+    private static <T extends GenericContainer> T copy(T record) {
+        if (record instanceof SpecificRecord) {
+            SpecificRecord specificRecord = (SpecificRecord) record;
+            return (T) SpecificData.get().deepCopy(specificRecord.getSchema(), specificRecord);
+        } else if (record instanceof GenericRecord) {
+            GenericRecord genericRecord = (GenericRecord) record;
+            return (T) GenericData.get().deepCopy(genericRecord.getSchema(), genericRecord);
+        } else {
+            throw new IllegalArgumentException("Unexpected record type: " + record.getClass());
+        }
+    }
 }

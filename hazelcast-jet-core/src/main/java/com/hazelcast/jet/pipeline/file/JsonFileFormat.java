@@ -17,8 +17,7 @@
 package com.hazelcast.jet.pipeline.file;
 
 import javax.annotation.Nonnull;
-
-import static java.util.Objects.requireNonNull;
+import javax.annotation.Nullable;
 
 /**
  * {@code FileFormat} for the JSON Lines files. See {@link FileFormat#json}
@@ -30,33 +29,43 @@ import static java.util.Objects.requireNonNull;
 public class JsonFileFormat<T> implements FileFormat<T> {
 
     /**
-     * Format ID for JSON Lines.
+     * Format ID for JSON.
      */
-    public static final String FORMAT_JSONL = "jsonl";
+    public static final String FORMAT_JSON = "json";
 
-    private final Class<T> clazz;
+    private Class<T> clazz;
 
     /**
-     * Creates a {@code JsonFileFormat}. See {@link FileFormat#json} for
-     * more details.
-     *
-     * @param clazz the type of the object to deserialize JSON into
+     * Creates {@link JsonFileFormat}. See {@link FileFormat#json} for more
+     * details.
      */
-    JsonFileFormat(@Nonnull Class<T> clazz) {
-        this.clazz = requireNonNull(clazz, "class must not be null");
+    JsonFileFormat() {
     }
 
     /**
-     * Returns the type of the object the data source using this format will
-     * emit.
+     * Specifies class that data will be deserialized into.
+     * If parameter is {@code null} data is deserialized into
+     * {@link com.fasterxml.jackson.jr.stree.JrsObject}.
+     *
+     * @param clazz type of the object to deserialize JSON into
      */
     @Nonnull
+    public JsonFileFormat<T> withClass(@Nullable Class<T> clazz) {
+        this.clazz = clazz;
+        return this;
+    }
+
+    /**
+     * Returns the class Jet will deserialize data into.
+     * Null if not set.
+     */
+    @Nullable
     public Class<T> clazz() {
         return clazz;
     }
 
     @Nonnull @Override
     public String format() {
-        return FORMAT_JSONL;
+        return FORMAT_JSON;
     }
 }

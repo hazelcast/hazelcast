@@ -36,7 +36,7 @@ import org.apache.parquet.avro.AvroParquetOutputFormat;
 import java.nio.file.Paths;
 
 /**
- * Converts data from jsonl file to other formats. You don't need to run this.
+ * Converts data from json file to other formats. You don't need to run this.
  * The data is already stored in data/trades.
  */
 public class TradeWriter {

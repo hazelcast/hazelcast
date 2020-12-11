@@ -16,25 +16,25 @@
 
 package com.hazelcast.jet.pipeline.file.impl;
 
-import com.hazelcast.jet.pipeline.BatchSource;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
 
 import javax.annotation.Nonnull;
 
 /**
- * A factory of Pipeline API's {@link BatchSource} based on a {@link
+ * A factory of {@link ProcessorMetaSupplier} based on a {@link
  * FileSourceBuilder}.
  *
  */
 public interface FileSourceFactory {
 
     /**
-     * Returns a Jet {@link BatchSource} that behaves as specified by the
+     * Returns a {@link ProcessorMetaSupplier} that behaves as specified by the
      * provided file source builder.
      *
-     * @param configuration the configuration object to use to create the source
-     * @param <T>           type of the item the source emits
+     * @param configuration the configuration object to use to create the supplier
+     * @param <T>           type of the item the source created by the supplier emits
      */
     @Nonnull
-    <T> BatchSource<T> create(@Nonnull FileSourceConfiguration<T> configuration);
+    <T> ProcessorMetaSupplier create(@Nonnull FileSourceConfiguration<T> configuration);
 }

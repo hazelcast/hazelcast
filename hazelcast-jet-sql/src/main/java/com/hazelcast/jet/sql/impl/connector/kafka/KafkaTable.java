@@ -102,9 +102,4 @@ class KafkaTable extends JetTable {
     QueryDataType[] types() {
         return getFields().stream().map(TableField::getType).toArray(QueryDataType[]::new);
     }
-
-    @Override
-    public String toString() {
-        return "Kafka[" + getSchemaName() + "." + getSqlName() + "]";
-    }
 }

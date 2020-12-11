@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet.json;
 
+import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.jr.annotationsupport.JacksonAnnotationExtension;
 import com.fasterxml.jackson.jr.ob.JSON;
+import com.fasterxml.jackson.jr.stree.JacksonJrsTreeCodec;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.pipeline.Sources;
 
@@ -59,7 +61,7 @@ public final class JsonUtil {
         JSON.Builder builder = JSON.builder();
         try {
             Class.forName("com.fasterxml.jackson.annotation.JacksonAnnotation", false, JsonUtil.class.getClassLoader());
-            builder.register(JacksonAnnotationExtension.std);
+            builder.register(JacksonAnnotationExtension.std).treeCodec(new JacksonJrsTreeCodec());
         } catch (ClassNotFoundException ignored) {
         }
         JSON_JR = builder.build();
@@ -75,6 +77,14 @@ public final class JsonUtil {
     @Nonnull
     public static HazelcastJsonValue hazelcastJsonValue(@Nonnull Object object) {
         return new HazelcastJsonValue(object.toString());
+    }
+
+    /**
+     * Converts a JSON string to a {@link TreeNode}.
+     */
+    @Nullable
+    public static <T extends TreeNode> T treeFrom(@Nonnull Object source) throws IOException {
+        return JSON_JR.treeFrom(source);
     }
 
     /**

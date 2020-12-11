@@ -31,6 +31,7 @@ Apache License, Version 2.0
   Jackson datatype: JSR310:2.10.0
   jackson-jr-annotation-support:2.11.2
   jackson-jr-objects:2.11.2
+  jackson-jr-stree:2.11.2
   mysql-binlog-connector-java:0.20.1
   compiler:0.9.3
   Google Android Annotations Library:4.1.1.4

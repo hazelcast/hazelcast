@@ -43,12 +43,14 @@ final class InfoSchemaConnector implements SqlConnector {
 
     public static final InfoSchemaConnector INSTANCE = new InfoSchemaConnector();
 
+    private static final String TYPE_NAME = "InformationSchema";
+
     private InfoSchemaConnector() {
     }
 
     @Override
     public String typeName() {
-        throw new UnsupportedOperationException();
+        return TYPE_NAME;
     }
 
     @Override

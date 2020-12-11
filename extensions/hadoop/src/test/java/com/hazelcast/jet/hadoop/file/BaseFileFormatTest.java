@@ -37,7 +37,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-
 @RunWith(Parameterized.class)
 public abstract class BaseFileFormatTest extends JetTestSupport {
 
@@ -52,7 +51,7 @@ public abstract class BaseFileFormatTest extends JetTestSupport {
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         currentDir = Paths.get(".").toAbsolutePath().normalize().toString();
         if (useHadoop) {
             assumeThatNoWindowsOS();

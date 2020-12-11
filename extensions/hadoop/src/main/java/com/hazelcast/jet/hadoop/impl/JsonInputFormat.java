@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.hadoop.impl;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.json.JsonUtil;
 import org.apache.hadoop.conf.Configuration;
@@ -32,6 +33,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.LineRecordReader;
 
 import java.io.IOException;
+import java.util.function.Function;
 
 public class JsonInputFormat extends FileInputFormat<LongWritable, Object> {
 
@@ -42,7 +44,8 @@ public class JsonInputFormat extends FileInputFormat<LongWritable, Object> {
 
         Configuration configuration = context.getConfiguration();
         String className = configuration.get(JSON_INPUT_FORMAT_BEAN_CLASS);
-        Class<?> clazz = ReflectionUtils.loadClass(className);
+        Class<?> clazz = className == null ? null : ReflectionUtils.loadClass(className);
+        Function<? super String, Object> mapper = mapper(clazz);
 
         return new RecordReader<LongWritable, Object>() {
 
@@ -64,8 +67,8 @@ public class JsonInputFormat extends FileInputFormat<LongWritable, Object> {
             }
 
             @Override
-            public Object getCurrentValue() throws IOException {
-                return JsonUtil.beanFrom(reader.getCurrentValue().toString(), clazz);
+            public Object getCurrentValue() {
+                return mapper.apply(reader.getCurrentValue().toString());
             }
 
             @Override
@@ -78,6 +81,12 @@ public class JsonInputFormat extends FileInputFormat<LongWritable, Object> {
                 reader.close();
             }
         };
+    }
+
+    private static FunctionEx<? super String, Object> mapper(Class<?> clazz) {
+        return clazz == null
+                ? JsonUtil::treeFrom
+                : line -> JsonUtil.beanFrom(line, clazz);
     }
 
     @Override
