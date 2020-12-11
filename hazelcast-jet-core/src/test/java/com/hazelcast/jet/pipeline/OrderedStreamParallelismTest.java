@@ -42,8 +42,12 @@ import static org.junit.Assert.assertEquals;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class OrderedStreamParallelismTest {
+
     private static final int DEFAULT_PARALLELISM = 8;
-    private static final int LOCAL_PARALLELISM = 11;
+    // Used to set the LP of the stage with the higher value than upstream parallelism
+    private static final int HIGH_LOCAL_PARALLELISM = 11;
+    // Used to set the LP of the stage with the smaller value than upstream parallelism
+    private static final int LOW_LOCAL_PARALLELISM = 2;
     private static final int UPSTREAM_PARALLELISM = 6;
     private static final Context PIPELINE_CTX = new Context() {
         @Override public int defaultLocalParallelism() {
@@ -69,7 +73,7 @@ public class OrderedStreamParallelismTest {
                 createParamSet(
                         stage -> stage
                                 .map(x -> x)
-                                .setLocalParallelism(LOCAL_PARALLELISM),
+                                .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
                         Collections.singletonList("map"),
                         Collections.singletonList(UPSTREAM_PARALLELISM),
                         "map"
@@ -77,7 +81,7 @@ public class OrderedStreamParallelismTest {
                 createParamSet(
                         stage -> stage
                                 .flatMap(x -> Traversers.singleton(1))
-                                .setLocalParallelism(LOCAL_PARALLELISM),
+                                .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
                         Collections.singletonList("flat-map"),
                         Collections.singletonList(UPSTREAM_PARALLELISM),
                         "flat-map"
@@ -85,7 +89,7 @@ public class OrderedStreamParallelismTest {
                 createParamSet(
                         stage -> stage
                                 .mapStateful(LongAccumulator::new, (s, x) -> x)
-                                .setLocalParallelism(LOCAL_PARALLELISM),
+                                .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
                         Collections.singletonList("map-stateful-global"),
                         Collections.singletonList(1),
                         "map-stateful-global"
@@ -94,10 +98,21 @@ public class OrderedStreamParallelismTest {
                         stage -> stage
                                 .peek()
                                 .map(x -> x)
-                                .setLocalParallelism(LOCAL_PARALLELISM),
+                                .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
                         Collections.singletonList("map"),
                         Collections.singletonList(UPSTREAM_PARALLELISM),
                         "map-after-peek"
+                ),
+                createParamSet(
+                        stage -> stage
+                                .peek()
+                                .map(x -> x)
+                                .setLocalParallelism(LOW_LOCAL_PARALLELISM)
+                                .flatMap(x -> Traversers.singleton(1))
+                                .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
+                        Arrays.asList("map", "flat-map"),
+                        Arrays.asList(LOW_LOCAL_PARALLELISM, LOW_LOCAL_PARALLELISM),
+                        "map+flat-map"
                 )
         );
     }

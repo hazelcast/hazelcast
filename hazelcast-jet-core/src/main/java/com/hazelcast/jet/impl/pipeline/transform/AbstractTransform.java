@@ -147,33 +147,42 @@ public abstract class AbstractTransform implements Transform {
             boolean shouldMatchUpstreamParallelism
     ) {
         int defaultParallelism = context.defaultLocalParallelism();
-        int upstreamParallelism = -1;
-        // Get the minimum of upstream LPs as upstreamParallelism
-        if (!upstream().isEmpty()) {
-            upstreamParallelism = upstream()
-                    .stream()
-                    .mapToInt(Transform::determinedLocalParallelism)
-                    .min()
-                    .getAsInt();
+        int upstreamParallelism = LOCAL_PARALLELISM_USE_DEFAULT;
+
+        if (shouldMatchUpstreamParallelism) {
+            // Get the minimum of upstream LPs as upstreamParallelism
+            if (!upstream().isEmpty()) {
+                upstreamParallelism = upstream()
+                        .stream()
+                        .mapToInt(Transform::determinedLocalParallelism)
+                        .min()
+                        .getAsInt();
+            }
         }
 
-        if (shouldMatchUpstreamParallelism && upstreamParallelism != LOCAL_PARALLELISM_USE_DEFAULT) {
-            determinedLocalParallelism(upstreamParallelism);
-            return;
-        }
-
+        int currParallelism;
         if (localParallelism() == LOCAL_PARALLELISM_USE_DEFAULT) {
             if (preferredLocalParallelism == LOCAL_PARALLELISM_USE_DEFAULT) {
-                determinedLocalParallelism(defaultParallelism);
+                currParallelism = defaultParallelism;
             } else {
                 if (defaultParallelism == LOCAL_PARALLELISM_USE_DEFAULT) {
-                    determinedLocalParallelism(preferredLocalParallelism);
+                    currParallelism = preferredLocalParallelism;
                 } else {
-                    determinedLocalParallelism(min(preferredLocalParallelism, defaultParallelism));
+                    currParallelism = min(preferredLocalParallelism, defaultParallelism);
                 }
             }
         } else {
-            determinedLocalParallelism(localParallelism());
+            currParallelism = localParallelism();
+        }
+
+        if (upstreamParallelism != LOCAL_PARALLELISM_USE_DEFAULT) {
+            if (currParallelism != LOCAL_PARALLELISM_USE_DEFAULT) {
+                determinedLocalParallelism(min(upstreamParallelism, currParallelism));
+            } else {
+                determinedLocalParallelism(upstreamParallelism);
+            }
+        } else {
+            determinedLocalParallelism(currParallelism);
         }
     }
 }

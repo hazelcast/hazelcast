@@ -50,7 +50,10 @@ import static java.util.stream.Collectors.toList;
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class OrderedBatchProcessingTest extends JetTestSupport {
 
-    private static final int LOCAL_PARALLELISM = 11;
+    // Used to set the LP of the stage with the higher value than upstream parallelism
+    private static final int HIGH_LOCAL_PARALLELISM = 11;
+    // Used to set the LP of the stage with the smaller value than upstream parallelism
+    private static final int LOW_LOCAL_PARALLELISM = 2;
     private static Pipeline p;
     private static JetInstance jet;
 
@@ -77,45 +80,103 @@ public class OrderedBatchProcessingTest extends JetTestSupport {
                 createParamSet(
                         stage -> stage
                                 .map(FunctionEx.identity())
-                                .setLocalParallelism(LOCAL_PARALLELISM),
-                        "map"
+                                .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
+                        "map-high"
                 ),
                 createParamSet(
                         stage -> stage
                                 .flatMap(Traversers::singleton)
-                                .setLocalParallelism(LOCAL_PARALLELISM),
-                        "flat-map"
+                                .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
+                        "flat-map-high"
                 ),
                 createParamSet(
                         stage -> stage
                                 .mapUsingIMap("test-map", wholeItem(), (x, ignored) -> x)
-                                .setLocalParallelism(LOCAL_PARALLELISM),
-                        "map-using-imap"
+                                .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
+                        "map-using-imap-high"
                 ),
                 createParamSet(
                         stage -> stage
                                 .mapUsingReplicatedMap("test-map", wholeItem(), (x, ignored) -> x)
-                                .setLocalParallelism(LOCAL_PARALLELISM),
-                        "map-using-replicated-map"
+                                .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
+                        "map-using-replicated-map-high"
                 ),
                 createParamSet(
                         stage -> stage
                                 .filter(PredicateEx.alwaysTrue())
-                                .setLocalParallelism(LOCAL_PARALLELISM),
-                        "filter"
+                                .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
+                        "filter-high"
                 ),
                 createParamSet(
                         stage -> stage
                                 .mapStateful(LongAccumulator::new, (s, x) -> x)
-                                .setLocalParallelism(LOCAL_PARALLELISM),
-                        "map-stateful-global"
+                                .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
+                        "map-stateful-global-high"
                 ),
                 createParamSet(
                         stage -> stage
                                 .<Integer>customTransform("custom-transform",
                                         Processors.mapP(FunctionEx.identity()))
-                                .setLocalParallelism(LOCAL_PARALLELISM),
-                        "custom-transform"
+                                .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
+                        "custom-transform-high"
+                ),
+                createParamSet(
+                        stage -> stage
+                                .map(FunctionEx.identity())
+                                .setLocalParallelism(LOW_LOCAL_PARALLELISM),
+                        "map-low"
+                ),
+                createParamSet(
+                        stage -> stage
+                                .flatMap(Traversers::singleton)
+                                .setLocalParallelism(LOW_LOCAL_PARALLELISM),
+                        "flat-map-low"
+                ),
+                createParamSet(
+                        stage -> stage
+                                .mapUsingIMap("test-map", wholeItem(), (x, ignored) -> x)
+                                .setLocalParallelism(LOW_LOCAL_PARALLELISM),
+                        "map-using-imap-low"
+                ),
+                createParamSet(
+                        stage -> stage
+                                .mapUsingReplicatedMap("test-map", wholeItem(), (x, ignored) -> x)
+                                .setLocalParallelism(LOW_LOCAL_PARALLELISM),
+                        "map-using-replicated-map-low"
+                ),
+                createParamSet(
+                        stage -> stage
+                                .filter(PredicateEx.alwaysTrue())
+                                .setLocalParallelism(LOW_LOCAL_PARALLELISM),
+                        "filter-low"
+                ),
+                createParamSet(
+                        stage -> stage
+                                .mapStateful(LongAccumulator::new, (s, x) -> x)
+                                .setLocalParallelism(LOW_LOCAL_PARALLELISM),
+                        "map-stateful-global-low"
+                ),
+                createParamSet(
+                        stage -> stage
+                                .<Integer>customTransform("custom-transform",
+                                        Processors.mapP(FunctionEx.identity()))
+                                .setLocalParallelism(LOW_LOCAL_PARALLELISM),
+                        "custom-transform-low"
+                ),
+                createParamSet(
+                        stage -> stage
+                                .map(FunctionEx.identity())
+                                .setLocalParallelism(HIGH_LOCAL_PARALLELISM)
+                                .filter(PredicateEx.alwaysTrue())
+                                .setLocalParallelism(LOW_LOCAL_PARALLELISM),
+                        "map-high-filter-low"
+                ), createParamSet(
+                        stage -> stage
+                                .map(FunctionEx.identity())
+                                .setLocalParallelism(LOW_LOCAL_PARALLELISM)
+                                .filter(PredicateEx.alwaysTrue())
+                                .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
+                        "map-low-filter-high"
                 )
         );
     }
@@ -130,7 +191,7 @@ public class OrderedBatchProcessingTest extends JetTestSupport {
 
     @Test
     public void ordered_batch_processing_test() {
-        int itemCount = 5_000;
+        int itemCount = 200;
         List<Integer> sequence1 = IntStream.range(0, itemCount).boxed().collect(toList());
         List<Integer> sequence2 = IntStream.range(itemCount, 2 * itemCount).boxed().collect(toList());
         List<Integer> sequence3 = IntStream.range(2 * itemCount, 3 * itemCount).boxed().collect(toList());
