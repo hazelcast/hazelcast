@@ -109,8 +109,8 @@ public class ParquetFileFormatTest extends BaseFileFormatTest {
             assertThatThrownBy(() -> jets[0].newJob(p).join())
                     .hasCauseInstanceOf(JetException.class)
                     .hasRootCauseInstanceOf(ClassCastException.class)
-                    .hasMessageContaining("com.hazelcast.jet.hadoop.file.generated.SpecificUser cannot be cast to "
-                            + "com.hazelcast.jet.hadoop.file.model.IncorrectUser");
+                    .hasMessageContaining("com.hazelcast.jet.hadoop.file.generated.SpecificUser")
+                    .hasMessageContaining("com.hazelcast.jet.hadoop.file.model.IncorrectUser");
         } finally {
             for (JetInstance jet : jets) {
                 jet.shutdown();
