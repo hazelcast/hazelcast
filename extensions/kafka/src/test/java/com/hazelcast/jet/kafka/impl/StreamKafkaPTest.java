@@ -40,7 +40,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
@@ -296,7 +295,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
         // create snapshot
         TestInbox snapshot = saveSnapshot(processor, outbox);
-        Set<Entry<TopicPartition, String>> snapshotItems = unwrapBroadcastKey(snapshot.queue());
+        Set<Entry<Object, Object>> snapshotItems = unwrapBroadcastKey(snapshot.queue());
 
         // consume one more item
         kafkaTestSupport.produce(topic1Name, 1, "1");
@@ -386,7 +385,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
         Job job = instance().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
         assertTrueEventually(() -> {
-            kafkaTestSupport.produce(topic1Name, 0, "0");
+            kafkaTestSupport.produce(topic1Name, 0, "0").get();
             assertFalse(sinkList.isEmpty());
             assertEquals(entry(0, "0"), sinkList.get(0));
         });
@@ -508,12 +507,15 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     }
 
     @SuppressWarnings("unchecked")
-    private Set<Entry<TopicPartition, String>> unwrapBroadcastKey(Collection c) {
+    private Set<Entry<Object, Object>> unwrapBroadcastKey(Collection c) {
         // BroadcastKey("x") != BroadcastKey("x") ==> we need to extract the key
-        Set<Entry<TopicPartition, String>> res = new HashSet<>();
+        Set<Entry<Object, Object>> res = new HashSet<>();
         for (Object o : c) {
-            Entry<BroadcastKey<TopicPartition>, long[]> entry = (Entry<BroadcastKey<TopicPartition>, long[]>) o;
-            res.add(entry(entry.getKey().key(), Arrays.toString(entry.getValue())));
+            Entry<BroadcastKey<?>, ?> entry = (Entry<BroadcastKey<?>, ?>) o;
+            Object equalsSafeValue = entry.getValue() instanceof long[]
+                    ? Arrays.toString((long[]) entry.getValue())
+                    : entry.getValue();
+            res.add(entry(entry.getKey().key(), equalsSafeValue));
         }
         return res;
     }

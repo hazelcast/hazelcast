@@ -59,6 +59,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
 
     private static final long METADATA_CHECK_INTERVAL_NANOS = SECONDS.toNanos(5);
+    private static final String PARTITION_COUNTS_SNAPSHOT_KEY = "partitionCounts";
 
     Map<TopicPartition, Integer> currentAssignment = new HashMap<>();
 
@@ -77,7 +78,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
      * Offsets are -1 initially and remain -1 for partitions not assigned to this processor.
      */
     private final Map<String, long[]> offsets = new HashMap<>();
-    private Traverser<Entry<BroadcastKey<TopicPartition>, long[]>> snapshotTraverser;
+    private Traverser<Entry<BroadcastKey<?>, ?>> snapshotTraverser;
     private int processorIndex;
     private Traverser<Object> traverser = Traversers.empty();
 
@@ -211,7 +212,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
         }
 
         if (snapshotTraverser == null) {
-            Stream<Entry<BroadcastKey<TopicPartition>, long[]>> snapshotStream =
+            Stream<Entry<BroadcastKey<?>, ?>> snapshotStream =
                     offsets.entrySet().stream()
                            .flatMap(entry -> IntStream.range(0, entry.getValue().length)
                                   .filter(partition -> entry.getValue()[partition] >= 0)
@@ -229,36 +230,57 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
                                     " Saved offsets: " + offsets() + ", Saved watermarks: " + watermarks());
                         }
                     });
+
+            if (processorIndex == 0) {
+                Entry<BroadcastKey<?>, ?> partitionCountsItem = entry(
+                        broadcastKey(PARTITION_COUNTS_SNAPSHOT_KEY),
+                        topics.stream()
+                              .collect(Collectors.toMap(topic -> topic, topic -> offsets.get(topic).length)));
+                snapshotTraverser = snapshotTraverser.append(partitionCountsItem);
+            }
         }
         return emitFromTraverserToSnapshot(snapshotTraverser);
     }
 
     @Override
-    public void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+    public void restoreFromSnapshot(@Nonnull Object key0, @Nonnull Object value) {
         @SuppressWarnings("unchecked")
-        TopicPartition topicPartition = ((BroadcastKey<TopicPartition>) key).key();
-        long[] value1 = (long[]) value;
-        long offset = value1[0];
-        long watermark = value1[1];
-        if (!offsets.containsKey(topicPartition.topic())) {
-            getLogger().warning("Offset for topic '" + topicPartition.topic()
-                    + "' is restored from the snapshot, but the topic is not supposed to be read, ignoring");
-            return;
+        Object key = ((BroadcastKey<Object>) key0).key();
+        if (PARTITION_COUNTS_SNAPSHOT_KEY.equals(key)) {
+            @SuppressWarnings("unchecked")
+            Map<String, Integer> partitionCounts = (Map<String, Integer>) value;
+            for (Entry<String, Integer> partitionCountEntry : partitionCounts.entrySet()) {
+                String topicName = partitionCountEntry.getKey();
+                int partitionCount = partitionCountEntry.getValue();
+                int topicIndex = topics.indexOf(topicName);
+                assert topicIndex >= 0;
+                handleNewPartitions(topicIndex, partitionCount, true);
+            }
+        } else {
+            TopicPartition topicPartition = (TopicPartition) key;
+            long[] value1 = (long[]) value;
+            long offset = value1[0];
+            long watermark = value1[1];
+            if (!offsets.containsKey(topicPartition.topic())) {
+                getLogger().warning("Offset for topic '" + topicPartition.topic()
+                        + "' is restored from the snapshot, but the topic is not supposed to be read, ignoring");
+                return;
+            }
+            int topicIndex = topics.indexOf(topicPartition.topic());
+            assert topicIndex >= 0;
+            handleNewPartitions(topicIndex, topicPartition.partition() + 1, true);
+            if (!handledByThisProcessor(topicIndex, topicPartition.partition())) {
+                return;
+            }
+            long[] topicOffsets = offsets.get(topicPartition.topic());
+            assert topicOffsets[topicPartition.partition()] < 0 : "duplicate offset for topicPartition '" + topicPartition
+                    + "' restored, offset1=" + topicOffsets[topicPartition.partition()] + ", offset2=" + offset;
+            topicOffsets[topicPartition.partition()] = offset;
+            consumer.seek(topicPartition, offset + 1);
+            Integer partitionIndex = currentAssignment.get(topicPartition);
+            assert partitionIndex != null;
+            eventTimeMapper.restoreWatermark(partitionIndex, watermark);
         }
-        int topicIndex = topics.indexOf(topicPartition.topic());
-        assert topicIndex >= 0;
-        handleNewPartitions(topicIndex, topicPartition.partition() + 1, true);
-        if (!handledByThisProcessor(topicIndex, topicPartition.partition())) {
-            return;
-        }
-        long[] topicOffsets = offsets.get(topicPartition.topic());
-        assert topicOffsets[topicPartition.partition()] < 0 : "duplicate offset for topicPartition '" + topicPartition
-                + "' restored, offset1=" + topicOffsets[topicPartition.partition()] + ", offset2=" + offset;
-        topicOffsets[topicPartition.partition()] = offset;
-        consumer.seek(topicPartition, offset + 1);
-        Integer partitionIndex = currentAssignment.get(topicPartition);
-        assert partitionIndex != null;
-        eventTimeMapper.restoreWatermark(partitionIndex, watermark);
     }
 
     @Override
