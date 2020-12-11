@@ -18,11 +18,12 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.AbstractCacheConfig;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.CacheConfigAccessor;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 
@@ -41,7 +42,7 @@ import java.io.IOException;
  * @param <V> the value type
  * @since 3.9
  */
-public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> {
+public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versioned {
     public PreJoinCacheConfig() {
         super();
     }
@@ -75,13 +76,18 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> {
 
     @Override
     protected void writeTenant(ObjectDataOutput out) throws IOException {
-        out.writeObject(CacheConfigAccessor.getTenantControl(this));
+        // RU_COMPAT_4_1
+        if (out.getVersion().isLessOrEqual(Versions.V4_2)) {
+            out.writeObject(TenantControl.NOOP_TENANT_CONTROL);
+        }
     }
 
     @Override
     protected void readTenant(ObjectDataInput in) throws IOException {
-        TenantControl tc = in.readObject();
-        CacheConfigAccessor.setTenantControl(this, tc);
+        // RU_COMPAT_4_1
+        if (in.getVersion().isLessOrEqual(Versions.V4_2)) {
+            in.readObject();
+        }
     }
 
     @Override
@@ -128,8 +134,8 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> {
     /**
      * @return this configuration as a {@link CacheConfig}
      */
-    CacheConfig asCacheConfig() {
-        return this.copy(new CacheConfig(), false);
+    CacheConfig<K, V> asCacheConfig() {
+        return this.copy(new CacheConfig<>(), false);
     }
 
     @Override
@@ -145,19 +151,19 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> {
     /**
      * @return an instance of {@code CacheConfig} that is not a {@code PreJoinCacheConfig}
      */
-    public static CacheConfig asCacheConfig(CacheConfig cacheConfig) {
+    public static <K, V> CacheConfig<K, V> asCacheConfig(CacheConfig<K, V> cacheConfig) {
         if (!(cacheConfig instanceof PreJoinCacheConfig)) {
             return cacheConfig;
         } else {
-            return ((PreJoinCacheConfig) cacheConfig).asCacheConfig();
+            return ((PreJoinCacheConfig<K, V>) cacheConfig).asCacheConfig();
         }
     }
 
-    public static PreJoinCacheConfig of(CacheConfig cacheConfig) {
+    public static <K, V> PreJoinCacheConfig<K, V> of(CacheConfig<K, V> cacheConfig) {
         if (cacheConfig instanceof PreJoinCacheConfig) {
-            return (PreJoinCacheConfig) cacheConfig;
+            return (PreJoinCacheConfig<K, V>) cacheConfig;
         } else {
-            return new PreJoinCacheConfig(cacheConfig, false);
+            return new PreJoinCacheConfig<>(cacheConfig, false);
         }
     }
 }

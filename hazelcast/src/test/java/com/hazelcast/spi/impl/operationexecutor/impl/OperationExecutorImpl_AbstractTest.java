@@ -229,14 +229,15 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         }
 
         @Override
-        public void run(Packet packet) throws Exception {
+        public boolean run(Packet packet) throws Exception {
             packets.add(packet);
             Operation op = serializationService.toObject(packet);
             run(op);
+            return false;
         }
 
         @Override
-        public void run(Operation task) {
+        public boolean run(Operation task) {
             operations.add(task);
 
             currentTask = task;
@@ -247,6 +248,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
             } finally {
                 currentTask = null;
             }
+            return false;
         }
     }
 

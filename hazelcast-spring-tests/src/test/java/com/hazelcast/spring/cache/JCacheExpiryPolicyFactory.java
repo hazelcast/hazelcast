@@ -26,20 +26,18 @@ import javax.annotation.Resource;
 import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 @SpringAware
 public class JCacheExpiryPolicyFactory implements Factory<ExpiryPolicy>, HazelcastInstanceAware, NodeAware {
 
     public static final AtomicBoolean HAZELCAST_INSTANCE_INJECTED = new AtomicBoolean();
     public static final AtomicBoolean NODE_INJECTED = new AtomicBoolean();
+    public static final AtomicReference<IJCacheDummyBean> INJECTED_DUMMY_BEAN = new AtomicReference<>();
 
-    public static JCacheExpiryPolicyFactory instance;
-
-    @Resource(name = "dummy")
     private IJCacheDummyBean dummyBean;
 
     public JCacheExpiryPolicyFactory() {
-        instance = this;
     }
 
     @Override
@@ -61,7 +59,9 @@ public class JCacheExpiryPolicyFactory implements Factory<ExpiryPolicy>, Hazelca
         return dummyBean;
     }
 
+    @Resource(name = "dummy")
     public void setDummyBean(IJCacheDummyBean dummyBean) {
+        INJECTED_DUMMY_BEAN.set(dummyBean);
         this.dummyBean = dummyBean;
     }
 }

@@ -45,6 +45,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.internal.partition.IPartitionService;
 
+import javax.annotation.Nonnull;
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -71,6 +72,7 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
@@ -92,7 +94,7 @@ abstract class CacheProxySupport<K, V>
     private static final int TIMEOUT = 10;
 
     protected final ILogger logger;
-    protected final CacheConfig<K, V> cacheConfig;
+    protected CacheConfig<K, V> cacheConfig;
     protected final String name;
     protected final String nameWithPrefix;
     protected final ICacheService cacheService;
@@ -163,6 +165,11 @@ abstract class CacheProxySupport<K, V>
     @Override
     public void close() {
         close0(false);
+    }
+
+    @Override
+    public @Nonnull DestroyEventContext getDestroyContextForTenant() {
+        return () -> cacheConfig = ((CacheService) cacheService).reSerializeCacheConfig(cacheConfig);
     }
 
     @Override

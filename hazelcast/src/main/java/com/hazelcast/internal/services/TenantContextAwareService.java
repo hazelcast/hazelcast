@@ -14,25 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
-
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.spi.annotation.PrivateApi;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+package com.hazelcast.internal.services;
 
 /**
- * Accessor for package-private methods of {@link CacheConfig}.
+ * A marker interface for distributed services participating in tenant control.
+ *
+ * @since 4.1
+ * @see com.hazelcast.spi.tenantcontrol.TenantControl
  */
-@PrivateApi
-public final class CacheConfigAccessor {
-
-    private CacheConfigAccessor() {
-    }
-
-    public static void setSerializationService(@Nonnull CacheConfig<?, ?> config,
-                                               @Nullable SerializationService serializationService) {
-        config.setSerializationService(serializationService);
-    }
+public interface TenantContextAwareService {
 }

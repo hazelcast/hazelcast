@@ -153,4 +153,9 @@ public class MapReplicationOperation extends Operation
     public int getClassId() {
         return MapDataSerializerHook.MAP_REPLICATION;
     }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }

@@ -32,6 +32,7 @@ import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.NamedOperation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import java.util.Collection;
 
@@ -114,5 +115,16 @@ public abstract class QueueOperation extends AbstractNamedOperation
     @Override
     public int getFactoryId() {
         return QueueDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public TenantControl getTenantControl() {
+        return getNodeEngine().getTenantControlService()
+                              .getTenantControl(QueueService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
     }
 }
