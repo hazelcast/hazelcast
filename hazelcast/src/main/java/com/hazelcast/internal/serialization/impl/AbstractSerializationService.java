@@ -495,7 +495,10 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
         //3-Custom registered types by user
         if (serializer == null || allowOverrideDefaultSerializers) {
-            serializer = lookupCustomSerializer(type);
+            final SerializerAdapter customSerializer = lookupCustomSerializer(type);
+            if (customSerializer != null) {
+                serializer = customSerializer;
+            }
         }
 
         //4-JDK serialization ( Serializable and Externalizable )
