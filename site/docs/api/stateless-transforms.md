@@ -161,7 +161,7 @@ StreamStage<OrderDetails> details = orders.mapUsingService(productService,
 
 ## mapUsingServiceAsync
 
-This transform is identical to [mapUsingService](#mapUsingService) with
+This transform is identical to [mapUsingService](#mapusingservice) with
 one important distinction: the service in this case supports
 asynchronous calls, which are compatible with cooperative concurrency
 and don't need extra threads. It also means that we can have multiple
