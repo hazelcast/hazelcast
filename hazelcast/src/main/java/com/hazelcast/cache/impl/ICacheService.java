@@ -170,6 +170,4 @@ public interface ICacheService
      * @since 3.10
      */
     <K, V> void createCacheConfigOnAllMembers(PreJoinCacheConfig<K, V> cacheConfig);
-
-    <K, V> void setTenantControl(CacheConfig<K, V> cacheConfig);
 }

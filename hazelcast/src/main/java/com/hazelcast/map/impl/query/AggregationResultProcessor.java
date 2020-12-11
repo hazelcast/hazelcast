@@ -17,11 +17,9 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-
-import java.util.Collection;
+import com.hazelcast.query.impl.QueryableEntry;
 
 /**
  * Responsible for populating {@link AggregationResult}s
@@ -37,7 +35,7 @@ public class AggregationResultProcessor implements ResultProcessor<AggregationRe
     }
 
     @Override
-    public AggregationResult populateResult(Query query, long resultLimit, Collection<QueryableEntry> entries,
+    public AggregationResult populateResult(Query query, long resultLimit, Iterable<QueryableEntry> entries,
                                             PartitionIdSet partitionIds) {
         return accumulationExecutor.execute(query.getAggregator(), entries, partitionIds);
     }

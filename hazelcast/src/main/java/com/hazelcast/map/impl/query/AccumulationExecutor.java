@@ -17,10 +17,8 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-
-import java.util.Collection;
+import com.hazelcast.query.impl.QueryableEntry;
 
 /**
  * Executes the accumulation phase of the Aggregator.
@@ -35,6 +33,6 @@ public interface AccumulationExecutor {
      * @param partitionIds IDs of the partitions where the entries reside
      * @return AggregationResult encompassing the result aggregator
      */
-    AggregationResult execute(Aggregator aggregator, Collection<QueryableEntry> entries,
+    AggregationResult execute(Aggregator aggregator, Iterable<QueryableEntry> entries,
                               PartitionIdSet partitionIds);
 }

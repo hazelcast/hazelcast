@@ -61,7 +61,6 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberGroupConfig;
-import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MetadataPolicy;
@@ -534,8 +533,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleSplitBrainProtection(Node node) {
-        SplitBrainProtectionConfig splitBrainProtectionConfig = new SplitBrainProtectionConfig();
         String name = getAttribute(node, "name");
+        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig(name);
         splitBrainProtectionConfig.setName(name);
         handleSplitBrainProtectionNode(node, splitBrainProtectionConfig, name);
     }
@@ -992,18 +991,22 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleExecutor(Node node) throws Exception {
-        ExecutorConfig executorConfig = new ExecutorConfig();
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        ExecutorConfig executorConfig = config.getExecutorConfig(name);
+
         handleViaReflection(node, config, executorConfig);
     }
 
     protected void handleDurableExecutor(Node node) throws Exception {
-        DurableExecutorConfig durableExecutorConfig = new DurableExecutorConfig();
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        DurableExecutorConfig durableExecutorConfig = config.getDurableExecutorConfig(name);
+
         handleViaReflection(node, config, durableExecutorConfig);
     }
 
     protected void handleScheduledExecutor(Node node) {
-        ScheduledExecutorConfig scheduledExecutorConfig = new ScheduledExecutorConfig();
-        scheduledExecutorConfig.setName(getTextContent(getNamedItemNode(node, "name")));
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        ScheduledExecutorConfig scheduledExecutorConfig = config.getScheduledExecutorConfig(name);
 
         handleScheduledExecutorNode(node, scheduledExecutorConfig);
     }
@@ -1032,8 +1035,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleCardinalityEstimator(Node node) {
-        CardinalityEstimatorConfig cardinalityEstimatorConfig = new CardinalityEstimatorConfig();
-        cardinalityEstimatorConfig.setName(getTextContent(getNamedItemNode(node, "name")));
+        CardinalityEstimatorConfig cardinalityEstimatorConfig = config.getCardinalityEstimatorConfig(
+          getTextContent(getNamedItemNode(node, "name")));
 
         handleCardinalityEstimatorNode(node, cardinalityEstimatorConfig);
     }
@@ -1057,13 +1060,14 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handlePNCounter(Node node) throws Exception {
-        PNCounterConfig pnCounterConfig = new PNCounterConfig();
+        String name = getAttribute(node, "name");
+        PNCounterConfig pnCounterConfig = config.getPNCounterConfig(name);
         handleViaReflection(node, config, pnCounterConfig);
     }
 
     protected void handleFlakeIdGenerator(Node node) {
         String name = getAttribute(node, "name");
-        FlakeIdGeneratorConfig generatorConfig = new FlakeIdGeneratorConfig(name);
+        FlakeIdGeneratorConfig generatorConfig = config.getFlakeIdGeneratorConfig(name);
         handleFlakeIdGeneratorNode(node, generatorConfig);
     }
 
@@ -1498,10 +1502,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleQueue(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        QueueConfig qConfig = new QueueConfig();
-        qConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        QueueConfig qConfig = config.getQueueConfig(name);
         handleQueueNode(node, qConfig);
     }
 
@@ -1547,10 +1549,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleList(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        ListConfig lConfig = new ListConfig();
-        lConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        ListConfig lConfig = config.getListConfig(name);
         handleListNode(node, lConfig);
     }
 
@@ -1579,10 +1579,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleSet(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        SetConfig sConfig = new SetConfig();
-        sConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        SetConfig sConfig = config.getSetConfig(name);
         handleSetNode(node, sConfig);
     }
 
@@ -1610,10 +1608,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleMultiMap(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        MultiMapConfig multiMapConfig = new MultiMapConfig();
-        multiMapConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        MultiMapConfig multiMapConfig = config.getMultiMapConfig(name);
         handleMultiMapNode(node, multiMapConfig);
     }
 
@@ -1658,10 +1654,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleReplicatedMap(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        final ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig();
-        replicatedMapConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        final ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(name);
         handleReplicatedMapNode(node, replicatedMapConfig);
     }
 
@@ -1688,8 +1682,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleMap(Node parentNode) throws Exception {
         String name = getAttribute(parentNode, "name");
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setName(name);
+        MapConfig mapConfig = config.getMapConfig(name);
         handleMapNode(parentNode, mapConfig);
     }
 
@@ -2650,10 +2643,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleMemcacheProtocol(Node node) {
-        MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig();
-        config.getNetworkConfig().setMemcacheProtocolConfig(memcacheProtocolConfig);
-        boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
-        memcacheProtocolConfig.setEnabled(enabled);
+        config.getNetworkConfig().getMemcacheProtocolConfig()
+            .setEnabled(getBooleanValue(getAttribute(node, "enabled")));
     }
 
     private void handleRestApi(Node node) {

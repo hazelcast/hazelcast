@@ -17,17 +17,17 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
+import com.hazelcast.query.impl.QueryableEntry;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.query.impl.predicates.PredicateUtils.estimatedSizeOf;
 import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -54,8 +54,9 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
 
     @Override
     @SuppressWarnings("unchecked")
-    public AggregationResult execute(
-            Aggregator aggregator, Collection<QueryableEntry> entries, PartitionIdSet partitionIds) {
+    public AggregationResult execute(Aggregator aggregator,
+                                     Iterable<QueryableEntry> entries,
+                                     PartitionIdSet partitionIds) {
         Collection<Aggregator> chunkAggregators = accumulateParallel(aggregator, entries);
 
         Aggregator resultAggregator = clone(aggregator);
@@ -72,38 +73,23 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
         return result;
     }
 
-    protected Collection<Aggregator> accumulateParallel(Aggregator aggregator, Collection<QueryableEntry> entries) {
+    protected Collection<Aggregator> accumulateParallel(Aggregator aggregator, Iterable<QueryableEntry> entries) {
         Collection<Future<Aggregator>> futures = new ArrayList<>();
-        Collection<QueryableEntry>[] chunks = split(entries, THREAD_SPLIT_COUNT);
-        if (chunks == null) {
-            // not enough elements for split
-            AccumulatePartitionCallable task = new AccumulatePartitionCallable(clone(aggregator), entries);
-            futures.add(executor.submit(task));
-        } else {
-            // split elements
-            for (Collection<QueryableEntry> chunk : chunks) {
-                AccumulatePartitionCallable task = new AccumulatePartitionCallable(clone(aggregator), chunk);
-                futures.add(executor.submit(task));
+
+        List<QueryableEntry> buffer = new ArrayList<>();
+        for (QueryableEntry entry : entries) {
+            buffer.add(entry);
+            if (buffer.size() == THREAD_SPLIT_COUNT) {
+                futures.add(executor.submit(new AccumulatePartitionCallable(clone(aggregator), buffer)));
+                buffer = new ArrayList<>();
             }
         }
-        return returnWithDeadline(futures, callTimeoutInMillis, MILLISECONDS, RETHROW_EVERYTHING);
-    }
 
-    private Collection<QueryableEntry>[] split(Collection<QueryableEntry> entries, int chunkCount) {
-        int estimatedSize = estimatedSizeOf(entries);
-        if (estimatedSize < chunkCount * 2) {
-            return null;
+        if (!buffer.isEmpty()) {
+            futures.add(executor.submit(new AccumulatePartitionCallable(clone(aggregator), buffer)));
         }
-        int counter = 0;
-        Collection<QueryableEntry>[] entriesSplit = new Collection[chunkCount];
-        int entriesPerChunk = estimatedSize / chunkCount;
-        for (int i = 0; i < chunkCount; i++) {
-            entriesSplit[i] = new ArrayList<>(entriesPerChunk);
-        }
-        for (QueryableEntry entry : entries) {
-            entriesSplit[counter++ % THREAD_SPLIT_COUNT].add(entry);
-        }
-        return entriesSplit;
+
+        return returnWithDeadline(futures, callTimeoutInMillis, MILLISECONDS, RETHROW_EVERYTHING);
     }
 
     private Aggregator clone(Aggregator aggregator) {
@@ -112,15 +98,15 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
 
     private static final class AccumulatePartitionCallable implements Callable<Aggregator> {
         private final Aggregator aggregator;
-        private final Collection<QueryableEntry> entries;
+        private final Iterable<QueryableEntry> entries;
 
-        private AccumulatePartitionCallable(Aggregator aggregator, Collection<QueryableEntry> entries) {
+        private AccumulatePartitionCallable(Aggregator aggregator, Iterable<QueryableEntry> entries) {
             this.aggregator = aggregator;
             this.entries = entries;
         }
 
         @Override
-        public Aggregator call() throws Exception {
+        public Aggregator call() {
             try {
                 for (QueryableEntry entry : entries) {
                     aggregator.accumulate(entry);

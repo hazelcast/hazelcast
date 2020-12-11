@@ -96,4 +96,10 @@ public class CacheGetAndReplaceOperation extends MutatingCacheOperation {
         return CacheDataSerializerHook.GET_AND_REPLACE;
     }
 
+    @Override
+    public boolean requiresTenantContext() {
+        // requires deserialization of replacement value
+        // when OBJECT in-memory format
+        return isObjectInMemoryFormat();
+    }
 }

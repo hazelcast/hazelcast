@@ -19,10 +19,9 @@ package com.hazelcast.query.impl;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.impl.StoreAdapter;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -47,7 +46,6 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     protected InternalSerializationService serializationService;
     protected Extractors extractors;
 
-    private StoreAdapter storeAdapter;
     private Record record;
 
     // overridden in some subclasses
@@ -65,14 +63,6 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
 
     public void setRecord(Record record) {
         this.record = record;
-    }
-
-    public StoreAdapter getStoreAdapter() {
-        return storeAdapter;
-    }
-
-    public void setStoreAdapter(StoreAdapter storeAdapter) {
-        this.storeAdapter = storeAdapter;
     }
 
     @Override
@@ -122,7 +112,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
             boolean isKey = startsWithKeyConstant(attributeName);
             attributeName = getAttributeName(isKey, attributeName);
             Object target = getTargetObject(isKey);
-            Object metadata = getMetadataOrNull(this. getMetadata(), isKey);
+            Object metadata = getMetadataOrNull(this.getMetadata(), isKey);
             result = extractAttributeValueFromTargetObject(extractors, attributeName, target, metadata);
         }
         if (result instanceof HazelcastJsonValue) {

@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.JetBuildInfo;
+import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.logging.AbstractLogger;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LogEvent;
@@ -25,7 +26,6 @@ import com.hazelcast.logging.LogListener;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.internal.util.ConstructorFunction;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;

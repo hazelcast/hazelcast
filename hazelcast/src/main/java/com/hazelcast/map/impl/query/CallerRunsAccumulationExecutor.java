@@ -17,11 +17,9 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-
-import java.util.Collection;
+import com.hazelcast.query.impl.QueryableEntry;
 
 /**
  * Implementation of the {@link AccumulationExecutor} that runs the accumulation in the calling thread in a sequential fashion.
@@ -36,8 +34,9 @@ public class CallerRunsAccumulationExecutor implements AccumulationExecutor {
 
     @Override
     @SuppressWarnings("unchecked")
-    public AggregationResult execute(
-            Aggregator aggregator, Collection<QueryableEntry> entries, PartitionIdSet partitionIds) {
+    public AggregationResult execute(Aggregator aggregator,
+                                     Iterable<QueryableEntry> entries,
+                                     PartitionIdSet partitionIds) {
         Aggregator resultAggregator = serializationService.toObject(serializationService.toData(aggregator));
         try {
             for (QueryableEntry entry : entries) {

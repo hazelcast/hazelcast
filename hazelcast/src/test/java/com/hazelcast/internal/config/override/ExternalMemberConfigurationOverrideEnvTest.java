@@ -22,6 +22,7 @@ import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,6 +34,7 @@ import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironment
 import static com.hazelcast.internal.config.override.ExternalConfigTestUtils.runWithSystemProperty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -140,6 +142,206 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
 
         assertTrue(config.getUserCodeDeploymentConfig().isEnabled());
         assertEquals(UserCodeDeploymentConfig.ClassCacheMode.OFF, config.getUserCodeDeploymentConfig().getClassCacheMode());
+    }
+
+    @Test
+    public void shouldHandleExecutorServiceConfig() throws Exception {
+        Config config = new Config();
+        config.getExecutorConfig("foo1")
+          .setPoolSize(1)
+          .setStatisticsEnabled(true);
+
+        withEnvironmentVariable("HZ_EXECUTORSERVICE_FOO1_STATISTICSENABLED", "true")
+          .and("HZ_EXECUTORSERVICE_FOO1_QUEUECAPACITY", "17")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getExecutorConfig("foo1").isStatisticsEnabled());
+        assertEquals(17, config.getExecutorConfig("foo1").getQueueCapacity());
+        assertEquals(1, config.getExecutorConfig("foo1").getPoolSize());
+    }
+
+    @Test
+    public void shouldHandleDurableExecutorServiceConfig() throws Exception {
+        Config config = new Config();
+        config.getDurableExecutorConfig("foo1")
+          .setPoolSize(1)
+          .setStatisticsEnabled(true);
+
+        withEnvironmentVariable("HZ_DURABLEEXECUTORSERVICE_FOO1_STATISTICSENABLED", "true")
+          .and("HZ_DURABLEEXECUTORSERVICE_FOO1_CAPACITY", "17")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getDurableExecutorConfig("foo1").isStatisticsEnabled());
+        assertEquals(17, config.getDurableExecutorConfig("foo1").getCapacity());
+        assertEquals(1, config.getDurableExecutorConfig("foo1").getPoolSize());
+    }
+
+    @Test
+    public void shouldHandleScheduledServiceConfig() throws Exception {
+        Config config = new Config();
+        config.getScheduledExecutorConfig("foo1")
+          .setPoolSize(1)
+          .setStatisticsEnabled(true);
+
+        withEnvironmentVariable("HZ_SCHEDULEDEXECUTORSERVICE_FOO1_ENABLED", "true")
+          .and("HZ_SCHEDULEDEXECUTORSERVICE_FOO1_CAPACITY", "17")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getScheduledExecutorConfig("foo1").isStatisticsEnabled());
+        assertEquals(17, config.getScheduledExecutorConfig("foo1").getCapacity());
+        assertEquals(1, config.getScheduledExecutorConfig("foo1").getPoolSize());
+    }
+
+    @Test
+    public void shouldHandleCardinalityEstimatorConfig() throws Exception {
+        Config config = new Config();
+        config.getCardinalityEstimatorConfig("foo")
+          .setAsyncBackupCount(4);
+
+        withEnvironmentVariable("HZ_CARDINALITYESTIMATOR_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2,  config.getCardinalityEstimatorConfig("foo").getBackupCount());
+        assertEquals(4,  config.getCardinalityEstimatorConfig("foo").getAsyncBackupCount());
+    }
+
+    @Test
+    public void shouldHandleSplitBrainProtectionConfig() throws Exception {
+        Config config = new Config();
+        config.getSplitBrainProtectionConfig("foo")
+          .setEnabled(true)
+          .setProtectOn(SplitBrainProtectionOn.READ);
+
+        withEnvironmentVariable("HZ_SPLITBRAINPROTECTION_FOO_ENABLED", "true")
+          .and("HZ_SPLITBRAINPROTECTION_FOO_FUNCTIONCLASSNAME", "com.foo.SomeClass")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getSplitBrainProtectionConfig("foo").isEnabled());
+        assertSame(SplitBrainProtectionOn.READ, config.getSplitBrainProtectionConfig("foo").getProtectOn());
+        assertEquals("com.foo.SomeClass", config.getSplitBrainProtectionConfig("foo").getFunctionClassName());
+    }
+
+    @Test
+    public void shouldHandlePNCounterConfig() throws Exception {
+        Config config = new Config();
+        config.getPNCounterConfig("foo")
+          .setStatisticsEnabled(false)
+          .setReplicaCount(2);
+
+        withEnvironmentVariable("HZ_PNCOUNTER_FOO_STATISTICSENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getPNCounterConfig("foo").isStatisticsEnabled());
+        assertEquals(2, config.getPNCounterConfig("foo").getReplicaCount());
+    }
+
+    @Test
+    public void shouldHandleMemcachedProtocolConfig() throws Exception {
+        Config config = new Config();
+        config.getNetworkConfig().getMemcacheProtocolConfig().setEnabled(false);
+
+        withEnvironmentVariable("HZ_NETWORK_MEMCACHEPROTOCOL_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getNetworkConfig().getMemcacheProtocolConfig().isEnabled());
+    }
+
+    @Test
+    public void shouldHandleFlakeIdConfig() throws Exception {
+        Config config = new Config();
+        config.getFlakeIdGeneratorConfig("foo")
+          .setStatisticsEnabled(false)
+          .setAllowedFutureMillis(1000);
+
+        withEnvironmentVariable("HZ_FLAKEIDGENERATOR_FOO_STATISTICSENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getFlakeIdGeneratorConfig("foo").isStatisticsEnabled());
+        assertEquals(1000, config.getFlakeIdGeneratorConfig("foo").getAllowedFutureMillis());
+    }
+
+    @Test
+    public void shouldHandleQueueConfig() throws Exception {
+        Config config = new Config();
+        config.getQueueConfig("foo")
+          .setBackupCount(4)
+          .setMaxSize(10);
+
+        withEnvironmentVariable("HZ_QUEUE_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getQueueConfig("foo").getBackupCount());
+        assertEquals(10, config.getQueueConfig("foo").getMaxSize());
+    }
+
+    @Test
+    public void shouldHandleListConfig() throws Exception {
+        Config config = new Config();
+        config.getListConfig("foo")
+          .setBackupCount(4)
+          .setMaxSize(10);
+
+        withEnvironmentVariable("HZ_LIST_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getListConfig("foo").getBackupCount());
+        assertEquals(10, config.getListConfig("foo").getMaxSize());
+    }
+
+    @Test
+    public void shouldHandleSetConfig() throws Exception {
+        Config config = new Config();
+        config.getSetConfig("foo")
+          .setBackupCount(4)
+          .setMaxSize(10);
+
+        withEnvironmentVariable("HZ_SET_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getSetConfig("foo").getBackupCount());
+        assertEquals(10, config.getSetConfig("foo").getMaxSize());
+    }
+
+    @Test
+    public void shouldHandleMapConfig() throws Exception {
+        Config config = new Config();
+        config.getMapConfig("foo")
+          .setBackupCount(4)
+          .setMaxIdleSeconds(100);
+
+        withEnvironmentVariable("HZ_MAP_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getMapConfig("foo").getBackupCount());
+        assertEquals(100, config.getMapConfig("foo").getMaxIdleSeconds());
+    }
+
+    @Test
+    public void shouldHandleReplicatedMapConfig() throws Exception {
+        Config config = new Config();
+        config.getReplicatedMapConfig("foo")
+          .setAsyncFillup(false)
+          .setStatisticsEnabled(false);
+
+        withEnvironmentVariable("HZ_REPLICATEDMAP_FOO_ASYNCFILLUP", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getReplicatedMapConfig("foo").isAsyncFillup());
+        assertFalse(config.getReplicatedMapConfig("foo").isStatisticsEnabled());
+    }
+
+    @Test
+    public void shouldHandleMultiMapConfig() throws Exception {
+        Config config = new Config();
+        config.getMultiMapConfig("foo")
+          .setBackupCount(4)
+          .setBinary(false);
+
+        withEnvironmentVariable("HZ_MULTIMAP_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getMultiMapConfig("foo").getBackupCount());
+        assertFalse(config.getMultiMapConfig("foo").isBinary());
     }
 
     @Test(expected = InvalidConfigurationException.class)

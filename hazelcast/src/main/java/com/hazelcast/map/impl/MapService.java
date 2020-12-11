@@ -41,6 +41,7 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.services.TenantContextAwareService;
 import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.internal.services.WanSupportingService;
 import com.hazelcast.map.LocalMapStats;
@@ -95,7 +96,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
         SplitBrainHandlerService, WanSupportingService, StatisticsAwareService<LocalMapStats>,
         PartitionAwareService, ClientAwareService, SplitBrainProtectionAwareService,
         NotifiableEventListener, ClusterStateListener, LockInterceptorService<Data>,
-        DynamicMetricsProvider {
+        DynamicMetricsProvider, TenantContextAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 

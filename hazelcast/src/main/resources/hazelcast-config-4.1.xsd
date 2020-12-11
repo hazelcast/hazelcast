@@ -2574,6 +2574,7 @@
                     <xs:enumeration value="CUSTOM"/>
                     <xs:enumeration value="PER_MEMBER"/>
                     <xs:enumeration value="ZONE_AWARE"/>
+                    <xs:enumeration value="NODE_AWARE"/>
                     <xs:enumeration value="SPI"/>
                 </xs:restriction>
             </xs:simpleType>

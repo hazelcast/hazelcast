@@ -223,7 +223,7 @@ public class EvictionTest extends HazelcastTestSupport {
             lastAccessTimes.put(i, lastAccessTime);
         }
 
-        sleepSeconds(1);
+        sleepAtLeastSeconds(1);
 
         EntryObject entryObject = new PredicateBuilderImpl().getEntryObject();
         Predicate predicateCityNull = entryObject.get("city").isNull();

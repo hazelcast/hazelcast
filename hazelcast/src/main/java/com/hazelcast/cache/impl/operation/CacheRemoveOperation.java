@@ -90,4 +90,9 @@ public class CacheRemoveOperation extends MutatingCacheOperation {
         super.readInternal(in);
         oldValue = IOUtil.readData(in);
     }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }

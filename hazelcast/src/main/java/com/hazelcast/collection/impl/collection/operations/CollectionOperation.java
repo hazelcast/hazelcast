@@ -43,6 +43,7 @@ import com.hazelcast.spi.impl.operationservice.NamedOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 public abstract class CollectionOperation extends Operation
         implements NamedOperation, PartitionAwareOperation, IdentifiedDataSerializable {
@@ -154,5 +155,17 @@ public abstract class CollectionOperation extends Operation
     private AbstractLocalCollectionStats getLocalCollectionStats() {
         CollectionService collectionService = getService();
         return collectionService.getLocalCollectionStats(name);
+    }
+
+    @Override
+    public TenantControl getTenantControl() {
+        CollectionService collectionService = getService();
+        return getNodeEngine().getTenantControlService()
+                .getTenantControl(collectionService.getServiceName(), name);
+    }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
     }
 }

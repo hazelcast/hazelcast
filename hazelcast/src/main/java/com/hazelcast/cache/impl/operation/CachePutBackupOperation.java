@@ -89,4 +89,9 @@ public class CachePutBackupOperation
     public int getClassId() {
         return CacheDataSerializerHook.PUT_BACKUP;
     }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }
