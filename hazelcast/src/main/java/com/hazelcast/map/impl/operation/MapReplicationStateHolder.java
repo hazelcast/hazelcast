@@ -27,6 +27,7 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
@@ -284,15 +285,17 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 ExpirySystem expirySystem = recordStore.getExpirySystem();
                 Map<Data, ExpirySystem.ExpiryMetadata> expireTimeByKey = expirySystem.getExpireTimeByKey();
 
-                out.writeInt(expireTimeByKey.size());
-                for (Map.Entry<Data, ExpirySystem.ExpiryMetadata> metadataEntry : expireTimeByKey.entrySet()) {
-                    Data key = metadataEntry.getKey();
-                    ExpirySystem.ExpiryMetadata expiryMetadata = metadataEntry.getValue();
+                out.writeInt(expireTimeByKey == null ? 0 : expireTimeByKey.size());
+                if (!MapUtil.isNullOrEmpty(expireTimeByKey)) {
+                    for (Map.Entry<Data, ExpirySystem.ExpiryMetadata> metadataEntry : expireTimeByKey.entrySet()) {
+                        Data key = metadataEntry.getKey();
+                        ExpirySystem.ExpiryMetadata expiryMetadata = metadataEntry.getValue();
 
-                    IOUtil.writeData(out, key);
-                    out.writeLong(expiryMetadata.getTtl());
-                    out.writeLong(expiryMetadata.getMaxIdle());
-                    out.writeLong(expiryMetadata.getExpirationTime());
+                        IOUtil.writeData(out, key);
+                        out.writeLong(expiryMetadata.getTtl());
+                        out.writeLong(expiryMetadata.getMaxIdle());
+                        out.writeLong(expiryMetadata.getExpirationTime());
+                    }
                 }
             }
         }
