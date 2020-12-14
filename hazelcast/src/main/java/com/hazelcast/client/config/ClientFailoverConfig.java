@@ -149,6 +149,7 @@ public class ClientFailoverConfig {
 
     /**
      * Returns the count of attempts to connect to a cluster.
+     * Default value is {@code Integer.MAX_VALUE}.
      *
      * @return the count of attempts
      */
