@@ -53,7 +53,6 @@ import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
@@ -287,9 +286,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleRingbuffer(Node node) {
         for (Node rbNode : childElements(node)) {
-            RingbufferConfig ringBufferConfig = new RingbufferConfig();
-            ringBufferConfig.setName(rbNode.getNodeName());
-            handleRingBufferNode(rbNode, ringBufferConfig);
+            handleRingBufferNode(rbNode, config.getRingbufferConfig(rbNode.getNodeName()));
         }
     }
 
@@ -304,9 +301,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleCache(Node parentNode) throws Exception {
         for (Node cacheNode : childElements(parentNode)) {
-            CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
-            cacheConfig.setName(cacheNode.getNodeName());
-            handleCacheNode(cacheNode, cacheConfig);
+            handleCacheNode(cacheNode, config.getCacheConfig(cacheNode.getNodeName()));
         }
     }
 
@@ -477,15 +472,16 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected MergePolicyConfig createMergePolicyConfig(Node node) {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
+    protected MergePolicyConfig createMergePolicyConfig(Node node, MergePolicyConfig baseMergePolicyConfig) {
         String policyString = getTextContent(getNamedItemNode(node, "class-name"));
-        mergePolicyConfig.setPolicy(policyString);
+        if (policyString != null) {
+            baseMergePolicyConfig.setPolicy(policyString);
+        }
         final String att = getAttribute(node, "batch-size");
         if (att != null) {
-            mergePolicyConfig.setBatchSize(getIntegerValue("batch-size", att));
+            baseMergePolicyConfig.setBatchSize(getIntegerValue("batch-size", att));
         }
-        return mergePolicyConfig;
+        return baseMergePolicyConfig;
     }
 
     @Override

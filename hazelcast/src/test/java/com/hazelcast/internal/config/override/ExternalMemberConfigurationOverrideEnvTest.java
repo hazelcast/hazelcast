@@ -193,6 +193,21 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
+    public void shouldHandleScheduledServiceConfigMergePolicy() throws Exception {
+        Config config = new Config();
+        config.getScheduledExecutorConfig("foo1")
+          .getMergePolicyConfig()
+          .setPolicy("foo")
+          .setBatchSize(4);
+
+        withEnvironmentVariable("HZ_SCHEDULEDEXECUTORSERVICE_FOO1_MERGEPOLICY_CLASSNAME", "PutIfAbsentMergePolicy")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals("PutIfAbsentMergePolicy", config.getScheduledExecutorConfig("foo").getMergePolicyConfig().getPolicy());
+        assertEquals(4, config.getScheduledExecutorConfig("foo").getMergePolicyConfig().getBatchSize());
+    }
+
+    @Test
     public void shouldHandleCardinalityEstimatorConfig() throws Exception {
         Config config = new Config();
         config.getCardinalityEstimatorConfig("foo")
@@ -203,6 +218,21 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
 
         assertEquals(2,  config.getCardinalityEstimatorConfig("foo").getBackupCount());
         assertEquals(4,  config.getCardinalityEstimatorConfig("foo").getAsyncBackupCount());
+    }
+
+    @Test
+    public void shouldHandleCardinalityEstimatorConfigMergePolicy() throws Exception {
+        Config config = new Config();
+        config.getCardinalityEstimatorConfig("foo")
+          .getMergePolicyConfig()
+          .setPolicy("foo")
+          .setBatchSize(4);
+
+        withEnvironmentVariable("HZ_CARDINALITYESTIMATOR_FOO_MERGEPOLICY_CLASSNAME", "PutIfAbsentMergePolicy")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals("PutIfAbsentMergePolicy", config.getCardinalityEstimatorConfig("foo").getMergePolicyConfig().getPolicy());
+        assertEquals(4, config.getCardinalityEstimatorConfig("foo").getMergePolicyConfig().getBatchSize());
     }
 
     @Test
@@ -247,6 +277,64 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
+    public void shouldHandleRingBufferConfig() throws Exception {
+        Config config = new Config();
+        config.getRingbufferConfig("foo")
+          .setAsyncBackupCount(2)
+          .setBackupCount(4);
+
+        withEnvironmentVariable("HZ_RINGBUFFER_FOO_ASYNCBACKUPCOUNT", "1")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(1, config.getRingbufferConfig("foo").getAsyncBackupCount());
+        assertEquals(4, config.getRingbufferConfig("foo").getBackupCount());
+    }
+
+    @Test
+    public void shouldHandleRingBufferConfigMergePolicy() throws Exception {
+        Config config = new Config();
+        config.getRingbufferConfig("foo")
+          .getMergePolicyConfig()
+          .setPolicy("foo")
+          .setBatchSize(4);
+
+        withEnvironmentVariable("HZ_RINGBUFFER_FOO_MERGEPOLICY_CLASSNAME", "PutIfAbsentMergePolicy")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals("PutIfAbsentMergePolicy", config.getRingbufferConfig("foo").getMergePolicyConfig().getPolicy());
+        assertEquals(4, config.getRingbufferConfig("foo").getMergePolicyConfig().getBatchSize());
+    }
+
+    @Test
+    public void shouldHandleCacheConfig() throws Exception {
+        Config config = new Config();
+        config.getCacheConfig("foo")
+          .setStatisticsEnabled(false)
+          .setBackupCount(4);
+
+        withEnvironmentVariable("HZ_CACHE_FOO_STATISTICSENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getCacheConfig("foo").isStatisticsEnabled());
+        assertEquals(4, config.getCacheConfig("foo").getBackupCount());
+    }
+
+    @Test
+    public void shouldHandleCacheConfigMergePolicy() throws Exception {
+        Config config = new Config();
+        config.getCacheConfig("foo")
+          .getMergePolicyConfig()
+          .setPolicy("foo")
+          .setBatchSize(4);
+
+        withEnvironmentVariable("HZ_CACHE_FOO_MERGEPOLICY_CLASSNAME", "PutIfAbsentMergePolicy")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals("PutIfAbsentMergePolicy", config.getCacheConfig("foo").getMergePolicyConfig().getPolicy());
+        assertEquals(4, config.getCacheConfig("foo").getMergePolicyConfig().getBatchSize());
+    }
+
+    @Test
     public void shouldHandleFlakeIdConfig() throws Exception {
         Config config = new Config();
         config.getFlakeIdGeneratorConfig("foo")
@@ -275,6 +363,21 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
+    public void shouldHandleQueueConfigMergePolicy() throws Exception {
+        Config config = new Config();
+        config.getQueueConfig("foo")
+          .getMergePolicyConfig()
+          .setPolicy("foo")
+          .setBatchSize(4);
+
+        withEnvironmentVariable("HZ_QUEUE_FOO_MERGEPOLICY_CLASSNAME", "PutIfAbsentMergePolicy")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals("PutIfAbsentMergePolicy", config.getQueueConfig("foo").getMergePolicyConfig().getPolicy());
+        assertEquals(4, config.getQueueConfig("foo").getMergePolicyConfig().getBatchSize());
+    }
+
+    @Test
     public void shouldHandleListConfig() throws Exception {
         Config config = new Config();
         config.getListConfig("foo")
@@ -286,6 +389,21 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
 
         assertEquals(2, config.getListConfig("foo").getBackupCount());
         assertEquals(10, config.getListConfig("foo").getMaxSize());
+    }
+
+    @Test
+    public void shouldHandleListConfigMergePolicy() throws Exception {
+        Config config = new Config();
+        config.getListConfig("foo")
+          .getMergePolicyConfig()
+          .setPolicy("foo")
+          .setBatchSize(4);
+
+        withEnvironmentVariable("HZ_LIST_FOO_MERGEPOLICY_CLASSNAME", "PutIfAbsentMergePolicy")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals("PutIfAbsentMergePolicy", config.getListConfig("foo").getMergePolicyConfig().getPolicy());
+        assertEquals(4, config.getListConfig("foo").getMergePolicyConfig().getBatchSize());
     }
 
     @Test
@@ -303,6 +421,21 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
+    public void shouldHandleSetConfigMergePolicy() throws Exception {
+        Config config = new Config();
+        config.getSetConfig("foo")
+          .getMergePolicyConfig()
+          .setPolicy("foo")
+          .setBatchSize(4);
+
+        withEnvironmentVariable("HZ_SET_FOO_MERGEPOLICY_CLASSNAME", "PutIfAbsentMergePolicy")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals("PutIfAbsentMergePolicy", config.getSetConfig("foo").getMergePolicyConfig().getPolicy());
+        assertEquals(4, config.getSetConfig("foo").getMergePolicyConfig().getBatchSize());
+    }
+
+    @Test
     public void shouldHandleMapConfig() throws Exception {
         Config config = new Config();
         config.getMapConfig("foo")
@@ -314,6 +447,21 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
 
         assertEquals(2, config.getMapConfig("foo").getBackupCount());
         assertEquals(100, config.getMapConfig("foo").getMaxIdleSeconds());
+    }
+
+    @Test
+    public void shouldHandleMapConfigMergePolicy() throws Exception {
+        Config config = new Config();
+        config.getMapConfig("foo")
+          .getMergePolicyConfig()
+          .setPolicy("foo")
+          .setBatchSize(4);
+
+        withEnvironmentVariable("HZ_MAP_FOO_MERGEPOLICY_CLASSNAME", "PutIfAbsentMergePolicy")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals("PutIfAbsentMergePolicy", config.getMapConfig("foo").getMergePolicyConfig().getPolicy());
+        assertEquals(4, config.getMapConfig("foo").getMergePolicyConfig().getBatchSize());
     }
 
     @Test
@@ -331,6 +479,21 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
+    public void shouldHandleReplicatedMapConfigMergePolicy() throws Exception {
+        Config config = new Config();
+        config.getReplicatedMapConfig("foo")
+          .getMergePolicyConfig()
+          .setPolicy("foo")
+          .setBatchSize(4);
+
+        withEnvironmentVariable("HZ_REPLICATEDMAP_FOO_MERGEPOLICY_CLASSNAME", "PutIfAbsentMergePolicy")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals("PutIfAbsentMergePolicy", config.getReplicatedMapConfig("foo").getMergePolicyConfig().getPolicy());
+        assertEquals(4, config.getReplicatedMapConfig("foo").getMergePolicyConfig().getBatchSize());
+    }
+
+    @Test
     public void shouldHandleMultiMapConfig() throws Exception {
         Config config = new Config();
         config.getMultiMapConfig("foo")
@@ -342,6 +505,21 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
 
         assertEquals(2, config.getMultiMapConfig("foo").getBackupCount());
         assertFalse(config.getMultiMapConfig("foo").isBinary());
+    }
+
+    @Test
+    public void shouldHandleMultiMapConfigMergePolicy() throws Exception {
+        Config config = new Config();
+        config.getMultiMapConfig("foo")
+          .getMergePolicyConfig()
+          .setPolicy("foo")
+          .setBatchSize(4);
+
+        withEnvironmentVariable("HZ_MULTIMAP_FOO_MERGEPOLICY_CLASSNAME", "PutIfAbsentMergePolicy")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals("PutIfAbsentMergePolicy", config.getMultiMapConfig("foo").getMergePolicyConfig().getPolicy());
+        assertEquals(4, config.getMultiMapConfig("foo").getMergePolicyConfig().getBatchSize());
     }
 
     @Test(expected = InvalidConfigurationException.class)
