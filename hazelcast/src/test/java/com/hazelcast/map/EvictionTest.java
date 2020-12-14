@@ -48,7 +48,6 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -128,8 +127,10 @@ public class EvictionTest extends HazelcastTestSupport {
                 .put(keyOwnedByInstanceA, "value0", 0, SECONDS, 3, SECONDS);
 
         assertTrueEventually(() -> {
-            RecordStore recordStore = getRecordStore(instanceB, keyOwnedByInstanceA);
-            assertEquals(0, recordStore.size());
+            RecordStore owner = getRecordStore(instanceA, keyOwnedByInstanceA);
+            RecordStore backup = getRecordStore(instanceB, keyOwnedByInstanceA);
+            assertEquals(0, owner.size());
+            assertEquals(0, backup.size());
         });
     }
 
@@ -730,6 +731,7 @@ public class EvictionTest extends HazelcastTestSupport {
                 .setMaxIdleSeconds(20);
         Config config = getConfig()
                 .setProperty(PROP_TASK_PERIOD_SECONDS, "1")
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "2")
                 .addMapConfig(mapConfig);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -780,7 +782,7 @@ public class EvictionTest extends HazelcastTestSupport {
         }
 
         // wait until eviction is complete
-        assertOpenEventually(latch, 20);
+        assertOpenEventually(latch, 100);
     }
 
     /**
@@ -1062,7 +1064,6 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
     @Category(NightlyTest.class)
     public void testBackupExpirationDelay_onPromotedReplica() {
         // cluster size should be at least 2 since we are testing a scenario with backups
@@ -1075,7 +1076,7 @@ public class EvictionTest extends HazelcastTestSupport {
                 // use a long delay for testing purposes
                 .setProperty(ClusterProperty.MAP_EXPIRY_DELAY_SECONDS.getName(),
                         String.valueOf(TimeUnit.HOURS.toSeconds(1)));
-        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(),"1");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
         HazelcastInstance[] instances = factory.newInstances(config);
@@ -1135,7 +1136,7 @@ public class EvictionTest extends HazelcastTestSupport {
         String mapName = randomMapName();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         Config config = getConfig();
-        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(),"1");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
         HazelcastInstance[] nodes = factory.newInstances(config);
         IMap<Integer, Integer> map = nodes[0].getMap(mapName);
 

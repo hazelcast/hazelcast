@@ -243,7 +243,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             Data key = entry.getKey();
             Record record = entry.getValue();
 
-            if (includeExpiredRecords || !isExpired(key, now, backup)) {
+            if (includeExpiredRecords
+                    || hasExpired(key, now, backup) != ExpirySystem.ExpiryReason.NOT_EXPIRED) {
                 consumer.accept(key, record);
             }
         }

@@ -414,6 +414,8 @@ public interface RecordStore<R extends Record> {
      * @param backup  <code>true</code> if a backup partition, otherwise <code>false</code>.
      * @return <code>true</code> if the record is expired, <code>false</code> otherwise.
      */
+    ExpirySystem.ExpiryReason hasExpired(Data dataKey, long now, boolean backup);
+
     boolean isExpired(Data dataKey, long now, boolean backup);
 
     /**
@@ -465,9 +467,7 @@ public interface RecordStore<R extends Record> {
      */
     boolean evictIfExpired(Data key, long now, boolean backup);
 
-    void evictAndDoPostEvictionOps(Data key, boolean backup);
-
-    boolean hasExpired(Data key, long now, boolean backup);
+    void evictExpiredAndPublishExpiryEvent(Data key, ExpirySystem.ExpiryReason expiryReason, boolean backup);
 
     /**
      * Evicts entries from this record-store.

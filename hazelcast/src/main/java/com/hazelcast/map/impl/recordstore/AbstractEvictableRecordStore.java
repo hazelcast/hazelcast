@@ -118,29 +118,38 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     @Override
     public boolean evictIfExpired(Data key, long now, boolean backup) {
-        if (!hasExpired(key, now, backup)) {
+        ExpirySystem.ExpiryReason expiryReason = hasExpired(key, now, backup);
+        if (expiryReason == ExpirySystem.ExpiryReason.NOT_EXPIRED) {
             return false;
         }
-        evictAndDoPostEvictionOps(key, backup);
+        evictExpiredAndPublishExpiryEvent(key, expiryReason, backup);
         return true;
     }
 
     @Override
-    public void evictAndDoPostEvictionOps(Data key, boolean backup) {
+    public void evictExpiredAndPublishExpiryEvent(Data key,
+                                                  ExpirySystem.ExpiryReason expiryReason,
+                                                  boolean backup) {
         Object value = evict(key, backup);
         if (!backup) {
-            doPostEvictionOperations(key, value);
+            publishExpirationEvent(key, value, expiryReason);
         }
     }
 
+    // TODO do we need to evict entry and publish expiry event, check master
     @Override
-    public boolean hasExpired(Data key, long now, boolean backup) {
-        return !isLocked(key) && isExpired(key, now, backup);
+    public ExpirySystem.ExpiryReason hasExpired(Data key, long now, boolean backup) {
+        if (isLocked(key)) {
+            return ExpirySystem.ExpiryReason.NOT_EXPIRED;
+        }
+        return expirySystem.hasExpired(key, now);
     }
 
+    // TODO do we need to evict entry and publish expiry event, check master
     @Override
     public boolean isExpired(Data dataKey, long now, boolean backup) {
-        return expirySystem.isExpired(dataKey, now, backup);
+        return expirySystem.hasExpired(dataKey, now)
+                != ExpirySystem.ExpiryReason.NOT_EXPIRED;
     }
 
     // TODO optimize for HD access to read expiry metadata
@@ -168,6 +177,19 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
 
         if (!ttlExpired && idleExpired) {
+            // only send expired key to backup if
+            // it is expired according to idleness.
+            expirySystem.accumulateOrSendExpiredKey(dataKey);
+        }
+    }
+
+    public void publishExpirationEvent(Data dataKey, Object value, ExpirySystem.ExpiryReason expiryReason) {
+        if (eventService.hasEventRegistration(SERVICE_NAME, name)) {
+            mapEventPublisher.publishEvent(thisAddress, name,
+                    EXPIRED, dataKey, value, null);
+        }
+
+        if (expiryReason == ExpirySystem.ExpiryReason.IDLENESS) {
             // only send expired key to backup if
             // it is expired according to idleness.
             expirySystem.accumulateOrSendExpiredKey(dataKey);

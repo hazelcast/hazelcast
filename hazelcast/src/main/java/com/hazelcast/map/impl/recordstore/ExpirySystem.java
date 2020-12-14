@@ -32,6 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -149,19 +150,26 @@ public class ExpirySystem {
         expiryMetadata.setExpirationTime(expirationTime);
     }
 
-    public boolean hasExpired(Data key, long now) {
+    public ExpiryReason hasExpired(Data key, long now) {
         Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (expireTimeByKey.isEmpty()) {
-            return false;
+            return ExpiryReason.NOT_EXPIRED;
         }
         ExpiryMetadata expiryMetadata = expireTimeByKey.get(key);
         //System.err.println("hasExpired --> now: " + now + ", " + expiryMetadata);
         return hasExpired0(expiryMetadata, now);
     }
 
-    public boolean hasExpired0(ExpiryMetadata expiryMetadata, long now) {
-        return expiryMetadata != null
+    // TODO add expiry delay for backup replica
+    public ExpiryReason hasExpired0(ExpiryMetadata expiryMetadata, long now) {
+        //System.err.println(expiryMetadata);
+        boolean expired = expiryMetadata != null
                 && expiryMetadata.getExpirationTime() <= now;
+        if (expired) {
+            return expiryMetadata.getTtl() > expiryMetadata.getMaxIdle()
+                    ? ExpiryReason.TTL : ExpiryReason.IDLENESS;
+        }
+        return ExpiryReason.NOT_EXPIRED;
     }
 
     public InvalidationQueue<ExpiredKey> getExpiredKeys() {
@@ -200,6 +208,11 @@ public class ExpirySystem {
     }
 
     private int evictExpiredEntriesInternal(int maxIterationCount, long now, boolean backup) {
+//        if (backup) {
+//            System.err.println("backup");
+//        }
+
+
         Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (expireTimeByKey.isEmpty()) {
             return 0;
@@ -210,7 +223,7 @@ public class ExpirySystem {
         expirationIterator = getIterator(expireTimeByKey);
 //        }
 
-        ArrayList<Data> keys = new ArrayList<>();
+        List dataKeyAndExpiryReason = new ArrayList<>();
         int checkedEntryCount = 0;
         // TODO how many entry will be checked?
         while (expirationIterator.hasNext()) {
@@ -221,16 +234,21 @@ public class ExpirySystem {
             Data key = entry.getKey();
             ExpiryMetadata expiryMetadata = entry.getValue();
 
-            if (hasExpired0(expiryMetadata, now) && !recordStore.isLocked(key)) {
-                keys.add(key);
+            ExpiryReason expiryReason = hasExpired0(expiryMetadata, now);
+            if (expiryReason != ExpiryReason.NOT_EXPIRED && !recordStore.isLocked(key)) {
+                dataKeyAndExpiryReason.add(key);
+                dataKeyAndExpiryReason.add(expiryReason);
                 callIterRemove(expirationIterator);
                 evictedEntryCount++;
             }
         }
 
-        for (Data key : keys) {
-            recordStore.evict(key, backup);
+        for (int i = 0; i < dataKeyAndExpiryReason.size(); i += 2) {
+            Data key = (Data) dataKeyAndExpiryReason.get(i);
+            ExpiryReason reason = (ExpiryReason) dataKeyAndExpiryReason.get(i + 1);
+            recordStore.evictExpiredAndPublishExpiryEvent(key, reason, backup);
         }
+
         return evictedEntryCount;
     }
 
@@ -301,13 +319,15 @@ public class ExpirySystem {
         }
 
         long nextExpiryTime = backup ? now + expiryDelayMillis : now;
-        return hasExpired(dataKey, nextExpiryTime);
+        ExpiryReason expiryReason = hasExpired(dataKey, nextExpiryTime);
+        return expiryReason == ExpiryReason.IDLENESS;
     }
 
     boolean isTTLExpired(Data dataKey, long now, boolean backup) {
         assert dataKey != null;
         long nextExpiryTime = backup ? now + expiryDelayMillis : now;
-        return hasExpired(dataKey, nextExpiryTime);
+        ExpiryReason expiryReason = hasExpired(dataKey, nextExpiryTime);
+        return expiryReason == ExpiryReason.TTL;
     }
 
     private long getRecordMaxIdleOrConfig(Record record) {
@@ -339,14 +359,10 @@ public class ExpirySystem {
         clearExpiredRecordsTask.tryToSendBackupExpiryOp(recordStore, true);
     }
 
-    public boolean isExpired(Data dataKey, long now, boolean backup) {
-        assert dataKey != null;
-        boolean idleExpired = isIdleExpired(dataKey, now, backup);
-        boolean ttlExpired = isTTLExpired(dataKey, now, backup);
-
-//        System.err.println("ttlExpired = " + ttlExpired);
-//        System.err.println("idleExpired = " + idleExpired);
-        return idleExpired || ttlExpired;
+    public enum ExpiryReason {
+        TTL,
+        IDLENESS,
+        NOT_EXPIRED
     }
 
     public static class ExpiryMetadataImpl implements ExpiryMetadata {

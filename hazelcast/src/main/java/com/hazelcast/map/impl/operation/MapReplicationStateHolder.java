@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.map.impl.MapContainer;
@@ -37,6 +38,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
@@ -47,6 +49,7 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +63,7 @@ import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
  * Holder for raw IMap key-value pairs and their metadata.
  */
 // keep this `protected`, extended in another context.
-public class MapReplicationStateHolder implements IdentifiedDataSerializable {
+public class MapReplicationStateHolder implements IdentifiedDataSerializable, Versioned {
 
     // holds recordStore-references of this partitions' maps
     protected transient Map<String, RecordStore<Record>> storesByMapName;
@@ -206,7 +209,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                 if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_2)) {
                     Queue metadata = expiryMetaData.get(mapName);
                     do {
-                        if (metadata.isEmpty()) {
+                        if (CollectionUtil.isEmpty(metadata)) {
                             break;
                         }
                         Data key = (Data) metadata.poll();
@@ -317,6 +320,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         data = createHashMap(size);
+        expiryMetaData = new HashMap<>();
 
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();

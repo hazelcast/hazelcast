@@ -22,8 +22,8 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -92,8 +92,8 @@ public class MapScanExecIterator implements KeyValueIterator {
 
                     if (!isOwned) {
                         throw QueryException.error(
-                            SqlErrorCode.PARTITION_DISTRIBUTION,
-                            "Partition is not owned by member: " + nextPart
+                                SqlErrorCode.PARTITION_DISTRIBUTION,
+                                "Partition is not owned by member: " + nextPart
                         ).markInvalidate();
                     }
 
@@ -108,7 +108,7 @@ public class MapScanExecIterator implements KeyValueIterator {
                         currentRecordStore.checkIfLoaded();
                     } catch (RetryableHazelcastException e) {
                         throw QueryException.error(SqlErrorCode.MAP_LOADING_IN_PROGRESS, "Map loading is in progress: "
-                            + map.getName(), e);
+                                + map.getName(), e);
                     }
 
                     currentRecordStoreIterator = currentRecordStore.getStorage().mutationTolerantIterator();
@@ -121,6 +121,7 @@ public class MapScanExecIterator implements KeyValueIterator {
             while (currentRecordStoreIterator.hasNext()) {
                 Map.Entry<Data, Record<Object>> entry = currentRecordStoreIterator.next();
 
+                // TODO why we have expiry check here
                 if (!currentRecordStore.isExpired(entry.getKey(), now, false)) {
                     nextKey = entry.getKey();
                     nextValue = entry.getValue().getValue();
