@@ -43,6 +43,7 @@ import static com.hazelcast.sql.SqlColumnType.SMALLINT;
 import static com.hazelcast.sql.SqlColumnType.TIME;
 import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
 import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
+import static com.hazelcast.sql.SqlColumnType.TINYINT;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static com.hazelcast.sql.impl.SqlErrorCode.DATA_EXCEPTION;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
@@ -442,6 +443,14 @@ public class PlusOperatorIntegrationTest extends ArithmeticOperatorIntegrationTe
     @Test
     public void testObject() {
         checkUnsupportedForAllTypesCommute(OBJECT_VAL, OBJECT);
+    }
+
+    @Test
+    public void testLiteral() {
+        // TODO: Add more tests
+        put(1);
+
+        checkValue0(sql("1", "null"), TINYINT, null);
     }
 
     @Test

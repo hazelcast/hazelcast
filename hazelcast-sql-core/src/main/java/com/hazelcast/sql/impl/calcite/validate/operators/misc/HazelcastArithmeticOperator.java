@@ -41,7 +41,7 @@ public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
             base.getKind(),
             base.getLeftPrec(),
             true,
-            ReturnTypes.ARG0,
+            ReturnTypes.ARG0_NULLABLE,
             BinaryOperatorOperandTypeInference.INSTANCE
         );
     }
