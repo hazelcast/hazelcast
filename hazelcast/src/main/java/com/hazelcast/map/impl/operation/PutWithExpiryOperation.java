@@ -20,6 +20,7 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -42,7 +43,8 @@ public class PutWithExpiryOperation extends PutOperation {
     @Override
     protected PutBackupOperation newBackupOperation(Data dataKey, Record record, Data dataValue) {
         if (Versions.CURRENT_CLUSTER_VERSION.isGreaterOrEqual(Versions.V4_2)) {
-            return new PutWithExpiryBackupOperation(name, dataKey, record, dataValue, ttl, maxIdle);
+            ExpiryMetadata expiryMetadata = recordStore.getExpirySystem().getExpiredMetadata(dataKey);
+            return new PutWithExpiryBackupOperation(name, dataKey, record, dataValue, expiryMetadata);
         } else {
             return super.newBackupOperation(dataKey, record, dataValue);
         }

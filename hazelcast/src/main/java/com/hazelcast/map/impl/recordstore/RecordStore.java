@@ -87,7 +87,8 @@ public interface RecordStore<R extends Record> {
     /**
      * @return current record after put.
      */
-    R putBackup(Data dataKey, Record record, boolean putTransient, CallerProvenance provenance);
+    R putBackup(Data dataKey, Record record, ExpiryMetadata expiryMetadata,
+                boolean putTransient, CallerProvenance provenance);
 
     R putBackup(Data dataKey, Record record, long ttl, long maxIdle, CallerProvenance provenance);
 
@@ -291,7 +292,9 @@ public interface RecordStore<R extends Record> {
      * @see com.hazelcast.map.impl.operation.MapReplicationOperation
      */
     R putReplicatedRecordLegacy(Data dataKey, R record, long nowInMillis, boolean indexesMustBePopulated);
-    R putReplicatedRecord(Data dataKey, R record, long nowInMillis, boolean indexesMustBePopulated);
+
+    R putReplicatedRecord(Data dataKey, R record, ExpiryMetadata expiryMetadata,
+                          boolean indexesMustBePopulated, long now);
 
     void forEach(BiConsumer<Data, R> consumer, boolean backup);
 
@@ -414,7 +417,7 @@ public interface RecordStore<R extends Record> {
      * @param backup  <code>true</code> if a backup partition, otherwise <code>false</code>.
      * @return <code>true</code> if the record is expired, <code>false</code> otherwise.
      */
-    ExpirySystem.ExpiryReason hasExpired(Data dataKey, long now, boolean backup);
+    ExpiryReason hasExpired(Data dataKey, long now, boolean backup);
 
     boolean isExpired(Data dataKey, long now, boolean backup);
 
@@ -433,8 +436,10 @@ public interface RecordStore<R extends Record> {
      * Does post eviction operations like sending events
      *
      * @param dataValue record to process
+     * @param expiryReason
      */
-    void doPostEvictionOperations(Data dataKey, Object dataValue);
+    void doPostEvictionOperations(Data dataKey, Object dataValue,
+                                  ExpiryReason expiryReason);
 
     MapDataStore<Data, Object> getMapDataStore();
 
@@ -467,7 +472,7 @@ public interface RecordStore<R extends Record> {
      */
     boolean evictIfExpired(Data key, long now, boolean backup);
 
-    void evictExpiredAndPublishExpiryEvent(Data key, ExpirySystem.ExpiryReason expiryReason, boolean backup);
+    void evictExpiredAndPublishExpiryEvent(Data key, ExpiryReason expiryReason, boolean backup);
 
     /**
      * Evicts entries from this record-store.

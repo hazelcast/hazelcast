@@ -16,14 +16,15 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
+import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -36,8 +37,8 @@ public class TxnSetBackupOperation extends PutBackupOperation {
     }
 
     public TxnSetBackupOperation(String name, Data dataKey, Record<Data> record,
-                                 Data dataValue, UUID transactionId) {
-        super(name, dataKey, record, dataValue);
+                                 Data dataValue, ExpiryMetadata expiryMetadata, UUID transactionId) {
+        super(name, dataKey, record, dataValue, expiryMetadata);
         this.transactionId = transactionId;
     }
 

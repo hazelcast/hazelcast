@@ -198,6 +198,7 @@ public class MergeOperation extends MapOperation
                 toBackupList.add(dataKey);
                 toBackupList.add(backupPairs.get(i + 1));
                 toBackupList.add(record);
+                toBackupList.add(recordStore.getExpirySystem().getExpiredMetadata(dataKey));
             }
         }
         return toBackupList;

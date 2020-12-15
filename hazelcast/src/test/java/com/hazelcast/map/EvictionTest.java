@@ -724,7 +724,7 @@ public class EvictionTest extends HazelcastTestSupport {
     @Test
     @Category(NightlyTest.class)
     public void expired_entries_removed_after_migration() {
-        int numOfEntries = 1000;
+        int numOfEntries = 10;
         String name = "expired_entries_removed_after_migration";
 
         MapConfig mapConfig = newMapConfig(name)

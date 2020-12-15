@@ -17,12 +17,14 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
+import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.ExpirySystem;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
@@ -34,16 +36,16 @@ public class PutAllBackupOperation extends MapOperation
         implements PartitionAwareOperation, BackupOperation {
 
     private boolean disableWanReplicationEvent;
-    private List dataKeyDataValueRecord;
+    private List keyValueRecordExpiry;
 
     private transient int lastIndex;
-    private transient List dataKeyRecord;
+    private transient List keyRecordExpiry;
 
     public PutAllBackupOperation(String name,
-                                 List dataKeyDataValueRecord,
+                                 List keyValueRecordExpiry,
                                  boolean disableWanReplicationEvent) {
         super(name);
-        this.dataKeyDataValueRecord = dataKeyDataValueRecord;
+        this.keyValueRecordExpiry = keyValueRecordExpiry;
         this.disableWanReplicationEvent = disableWanReplicationEvent;
     }
 
@@ -52,11 +54,12 @@ public class PutAllBackupOperation extends MapOperation
 
     @Override
     protected void runInternal() {
-        if (dataKeyRecord != null) {
-            for (int i = lastIndex; i < dataKeyRecord.size(); i += 2) {
-                Data key = (Data) dataKeyRecord.get(i);
-                Record record = (Record) dataKeyRecord.get(i + 1);
-                putBackup(key, record);
+        if (keyRecordExpiry != null) {
+            for (int i = lastIndex; i < keyRecordExpiry.size(); i += 3) {
+                Data key = (Data) keyRecordExpiry.get(i);
+                Record record = (Record) keyRecordExpiry.get(i + 1);
+                ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiry.get(i + 2);
+                putBackup(key, record, expiryMetadata);
                 lastIndex = i;
             }
         } else {
@@ -64,18 +67,20 @@ public class PutAllBackupOperation extends MapOperation
             // `runInternal` method, means this operation
             // has not been serialized/deserialized
             // and is running directly on caller node
-            for (int i = lastIndex; i < dataKeyDataValueRecord.size(); i += 3) {
-                Data key = (Data) dataKeyDataValueRecord.get(i);
-                Record record = (Record) dataKeyDataValueRecord.get(i + 2);
-                putBackup(key, record);
+            for (int i = lastIndex; i < keyValueRecordExpiry.size(); i += 4) {
+                Data key = (Data) keyValueRecordExpiry.get(i);
+                Record record = (Record) keyValueRecordExpiry.get(i + 2);
+                ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiry.get(i + 3);
+                putBackup(key, record, expiryMetadata);
                 lastIndex = i;
             }
         }
     }
 
-    private void putBackup(Data key, Record record) {
+    private void putBackup(Data key, Record record, ExpiryMetadata expiryMetadata) {
         Record currentRecord = recordStore.putBackup(key, record,
-                false, getCallerProvenance());
+                expiryMetadata.getTtl(), expiryMetadata.getMaxIdle(),
+                getCallerProvenance());
         Records.copyMetadataFrom(record, currentRecord);
         publishWanUpdate(key, record.getValue());
         evict(key);
@@ -86,18 +91,20 @@ public class PutAllBackupOperation extends MapOperation
         return disableWanReplicationEvent;
     }
 
+    // TODO Rolling upgrade?
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        out.writeInt(dataKeyDataValueRecord.size() / 3);
-        for (int i = 0; i < dataKeyDataValueRecord.size(); i += 3) {
-            Data dataKey = (Data) dataKeyDataValueRecord.get(i);
-            Data dataValue = (Data) dataKeyDataValueRecord.get(i + 1);
-            Record record = (Record) dataKeyDataValueRecord.get(i + 2);
+        out.writeInt(keyValueRecordExpiry.size() / 4);
+        for (int i = 0; i < keyValueRecordExpiry.size(); i += 4) {
+            Data dataKey = (Data) keyValueRecordExpiry.get(i);
+            Data dataValue = (Data) keyValueRecordExpiry.get(i + 1);
+            Record record = (Record) keyValueRecordExpiry.get(i + 2);
+            ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyValueRecordExpiry.get(i + 3);
 
             IOUtil.writeData(out, dataKey);
-            Records.writeRecord(out, record, dataValue);
+            Records.writeRecord(out, record, dataValue, expiryMetadata);
         }
         out.writeBoolean(disableWanReplicationEvent);
     }
@@ -107,12 +114,15 @@ public class PutAllBackupOperation extends MapOperation
         super.readInternal(in);
 
         int size = in.readInt();
-        List dataKeyRecord = new ArrayList<>(size * 2);
+        List keyRecordExpiry = new ArrayList<>(size * 2);
         for (int i = 0; i < size; i++) {
-            dataKeyRecord.add(IOUtil.readData(in));
-            dataKeyRecord.add(Records.readRecord(in));
+            keyRecordExpiry.add(IOUtil.readData(in));
+
+            ExpiryMetadata expiryMetadata = new ExpirySystem.ExpiryMetadataImpl();
+            keyRecordExpiry.add(Records.readRecord(in, expiryMetadata));
+            keyRecordExpiry.add(expiryMetadata);
         }
-        this.dataKeyRecord = dataKeyRecord;
+        this.keyRecordExpiry = keyRecordExpiry;
         this.disableWanReplicationEvent = in.readBoolean();
     }
 

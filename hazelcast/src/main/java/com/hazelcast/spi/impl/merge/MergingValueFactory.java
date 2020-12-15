@@ -25,6 +25,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapMergeContainer;
@@ -125,39 +126,44 @@ public final class MergingValueFactory {
                 .setCost(entryView.getCost());
     }
 
-    public static <K, V> MapMergeTypes<K, V> createMergingEntry(SerializationService serializationService, Data dataKey,
-                                                                Record record) {
+    public static <K, V> MapMergeTypes<K, V> createMergingEntry(SerializationService serializationService,
+                                                                Data dataKey,
+                                                                Record record,
+                                                                ExpiryMetadata expiryMetadata) {
         return new MapMergingEntryImpl<K, V>(serializationService)
                 .setKey(dataKey)
                 .setValue(serializationService.toData(record.getValue()))
                 .setCreationTime(record.getCreationTime())
-                .setExpirationTime(record.getExpirationTime())
                 .setLastStoredTime(record.getLastStoredTime())
                 .setLastAccessTime(record.getLastAccessTime())
                 .setLastStoredTime(record.getLastStoredTime())
                 .setLastUpdateTime(record.getLastUpdateTime())
                 .setHits(record.getHits())
-                .setTtl(record.getTtl())
-                .setMaxIdle(record.getMaxIdle())
                 .setVersion(record.getVersion())
-                .setCost(record.getCost());
+                .setCost(record.getCost())
+                .setTtl(expiryMetadata.getTtl())
+                .setMaxIdle(expiryMetadata.getMaxIdle())
+                .setExpirationTime(expiryMetadata.getExpirationTime());
     }
 
-    public static <K, V> MapMergeTypes<K, V> createMergingEntry(SerializationService serializationService, Data dataKey,
-                                                                Data dataValue, Record record) {
+    public static <K, V> MapMergeTypes<K, V> createMergingEntry(SerializationService serializationService,
+                                                                Data dataKey,
+                                                                Data dataValue,
+                                                                Record record,
+                                                                ExpiryMetadata expiryMetadata) {
         return new MapMergingEntryImpl<K, V>(serializationService)
                 .setKey(dataKey)
                 .setValue(dataValue)
                 .setCreationTime(record.getCreationTime())
-                .setExpirationTime(record.getExpirationTime())
                 .setLastStoredTime(record.getLastStoredTime())
                 .setLastAccessTime(record.getLastAccessTime())
                 .setLastUpdateTime(record.getLastUpdateTime())
                 .setHits(record.getHits())
-                .setTtl(record.getTtl())
-                .setMaxIdle(record.getMaxIdle())
                 .setVersion(record.getVersion())
-                .setCost(record.getCost());
+                .setCost(record.getCost())
+                .setTtl(expiryMetadata.getTtl())
+                .setMaxIdle(expiryMetadata.getMaxIdle())
+                .setExpirationTime(expiryMetadata.getExpirationTime());
     }
 
     public static <K, V> CacheMergeTypes<K, V> createMergingEntry(SerializationService serializationService,

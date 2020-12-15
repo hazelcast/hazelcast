@@ -16,10 +16,11 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 
@@ -34,14 +35,15 @@ public final class Records {
     private Records() {
     }
 
-    public static void writeRecord(ObjectDataOutput out, Record record, Data dataValue) throws IOException {
+    public static void writeRecord(ObjectDataOutput out, Record record,
+                                   Data dataValue, ExpiryMetadata expiryMetadata) throws IOException {
         out.writeByte(record.getMatchingRecordReaderWriter().getId());
-        record.getMatchingRecordReaderWriter().writeRecord(out, record, dataValue);
+        record.getMatchingRecordReaderWriter().writeRecord(out, record, dataValue, expiryMetadata);
     }
 
-    public static Record readRecord(ObjectDataInput in) throws IOException {
+    public static Record readRecord(ObjectDataInput in, ExpiryMetadata expiryMetadata) throws IOException {
         byte matchingDataRecordId = in.readByte();
-        return getById(matchingDataRecordId).readRecord(in);
+        return getById(matchingDataRecordId).readRecord(in, expiryMetadata);
     }
 
     /**
