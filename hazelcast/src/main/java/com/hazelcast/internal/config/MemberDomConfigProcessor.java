@@ -18,7 +18,6 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AttributeConfig;
-import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.AutoDetectionConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheDeserializedValues;
@@ -343,7 +342,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         } else if (matches(CP_SUBSYSTEM.getName(), nodeName)) {
             handleCPSubsystem(node);
         } else if (matches(AUDITLOG.getName(), nodeName)) {
-            config.setAuditlogConfig(fillFactoryWithPropertiesConfig(node, new AuditlogConfig()));
+            fillFactoryWithPropertiesConfig(node, config.getAuditlogConfig());
         } else if (matches(METRICS.getName(), nodeName)) {
             handleMetrics(node);
         } else if (matches(INSTANCE_TRACKING.getName(), nodeName)) {

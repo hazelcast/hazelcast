@@ -344,6 +344,26 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         assertFalse(config.getMultiMapConfig("foo").isBinary());
     }
 
+    @Test
+    public void shouldHandleAuditLogConfig() throws Exception {
+        Config config = new Config();
+        config.getAuditlogConfig()
+          .setEnabled(false)
+          .setFactoryClassName("com.acme.AuditlogToSyslogFactory")
+          .setProperty("host", "syslogserver.acme.com")
+          .setProperty("port", "514")
+          .setProperty("type", "tcp");
+
+        withEnvironmentVariable("HZ_AUDITLOG_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getAuditlogConfig().isEnabled());
+        assertEquals("com.acme.AuditlogToSyslogFactory", config.getAuditlogConfig().getFactoryClassName());
+        assertEquals("syslogserver.acme.com", config.getAuditlogConfig().getProperty("host"));
+        assertEquals("514", config.getAuditlogConfig().getProperty("port"));
+        assertEquals("tcp", config.getAuditlogConfig().getProperty("type"));
+    }
+
     @Test(expected = InvalidConfigurationException.class)
     public void shouldDisallowConflictingEntries() throws Exception {
         withEnvironmentVariable("HZ_CLUSTERNAME", "test")
