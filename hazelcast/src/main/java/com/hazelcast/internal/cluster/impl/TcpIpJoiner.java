@@ -64,7 +64,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         super(node);
         int tryCount = node.getProperties().getInteger(ClusterProperty.TCP_JOIN_PORT_TRY_COUNT);
         if (tryCount <= 0) {
-            throw new IllegalArgumentException(String.format("%s should be greater than zero! Current value: %d",
+            throw new IllegalArgumentException(String.format("%s must be greater than zero! Current value: %d",
                     ClusterProperty.TCP_JOIN_PORT_TRY_COUNT, tryCount));
         }
         maxPortTryCount = tryCount;

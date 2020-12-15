@@ -34,6 +34,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.wan.impl.CallerProvenance;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -71,7 +72,7 @@ public class MapMergePolicySerializationTest extends HazelcastTestSupport {
         SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
         SplitBrainMergePolicy mergePolicy = mergePolicyProvider.getMergePolicy(PutIfAbsentMergePolicy.class.getName());
         EntryView<Data, Data> mergingEntryView = new SimpleEntryView<>(dataKey, dataValue);
-        recordStore.merge(createMergingEntry(nodeEngine.getSerializationService(), mergingEntryView), mergePolicy);
+        recordStore.merge(createMergingEntry(nodeEngine.getSerializationService(), mergingEntryView), mergePolicy, CallerProvenance.NOT_WAN);
 
         int deSerializedCount = MyObject.deserializedCount;
         assertEquals(0, deSerializedCount);

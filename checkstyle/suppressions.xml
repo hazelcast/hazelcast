@@ -174,9 +174,7 @@
     <suppress checks="Header|MethodCount|Length|ClassDataAbstractionCoupling|ClassFanOutComplexity|Whitespace|MethodParamPad"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]DefaultMessageTaskFactoryProvider"/>
     <suppress checks="ExecutableStatementCount|MethodCount|Length|ClassDataAbstractionCoupling|ClassFanOutComplexity"
-              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]clientside[\\/]ClientExceptionFactory.java"/>
-    <suppress checks="ExecutableStatementCount|MethodCount|Length|ClassDataAbstractionCoupling|ClassFanOutComplexity"
-              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]ClientExceptions.java"/>
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]ClientExceptionFactory.java"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]ClientMessage"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]util[\\/]MessageFlyweight"/>
     <suppress checks="UnusedImport|DeclarationOrder" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]"/>
@@ -197,6 +195,7 @@
     <!-- SPI -->
     <suppress checks="FileLength"
               files="com[\\/]hazelcast[\\/]spi[\\/]impl[\\/]AbstractInvocationFuture"/>
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]spi[\\/]properties[\\/]ClusterProperty"/>
 
     <!-- Transaction -->
     <suppress checks="Javadoc(Method|Type)" files="com[\\/]hazelcast[\\/]transaction[\\/]"/>

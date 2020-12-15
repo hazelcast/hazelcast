@@ -18,6 +18,7 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,6 +38,7 @@ import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.spy;
@@ -379,6 +381,44 @@ public class MetricsCompressorTest {
     @Test
     public void when_tooLongWord_then_metricIgnored__discriminatorValue() {
         when_tooLongWord_then_metricIgnored(supplier.get().withDiscriminator("n", LONG_NAME));
+    }
+
+    @Test
+    public void testNewUnitIsConvertedToTag() {
+        boolean isNewUnitIntroduced = false;
+        ProbeUnit aNewUnit = null;
+        for (ProbeUnit unit : ProbeUnit.values()) {
+            if (unit.isNewUnit()) {
+                isNewUnitIntroduced = true;
+                aNewUnit = unit;
+            }
+        }
+        assumeTrue(isNewUnitIntroduced);
+
+        MetricDescriptor originalMetric = supplier.get()
+                .withPrefix("prefix")
+                .withMetric("metricName")
+                .withDiscriminator("ds", "dsName1")
+                .withUnit(aNewUnit)
+                .withTag("tag0", "tag0Value");
+
+        compressor.addLong(originalMetric, 42L);
+        byte[] blob = compressor.getBlobAndReset();
+
+        MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
+
+        MetricDescriptor expectedMetric = supplier.get()
+                .withPrefix("prefix")
+                .withMetric("metricName")
+                .withDiscriminator("ds", "dsName1")
+                .withUnit(null)
+                .withTag("tag0", "tag0Value")
+                .withTag("metric-unit", aNewUnit.name());
+
+        verify(metricConsumerMock).consumeLong(expectedMetric, 42L);
+        verifyNoMoreInteractions(metricConsumerMock);
+        verify(supplierSpy, only()).get();
     }
 
     private void when_tooLongWord_then_metricIgnored(MetricDescriptor badDescriptor) {

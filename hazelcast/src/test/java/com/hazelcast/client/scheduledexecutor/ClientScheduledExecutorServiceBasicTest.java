@@ -81,4 +81,17 @@ public class ClientScheduledExecutorServiceBasicTest extends ScheduledExecutorSe
     @Override
     public void scheduleOnMember_testMemberLostEvent() {
     }
+
+    @Test
+    @Ignore("Only implemented for server-side runs")
+    @Override
+    public void scheduledAtFixedRate_generates_statistics_when_stats_enabled() {
+    }
+
+    @Test
+    @Ignore("Only implemented for server-side runs")
+    @Override
+    public void scheduledAtFixedRate_does_not_generate_statistics_when_stats_disabled() {
+        super.scheduledAtFixedRate_does_not_generate_statistics_when_stats_disabled();
+    }
 }

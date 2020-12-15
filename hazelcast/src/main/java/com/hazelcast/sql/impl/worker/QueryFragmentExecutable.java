@@ -165,7 +165,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
             completed = true;
 
             // Notify state about the exception to trigger cancel operation.
-            stateCallback.cancel(e);
+            stateCallback.cancel(e, false);
         } finally {
             unscheduleOrReschedule();
         }

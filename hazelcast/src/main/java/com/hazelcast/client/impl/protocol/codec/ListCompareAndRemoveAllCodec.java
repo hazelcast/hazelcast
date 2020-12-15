@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes from this list all of its elements that are contained in the specified collection (optional operation).
  */
-@Generated("c6ae3e84f81d9d309b6be086434cb508")
+@Generated("897959883be5bdbd566645f2e96b6cb7")
 public final class ListCompareAndRemoveAllCodec {
     //hex: 0x050700
     public static final int REQUEST_MESSAGE_TYPE = 329472;
@@ -97,8 +97,8 @@ public final class ListCompareAndRemoveAllCodec {
     }
 
     /**
-    * True if removed at least one of the items, false otherwise.
-    */
+     * True if removed at least one of the items, false otherwise.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

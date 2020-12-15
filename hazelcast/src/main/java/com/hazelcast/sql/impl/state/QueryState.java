@@ -207,19 +207,21 @@ public final class QueryState implements QueryStateCallback {
     }
 
     @Override
-    public void cancel(@Nullable Exception error) {
-        // Make sure that this thread changes the state.
+    public void cancel(@Nullable Exception error, boolean local) {
+        // Make sure that cancel is performed only once.
         if (!completionGuard.compareAndSet(false, true)) {
             return;
         }
 
+        // Prepare the normalized exception object.
         if (error == null) {
             error = QueryException.cancelledByUser();
         }
 
         QueryException error0 = prepareCancelError(error);
 
-        // Invalidate plan if needed.
+        // Invalidate the plan if needed. Do this before user notification (see below), to minimize the chance that the
+        // user will pick te same bad plan immediately.
         if (isInitiator() && error0.isInvalidatePlan()) {
             CachedPlanInvalidationCallback planInvalidationCallback = initiatorState.getPlanInvalidationCallback();
 
@@ -228,17 +230,26 @@ public final class QueryState implements QueryStateCallback {
             }
         }
 
-        // Determine members which should be notified.
+        // Notify user about the error.
+        if (isInitiator()) {
+            initiatorState.getResultProducer().onError(error0);
+        }
+
+        // Notify fragments about the error.
+        completionError = error0;
+
+        // Determine which members should be notified.
         Collection<UUID> memberIds;
 
-        if (isInitiator()) {
+        if (local) {
+            // Local cancel, do not send messages.
+            memberIds = Collections.emptySet();
+        } else if (isInitiator()) {
             // Cancel is performed on an initiator. Broadcast to all participants.
             memberIds = new HashSet<>(getParticipants());
             memberIds.remove(localMemberId);
         } else {
-            boolean isLocal = error0.getOriginatingMemberId().equals(localMemberId);
-
-            if (isLocal) {
+            if (error0.getOriginatingMemberId().equals(localMemberId)) {
                 // The cancel has been triggered locally. Notify initiator.
                 memberIds = Collections.singletonList(queryId.getMemberId());
             } else {
@@ -247,7 +258,7 @@ public final class QueryState implements QueryStateCallback {
             }
         }
 
-        // Invoke the completion callback.
+        // Invoke the completion callback that will send cancel message to other members, and remove the state from the registry.
         assert completionCallback != null;
 
         completionCallback.onError(
@@ -257,13 +268,6 @@ public final class QueryState implements QueryStateCallback {
             error0.getOriginatingMemberId(),
             memberIds
         );
-
-        completionError = error0;
-
-        // If this is the initiator
-        if (isInitiator()) {
-            initiatorState.getResultProducer().onError(error0);
-        }
     }
 
     private QueryException prepareCancelError(Exception error) {
@@ -271,13 +275,7 @@ public final class QueryState implements QueryStateCallback {
             QueryException error0 = (QueryException) error;
 
             if (error0.getOriginatingMemberId() == null) {
-                boolean invalidatePlan = error0.isInvalidatePlan();
-
-                error0 = QueryException.error(error0.getCode(), error0.getMessage(), error0.getCause(), localMemberId);
-
-                if (invalidatePlan) {
-                    error0 = error0.withInvalidate();
-                }
+                error0.setOriginatingMemberId(localMemberId);
             }
 
             return error0;
@@ -317,7 +315,7 @@ public final class QueryState implements QueryStateCallback {
 
         assert !missingMemberIds.isEmpty();
 
-        cancel(QueryException.memberConnection(missingMemberIds));
+        cancel(QueryException.memberConnection(missingMemberIds), false);
 
         return true;
     }
@@ -335,7 +333,7 @@ public final class QueryState implements QueryStateCallback {
         long timeout = initiatorState.getTimeout();
 
         if (timeout > 0 && clockProvider.currentTimeMillis() - startTime > timeout) {
-            cancel(QueryException.timeout(timeout));
+            cancel(QueryException.timeout(timeout), false);
 
             return true;
         } else {

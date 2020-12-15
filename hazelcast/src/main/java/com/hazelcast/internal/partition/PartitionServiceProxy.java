@@ -146,7 +146,7 @@ public class PartitionServiceProxy implements PartitionService {
     @Override
     public boolean isMemberSafe(Member member) {
         if (member == null) {
-            throw new NullPointerException("Parameter member should not be null");
+            throw new NullPointerException("Parameter member must not be null");
         }
         final Member localMember = nodeEngine.getLocalMember();
         if (localMember.equals(member)) {
@@ -215,12 +215,13 @@ public class PartitionServiceProxy implements PartitionService {
         @Override
         public Member getOwner() {
             // triggers initial partition assignment
-            final Address address = partitionService.getPartitionOwner(partitionId);
-            if (address == null) {
+            InternalPartition partition = partitionService.getPartition(partitionId);
+            PartitionReplica owner = partition.getOwnerReplicaOrNull();
+            if (owner == null) {
                 return null;
             }
 
-            return nodeEngine.getClusterService().getMember(address);
+            return nodeEngine.getClusterService().getMember(owner.address(), owner.uuid());
         }
 
         @Override

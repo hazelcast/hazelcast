@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this collection contains no elements.
  */
-@Generated("9ae6451ea8f3debbbeb0d5690ff13251")
+@Generated("27b38ec621d7d5414e735c96cb97b5fc")
 public final class QueueIsEmptyCodec {
     //hex: 0x031400
     public static final int REQUEST_MESSAGE_TYPE = 201728;
@@ -48,12 +48,6 @@ public final class QueueIsEmptyCodec {
 
     private QueueIsEmptyCodec() {
     }
-
-    /**
-     * Name of the Queue
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -67,6 +61,9 @@ public final class QueueIsEmptyCodec {
         return clientMessage;
     }
 
+    /**
+     * Name of the Queue
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -85,8 +82,8 @@ public final class QueueIsEmptyCodec {
     }
 
     /**
-    * <tt>True</tt> if this collection contains no elements
-    */
+     * <tt>True</tt> if this collection contains no elements
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

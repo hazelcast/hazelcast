@@ -213,7 +213,7 @@ public final class ConverterCache {
 
         @Override
         public Comparable convert(Comparable value) {
-            throw new UnsupportedOperationException("should never be called");
+            throw new UnsupportedOperationException("must never be called");
         }
 
     }

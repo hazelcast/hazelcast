@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Registers a new CP group availability listener.
  */
-@Generated("301af08455e8d6a4d5dd4bf9f4abeaff")
+@Generated("50f41213c3feee3460232d08ec934646")
 public final class CPSubsystemAddGroupAvailabilityListenerCodec {
     //hex: 0x220300
     public static final int REQUEST_MESSAGE_TYPE = 2228992;
@@ -54,12 +54,6 @@ public final class CPSubsystemAddGroupAvailabilityListenerCodec {
     private CPSubsystemAddGroupAvailabilityListenerCodec() {
     }
 
-    /**
-     * Denotes whether register a local listener or not.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public boolean local;
-
     public static ClientMessage encodeRequest(boolean local) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
@@ -72,6 +66,9 @@ public final class CPSubsystemAddGroupAvailabilityListenerCodec {
         return clientMessage;
     }
 
+    /**
+     * Denotes whether register a local listener or not.
+     */
     public static boolean decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -89,8 +86,8 @@ public final class CPSubsystemAddGroupAvailabilityListenerCodec {
     }
 
     /**
-    * Registration id for the listener.
-    */
+     * Registration id for the listener.
+     */
     public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -132,7 +129,7 @@ public final class CPSubsystemAddGroupAvailabilityListenerCodec {
          * @param groupId Group id whose availability is reported.
          * @param members All members.
          * @param unavailableMembers Missing members.
-        */
+         */
         public abstract void handleGroupAvailabilityEventEvent(com.hazelcast.cp.internal.RaftGroupId groupId, java.util.Collection<com.hazelcast.cp.CPMember> members, java.util.Collection<com.hazelcast.cp.CPMember> unavailableMembers);
     }
 }

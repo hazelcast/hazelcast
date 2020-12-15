@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Stores a key-value pair in the multimap.
  */
-@Generated("7a1ac5242da2bf918ba878b9148d3225")
+@Generated("a6f3bf15dc0ca6286ee6314f0eee22e0")
 public final class TransactionalMultiMapPutCodec {
     //hex: 0x0F0100
     public static final int REQUEST_MESSAGE_TYPE = 983296;
@@ -119,8 +119,8 @@ public final class TransactionalMultiMapPutCodec {
     }
 
     /**
-    * True if the size of the multimap is increased, false if the multimap already contains the key-value pair.
-    */
+     * True if the size of the multimap is increased, false if the multimap already contains the key-value pair.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

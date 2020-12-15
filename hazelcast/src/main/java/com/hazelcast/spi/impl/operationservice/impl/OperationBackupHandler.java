@@ -277,7 +277,7 @@ final class OperationBackupHandler {
     private Operation getBackupOperation(BackupAwareOperation backupAwareOp) {
         Operation backupOp = backupAwareOp.getBackupOperation();
         if (backupOp == null) {
-            throw new IllegalArgumentException("Backup operation should not be null! " + backupAwareOp);
+            throw new IllegalArgumentException("Backup operation must not be null! " + backupAwareOp);
         }
         if (ASSERTION_ENABLED) {
             checkServiceNamespaces(backupAwareOp, backupOp);

@@ -94,9 +94,10 @@ public class SqlCatalogTest {
             this.tables = asList(tables);
         }
 
+        @Nonnull
         @Override
         public List<List<String>> getDefaultSearchPaths() {
-            throw new UnsupportedOperationException();
+            return emptyList();
         }
 
         @Nonnull

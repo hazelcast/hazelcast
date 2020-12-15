@@ -234,6 +234,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     @Override
     public void reset() {
+        missingMembers.clear();
     }
 
     @Override

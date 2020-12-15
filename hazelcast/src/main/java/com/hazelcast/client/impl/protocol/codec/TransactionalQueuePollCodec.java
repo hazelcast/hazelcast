@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retrieves and removes the head of this queue, waiting up to the specified wait time if necessary for an element
  * to become available.
  */
-@Generated("20086aef805d735d38cf5c89b6f1a587")
+@Generated("7d1549ffae5eb0104c25eff64412f06a")
 public final class TransactionalQueuePollCodec {
     //hex: 0x120300
     public static final int REQUEST_MESSAGE_TYPE = 1180416;
@@ -113,8 +113,8 @@ public final class TransactionalQueuePollCodec {
     }
 
     /**
-    * The head of this queue, or <tt>null</tt> if the specified waiting time elapses before an element is available
-    */
+     * The head of this queue, or <tt>null</tt> if the specified waiting time elapses before an element is available
+     */
     public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

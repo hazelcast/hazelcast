@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishAllCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
@@ -25,6 +26,7 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.Message;
@@ -32,8 +34,11 @@ import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.impl.DataAwareMessage;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.UUID;
 
+import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -58,6 +63,15 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
         invokeOnPartition(request);
     }
 
+    @Override
+    public InternalCompletableFuture<Void> publishAsync(@Nonnull E message) {
+        checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
+
+        Data data = toData(message);
+        final ClientMessage request = TopicPublishCodec.encodeRequest(name, data);
+        return invokeOnPartitionAsync(request, clientMessage -> null);
+    }
+
     @Nonnull
     @Override
     public UUID addMessageListener(@Nonnull final MessageListener<E> listener) {
@@ -75,6 +89,27 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
     @Override
     public LocalTopicStats getLocalTopicStats() {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
+    }
+
+    @Override
+    public void publishAll(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        ClientMessage request = getClientMessage(messages);
+        invokeOnPartition(request);
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> publishAllAsync(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        final ClientMessage request = getClientMessage(messages);
+        return invokeOnPartitionAsync(request, clientMessage -> null);
+    }
+
+    private ClientMessage getClientMessage(@Nonnull Collection<? extends E> messages) {
+        Collection<Data> dataCollection = objectToDataCollection(messages, getSerializationService());
+        return TopicPublishAllCodec.encodeRequest(name, dataCollection);
     }
 
     @Override

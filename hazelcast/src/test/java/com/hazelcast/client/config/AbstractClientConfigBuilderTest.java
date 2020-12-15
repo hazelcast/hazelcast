@@ -495,15 +495,24 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     @Test
     public abstract void testPersistentMemoryDirectoryConfigurationSimple();
 
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public abstract void testPersistentMemoryDirectoryConfiguration_uniqueDirViolationThrows();
 
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public abstract void testPersistentMemoryDirectoryConfiguration_uniqueNumaNodeViolationThrows();
 
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public abstract void testPersistentMemoryDirectoryConfiguration_numaNodeConsistencyViolationThrows();
 
     @Test
     public abstract void testPersistentMemoryDirectoryConfiguration_simpleAndAdvancedPasses();
+
+    @Test
+    public abstract void testPersistentMemoryConfiguration_SystemMemoryMode();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testPersistentMemoryConfiguration_NotExistingModeThrows();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testPersistentMemoryDirectoryConfiguration_SystemMemoryModeThrows();
 }

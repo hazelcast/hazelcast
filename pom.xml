@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>4.1-SNAPSHOT</version>
+    <version>4.2-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -79,7 +79,7 @@
         <maven.checkstyle.plugin.version>3.1.1</maven.checkstyle.plugin.version>
         <maven.spotbugs.plugin.version>3.1.12</maven.spotbugs.plugin.version>
         <maven.sonar.plugin.version>3.6.0.1398</maven.sonar.plugin.version>
-        <maven.jacoco.plugin.version>0.8.4</maven.jacoco.plugin.version>
+        <maven.jacoco.plugin.version>0.8.6</maven.jacoco.plugin.version>
         <maven.failsafe.plugin.version>2.22.0</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.6</maven.cobertura.plugin.version>
         <maven.enforcer.plugin.version>3.0.0-M2</maven.enforcer.plugin.version>
@@ -90,9 +90,9 @@
         <slf4j.api.version>1.7.30</slf4j.api.version>
 
         <jackson.version>2.11.2</jackson.version>
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13.1</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
-        <mockito.version>2.19.0</mockito.version>
+        <mockito.version>3.6.0</mockito.version>
         <powermock.version>2.0.7</powermock.version>
         <bytebuddy.version>1.10.9</bytebuddy.version>
         <reflections.version>0.9.10</reflections.version>
@@ -275,7 +275,10 @@
                         <exclude>**/**IT.java</exclude>
                         <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                     </excludes>
-                    <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                    <groups>
+                        com.hazelcast.test.annotation.QuickTest,
+                        com.hazelcast.test.modulepath.ModulePathTest
+                    </groups>
                     <excludedGroups>
                         com.hazelcast.test.annotation.SlowTest,
                         com.hazelcast.test.annotation.NightlyTest
@@ -299,7 +302,10 @@
                     </argLine>
                     <useManifestOnlyJar>false</useManifestOnlyJar>
                     <useSystemClassLoader>true</useSystemClassLoader>
-                    <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                    <groups>
+                        com.hazelcast.test.annotation.QuickTest,
+                        com.hazelcast.test.modulepath.ModulePathTest
+                    </groups>
                     <excludedGroups>
                         com.hazelcast.test.annotation.SlowTest,
                         com.hazelcast.test.annotation.NightlyTest
@@ -446,7 +452,10 @@
                                         <exclude>**/**IT.java</exclude>
                                         <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                                     </excludes>
-                                    <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                                    <groups>
+                                        com.hazelcast.test.annotation.QuickTest,
+                                        com.hazelcast.test.modulepath.ModulePathTest
+                                    </groups>
                                     <excludedGroups>
                                         com.hazelcast.test.annotation.SlowTest,
                                         com.hazelcast.test.annotation.NightlyTest,
@@ -490,7 +499,10 @@
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                             </excludes>
-                            <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                            <groups>
+                                com.hazelcast.test.annotation.QuickTest,
+                                com.hazelcast.test.modulepath.ModulePathTest
+                            </groups>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.SlowTest,
                                 com.hazelcast.test.annotation.NightlyTest
@@ -514,7 +526,10 @@
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
                             <useSystemClassLoader>true</useSystemClassLoader>
-                            <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                            <groups>
+                                com.hazelcast.test.annotation.QuickTest,
+                                com.hazelcast.test.modulepath.ModulePathTest
+                            </groups>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.SlowTest,
                                 com.hazelcast.test.annotation.NightlyTest
@@ -659,7 +674,8 @@
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
-                                com.hazelcast.test.annotation.SlowTest
+                                com.hazelcast.test.annotation.SlowTest,
+                                com.hazelcast.test.modulepath.ModulePathTest
                             </groups>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.NightlyTest
@@ -684,6 +700,7 @@
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
                                 com.hazelcast.test.annotation.SlowTest,
+                                com.hazelcast.test.modulepath.ModulePathTest
                             </groups>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.NightlyTest
@@ -974,6 +991,7 @@
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
                                 com.hazelcast.test.annotation.SlowTest,
+                                com.hazelcast.test.modulepath.ModulePathTest,
                                 com.hazelcast.test.annotation.NightlyTest
                             </groups>
                         </configuration>
@@ -997,6 +1015,7 @@
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
                                 com.hazelcast.test.annotation.SlowTest,
+                                com.hazelcast.test.modulepath.ModulePathTest,
                                 com.hazelcast.test.annotation.NightlyTest
                             </groups>
                         </configuration>
@@ -1093,7 +1112,10 @@
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                             </excludes>
-                            <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                            <groups>
+                                com.hazelcast.test.annotation.QuickTest,
+                                com.hazelcast.test.modulepath.ModulePathTest
+                            </groups>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.SlowTest,
                                 com.hazelcast.test.annotation.NightlyTest,

@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.clientside;
+package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.UndefinedErrorCodeException;
-import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.builtin.ErrorsCodec;
 import com.hazelcast.client.impl.protocol.exception.ErrorHolder;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
@@ -47,7 +46,10 @@ import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.flakeidgen.impl.NodeIdOutOfRangeException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.memory.NativeOutOfMemoryError;
@@ -89,9 +91,11 @@ import java.io.UTFDataFormatException;
 import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.security.AccessControlException;
+import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -207,9 +211,16 @@ import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.XA;
  */
 public class ClientExceptionFactory {
 
-    private final Map<Integer, ExceptionFactory> intToFactory = new HashMap<Integer, ExceptionFactory>();
+    public interface ExceptionFactory {
+        Throwable createException(String message, Throwable cause);
+    }
 
-    public ClientExceptionFactory(boolean jcacheAvailable) {
+    private final Map<Integer, ExceptionFactory> intToFactory = new HashMap<>();
+    private final Map<Class, Integer> classToInt = new HashMap<>();
+    private final ClassLoader classLoader;
+
+    public ClientExceptionFactory(boolean jcacheAvailable, ClassLoader classLoader) {
+        this.classLoader = classLoader;
         if (jcacheAvailable) {
             register(CACHE, CacheException.class, CacheException::new);
             register(CACHE_LOADER, CacheLoaderException.class, CacheLoaderException::new);
@@ -325,9 +336,20 @@ public class ClientExceptionFactory {
         }
         ErrorHolder errorHolder = iterator.next();
         ExceptionFactory exceptionFactory = intToFactory.get(errorHolder.getErrorCode());
-        Throwable throwable;
+        Throwable throwable = null;
         if (exceptionFactory == null) {
-            throwable = new UndefinedErrorCodeException(errorHolder.getMessage(), errorHolder.getClassName());
+            String className = errorHolder.getClassName();
+            try {
+                Class<? extends Throwable> exceptionClass =
+                        (Class<? extends Throwable>) ClassLoaderUtil.loadClass(classLoader, className);
+                throwable = ExceptionUtil.tryCreateExceptionWithMessageAndCause(exceptionClass, errorHolder.getMessage(),
+                        createException(iterator));
+            } catch (ClassNotFoundException e) {
+                EmptyStatement.ignore(e);
+            }
+            if (throwable == null) {
+                throwable = new UndefinedErrorCodeException(errorHolder.getMessage(), className, createException(iterator));
+            }
         } else {
             throwable = exceptionFactory.createException(errorHolder.getMessage(), createException(iterator));
         }
@@ -335,10 +357,21 @@ public class ClientExceptionFactory {
         return throwable;
     }
 
+    /**
+     * hazelcast and jdk exceptions should always be defined
+     * in {@link com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes} and
+     * in {@link ClientExceptionFactory}
+     * so that a well defined error code could be delivered to non-java clients.
+     * So we don't try to load them via ClassLoader to be able to catch the missing exceptions
+     */
+    private boolean checkClassNameForValidity(String exceptionClassName) {
+        return !exceptionClassName.startsWith("com.hazelcast") && !exceptionClassName.startsWith("java");
+    }
+
     // method is used by Jet
     @SuppressWarnings("WeakerAccess")
     public void register(int errorCode, Class clazz, ExceptionFactory exceptionFactory) {
-        if (intToFactory.containsKey(errorCode)) {
+        if (intToFactory.putIfAbsent(errorCode, exceptionFactory) != null) {
             throw new HazelcastException("Code " + errorCode + " already used");
         }
 
@@ -346,11 +379,34 @@ public class ClientExceptionFactory {
             throw new HazelcastException("Exception factory did not produce an instance of expected class");
         }
 
-        intToFactory.put(errorCode, exceptionFactory);
+        Integer currentCode = classToInt.putIfAbsent(clazz, errorCode);
+        if (currentCode != null) {
+            throw new HazelcastException("Class " + clazz.getName() + " already added with code: " + currentCode);
+        }
     }
 
-    public interface ExceptionFactory {
-        Throwable createException(String message, Throwable cause);
+    public ClientMessage createExceptionMessage(Throwable throwable) {
+        List<ErrorHolder> errorHolders = new LinkedList<>();
+        errorHolders.add(convertToErrorHolder(throwable));
+        Throwable cause = throwable.getCause();
+        while (cause != null) {
+            errorHolders.add(convertToErrorHolder(cause));
+            cause = cause.getCause();
+        }
 
+        return ErrorsCodec.encode(errorHolders);
+    }
+
+    private ErrorHolder convertToErrorHolder(Throwable t) {
+        Integer errorCode = classToInt.get(t.getClass());
+        if (errorCode == null) {
+            errorCode = ClientProtocolErrorCodes.UNDEFINED;
+        }
+        return new ErrorHolder(errorCode, t.getClass().getName(), t.getMessage(), Arrays.asList(t.getStackTrace()));
+    }
+
+    // package-access for test
+    boolean isKnownClass(Class<? extends Throwable> aClass) {
+        return classToInt.containsKey(aClass);
     }
 }

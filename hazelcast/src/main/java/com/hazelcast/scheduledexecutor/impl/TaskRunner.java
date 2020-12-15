@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.scheduledexecutor.impl.TaskDefinition.Type.AT_FIXED_RATE;
 import static com.hazelcast.scheduledexecutor.impl.TaskDefinition.Type.SINGLE_RUN;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
@@ -34,7 +35,6 @@ import static java.util.logging.Level.WARNING;
 class TaskRunner<V> implements Callable<V>, Runnable {
 
     private final boolean statisticsEnabled;
-    private final long creationTime = Clock.currentTimeMillis();
     private final String name;
     private final String taskName;
     private final Callable<V> original;
@@ -42,17 +42,21 @@ class TaskRunner<V> implements Callable<V>, Runnable {
     private final ScheduledTaskDescriptor descriptor;
     private final ScheduledExecutorContainer container;
     private final ScheduledTaskStatisticsImpl statistics;
+    private final TaskDefinition.Type type;
 
     private boolean initialized;
     private ScheduledTaskResult resolution;
 
+    private volatile long creationTime = Clock.currentTimeMillis();
+
     TaskRunner(ScheduledExecutorContainer container,
-               ScheduledTaskDescriptor descriptor) {
+               ScheduledTaskDescriptor descriptor, TaskDefinition.Type type) {
         this.container = container;
         this.descriptor = descriptor;
         this.original = descriptor.getDefinition().getCommand();
         this.taskName = descriptor.getDefinition().getName();
         this.statistics = descriptor.getStatsSnapshot();
+        this.type = type;
         this.statistics.onInit();
         this.statisticsEnabled = container.isStatisticsEnabled();
         this.executorStats = container.getExecutorStats();
@@ -67,7 +71,7 @@ class TaskRunner<V> implements Callable<V>, Runnable {
     public V call() throws Exception {
         long start = Clock.currentTimeMillis();
         if (statisticsEnabled) {
-            executorStats.startExecution(container.getName(), start - creationTime);
+            executorStats.startExecution(name, start - creationTime);
         }
         beforeRun();
         try {
@@ -85,6 +89,11 @@ class TaskRunner<V> implements Callable<V>, Runnable {
 
             if (statisticsEnabled) {
                 executorStats.finishExecution(name, Clock.currentTimeMillis() - start);
+
+                if (type.equals(AT_FIXED_RATE)) {
+                    executorStats.startPending(name);
+                    creationTime = Clock.currentTimeMillis();
+                }
             }
         }
     }

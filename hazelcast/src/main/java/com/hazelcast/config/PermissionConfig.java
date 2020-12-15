@@ -162,9 +162,10 @@ public class PermissionConfig implements IdentifiedDataSerializable {
          */
         RELIABLE_TOPIC("reliable-topic-permission"),
         /**
-         * SQL
+         * ReplicatedMap
          */
-        SQL("sql-permission");
+        REPLICATEDMAP("replicatedmap-permission")
+        ;
         private final String nodeName;
 
         PermissionType(String nodeName) {

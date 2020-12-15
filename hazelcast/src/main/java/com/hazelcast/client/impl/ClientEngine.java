@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Client;
-import com.hazelcast.client.impl.protocol.ClientExceptions;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.cluster.Address;
@@ -39,7 +39,7 @@ import java.util.function.Consumer;
 
 /**
  * The client Engine.
- *
+ * <p>
  * todo: what is the purpose of the client engine.
  */
 public interface ClientEngine extends Consumer<ClientMessage> {
@@ -49,7 +49,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      * Only authenticated endpoints should be registered here.
      * bind can be called twice for same connection, as long as client is allowed to be registered all calls to this
      * method returns true
-     *
+     * <p>
      * A selector could prevent endpoint to be registered
      * see {@link #applySelector}
      *
@@ -81,7 +81,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
 
     ClientEndpointManager getEndpointManager();
 
-    ClientExceptions getClientExceptions();
+    ClientExceptionFactory getExceptionFactory();
 
     SecurityContext getSecurityContext();
 
@@ -91,7 +91,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
 
     /**
      * Returns Map which contains number of connected clients to the cluster.
-     *
+     * <p>
      * The returned map can be used to get information about connected clients to the cluster.
      *
      * @return {@code Map&lt;String, Integer&gt;}.

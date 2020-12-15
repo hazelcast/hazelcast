@@ -28,8 +28,8 @@ import java.util.UUID;
 public final class QueryException extends HazelcastException {
 
     private final int code;
-    private final UUID originatingMemberId;
-    private final boolean invalidatePlan;
+    private UUID originatingMemberId;
+    private boolean invalidatePlan;
 
     private QueryException(int code, String message, Throwable cause, UUID originatingMemberId) {
         this(code, message, cause, originatingMemberId, false);
@@ -68,15 +68,15 @@ public final class QueryException extends HazelcastException {
     }
 
     public static QueryException memberConnection(UUID memberId) {
-        return error(SqlErrorCode.CONNECTION_PROBLEM, "Member cannot be reached: " + memberId).withInvalidate();
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Member cannot be reached: " + memberId).markInvalidate();
     }
 
     public static QueryException memberConnection(Address address) {
-        return error(SqlErrorCode.CONNECTION_PROBLEM, "Member cannot be reached: " + address).withInvalidate();
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Member cannot be reached: " + address).markInvalidate();
     }
 
     public static QueryException memberConnection(Collection<UUID> memberIds) {
-        return error(SqlErrorCode.CONNECTION_PROBLEM, "Members cannot be reached: " + memberIds).withInvalidate();
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Members cannot be reached: " + memberIds).markInvalidate();
     }
 
     public static QueryException clientMemberConnection(UUID clientId) {
@@ -99,8 +99,13 @@ public final class QueryException extends HazelcastException {
         return dataException(message, null);
     }
 
-    public QueryException withInvalidate() {
-        return new QueryException(code, getMessage(), getCause(), originatingMemberId, true);
+    public QueryException markInvalidate() {
+        invalidatePlan = true;
+        return this;
+    }
+
+    public void setOriginatingMemberId(UUID uuid) {
+        originatingMemberId = uuid;
     }
 
     /**
@@ -120,6 +125,10 @@ public final class QueryException extends HazelcastException {
         return originatingMemberId;
     }
 
+    /**
+     * If true, the plan that caused this exception should be invalidated from
+     * the plan cache.
+     */
     public boolean isInvalidatePlan() {
         return invalidatePlan;
     }

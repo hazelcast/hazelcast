@@ -14,23 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.security.permission;
+package usercodedeployment;
 
-import java.security.Permission;
+import java.io.Serializable;
 
-public class SqlPermission extends ClusterPermission {
+public class DomainClassWithInnerClass implements Serializable {
 
-    public SqlPermission() {
-        super("<sql>");
+    public final InnerClass innerObject;
+
+    public DomainClassWithInnerClass(InnerClass enumVal) {
+        this.innerObject = enumVal;
     }
 
-    @Override
-    public boolean implies(Permission permission) {
-        return getClass() == permission.getClass();
+    public static class InnerClass implements Serializable {
+        public final int value;
+
+        public InnerClass(int value) {
+            this.value = value;
+        }
     }
 
-    @Override
-    public String getActions() {
-        return "sql";
-    }
 }
+
+

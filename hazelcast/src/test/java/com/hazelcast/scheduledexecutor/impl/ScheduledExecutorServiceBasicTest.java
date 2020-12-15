@@ -58,8 +58,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -1587,12 +1589,14 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             entry.getValue().get();
         }
 
-        // collect metrics
-        Map<String, List<Long>> metrics = collectMetrics(SCHEDULED_EXECUTOR_PREFIX, instances);
+        assertTrueEventually(() -> {
+            // collect metrics
+            Map<String, List<Long>> metrics = collectMetrics(SCHEDULED_EXECUTOR_PREFIX, instances);
 
-        // check results
-        assertMetricsCollected(metrics, 1000, 0,
+            // check results
+            assertMetricsCollected(metrics, 1000, 0,
                 1, 1, 0, 1, 0);
+        });
     }
 
     @Test
@@ -1610,12 +1614,70 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             entry.getValue().get();
         }
 
-        // collect metrics
-        Map<String, List<Long>> metrics = collectMetrics(SCHEDULED_EXECUTOR_PREFIX, instances);
+        assertTrueAllTheTime(() -> {
+            // collect metrics
+            Map<String, List<Long>> metrics = collectMetrics(SCHEDULED_EXECUTOR_PREFIX, instances);
 
-        // check results
-        assertTrue("No metrics collection expected but " + metrics, metrics.isEmpty());
+            // check results
+            assertTrue("No metrics collection expected but " + metrics, metrics.isEmpty());
+        }, 5);
     }
+
+    @Test
+    public void scheduledAtFixedRate_generates_statistics_when_stats_enabled() {
+        // run task
+        Config config = smallInstanceConfig();
+        config.getScheduledExecutorConfig(ANY_EXECUTOR_NAME)
+                .setStatisticsEnabled(true);
+
+        long now = System.currentTimeMillis();
+        HazelcastInstance[] instances = createClusterWithCount(1, config);
+        IScheduledExecutorService s = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
+        CountDownLatch progress = new CountDownLatch(3);
+        Semaphore suspend = new Semaphore(0);
+        s.scheduleAtFixedRate(new CountableRunTask(progress, suspend), 1, 1, SECONDS);
+
+        assertOpenEventually(progress);
+
+        try {
+            assertTrueEventually(() -> {
+                // collect metrics
+                Map<String, List<Long>> metrics = collectMetrics(SCHEDULED_EXECUTOR_PREFIX, instances);
+
+                // check results
+                assertMetricsCollected(metrics, 0, 0,
+                    3, 2, 0, now, 0);
+            });
+        } finally {
+            suspend.release();
+        }
+    }
+
+    @Test
+    public void scheduledAtFixedRate_does_not_generate_statistics_when_stats_disabled() {
+        // run task
+        Config config = smallInstanceConfig();
+        config.getScheduledExecutorConfig(ANY_EXECUTOR_NAME)
+                .setStatisticsEnabled(false);
+
+        long now = System.currentTimeMillis();
+        HazelcastInstance[] instances = createClusterWithCount(1, config);
+        IScheduledExecutorService s = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
+        CountDownLatch progress = new CountDownLatch(3);
+        Semaphore suspend = new Semaphore(0);
+        s.scheduleAtFixedRate(new CountableRunTask(progress, suspend), 1, 1, SECONDS);
+
+        assertOpenEventually(progress);
+
+        assertTrueAllTheTime(() -> {
+            // collect metrics
+            Map<String, List<Long>> metrics = collectMetrics(SCHEDULED_EXECUTOR_PREFIX, instances);
+
+            // check results
+            assertTrue("No metrics collection expected but " + metrics, metrics.isEmpty());
+        }, 5);
+    }
+
 
     public static Map<String, List<Long>> collectMetrics(String prefix, HazelcastInstance... instances) {
         Map<String, List<Long>> metricsMap = new HashMap<>();

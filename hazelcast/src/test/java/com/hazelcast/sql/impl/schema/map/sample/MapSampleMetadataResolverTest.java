@@ -52,11 +52,11 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.TreeMap;
 
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
@@ -229,6 +229,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         checkFields(
             metadata,
+            field("publicFieldBase", QueryDataType.INT, true),
             field("publicField", QueryDataType.INT, true),
             hiddenField(KEY, QueryDataType.OBJECT, true)
         );
@@ -237,6 +238,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         checkFields(
             metadata,
+            field("publicFieldBase", QueryDataType.INT, true),
             field("publicField", QueryDataType.INT, true),
             hiddenField(KEY, QueryDataType.OBJECT, true)
         );
@@ -311,21 +313,23 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
     public void testJavaTopFieldClash() {
         InternalSerializationService ss = getSerializationService();
 
-        JavaTopFieldClash object = new JavaTopFieldClash();
-
         // Key
+        Object object = new JavaTopFieldKeyClash();
+
         TableField field = MapSampleMetadataResolver.resolve(ss, jetMapMetadataResolver, object, true).getFields().get(KEY);
-        assertEquals(hiddenField(KEY, QueryDataType.OBJECT, true), field);
+        assertEquals(field(KEY, QueryDataType.OBJECT, true), field);
 
         field = MapSampleMetadataResolver.resolve(ss, jetMapMetadataResolver, ss.toData(object), true).getFields().get(KEY);
-        assertEquals(hiddenField(KEY, QueryDataType.OBJECT, true), field);
+        assertEquals(field(KEY, QueryDataType.OBJECT, true), field);
 
         // Value
+        object = new JavaTopFieldValueClash();
+
         field = MapSampleMetadataResolver.resolve(ss, jetMapMetadataResolver, object, false).getFields().get(VALUE);
-        assertEquals(hiddenField(VALUE, QueryDataType.OBJECT, false), field);
+        assertEquals(field(VALUE, QueryDataType.OBJECT, false), field);
 
         field = MapSampleMetadataResolver.resolve(ss, jetMapMetadataResolver, ss.toData(object), false).getFields().get(VALUE);
-        assertEquals(hiddenField(VALUE, QueryDataType.OBJECT, false), field);
+        assertEquals(field(VALUE, QueryDataType.OBJECT, false), field);
     }
 
     /**
@@ -464,21 +468,20 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
     }
 
     private static void checkFields(MapSampleMetadata metadata, MapTableField... expectedFields) {
-        TreeMap<String, TableField> expectedFieldMap = new TreeMap<>();
+        // sort by visible/hidden, then by name
+        Arrays.sort(expectedFields, Comparator.comparing(MapTableField::isHidden)
+                                              .thenComparing(MapTableField::getName));
+
+        List<String> expectedFieldNames = new ArrayList<>();
 
         for (MapTableField field : expectedFields) {
-            expectedFieldMap.put(field.getName(), field);
+            expectedFieldNames.add(field.getName());
         }
-
-        LinkedHashMap<String, TableField> expectedFieldMap0 = new LinkedHashMap<>(expectedFieldMap);
-
-        List<String> expectedFieldNames = new ArrayList<>(expectedFieldMap0.keySet());
 
         assertEquals(expectedFieldNames, new ArrayList<>(metadata.getFields().keySet()));
 
-        for (String expectedFieldName : expectedFieldNames) {
-            TableField expectedField = expectedFieldMap0.get(expectedFieldName);
-            TableField field = metadata.getFields().get(expectedFieldName);
+        for (MapTableField expectedField : expectedFields) {
+            TableField field = metadata.getFields().get(expectedField.getName());
 
             assertEquals(expectedField, field);
         }
@@ -536,11 +539,20 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
     }
 
 
-    private static class JavaFields implements Serializable {
+    private static class JavaFieldsBase implements Serializable {
+        public int publicFieldBase;
+        int defaultFieldBase;
+        protected int protectedFieldBase;
+        private int privateFieldBase;
+        public static int staticFieldBase;
+    }
+
+    private static class JavaFields extends JavaFieldsBase {
         public int publicField;
         int defaultField;
         protected int protectedField;
         private int privateField;
+        public static int staticField;
     }
 
     private static class JavaGetters implements Serializable {
@@ -617,8 +629,14 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         }
     }
 
-    private static class JavaTopFieldClash implements Serializable {
+    private static class JavaTopFieldKeyClash implements Serializable {
         public int __key;
+    }
+
+    private static class JavaTopFieldValueClash implements Serializable {
+        public int getThis() {
+            return 0;
+        }
     }
 
     private static class JavaTopGetterClash implements Serializable {

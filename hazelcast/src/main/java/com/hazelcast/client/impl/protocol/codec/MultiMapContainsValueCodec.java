@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns whether the multimap contains an entry with the value.
  */
-@Generated("2863a3739bbdf0ce38cec1c0d37c3009")
+@Generated("87639328627db82279bb62b55aa45ae6")
 public final class MultiMapContainsValueCodec {
     //hex: 0x020800
     public static final int REQUEST_MESSAGE_TYPE = 133120;
@@ -97,8 +97,8 @@ public final class MultiMapContainsValueCodec {
     }
 
     /**
-    * True if the multimap contains an entry with the value, false otherwise.
-    */
+     * True if the multimap contains an entry with the value, false otherwise.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

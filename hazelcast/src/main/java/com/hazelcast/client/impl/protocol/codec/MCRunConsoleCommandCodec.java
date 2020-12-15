@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Runs given console command on the member it's called on.
  */
-@Generated("6af3250f170a0ab9c375ef9d0491cd7a")
+@Generated("bc876909bbea01d89721181a741d46d9")
 public final class MCRunConsoleCommandCodec {
     //hex: 0x201200
     public static final int REQUEST_MESSAGE_TYPE = 2101760;
@@ -96,8 +96,8 @@ public final class MCRunConsoleCommandCodec {
     }
 
     /**
-    * Execution result: console command output.
-    */
+     * Execution result: console command output.
+     */
     public static java.lang.String decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

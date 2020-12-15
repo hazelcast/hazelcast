@@ -19,4 +19,6 @@ package com.hazelcast.logging;
 public interface LoggerFactory {
 
     ILogger getLogger(String name);
+
+    void removeLogger(String name);
 }

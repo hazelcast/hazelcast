@@ -28,10 +28,21 @@ import static java.util.Objects.requireNonNull;
  * Configuration class for persistent memory devices (e.g. Intel Optane).
  */
 public class PersistentMemoryConfig {
+
+    /**
+     * Indicates if the persistent memory is enabled.
+     */
+    private boolean enabled;
+
     /**
      * Paths to the non-volatile memory directory.
      */
     private List<PersistentMemoryDirectoryConfig> directoryConfigs = new LinkedList<>();
+
+    /**
+     * The operational mode of the persistent memory configured on the machine.
+     */
+    private PersistentMemoryMode mode = PersistentMemoryMode.MOUNTED;
 
     public PersistentMemoryConfig() {
     }
@@ -46,6 +57,27 @@ public class PersistentMemoryConfig {
     public PersistentMemoryConfig(@Nonnull PersistentMemoryConfig persistentMemoryConfig) {
         requireNonNull(persistentMemoryConfig).directoryConfigs
                 .forEach(directoryConfig -> addDirectoryConfig(new PersistentMemoryDirectoryConfig(directoryConfig)));
+        enabled = persistentMemoryConfig.enabled;
+        mode = persistentMemoryConfig.mode;
+    }
+
+    /**
+     * Returns if the persistent memory is enabled.
+     *
+     * @return {@code true} if persistent memory allocation is enabled, {@code false} otherwise.
+     */
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    /**
+     * Enables or disables persistent memory.
+     *
+     * @return this {@link NativeMemoryConfig} instance
+     */
+    public PersistentMemoryConfig setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        return this;
     }
 
     /**
@@ -140,11 +172,33 @@ public class PersistentMemoryConfig {
         }
     }
 
-    void setDirectoryConfig(@Nonnull PersistentMemoryDirectoryConfig directoryConfig) {
+    PersistentMemoryConfig setDirectoryConfig(@Nonnull PersistentMemoryDirectoryConfig directoryConfig) {
         requireNonNull(directoryConfig);
         // method to support 4.0 API of NativeMemoryConfig
         this.directoryConfigs.clear();
         this.directoryConfigs.add(directoryConfig);
+        return this;
+    }
+
+    /**
+     * Returns the mode in which the persistent memory should be used.
+     * @return the mode
+     */
+    @Nonnull
+    public PersistentMemoryMode getMode() {
+        return mode;
+    }
+
+    /**
+     * Sets the mode in which the persistent memory should be used. The default
+     * mode is {@link PersistentMemoryMode#MOUNTED}.
+     *
+     * @param mode The mode of the persistent memory
+     * @throws NullPointerException if {@code mode} is {@code null}
+     */
+    public PersistentMemoryConfig setMode(@Nonnull PersistentMemoryMode mode) {
+        this.mode = requireNonNull(mode);
+        return this;
     }
 
     @Override
@@ -158,18 +212,29 @@ public class PersistentMemoryConfig {
 
         PersistentMemoryConfig that = (PersistentMemoryConfig) o;
 
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (mode != that.mode) {
+            return false;
+        }
         return Objects.equals(directoryConfigs, that.directoryConfigs);
     }
 
     @Override
     public int hashCode() {
-        return directoryConfigs.hashCode();
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + (mode != null ? mode.hashCode() : 0);
+        result = 31 * result + (directoryConfigs != null ? directoryConfigs.hashCode() : 0);
+        return result;
     }
 
     @Override
     public String toString() {
         return "PersistentMemoryConfig{"
-                + "directoryConfigs=" + directoryConfigs
+                + "enabled=" + enabled
+                + ", mode=" + mode
+                + ", directoryConfigs=" + directoryConfigs
                 + '}';
     }
 }

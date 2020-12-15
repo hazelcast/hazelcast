@@ -20,12 +20,11 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.ClassRule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -33,17 +32,12 @@ import static org.junit.Assert.assertFalse;
 @Category(QuickTest.class)
 public class ExternalClientConfigurationOverrideTest extends HazelcastTestSupport {
 
-    @ClassRule
-    public static final EnvironmentVariables environmentVariables = new EnvironmentVariables();
-
     @Test
-    public void shouldExtractConfigFromEnv() {
-        environmentVariables
-          .set("HZCLIENT_INSTANCENAME", "test")
-          .set("HZCLIENT_NETWORK_AUTODETECTION_ENABLED", "false");
-
+    public void shouldExtractConfigFromEnv() throws Exception {
         ClientConfig config = new ClientConfig();
-        new ExternalConfigurationOverride().overwriteClientConfig(config);
+        withEnvironmentVariable("HZCLIENT_INSTANCENAME", "test")
+          .and("HZCLIENT_NETWORK_AUTODETECTION_ENABLED", "false")
+          .execute(() -> new ExternalConfigurationOverride().overwriteClientConfig(config));
 
         assertEquals("test", config.getInstanceName());
         assertFalse(config.getNetworkConfig().isAutoDetectionEnabled());

@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * then the current thread becomes disabled for thread scheduling purposes
  * and lies dormant until other threads release enough permits.
  */
-@Generated("59f628125a8b862520c8441edd9d0244")
+@Generated("9c5da2c869a35cf7f74d5d753b14d949")
 public final class SemaphoreAcquireCodec {
     //hex: 0x0C0200
     public static final int REQUEST_MESSAGE_TYPE = 786944;
@@ -139,9 +139,9 @@ public final class SemaphoreAcquireCodec {
     }
 
     /**
-    * true if requested permits are acquired,
-    * false otherwise
-    */
+     * true if requested permits are acquired,
+     * false otherwise
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

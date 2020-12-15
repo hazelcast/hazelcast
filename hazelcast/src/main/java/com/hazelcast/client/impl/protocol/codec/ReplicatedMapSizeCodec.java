@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of key-value mappings in this map. If the map contains more than Integer.MAX_VALUE elements,
  * returns Integer.MAX_VALUE.
  */
-@Generated("053eee63c6e2af8f66d32b0d17e52cd9")
+@Generated("da4377c2faeba81d2267709e391ba3ce")
 public final class ReplicatedMapSizeCodec {
     //hex: 0x0D0200
     public static final int REQUEST_MESSAGE_TYPE = 852480;
@@ -49,12 +49,6 @@ public final class ReplicatedMapSizeCodec {
 
     private ReplicatedMapSizeCodec() {
     }
-
-    /**
-     * Name of the ReplicatedMap
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -68,6 +62,9 @@ public final class ReplicatedMapSizeCodec {
         return clientMessage;
     }
 
+    /**
+     * Name of the ReplicatedMap
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -86,8 +83,8 @@ public final class ReplicatedMapSizeCodec {
     }
 
     /**
-    * the number of key-value mappings in this map.
-    */
+     * the number of key-value mappings in this map.
+     */
     public static int decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

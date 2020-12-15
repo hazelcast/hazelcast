@@ -21,7 +21,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.1.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.2.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -696,6 +696,21 @@
                             </hz:kerberos>
                         </hz:identity>
                     </hz:realm>
+                    <hz:realm name="simpleKerberosRealm">
+                        <hz:authentication>
+                            <hz:kerberos>
+                                <hz:principal>hz/127.0.0.1@HAZELCAST.COM</hz:principal>
+                                <hz:keytab-file>/opt/localhost.keytab</hz:keytab-file>
+                            </hz:kerberos>
+                        </hz:authentication>
+                        <hz:identity>
+                            <hz:kerberos>
+                                <hz:realm>HAZELCAST.COM</hz:realm>
+                                <hz:principal>hz/127.0.0.1@HAZELCAST.COM</hz:principal>
+                                <hz:keytab-file>/opt/localhost.keytab</hz:keytab-file>
+                            </hz:kerberos>
+                        </hz:identity>
+                    </hz:realm>
                     <hz:realm name="krb5Acceptor">
                         <hz:authentication>
                             <hz:jaas>
@@ -852,7 +867,11 @@
                             <hz:action>all</hz:action>
                         </hz:actions>
                     </hz:reliable-topic-permission>
-                    <hz:sql-permission principal="dev"/>
+                    <hz:replicatedmap-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:replicatedmap-permission>
                 </hz:client-permissions>
                 <hz:client-block-unmapped-actions>false</hz:client-block-unmapped-actions>
             </hz:security>

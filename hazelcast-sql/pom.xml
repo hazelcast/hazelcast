@@ -28,7 +28,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>4.1-SNAPSHOT</version>
+        <version>4.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -37,7 +37,8 @@
         <main.basedir>${project.parent.basedir}</main.basedir>
 
         <calcite.version>1.23.0</calcite.version>
-        <guava.version>24.1.1-jre</guava.version>
+        <guava.version>30.0-jre</guava.version>
+        <slf4j.version>1.7.25</slf4j.version>
     </properties>
 
     <build>
@@ -78,65 +79,37 @@
                 <version>${maven.shade.plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>fat-jar</id>
+                        <id>slim-original-jar</id>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
                         <configuration>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>jar-with-dependencies</shadedClassifierName>
+                            <shadedClassifierName>original</shadedClassifierName>
                             <createSourcesJar>true</createSourcesJar>
                             <artifactSet>
                                 <includes>
-                                    <include>com.fasterxml.jackson.core:jackson-core</include>
-                                    <include>com.google.guava:guava</include>
-                                    <include>com.jayway.jsonpath:json-path</include>
-                                    <include>org.apache.calcite.avatica:avatica-core</include>
                                     <include>org.apache.calcite:calcite-core</include>
-                                    <include>org.apache.calcite:calcite-linq4j</include>
-                                    <include>org.codehaus.janino:commons-compiler</include>
-                                    <include>org.codehaus.janino:janino</include>
-                                    <include>org.slf4j:slf4j-api</include>
-                                    <include>commons-codec:commons-codec</include>
                                 </includes>
                             </artifactSet>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
+                                <transformer
+                                    implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
                                     <resource>com.hazelcast.org.codehaus.commons.compiler.properties</resource>
                                 </transformer>
                             </transformers>
                             <filters>
                                 <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <!-- Exclude signatures -->
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                    </excludes>
+                                    <artifact>org.apache.calcite:calcite-core</artifact>
+                                    <includes>
+                                        <include>**/Parser.jj</include>
+                                    </includes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.apache.calcite:*</artifact>
+                                    <artifact>${project.groupId}:${project.artifactId}</artifact>
                                     <excludes>
-                                        <!-- Avoid automatic discovery of Calcite JDBC. -->
-                                        <exclude>META-INF/services/java.sql.Driver</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.apache.calcite.avatica:*</artifact>
-                                    <excludes>
-                                        <!-- Avoid automatic discovery of Avatica JDBC. -->
-                                        <exclude>META-INF/services/java.sql.Driver</exclude>
-                                        <!-- Exclude Avatica ProtoBuf definitions, since Avatica is not used. -->
-                                        <exclude>*.proto</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
-                                    <excludes>
-                                        <!-- Jackson Core is already included in hazelcast.jar. -->
-                                        <exclude>**</exclude>
+                                        <exclude>org/slf4j/**</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
@@ -155,18 +128,9 @@
                             <shadeSourcesContent>true</shadeSourcesContent>
                             <shadeTestJar>false</shadeTestJar>
                             <artifactSet>
-                                <includes>
-                                    <include>com.fasterxml.jackson.core:jackson-core</include>
-                                    <include>com.google.guava:guava</include>
-                                    <include>com.jayway.jsonpath:json-path</include>
-                                    <include>org.apache.calcite.avatica:avatica-core</include>
-                                    <include>org.apache.calcite:calcite-core</include>
-                                    <include>org.apache.calcite:calcite-linq4j</include>
-                                    <include>org.codehaus.janino:commons-compiler</include>
-                                    <include>org.codehaus.janino:janino</include>
-                                    <include>org.slf4j:slf4j-api</include>
-                                    <include>commons-codec:commons-codec</include>
-                                </includes>
+                                <excludes>
+                                    <exclude>com.hazelcast:hazelcast</exclude>
+                                </excludes>
                             </artifactSet>
                             <relocations>
                                 <relocation>
@@ -182,9 +146,12 @@
                                 </relocation>
                             </relocations>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
                             <filters>
                                 <filter>
@@ -201,7 +168,9 @@
                                     <excludes>
                                         <!-- Avoid automatic discovery of Calcite JDBC. -->
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>codegen/**</exclude>
+                                        <exclude>**/package-info.java</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -209,13 +178,15 @@
                                     <excludes>
                                         <!-- Avoid automatic discovery of Avatica JDBC. -->
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Exclude Avatica ProtoBuf definitions, since Avatica is not used. -->
                                         <exclude>*.proto</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.codehaus.janino:janino</artifact>
+                                    <artifact>org.codehaus.janino:*</artifact>
                                     <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Replace with the one from src/main/resources for correct reflection in runtime. -->
                                         <exclude>org.codehaus.commons.compiler.properties</exclude>
                                     </excludes>
@@ -225,6 +196,37 @@
                                     <excludes>
                                         <!-- Jackson Core is already included in hazelcast.jar. -->
                                         <exclude>**</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>commons-codec:commons-codec</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.google.guava:guava</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.jayway.jsonpath:json-path</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.slf4j:slf4j-api</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <exclude>org/slf4j/impl/StaticLoggerBinder.java</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
@@ -341,8 +343,30 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.code.findbugs</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.errorprone</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.checkerframework</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.j2objc</groupId>
+                    <artifactId>j2objc-annotations</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.googlecode.junit-toolbox</groupId>
             <artifactId>junit-toolbox</artifactId>

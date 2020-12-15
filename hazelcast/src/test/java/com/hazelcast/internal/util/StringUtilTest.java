@@ -166,7 +166,6 @@ public class StringUtilTest extends HazelcastTestSupport {
         assertEquals("a/", StringUtil.stripTrailingSlash("a//"));
     }
 
-
     @Test
     public void testResolvePlaceholders() throws Exception {
         assertResolvePlaceholder(

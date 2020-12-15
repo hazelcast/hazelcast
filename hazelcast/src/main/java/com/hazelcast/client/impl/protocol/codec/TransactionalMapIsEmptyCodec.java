@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains no entries.
  */
-@Generated("828ecd7c7fdb8add4fa92cc3b0839565")
+@Generated("e307b87ba76a5c60a87ff38ff704d10e")
 public final class TransactionalMapIsEmptyCodec {
     //hex: 0x0E0500
     public static final int REQUEST_MESSAGE_TYPE = 918784;
@@ -105,8 +105,8 @@ public final class TransactionalMapIsEmptyCodec {
     }
 
     /**
-    * <tt>true</tt> if this map contains no entries.
-    */
+     * <tt>true</tt> if this map contains no entries.
+     */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

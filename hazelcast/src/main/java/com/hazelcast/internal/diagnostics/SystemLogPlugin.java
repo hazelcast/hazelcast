@@ -197,16 +197,18 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         if (members != null) {
             boolean first = true;
             for (Member member : members) {
-                if (member.getAddress().equals(thisAddress)) {
+                Address memberAddress = member.getAddress();
+                String addressStr = String.valueOf(memberAddress);
+                if (memberAddress.equals(thisAddress)) {
                     if (first) {
-                        writer.writeEntry(member.getAddress().toString() + ":this:master");
+                        writer.writeEntry(addressStr + ":this:master");
                     } else {
-                        writer.writeEntry(member.getAddress().toString() + ":this");
+                        writer.writeEntry(addressStr + ":this");
                     }
                 } else if (first) {
-                    writer.writeEntry(member.getAddress().toString() + ":master");
+                    writer.writeEntry(addressStr + ":master");
                 } else {
-                    writer.writeEntry(member.getAddress().toString());
+                    writer.writeEntry(addressStr);
                 }
                 first = false;
             }
@@ -291,7 +293,7 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         writer.endSection();
     }
 
-    private class LifecycleListenerImpl implements LifecycleListener {
+    protected class LifecycleListenerImpl implements LifecycleListener {
         @Override
         public void stateChanged(LifecycleEvent event) {
             logQueue.add(event);
@@ -302,13 +304,13 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         final boolean added;
         final Connection connection;
 
-        private ConnectionEvent(boolean added, Connection connection) {
+        ConnectionEvent(boolean added, Connection connection) {
             this.added = added;
             this.connection = connection;
         }
     }
 
-    private class ConnectionListenerImpl implements ConnectionListener {
+    protected class ConnectionListenerImpl implements ConnectionListener {
         @Override
         public void connectionAdded(Connection connection) {
             logQueue.add(new ConnectionEvent(true, connection));
@@ -320,7 +322,7 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         }
     }
 
-    private class MembershipListenerImpl extends MembershipAdapter {
+    protected class MembershipListenerImpl extends MembershipAdapter {
         @Override
         public void memberAdded(MembershipEvent event) {
             logQueue.add(event);
@@ -332,7 +334,7 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         }
     }
 
-    private class MigrationListenerImpl implements MigrationListener {
+    protected class MigrationListenerImpl implements MigrationListener {
         @Override
         public void migrationStarted(MigrationState state) {
             logQueue.add(state);
@@ -354,7 +356,7 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         }
     }
 
-    private class ClusterVersionListenerImpl implements ClusterVersionListener {
+    protected class ClusterVersionListenerImpl implements ClusterVersionListener {
         @Override
         public void onClusterVersionChange(Version newVersion) {
             logQueue.add(newVersion);

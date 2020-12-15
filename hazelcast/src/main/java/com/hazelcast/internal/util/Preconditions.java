@@ -280,7 +280,7 @@ public final class Preconditions {
     public static <E> E checkInstanceOf(Class<E> type, Object object) {
         isNotNull(type, "type");
         if (!type.isInstance(object)) {
-            throw new IllegalArgumentException(object + " should be instanceof " + type.getName());
+            throw new IllegalArgumentException(object + " must be instanceof " + type.getName());
         }
         return (E) object;
     }
@@ -369,4 +369,3 @@ public final class Preconditions {
         }
     }
 }
-

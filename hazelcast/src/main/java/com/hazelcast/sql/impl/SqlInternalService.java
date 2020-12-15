@@ -109,16 +109,12 @@ public class SqlInternalService {
         stateRegistryUpdater.start();
     }
 
-    public void reset() {
-        stateRegistry.reset();
-        clientStateRegistry.reset();
-    }
-
     public void shutdown() {
-        stateRegistryUpdater.stop();
-        operationHandler.stop();
+        stateRegistryUpdater.shutdown();
+        operationHandler.shutdown();
 
-        reset();
+        stateRegistry.shutdown();
+        clientStateRegistry.shutdown();
     }
 
     /**
@@ -185,7 +181,7 @@ public class SqlInternalService {
 
             return state;
         } catch (Exception e) {
-            state.cancel(e);
+            state.cancel(e, false);
 
             throw e;
         }

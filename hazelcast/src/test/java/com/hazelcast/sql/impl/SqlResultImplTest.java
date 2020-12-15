@@ -26,8 +26,6 @@ import org.junit.Test;
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class SqlResultImplTest {
@@ -40,16 +38,14 @@ public class SqlResultImplTest {
                 null, System::currentTimeMillis);
         SqlResultImpl r = SqlResultImpl.createRowsResult(queryState);
 
-        assertFalse(r.isUpdateCount());
+        assertEquals(-1, r.updateCount());
         assertEquals(metadata, r.getRowMetadata());
         assertEquals(queryId, r.getQueryId());
-        assertThrows(IllegalStateException.class, "This result doesn't contain update count", () -> r.updateCount());
     }
 
     @Test
     public void test_updateCountResult() {
         SqlResultImpl r = SqlResultImpl.createUpdateCountResult(10);
-        assertTrue(r.isUpdateCount());
         assertEquals(10, r.updateCount());
         assertThrows(IllegalStateException.class, "This result contains only update count", () -> r.iterator());
         assertThrows(IllegalStateException.class, "This result contains only update count", () -> r.getRowMetadata());

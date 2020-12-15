@@ -31,7 +31,6 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-@SuppressWarnings("checkstyle:RedundantModifier")
 public class SqlBasicClientTest extends SqlBasicTest {
     @Override
     protected HazelcastInstance getTarget() {

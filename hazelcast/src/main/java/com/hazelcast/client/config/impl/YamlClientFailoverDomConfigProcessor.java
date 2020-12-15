@@ -49,7 +49,7 @@ public class YamlClientFailoverDomConfigProcessor extends ClientFailoverDomConfi
 
         if (!clientConfigDefined) {
             String path = ((YamlElementAdapter) node).getYamlNode().path();
-            throw new InvalidConfigurationException(String.format("At least one client configuration should be defined "
+            throw new InvalidConfigurationException(String.format("At least one client configuration must be defined "
                     + "under '%s'", path));
         }
     }

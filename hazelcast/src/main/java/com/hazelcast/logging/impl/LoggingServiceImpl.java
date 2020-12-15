@@ -16,9 +16,9 @@
 
 package com.hazelcast.logging.impl;
 
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.JetBuildInfo;
-import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.logging.AbstractLogger;
 import com.hazelcast.logging.ILogger;
@@ -60,7 +60,7 @@ public class LoggingServiceImpl implements LoggingService {
         this.detailsEnabled = detailsEnabled;
         JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
         versionMessage = "[" + clusterName + "] ["
-                + (jetBuildInfo != null ?  jetBuildInfo.getVersion() : buildInfo.getVersion()) + "] ";
+                + (jetBuildInfo != null ? jetBuildInfo.getVersion() : buildInfo.getVersion()) + "] ";
     }
 
     public void setThisMember(MemberImpl thisMember) {
@@ -84,6 +84,18 @@ public class LoggingServiceImpl implements LoggingService {
     }
 
     @Override
+    public void removeLogger(@Nonnull String name) {
+        checkNotNull(name, "name must not be null");
+        removeLoggerInternal(name);
+    }
+
+    @Override
+    public void removeLogger(@Nonnull Class clazz) {
+        checkNotNull(clazz, "class must not be null");
+        removeLoggerInternal(clazz.getName());
+    }
+
+    @Override
     public void addLogListener(@Nonnull Level level, @Nonnull LogListener logListener) {
         listeners.add(new LogListenerRegistration(level, logListener));
         if (level.intValue() < minLevel.intValue()) {
@@ -102,6 +114,14 @@ public class LoggingServiceImpl implements LoggingService {
                 logListenerRegistration.getLogListener().log(logEvent);
             }
         }
+    }
+
+    private void removeLoggerInternal(String name) {
+        mapLoggers.computeIfPresent(name, (k, v) -> {
+            loggerFactory.removeLogger(name);
+            // delete the entry
+            return null;
+        });
     }
 
     private static class LogListenerRegistration {

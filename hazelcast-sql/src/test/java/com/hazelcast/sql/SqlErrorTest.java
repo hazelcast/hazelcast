@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.exec.BlockingExec;
 import com.hazelcast.sql.impl.exec.scan.MapScanExec;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -33,7 +33,7 @@ import static junit.framework.TestCase.assertTrue;
 /**
  * Test for different error conditions.
  */
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlErrorTest extends SqlErrorAbstractTest {
     @Test
@@ -69,8 +69,8 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
     @Test
     public void testMemberLeave() {
         // Start two instances and fill them with data
-        instance1 = factory.newHazelcastInstance();
-        instance2 = factory.newHazelcastInstance();
+        instance1 = newHazelcastInstance(false);
+        instance2 = newHazelcastInstance(true);
 
         populate(instance1);
 
@@ -113,7 +113,7 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
     @Test
     public void testExecuteOnLiteMember() {
         // Start one normal member and one local member.
-        factory.newHazelcastInstance(getConfig());
+        newHazelcastInstance(true);
         HazelcastInstance liteMember = factory.newHazelcastInstance(getConfig().setLiteMember(true));
 
         // Insert data
@@ -121,7 +121,7 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
 
         // Try query from the lite member.
         HazelcastSqlException error = assertSqlException(liteMember, query());
-        assertEquals(SqlErrorCode.GENERIC, error.getCode());
+        assertErrorCode(SqlErrorCode.GENERIC, error);
         assertEquals("SQL queries cannot be executed on lite members", error.getMessage());
     }
 

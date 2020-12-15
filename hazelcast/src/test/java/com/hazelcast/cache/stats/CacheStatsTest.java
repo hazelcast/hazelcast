@@ -29,7 +29,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheStatsTest extends CacheTestSupport {
 
@@ -57,7 +57,7 @@ public class CacheStatsTest extends CacheTestSupport {
 
     @Override
     protected void onTearDown() {
-        factory.terminateAll();
+        factory.shutdownAll();
     }
 
     @Override

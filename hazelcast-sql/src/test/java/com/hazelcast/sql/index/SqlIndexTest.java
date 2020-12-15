@@ -24,12 +24,17 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-// TODO: Remove @Ignore
+import java.util.Collection;
+
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-@Ignore
 public class SqlIndexTest extends SqlIndexAbstractTest {
+    @Parameterized.Parameters(name = "indexType:{0}, composite:{1}, field1:{2}, field2:{3}")
+    public static Collection<Object[]> parameters() {
+        return parametersQuick();
+    }
+
     @Override
     protected boolean isHd() {
         return false;

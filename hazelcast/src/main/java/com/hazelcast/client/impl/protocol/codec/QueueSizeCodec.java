@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of elements in this collection.  If this collection contains more than Integer.MAX_VALUE
  * elements, returns Integer.MAX_VALUE
  */
-@Generated("bcf20c4ea44113fe6eaa9b178e3c3e48")
+@Generated("2f04f5c8a3897222141474c7d15488c4")
 public final class QueueSizeCodec {
     //hex: 0x030300
     public static final int REQUEST_MESSAGE_TYPE = 197376;
@@ -49,12 +49,6 @@ public final class QueueSizeCodec {
 
     private QueueSizeCodec() {
     }
-
-    /**
-     * Name of the Queue
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -68,6 +62,9 @@ public final class QueueSizeCodec {
         return clientMessage;
     }
 
+    /**
+     * Name of the Queue
+     */
     public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
@@ -86,8 +83,8 @@ public final class QueueSizeCodec {
     }
 
     /**
-    * The number of elements in this collection
-    */
+     * The number of elements in this collection
+     */
     public static int decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

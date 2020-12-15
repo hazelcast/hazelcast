@@ -46,10 +46,11 @@ public class TestTableResolver implements TableResolver {
         this.tables = tables;
     }
 
+    @Nonnull
     @Override
     public List<List<String>> getDefaultSearchPaths() {
         if (searchPath == null) {
-            return null;
+            return Collections.emptyList();
         } else {
             return Collections.singletonList(Arrays.asList(QueryUtils.CATALOG, searchPath));
         }

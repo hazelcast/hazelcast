@@ -62,7 +62,7 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
         this.diagnostics = diagnostics;
         this.logger = diagnostics.logger;
         this.fileName = diagnostics.baseFileName + "-%03d.log";
-        this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime);
+        this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime, diagnostics.logger);
 
         this.maxRollingFileCount = diagnostics.properties.getInteger(MAX_ROLLED_FILE_COUNT);
         // we accept a float so it becomes easier to testing to create a small file
@@ -124,8 +124,8 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
     }
 
     private void renderPlugin(DiagnosticsPlugin plugin) {
+        logWriter.resetSectionLevel();
         logWriter.init(printWriter);
-
         plugin.run(logWriter);
     }
 

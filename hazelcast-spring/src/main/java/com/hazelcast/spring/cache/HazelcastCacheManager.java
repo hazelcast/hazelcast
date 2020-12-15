@@ -126,7 +126,7 @@ public class HazelcastCacheManager implements CacheManager {
         String key = keyValue[0].trim();
         String value = (keyValue.length == 1) ? null : keyValue[1].trim();
 
-        isTrue(value != null && !value.isEmpty(), String.format("value for %s should not be null or empty", key));
+        isTrue(value != null && !value.isEmpty(), String.format("value for %s must not be null or empty", key));
 
         if ("defaultReadTimeout".equals(key)) {
             defaultReadTimeout = Long.parseLong(value);

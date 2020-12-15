@@ -25,13 +25,13 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.operation.MapReplicationOperation;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
@@ -58,10 +58,13 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
     protected final MapServiceContext mapServiceContext;
     protected final SerializationService serializationService;
 
+    private final ILogger logger;
+
     MapMigrationAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
         this.containers = mapServiceContext.getPartitionContainers();
+        this.logger = mapServiceContext.getNodeEngine().getLogger(getClass());
     }
 
     @Override
@@ -86,7 +89,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             clearNonGlobalIndexes(event);
 
             // 2. Populate non-global partitioned indexes.
-            populateIndexes(event, TargetIndexes.NON_GLOBAL);
+            populateIndexes(event, TargetIndexes.NON_GLOBAL, "beforeMigration");
         }
 
         flushAndRemoveQueryCaches(event);
@@ -144,9 +147,9 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == DESTINATION) {
-            populateIndexes(event, TargetIndexes.GLOBAL);
+            populateIndexes(event, TargetIndexes.GLOBAL, "commitMigration");
         } else {
-            depopulateIndexes(event);
+            depopulateIndexes(event, "commitMigration");
         }
 
         if (SOURCE == event.getMigrationEndpoint()) {
@@ -247,7 +250,8 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         return mapServiceContext.getMapNearCacheManager().getInvalidator().getMetaDataGenerator();
     }
 
-    private void populateIndexes(PartitionMigrationEvent event, TargetIndexes targetIndexes) {
+    private void populateIndexes(PartitionMigrationEvent event,
+                                 TargetIndexes targetIndexes, String stepName) {
         assert event.getMigrationEndpoint() == DESTINATION;
         assert targetIndexes != null;
 
@@ -256,13 +260,12 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             return;
         }
 
-        final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
+        PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore<Record> recordStore : container.getMaps().values()) {
-            final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
-            final StoreAdapter storeAdapter = new RecordStoreAdapter(recordStore);
+            MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
 
-            final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
-            indexes.createIndexesFromRecordedDefinitions(storeAdapter);
+            Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
+            indexes.createIndexesFromRecordedDefinitions();
             if (!indexes.haveAtLeastOneIndex()) {
                 // no indexes to work with
                 continue;
@@ -284,16 +287,19 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                 if (value != null) {
                     QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
                     queryEntry.setRecord(record);
-                    queryEntry.setStoreAdapter(storeAdapter);
                     indexes.putEntry(queryEntry, null, Index.OperationSource.SYSTEM);
                 }
             }, false);
 
             Indexes.markPartitionAsIndexed(event.getPartitionId(), indexesSnapshot);
         }
+
+        if (logger.isFinestEnabled()) {
+            logger.finest(String.format("Populated indexes at step `%s`:[%s]", stepName, event));
+        }
     }
 
-    private void depopulateIndexes(PartitionMigrationEvent event) {
+    private void depopulateIndexes(PartitionMigrationEvent event, String stepName) {
         assert event.getMigrationEndpoint() == SOURCE;
         assert event.getNewReplicaIndex() != 0 : "Invalid migration event: " + event;
 
@@ -302,11 +308,10 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             return;
         }
 
-        final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
+        PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore<Record> recordStore : container.getMaps().values()) {
-            final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
-
-            final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
+            MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
+            Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
             if (!indexes.haveAtLeastOneIndex()) {
                 // no indexes to work with
                 continue;
@@ -322,6 +327,10 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             }, false);
 
             Indexes.markPartitionAsUnindexed(event.getPartitionId(), indexesSnapshot);
+        }
+
+        if (logger.isFinestEnabled()) {
+            logger.finest(String.format("Depopulated indexes at step `%s`:[%s]", stepName, event));
         }
     }
 

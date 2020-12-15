@@ -22,6 +22,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.impl.LocalMemberIdProvider;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.operation.QueryCancelOperation;
 import com.hazelcast.sql.impl.operation.QueryOperation;
 import com.hazelcast.sql.impl.operation.QueryOperationDeserializationException;
@@ -116,16 +118,10 @@ public class QueryPoolTask implements Runnable {
         UUID targetMemberId = e.getCallerId();
         UUID initiatorMemberId = queryId.getMemberId();
 
-        QueryException error = QueryException.error("Failed to deserialize " + e.getOperationClassName()
-            + " received from " + targetMemberId + ": " + e.getMessage(), e);
+        QueryCancelOperation cancelOperation = new QueryCancelOperation(queryId, SqlErrorCode.GENERIC,
+                "Failed to deserialize " + e.getOperationClassName() + " received from " + targetMemberId + ": " + e.getMessage(),
+                localMemberId);
 
-        QueryCancelOperation cancelOperation =
-            new QueryCancelOperation(queryId, error.getCode(), error.getMessage(), localMemberId);
-
-        try {
-            operationHandler.submit(localMemberId, initiatorMemberId, cancelOperation);
-        } catch (Exception ignore) {
-            // This should never happen, since we do not transmit user objects.
-        }
+        operationHandler.submit(localMemberId, initiatorMemberId, cancelOperation);
     }
 }

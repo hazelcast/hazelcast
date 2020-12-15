@@ -38,20 +38,18 @@ import java.util.NoSuchElementException;
  */
 public class SqlClientResult implements SqlResult {
 
-    private final boolean isUpdateCount;
     private final SqlClientService service;
     private final Connection connection;
     private final QueryId queryId;
     private final SqlRowMetadata rowMetadata;
     private final ClientIterator iterator;
     private final int cursorBufferSize;
-    private final long updatedCount;
+    private final long updateCount;
 
     private boolean closed;
     private boolean iteratorAccessed;
 
     public SqlClientResult(
-        boolean isUpdateCount,
         SqlClientService service,
         Connection connection,
         QueryId queryId,
@@ -59,19 +57,20 @@ public class SqlClientResult implements SqlResult {
         List<List<Data>> rowPage,
         boolean rowPageLast,
         int cursorBufferSize,
-        long updatedCount
+        long updateCount
     ) {
         this.service = service;
         this.connection = connection;
         this.queryId = queryId;
         this.rowMetadata = rowMetadata;
         this.cursorBufferSize = cursorBufferSize;
-        this.isUpdateCount = isUpdateCount;
-        this.updatedCount = updatedCount;
+        this.updateCount = updateCount;
 
-        if (isUpdateCount) {
+        if (updateCount >= 0) {
             iterator = null;
         } else {
+            assert updateCount == -1;
+            assert rowMetadata != null;
             iterator = new ClientIterator();
             iterator.onNextPage(rowPage, rowPageLast);
         }
@@ -81,40 +80,31 @@ public class SqlClientResult implements SqlResult {
     @Override
     public SqlRowMetadata getRowMetadata() {
         checkIsRowsResult();
-
+        assert rowMetadata != null;
         return rowMetadata;
     }
 
     @Override
     @Nonnull
     public Iterator<SqlRow> iterator() {
+        if (iteratorAccessed) {
+            throw new IllegalStateException("Iterator can be requested only once");
+        }
+
         checkIsRowsResult();
 
-        if (!iteratorAccessed) {
-            iteratorAccessed = true;
-
-            return iterator;
-        } else {
-            throw new IllegalStateException("Iterator could be requested only once");
-        }
+        iteratorAccessed = true;
+        return iterator;
     }
 
     @Override
     public long updateCount() {
-        if (!isUpdateCount) {
-            throw new IllegalStateException("This result doesn't contain update count");
-        }
-        return updatedCount;
-    }
-
-    @Override
-    public boolean isUpdateCount() {
-        return isUpdateCount;
+        return updateCount;
     }
 
     @Override
     public void close() {
-        if (isUpdateCount) {
+        if (iterator == null) {
             return;
         }
 
@@ -133,7 +123,7 @@ public class SqlClientResult implements SqlResult {
     }
 
     private void checkIsRowsResult() {
-        if (isUpdateCount) {
+        if (iterator == null) {
             throw new IllegalStateException("This result contains only update count");
         }
     }

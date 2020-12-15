@@ -593,6 +593,8 @@ hazelcast:
     page-size: 123
     metadata-space-percentage: 12.5
     persistent-memory:
+      enabled: true
+      mode: MOUNTED
       directories:
         - directory: /mnt/pmem0
           numa-node: 0
@@ -682,6 +684,16 @@ hazelcast:
             service-name-prefix: hz/
             use-canonical-hostname: true
             spn: hz/127.0.0.1@HAZELCAST.COM
+      - name: simpleKerberosRealm
+        authentication:
+          kerberos:
+            principal: hz/127.0.0.1@HAZELCAST.COM
+            keytab-file: /opt/localhost.keytab
+        identity:
+          kerberos:
+            realm: HAZELCAST.COM
+            principal: hz/127.0.0.1@HAZELCAST.COM
+            keytab-file: /opt/localhost.keytab
       - name: krb5Acceptor
         authentication:
           jaas:
@@ -829,13 +841,16 @@ hazelcast:
           principal: "*"
           actions:
             - all
+      replicatedmap:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
       reliable-topic:
         - name: "*"
           principal: "*"
           actions:
             - all
-      sql:
-        principal: dev
     client-block-unmapped-actions: true
 
   member-attributes:

@@ -155,12 +155,12 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
     }
 
     private long invocationTimeoutMillis(HazelcastProperties properties) {
-        long heartbeatTimeoutMillis = properties.getMillis(OPERATION_CALL_TIMEOUT_MILLIS);
+        long invocationTimeoutMillis = properties.getMillis(OPERATION_CALL_TIMEOUT_MILLIS);
         if (logger.isFinestEnabled()) {
-            logger.finest("Operation invocation timeout is " + heartbeatTimeoutMillis + " ms");
+            logger.finest("Operation invocation timeout is " + invocationTimeoutMillis + " ms");
         }
 
-        return heartbeatTimeoutMillis;
+        return invocationTimeoutMillis;
     }
 
     private long backupTimeoutMillis(HazelcastProperties properties) {

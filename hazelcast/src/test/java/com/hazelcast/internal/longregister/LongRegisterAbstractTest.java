@@ -58,9 +58,21 @@ public abstract class LongRegisterAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testGetAndDecrement() {
+        assertEquals(0, longRegister.getAndDecrement());
+        assertEquals(-1, longRegister.getAndDecrement());
+    }
+
+    @Test
     public void testIncrementAndGet() {
         assertEquals(1, longRegister.incrementAndGet());
         assertEquals(2, longRegister.incrementAndGet());
+    }
+
+    @Test
+    public void testGetAndIncrement() {
+        assertEquals(0, longRegister.getAndIncrement());
+        assertEquals(1, longRegister.getAndIncrement());
     }
 
     @Test

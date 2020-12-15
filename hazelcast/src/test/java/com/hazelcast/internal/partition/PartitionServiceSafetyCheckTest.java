@@ -47,6 +47,13 @@ public class PartitionServiceSafetyCheckTest extends PartitionCorrectnessTestSup
         nodeCount = 4;
     }
 
+    @Override
+    protected Config getConfig() {
+        // Partition count is overwritten back to PartitionCorrectnessTestSupport.partitionCount
+        // in PartitionCorrectnessTestSupport.getConfig(boolean, boolean).
+        return smallInstanceConfig();
+    }
+
     @Test
     public void clusterShouldBeSafe_withoutPartitionInitialization() throws InterruptedException {
         Config config = getConfig(false, false);

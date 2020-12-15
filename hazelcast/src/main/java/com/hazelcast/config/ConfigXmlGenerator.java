@@ -32,6 +32,7 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.MapUtil;
@@ -43,14 +44,6 @@ import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
 
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -61,11 +54,10 @@ import java.util.Set;
 
 import static com.hazelcast.config.PermissionConfig.PermissionType.ALL;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
-import static com.hazelcast.config.PermissionConfig.PermissionType.SQL;
 import static com.hazelcast.config.PermissionConfig.PermissionType.TRANSACTION;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.StringUtil.formatXml;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 import static java.util.Arrays.asList;
@@ -129,7 +121,11 @@ public class ConfigXmlGenerator {
                 .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
-                .append("http://www.hazelcast.com/schema/config/hazelcast-config-4.1.xsd\">");
+                .append("http://www.hazelcast.com/schema/config/hazelcast-config-")
+                .append(Versions.CURRENT_CLUSTER_VERSION.getMajor())
+                .append('.')
+                .append(Versions.CURRENT_CLUSTER_VERSION.getMinor())
+                .append(".xsd\">");
         gen.node("license-key", getOrMaskValue(config.getLicenseKey()))
                 .node("instance-name", config.getInstanceName())
                 .node("cluster-name", config.getClusterName())
@@ -174,7 +170,8 @@ public class ConfigXmlGenerator {
 
         xml.append("</hazelcast>");
 
-        return format(xml.toString(), INDENT);
+        String xmlString = xml.toString();
+        return formatted ? formatXml(xmlString, INDENT) : xmlString;
     }
 
     private String getOrMaskValue(String value) {
@@ -291,7 +288,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private void securityRealmGenerator(XmlGenerator gen, String name, RealmConfig c) {
+    protected void securityRealmGenerator(XmlGenerator gen, String name, RealmConfig c) {
         gen.open("realm", "name", name);
         if (c.isAuthenticationConfigured()) {
             gen.open("authentication");
@@ -366,7 +363,9 @@ public class ConfigXmlGenerator {
         addClusterLoginElements(kerberosGen, c)
                 .nodeIfContents("relax-flags-check", c.getRelaxFlagsCheck())
                 .nodeIfContents("use-name-without-realm", c.getUseNameWithoutRealm())
-                .nodeIfContents("security-realm", c.getSecurityRealm());
+                .nodeIfContents("security-realm", c.getSecurityRealm())
+                .nodeIfContents("keytab-file", c.getKeytabFile())
+                .nodeIfContents("principal", c.getPrincipal());
         ldapAuthenticationGenerator(kerberosGen, c.getLdapAuthenticationConfig());
         kerberosGen.close();
     }
@@ -378,6 +377,8 @@ public class ConfigXmlGenerator {
         gen.open("kerberos")
                 .nodeIfContents("realm", c.getRealm())
                 .nodeIfContents("security-realm", c.getSecurityRealm())
+                .nodeIfContents("keytab-file", c.getKeytabFile())
+                .nodeIfContents("principal", c.getPrincipal())
                 .nodeIfContents("service-name-prefix", c.getServiceNamePrefix())
                 .nodeIfContents("spn", c.getSpn())
                 .nodeIfContents("use-canonical-hostname", c.getUseCanonicalHostname())
@@ -399,7 +400,7 @@ public class ConfigXmlGenerator {
     }
 
     private static void appendSecurityPermissions(XmlGenerator gen, String tag, Set<PermissionConfig> cpc, Object... attributes) {
-        final List<PermissionConfig.PermissionType> clusterPermTypes = asList(ALL, CONFIG, TRANSACTION, SQL);
+        final List<PermissionConfig.PermissionType> clusterPermTypes = asList(ALL, CONFIG, TRANSACTION);
 
         if (!cpc.isEmpty()) {
             gen.open(tag, attributes);
@@ -1685,11 +1686,14 @@ public class ConfigXmlGenerator {
                 .node("page-size", nativeMemoryConfig.getPageSize())
                 .node("metadata-space-percentage", nativeMemoryConfig.getMetadataSpacePercentage());
 
-        List<PersistentMemoryDirectoryConfig> directoryConfigs = nativeMemoryConfig.getPersistentMemoryConfig()
-                .getDirectoryConfigs();
+        PersistentMemoryConfig pmemConfig = nativeMemoryConfig.getPersistentMemoryConfig();
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = pmemConfig.getDirectoryConfigs();
+        gen.open("persistent-memory",
+                "enabled", pmemConfig.isEnabled(),
+                "mode", pmemConfig.getMode().name()
+        );
         if (!directoryConfigs.isEmpty()) {
-            gen.open("persistent-memory")
-                    .open("directories");
+            gen.open("directories");
             for (PersistentMemoryDirectoryConfig dirConfig : directoryConfigs) {
                 if (dirConfig.isNumaNodeSet()) {
                     gen.node("directory", dirConfig.getDirectory(),
@@ -1698,11 +1702,9 @@ public class ConfigXmlGenerator {
                     gen.node("directory", dirConfig.getDirectory());
                 }
             }
-            gen.close()
-                    .close();
+            gen.close();
         }
-
-        gen.close();
+        gen.close().close();
     }
 
     private static void liteMemberXmlGenerator(XmlGenerator gen, Config config) {
@@ -1727,53 +1729,6 @@ public class ConfigXmlGenerator {
             return;
         }
         gen.node("memcache-protocol", null, "enabled", c.isEnabled());
-    }
-
-    private String format(String input, int indent) {
-        if (!formatted) {
-            return input;
-        }
-        StreamResult xmlOutput = null;
-        try {
-            Source xmlInput = new StreamSource(new StringReader(input));
-            xmlOutput = new StreamResult(new StringWriter());
-            TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            /*
-             * Older versions of Xalan still use this method of setting indent values.
-             * Attempt to make this work but don't completely fail if it's a problem.
-             */
-            try {
-                transformerFactory.setAttribute("indent-number", indent);
-            } catch (IllegalArgumentException e) {
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Failed to set indent-number attribute; cause: " + e.getMessage());
-                }
-            }
-            Transformer transformer = transformerFactory.newTransformer();
-            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            /*
-             * Newer versions of Xalan will look for a fully-qualified output property in order to specify amount of
-             * indentation to use. Attempt to make this work as well but again don't completely fail if it's a problem.
-             */
-            try {
-                transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", Integer.toString(indent));
-            } catch (IllegalArgumentException e) {
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Failed to set indent-amount property; cause: " + e.getMessage());
-                }
-            }
-            transformer.transform(xmlInput, xmlOutput);
-            return xmlOutput.getWriter().toString();
-        } catch (Exception e) {
-            LOGGER.warning(e);
-            return input;
-        } finally {
-            if (xmlOutput != null) {
-                closeResource(xmlOutput.getWriter());
-            }
-        }
     }
 
     private static void appendItemListenerConfigs(XmlGenerator gen, Collection<ItemListenerConfig> configs) {

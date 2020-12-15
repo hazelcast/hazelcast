@@ -97,6 +97,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         }
 
         partitionStateManager.clearMigratingFlag(partitionId);
+        partitionService.getMigrationManager().removeActiveMigration(migrationInfo);
         if (success) {
             nodeEngine.onPartitionMigrate(migrationInfo);
         }
@@ -133,7 +134,8 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
                 endpoint == MigrationEndpoint.SOURCE
                         ? migrationInfo.getSourceCurrentReplicaIndex() : migrationInfo.getDestinationCurrentReplicaIndex(),
                 endpoint == MigrationEndpoint.SOURCE
-                        ? migrationInfo.getSourceNewReplicaIndex() : migrationInfo.getDestinationNewReplicaIndex());
+                        ? migrationInfo.getSourceNewReplicaIndex() : migrationInfo.getDestinationNewReplicaIndex(),
+                migrationInfo.getUid());
     }
 
     /** Updates the replica versions on the migration source if the replica index has changed. */

@@ -25,12 +25,11 @@ import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -67,9 +66,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupport {
-
-    @ClassRule
-    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug.xml");
 
     @Before
     public void setupParams() {
@@ -281,6 +277,7 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
     }
 
     @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/12788")
     public void migrationCommit_shouldRollback_whenTargetCrashes() throws Exception {
         Config config = getConfig(true, true)
                 .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "4000");

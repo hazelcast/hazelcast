@@ -389,7 +389,7 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void cancel(Exception e) {
+        public void cancel(Exception e, boolean local) {
             cancelException = e;
         }
 

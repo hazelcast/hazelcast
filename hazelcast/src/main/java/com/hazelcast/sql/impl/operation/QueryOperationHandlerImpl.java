@@ -93,7 +93,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         );
     }
 
-    public void stop() {
+    public void shutdown() {
         fragmentPool.stop();
         systemPool.stop();
     }
@@ -249,9 +249,6 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         QueryState state = stateRegistry.onDistributedQueryStarted(localMemberId, operation.getQueryId(), this, false);
 
         if (state == null) {
-            // Received stale batch for the query initiated on a local member, ignore.
-            assert localMemberId.equals(operation.getQueryId().getMemberId());
-
             return;
         }
 
@@ -288,7 +285,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
                 operation.getOriginatingMemberId()
             );
 
-            state.cancel(error);
+            state.cancel(error, false);
         }
     }
 
@@ -342,7 +339,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             QueryState state = stateRegistry.getState(queryId);
 
             if (state != null) {
-                state.cancel(error);
+                state.cancel(error, false);
             }
         }
     }
