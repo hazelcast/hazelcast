@@ -16,10 +16,6 @@
 
 package com.hazelcast.instance.impl;
 
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-
 import com.hazelcast.cache.impl.HazelcastInstanceCacheManager;
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
@@ -48,7 +44,6 @@ import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.memory.MemoryStats;
@@ -80,11 +75,16 @@ import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.xa.XAService;
+
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import javax.annotation.Nonnull;
+
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class HazelcastInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
@@ -177,11 +177,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Override
     public <E> IQueue<E> getQueue(@Nonnull String name) {
         checkNotNull(name, "Retrieving a queue instance with a null name is not allowed!");
-        // RU_COMPAT_4_0
-        if (node.getClusterService().getClusterVersion().isLessThan(Versions.V4_1)
-                && node.getConfig().getQueueConfig(name).isPriorityQueue()) {
-            throw new UnsupportedOperationException("PriorityQueue support is not available before version 4.1!");
-        }
         return getDistributedObject(QueueService.SERVICE_NAME, name);
     }
 
