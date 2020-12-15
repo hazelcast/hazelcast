@@ -41,7 +41,7 @@ public class ReceivePlanNodeTest extends SqlTestSupport {
         int edgeId = 2;
         List<QueryDataType> types = Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR);
 
-        ReceivePlanNode node = new ReceivePlanNode(id, edgeId, false, types);
+        ReceivePlanNode node = new ReceivePlanNode(id, edgeId, types);
 
         assertEquals(id, node.getId());
         assertEquals(edgeId, node.getEdgeId());
@@ -62,12 +62,13 @@ public class ReceivePlanNodeTest extends SqlTestSupport {
         checkEquals(new ReceivePlanNode(id1, edgeId1, false, types1), new ReceivePlanNode(id1, edgeId1, false, types1), true);
         checkEquals(new ReceivePlanNode(id1, edgeId1, false, types1), new ReceivePlanNode(id2, edgeId1, false, types1), false);
         checkEquals(new ReceivePlanNode(id1, edgeId1, false, types1), new ReceivePlanNode(id1, edgeId2, false, types1), false);
+        checkEquals(new ReceivePlanNode(id1, edgeId1, false, types1), new ReceivePlanNode(id1, edgeId1, true, types2), false);
         checkEquals(new ReceivePlanNode(id1, edgeId1, false, types1), new ReceivePlanNode(id1, edgeId1, false, types2), false);
     }
 
     @Test
     public void testSerialization() {
-        ReceivePlanNode original = new ReceivePlanNode(1, 2, false, Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR));
+        ReceivePlanNode original = new ReceivePlanNode(1, 2, true, Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR));
         ReceivePlanNode restored = serializeAndCheck(original, SqlDataSerializerHook.NODE_RECEIVE);
 
         checkEquals(original, restored, true);

@@ -211,7 +211,6 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
         ReceivePlanNode receiveNode = new ReceivePlanNode(
             nextNodeId(),
             EDGE_1_ID,
-            false,
             Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR)
         );
 

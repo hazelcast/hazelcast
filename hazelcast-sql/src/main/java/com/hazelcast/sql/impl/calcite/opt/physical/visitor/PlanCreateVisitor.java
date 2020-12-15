@@ -273,7 +273,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         ReceivePlanNode receiveNode = new ReceivePlanNode(
             id,
             edge,
-            false,
             sendNode.getSchema().getTypes()
         );
 

@@ -43,6 +43,10 @@ public class ReceivePlanNode extends ZeroInputPlanNode implements EdgeAwarePlanN
         // No-op.
     }
 
+    public ReceivePlanNode(int id, int edgeId, List<QueryDataType> fieldTypes) {
+        this(id, edgeId, false, fieldTypes);
+    }
+
     public ReceivePlanNode(int id, int edgeId, boolean ordered, List<QueryDataType> fieldTypes) {
         super(id);
 

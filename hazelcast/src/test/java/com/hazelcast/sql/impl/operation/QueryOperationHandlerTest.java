@@ -446,7 +446,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
 
     private QueryExecuteOperation createExecuteOperation(UUID toMemberId) {
         PlanNode node = new ParticipantNode(
-            1, new ReceivePlanNode(2, EDGE_ID, false, Collections.singletonList(QueryDataType.INT))
+            1, new ReceivePlanNode(2, EDGE_ID, Collections.singletonList(QueryDataType.INT))
         );
 
         QueryExecuteOperationFragment fragment = new QueryExecuteOperationFragment(
