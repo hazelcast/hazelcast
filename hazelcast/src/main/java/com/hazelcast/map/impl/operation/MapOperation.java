@@ -31,6 +31,7 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.writebehind.TxnReservedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.memory.NativeOutOfMemoryError;
@@ -329,8 +330,10 @@ public abstract class MapOperation extends AbstractNamedOperation
         }
 
         Data dataValue = toHeapData(mapServiceContext.toData(value));
+        ExpiryMetadata expiredMetadata = recordStore.getExpirySystem().getExpiredMetadata(dataKey);
         WanMapEntryView<Object, Object> entryView = createWanEntryView(
-                toHeapData(dataKey), dataValue, record, getNodeEngine().getSerializationService());
+                toHeapData(dataKey), dataValue, record, expiredMetadata,
+                getNodeEngine().getSerializationService());
 
         mapEventPublisher.publishWanUpdate(name, entryView, hasLoadProvenance);
     }

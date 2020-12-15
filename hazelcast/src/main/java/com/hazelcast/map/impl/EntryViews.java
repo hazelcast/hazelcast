@@ -20,6 +20,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 
 /**
@@ -34,22 +35,23 @@ public final class EntryViews {
         return new SimpleEntryView<>();
     }
 
-    public static <K, V> EntryView<K, V> createSimpleEntryView(K key, V value, Record record) {
+    public static <K, V> EntryView<K, V> createSimpleEntryView(K key, V value, Record record,
+                                                               ExpiryMetadata expiryMetadata) {
         return new SimpleEntryView<>(key, value)
                 .withCost(record.getCost())
                 .withVersion(record.getVersion())
                 .withHits(record.getHits())
                 .withLastAccessTime(record.getLastAccessTime())
                 .withLastUpdateTime(record.getLastUpdateTime())
-                .withTtl(record.getTtl())
-                .withMaxIdle(record.getMaxIdle())
                 .withCreationTime(record.getCreationTime())
-                .withExpirationTime(record.getExpirationTime())
-                .withLastStoredTime(record.getLastStoredTime());
+                .withLastStoredTime(record.getLastStoredTime())
+                .withTtl(expiryMetadata.getTtl())
+                .withMaxIdle(expiryMetadata.getMaxIdle())
+                .withExpirationTime(expiryMetadata.getExpirationTime());
     }
 
     public static <K, V> WanMapEntryView<K, V> createWanEntryView(Data key, Data value,
-                                                                  Record<V> record,
+                                                                  Record<V> record, ExpiryMetadata expiryMetadata,
                                                                   SerializationService serializationService) {
         return new WanMapEntryView<K, V>(key, value, serializationService)
                 .withCost(record.getCost())
@@ -57,10 +59,10 @@ public final class EntryViews {
                 .withHits(record.getHits())
                 .withLastAccessTime(record.getLastAccessTime())
                 .withLastUpdateTime(record.getLastUpdateTime())
-                .withTtl(record.getTtl())
-                .withMaxIdle(record.getMaxIdle())
                 .withCreationTime(record.getCreationTime())
-                .withExpirationTime(record.getExpirationTime())
-                .withLastStoredTime(record.getLastStoredTime());
+                .withLastStoredTime(record.getLastStoredTime())
+                .withTtl(expiryMetadata.getTtl())
+                .withMaxIdle(expiryMetadata.getMaxIdle())
+                .withExpirationTime(expiryMetadata.getExpirationTime());
     }
 }

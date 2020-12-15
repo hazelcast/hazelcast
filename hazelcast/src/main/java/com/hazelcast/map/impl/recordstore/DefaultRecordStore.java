@@ -158,32 +158,34 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Record putReplicatedRecordLegacy(Data dataKey, Record replicatedRecord, long nowInMillis,
-                                      boolean populateIndexes) {
+                                            boolean populateIndexes) {
         Record newRecord = createRecord(dataKey, replicatedRecord, nowInMillis);
-        // TODO expiry info must be got from expiry system
         storage.put(dataKey, newRecord);
-        markRecordStoreExpirable(dataKey, replicatedRecord.getTtl(),
-                replicatedRecord.getMaxIdle(), nowInMillis);
+        getExpirySystem().addExpiry0(dataKey, replicatedRecord.getTtl(),
+                replicatedRecord.getMaxIdle(), replicatedRecord.getExpirationTime());
         mutationObserver.onReplicationPutRecord(dataKey, newRecord, populateIndexes);
         updateStatsOnPut(replicatedRecord.getHits(), nowInMillis);
         return newRecord;
     }
 
     @Override
-    public Record putReplicatedRecord(Data dataKey, Record replicatedRecord, long nowInMillis,
-                                      boolean populateIndexes) {
+    public Record putReplicatedRecord(Data dataKey, Record replicatedRecord, ExpiryMetadata expiryMetadata,
+                                      boolean populateIndexes, long nowInMillis) {
         Record newRecord = createRecord(dataKey, replicatedRecord, nowInMillis);
         storage.put(dataKey, newRecord);
+        getExpirySystem().addExpiry0(dataKey, expiryMetadata.getTtl(),
+                expiryMetadata.getMaxIdle(), expiryMetadata.getExpirationTime());
         mutationObserver.onReplicationPutRecord(dataKey, newRecord, populateIndexes);
         updateStatsOnPut(replicatedRecord.getHits(), nowInMillis);
+
         return newRecord;
     }
 
     @Override
-    public Record putBackup(Data dataKey, Record newRecord,
+    public Record putBackup(Data dataKey, Record newRecord, ExpiryMetadata expiryMetadata,
                             boolean putTransient, CallerProvenance provenance) {
         return putBackupInternal(dataKey, newRecord.getValue(),
-                newRecord.getTtl(), newRecord.getMaxIdle(), putTransient, provenance, null);
+                expiryMetadata.getTtl(), expiryMetadata.getMaxIdle(), putTransient, provenance, null);
     }
 
     @Override
@@ -245,7 +247,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             Record record = entry.getValue();
 
             if (includeExpiredRecords
-                    || hasExpired(key, now, backup) == ExpirySystem.ExpiryReason.NOT_EXPIRED) {
+                    || hasExpired(key, now, backup) == ExpiryReason.NOT_EXPIRED) {
                 consumer.accept(key, record);
             }
         }
@@ -899,7 +901,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             newValue = putIntoMapStore(record, key, newValue, now, transactionId);
         }
         storage.updateRecordValue(key, record, newValue);
-        markRecordStoreExpirable(key, ttl, maxIdle, now);
+        getExpirySystem().addExpiry(key, ttl, maxIdle, now);
         mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
     }
 
@@ -914,7 +916,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             putIntoMapStore(record, key, newValue, now, transactionId);
         }
         storage.put(key, record);
-        markRecordStoreExpirable(key, ttlMillis, maxIdleMillis, now);
+        getExpirySystem().addExpiry(key, ttlMillis, maxIdleMillis, now);
         if (entryEventType == EntryEventType.LOADED) {
             mutationObserver.onLoadRecord(key, record, backup);
         } else {
@@ -959,7 +961,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     null, ADDED, persist, false);
         } else {
             oldValue = record.getValue();
-            MapMergeTypes<Object, Object> existingEntry = createMergingEntry(serializationService, key, record);
+            ExpiryMetadata expiredMetadata = getExpirySystem().getExpiredMetadata(key);
+            MapMergeTypes<Object, Object> existingEntry
+                    = createMergingEntry(serializationService, key, record, expiredMetadata);
             newValue = mergePolicy.merge(mergingEntry, existingEntry);
             // existing entry will be removed
             if (newValue == null) {

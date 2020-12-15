@@ -16,9 +16,10 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
 
 public class PutTransientBackupOperation extends PutBackupOperation {
 
@@ -26,8 +27,9 @@ public class PutTransientBackupOperation extends PutBackupOperation {
     }
 
     public PutTransientBackupOperation(String name, Data dataKey,
-                                       Record<Data> record, Data dataValue) {
-        super(name, dataKey, record, dataValue);
+                                       Record<Data> record, Data dataValue,
+                                       ExpiryMetadata expiryMetadata) {
+        super(name, dataKey, record, dataValue, expiryMetadata);
     }
 
     @Override

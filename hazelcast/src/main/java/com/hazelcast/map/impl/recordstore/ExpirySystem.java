@@ -29,6 +29,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -167,13 +168,19 @@ public class ExpirySystem {
                 && expiryMetadata.getExpirationTime() <= now;
         if (expired) {
             return expiryMetadata.getTtl() > expiryMetadata.getMaxIdle()
-                    ? ExpiryReason.TTL : ExpiryReason.IDLENESS;
+                    ? ExpiryReason.IDLENESS : ExpiryReason.TTL;
         }
         return ExpiryReason.NOT_EXPIRED;
     }
 
     public InvalidationQueue<ExpiredKey> getExpiredKeys() {
         return expiredKeys;
+    }
+
+    @Nonnull
+    public ExpiryMetadata getExpiredMetadata(Data key) {
+        ExpiryMetadata expiryMetadata = getOrCreateExpireTimeByKeyMap(false).get(key);
+        return expiryMetadata != null ? expiryMetadata : ExpiryMetadata.NULL;
     }
 
     /**
@@ -212,7 +219,6 @@ public class ExpirySystem {
 //            System.err.println("backup");
 //        }
 
-
         Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (expireTimeByKey.isEmpty()) {
             return 0;
@@ -245,8 +251,13 @@ public class ExpirySystem {
 
         for (int i = 0; i < dataKeyAndExpiryReason.size(); i += 2) {
             Data key = (Data) dataKeyAndExpiryReason.get(i);
+
+            System.err.println(mapServiceContext.getNodeEngine().getLocalMember() + ", key="+mapServiceContext.toObject(key));
+
+
             ExpiryReason reason = (ExpiryReason) dataKeyAndExpiryReason.get(i + 1);
             recordStore.evictExpiredAndPublishExpiryEvent(key, reason, backup);
+
         }
 
         return evictedEntryCount;
@@ -288,10 +299,6 @@ public class ExpirySystem {
             return defaultMaxIterationCount;
         }
         return Math.round(maxIterationCount);
-    }
-
-    public void markRecordStoreExpirable(Data key, long ttl, long maxIdle, long now) {
-        addExpiry(key, ttl, maxIdle, now);
     }
 
     public boolean isTtlOrMaxIdleDefined(Record record) {
@@ -359,16 +366,13 @@ public class ExpirySystem {
         clearExpiredRecordsTask.tryToSendBackupExpiryOp(recordStore, true);
     }
 
-    public enum ExpiryReason {
-        TTL,
-        IDLENESS,
-        NOT_EXPIRED
-    }
-
     public static class ExpiryMetadataImpl implements ExpiryMetadata {
         long ttl;
         long maxIdle;
         long expirationTime;
+
+        public ExpiryMetadataImpl() {
+        }
 
         public ExpiryMetadataImpl(long ttl, long maxIdle, long expirationTime) {
             this.ttl = ttl;
@@ -417,21 +421,6 @@ public class ExpirySystem {
                     + ", expirationTime=" + expirationTime
                     + '}';
         }
-    }
-
-    public interface ExpiryMetadata {
-
-        long getTtl();
-
-        ExpiryMetadata setTtl(long ttl);
-
-        long getMaxIdle();
-
-        ExpiryMetadata setMaxIdle(long maxIdle);
-
-        long getExpirationTime();
-
-        ExpiryMetadata setExpirationTime(long expirationTime);
     }
 
 

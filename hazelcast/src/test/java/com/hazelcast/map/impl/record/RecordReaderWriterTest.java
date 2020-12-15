@@ -15,11 +15,13 @@
  */
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
 import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.ExpirySystem;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -120,9 +122,10 @@ public class RecordReaderWriterTest {
     private Record writeReadAndGet(Record expectedRecord, Data dataValue) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         ObjectDataOutputStream out = new ObjectDataOutputStream(outputStream, ss);
-        Records.writeRecord(out, expectedRecord, dataValue);
+        Records.writeRecord(out, expectedRecord, dataValue, ExpiryMetadata.NULL);
         ObjectDataInputStream in = new ObjectDataInputStream(new ByteArrayInputStream(outputStream.toByteArray()), ss);
-        return Records.readRecord(in);
+        ExpiryMetadata expiryMetadata = new ExpirySystem.ExpiryMetadataImpl();
+        return Records.readRecord(in, expiryMetadata);
     }
 
     private static Record<Data> asDataRecord(Record fromRecord, Data value) {

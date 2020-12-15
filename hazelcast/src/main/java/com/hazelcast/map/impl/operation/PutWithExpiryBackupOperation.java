@@ -21,6 +21,8 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
+import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.ExpirySystem;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -29,15 +31,10 @@ import java.io.IOException;
 public class PutWithExpiryBackupOperation
         extends PutBackupOperation {
 
-    private long ttl;
-    private long maxIdle;
-
     public PutWithExpiryBackupOperation(String name, Data dataKey,
                                         Record<Data> record,
-                                        Data dataValue, long ttl, long maxIdle) {
-        super(name, dataKey, record, dataValue);
-        this.ttl = ttl;
-        this.maxIdle = maxIdle;
+                                        Data dataValue, ExpiryMetadata expiryMetadata) {
+        super(name, dataKey, record, dataValue, expiryMetadata);
     }
 
     public PutWithExpiryBackupOperation() {
@@ -48,7 +45,8 @@ public class PutWithExpiryBackupOperation
         // TODO performance: we can put this record directly
         // into record-store if memory format is BINARY
         Record currentRecord = recordStore.putBackup(dataKey,
-                record, ttl, maxIdle, getCallerProvenance());
+                // TODO also put expiryTime from expiryMetadata
+                record, expiryMetadata.getTtl(), expiryMetadata.getMaxIdle(), getCallerProvenance());
         Records.copyMetadataFrom(record, currentRecord);
     }
 
@@ -62,10 +60,7 @@ public class PutWithExpiryBackupOperation
         super.writeInternal(out);
 
         IOUtil.writeData(out, dataKey);
-        Records.writeRecord(out, record, dataValue);
-
-        out.writeLong(ttl);
-        out.writeLong(maxIdle);
+        Records.writeRecord(out, record, dataValue, expiryMetadata);
     }
 
     @Override
@@ -73,9 +68,7 @@ public class PutWithExpiryBackupOperation
         super.readInternal(in);
 
         dataKey = IOUtil.readData(in);
-        record = Records.readRecord(in);
-
-        ttl = in.readLong();
-        maxIdle = in.readLong();
+        expiryMetadata = new ExpirySystem.ExpiryMetadataImpl();
+        record = Records.readRecord(in, expiryMetadata);
     }
 }

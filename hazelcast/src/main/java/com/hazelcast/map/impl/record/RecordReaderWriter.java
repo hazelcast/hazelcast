@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -42,6 +43,34 @@ public enum RecordReaderWriter {
             out.writeInt(record.getRawLastUpdateTime());
             out.writeInt(record.getHits());
             out.writeLong(record.getVersion());
+        }
+
+        @Override
+        void writeRecord(ObjectDataOutput out, Record record, Data dataValue,
+                         ExpiryMetadata expiryMetadata) throws IOException {
+            writeData(out, dataValue);
+            // TODO int ttl
+            out.writeInt((int) expiryMetadata.getTtl());
+            out.writeInt((int) expiryMetadata.getMaxIdle());
+            out.writeInt(record.getRawCreationTime());
+            out.writeInt(record.getRawLastAccessTime());
+            out.writeInt(record.getRawLastUpdateTime());
+            out.writeInt(record.getHits());
+            out.writeLong(record.getVersion());
+        }
+
+        @Override
+        public Record readRecord(ObjectDataInput in, ExpiryMetadata expiryMetadata) throws IOException {
+            DataRecord record = new DataRecord();
+            record.setValue(readData(in));
+            expiryMetadata.setTtl(in.readInt());
+            expiryMetadata.setMaxIdle(in.readInt());
+            record.setRawCreationTime(in.readInt());
+            record.setRawLastAccessTime(in.readInt());
+            record.setRawLastUpdateTime(in.readInt());
+            record.setHits(in.readInt());
+            record.setVersion(in.readLong());
+            return record;
         }
 
         @Override
@@ -76,6 +105,38 @@ public enum RecordReaderWriter {
         }
 
         @Override
+        void writeRecord(ObjectDataOutput out, Record record, Data dataValue,
+                         ExpiryMetadata expiryMetadata) throws IOException {
+            writeData(out, dataValue);
+            // TODO int ttl
+            out.writeInt((int) expiryMetadata.getTtl());
+            out.writeInt((int) expiryMetadata.getMaxIdle());
+            out.writeInt(record.getRawCreationTime());
+            out.writeInt(record.getRawLastAccessTime());
+            out.writeInt(record.getRawLastUpdateTime());
+            out.writeInt(record.getHits());
+            out.writeLong(record.getVersion());
+            out.writeInt(record.getRawLastStoredTime());
+            out.writeInt((int) expiryMetadata.getExpirationTime());
+        }
+
+        @Override
+        public Record readRecord(ObjectDataInput in, ExpiryMetadata expiryMetadata) throws IOException {
+            DataRecordWithStats record = new DataRecordWithStats();
+            record.setValue(readData(in));
+            expiryMetadata.setTtl(in.readInt());
+            expiryMetadata.setMaxIdle(in.readInt());
+            record.setRawCreationTime(in.readInt());
+            record.setRawLastAccessTime(in.readInt());
+            record.setRawLastUpdateTime(in.readInt());
+            record.setHits(in.readInt());
+            record.setVersion(in.readLong());
+            record.setRawLastStoredTime(in.readInt());
+            expiryMetadata.setExpirationTime(in.readInt());
+            return record;
+        }
+
+        @Override
         Record readRecord(ObjectDataInput in) throws IOException {
             DataRecordWithStats record = new DataRecordWithStats();
             record.setValue(readData(in));
@@ -100,6 +161,28 @@ public enum RecordReaderWriter {
         }
 
         @Override
+        void writeRecord(ObjectDataOutput out, Record record, Data dataValue,
+                         ExpiryMetadata expiryMetadata) throws IOException {
+            writeData(out, dataValue);
+            // TODO ttl int
+            out.writeInt((int) expiryMetadata.getTtl());
+            out.writeInt((int) expiryMetadata.getMaxIdle());
+            out.writeInt((int) expiryMetadata.getExpirationTime());
+        }
+
+        @Override
+        public Record readRecord(ObjectDataInput in, ExpiryMetadata expiryMetadata) throws IOException {
+            Record record = new SimpleRecord();
+            record.setValue(readData(in));
+
+            expiryMetadata.setTtl(in.readInt());
+            expiryMetadata.setMaxIdle(in.readInt());
+            expiryMetadata.setExpirationTime(in.readInt());
+
+            return record;
+        }
+
+        @Override
         Record readRecord(ObjectDataInput in) throws IOException {
             Record record = new SimpleRecord();
             record.setValue(readData(in));
@@ -113,6 +196,30 @@ public enum RecordReaderWriter {
                          Record record, Data dataValue) throws IOException {
             writeData(out, dataValue);
             out.writeInt(record.getRawLastAccessTime());
+        }
+
+        @Override
+        void writeRecord(ObjectDataOutput out, Record record, Data dataValue,
+                         ExpiryMetadata expiryMetadata) throws IOException {
+            writeData(out, dataValue);
+            out.writeInt(record.getRawLastAccessTime());
+            // TODO ttl int
+            out.writeInt((int) expiryMetadata.getTtl());
+            out.writeInt((int) expiryMetadata.getMaxIdle());
+            out.writeInt((int) expiryMetadata.getExpirationTime());
+        }
+
+        @Override
+        public Record readRecord(ObjectDataInput in, ExpiryMetadata expiryMetadata) throws IOException {
+            Record record = new SimpleRecordWithLRUEviction();
+            record.setValue(readData(in));
+            record.setRawLastAccessTime(in.readInt());
+
+            expiryMetadata.setTtl(in.readInt());
+            expiryMetadata.setMaxIdle(in.readInt());
+            expiryMetadata.setExpirationTime(in.readInt());
+
+            return record;
         }
 
         @Override
@@ -130,6 +237,30 @@ public enum RecordReaderWriter {
                          Record record, Data dataValue) throws IOException {
             writeData(out, dataValue);
             out.writeInt(record.getHits());
+        }
+
+        @Override
+        void writeRecord(ObjectDataOutput out, Record record, Data dataValue,
+                         ExpiryMetadata expiryMetadata) throws IOException {
+            writeData(out, dataValue);
+            out.writeInt(record.getHits());
+            // TODO ttl int
+            out.writeInt((int) expiryMetadata.getTtl());
+            out.writeInt((int) expiryMetadata.getMaxIdle());
+            out.writeInt((int) expiryMetadata.getExpirationTime());
+        }
+
+        @Override
+        public Record readRecord(ObjectDataInput in, ExpiryMetadata expiryMetadata) throws IOException {
+            Record record = new SimpleRecordWithLRUEviction();
+            record.setValue(readData(in));
+            record.setHits(in.readInt());
+
+            expiryMetadata.setTtl(in.readInt());
+            expiryMetadata.setMaxIdle(in.readInt());
+            expiryMetadata.setExpirationTime(in.readInt());
+
+            return record;
         }
 
         @Override
@@ -152,6 +283,7 @@ public enum RecordReaderWriter {
     }
 
     private static class TypeId {
+
         private static final byte DATA_RECORD_TYPE_ID = 1;
         private static final byte DATA_RECORD_WITH_STATS_TYPE_ID = 2;
         private static final byte SIMPLE_DATA_RECORD_TYPE_ID = 3;
@@ -180,4 +312,9 @@ public enum RecordReaderWriter {
                               Record record, Data dataValue) throws IOException;
 
     abstract Record readRecord(ObjectDataInput in) throws IOException;
+
+    abstract void writeRecord(ObjectDataOutput out,
+                              Record record, Data dataValue, ExpiryMetadata expiryMetadata) throws IOException;
+
+    public abstract Record readRecord(ObjectDataInput in, ExpiryMetadata expiryMetadata) throws IOException;
 }

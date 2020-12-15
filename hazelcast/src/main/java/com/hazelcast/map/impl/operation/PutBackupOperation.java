@@ -21,6 +21,8 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
+import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.ExpirySystem;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
@@ -33,13 +35,16 @@ public class PutBackupOperation
     protected Record<Data> record;
     protected Data dataKey;
     protected Data dataValue;
+    protected ExpiryMetadata expiryMetadata;
 
     public PutBackupOperation(String name, Data dataKey,
-                              Record<Data> record, Data dataValue) {
+                              Record<Data> record, Data dataValue,
+                              ExpiryMetadata expiryMetadata) {
         super(name);
         this.dataKey = dataKey;
         this.record = record;
         this.dataValue = dataValue;
+        this.expiryMetadata = expiryMetadata;
     }
 
     public PutBackupOperation() {
@@ -48,7 +53,8 @@ public class PutBackupOperation
     @Override
     protected void runInternal() {
         // TODO performance: we can put this record directly into record-store if memory format is BINARY
-        Record currentRecord = recordStore.putBackup(dataKey, record, isPutTransient(), getCallerProvenance());
+        Record currentRecord = recordStore.putBackup(dataKey, record,
+                expiryMetadata, isPutTransient(), getCallerProvenance());
         Records.copyMetadataFrom(record, currentRecord);
     }
 
@@ -74,12 +80,13 @@ public class PutBackupOperation
         return MapDataSerializerHook.PUT_BACKUP;
     }
 
+    // TODO Rolling upgrade
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
         IOUtil.writeData(out, dataKey);
-        Records.writeRecord(out, record, dataValue);
+        Records.writeRecord(out, record, dataValue, expiryMetadata);
     }
 
     @Override
@@ -87,6 +94,7 @@ public class PutBackupOperation
         super.readInternal(in);
 
         dataKey = IOUtil.readData(in);
-        record = Records.readRecord(in);
+        expiryMetadata = new ExpirySystem.ExpiryMetadataImpl();
+        record = Records.readRecord(in, expiryMetadata);
     }
 }

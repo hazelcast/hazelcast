@@ -16,9 +16,10 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import static com.hazelcast.map.impl.record.Record.UNSET;
@@ -40,7 +41,8 @@ public class PutTransientOperation extends BasePutOperation implements MutatingO
 
     @Override
     protected PutBackupOperation newBackupOperation(Data dataKey, Record record, Data dataValue) {
-        return new PutTransientBackupOperation(name, dataKey, record, dataValue);
+        ExpiryMetadata expiredMetadata = recordStore.getExpirySystem().getExpiredMetadata(dataKey);
+        return new PutTransientBackupOperation(name, dataKey, record, dataValue, expiredMetadata);
     }
 
     protected long getTtl() {
