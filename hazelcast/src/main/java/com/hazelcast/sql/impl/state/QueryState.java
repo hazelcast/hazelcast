@@ -67,6 +67,7 @@ public final class QueryState implements QueryStateCallback {
     /** Time when the a check was performed for the last time. */
     private volatile long checkTime;
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private QueryState(
         QueryId queryId,
         UUID localMemberId,

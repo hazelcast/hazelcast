@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.exec.io;
 
 import java.util.Comparator;
 
-public class InboundBatchOrdinalComparator implements Comparator<InboundBatch> {
+public final class InboundBatchOrdinalComparator implements Comparator<InboundBatch> {
 
     public static final InboundBatchOrdinalComparator INSTANCE = new InboundBatchOrdinalComparator();
 

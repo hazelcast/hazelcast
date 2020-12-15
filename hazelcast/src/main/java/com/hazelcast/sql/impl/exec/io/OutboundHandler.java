@@ -26,5 +26,5 @@ public interface OutboundHandler {
      * @param ordinal ordinal to track stale messages
      * @param remainingMemory the amount of memory that is available on the remote end
      */
-    void onFlowControl(long ordinal ,long remainingMemory);
+    void onFlowControl(long ordinal, long remainingMemory);
 }
