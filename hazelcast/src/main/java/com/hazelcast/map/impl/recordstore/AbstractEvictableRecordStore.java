@@ -208,7 +208,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     protected void mergeRecordExpiration(Data key, Record record, MapMergeTypes mergingEntry, long now) {
         mergeRecordExpiration(record, mergingEntry.getTtl(), mergingEntry.getMaxIdle(), mergingEntry.getCreationTime(),
                 mergingEntry.getLastAccessTime(), mergingEntry.getLastUpdateTime());
-        getExpirySystem().addExpiry0(key, mergingEntry.getTtl(),
+        getExpirySystem().addExpiry(key, mergingEntry.getTtl(),
                 mergingEntry.getMaxIdle(), mergingEntry.getExpirationTime());
     }
 
