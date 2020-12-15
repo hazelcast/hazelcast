@@ -16,6 +16,11 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import static com.hazelcast.map.impl.record.Record.EPOCH_TIME;
+import static com.hazelcast.map.impl.record.Record.UNSET;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 public interface ExpiryMetadata {
 
     ExpiryMetadata NULL = new ExpiryMetadata() {
@@ -25,7 +30,17 @@ public interface ExpiryMetadata {
         }
 
         @Override
+        public int getRawTtl() {
+            return Integer.MAX_VALUE;
+        }
+
+        @Override
         public ExpiryMetadata setTtl(long ttl) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ExpiryMetadata setRawTtl(int ttl) {
             throw new UnsupportedOperationException();
         }
 
@@ -35,7 +50,17 @@ public interface ExpiryMetadata {
         }
 
         @Override
+        public int getRawMaxIdle() {
+            return Integer.MAX_VALUE;
+        }
+
+        @Override
         public ExpiryMetadata setMaxIdle(long maxIdle) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ExpiryMetadata setRawMaxIdle(int maxIdle) {
             throw new UnsupportedOperationException();
         }
 
@@ -45,7 +70,17 @@ public interface ExpiryMetadata {
         }
 
         @Override
+        public int getRawExpirationTime() {
+            return Integer.MAX_VALUE;
+        }
+
+        @Override
         public ExpiryMetadata setExpirationTime(long expirationTime) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ExpiryMetadata setRawExpirationTime(int expirationTime) {
             throw new UnsupportedOperationException();
         }
     };
@@ -53,13 +88,43 @@ public interface ExpiryMetadata {
 
     long getTtl();
 
+    int getRawTtl();
+
     ExpiryMetadata setTtl(long ttl);
+
+    ExpiryMetadata setRawTtl(int ttl);
 
     long getMaxIdle();
 
+    int getRawMaxIdle();
+
     ExpiryMetadata setMaxIdle(long maxIdle);
+
+    ExpiryMetadata setRawMaxIdle(int maxIdle);
 
     long getExpirationTime();
 
+    int getRawExpirationTime();
+
     ExpiryMetadata setExpirationTime(long expirationTime);
+
+    ExpiryMetadata setRawExpirationTime(int expirationTime);
+
+    default int stripBaseTime(long value) {
+        int diff = UNSET;
+        if (value > 0) {
+            diff = (int) MILLISECONDS.toSeconds(value - EPOCH_TIME);
+        }
+
+        return diff;
+    }
+
+    default long recomputeWithBaseTime(int value) {
+        if (value == UNSET) {
+            return 0L;
+        }
+
+        long exploded = SECONDS.toMillis(value);
+        return exploded + EPOCH_TIME;
+    }
 }

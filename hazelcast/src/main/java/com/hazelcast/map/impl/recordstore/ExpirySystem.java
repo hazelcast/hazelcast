@@ -43,6 +43,8 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateExpirationTim
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTLMillis;
 import static com.hazelcast.map.impl.record.Record.UNSET;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Always accessed by 1 thread.
@@ -252,7 +254,7 @@ public class ExpirySystem {
         for (int i = 0; i < dataKeyAndExpiryReason.size(); i += 2) {
             Data key = (Data) dataKeyAndExpiryReason.get(i);
 
-            System.err.println(mapServiceContext.getNodeEngine().getLocalMember() + ", key="+mapServiceContext.toObject(key));
+            System.err.println(mapServiceContext.getNodeEngine().getLocalMember() + ", key=" + mapServiceContext.toObject(key));
 
 
             ExpiryReason reason = (ExpiryReason) dataKeyAndExpiryReason.get(i + 1);
@@ -367,48 +369,100 @@ public class ExpirySystem {
     }
 
     public static class ExpiryMetadataImpl implements ExpiryMetadata {
-        long ttl;
-        long maxIdle;
-        long expirationTime;
+        private int ttl;
+        private int maxIdle;
+        private int expirationTime;
 
         public ExpiryMetadataImpl() {
         }
 
         public ExpiryMetadataImpl(long ttl, long maxIdle, long expirationTime) {
-            this.ttl = ttl;
-            this.maxIdle = maxIdle;
-            this.expirationTime = expirationTime;
+            setTtl(ttl);
+            setMaxIdle(maxIdle);
+            setExpirationTime(expirationTime);
         }
 
         @Override
         public long getTtl() {
+            return ttl == Integer.MAX_VALUE ? Long.MAX_VALUE : SECONDS.toMillis(ttl);
+        }
+
+        @Override
+        public int getRawTtl() {
             return ttl;
         }
 
         @Override
         public ExpiryMetadata setTtl(long ttl) {
+            long ttlSeconds = MILLISECONDS.toSeconds(ttl);
+            if (ttlSeconds == 0 && ttl != 0) {
+                ttlSeconds = 1;
+            }
+
+            this.ttl = ttlSeconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) ttlSeconds;
+            return this;
+        }
+
+        @Override
+        public ExpiryMetadata setRawTtl(int ttl) {
             this.ttl = ttl;
             return this;
         }
 
         @Override
         public long getMaxIdle() {
+            return maxIdle == Integer.MAX_VALUE ? Long.MAX_VALUE : SECONDS.toMillis(maxIdle);
+        }
+
+        @Override
+        public int getRawMaxIdle() {
             return maxIdle;
         }
 
         @Override
         public ExpiryMetadata setMaxIdle(long maxIdle) {
+            long maxIdleSeconds = MILLISECONDS.toSeconds(maxIdle);
+            if (maxIdleSeconds == 0 && maxIdle != 0) {
+                maxIdleSeconds = 1;
+            }
+            this.maxIdle = maxIdleSeconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) maxIdleSeconds;
+            return this;
+        }
+
+        @Override
+        public ExpiryMetadata setRawMaxIdle(int maxIdle) {
             this.maxIdle = maxIdle;
             return this;
         }
 
         @Override
         public long getExpirationTime() {
+            if (expirationTime == UNSET) {
+                return 0L;
+            }
+
+            if (expirationTime == Integer.MAX_VALUE) {
+                return Long.MAX_VALUE;
+            }
+
+            return recomputeWithBaseTime(expirationTime);
+        }
+
+        @Override
+        public int getRawExpirationTime() {
             return expirationTime;
         }
 
         @Override
         public ExpiryMetadata setExpirationTime(long expirationTime) {
+            this.expirationTime = expirationTime == Long.MAX_VALUE
+                    ? Integer.MAX_VALUE
+                    : stripBaseTime(expirationTime);
+            return this;
+        }
+
+        @Override
+        public ExpiryMetadata setRawExpirationTime(int expirationTime) {
             this.expirationTime = expirationTime;
             return this;
         }
@@ -416,9 +470,9 @@ public class ExpirySystem {
         @Override
         public String toString() {
             return "ExpiryMetadata{"
-                    + "ttl=" + ttl
-                    + ", maxIdle=" + maxIdle
-                    + ", expirationTime=" + expirationTime
+                    + "ttl=" + getTtl()
+                    + ", maxIdle=" + getMaxIdle()
+                    + ", expirationTime=" + getExpirationTime()
                     + '}';
         }
     }

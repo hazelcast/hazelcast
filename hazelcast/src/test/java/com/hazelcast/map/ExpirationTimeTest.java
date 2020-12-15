@@ -140,25 +140,26 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
         HazelcastInstance node1 = factory.newHazelcastInstance(config);
         IMap<Integer, Integer> map = node1.getMap(mapName);
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 1; i++) {
             map.put(i, i, 111, SECONDS, 222, SECONDS);
             map.get(i);
             map.put(i, i, 112, SECONDS, 223, SECONDS);
         }
 
         Map<Integer, EntryView> entryViewsBefore = new HashMap<>();
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 1; i++) {
             entryViewsBefore.put(i, map.getEntryView(i));
         }
 
         HazelcastInstance node2 = factory.newHazelcastInstance(config);
+
         IMap<Integer, Integer> map2 = node2.getMap(mapName);
         Map<Integer, EntryView> entryViewsAfter = new HashMap<>();
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 1; i++) {
             entryViewsAfter.put(i, map2.getEntryView(i));
         }
 
-        assertEquals(entryViewsAfter, entryViewsBefore);
+        assertEquals(entryViewsBefore, entryViewsAfter);
     }
 
     @Test
