@@ -183,9 +183,17 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         // Get or create query state.
         QueryState state = stateRegistry.onDistributedQueryStarted(localMemberId, operation.getQueryId(), this, false);
 
+        if (state == null) {
+            // The query is already cancelled. This may happen on the local member only when a user cancelled the query
+            // before the execute request is processed. No-op.
+            return;
+        }
+
         if (state.isCancelled()) {
             // Race condition when query start request arrived after query cancel
             stateRegistry.onQueryCompleted(state.getQueryId());
+
+            return;
         }
 
         List<QueryFragmentExecutable> fragmentExecutables = new ArrayList<>(operation.getFragments().size());
