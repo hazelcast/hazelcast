@@ -20,6 +20,7 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControl;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
+import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.UUID;
 
@@ -27,17 +28,28 @@ import java.util.UUID;
  * Abstract inbox implementation.
  */
 public abstract class AbstractInbox extends AbstractMailbox implements InboundHandler {
+    /** Comparator to order incoming batches based on their ordinals. */
+    private static final Comparator<InboundBatch> BATCH_COMPARATOR = (b1, b2) -> Long.compare(b1.getOrdinal(), b2.getOrdinal());
+
     /** Number of enqueued batches. */
     protected int enqueuedBatches;
 
     /** Remaining active sources. */
     private int remainingStreams;
 
+    /** Whether batches must be ordered according to their ordinals. */
     private final boolean ordered;
+
+    /** Operation handler that is used to initiate operations. */
     private final QueryOperationHandler operationHandler;
+
+    /** Implementation of the flow control interface. */
     private final FlowControl flowControl;
 
+    /** If the inbox is ordered, contains the ordinal of the next expected batch. */
     private long expectedOrdinal;
+
+    /** If the inbox is ordered, contains the batches with ordinals greater than then {@link #expectedOrdinal}. */
     private PriorityQueue<InboundBatch> pendingBatches;
 
     protected AbstractInbox(
@@ -76,7 +88,7 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
         );
 
         if (!ordered) {
-            // If the batch is not ordered, it could be processed right immediately.
+            // If the batch is not ordered, it could be processed immediately.
             processBatch(batch);
         } else {
             if (batch.getOrdinal() == expectedOrdinal) {
@@ -107,7 +119,7 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
             } else {
                 // Put the batch into the pending queue
                 if (pendingBatches == null) {
-                    pendingBatches = new PriorityQueue<>(1, InboundBatchOrdinalComparator.INSTANCE);
+                    pendingBatches = new PriorityQueue<>(1, BATCH_COMPARATOR);
                 }
 
                 pendingBatches.add(batch);

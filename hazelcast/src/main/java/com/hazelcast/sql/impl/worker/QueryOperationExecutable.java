@@ -23,7 +23,6 @@ import com.hazelcast.sql.impl.operation.QueryOperation;
  * Query operation to be executed. Could be either local (i.e. requested on the local member), or remote.
  */
 public final class QueryOperationExecutable {
-
     private final QueryOperation localOperation;
     private final Packet remoteOperation;
 
