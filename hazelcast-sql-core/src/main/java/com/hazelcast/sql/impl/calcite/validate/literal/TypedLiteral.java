@@ -28,6 +28,12 @@ public class TypedLiteral extends Literal {
 
     @Override
     public RelDataType getType(HazelcastTypeFactory typeFactory) {
-        return typeFactory.createSqlType(typeName);
+        RelDataType type = typeFactory.createSqlType(typeName);
+
+        if (value == null) {
+            type = typeFactory.createTypeWithNullability(type, true);
+        }
+
+        return type;
     }
 }

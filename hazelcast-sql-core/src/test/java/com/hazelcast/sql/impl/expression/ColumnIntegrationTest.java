@@ -61,6 +61,7 @@ public class ColumnIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testLiteral() {
         checkValue0(sql("null"), NULL, null);
+        checkValue0(sql("unknown"), BOOLEAN, null);
 
         checkValue0(sql("''"), VARCHAR, "");
         checkValue0(sql("'f'"), VARCHAR, "f");
