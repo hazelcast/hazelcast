@@ -106,4 +106,8 @@ public class CachePutOperation extends MutatingCacheOperation {
         return CacheDataSerializerHook.PUT;
     }
 
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }

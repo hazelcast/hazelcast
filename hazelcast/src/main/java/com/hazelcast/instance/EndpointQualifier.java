@@ -85,10 +85,6 @@ public final class EndpointQualifier
             return false;
         }
 
-        // Single instance types - identifier doesn't matter
-        if (type.getServerSocketCardinality() == 1) {
-            return true;
-        }
         return identifier != null ? identifier.equals(that.identifier) : that.identifier == null;
     }
 
@@ -140,18 +136,18 @@ public final class EndpointQualifier
                 + '\'' + '}';
     }
 
-    public static EndpointQualifier resolve(ProtocolType protocolType, String name) {
+    public static EndpointQualifier resolve(ProtocolType protocolType, String identifier) {
         switch (protocolType) {
             case MEMBER:
                 return MEMBER;
             case CLIENT:
-                return CLIENT;
+                return new EndpointQualifier(ProtocolType.CLIENT, identifier);
             case MEMCACHE:
                 return MEMCACHE;
             case REST:
                 return REST;
             case WAN:
-                return new EndpointQualifier(ProtocolType.WAN, name);
+                return new EndpointQualifier(ProtocolType.WAN, identifier);
             default:
                 throw new IllegalArgumentException("Cannot resolve EndpointQualifier for protocol type " + protocolType);
         }

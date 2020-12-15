@@ -48,6 +48,8 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.nio.NioNetworking;
@@ -118,7 +120,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     private static final int DEFAULT_SMART_CLIENT_THREAD_COUNT = 3;
     private static final int EXECUTOR_CORE_POOL_SIZE = 10;
     private static final int SMALL_MACHINE_PROCESSOR_COUNT = 8;
-
+    private static final EndpointQualifier CLIENT_PUBLIC_ENDPOINT_QUALIFIER =
+            EndpointQualifier.resolve(ProtocolType.CLIENT, "public");
     protected final AtomicInteger connectionIdGen = new AtomicInteger();
 
     private final AtomicBoolean isAlive = new AtomicBoolean();
@@ -582,8 +585,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             return connection;
         }
 
-        Address address = member.getAddress();
-        address = translate(address);
+        Address address = translate(member);
         connection = createSocketConnection(address);
         ClientAuthenticationCodec.ResponseParameters response = authenticateOnCluster(connection);
         return onAuthenticated(connection, response);
@@ -677,6 +679,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             logger.finest(e);
             throw rethrow(e);
         }
+    }
+
+    private Address translate(Member member) {
+        if (client.getClientClusterService().translateToPublicAddress()) {
+            Address publicAddress = member.getAddressMap().get(CLIENT_PUBLIC_ENDPOINT_QUALIFIER);
+            if (publicAddress != null) {
+                return publicAddress;
+            }
+            return member.getAddress();
+        }
+        return translate(member.getAddress());
     }
 
     private Address translate(Address target) {

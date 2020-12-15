@@ -16,40 +16,33 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
-import java.io.IOException;
-
-import static com.hazelcast.map.impl.query.Target.TargetMode.PARTITION_OWNER;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.map.impl.query.Target.TargetMode.PARTITION_OWNER;
 
 /**
  * Target for a query.
  * <p>
- * Possible options:
- * - all nodes
- * - local node only
- * - given partition
+ * Possible options:<ul>
+ *     <li>all nodes
+ *     <li>local node only
+ *     <li>given partition set
+ * </ul>
  */
-public class Target implements IdentifiedDataSerializable {
+public final class Target {
 
     public static final Target ALL_NODES = new Target(TargetMode.ALL_NODES, null);
     public static final Target LOCAL_NODE = new Target(TargetMode.LOCAL_NODE, null);
 
-    private TargetMode mode;
-    private Integer partitionId;
+    private final TargetMode mode;
+    private final PartitionIdSet partitions;
 
-    public Target() {
-    }
-
-    private Target(TargetMode mode, Integer partitionId) {
+    private Target(TargetMode mode, PartitionIdSet partitions) {
         this.mode = checkNotNull(mode);
-        this.partitionId = partitionId;
-        if (mode.equals(PARTITION_OWNER) && partitionId == null) {
-            throw new IllegalArgumentException("It's forbidden to use null partitionId with PARTITION_OWNER mode");
+        this.partitions = partitions;
+        if (mode.equals(PARTITION_OWNER) ^ partitions != null) {
+            throw new IllegalArgumentException("partitions must be used only with PARTITION_OWNER mode and not otherwise");
         }
     }
 
@@ -57,39 +50,17 @@ public class Target implements IdentifiedDataSerializable {
         return mode;
     }
 
-    public Integer partitionId() {
-        return partitionId;
+    public PartitionIdSet partitions() {
+        return partitions;
     }
 
-    enum TargetMode {
+    public enum TargetMode {
         LOCAL_NODE,
         ALL_NODES,
         PARTITION_OWNER
     }
 
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getClassId() {
-        return MapDataSerializerHook.TARGET;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(partitionId);
-        out.writeUTF(mode.name());
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        this.partitionId = in.readInt();
-        this.mode = TargetMode.valueOf(in.readUTF());
-    }
-
-    public static Target createPartitionTarget(int partitionId) {
-        return new Target(TargetMode.PARTITION_OWNER, partitionId);
+    public static Target createPartitionTarget(PartitionIdSet partitions) {
+        return new Target(TargetMode.PARTITION_OWNER, partitions);
     }
 }

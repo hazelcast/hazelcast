@@ -45,6 +45,7 @@ import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.services.TenantContextAwareService;
 import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
@@ -97,7 +98,8 @@ import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValu
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public class QueueService implements ManagedService, MigrationAwareService, TransactionalService, RemoteService,
         EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService<LocalQueueStats>,
-        SplitBrainProtectionAwareService, SplitBrainHandlerService, DynamicMetricsProvider {
+        SplitBrainProtectionAwareService, SplitBrainHandlerService, DynamicMetricsProvider,
+        TenantContextAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
 

@@ -117,4 +117,9 @@ public class CacheGetConfigOperation extends AbstractNamedOperation implements I
     public Object getResponse() {
         return response;
     }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
+    }
 }

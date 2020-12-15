@@ -17,21 +17,23 @@
 package com.hazelcast.cache.impl.tenantcontrol;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheProxy;
-import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 
-import javax.cache.Cache;
 import java.io.IOException;
 
-import static com.hazelcast.config.CacheConfigAccessor.setTenantControl;
-import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
-
-public class CacheDestroyEventContext implements DestroyEventContext<Cache>, IdentifiedDataSerializable {
+/**
+ * The only reason this is not removed is because it will break RU serialization
+ * logic.
+ *
+ * @author lprimak
+ * @deprecated
+ */
+// RU_COMPAT_4_1
+@Deprecated
+public class CacheDestroyEventContext implements DestroyEventContext, IdentifiedDataSerializable {
 
     private String cacheName;
 
@@ -40,21 +42,6 @@ public class CacheDestroyEventContext implements DestroyEventContext<Cache>, Ide
 
     public CacheDestroyEventContext(String cacheName) {
         this.cacheName = cacheName;
-    }
-
-    @Override
-    public void destroy(Cache context) {
-        if (context instanceof CacheProxy) {
-            CacheProxy cache = (CacheProxy) context;
-            CacheService cacheService = (CacheService) cache.getService();
-            CacheConfig cacheConfig = cacheService.getCacheConfig(cache.getPrefixedName());
-            setTenantControl(cacheConfig, NOOP_TENANT_CONTROL);
-        }
-    }
-
-    @Override
-    public Class<? extends Cache> getContextType() {
-        return Cache.class;
     }
 
     @Override
@@ -80,12 +67,6 @@ public class CacheDestroyEventContext implements DestroyEventContext<Cache>, Ide
     }
 
     @Override
-    public String getDistributedObjectName() {
-        return cacheName;
-    }
-
-    @Override
-    public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+    public void tenantUnavailable() {
     }
 }

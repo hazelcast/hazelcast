@@ -116,12 +116,14 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         long id2 = generateUniqueHazelcastInjectionId();
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(CACHE_NAME);
         cacheConfig.setCacheLoaderFactory(new CacheLoaderFactoryWithDependencies(id1, id2));
+        cacheConfig.setReadThrough(true);
 
         HazelcastInstance hazelcastInstance = createInstance();
         CacheManager cacheManager = createCachingProvider(hazelcastInstance).getCacheManager();
         Cache<Integer, Integer> cache = cacheManager.createCache(CACHE_NAME, cacheConfig);
 
         cache.put(1, 1);
+        cache.get(2);
 
         assertEquals("Hazelcast instance has not been injected into cache loader factory!",
                 Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id1));
@@ -139,6 +141,7 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         long id2 = generateUniqueHazelcastInjectionId();
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(CACHE_NAME);
         cacheConfig.setCacheWriterFactory(new CacheWriterFactoryWithDependencies(id1, id2));
+        cacheConfig.setWriteThrough(true);
 
         HazelcastInstance hazelcastInstance = createInstance();
         CacheManager cacheManager = createCachingProvider(hazelcastInstance).getCacheManager();
