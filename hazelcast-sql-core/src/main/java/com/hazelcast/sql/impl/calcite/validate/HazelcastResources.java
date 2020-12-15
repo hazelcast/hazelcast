@@ -30,10 +30,10 @@ public interface HazelcastResources {
     @Resources.BaseMessage("Function ''{0}'' does not exist")
     Resources.ExInst<CalciteException> functionDoesNotExist(String functionName);
 
-    @Resources.BaseMessage("Cannot apply {1} to the {0} operator (consider adding an explicit CAST)")
+    @Resources.BaseMessage("Cannot apply {0} operator to {1} (consider adding an explicit CAST)")
     Resources.ExInst<SqlValidatorException> invalidOperatorOperands(String operatorName, String operandTypes);
 
-    @Resources.BaseMessage("Cannot apply {1} to the {0} function (consider adding an explicit CAST)")
+    @Resources.BaseMessage("Cannot apply {0} function to {1} (consider adding an explicit CAST)")
     Resources.ExInst<SqlValidatorException> invalidFunctionOperands(String functionName, String operandTypes);
 
     @Resources.BaseMessage("CAST function cannot convert value of type {0} to type {1}")

@@ -210,21 +210,21 @@ public class RoundFunctionIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void test_boolean() {
-        checkColumnFailure_2(new ExpressionBiValue.BooleanIntegerVal().fields(true, 127), SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, INTEGER] to the 'ROUND' function (consider adding an explicit CAST)");
-        checkColumnFailure_2(new ExpressionBiValue.IntegerBooleanVal().fields(127, true), SqlErrorCode.PARSING, "Cannot apply [INTEGER, BOOLEAN] to the 'ROUND' function (consider adding an explicit CAST)");
+        checkColumnFailure_2(new ExpressionBiValue.BooleanIntegerVal().fields(true, 127), SqlErrorCode.PARSING, signatureErorr(BOOLEAN, INTEGER));
+        checkColumnFailure_2(new ExpressionBiValue.IntegerBooleanVal().fields(127, true), SqlErrorCode.PARSING, signatureErorr(INTEGER, BOOLEAN));
     }
 
     @Test
     public void test_temporal() {
-        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalDateVal().fields(127, LOCAL_DATE_VAL), SqlErrorCode.PARSING, "Cannot apply [INTEGER, DATE] to the 'ROUND' function (consider adding an explicit CAST)");
-        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalTimeVal().fields(127, LOCAL_TIME_VAL), SqlErrorCode.PARSING, "Cannot apply [INTEGER, TIME] to the 'ROUND' function (consider adding an explicit CAST)");
-        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalDateTimeVal().fields(127, LOCAL_DATE_TIME_VAL), SqlErrorCode.PARSING, "Cannot apply [INTEGER, TIMESTAMP] to the 'ROUND' function (consider adding an explicit CAST)");
-        checkColumnFailure_2(new ExpressionBiValue.IntegerOffsetDateTimeVal().fields(127, OFFSET_DATE_TIME_VAL), SqlErrorCode.PARSING, "Cannot apply [INTEGER, TIMESTAMP_WITH_TIME_ZONE] to the 'ROUND' function (consider adding an explicit CAST)");
+        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalDateVal().fields(127, LOCAL_DATE_VAL), SqlErrorCode.PARSING, signatureErorr(INTEGER, DATE));
+        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalTimeVal().fields(127, LOCAL_TIME_VAL), SqlErrorCode.PARSING, signatureErorr(INTEGER, TIME));
+        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalDateTimeVal().fields(127, LOCAL_DATE_TIME_VAL), SqlErrorCode.PARSING, signatureErorr(INTEGER, TIMESTAMP));
+        checkColumnFailure_2(new ExpressionBiValue.IntegerOffsetDateTimeVal().fields(127, OFFSET_DATE_TIME_VAL), SqlErrorCode.PARSING, signatureErorr(INTEGER, TIMESTAMP_WITH_TIME_ZONE));
     }
 
     @Test
     public void test_object() {
-        checkColumnFailure_2(new IntegerObjectVal().fields(127, "bad"), SqlErrorCode.PARSING, "Cannot apply [INTEGER, OBJECT] to the 'ROUND' function (consider adding an explicit CAST)");
+        checkColumnFailure_2(new IntegerObjectVal().fields(127, "bad"), SqlErrorCode.PARSING, signatureErorr(INTEGER, OBJECT));
     }
 
     @Test
@@ -304,14 +304,14 @@ public class RoundFunctionIntegrationTest extends ExpressionTestSupport {
         put(new IntegerVal().field1(-1));
         check_2("15", "field1", TINYINT, (byte) 20);
         check_2("15.1", "field1", DECIMAL, new BigDecimal("20"));
-        checkFailure_2("'15.1'", "field1", SqlErrorCode.PARSING, "Cannot apply [VARCHAR, INTEGER] to the 'ROUND' function");
-        checkFailure_2("true", "field1", SqlErrorCode.PARSING, "Cannot apply [BOOLEAN, INTEGER] to the 'ROUND' function (consider adding an explicit CAST)");
+        checkFailure_2("'15.1'", "field1", SqlErrorCode.PARSING, signatureErorr(VARCHAR, INTEGER));
+        checkFailure_2("true", "field1", SqlErrorCode.PARSING, signatureErorr(BOOLEAN, INTEGER));
 
         // Second operand
         put(new IntegerVal().field1(15));
         check_2("field1", "-1", INTEGER, 20);
-        checkFailure_2("field1", "'-1'", SqlErrorCode.PARSING, "Cannot apply [INTEGER, VARCHAR] to the 'ROUND' function (consider adding an explicit CAST)");
-        checkFailure_2("field1", "true", SqlErrorCode.PARSING, "Cannot apply [INTEGER, BOOLEAN] to the 'ROUND' function (consider adding an explicit CAST)");
+        checkFailure_2("field1", "'-1'", SqlErrorCode.PARSING, signatureErorr(INTEGER, VARCHAR));
+        checkFailure_2("field1", "true", SqlErrorCode.PARSING, signatureErorr(INTEGER, BOOLEAN));
     }
 
     private void checkColumn_1(ExpressionValue value, SqlColumnType expectedType, Object expectedValue) {
@@ -352,6 +352,10 @@ public class RoundFunctionIntegrationTest extends ExpressionTestSupport {
 
     private void check_2(Object operand1, Object operand2, SqlColumnType expectedType, Object expectedValue, Object... params) {
         checkValue0(sql(operand1, operand2), expectedType, expectedValue, params);
+    }
+
+    private String signatureErorr(SqlColumnType... columnTypes) {
+        return signatureErrorFunction("ROUND", columnTypes);
     }
 
     private static String sql(Object operand1, Object... operand2) {
