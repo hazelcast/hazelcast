@@ -58,7 +58,7 @@ public interface OutboundCollector {
 
 
     static OutboundCollector compositeCollector(
-            OutboundCollector[] collectors, EdgeDef outboundEdge, int partitionCount
+            OutboundCollector[] collectors, EdgeDef outboundEdge, int partitionCount, boolean local
     ) {
         if (collectors.length == 1) {
             return collectors[0];
@@ -71,6 +71,8 @@ public interface OutboundCollector {
                 return new Partitioned(collectors, outboundEdge.partitioner(), partitionCount);
             case BROADCAST:
                 return new Broadcast(collectors);
+            case FANOUT:
+                return local ? new RoundRobin(collectors) : new Broadcast(collectors);
             default:
                 throw new AssertionError("Missing case label for " + outboundEdge.routingPolicy());
         }

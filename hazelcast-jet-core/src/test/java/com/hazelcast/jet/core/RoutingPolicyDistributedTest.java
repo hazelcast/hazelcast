@@ -25,6 +25,7 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -34,6 +35,7 @@ import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.Edge.between;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -102,20 +104,24 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
         assertEquals("items on member1", setOf(NUMBERS), items1);
     }
 
-
     @Test
     public void when_distributedToOne_broadcast() {
-        when_distributedToOne_notPartitioned(e -> e.broadcast(), "must be partitioned");
+        when_distributedToOne_notPartitioned(Edge::broadcast, "must be partitioned");
     }
 
     @Test
     public void when_distributedToOne_unicast() {
-        when_distributedToOne_notPartitioned(e -> e.unicast(), "must be partitioned");
+        when_distributedToOne_notPartitioned(Edge::unicast, "must be partitioned");
     }
 
     @Test
     public void when_distributedToOne_isolated() {
-        when_distributedToOne_notPartitioned(e -> e.isolated(), "Isolated edges must be local");
+        when_distributedToOne_notPartitioned(Edge::isolated, "Isolated edges must be local");
+    }
+
+    @Test
+    public void when_distributedToOne_fanout() {
+        when_distributedToOne_notPartitioned(Edge::fanout, "must be partitioned");
     }
 
     private void when_distributedToOne_notPartitioned(Consumer<Edge> configureEdgeFn, String expectedError) {
@@ -148,6 +154,42 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
 
         exception.expectMessage("The target member of an edge is not present in the cluster");
         instance().newJob(dag).join();
+    }
+
+    @Test
+    public void when_local_fanout() {
+        DAG dag = new DAG();
+        Vertex producer = new Vertex("producer", new ListsSourceP(asList(1, 2), asList(3, 4))).localParallelism(1);
+        Vertex consumer = new Vertex("consumer", consumerSup).localParallelism(2);
+
+        dag.vertex(producer)
+           .vertex(consumer)
+           .edge(between(producer, consumer).fanout());
+
+        instance().newJob(dag).join();
+
+        assertEquals("items on member0-processor0", ImmutableSet.of(1), new HashSet<>(consumerSup.getListAt(0)));
+        assertEquals("items on member0-processor1", ImmutableSet.of(2), new HashSet<>(consumerSup.getListAt(1)));
+        assertEquals("items on member1-processor0", ImmutableSet.of(3), new HashSet<>(consumerSup.getListAt(2)));
+        assertEquals("items on member1-processor1", ImmutableSet.of(4), new HashSet<>(consumerSup.getListAt(3)));
+    }
+
+    @Test
+    public void when_distributed_fanout() {
+        DAG dag = new DAG();
+        Vertex producer = new Vertex("producer", new ListsSourceP(asList(1, 2), asList(3, 4))).localParallelism(1);
+        Vertex consumer = new Vertex("consumer", consumerSup).localParallelism(2);
+
+        dag.vertex(producer)
+           .vertex(consumer)
+           .edge(between(producer, consumer).distributed().fanout());
+
+        instance().newJob(dag).join();
+
+        assertEquals("items on member0-processor0", ImmutableSet.of(1, 3), new HashSet<>(consumerSup.getListAt(0)));
+        assertEquals("items on member0-processor1", ImmutableSet.of(2, 4), new HashSet<>(consumerSup.getListAt(1)));
+        assertEquals("items on member1-processor0", ImmutableSet.of(1, 3), new HashSet<>(consumerSup.getListAt(2)));
+        assertEquals("items on member1-processor1", ImmutableSet.of(2, 4), new HashSet<>(consumerSup.getListAt(3)));
     }
 
     private Vertex consumer() {

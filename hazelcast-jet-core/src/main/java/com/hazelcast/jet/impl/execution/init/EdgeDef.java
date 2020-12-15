@@ -105,6 +105,10 @@ public class EdgeDef implements IdentifiedDataSerializable {
         return priority == MasterJobContext.SNAPSHOT_RESTORE_EDGE_PRIORITY;
     }
 
+    boolean isLocal() {
+        return distributedTo == null;
+    }
+
     /**
      * Note: unlike {@link Edge#getDistributedTo()}, this method always returns
      * null if the DAG is about to be run on a single member. See {@linkplain

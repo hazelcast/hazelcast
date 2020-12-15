@@ -193,6 +193,28 @@ public class RoutingPolicyTest extends SimpleTestInClusterSupport {
         assertEquals(setOf(NUMBERS_HIGH), setOf(list2));
     }
 
+    @Test
+    public void when_fanout() throws Throwable {
+        DAG dag = new DAG();
+        Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH);
+        Vertex consumer = consumer(2);
+
+        dag.vertex(producer)
+           .vertex(consumer)
+           .edge(between(producer, consumer)
+                   .fanout());
+
+        execute(dag);
+
+        List<Object> combined = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            combined.addAll(consumerSup.getListAt(i));
+        }
+
+        assertEquals(NUMBERS_LOW.size() + NUMBERS_HIGH.size(), combined.size());
+        assertEquals(setOf(NUMBERS_LOW, NUMBERS_HIGH), setOf(combined));
+    }
+
     private void execute(DAG dag) throws Throwable {
         executeAndPeel(instance().newJob(dag));
     }

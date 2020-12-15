@@ -378,6 +378,17 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
+     * Activates the {@link RoutingPolicy#FANOUT FANOUT} routing policy.
+     *
+     * @since 4.4
+     */
+    @Nonnull
+    public Edge fanout() {
+        routingPolicy = RoutingPolicy.FANOUT;
+        return this;
+    }
+
+    /**
      * Returns the instance encapsulating the partitioning strategy in effect
      * on this edge.
      */
@@ -549,6 +560,9 @@ public class Edge implements IdentifiedDataSerializable {
             case BROADCAST:
                 b.append(".broadcast()");
                 break;
+            case FANOUT:
+                b.append(".fanout()");
+                break;
             default:
         }
         if (DISTRIBUTE_TO_ALL.equals(distributedTo)) {
@@ -676,7 +690,20 @@ public class Edge implements IdentifiedDataSerializable {
         /**
          * This policy sends each item to all candidate processors.
          */
-        BROADCAST
+        BROADCAST,
+        /**
+         * This policy sends an item to all members, but only to one processor on
+         * each member. It's a combination of {@link #BROADCAST} and {@link
+         * #UNICAST}: an item is first <em>broadcast</em> to all members, and then,
+         * on each member, it is <em>unicast</em> to one processor.
+         * <p>
+         * If the destination local parallelism is 1, the behavior is equal to
+         * {@link #BROADCAST}. If the member count in the cluster is 1, the
+         * behavior is equal to {@link #UNICAST}.
+         *
+         * @since 4.4
+         */
+        FANOUT
     }
 
     private static class Single implements Partitioner<Object> {
