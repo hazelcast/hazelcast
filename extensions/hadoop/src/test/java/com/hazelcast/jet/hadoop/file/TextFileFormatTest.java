@@ -22,6 +22,9 @@ import com.hazelcast.jet.pipeline.file.FileSources;
 import org.junit.Test;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
@@ -30,15 +33,16 @@ import static org.assertj.core.api.Assumptions.assumeThat;
 public class TextFileFormatTest extends BaseFileFormatTest {
 
     @Test
-    public void readTextFileAsSingleItem() {
+    public void readTextFileAsSingleItem() throws Exception {
         FileSourceBuilder<String> source = FileSources.files(currentDir + "/src/test/resources")
                                                       .glob("file.txt")
                                                       .format(FileFormat.text());
 
-        assertItemsInSource(source,
-                "Text contents of" + System.lineSeparator() +
-                        "the file." + System.lineSeparator()
-        );
+        String expected = new String(
+                Files.readAllBytes(Paths.get(currentDir, "/src/test/resources", "file.txt")),
+                StandardCharsets.UTF_8);
+
+        assertItemsInSource(source, expected);
     }
 
     @Test

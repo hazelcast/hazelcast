@@ -51,6 +51,7 @@ public class PathAndGlobFileSourceTest extends BaseFileFormatTest {
 
     @Test
     public void shouldReadFilesMatchingGlobInPath() {
+        assumeThatNoWindowsOS(); // * is not allowed in filename
         assumeThat(useHadoop).isTrue();
         FileSourceBuilder<String> source = FileSources.files(currentDir + "/src/test/*/glob") // src/test/resources/glob
                                                       .glob("file")

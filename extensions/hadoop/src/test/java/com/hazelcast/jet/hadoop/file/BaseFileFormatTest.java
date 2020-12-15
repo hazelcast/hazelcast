@@ -19,7 +19,7 @@ package com.hazelcast.jet.hadoop.file;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.hadoop.impl.HadoopTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(Parameterized.class)
-public abstract class BaseFileFormatTest extends JetTestSupport {
+public abstract class BaseFileFormatTest extends HadoopTestSupport {
 
     @Parameter
     public boolean useHadoop;
@@ -50,12 +50,14 @@ public abstract class BaseFileFormatTest extends JetTestSupport {
         return Arrays.asList(true, false);
     }
 
+    @Override
+    protected boolean useHadoop() {
+        return useHadoop;
+    }
+
     @Before
     public void setUp() {
         currentDir = Paths.get(".").toAbsolutePath().normalize().toString();
-        if (useHadoop) {
-            assumeThatNoWindowsOS();
-        }
     }
 
     @SafeVarargs
@@ -91,7 +93,11 @@ public abstract class BaseFileFormatTest extends JetTestSupport {
         }
     }
 
-    protected void assertJobFailed(FileSourceBuilder source, Class expectedRootException, String expectedMessage) {
+    protected void assertJobFailed(
+            FileSourceBuilder<?> source,
+            Class<? extends Throwable> expectedRootException,
+            String expectedMessage
+    ) {
         if (useHadoop) {
             source.useHadoopForLocalFiles(true);
         }

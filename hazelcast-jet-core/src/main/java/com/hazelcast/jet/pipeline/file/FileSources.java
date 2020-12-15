@@ -17,53 +17,50 @@
 package com.hazelcast.jet.pipeline.file;
 
 /**
- * Convenience methods to FileSourceBuilder
+ * Contains factory methods for the Unified File Connector.
  *
  * @since 4.4
  */
 public final class FileSources {
 
-    /**
-     * Helper class
-     */
     private FileSources() {
     }
 
     /**
-     * The main entrypoint to the Unified File Connector
+     * The main entry point to the Unified File Connector.
      * <p>
-     * Returns a {@link FileSourceBuilder} configured with LinesTextFileFormat
-     * - each line of the file is emitted from the source as a single String.
+     * Returns a {@link FileSourceBuilder} configured with default values, see
+     * its documentation for more options.
+     * <p>
+     * The path specifies the filesystem type (for example {@code s3a://},
+     * {@code hdfs://}) and the path to the files. If it doesn't specify a file
+     * system, a local file system is used - in this case the path must be
+     * absolute. By "local" we mean local to each Jet cluster member, not to
+     * the client submitting the job.
+     * <p>
+     * The following file systems are supported:<ul>
+     *     <li>{@code s3a://} (Amazon S3)
+     *     <li>{@code hdfs://} (HDFS)
+     *     <li>{@code wasbs://} (Azure Cloud Storage)
+     *     <li>{@code adl://} (Azure Data Lake Gen 1)
+     *     <li>{@code abfs://} (Azure Data Lake Gen 2)
+     *     <li>{@code gs://} (Google Cloud Storage)
+     * </ul>
      * <p>
      * The path must point to a directory. All files in the directory are
-     * processed. The directory is not processed recursively.
+     * processed. Subdirectories are not processed recursively.
      * <p>
-     * An optional glob parameter can be provided, e.g. {@code "file*"}, capturing {@code file1.txt},
-     * {@code file2.txt}, ...
+     * Example usage:
      * <pre>{@code
      * Pipeline p = Pipeline.create();
-     * p.readFrom(FileSources.files("src/main/java"))
-     *  .map(line -> LogParser.parse(line))
-     *  .filter(log -> log.level().equals("ERROR"))
-     *  .writeTo(Sinks.logger());}</pre>
-     *
-     * You can override the format by calling
-     * {@link FileSourceBuilder#format(FileFormat)} method.
-     * For example:
-     * <pre>{@code
-     * BatchSource<byte[]> source = FileSources.files("path/to/binary/file")
-     *                                         .build();
-     * }</pre>
-     *
-     * Usage:
-     * <pre>{@code
-     * BatchSource<byte[]> source = FileSources.files("path/to/binary/file")
-     *                                         .build();
+     *         p.readFrom(FileSources.files("/path/to/file").build())
+     *          .map(line -> LogParser.parse(line))
+     *          .filter(log -> log.level().equals("ERROR"))
+     *          .writeTo(Sinks.logger());
      * }</pre>
      *
      * @param path the path to the file
-     *
-     * @return FileSourceBuilder, which can be further modified using fluent API
+     * @return the builder object with fluent API
      */
     public static FileSourceBuilder<String> files(String path) {
         return new FileSourceBuilder<>(path)

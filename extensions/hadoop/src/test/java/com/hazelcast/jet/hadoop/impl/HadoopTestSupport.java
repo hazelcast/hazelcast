@@ -21,13 +21,19 @@ import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 
-@Category({IgnoreInJenkinsOnWindows.class})
+@Category(IgnoreInJenkinsOnWindows.class)
 public abstract class HadoopTestSupport extends SimpleTestInClusterSupport {
 
     @Before
     public void hadoopSupportBefore() {
-        // Tests fail on windows. If you want to run them, comment out this line and
-        // follow this instructions: https://stackoverflow.com/a/35652866/952135
-        assumeThatNoWindowsOS();
+        if (useHadoop()) {
+            // Tests fail on windows without an extra setup. If you want to run them, comment out this
+            // line and follow instructions here: https://stackoverflow.com/a/35652866/952135
+            assumeThatNoWindowsOS();
+        }
+    }
+
+    protected boolean useHadoop() {
+        return true;
     }
 }
