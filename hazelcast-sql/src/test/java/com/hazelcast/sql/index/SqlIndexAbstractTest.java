@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.index;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
@@ -150,11 +149,6 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
             factory.shutdownAll();
             factory = null;
         }
-    }
-
-    @Override
-    protected Config getConfig() {
-        return smallInstanceConfig();
     }
 
     private void fill() {
