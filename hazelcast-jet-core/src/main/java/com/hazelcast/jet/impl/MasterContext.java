@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.entry;
@@ -45,6 +46,7 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
 
 /**
@@ -241,32 +243,33 @@ public class MasterContext {
         AtomicInteger remainingCount = new AtomicInteger(executionPlanMap.size());
         for (Entry<MemberInfo, ExecutionPlan> entry : executionPlanMap.entrySet()) {
             MemberInfo memberInfo = entry.getKey();
-            Operation op = operationCtor.apply(entry.getValue());
-            invokeOnParticipant(memberInfo, op, completionCallback, errorCallback, retryOnTimeoutException, responses,
-                    remainingCount);
+            Supplier<Operation> opSupplier = () -> operationCtor.apply(entry.getValue());
+            invokeOnParticipant(memberInfo, opSupplier, completionCallback, errorCallback, retryOnTimeoutException,
+                    responses, remainingCount);
         }
     }
 
     private void invokeOnParticipant(
             MemberInfo memberInfo,
-            Operation op,
+            Supplier<Operation> operationSupplier,
             @Nullable Consumer<Collection<Map.Entry<MemberInfo, Object>>> completionCallback,
             @Nullable Consumer<Throwable> errorCallback,
             boolean retryOnTimeoutException,
             ConcurrentMap<MemberInfo, Object> collectedResponses,
             AtomicInteger remainingCount
     ) {
+        Operation operation = operationSupplier.get();
         InternalCompletableFuture<Object> future = nodeEngine.getOperationService()
-                .createInvocationBuilder(JetService.SERVICE_NAME, op, memberInfo.getAddress())
+                .createInvocationBuilder(JetService.SERVICE_NAME, operation, memberInfo.getAddress())
                 .invoke();
 
-        future.whenCompleteAsync((r, throwable) -> {
+        future.whenCompleteAsync(withTryCatch(logger, (r, throwable) -> {
             Object response = r != null ? r : throwable != null ? peel(throwable) : NULL_OBJECT;
             if (retryOnTimeoutException && throwable instanceof OperationTimeoutException) {
-                logger.warning("Retrying " + op.getClass().getSimpleName() + " that failed with "
+                logger.warning("Retrying " + operation.getClass().getName() + " that failed with "
                         + OperationTimeoutException.class.getSimpleName() + " in " + jobIdString());
-                invokeOnParticipant(memberInfo, op, completionCallback, errorCallback, retryOnTimeoutException,
-                        collectedResponses, remainingCount);
+                invokeOnParticipant(memberInfo, operationSupplier, completionCallback, errorCallback,
+                        retryOnTimeoutException, collectedResponses, remainingCount);
                 return;
             }
             if (errorCallback != null && throwable != null) {
@@ -280,6 +283,6 @@ public class MasterContext {
                         .map(e -> e.getValue() == NULL_OBJECT ? entry(e.getKey(), null) : e)
                         .collect(Collectors.toList()));
             }
-        });
+        }));
     }
 }

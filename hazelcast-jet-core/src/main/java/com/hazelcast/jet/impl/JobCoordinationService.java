@@ -26,6 +26,7 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -601,8 +602,10 @@ public class JobCoordinationService {
                     membersShuttingDown.keySet());
             return false;
         }
-        if (!getInternalPartitionService().isMemberStateSafe()) {
-            logger.fine("Not starting jobs because master is not in safe state.");
+        PartitionServiceState state =
+                getInternalPartitionService().getPartitionReplicaStateChecker().getPartitionServiceState();
+        if (state != PartitionServiceState.SAFE) {
+            logger.fine("Not starting jobs because partition replication is not in safe state, but in " + state);
             return false;
         }
         if (!getInternalPartitionService().getPartitionStateManager().isInitialized()) {
