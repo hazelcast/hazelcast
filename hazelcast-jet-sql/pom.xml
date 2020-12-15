@@ -363,13 +363,21 @@
                     <shadedArtifactAttached>true</shadedArtifactAttached>
                     <shadedClassifierName>jar-with-dependencies</shadedClassifierName>
                     <!--
-                    We actually don't shade these in here in Hadoop module, they are already part of core
-                    But we need to relocate the usage in the Hadoop module
+                    The whole package `com.fasterxml.jackson` can't be relocated - it would relocate
+                    `com.fasterxml.jackson.annotation` and users wouldn't be able to use standard jackson annotations.
                     -->
                     <relocations>
                         <relocation>
                             <pattern>com.fasterxml.jackson.jr</pattern>
                             <shadedPattern>com.hazelcast.com.fasterxml.jackson.jr</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.fasterxml.jackson.core</pattern>
+                            <shadedPattern>com.hazelcast.com.fasterxml.jackson.core</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.fasterxml.jackson.databind</pattern>
+                            <shadedPattern>com.hazelcast.com.fasterxml.jackson.databind</shadedPattern>
                         </relocation>
                     </relocations>
                     <transformers>
