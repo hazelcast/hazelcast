@@ -131,7 +131,9 @@ public final class HazelcastComparisonPredicateUtils {
         }
 
         // Types are in the same group, cast lower to higher.
-        validator.getTypeCoercion().coerceOperandType(callBinding.getScope(), callBinding.getCall(), lowIndex, highType);
+        RelDataType newLowType = validator.getTypeFactory().createTypeWithNullability(highType, lowType.isNullable());
+
+        validator.getTypeCoercion().coerceOperandType(callBinding.getScope(), callBinding.getCall(), lowIndex, newLowType);
 
         return true;
     }
