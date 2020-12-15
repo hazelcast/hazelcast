@@ -194,8 +194,8 @@ public class ExpirySystem {
         return !expireTimeByKey.isEmpty();
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     public void evictExpiredEntries(long now, int percentage, boolean backup) {
-        int size = recordStore.size();
         int maxIterationCount = 100;
         int maxRetry = 3;
         int loop = 0;

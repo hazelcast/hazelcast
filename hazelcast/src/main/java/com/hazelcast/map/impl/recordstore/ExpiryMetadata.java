@@ -23,6 +23,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public interface ExpiryMetadata {
 
+    @SuppressWarnings("checkstyle:anoninnerlength")
     ExpiryMetadata NULL = new ExpiryMetadata() {
         @Override
         public long getTtl() {

@@ -53,7 +53,9 @@ public class PutAllBackupOperation extends MapOperation
     }
 
     @Override
+    @SuppressWarnings("checkstyle:magicnumber")
     protected void runInternal() {
+        List keyRecordExpiry = this.keyRecordExpiry;
         if (keyRecordExpiry != null) {
             for (int i = lastIndex; i < keyRecordExpiry.size(); i += 3) {
                 Data key = (Data) keyRecordExpiry.get(i);
@@ -67,10 +69,11 @@ public class PutAllBackupOperation extends MapOperation
             // `runInternal` method, means this operation
             // has not been serialized/deserialized
             // and is running directly on caller node
+            List keyValueRecordExpiry = this.keyValueRecordExpiry;
             for (int i = lastIndex; i < keyValueRecordExpiry.size(); i += 4) {
                 Data key = (Data) keyValueRecordExpiry.get(i);
                 Record record = (Record) keyValueRecordExpiry.get(i + 2);
-                ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiry.get(i + 3);
+                ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyValueRecordExpiry.get(i + 3);
                 putBackup(key, record, expiryMetadata);
                 lastIndex = i;
             }
@@ -93,6 +96,7 @@ public class PutAllBackupOperation extends MapOperation
 
     // TODO Rolling upgrade?
     @Override
+    @SuppressWarnings("checkstyle:magicnumber")
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
