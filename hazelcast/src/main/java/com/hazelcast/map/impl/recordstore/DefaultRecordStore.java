@@ -244,7 +244,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             Record record = entry.getValue();
 
             if (includeExpiredRecords
-                    || hasExpired(key, now, backup) != ExpirySystem.ExpiryReason.NOT_EXPIRED) {
+                    || hasExpired(key, now, backup) == ExpirySystem.ExpiryReason.NOT_EXPIRED) {
                 consumer.accept(key, record);
             }
         }
