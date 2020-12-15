@@ -27,7 +27,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.TestUtil;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
@@ -156,6 +158,22 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
 
     public static ICacheService getCacheService(HazelcastInstance instance) {
         return getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
+    }
+
+    public static ProxyService getProxyService(HazelcastInstance instance) {
+        return getNodeEngineImpl(instance).getProxyService();
+    }
+
+    public static TenantControl getTenantControl(HazelcastInstance hz, ICache<?, ?> cache) {
+        return getNodeEngineImpl(hz)
+                .getTenantControlService()
+                .getTenantControl(ICacheService.SERVICE_NAME, CacheUtil.getDistributedObjectName(cache.getName()));
+    }
+
+    public static TenantControl getTenantControl(HazelcastInstance hz, CacheConfig cacheConfig) {
+        return getNodeEngineImpl(hz)
+                .getTenantControlService()
+                .getTenantControl(ICacheService.SERVICE_NAME, CacheUtil.getDistributedObjectName(cacheConfig.getName()));
     }
 
     public static HazelcastServerCachingProvider createServerCachingProvider(HazelcastInstance instance) {

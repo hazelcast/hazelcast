@@ -84,4 +84,11 @@ public class CacheFetchEntriesOperation extends KeyBasedCacheOperation implement
         }
         fetchSize = in.readInt();
     }
+
+    @Override
+    public boolean requiresTenantContext() {
+        // requires serialization of Objects to Data
+        // when using OBJECT in-memory format
+        return isObjectInMemoryFormat();
+    }
 }

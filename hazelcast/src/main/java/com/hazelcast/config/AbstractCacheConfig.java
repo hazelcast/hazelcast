@@ -564,4 +564,8 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
 
         return true;
     }
+
+    void setSerializationService(SerializationService serializationService) {
+        this.serializationService = serializationService;
+    }
 }

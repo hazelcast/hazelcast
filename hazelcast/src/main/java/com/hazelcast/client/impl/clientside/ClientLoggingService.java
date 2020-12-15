@@ -86,26 +86,6 @@ public class ClientLoggingService implements LoggingService {
         return getOrPutIfAbsent(mapLoggers, clazz.getName(), loggerConstructor);
     }
 
-    @Override
-    public void removeLogger(@Nonnull String name) {
-        checkNotNull(name, "name must not be null");
-        removeLoggerInternal(name);
-    }
-
-    @Override
-    public void removeLogger(@Nonnull Class clazz) {
-        checkNotNull(clazz, "class must not be null");
-        removeLoggerInternal(clazz.getName());
-    }
-
-    private void removeLoggerInternal(String name) {
-        mapLoggers.computeIfPresent(name, (k, v) -> {
-            loggerFactory.removeLogger(name);
-            // delete the entry
-            return null;
-        });
-    }
-
     private class DefaultLogger extends AbstractLogger {
 
         final String name;

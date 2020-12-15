@@ -37,6 +37,7 @@ import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
@@ -359,5 +360,16 @@ public abstract class MapOperation extends AbstractNamedOperation
             return dataValue;
         }
         return mapServiceContext.toData(record.getValue());
+    }
+
+    @Override
+    public TenantControl getTenantControl() {
+        return getNodeEngine().getTenantControlService()
+                              .getTenantControl(MapService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
     }
 }
