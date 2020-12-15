@@ -17,7 +17,9 @@
 package com.hazelcast.internal.config.override;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
@@ -314,6 +316,46 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
 
         assertEquals(2, config.getMapConfig("foo").getBackupCount());
         assertEquals(100, config.getMapConfig("foo").getMaxIdleSeconds());
+    }
+
+    @Test
+    public void shouldHandleMapMerkleTreeConfig() throws Exception {
+        Config config = new Config();
+        MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig()
+          .setEnabled(false)
+          .setDepth(5);
+
+        config.getMapConfig("foo1")
+          .setBackupCount(4)
+          .setMerkleTreeConfig(merkleTreeConfig);
+
+        withEnvironmentVariable("HZ_MAP_FOO1_BACKUPCOUNT", "2")
+          .and("HZ_MAP_FOO1_MERKLETREE_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getMapConfig("foo1").getBackupCount());
+        assertTrue(config.getMapConfig("foo1").getMerkleTreeConfig().isEnabled());
+        assertEquals(5, config.getMapConfig("foo1").getMerkleTreeConfig().getDepth());
+    }
+
+    @Test
+    public void shouldHandleMapEventJournalConfig() throws Exception {
+        Config config = new Config();
+        EventJournalConfig eventJournalConfig = new EventJournalConfig()
+          .setEnabled(false)
+          .setCapacity(10);
+
+        config.getMapConfig("foo1")
+          .setBackupCount(4)
+          .setEventJournalConfig(eventJournalConfig);
+
+        withEnvironmentVariable("HZ_MAP_FOO1_BACKUPCOUNT", "2")
+          .and("HZ_MAP_FOO1_EVENTJOURNAL_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getMapConfig("foo1").getBackupCount());
+        assertTrue(config.getMapConfig("foo1").getEventJournalConfig().isEnabled());
+        assertEquals(10, config.getMapConfig("foo1").getEventJournalConfig().getCapacity());
     }
 
     @Test
