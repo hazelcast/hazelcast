@@ -16,15 +16,15 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
-import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCastFunction;
-import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastArithmeticOperator;
-import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastUnaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastFloorCeilFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastRandFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastRoundTruncateFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastSignFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastArithmeticOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastUnaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
@@ -48,6 +48,7 @@ import org.apache.calcite.sql.fun.SqlCase;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
+import org.apache.calcite.sql.validate.SqlNameMatchers;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -216,7 +217,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                     null,
                     operator.getSyntax(),
                     resolvedOperators,
-                    validator.getCatalogReader().nameMatcher()
+                    SqlNameMatchers.withCaseSensitive(false)
                 );
 
                 if (resolvedOperators.isEmpty()) {

@@ -40,10 +40,12 @@ import static junit.framework.TestCase.fail;
  * Ensure that nested function call derive argument types as expected. This might not be the case if the
  * {@code HazelcastOperandTypeCheckerAware} doesn't work  properly, and the operand type information is not
  * resolved recursively.
+ * <p>
+ * Also ensures that function names are case-insensitive.
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class NestedExpressionIntegrationTest extends ExpressionTestSupport {
+public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     @Override
     public void before0() {
         put(1);
@@ -71,7 +73,7 @@ public class NestedExpressionIntegrationTest extends ExpressionTestSupport {
             String testMethodName = "test_" + field.getName();
 
             try {
-                NestedExpressionIntegrationTest.class.getMethod(testMethodName);
+                NestingAndCasingExpressionTest.class.getMethod(testMethodName);
             } catch (NoSuchMethodException e) {
                 missingMethodNames.add(testMethodName);
             }
@@ -90,276 +92,281 @@ public class NestedExpressionIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void test_CAST() {
-        checkValue0(sql("CAST(? AS INTEGER) || CAST(? AS INTEGER)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("CAST(? AS INTEGER) || CAST(? AS INTEGER)"), 1, 1);
     }
 
     @Test
     public void test_AND() {
-        checkValue0(sql("(? AND ?) || (? AND ?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, true, true, true, true);
+        check(sql("(? AND ?) || (? AND ?)"), true, true, true, true);
     }
 
     @Test
     public void test_OR() {
-        checkValue0(sql("(? OR ?) || (? OR ?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, true, true, true, true);
+        check(sql("(? OR ?) || (? OR ?)"), true, true, true, true);
     }
 
     @Test
     public void test_NOT() {
-        checkValue0(sql("(NOT(?)) || (NOT(?))"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, true, true);
+        check(sql("(NOT(?)) || (NOT(?))"), true, true);
     }
 
     @Test
     public void test_EQUALS() {
-        checkValue0(sql("(1=?) || (1=?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("(1=?) || (1=?)"), 1, 1);
     }
 
     @Test
     public void test_NOT_EQUALS() {
-        checkValue0(sql("(1!=?) || (1!=?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("(1!=?) || (1!=?)"), 1, 1);
     }
 
     @Test
     public void test_GREATER_THAN() {
-        checkValue0(sql("(1>?) || (1>?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("(1>?) || (1>?)"), 1, 1);
     }
 
     @Test
     public void test_GREATER_THAN_OR_EQUAL() {
-        checkValue0(sql("(1>=?) || (1>=?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("(1>=?) || (1>=?)"), 1, 1);
     }
 
     @Test
     public void test_LESS_THAN() {
-        checkValue0(sql("(1<?) || (1<?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("(1<?) || (1<?)"), 1, 1);
     }
 
     @Test
     public void test_LESS_THAN_OR_EQUAL() {
-        checkValue0(sql("(1<=?) || (1<=?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("(1<=?) || (1<=?)"), 1, 1);
     }
 
     @Test
     public void test_PLUS() {
-        checkValue0(sql("(1+?) || (1+?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("(1+?) || (1+?)"), 1, 1);
     }
 
     @Test
     public void test_MINUS() {
-        checkValue0(sql("(1-?) || (1-?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("(1-?) || (1-?)"), 1, 1);
     }
 
     @Test
     public void test_MULTIPLY() {
-        checkValue0(sql("(1*?) || (1*?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("(1*?) || (1*?)"), 1, 1);
     }
 
     @Test
     public void test_DIVIDE() {
-        checkValue0(sql("(1/?) || (1/?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("(1/?) || (1/?)"), 1, 1);
     }
 
     @Test
     public void test_UNARY_PLUS() {
-        checkValue0(sql("(+?) || (+?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("(+?) || (+?)"), 1, 1);
     }
 
     @Test
     public void test_UNARY_MINUS() {
-        checkValue0(sql("(-?) || (-?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("(-?) || (-?)"), 1, 1);
     }
 
     @Test
     public void test_IS_TRUE() {
-        checkValue0(sql("(? IS TRUE) || (? IS TRUE)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, false, false);
+        check(sql("(? IS TRUE) || (? IS TRUE)"), false, false);
     }
 
     @Test
     public void test_IS_NOT_TRUE() {
-        checkValue0(sql("(? IS NOT TRUE) || (? IS NOT TRUE)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, false, false);
+        check(sql("(? IS NOT TRUE) || (? IS NOT TRUE)"), false, false);
     }
 
     @Test
     public void test_IS_FALSE() {
-        checkValue0(sql("(? IS FALSE) || (? IS FALSE)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, false, false);
+        check(sql("(? IS FALSE) || (? IS FALSE)"), false, false);
     }
 
     @Test
     public void test_IS_NOT_FALSE() {
-        checkValue0(sql("(? IS NOT FALSE) || (? IS NOT FALSE)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, false, false);
+        check(sql("(? IS NOT FALSE) || (? IS NOT FALSE)"), false, false);
     }
 
     @Test
     public void test_IS_NULL() {
-        checkValue0(sql("(? IS NULL) || (? IS NULL)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("(? IS NULL) || (? IS NULL)"), 1, 1);
     }
 
     @Test
     public void test_IS_NOT_NULL() {
-        checkValue0(sql("(? IS NOT NULL) || (? IS NOT NULL)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("(? IS NOT NULL) || (? IS NOT NULL)"), 1, 1);
     }
 
     @Test
     public void test_ABS() {
-        checkValue0(sql("ABS(?) || ABS(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("ABS(?) || ABS(?)"), 1, 1);
     }
 
     @Test
     public void test_SIGN() {
-        checkValue0(sql("SIGN(?) || SIGN(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("SIGN(?) || SIGN(?)"), 1, 1);
     }
 
     @Test
     public void test_RAND() {
-        checkValue0(sql("RAND(?) || RAND(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("RAND(?) || RAND(?)"), 1, 1);
     }
 
     @Test
     public void test_COS() {
-        checkValue0(sql("COS(?) || COS(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("COS(?) || COS(?)"), 1, 1);
     }
 
     @Test
     public void test_SIN() {
-        checkValue0(sql("SIN(?) || SIN(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("SIN(?) || SIN(?)"), 1, 1);
     }
 
     @Test
     public void test_TAN() {
-        checkValue0(sql("TAN(?) || TAN(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("TAN(?) || TAN(?)"), 1, 1);
     }
 
     @Test
     public void test_COT() {
-        checkValue0(sql("COT(?) || COT(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("COT(?) || COT(?)"), 1, 1);
     }
 
     @Test
     public void test_ACOS() {
-        checkValue0(sql("ACOS(?) || ACOS(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("ACOS(?) || ACOS(?)"), 1, 1);
     }
 
     @Test
     public void test_ASIN() {
-        checkValue0(sql("ASIN(?) || ASIN(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("ASIN(?) || ASIN(?)"), 1, 1);
     }
 
     @Test
     public void test_ATAN() {
-        checkValue0(sql("ATAN(?) || ATAN(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("ATAN(?) || ATAN(?)"), 1, 1);
     }
 
     @Test
     public void test_EXP() {
-        checkValue0(sql("EXP(?) || EXP(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("EXP(?) || EXP(?)"), 1, 1);
     }
 
     @Test
     public void test_LN() {
-        checkValue0(sql("LN(?) || LN(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("LN(?) || LN(?)"), 1, 1);
     }
 
     @Test
     public void test_LOG10() {
-        checkValue0(sql("LOG10(?) || LOG10(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("LOG10(?) || LOG10(?)"), 1, 1);
     }
 
     @Test
     public void test_DEGREES() {
-        checkValue0(sql("DEGREES(?) || DEGREES(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("DEGREES(?) || DEGREES(?)"), 1, 1);
     }
 
     @Test
     public void test_RADIANS() {
-        checkValue0(sql("RADIANS(?) || RADIANS(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("RADIANS(?) || RADIANS(?)"), 1, 1);
     }
 
     @Test
     public void test_FLOOR() {
-        checkValue0(sql("FLOOR(?) || FLOOR(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("FLOOR(?) || FLOOR(?)"), 1, 1);
     }
 
     @Test
     public void test_CEIL() {
-        checkValue0(sql("CEIL(?) || CEIL(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("CEIL(?) || CEIL(?)"), 1, 1);
     }
     @Test
     public void test_ROUND() {
-        checkValue0(sql("ROUND(?) || ROUND(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("ROUND(?) || ROUND(?)"), 1, 1);
     }
 
     @Test
     public void test_TRUNCATE() {
-        checkValue0(sql("TRUNCATE(?) || TRUNCATE(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, 1, 1);
+        check(sql("TRUNCATE(?) || TRUNCATE(?)"), 1, 1);
     }
 
     @Test
     public void test_CONCAT() {
-        checkValue0(sql("(? || ?) || (? || ?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, "a", "b", "c", "d");
+        check(sql("(? || ?) || (? || ?)"), "a", "b", "c", "d");
     }
 
     @Test
     public void test_LIKE() {
-        checkValue0(sql("(? LIKE ?) || (? LIKE ?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, "a", "a", "b", "b");
+        check(sql("(? LIKE ?) || (? LIKE ?)"), "a", "a", "b", "b");
     }
 
     @Test
     public void test_SUBSTRING() {
-        checkValue0(sql("SUBSTRING(? FROM ?) || SUBSTRING(? FROM ?) "), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, "a", 1, "b", 1);
+        check(sql("SUBSTRING(? FROM ?) || SUBSTRING(? FROM ?) "), "a", 1, "b", 1);
     }
 
     @Test
     public void test_TRIM() {
-        checkValue0(sql("TRIM(LEADING ? FROM ?) || RTRIM(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, "1", "1", "2");
+        check(sql("TRIM(LEADING ? FROM ?) || RTRIM(?)"), "1", "1", "2");
     }
 
     @Test
     public void test_RTRIM() {
-        checkValue0(sql("RTRIM(?) || RTRIM(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, "1", "1");
+        check(sql("RTRIM(?) || RTRIM(?)"), "1", "1");
     }
 
     @Test
     public void test_LTRIM() {
-        checkValue0(sql("LTRIM(?) || LTRIM(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, "1", "1");
+        check(sql("LTRIM(?) || LTRIM(?)"), "1", "1");
     }
 
     @Test
     public void test_BTRIM() {
-        checkValue0(sql("BTRIM(?) || BTRIM(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, "1", "1");
+        check(sql("BTRIM(?) || BTRIM(?)"), "1", "1");
     }
 
     @Test
     public void test_ASCII() {
-        checkValue0(sql("ASCII(?) || ASCII(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, "1", "1");
+        check(sql("ASCII(?) || ASCII(?)"), "1", "1");
     }
 
     @Test
     public void test_INITCAP() {
-        checkValue0(sql("INITCAP(?) || INITCAP(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, "1", "1");
+        check(sql("INITCAP(?) || INITCAP(?)"), "1", "1");
     }
 
     @Test
     public void test_CHAR_LENGTH() {
-        checkValue0(sql("CHAR_LENGTH(?) || CHAR_LENGTH(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, "1", "1");
+        check(sql("CHAR_LENGTH(?) || CHAR_LENGTH(?)"), "1", "1");
     }
 
     @Test
     public void test_CHARACTER_LENGTH() {
-        checkValue0(sql("CHARACTER_LENGTH(?) || CHARACTER_LENGTH(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, "1", "1");
+        check(sql("CHARACTER_LENGTH(?) || CHARACTER_LENGTH(?)"), "1", "1");
     }
 
     @Test
     public void test_LENGTH() {
-        checkValue0(sql("LENGTH(?) || LENGTH(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, "1", "1");
+        check(sql("LENGTH(?) || LENGTH(?)"), "1", "1");
     }
 
     @Test
     public void test_LOWER() {
-        checkValue0(sql("LOWER(?) || LOWER(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, "1", "2");
+        check(sql("LOWER(?) || LOWER(?)"), "1", "2");
     }
 
     @Test
     public void test_UPPER() {
-        checkValue0(sql("UPPER(?) || UPPER(?)"), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, "1", "2");
+        check(sql("UPPER(?) || UPPER(?)"), "1", "2");
+    }
+
+    private void check(String sql, Object... params) {
+        checkValue0(sql, SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
+        checkValue0(sql.toLowerCase(), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
     }
 
     private String sql(String expression) {
