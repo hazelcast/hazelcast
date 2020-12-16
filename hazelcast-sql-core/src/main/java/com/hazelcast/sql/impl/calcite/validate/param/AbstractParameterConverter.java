@@ -92,9 +92,9 @@ public abstract class AbstractParameterConverter implements ParameterConverter {
         String context;
 
         if (line == endLine && col == endCol) {
-            context = String.format("At line %s, column %s", line, col);
+            context = String.format("At line %d, column %d", line, col);
         } else {
-            context = String.format("From line %s, column %s to line %s, column %s", line, col, endLine, endCol);
+            context = String.format("From line %d, column %d to line %d, column %d", line, col, endLine, endCol);
         }
 
         return context + ": " + message;

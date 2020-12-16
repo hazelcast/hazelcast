@@ -73,7 +73,7 @@ public final class HazelcastAndOrPredicate extends HazelcastBinaryOperator {
     @Override
     public boolean validRexOperands(int count, Litmus litmus) {
         // Allow for more than two operands similarly to Calcite built-in AND/OR operators.
-        // We ooverride the method because Calcite returns "true" only for the instances of the original operators.
+        // We override the method because Calcite returns "true" only for the instances of the original operators.
         if (count > 2) {
             return true;
         }
