@@ -215,6 +215,13 @@ public class SqlInternalService {
         return clientStateRegistry;
     }
 
+    /**
+     * For testing only.
+     */
+    public void setStateCheckFrequency(long frequency) {
+        stateRegistryUpdater.setStateCheckFrequency(frequency);
+    }
+
     private void prepareParameters(Plan plan, List<Object> params) {
         assert params != null;
         QueryParameterMetadata parameterMetadata = plan.getParameterMetadata();

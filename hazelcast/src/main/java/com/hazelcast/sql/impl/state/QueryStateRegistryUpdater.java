@@ -42,7 +42,7 @@ public class QueryStateRegistryUpdater {
     private final QueryClientStateRegistry clientStateRegistry;
     private final QueryOperationHandler operationHandler;
     private final PlanCacheChecker planCacheChecker;
-    private final long stateCheckFrequency;
+    private volatile long stateCheckFrequency;
 
     /** Worker performing periodic state check. */
     private final Worker worker;
@@ -76,6 +76,13 @@ public class QueryStateRegistryUpdater {
 
     public void shutdown() {
         worker.stop();
+    }
+
+    /**
+     * For testing only.
+     */
+    public void setStateCheckFrequency(long stateCheckFrequency) {
+        this.stateCheckFrequency = stateCheckFrequency;
     }
 
     private final class Worker implements Runnable {

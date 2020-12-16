@@ -445,7 +445,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     }
 
     private QueryExecuteOperation createExecuteOperation(UUID toMemberId) {
-        PlanNode node = new ParticipantNode(
+        PlanNode node = new TestNode(
             1, new ReceivePlanNode(2, EDGE_ID, Collections.singletonList(QueryDataType.INT))
         );
 
@@ -615,13 +615,12 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         return internalService;
     }
 
-    @SuppressWarnings("unused")
-    private static class ParticipantNode extends UniInputPlanNode implements CreateExecPlanNodeVisitorCallback {
-        private ParticipantNode() {
+    private static class TestNode extends UniInputPlanNode implements CreateExecPlanNodeVisitorCallback {
+        private TestNode() {
             // No-op.
         }
 
-        private ParticipantNode(int id, PlanNode upstream) {
+        private TestNode(int id, PlanNode upstream) {
             super(id, upstream);
         }
 
@@ -632,26 +631,39 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
 
         @Override
         public void onVisit(CreateExecPlanNodeVisitor visitor) {
-            visitor.setExec(new ParticipantExec(id, visitor.pop()));
+            visitor.setExec(new TestExec(id, visitor.pop()));
         }
     }
 
-    private static class ParticipantExec extends AbstractUpstreamAwareExec {
+    private static class TestExec extends AbstractUpstreamAwareExec {
 
-        private ParticipantExec(int id, Exec upstream) {
+        private boolean consumed1;
+        private boolean consumed2;
+
+        private TestExec(int id, Exec upstream) {
             super(id, upstream);
         }
 
         @Override
         protected IterationResult advance0() {
-            testState.onAdvance();
-
             while (true) {
                 if (!state.advance()) {
                     return IterationResult.WAIT;
                 }
 
-                testState.pushRows(state.consumeBatch());
+                RowBatch batch = state.consumeBatch();
+
+                for (int i = 0; i < batch.getRowCount(); i++) {
+                    Integer value = batch.getRow(i).get(0);
+
+                    if (value == 1) {
+                        consumed1 = true;
+                    } else {
+                        assert value == 2;
+
+                        consumed2 = true;
+                    }
+                }
 
                 if (state.isDone()) {
                     testState.onCompleted();
