@@ -16,31 +16,39 @@
 
 package com.hazelcast.sql.impl.operation;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryId;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Common class for data exchange operations.
  */
 public abstract class QueryAbstractExchangeOperation extends QueryAbstractIdAwareOperation {
 
-    protected int edgeId;
+    private int edgeId;
+    private UUID targetMemberId;
 
     public QueryAbstractExchangeOperation() {
         // No-op.
     }
 
-    public QueryAbstractExchangeOperation(QueryId queryId, int edgeId) {
+    public QueryAbstractExchangeOperation(QueryId queryId, int edgeId, UUID targetMemberId) {
         super(queryId);
 
         this.edgeId = edgeId;
+        this.targetMemberId = targetMemberId;
     }
 
     public int getEdgeId() {
         return edgeId;
+    }
+
+    public UUID getTargetMemberId() {
+        return targetMemberId;
     }
 
     /**
@@ -51,6 +59,7 @@ public abstract class QueryAbstractExchangeOperation extends QueryAbstractIdAwar
     @Override
     protected final void writeInternal1(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);
+        UUIDSerializationUtil.writeUUID(out, targetMemberId);
 
         writeInternal2(out);
     }
@@ -58,6 +67,7 @@ public abstract class QueryAbstractExchangeOperation extends QueryAbstractIdAwar
     @Override
     protected final void readInternal1(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
+        targetMemberId = UUIDSerializationUtil.readUUID(in);
 
         readInternal2(in);
     }

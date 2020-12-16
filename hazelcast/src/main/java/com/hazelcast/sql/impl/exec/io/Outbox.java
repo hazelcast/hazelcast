@@ -149,6 +149,11 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
 
     @Override
     public void onFlowControl(long ordinal, long remainingMemory) {
+        // The flow control implementation may inform the receiver about the remaining memory at arbitrary times.
+        // It may happen that two flow control messages are reordered, e.g. [2, 100b], then [1, 500b].
+        // We need to ensure that we save only the most relevant information about the remaining memory.
+        // E.g., 100b as in the example above. Therefore, we ignore messages with ordinals less than
+        // the lask known.
         if (lastFlowControlOrdinal < ordinal) {
             this.remainingMemory = remainingMemory;
 

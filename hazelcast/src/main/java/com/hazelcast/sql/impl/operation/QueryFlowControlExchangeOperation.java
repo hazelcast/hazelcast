@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Flow control operation which allows for remote sender to proceed with sending.
@@ -35,8 +36,14 @@ public class QueryFlowControlExchangeOperation extends QueryAbstractExchangeOper
         // No-op.
     }
 
-    public QueryFlowControlExchangeOperation(QueryId queryId, int edgeId, long ordinal, long remainingMemory) {
-        super(queryId, edgeId);
+    public QueryFlowControlExchangeOperation(
+        QueryId queryId,
+        int edgeId,
+        UUID targetMemberId,
+        long ordinal,
+        long remainingMemory
+    ) {
+        super(queryId, edgeId, targetMemberId);
 
         assert remainingMemory >= 0L;
 

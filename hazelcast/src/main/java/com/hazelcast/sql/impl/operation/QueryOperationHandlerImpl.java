@@ -51,7 +51,11 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     private final NodeServiceProvider nodeServiceProvider;
     private final InternalSerializationService serializationService;
     private final QueryStateRegistry stateRegistry;
+
+    /** Pool to execute query fragments. */
     private final QueryOperationWorkerPool fragmentPool;
+
+    /** Pool to execute system messages (see {@link QueryOperation#isSystem()}). */
     private final QueryOperationWorkerPool systemPool;
     private final int outboxBatchSize;
     private final FlowControlFactory flowControlFactory;
@@ -158,12 +162,10 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     public void execute(QueryOperation operation) {
         if (operation instanceof QueryExecuteOperation) {
             handleExecute((QueryExecuteOperation) operation);
-        } else if (operation instanceof QueryBatchExchangeOperation) {
-            handleBatch((QueryBatchExchangeOperation) operation);
+        } else if (operation instanceof QueryAbstractExchangeOperation) {
+            handleExchange((QueryAbstractExchangeOperation) operation);
         } else if (operation instanceof QueryCancelOperation) {
             handleCancel((QueryCancelOperation) operation);
-        } else if (operation instanceof QueryFlowControlExchangeOperation) {
-            handleFlowControl((QueryFlowControlExchangeOperation) operation);
         } else if (operation instanceof QueryCheckOperation) {
             handleCheck((QueryCheckOperation) operation);
         } else if (operation instanceof QueryCheckResponseOperation) {
@@ -184,13 +186,13 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         QueryState state = stateRegistry.onDistributedQueryStarted(localMemberId, operation.getQueryId(), this, false);
 
         if (state == null) {
-            // The query is already cancelled. This may happen on the local member only when a user cancelled the query
-            // before the execute request is processed. No-op.
+            // The query is already cancelled. This may happen on the local member when a user cancelled the query
+            // before the execute request is processed. Ignore.
             return;
         }
 
         if (state.isCancelled()) {
-            // Race condition when query start request arrived after query cancel
+            // Race condition when query start request arrived after query cancel. Clean the state and return.
             stateRegistry.onQueryCompleted(state.getQueryId());
 
             return;
@@ -245,7 +247,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         }
     }
 
-    private void handleBatch(QueryBatchExchangeOperation operation) {
+    private void handleExchange(QueryAbstractExchangeOperation operation) {
         UUID localMemberId = getLocalMemberId();
 
         if (!localMemberId.equals(operation.getTargetMemberId())) {
@@ -257,11 +259,14 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         QueryState state = stateRegistry.onDistributedQueryStarted(localMemberId, operation.getQueryId(), this, false);
 
         if (state == null) {
+            // Batch arrived to the initiator member, but there is no associated state.
+            // It means that the query is already completed, ignore.
             return;
         }
 
         if (state.isCancelled()) {
-            // Returned a batch for a cancelled query, ignore.
+            // Received a batch for a cancelled query, ignore. The state will be cleared
+            // by either "execute" or "check" message.
             return;
         }
 
@@ -294,25 +299,6 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             );
 
             state.cancel(error, false);
-        }
-    }
-
-    private void handleFlowControl(QueryFlowControlExchangeOperation operation) {
-        QueryState state = stateRegistry.getState(operation.getQueryId());
-
-        if (state == null) {
-            return;
-        }
-
-        if (state.isCancelled()) {
-            return;
-        }
-
-        QueryFragmentExecutable fragmentExecutable = state.getDistributedState().onOperation(operation);
-
-        if (fragmentExecutable != null) {
-            // Fragment is scheduled if the query is already initialized.
-            fragmentExecutable.schedule();
         }
     }
 
