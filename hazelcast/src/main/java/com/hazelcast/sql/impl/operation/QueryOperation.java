@@ -44,6 +44,9 @@ public abstract class QueryOperation implements IdentifiedDataSerializable {
         this.callerId = callerId;
     }
 
+    /**
+     * @return {@code true} if the operation should be executed in the system pool
+     */
     public boolean isSystem() {
         return false;
     }
