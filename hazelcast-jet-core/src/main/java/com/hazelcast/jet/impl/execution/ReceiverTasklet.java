@@ -46,6 +46,7 @@ import java.util.Queue;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
+import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static java.lang.Math.ceil;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -124,7 +125,7 @@ public class ReceiverTasklet implements Tasklet {
             OutboundCollector collector, InternalSerializationService serializationService,
             int rwinMultiplier, int flowControlPeriodMs, LoggingService loggingService,
             Address sourceAddress, int ordinal, String destinationVertexName,
-            Connection memberConnection
+            Connection memberConnection, String jobPrefix
     ) {
         this.collector = collector;
         this.serializationService = serializationService;
@@ -134,8 +135,8 @@ public class ReceiverTasklet implements Tasklet {
         this.ordinalString = "" + ordinal;
         this.destinationVertexName = destinationVertexName;
         this.memberConnection = memberConnection;
-        String loggerName = String.format("%s.receiverFor:%s#%d", getClass().getName(), destinationVertexName, ordinal);
-        this.logger = loggingService.getLogger(loggerName);
+        String prefix = String.format("%s/receiverFor:%s#%d", jobPrefix, destinationVertexName, ordinal);
+        this.logger = prefixedLogger(loggingService.getLogger(getClass()), prefix);
         this.receiveWindowCompressed = INITIAL_RECEIVE_WINDOW_COMPRESSED;
     }
 

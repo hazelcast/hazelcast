@@ -442,10 +442,6 @@ public final class Util {
         return name + '-' + index;
     }
 
-    public static String sanitizeLoggerNamePart(String name) {
-        return name.replace('.', '_');
-    }
-
     public static void doWithClassLoader(ClassLoader cl, RunnableEx action) {
         Thread currentThread = Thread.currentThread();
         ClassLoader previousCl = currentThread.getContextClassLoader();

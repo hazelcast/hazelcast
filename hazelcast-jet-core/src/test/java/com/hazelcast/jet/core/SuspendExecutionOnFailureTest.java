@@ -129,6 +129,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
         dag.newVertex("faulty", () -> new MockP().setCompleteError(MOCK_ERROR));
 
         // When
+        jobConfig.setName("faultyJob");
         Job job = jet().newJob(dag, jobConfig);
 
         // Then
@@ -138,7 +139,8 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
         assertThat(job.getSuspensionCause().errorCause())
                 .isNotNull()
                 .matches(error -> error.matches("(?s)Execution failure:\n" +
-                        "com.hazelcast.jet.JetException: Exception in ProcessorTasklet\\{faulty#[0-9]*}: " +
+                        "com.hazelcast.jet.JetException: Exception in ProcessorTasklet" +
+                        "\\{faultyJob/faulty#[0-9]+}: " +
                         "java.lang.AssertionError: mock error.*"));
 
         cancelAndJoin(job);

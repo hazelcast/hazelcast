@@ -82,6 +82,8 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.WAITING_FOR_SNAPSH
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
+import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
 import static com.hazelcast.jet.impl.util.Util.lazyAdd;
@@ -172,7 +174,9 @@ public class ProcessorTasklet implements Tasklet {
                                     .sorted(comparing(OutboundEdgeStream::ordinal))
                                     .toArray(OutboundEdgeStream[]::new);
         this.ssContext = ssContext;
-        this.logger = getLogger(context);
+        String prefix = prefix(context.jobConfig().getName(),
+                context.jobId(), context.vertexName(), context.globalProcessorIndex());
+        this.logger = prefixedLogger(getLogger(context), prefix);
         this.isSource = isSource;
 
         instreamCursor = popInstreamGroup();
@@ -192,7 +196,7 @@ public class ProcessorTasklet implements Tasklet {
             justification = "jetInstance() can be null in TestProcessorContext")
     private ILogger getLogger(@Nonnull Context context) {
         return context.jetInstance() != null
-                ? context.jetInstance().getHazelcastInstance().getLoggingService().getLogger(getClass() + "." + toString())
+                ? context.jetInstance().getHazelcastInstance().getLoggingService().getLogger(getClass())
                 : Logger.getLogger(getClass());
     }
 
@@ -546,8 +550,9 @@ public class ProcessorTasklet implements Tasklet {
 
     @Override
     public String toString() {
-        String jobPrefix = context.jobConfig().getName() == null ? "" : context.jobConfig().getName() + "/";
-        return "ProcessorTasklet{" + jobPrefix + context.vertexName() + '#' + context.globalProcessorIndex() + '}';
+        String prefix = prefix(context.jobConfig().getName(),
+                context.jobId(), context.vertexName(), context.globalProcessorIndex());
+        return "ProcessorTasklet{" + prefix + '}';
     }
 
     private void observeBarrier(int ordinal, SnapshotBarrier barrier) {
