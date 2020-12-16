@@ -164,7 +164,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             }
         }
 
-        // Delegate ot Apache Calcite.
+        // Delegate to Apache Calcite.
         RexNode convertedOperand = blackboard.convertExpression(call.operand(0));
 
         return getRexBuilder().makeCast(to, convertedOperand);

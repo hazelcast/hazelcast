@@ -19,8 +19,12 @@ package com.hazelcast.sql.impl.calcite.validate.literal;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlLiteral;
+import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+/**
+ * A convenient class to resolve literal types. See {@link LiteralUtils#literal(SqlNode)}.
+ */
 public abstract class Literal {
 
     protected final SqlLiteral original;
