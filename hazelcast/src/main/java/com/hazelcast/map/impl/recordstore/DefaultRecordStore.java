@@ -161,15 +161,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                             boolean populateIndexes) {
         Record newRecord = createRecord(dataKey, replicatedRecord, nowInMillis);
         storage.put(dataKey, newRecord);
-        getExpirySystem().addExpiry0(dataKey, replicatedRecord.getTtl(),
-                replicatedRecord.getMaxIdle(), replicatedRecord.getExpirationTime());
+        getExpirySystem().addExpiry(dataKey, replicatedRecord.getTtl(),
+                replicatedRecord.getMaxIdle(), nowInMillis);
         mutationObserver.onReplicationPutRecord(dataKey, newRecord, populateIndexes);
         updateStatsOnPut(replicatedRecord.getHits(), nowInMillis);
         return newRecord;
     }
 
     @Override
-    public Record putReplicatedRecord(Data dataKey, Record replicatedRecord, ExpiryMetadata expiryMetadata,
+    public Record putReplicatedRecord(Data dataKey, Record replicatedRecord,
+                                      ExpiryMetadata expiryMetadata,
                                       boolean populateIndexes, long nowInMillis) {
         Record newRecord = createRecord(dataKey, replicatedRecord, nowInMillis);
         storage.put(dataKey, newRecord);

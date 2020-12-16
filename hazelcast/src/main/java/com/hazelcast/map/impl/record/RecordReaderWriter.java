@@ -30,7 +30,9 @@ import static com.hazelcast.internal.nio.IOUtil.writeData;
  * Used when reading and writing records
  * for backup and replication operations
  */
+// TODO Rolling upgrade: which record type will be used in which cluster-version?s
 public enum RecordReaderWriter {
+
     DATA_RECORD_READER_WRITER(TypeId.DATA_RECORD_TYPE_ID) {
         @Override
         void writeRecord(ObjectDataOutput out,
@@ -72,7 +74,6 @@ public enum RecordReaderWriter {
 
             expiryMetadata.setRawTtl(record.getRawTtl());
             expiryMetadata.setRawMaxIdle(record.getRawMaxIdle());
-            expiryMetadata.setRawExpirationTime(record.getRawExpirationTime());
             return record;
         }
 
