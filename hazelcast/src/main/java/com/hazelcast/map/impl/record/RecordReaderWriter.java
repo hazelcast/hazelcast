@@ -62,13 +62,17 @@ public enum RecordReaderWriter {
         public Record readRecord(ObjectDataInput in, ExpiryMetadata expiryMetadata) throws IOException {
             DataRecord record = new DataRecord();
             record.setValue(readData(in));
-            expiryMetadata.setRawTtl(in.readInt());
-            expiryMetadata.setMaxIdle(in.readInt());
+            record.setRawTtl(in.readInt());
+            record.setMaxIdle(in.readInt());
             record.setRawCreationTime(in.readInt());
             record.setRawLastAccessTime(in.readInt());
             record.setRawLastUpdateTime(in.readInt());
             record.setHits(in.readInt());
             record.setVersion(in.readLong());
+
+            expiryMetadata.setRawTtl(record.getRawTtl());
+            expiryMetadata.setMaxIdle(record.getRawMaxIdle());
+            expiryMetadata.setExpirationTime(record.getExpirationTime());
             return record;
         }
 
@@ -122,15 +126,19 @@ public enum RecordReaderWriter {
         public Record readRecord(ObjectDataInput in, ExpiryMetadata expiryMetadata) throws IOException {
             DataRecordWithStats record = new DataRecordWithStats();
             record.setValue(readData(in));
-            expiryMetadata.setRawTtl(in.readInt());
-            expiryMetadata.setRawMaxIdle(in.readInt());
+            record.setRawTtl(in.readInt());
+            record.setRawMaxIdle(in.readInt());
             record.setRawCreationTime(in.readInt());
             record.setRawLastAccessTime(in.readInt());
             record.setRawLastUpdateTime(in.readInt());
             record.setHits(in.readInt());
             record.setVersion(in.readLong());
             record.setRawLastStoredTime(in.readInt());
-            expiryMetadata.setRawExpirationTime(in.readInt());
+            record.setRawExpirationTime(in.readInt());
+
+            expiryMetadata.setRawTtl(record.getRawTtl());
+            expiryMetadata.setMaxIdle(record.getRawMaxIdle());
+            expiryMetadata.setExpirationTime(record.getExpirationTime());
             return record;
         }
 

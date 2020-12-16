@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.Data;
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
 class DataRecord extends AbstractRecord<Data> {
+
     protected volatile Data value;
 
     DataRecord(Data value) {

@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -73,58 +74,71 @@ public class RecordReaderWriterTest {
 
     @Test
     public void written_and_read_data_record_are_equal() throws IOException {
-        Record<Data> writtenRecord = populateAndGetRecord(new DataRecord());
-        Record<Data> readRecord = writeReadAndGet(writtenRecord, writtenRecord.getValue());
+        ExpiryMetadata expiryMetadata = newExpiryMetadata();
+        Record<Data> writtenRecord = populateAndGetRecord(new DataRecord(), expiryMetadata);
+        Record<Data> readRecord = writeReadAndGet(writtenRecord, writtenRecord.getValue(), expiryMetadata);
 
         assertEquals(writtenRecord, readRecord);
     }
 
+    @Nonnull
+    private ExpirySystem.ExpiryMetadataImpl newExpiryMetadata() {
+        return new ExpirySystem.ExpiryMetadataImpl();
+    }
+
     @Test
     public void written_and_read_data_record_with_stats_are_equal() throws IOException {
-        Record<Data> writtenRecord = populateAndGetRecord(new DataRecordWithStats());
-        Record<Data> readRecord = writeReadAndGet(writtenRecord, writtenRecord.getValue());
+        ExpiryMetadata expiryMetadata = newExpiryMetadata();
+        Record<Data> writtenRecord = populateAndGetRecord(new DataRecordWithStats(), expiryMetadata);
+        Record<Data> readRecord = writeReadAndGet(writtenRecord, writtenRecord.getValue(), expiryMetadata);
 
         assertEquals(writtenRecord, readRecord);
     }
 
     @Test
     public void written_and_read_object_record_are_equal() throws IOException {
-        Record writtenRecord = populateAndGetRecord(new ObjectRecord());
+        ExpiryMetadata expiryMetadata = newExpiryMetadata();
+        Record writtenRecord = populateAndGetRecord(new ObjectRecord(), expiryMetadata);
         Data dataValue = ss.toData(writtenRecord.getValue());
-        Record<Data> readRecord = writeReadAndGet(writtenRecord, dataValue);
+        Record<Data> readRecord = writeReadAndGet(writtenRecord, dataValue, expiryMetadata);
 
         assertEquals(asDataRecord(writtenRecord, dataValue), readRecord);
     }
 
     @Test
     public void written_and_read_object_record_with_stats_are_equal() throws IOException {
-        Record writtenRecord = populateAndGetRecord(new ObjectRecordWithStats());
+        ExpiryMetadata expiryMetadata = newExpiryMetadata();
+        Record writtenRecord = populateAndGetRecord(new ObjectRecordWithStats(), expiryMetadata);
         Data dataValue = ss.toData(writtenRecord.getValue());
-        Record<Data> readRecord = writeReadAndGet(writtenRecord, dataValue);
+        Record<Data> readRecord = writeReadAndGet(writtenRecord, dataValue, expiryMetadata);
 
         assertEquals(asDataRecordWithStats(writtenRecord, dataValue), readRecord);
     }
 
-    private Record populateAndGetRecord(Record writtenRecord) {
+    private Record populateAndGetRecord(Record writtenRecord, ExpiryMetadata expiryMetadata) {
         writtenRecord.setTtl(1);
         writtenRecord.setMaxIdle(2);
         writtenRecord.setVersion(3);
         writtenRecord.setLastUpdateTime(4);
         writtenRecord.setLastAccessTime(5);
         writtenRecord.setLastStoredTime(6);
-        writtenRecord.setCreationTime(7);
-        writtenRecord.setVersion(8);
-        writtenRecord.setHits(9);
+        writtenRecord.setExpirationTime(7);
+        writtenRecord.setCreationTime(8);
+        writtenRecord.setVersion(9);
+        writtenRecord.setHits(10);
         writtenRecord.setValue(ss.toData(11));
+
+        expiryMetadata.setTtl(writtenRecord.getTtl());
+        expiryMetadata.setMaxIdle(writtenRecord.getMaxIdle());
+        expiryMetadata.setExpirationTime(writtenRecord.getExpirationTime());
         return writtenRecord;
     }
 
-    private Record writeReadAndGet(Record expectedRecord, Data dataValue) throws IOException {
+    private Record writeReadAndGet(Record expectedRecord, Data dataValue, ExpiryMetadata expiryMetadata) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         ObjectDataOutputStream out = new ObjectDataOutputStream(outputStream, ss);
-        Records.writeRecord(out, expectedRecord, dataValue, ExpiryMetadata.NULL);
+        Records.writeRecord(out, expectedRecord, dataValue, expiryMetadata);
         ObjectDataInputStream in = new ObjectDataInputStream(new ByteArrayInputStream(outputStream.toByteArray()), ss);
-        ExpiryMetadata expiryMetadata = new ExpirySystem.ExpiryMetadataImpl();
         return Records.readRecord(in, expiryMetadata);
     }
 
