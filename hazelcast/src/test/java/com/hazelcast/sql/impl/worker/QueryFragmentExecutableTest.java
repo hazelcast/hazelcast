@@ -32,7 +32,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -131,8 +130,6 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
         assertEquals(0, stateCallback.getFragmentFinishedInvocationCount());
     }
 
-    // TODO: Fix me
-    @Ignore
     @Test
     public void testSchedule() throws Exception {
         TestStateCallback stateCallback = new TestStateCallback();
@@ -170,7 +167,10 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
             return IterationResult.FETCHED;
         });
 
-        assertTrue(fragmentExecutable.schedule());
+        Thread thread = new Thread(() -> assertTrue(fragmentExecutable.schedule()));
+        thread.setDaemon(true);
+        thread.start();
+
         startLatch.await();
 
         assertFalse(fragmentExecutable.schedule());
