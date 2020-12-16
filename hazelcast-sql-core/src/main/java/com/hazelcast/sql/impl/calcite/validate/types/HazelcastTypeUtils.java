@@ -180,24 +180,6 @@ public final class HazelcastTypeUtils {
     }
 
     /**
-     * @return {@code true} if the given type is a numeric approximate type, {@code false}
-     * otherwise.
-     * <p>
-     * Numeric approximate types are: REAL and DOUBLE.
-     */
-    public static boolean isNumericApproximateType(RelDataType type) {
-        switch (type.getSqlTypeName()) {
-            case FLOAT:
-            case REAL:
-            case DOUBLE:
-                return true;
-
-            default:
-                return false;
-        }
-    }
-
-    /**
      * Selects a type having a higher precedence from the two given types.
      * <p>
      * Type precedence is used to determine resulting types of operators and
