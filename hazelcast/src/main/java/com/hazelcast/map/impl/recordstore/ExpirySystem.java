@@ -254,7 +254,7 @@ public class ExpirySystem {
         for (int i = 0; i < dataKeyAndExpiryReason.size(); i += 2) {
             Data key = (Data) dataKeyAndExpiryReason.get(i);
 
-            System.err.println(mapServiceContext.getNodeEngine().getLocalMember() + ", key=" + mapServiceContext.toObject(key));
+            //System.err.println(mapServiceContext.getNodeEngine().getLocalMember() + ", key=" + mapServiceContext.toObject(key));
 
 
             ExpiryReason reason = (ExpiryReason) dataKeyAndExpiryReason.get(i + 1);

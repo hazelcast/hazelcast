@@ -71,8 +71,8 @@ public enum RecordReaderWriter {
             record.setVersion(in.readLong());
 
             expiryMetadata.setRawTtl(record.getRawTtl());
-            expiryMetadata.setMaxIdle(record.getRawMaxIdle());
-            expiryMetadata.setExpirationTime(record.getExpirationTime());
+            expiryMetadata.setRawMaxIdle(record.getRawMaxIdle());
+            expiryMetadata.setRawExpirationTime(record.getRawExpirationTime());
             return record;
         }
 
@@ -137,8 +137,8 @@ public enum RecordReaderWriter {
             record.setRawExpirationTime(in.readInt());
 
             expiryMetadata.setRawTtl(record.getRawTtl());
-            expiryMetadata.setMaxIdle(record.getRawMaxIdle());
-            expiryMetadata.setExpirationTime(record.getExpirationTime());
+            expiryMetadata.setRawMaxIdle(record.getRawMaxIdle());
+            expiryMetadata.setRawExpirationTime(record.getRawExpirationTime());
             return record;
         }
 
