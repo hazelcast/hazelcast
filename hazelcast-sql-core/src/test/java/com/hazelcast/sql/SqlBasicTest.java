@@ -716,10 +716,6 @@ public class SqlBasicTest extends SqlTestSupport {
         public List<Object> getObjectVal() {
             return objectVal;
         }
-
-        public Object getNullVal() {
-            return nullVal;
-        }
     }
 
     public static class SerializablePojoKey extends AbstractPojoKey implements Serializable {
