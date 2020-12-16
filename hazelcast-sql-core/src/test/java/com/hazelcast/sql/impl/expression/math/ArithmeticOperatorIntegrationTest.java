@@ -20,12 +20,81 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
+import org.junit.Test;
 
 import java.math.BigDecimal;
+
+import static com.hazelcast.sql.SqlColumnType.BIGINT;
+import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
+import static com.hazelcast.sql.SqlColumnType.DECIMAL;
+import static com.hazelcast.sql.SqlColumnType.DOUBLE;
+import static com.hazelcast.sql.SqlColumnType.INTEGER;
+import static com.hazelcast.sql.SqlColumnType.NULL;
+import static com.hazelcast.sql.SqlColumnType.OBJECT;
+import static com.hazelcast.sql.SqlColumnType.SMALLINT;
+import static com.hazelcast.sql.SqlColumnType.TINYINT;
+import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 
 public abstract class ArithmeticOperatorIntegrationTest extends ExpressionTestSupport {
 
     protected abstract String operator();
+
+    @Test
+    public void testVarchar() {
+        checkUnsupportedForAllTypesCommute(CHAR_VAL, VARCHAR);
+        checkUnsupportedForAllTypesCommute(STRING_VAL, VARCHAR);
+    }
+
+    @Test
+    public void testBoolean() {
+        checkUnsupportedForAllTypesCommute(BOOLEAN_VAL, BOOLEAN);
+    }
+
+    @Test
+    public void testObject() {
+        checkUnsupportedForAllTypesCommute(OBJECT_VAL, OBJECT);
+    }
+
+    @Test
+    public void testParameterParameter() {
+        put(1);
+
+        checkFailure0(sql("?", "?"), SqlErrorCode.PARSING, signatureError(NULL, NULL));
+    }
+
+    @Test
+    public void testNullLiteral() {
+        put(1);
+
+        checkFailure0(sql("null", "null"), SqlErrorCode.PARSING, signatureError(NULL, NULL));
+
+        checkFailure0(sql("'foo'", "null"), SqlErrorCode.PARSING, signatureError(VARCHAR, VARCHAR));
+        checkFailure0(sql("null", "'foo'"), SqlErrorCode.PARSING, signatureError(VARCHAR, VARCHAR));
+
+        checkFailure0(sql("true", "null"), SqlErrorCode.PARSING, signatureError(BOOLEAN, BOOLEAN));
+        checkFailure0(sql("null", "true"), SqlErrorCode.PARSING, signatureError(BOOLEAN, BOOLEAN));
+
+        checkValue0(sql("null", 1), TINYINT, null);
+        checkValue0(sql(1, "null"), TINYINT, null);
+
+        checkValue0(sql("null", Byte.MAX_VALUE), SMALLINT, null);
+        checkValue0(sql(Byte.MAX_VALUE, "null"), SMALLINT, null);
+
+        checkValue0(sql("null", Short.MAX_VALUE), INTEGER, null);
+        checkValue0(sql(Short.MAX_VALUE, "null"), INTEGER, null);
+
+        checkValue0(sql("null", Integer.MAX_VALUE), BIGINT, null);
+        checkValue0(sql(Integer.MAX_VALUE, "null"), BIGINT, null);
+
+        checkValue0(sql("null", Long.MAX_VALUE), BIGINT, null);
+        checkValue0(sql(Long.MAX_VALUE, "null"), BIGINT, null);
+
+        checkValue0(sql("null", "1.1"), DECIMAL, null);
+        checkValue0(sql("1.1", "null"), DECIMAL, null);
+
+        checkValue0(sql("null", "1.1E1"), DOUBLE, null);
+        checkValue0(sql("1.1E1", "null"), DOUBLE, null);
+    }
 
     protected void checkUnsupportedForAllTypesCommute(Object field1, SqlColumnType type1) {
         checkSignatureErrorCommute(field1, CHAR_VAL, type1, SqlColumnType.VARCHAR);

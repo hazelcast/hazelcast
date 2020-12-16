@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -36,7 +35,6 @@ import static com.hazelcast.sql.SqlColumnType.DATE;
 import static com.hazelcast.sql.SqlColumnType.DECIMAL;
 import static com.hazelcast.sql.SqlColumnType.DOUBLE;
 import static com.hazelcast.sql.SqlColumnType.INTEGER;
-import static com.hazelcast.sql.SqlColumnType.NULL;
 import static com.hazelcast.sql.SqlColumnType.OBJECT;
 import static com.hazelcast.sql.SqlColumnType.REAL;
 import static com.hazelcast.sql.SqlColumnType.SMALLINT;
@@ -53,17 +51,6 @@ public class DivideOperatorIntegrationTest extends ArithmeticOperatorIntegration
     @Override
     protected String operator() {
         return "/";
-    }
-
-    @Test
-    public void testVarchar() {
-        checkUnsupportedForAllTypesCommute(CHAR_VAL, VARCHAR);
-        checkUnsupportedForAllTypesCommute(STRING_VAL, VARCHAR);
-    }
-
-    @Test
-    public void testBoolean() {
-        checkUnsupportedForAllTypesCommute(BOOLEAN_VAL, BOOLEAN);
     }
 
     @Test
@@ -403,18 +390,6 @@ public class DivideOperatorIntegrationTest extends ArithmeticOperatorIntegration
         checkUnsupportedForAllTypesCommute(LOCAL_TIME_VAL, TIME);
         checkUnsupportedForAllTypesCommute(LOCAL_DATE_TIME_VAL, TIMESTAMP);
         checkUnsupportedForAllTypesCommute(OFFSET_DATE_TIME_VAL, TIMESTAMP_WITH_TIME_ZONE);
-    }
-
-    @Test
-    public void testObject() {
-        checkUnsupportedForAllTypesCommute(OBJECT_VAL, OBJECT);
-    }
-
-    @Test
-    public void testParameterParameter() {
-        put(1);
-
-        checkFailure0(sql("?", "?"), SqlErrorCode.PARSING, signatureError(NULL, NULL));
     }
 
     @Test
