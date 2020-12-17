@@ -431,10 +431,9 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             assertTrue(state.isCancelled());
 
             setStateCheckFrequency(100L);
-            assertQueryNotRegisteredEventually(queryId);
-        } else {
-            assertQueryNotRegisteredEventually(queryId);
         }
+
+        assertQueryNotRegisteredEventually(queryId);
     }
 
     @Test
@@ -447,9 +446,9 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
 
             sendExecute(false);
             assertQueryNotRegisteredEventually(queryId);
-        } {
-            assertQueryNotRegisteredEventually(queryId);
         }
+
+        assertQueryNotRegisteredEventually(queryId);
     }
 
     @Test
@@ -464,10 +463,9 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             assertExecNotCreatedWithDelay(state);
 
             sendExecute(false);
-            assertQueryNotRegisteredEventually(queryId);
-        } else {
-            assertQueryNotRegisteredEventually(queryId);
         }
+
+        assertQueryNotRegisteredEventually(queryId);
     }
 
     private void sendExecute(boolean ordered) {
