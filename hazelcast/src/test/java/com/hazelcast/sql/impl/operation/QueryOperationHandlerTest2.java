@@ -120,8 +120,17 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
     }
 
     @Test
-    public void test_participant_E_B1_B2() {
-        send(initiatorId, participantId, createExecuteOperation(participantId));
+    public void test_participant_E_B1_B2_ordered() {
+        check_participant_E_B1_B2(true);
+    }
+
+    @Test
+    public void test_participant_E_B1_B2_unordered() {
+        check_participant_E_B1_B2(false);
+    }
+
+    public void check_participant_E_B1_B2(boolean ordered) {
+        send(initiatorId, participantId, createExecuteOperation(participantId, ordered));
 
         QueryState state = assertQueryRegisteredEventually(participantService, queryId);
 
@@ -158,9 +167,9 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
         );
     }
 
-    private QueryExecuteOperation createExecuteOperation(UUID targetMemberId) {
+    private QueryExecuteOperation createExecuteOperation(UUID targetMemberId, boolean ordered) {
         TestNode node = new TestNode(
-            1, new ReceivePlanNode(2, EDGE_ID, Collections.singletonList(QueryDataType.INT))
+            1, new ReceivePlanNode(2, EDGE_ID, ordered, Collections.singletonList(QueryDataType.INT))
         );
 
         QueryExecuteOperationFragment fragment = new QueryExecuteOperationFragment(
