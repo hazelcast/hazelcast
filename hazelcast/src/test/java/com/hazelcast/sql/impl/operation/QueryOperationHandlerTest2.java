@@ -104,8 +104,7 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
         initiatorService = sqlInternalService(initiator);
         participantService = sqlInternalService(participant);
 
-        initiatorService.setStateCheckFrequency(STATE_CHECK_FREQUENCY);
-        participantService.setStateCheckFrequency(STATE_CHECK_FREQUENCY);
+        setStateCheckFrequency(Long.MAX_VALUE);
 
         partitionMap = new HashMap<>();
         partitionMap.put(initiatorId, new PartitionIdSet(2, Collections.singletonList(1)));
@@ -146,6 +145,8 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
 
         assertQueryUnregisteredEventually(participantService, queryId);
     }
+
+
 
     private void assertConsumedEventually(TestExec exec, int value) {
         assert value == VALUE_0 || value == VALUE_1;
@@ -203,6 +204,11 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
             last,
             Long.MAX_VALUE
         );
+    }
+
+    private void setStateCheckFrequency(long frequency) {
+        initiatorService.setStateCheckFrequency(frequency);
+        participantService.setStateCheckFrequency(frequency);
     }
 
     private static TestExec getExec(QueryState state) {
