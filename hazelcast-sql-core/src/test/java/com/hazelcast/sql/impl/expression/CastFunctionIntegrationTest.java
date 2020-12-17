@@ -738,7 +738,34 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void testDecimal_literal() {
+    public void testDecimal_literal_small() {
+        put(1);
+
+        String literal = literal("1.1");
+        BigDecimal decimalValue = decimal(literal);
+
+        checkValue0(sql(literal, VARCHAR), VARCHAR, literal);
+        checkFailure0(sql(literal, BOOLEAN), PARSING, castError(DECIMAL, BOOLEAN));
+
+        checkValue0(sql(literal, TINYINT), TINYINT, (byte) 1);
+        checkValue0(sql(literal, SMALLINT), SMALLINT, (short) 1);
+        checkValue0(sql(literal, INTEGER), INTEGER, 1);
+        checkValue0(sql(literal, BIGINT), BIGINT, 1L);
+
+        checkValue0(sql(literal, DECIMAL), DECIMAL, decimalValue);
+        checkValue0(sql(literal, REAL), REAL, decimalValue.floatValue());
+        checkValue0(sql(literal, DOUBLE), DOUBLE, decimalValue.doubleValue());
+
+        checkFailure0(sql(literal, DATE), PARSING, castError(DECIMAL, DATE));
+        checkFailure0(sql(literal, TIME), PARSING, castError(DECIMAL, TIME));
+        checkFailure0(sql(literal, TIMESTAMP), PARSING, castError(DECIMAL, TIMESTAMP));
+        checkFailure0(sql(literal, TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DECIMAL, TIMESTAMP_WITH_TIME_ZONE));
+
+        checkFailure0(sql(literal, OBJECT), PARSING, "CAST function cannot convert literal 1.1 to type OBJECT: Conversion of literals to OBJECT type is not allowed (consider adding an explicit CAST to another expression part)");
+    }
+
+    @Test
+    public void testDecimal_literal_big() {
         put(1);
 
         String literal = literal(Long.MAX_VALUE + "0.1");

@@ -365,9 +365,10 @@ public final class RexToExpression {
         return ConstantExpression.create(value, HazelcastTypeUtils.toHazelcastType(type));
     }
 
-    private static Expression<?> convertNumericLiteral(RexLiteral literal, SqlTypeName type) {
+    private static Expression<?> convertNumericLiteral(RexLiteral literal, SqlTypeName targetType) {
         Object value;
-        switch (type) {
+
+        switch (targetType) {
             case TINYINT:
                 value = literal.getValueAs(Byte.class);
                 break;
@@ -381,7 +382,13 @@ public final class RexToExpression {
                 break;
 
             case BIGINT:
-                value = literal.getValueAs(Long.class);
+                // Calcite incorrectly convers the DECIMAL literal to BIGINT using the "BigDecimal.unscaledValue" method.
+                // We fix it here.
+                if (literal.getTypeName() == SqlTypeName.DECIMAL) {
+                    value = literal.getValueAs(BigDecimal.class).longValue();
+                } else {
+                    value = literal.getValueAs(Long.class);
+                }
                 break;
 
             case DECIMAL:
@@ -397,10 +404,10 @@ public final class RexToExpression {
                 break;
 
             default:
-                throw new IllegalArgumentException("Unsupported literal type: " + type);
+                throw new IllegalArgumentException("Unsupported literal type: " + targetType);
         }
 
-        return ConstantExpression.create(value, HazelcastTypeUtils.toHazelcastType(type));
+        return ConstantExpression.create(value, HazelcastTypeUtils.toHazelcastType(targetType));
     }
 
     private static Expression<?> convertStringLiteral(RexLiteral literal, SqlTypeName type) {
