@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.exec.AbstractUpstreamAwareExec;
@@ -189,6 +190,43 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
         assertQueryNotRegisteredEventually(participantService, queryId);
     }
 
+    @Test
+    public void test_participant_E_B_C() {
+        send(initiatorId, participantId, createExecuteOperation(participantId, false));
+
+        QueryState state = assertQueryRegisteredEventually(participantService, queryId);
+
+        TestExec exec = getExec(state);
+        assertFalse(exec.consumed0);
+        assertFalse(exec.consumed1);
+
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_0));
+        assertConsumedEventually(exec, VALUE_0);
+
+        send(initiatorId, participantId, createCancelOperation(initiatorId));
+        assertQueryNotRegisteredEventually(participantService, queryId);
+    }
+
+    @Test
+    public void test_participant_E_C_B() {
+        send(initiatorId, participantId, createExecuteOperation(participantId, false));
+
+        QueryState state = assertQueryRegisteredEventually(participantService, queryId);
+
+        TestExec exec = getExec(state);
+        assertFalse(exec.consumed0);
+        assertFalse(exec.consumed1);
+
+        send(initiatorId, participantId, createCancelOperation(initiatorId));
+        assertQueryNotRegisteredEventually(participantService, queryId);
+
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_0));
+        state = assertQueryRegisteredEventually(participantService, queryId);
+
+        setStateCheckFrequency(100L);
+        assertQueryNotRegisteredEventually(participantService, queryId);
+    }
+
     private void send(UUID sourceMemberId, UUID targetMemberId, QueryOperation operation) {
         SqlInternalService sourceService = sourceMemberId.equals(initiatorId) ? initiatorService : participantService;
 
@@ -234,6 +272,15 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
             ordinal,
             last,
             Long.MAX_VALUE
+        );
+    }
+
+    private QueryCancelOperation createCancelOperation(UUID sourceMemberId) {
+        return new QueryCancelOperation(
+            queryId,
+            SqlErrorCode.GENERIC,
+            "Error",
+            sourceMemberId
         );
     }
 
