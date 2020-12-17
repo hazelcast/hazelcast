@@ -318,7 +318,12 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             QueryState state = stateRegistry.getState(queryId);
 
             if (state != null) {
+                // Initiate the cancel if the query is not cancelled yet.
                 state.cancel(error, false);
+
+                // If the query is already cancelled, then we need to clear it from the state registry forcefully, because
+                // the cleanup callback is not invoked.
+                stateRegistry.onQueryCompleted(queryId);
             }
         }
     }

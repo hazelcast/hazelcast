@@ -218,8 +218,8 @@ public class SqlInternalService {
     /**
      * For testing only.
      */
-    public void setStateCheckFrequency(long frequency) {
-        stateRegistryUpdater.setStateCheckFrequency(frequency);
+    public QueryStateRegistryUpdater getStateRegistryUpdater() {
+        return stateRegistryUpdater;
     }
 
     private void prepareParameters(Plan plan, List<Object> params) {

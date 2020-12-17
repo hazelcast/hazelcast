@@ -44,7 +44,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -66,6 +65,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests for different combinations of events
  */
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryOperationHandlerTest extends SqlTestSupport {
@@ -78,9 +78,6 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     private static final Duration ASSERT_FALSE_TIMEOUT = Duration.ofMillis(1000L);
 
     private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
-
-    private HazelcastInstanceProxy initiator;
-    private HazelcastInstanceProxy participant;
 
     private UUID initiatorId;
     private UUID participantId;
@@ -99,8 +96,8 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
 
     @Before
     public void before() {
-        initiator = (HazelcastInstanceProxy) factory.newHazelcastInstance();
-        participant = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        HazelcastInstanceProxy initiator = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        HazelcastInstanceProxy participant = (HazelcastInstanceProxy) factory.newHazelcastInstance();
 
         initiatorId = initiator.getLocalEndpoint().getUuid();
         participantId = participant.getLocalEndpoint().getUuid();
@@ -123,6 +120,16 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_participant_E() {
+        send(initiatorId, participantId, createExecuteOperation(participantId, false));
+        assertQueryRegisteredEventually(participantService, queryId);
+
+        setOrphanedQueryStateCheckFrequency(100L);
+        setStateCheckFrequency(100L);
+        assertQueryNotRegisteredEventually(participantService, queryId);
+    }
+
+    @Test
     public void test_participant_E_B1_B2_ordered() {
         check_participant_E_B1_B2(true);
     }
@@ -134,7 +141,6 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
 
     public void check_participant_E_B1_B2(boolean ordered) {
         send(initiatorId, participantId, createExecuteOperation(participantId, ordered));
-
         QueryState state = assertQueryRegisteredEventually(participantService, queryId);
 
         TestExec exec = assertExecCreatedEventually(state);
@@ -391,6 +397,19 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         assertQueryNotRegisteredEventually(participantService, queryId);
     }
 
+    @Test
+    public void test_participant_C_B_E() {
+        send(initiatorId, participantId, createCancelOperation(initiatorId));
+        QueryState state = assertQueryRegisteredEventually(participantService, queryId);
+        assertTrue(state.isCancelled());
+
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_0));
+        assertExecNotCreatedWithDelay(state);
+
+        send(initiatorId, participantId, createExecuteOperation(participantId, false));
+        assertQueryNotRegisteredEventually(participantService, queryId);
+    }
+
     private void send(UUID sourceMemberId, UUID targetMemberId, QueryOperation operation) {
         SqlInternalService sourceService = sourceMemberId.equals(initiatorId) ? initiatorService : participantService;
 
@@ -448,9 +467,14 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         );
     }
 
+    private void setOrphanedQueryStateCheckFrequency(long frequency) {
+        initiatorService.getStateRegistryUpdater().setOrphanedQueryStateCheckFrequency(frequency);
+        participantService.getStateRegistryUpdater().setOrphanedQueryStateCheckFrequency(frequency);
+    }
+
     private void setStateCheckFrequency(long frequency) {
-        initiatorService.setStateCheckFrequency(frequency);
-        participantService.setStateCheckFrequency(frequency);
+        initiatorService.getStateRegistryUpdater().setStateCheckFrequency(frequency);
+        participantService.getStateRegistryUpdater().setStateCheckFrequency(frequency);
     }
 
     private TestExec assertExecCreatedEventually(QueryState state) {
@@ -522,7 +546,8 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     }
 
     private static class TestNode extends UniInputPlanNode implements CreateExecPlanNodeVisitorCallback {
-        private TestNode() {
+        @SuppressWarnings("unused")
+        public TestNode() {
             // No-op.
         }
 

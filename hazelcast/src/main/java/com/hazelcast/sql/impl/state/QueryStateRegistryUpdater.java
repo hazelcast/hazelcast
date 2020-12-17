@@ -37,12 +37,15 @@ import static com.hazelcast.sql.impl.QueryUtils.WORKER_TYPE_STATE_CHECKER;
  */
 public class QueryStateRegistryUpdater {
 
+    private static final long DEFAULT_ORPHANED_QUERY_STATE_CHECK_FREQUENCY = 30_000L;
+
     private final NodeServiceProvider nodeServiceProvider;
     private final QueryStateRegistry stateRegistry;
     private final QueryClientStateRegistry clientStateRegistry;
     private final QueryOperationHandler operationHandler;
     private final PlanCacheChecker planCacheChecker;
     private volatile long stateCheckFrequency;
+    private volatile long orphanedQueryStateCheckFrequency = DEFAULT_ORPHANED_QUERY_STATE_CHECK_FREQUENCY;
 
     /** Worker performing periodic state check. */
     private final Worker worker;
@@ -85,6 +88,13 @@ public class QueryStateRegistryUpdater {
         this.stateCheckFrequency = stateCheckFrequency;
 
         worker.thread.interrupt();
+    }
+
+    /**
+     * For testing only.
+     */
+    public void setOrphanedQueryStateCheckFrequency(long orphanedQueryStateCheckFrequency) {
+        this.orphanedQueryStateCheckFrequency = orphanedQueryStateCheckFrequency;
     }
 
     private final class Worker implements Runnable {
@@ -157,7 +167,7 @@ public class QueryStateRegistryUpdater {
                 }
 
                 // 3. Check whether the query is not initialized for too long. If yes, trigger the check process.
-                if (state.requestQueryCheck(stateCheckFrequency)) {
+                if (state.requestQueryCheck(stateCheckFrequency, orphanedQueryStateCheckFrequency)) {
                     QueryId queryId = state.getQueryId();
 
                     checkMap.computeIfAbsent(queryId.getMemberId(), (key) -> new ArrayList<>(1)).add(queryId);
