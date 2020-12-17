@@ -56,9 +56,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     private static final Config CONFIG = Config.DEFAULT.withIdentifierExpansion(true);
 
-    /** Visitor to rewrite Calcite operators to Hazelcast operators. */
-    private final HazelcastSqlOperatorTable.RewriteVisitor rewriteVisitor;
-
     /** Parameter converter that will be passed to parameter metadata. */
     private final Map<Integer, ParameterConverter> parameterConverterMap = new HashMap<>();
 
@@ -82,8 +79,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         super(operatorTable(extensionOperatorTable), catalogReader, typeFactory, CONFIG.withSqlConformance(conformance));
 
         setTypeCoercion(new HazelcastTypeCoercion(this));
-
-        rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
     }
 
     private static SqlOperatorTable operatorTable(SqlOperatorTable extensionOperatorTable) {
@@ -158,7 +153,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             // the first '+' refers to the standard Calcite SqlStdOperatorTable.PLUS
             // operator and the second '+' refers to HazelcastSqlOperatorTable.PLUS
             // operator.
-            rewritten.accept(rewriteVisitor);
+            rewritten.accept(HazelcastSqlOperatorTable.REWRITE_VISITOR);
         }
 
         return rewritten;
