@@ -85,6 +85,13 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
     }
 
     /**
+     * For testing only.
+     */
+    public Exec getExec() {
+        return exec;
+    }
+
+    /**
      * Add operation to be processed.
      */
     public void addOperation(Object operation) {

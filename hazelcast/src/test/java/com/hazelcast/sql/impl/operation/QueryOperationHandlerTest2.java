@@ -16,12 +16,11 @@
 
 package com.hazelcast.sql.impl.operation;
 
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.config.Config;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlInternalService;
-import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.exec.AbstractUpstreamAwareExec;
 import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitor;
@@ -33,12 +32,15 @@ import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
 import com.hazelcast.sql.impl.plan.node.UniInputPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
+import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,6 +50,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for different combinations of events
@@ -58,6 +67,11 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
 
     private static final int EDGE_ID = 1;
     private static final long STATE_CHECK_FREQUENCY = 100L;
+
+    private static final int VALUE_0 = 0;
+    private static final int VALUE_1 = 1;
+
+    private static final long ASSERT_FALSE_TIMEOUT = 2000L;
 
     private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
 
@@ -73,6 +87,11 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
     private Map<UUID, PartitionIdSet> partitionMap;
 
     private QueryId queryId;
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
 
     @Before
     public void before() {
@@ -95,9 +114,38 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
         queryId = QueryId.create(initiatorId);
     }
 
+    @After
+    public void after() {
+        factory.shutdownAll();
+    }
+
     @Test
-    public void test() {
+    public void test_participant_E_B1_B2() {
         send(initiatorId, participantId, createExecuteOperation(participantId));
+
+        QueryState state = assertQueryRegisteredEventually(participantService, queryId);
+
+        TestExec exec = getExec(state);
+        assertFalse(exec.consumed0);
+        assertFalse(exec.consumed1);
+
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_0));
+        assertConsumedEventually(exec, VALUE_0);
+
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_1));
+        assertConsumedEventually(exec, VALUE_1);
+
+        assertQueryUnregisteredEventually(participantService, queryId);
+    }
+
+    private void assertConsumedEventually(TestExec exec, int value) {
+        assert value == VALUE_0 || value == VALUE_1;
+
+        if (value == VALUE_0) {
+            assertTrueEventually(() -> assertTrue(exec.consumed0));
+        } else {
+            assertTrueEventually(() -> assertTrue(exec.consumed1));
+        }
     }
 
     private void send(UUID sourceMemberId, UUID targetMemberId, QueryOperation operation) {
@@ -132,6 +180,56 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
         );
     }
 
+    private QueryBatchExchangeOperation createBatchOperation(UUID targetMemberId, int value) {
+        long ordinal = value;
+        boolean last = value == 1;
+        ListRowBatch rows = createMonotonicBatch(value, 1);
+
+        return new QueryBatchExchangeOperation(
+            queryId,
+            EDGE_ID,
+            targetMemberId,
+            rows,
+            ordinal,
+            last,
+            Long.MAX_VALUE
+        );
+    }
+
+    private static TestExec getExec(QueryState state) {
+        return (TestExec) state.getDistributedState().getFragments().iterator().next().getExec();
+    }
+
+    private static QueryState assertQueryRegisteredEventually(SqlInternalService service, QueryId queryId) {
+        return assertTrueEventually(() -> {
+            QueryState state0 = service.getStateRegistry().getState(queryId);
+
+            assertNotNull(state0);
+
+            return state0;
+        });
+    }
+
+    private static void assertQueryUnregisteredEventually(SqlInternalService service, QueryId queryId) {
+        assertTrueEventually(() -> {
+            QueryState state0 = service.getStateRegistry().getState(queryId);
+
+            assertNull(state0);
+        }, ASSERT_FALSE_TIMEOUT);
+    }
+
+    private static <T> T assertTrueEventually(Supplier<T> task) {
+        AtomicReference<T> resRef = new AtomicReference<>();
+
+        assertTrueEventually(() -> {
+            T res = task.get();
+
+            resRef.set(res);
+        });
+
+        return resRef.get();
+    }
+
     private static class TestNode extends UniInputPlanNode implements CreateExecPlanNodeVisitorCallback {
         private TestNode() {
             // No-op.
@@ -154,8 +252,8 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
 
     private static class TestExec extends AbstractUpstreamAwareExec {
 
+        private boolean consumed0;
         private boolean consumed1;
-        private boolean consumed2;
 
         private TestExec(int id, Exec upstream) {
             super(id, upstream);
@@ -173,12 +271,12 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
                 for (int i = 0; i < batch.getRowCount(); i++) {
                     Integer value = batch.getRow(i).get(0);
 
-                    if (value == 1) {
-                        consumed1 = true;
+                    if (value == VALUE_0) {
+                        consumed0 = true;
                     } else {
-                        assert value == 2;
+                        assert value == VALUE_1;
 
-                        consumed2 = true;
+                        consumed1 = true;
                     }
                 }
 

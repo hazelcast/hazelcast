@@ -83,6 +83,8 @@ public class QueryStateRegistryUpdater {
      */
     public void setStateCheckFrequency(long stateCheckFrequency) {
         this.stateCheckFrequency = stateCheckFrequency;
+
+        worker.thread.interrupt();
     }
 
     private final class Worker implements Runnable {
@@ -117,13 +119,20 @@ public class QueryStateRegistryUpdater {
         @Override
         public void run() {
             while (!stopped) {
+                long currentStateCheckFrequency = stateCheckFrequency;
+
                 try {
-                    Thread.sleep(stateCheckFrequency);
+                    Thread.sleep(currentStateCheckFrequency);
 
                     checkMemberState();
                     checkClientState();
                     checkPlans();
                 } catch (InterruptedException e) {
+                    if (currentStateCheckFrequency != stateCheckFrequency) {
+                        // Interrupted due to frequency change.
+                        continue;
+                    }
+
                     Thread.currentThread().interrupt();
 
                     break;
@@ -147,7 +156,7 @@ public class QueryStateRegistryUpdater {
                     continue;
                 }
 
-                // 3. Check whether the query is not initialized for too long. If yes, trigger check process.
+                // 3. Check whether the query is not initialized for too long. If yes, trigger the check process.
                 if (state.requestQueryCheck(stateCheckFrequency)) {
                     QueryId queryId = state.getQueryId();
 
