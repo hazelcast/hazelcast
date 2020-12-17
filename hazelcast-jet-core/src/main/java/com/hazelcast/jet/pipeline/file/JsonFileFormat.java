@@ -45,7 +45,7 @@ public class JsonFileFormat<T> implements FileFormat<T> {
     /**
      * Specifies class that data will be deserialized into.
      * If parameter is {@code null} data is deserialized into
-     * {@link com.fasterxml.jackson.jr.stree.JrsObject}.
+     * {@code Map<String, Object>}.
      *
      * @param clazz type of the object to deserialize JSON into
      */

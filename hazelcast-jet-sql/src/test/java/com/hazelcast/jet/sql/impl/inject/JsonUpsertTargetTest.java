@@ -31,6 +31,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
 import static java.time.ZoneOffset.UTC;
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(JUnitParamsRunner.class)
@@ -58,7 +59,7 @@ public class JsonUpsertTargetTest {
 
         target.init();
         nullInjector.set(null);
-        objectInjector.set(new ObjectNode(JsonNodeFactory.instance));
+        objectInjector.set(emptyMap());
         stringInjector.set("string");
         booleanInjector.set(true);
         byteInjector.set((byte) 127);

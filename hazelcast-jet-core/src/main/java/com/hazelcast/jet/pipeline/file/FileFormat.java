@@ -99,9 +99,9 @@ public interface FileFormat<T> extends Serializable {
      * href="https://github.com/FasterXML/jackson-jr">Jackson jr</a>, which
      * supports the basic data types such as strings, numbers, lists and maps,
      * objects with JavaBeans-style getters/setters, as well as public fields.
-     * If parameter is {@code null}, data is deserialized into
-     * {@link com.fasterxml.jackson.jr.stree.JrsObject} but for that case you
-     * may prefer the no-argument {@link #json()} call.
+     * If parameter is {@code null}, data is deserialized into {@code
+     * Map<String, Object>} but for that case you may prefer the no-argument
+     * {@link #json()} call.
      */
     @Nonnull
     static <T> JsonFileFormat<T> json(@Nullable Class<T> clazz) {

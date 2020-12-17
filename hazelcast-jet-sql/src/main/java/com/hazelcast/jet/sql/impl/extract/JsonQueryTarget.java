@@ -16,10 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.extract;
 
-import com.fasterxml.jackson.jr.stree.JrsBoolean;
-import com.fasterxml.jackson.jr.stree.JrsNumber;
-import com.fasterxml.jackson.jr.stree.JrsObject;
-import com.fasterxml.jackson.jr.stree.JrsValue;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryTarget;
@@ -27,18 +23,20 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.IOException;
+import java.util.Map;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 
 @NotThreadSafe
 public class JsonQueryTarget implements QueryTarget {
 
-    private JrsObject json;
+    private Map<String, Object> json;
 
     @Override
+    @SuppressWarnings("unchecked")
     public void setTarget(Object target) {
         try {
-            json = target instanceof JrsObject ? (JrsObject) target : JsonUtil.treeFrom(target);
+            json = target instanceof Map ? (Map<String, Object>) target : JsonUtil.mapFrom(target);
         } catch (IOException e) {
             throw sneakyThrow(e);
         }
@@ -54,21 +52,6 @@ public class JsonQueryTarget implements QueryTarget {
     }
 
     private QueryExtractor createFieldExtractor(String path, QueryDataType type) {
-        return () -> type.convert(extractValue(json, path));
-    }
-
-    private static Object extractValue(JrsObject json, String path) {
-        JrsValue value = json.get(path);
-        if (value == null || value.isNull()) {
-            return null;
-        } else if (value instanceof JrsBoolean) {
-            return ((JrsBoolean) value).booleanValue();
-        } else if (value.isNumber()) {
-            return ((JrsNumber) value).getValue();
-        } else if (value.isValueNode()) {
-            return value.asText();
-        } else {
-            return value;
-        }
+        return () -> type.convert(json.get(path));
     }
 }

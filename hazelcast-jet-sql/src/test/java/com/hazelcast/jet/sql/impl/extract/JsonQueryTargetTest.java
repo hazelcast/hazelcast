@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.extract;
 
-import com.fasterxml.jackson.core.TreeNode;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryTarget;
@@ -32,6 +31,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
@@ -71,11 +71,12 @@ public class JsonQueryTargetTest {
                 + ", \"timestampTz\": \"2020-09-09T12:23:34.2Z\""
                 + ", \"null\": null"
                 + ", \"object\": {}"
+                + ", \"co\": {\"nested\":{}}"
                 + "}";
         return new Object[]{
                 new Object[]{json},
                 new Object[]{json.getBytes(StandardCharsets.UTF_8)},
-                new Object[]{JsonUtil.treeFrom(json)}
+                new Object[]{JsonUtil.mapFrom(json)}
         };
     }
 
@@ -103,7 +104,7 @@ public class JsonQueryTargetTest {
 
         target.setTarget(value);
 
-        assertThat(topExtractor.get()).isInstanceOf(TreeNode.class);
+        assertThat(topExtractor.get()).isInstanceOf(Map.class);
         assertThat(nonExistingExtractor.get()).isNull();
         assertThat(stringExtractor.get()).isEqualTo("string");
         assertThat(booleanExtractor.get()).isEqualTo(true);

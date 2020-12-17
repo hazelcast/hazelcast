@@ -27,6 +27,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Map;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
@@ -103,6 +104,8 @@ class JsonUpsertTarget implements UpsertTarget {
             generator.writeNull();
         } else if (value instanceof TreeNode) {
             generator.writeTree((TreeNode) value);
+        } else if (value instanceof Map) {
+            generator.writeObject(value);
         } else if (value instanceof Boolean) {
             generator.writeBoolean((boolean) value);
         } else if (value instanceof Byte) {

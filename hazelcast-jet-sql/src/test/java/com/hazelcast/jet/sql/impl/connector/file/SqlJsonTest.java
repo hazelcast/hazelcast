@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.file;
 
-import com.fasterxml.jackson.jr.stree.JrsObject;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
@@ -113,7 +112,7 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ")"
         );
 
-        assertComparingFieldByFieldRowsAnyOrder(
+        assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " + name,
                 singletonList(new Row(
                         "string",
@@ -129,7 +128,7 @@ public class SqlJsonTest extends SqlTestSupport {
                         LocalDate.of(2020, 4, 15),
                         LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000),
                         OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
-                        new JrsObject(emptyMap())
+                        emptyMap()
                 ))
         );
     }
@@ -146,7 +145,7 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ")"
         );
 
-        assertComparingFieldByFieldRowsAnyOrder(
+        assertRowsEventuallyInAnyOrder(
                 "SELECT "
                         + "string"
                         + ", \"boolean\""
@@ -179,7 +178,7 @@ public class SqlJsonTest extends SqlTestSupport {
                         "2020-04-15T12:23:34.001",
                         "2020-04-15T12:23:34.200Z",
                         null,
-                        new JrsObject(emptyMap())
+                        emptyMap()
                 ))
         );
     }
@@ -202,7 +201,7 @@ public class SqlJsonTest extends SqlTestSupport {
                         + ", \"timestamp\""
                         + ", \"timestampTz\""
                         + ", \"null\""
-                        + ", object IS NOT NULL"
+                        + ", object"
                         + " FROM TABLE ("
                         + "JSON_FILE ('" + RESOURCES_PATH + "', 'file.json')"
                         + ")",
@@ -221,7 +220,7 @@ public class SqlJsonTest extends SqlTestSupport {
                         "2020-04-15T12:23:34.001",
                         "2020-04-15T12:23:34.200Z",
                         null,
-                        true
+                        emptyMap()
                 ))
         );
     }

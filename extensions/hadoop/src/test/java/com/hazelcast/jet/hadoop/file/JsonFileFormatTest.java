@@ -18,9 +18,6 @@ package com.hazelcast.jet.hadoop.file;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.io.JsonEOFException;
-import com.fasterxml.jackson.jr.stree.JrsNumber;
-import com.fasterxml.jackson.jr.stree.JrsObject;
-import com.fasterxml.jackson.jr.stree.JrsString;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.hadoop.file.model.User;
 import com.hazelcast.jet.pipeline.file.FileFormat;
@@ -29,26 +26,28 @@ import com.hazelcast.jet.pipeline.file.FileSources;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class JsonFileFormatTest extends BaseFileFormatTest {
 
     @Test
     public void shouldReadJsonFile() {
-        FileSourceBuilder<JrsObject> source = FileSources.files(currentDir + "/src/test/resources")
+        FileSourceBuilder<Map<String, Object>> source = FileSources.files(currentDir + "/src/test/resources")
                                                          .glob("file.jsonl")
                                                          .format(FileFormat.json());
 
         assertItemsInSource(source,
                 collected -> assertThat(collected).usingRecursiveFieldByFieldElementComparator()
                                                   .containsOnly(
-                                                          new JrsObject(ImmutableMap.of(
-                                                                  "name", new JrsString("Frantisek"),
-                                                                  "favoriteNumber", new JrsNumber(7))
+                                                          ImmutableMap.of(
+                                                                  "name", "Frantisek",
+                                                                  "favoriteNumber", 7
                                                           ),
-                                                          new JrsObject(ImmutableMap.of(
-                                                                  "name", new JrsString("Ali"),
-                                                                  "favoriteNumber", new JrsNumber(42))
+                                                          ImmutableMap.of(
+                                                                  "name", "Ali",
+                                                                  "favoriteNumber", 42
                                                           )
                                                   )
         );

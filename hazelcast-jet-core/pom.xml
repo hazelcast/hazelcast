@@ -109,11 +109,6 @@
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.jr</groupId>
-            <artifactId>jackson-jr-stree</artifactId>
-            <version>${jackson.jr.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.jr</groupId>
             <artifactId>jackson-jr-objects</artifactId>
             <version>${jackson.jr.version}</version>
         </dependency>

@@ -16,14 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.connector.file;
 
-import com.fasterxml.jackson.jr.stree.JrsBoolean;
-import com.fasterxml.jackson.jr.stree.JrsObject;
-import com.fasterxml.jackson.jr.stree.JrsValue;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,12 +30,9 @@ final class JsonResolver {
     private JsonResolver() {
     }
 
-    static List<MappingField> resolveFields(JrsObject object) {
+    static List<MappingField> resolveFields(Map<String, Object> json) {
         Map<String, MappingField> fields = new LinkedHashMap<>();
-        Iterator<Entry<String, JrsValue>> iterator = object.fields();
-        while (iterator.hasNext()) {
-            Entry<String, JrsValue> entry = iterator.next();
-
+        for (Entry<String, Object> entry : json.entrySet()) {
             String name = entry.getKey();
             QueryDataType type = resolveType(entry.getValue());
 
@@ -49,14 +42,12 @@ final class JsonResolver {
         return new ArrayList<>(fields.values());
     }
 
-    private static QueryDataType resolveType(JrsValue value) {
-        if (value == null || value.isNull()) {
-            return QueryDataType.OBJECT;
-        } else if (value instanceof JrsBoolean) {
+    private static QueryDataType resolveType(Object value) {
+        if (value instanceof Boolean) {
             return QueryDataType.BOOLEAN;
-        } else if (value.isNumber()) {
+        } else if (value instanceof Number) {
             return QueryDataType.DOUBLE;
-        } else if (value.isValueNode()) {
+        } else if (value instanceof String) {
             return QueryDataType.VARCHAR;
         } else {
             return QueryDataType.OBJECT;

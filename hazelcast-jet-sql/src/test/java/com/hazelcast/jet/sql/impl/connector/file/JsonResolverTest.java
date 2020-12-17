@@ -16,19 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.connector.file;
 
-import com.fasterxml.jackson.jr.stree.JrsArray;
-import com.fasterxml.jackson.jr.stree.JrsBoolean;
-import com.fasterxml.jackson.jr.stree.JrsNull;
-import com.fasterxml.jackson.jr.stree.JrsNumber;
-import com.fasterxml.jackson.jr.stree.JrsObject;
-import com.fasterxml.jackson.jr.stree.JrsString;
-import com.fasterxml.jackson.jr.stree.JrsValue;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.junit.Test;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -39,20 +33,20 @@ public class JsonResolverTest {
     @Test
     public void test_resolveFields() {
         // given
-        JrsObject object = new JrsObject(new LinkedHashMap<String, JrsValue>() {
+        Map<String, Object> json = new LinkedHashMap<String, Object>() {
             {
-                put("boolean", JrsBoolean.TRUE);
-                put("number", new JrsNumber(1));
-                put("string", new JrsString("string"));
-                put("object", new JrsObject(emptyMap()));
-                put("array", new JrsArray(emptyList()));
+                put("boolean", true);
+                put("number", 1);
+                put("string", "string");
+                put("object", emptyMap());
+                put("array", emptyList());
                 put("nullValue", null);
-                put("null", new JrsNull());
+                put("null", null);
             }
-        });
+        };
 
         // when
-        List<MappingField> fields = JsonResolver.resolveFields(object);
+        List<MappingField> fields = JsonResolver.resolveFields(json);
 
         // then
         assertThat(fields).hasSize(7);

@@ -16,9 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
-import com.fasterxml.jackson.jr.stree.JrsNumber;
-import com.fasterxml.jackson.jr.stree.JrsObject;
-import com.fasterxml.jackson.jr.stree.JrsString;
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.AllTypesSqlConnector;
@@ -46,7 +44,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlJsonTest extends SqlTestSupport {
@@ -264,11 +261,11 @@ public class SqlJsonTest extends SqlTestSupport {
         );
         sqlService.execute("INSERT INTO " + name + " VALUES (1, 'Alice')");
 
-        assertComparingFieldByFieldRowsEventuallyInAnyOrder(
+        assertRowsEventuallyInAnyOrder(
                 "SELECT __key, this FROM " + name,
                 singletonList(new Row(
-                        new JrsObject(singletonMap("id", new JrsNumber(1))),
-                        new JrsObject(singletonMap("name", new JrsString("Alice")))
+                        ImmutableMap.of("id", 1),
+                        ImmutableMap.of("name", "Alice")
                 ))
         );
     }

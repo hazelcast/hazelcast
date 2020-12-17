@@ -16,10 +16,8 @@
 
 package com.hazelcast.jet.json;
 
-import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.jr.annotationsupport.JacksonAnnotationExtension;
 import com.fasterxml.jackson.jr.ob.JSON;
-import com.fasterxml.jackson.jr.stree.JacksonJrsTreeCodec;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.pipeline.Sources;
 
@@ -61,7 +59,7 @@ public final class JsonUtil {
         JSON.Builder builder = JSON.builder();
         try {
             Class.forName("com.fasterxml.jackson.annotation.JacksonAnnotation", false, JsonUtil.class.getClassLoader());
-            builder.register(JacksonAnnotationExtension.std).treeCodec(new JacksonJrsTreeCodec());
+            builder.register(JacksonAnnotationExtension.std);
         } catch (ClassNotFoundException ignored) {
         }
         JSON_JR = builder.build();
@@ -80,14 +78,6 @@ public final class JsonUtil {
     }
 
     /**
-     * Converts a JSON string to a {@link TreeNode}.
-     */
-    @Nullable
-    public static <T extends TreeNode> T treeFrom(@Nonnull Object source) throws IOException {
-        return JSON_JR.treeFrom(source);
-    }
-
-    /**
      * Converts a JSON string to an object of the given type.
      */
     @Nullable
@@ -99,8 +89,8 @@ public final class JsonUtil {
      * Converts a JSON string to a {@link Map}.
      */
     @Nullable
-    public static Map<String, Object> mapFrom(@Nonnull String jsonString) throws IOException {
-        return JSON_JR.mapFrom(jsonString);
+    public static Map<String, Object> mapFrom(@Nonnull Object object) throws IOException {
+        return JSON_JR.mapFrom(object);
     }
 
     /**
@@ -124,7 +114,7 @@ public final class JsonUtil {
      * according to the content of the string:
      * <ul>
      *     <li>content is a JSON object, returns a {@link Map}. See
-     *     {@link #mapFrom(String)}.</li>
+     *     {@link #mapFrom(Object)}.</li>
      *     <li>content is a JSON array, returns a {@link List}. See
      *     {@link #listFrom(String)}.</li>
      *     <li>content is a String, null or primitive, returns String, null or

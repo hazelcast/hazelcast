@@ -368,10 +368,6 @@
                     -->
                     <relocations>
                         <relocation>
-                            <pattern>com.fasterxml.jackson.jr</pattern>
-                            <shadedPattern>com.hazelcast.com.fasterxml.jackson.jr</shadedPattern>
-                        </relocation>
-                        <relocation>
                             <pattern>com.fasterxml.jackson.core</pattern>
                             <shadedPattern>com.hazelcast.com.fasterxml.jackson.core</shadedPattern>
                         </relocation>

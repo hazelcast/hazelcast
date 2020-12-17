@@ -161,7 +161,7 @@ public class SqlAvroTest extends SqlTestSupport {
                         + ", \"timestamp\""
                         + ", \"timestampTz\""
                         + ", \"null\""
-                        + ", object IS NOT NULL"
+                        + ", object"
                         + " FROM " + name,
                 singletonList(new Row(
                         "string",
@@ -178,7 +178,7 @@ public class SqlAvroTest extends SqlTestSupport {
                         "2020-04-15T12:23:34.001",
                         "2020-04-15T12:23:34.200Z",
                         null,
-                        true
+                        new GenericRecordBuilder(SchemaBuilder.record("object").fields().endRecord()).build()
                 ))
         );
     }
@@ -201,7 +201,7 @@ public class SqlAvroTest extends SqlTestSupport {
                         + ", \"timestamp\""
                         + ", \"timestampTz\""
                         + ", \"null\""
-                        + ", object IS NOT NULL"
+                        + ", object"
                         + " FROM TABLE ("
                         + "AVRO_FILE ('" + RESOURCES_PATH + "', 'file.avro')"
                         + ")",
@@ -220,7 +220,7 @@ public class SqlAvroTest extends SqlTestSupport {
                         "2020-04-15T12:23:34.001",
                         "2020-04-15T12:23:34.200Z",
                         null,
-                        true
+                        new GenericRecordBuilder(SchemaBuilder.record("object").fields().endRecord()).build()
                 ))
         );
     }
