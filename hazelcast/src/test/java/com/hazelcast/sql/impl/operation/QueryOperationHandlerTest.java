@@ -223,9 +223,130 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         assertQueryNotRegisteredEventually(participantService, queryId);
 
         send(initiatorId, participantId, createBatchOperation(participantId, VALUE_0));
-        state = assertQueryRegisteredEventually(participantService, queryId);
+        assertQueryRegisteredEventually(participantService, queryId);
 
         setStateCheckFrequency(100L);
+        assertQueryNotRegisteredEventually(participantService, queryId);
+    }
+
+    @Test
+    public void test_participant_B1_E_B2_ordered() {
+        check_participant_B1_E_B2(true);
+    }
+
+    @Test
+    public void test_participant_B1_E_B2_unordered() {
+        check_participant_B1_E_B2(false);
+    }
+
+    private void check_participant_B1_E_B2(boolean ordered) {
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_0));
+        QueryState state = assertQueryRegisteredEventually(participantService, queryId);
+        assertExecNotCreatedWithDelay(state);
+
+        send(initiatorId, participantId, createExecuteOperation(participantId, ordered));
+        TestExec exec = assertExecCreatedEventually(state);
+        assertConsumedEventually(exec, VALUE_0);
+
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_1));
+        assertConsumedEventually(exec, VALUE_1);
+
+        assertQueryNotRegisteredEventually(participantService, queryId);
+    }
+
+    @Test
+    public void test_participant_B2_E_B1_ordered() {
+        check_participant_B2_E_B1(true);
+    }
+
+    @Test
+    public void test_participant_B2_E_B1_unordered() {
+        check_participant_B2_E_B1(false);
+    }
+
+    private void check_participant_B2_E_B1(boolean ordered) {
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_1));
+        QueryState state = assertQueryRegisteredEventually(participantService, queryId);
+        assertExecNotCreatedWithDelay(state);
+
+        send(initiatorId, participantId, createExecuteOperation(participantId, ordered));
+        TestExec exec = assertExecCreatedEventually(state);
+
+        if (ordered) {
+            assertNotConsumedWithDelay(exec, VALUE_1);
+        } else {
+            assertConsumedEventually(exec, VALUE_1);
+        }
+
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_0));
+        assertConsumedEventually(exec, VALUE_0);
+
+        if (ordered) {
+            assertConsumedEventually(exec, VALUE_1);
+            assertFalse(exec.reordered);
+        } else {
+            assertTrue(exec.reordered);
+        }
+
+        assertQueryNotRegisteredEventually(participantService, queryId);
+    }
+
+    @Test
+    public void test_participant_B1_B2_E_ordered() {
+        check_participant_B1_B2_E(true);
+    }
+
+    @Test
+    public void test_participant_B1_B2_E_unordered() {
+        check_participant_B1_B2_E(false);
+    }
+
+    private void check_participant_B1_B2_E(boolean ordered) {
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_0));
+        QueryState state = assertQueryRegisteredEventually(participantService, queryId);
+        assertExecNotCreatedWithDelay(state);
+
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_1));
+        assertExecNotCreatedWithDelay(state);
+
+        send(initiatorId, participantId, createExecuteOperation(participantId, ordered));
+        TestExec exec = assertExecCreatedEventually(state);
+        assertConsumedEventually(exec, VALUE_0);
+        assertConsumedEventually(exec, VALUE_1);
+        assertFalse(exec.reordered);
+
+        assertQueryNotRegisteredEventually(participantService, queryId);
+    }
+
+    @Test
+    public void test_participant_B2_B1_E_ordered() {
+        check_participant_B2_B1_E(true);
+    }
+
+    @Test
+    public void test_participant_B2_B1_E_unordered() {
+        check_participant_B2_B1_E(false);
+    }
+
+    private void check_participant_B2_B1_E(boolean ordered) {
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_1));
+        QueryState state = assertQueryRegisteredEventually(participantService, queryId);
+        assertExecNotCreatedWithDelay(state);
+
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_0));
+        assertExecNotCreatedWithDelay(state);
+
+        send(initiatorId, participantId, createExecuteOperation(participantId, ordered));
+        TestExec exec = assertExecCreatedEventually(state);
+        assertConsumedEventually(exec, VALUE_0);
+        assertConsumedEventually(exec, VALUE_1);
+
+        if (ordered) {
+            assertFalse(exec.reordered);
+        } else {
+            assertTrue(exec.reordered);
+        }
+
         assertQueryNotRegisteredEventually(participantService, queryId);
     }
 
@@ -298,6 +419,14 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             assertFalse(fragments.isEmpty());
 
             return (TestExec) fragments.iterator().next().getExec();
+        });
+    }
+
+    private void assertExecNotCreatedWithDelay(QueryState state) {
+        assertTrueDelayed((int) ASSERT_FALSE_TIMEOUT.getSeconds(), () -> {
+            Set<QueryFragmentExecutable> fragments = state.getDistributedState().getFragments();
+
+            assertTrue(fragments.isEmpty());
         });
     }
 
