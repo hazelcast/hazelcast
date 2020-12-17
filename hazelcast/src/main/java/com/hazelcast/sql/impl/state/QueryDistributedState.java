@@ -16,10 +16,9 @@
 
 package com.hazelcast.sql.impl.state;
 
-import com.hazelcast.sql.impl.worker.QueryFragmentExecutable;
 import com.hazelcast.sql.impl.operation.QueryAbstractExchangeOperation;
+import com.hazelcast.sql.impl.worker.QueryFragmentExecutable;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;

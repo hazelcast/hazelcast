@@ -144,21 +144,6 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     }
 
     @Override
-    public QueryOperationChannel createChannel(UUID sourceMemberId, UUID targetMemberId) {
-        if (targetMemberId.equals(getLocalMemberId())) {
-            return new QueryOperationChannelImpl(this, sourceMemberId, null);
-        } else {
-            Connection connection = getConnection(targetMemberId);
-
-            if (connection == null) {
-                throw QueryException.memberConnection(targetMemberId);
-            }
-
-            return new QueryOperationChannelImpl(this, sourceMemberId, connection);
-        }
-    }
-
-    @Override
     public void execute(QueryOperation operation) {
         if (operation instanceof QueryExecuteOperation) {
             handleExecute((QueryExecuteOperation) operation);
