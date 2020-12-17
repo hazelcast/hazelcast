@@ -44,6 +44,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -230,6 +231,26 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_participant_B() {
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_0));
+        QueryState state = assertQueryRegisteredEventually(participantService, queryId);
+        assertExecNotCreatedWithDelay(state);
+
+        setStateCheckFrequency(100L);
+        assertQueryNotRegisteredEventually(participantService, queryId);
+    }
+
+    @Test
+    public void test_participant_B_C() {
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_0));
+        QueryState state = assertQueryRegisteredEventually(participantService, queryId);
+        assertExecNotCreatedWithDelay(state);
+
+        send(initiatorId, participantId, createCancelOperation(initiatorId));
+        assertQueryNotRegisteredEventually(participantService, queryId);
+    }
+
+    @Test
     public void test_participant_B1_E_B2_ordered() {
         check_participant_B1_E_B2(true);
     }
@@ -347,6 +368,26 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             assertTrue(exec.reordered);
         }
 
+        assertQueryNotRegisteredEventually(participantService, queryId);
+    }
+
+    @Test
+    public void test_participant_C() {
+        send(initiatorId, participantId, createCancelOperation(initiatorId));
+        QueryState state = assertQueryRegisteredEventually(participantService, queryId);
+        assertTrue(state.isCancelled());
+
+        setStateCheckFrequency(100L);
+        assertQueryNotRegisteredEventually(participantService, queryId);
+    }
+
+    @Test
+    public void test_participant_C_E() {
+        send(initiatorId, participantId, createCancelOperation(initiatorId));
+        QueryState state = assertQueryRegisteredEventually(participantService, queryId);
+        assertTrue(state.isCancelled());
+
+        send(initiatorId, participantId, createExecuteOperation(participantId, false));
         assertQueryNotRegisteredEventually(participantService, queryId);
     }
 
