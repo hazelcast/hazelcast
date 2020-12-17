@@ -198,8 +198,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClusterDiscoveryService clusterDiscoveryService;
     private final ClientProxySessionManager proxySessionManager;
     private final CPSubsystemImpl cpSubsystem;
-    private final ConcurrentLinkedQueue<Disposable> onClusterChangeDisposables = new ConcurrentLinkedQueue();
-    private final ConcurrentLinkedQueue<Disposable> onClientShutdownDisposables = new ConcurrentLinkedQueue();
+    private final ConcurrentLinkedQueue<Disposable> onClusterChangeDisposables = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<Disposable> onClientShutdownDisposables = new ConcurrentLinkedQueue<>();
     private final SqlClientService sqlService;
 
     public HazelcastClientInstanceImpl(String instanceName, ClientConfig clientConfig,
@@ -826,7 +826,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public void onClusterChange() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
-        logger.info("Resetting local state of the client, because of a cluster change ");
+        logger.info("Resetting local state of the client, because of a cluster change.");
 
         dispose(onClusterChangeDisposables);
         //clear the member lists
@@ -841,7 +841,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public void onClusterRestart() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
-        logger.info("Clearing local state of the client, because of a cluster restart");
+        logger.info("Clearing local state of the client, because of a cluster restart.");
 
         dispose(onClusterChangeDisposables);
         //clear the member list version
@@ -865,8 +865,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private Collection<EventListener> instantiateConfiguredListenerObjects() {
         return config.getListenerConfigs().stream().map((listenerConfig) -> {
-            EventListener implementation = listenerConfig.getImplementation();
-            EventListener listener = implementation;
+            EventListener listener = listenerConfig.getImplementation();
             if (listener == null) {
                 try {
                     listener = ClassLoaderUtil.newInstance(config.getClassLoader(), listenerConfig.getClassName());
