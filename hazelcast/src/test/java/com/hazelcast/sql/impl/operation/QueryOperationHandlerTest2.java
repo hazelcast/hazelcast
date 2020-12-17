@@ -46,6 +46,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,12 +67,11 @@ import static org.junit.Assert.assertTrue;
 public class QueryOperationHandlerTest2 extends SqlTestSupport {
 
     private static final int EDGE_ID = 1;
-    private static final long STATE_CHECK_FREQUENCY = 100L;
 
     private static final int VALUE_0 = 0;
     private static final int VALUE_1 = 1;
 
-    private static final long ASSERT_FALSE_TIMEOUT = 2000L;
+    private static final Duration ASSERT_FALSE_TIMEOUT = Duration.ofMillis(1000L);
 
     private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
 
@@ -143,19 +143,50 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
         send(initiatorId, participantId, createBatchOperation(participantId, VALUE_1));
         assertConsumedEventually(exec, VALUE_1);
 
-        assertQueryUnregisteredEventually(participantService, queryId);
+        assertQueryNotRegisteredEventually(participantService, queryId);
     }
 
+    @Test
+    public void test_participant_E_B2_B1_ordered() {
+        check_participant_E_B2_B1(true);
+    }
 
+    @Test
+    public void test_participant_E_B2_B1_unordered() {
+        check_participant_E_B2_B1(false);
+    }
 
-    private void assertConsumedEventually(TestExec exec, int value) {
-        assert value == VALUE_0 || value == VALUE_1;
+    public void check_participant_E_B2_B1(boolean ordered) {
+        send(initiatorId, participantId, createExecuteOperation(participantId, ordered));
 
-        if (value == VALUE_0) {
-            assertTrueEventually(() -> assertTrue(exec.consumed0));
+        QueryState state = assertQueryRegisteredEventually(participantService, queryId);
+
+        TestExec exec = getExec(state);
+        assertFalse(exec.consumed0);
+        assertFalse(exec.consumed1);
+
+        // Send the second batch, only unordered exec should process it
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_1));
+
+        if (ordered) {
+            assertNotConsumedWithDelay(exec, VALUE_1);
         } else {
-            assertTrueEventually(() -> assertTrue(exec.consumed1));
+            assertConsumedEventually(exec, VALUE_1);
         }
+
+        // Send the first batch, processing should be finished in both modes
+        send(initiatorId, participantId, createBatchOperation(participantId, VALUE_0));
+
+        assertConsumedEventually(exec, VALUE_0);
+
+        if (ordered) {
+            assertConsumedEventually(exec, VALUE_1);
+            assertFalse(exec.reordered);
+        } else {
+            assertTrue(exec.reordered);
+        }
+
+        assertQueryNotRegisteredEventually(participantService, queryId);
     }
 
     private void send(UUID sourceMemberId, UUID targetMemberId, QueryOperation operation) {
@@ -225,12 +256,32 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
         });
     }
 
-    private static void assertQueryUnregisteredEventually(SqlInternalService service, QueryId queryId) {
+    private static void assertQueryNotRegisteredEventually(SqlInternalService service, QueryId queryId) {
         assertTrueEventually(() -> {
             QueryState state0 = service.getStateRegistry().getState(queryId);
 
             assertNull(state0);
-        }, ASSERT_FALSE_TIMEOUT);
+        }, ASSERT_FALSE_TIMEOUT.toMillis());
+    }
+
+    private void assertConsumedEventually(TestExec exec, int value) {
+        assert value == VALUE_0 || value == VALUE_1;
+
+        if (value == VALUE_0) {
+            assertTrueEventually(() -> assertTrue(exec.consumed0));
+        } else {
+            assertTrueEventually(() -> assertTrue(exec.consumed1));
+        }
+    }
+
+    private void assertNotConsumedWithDelay(TestExec exec, int value) {
+        assert value == VALUE_0 || value == VALUE_1;
+
+        if (value == VALUE_0) {
+            assertTrueDelayed((int) ASSERT_FALSE_TIMEOUT.getSeconds(), () -> assertFalse(exec.consumed0));
+        } else {
+            assertTrueDelayed((int) ASSERT_FALSE_TIMEOUT.getSeconds(), () -> assertFalse(exec.consumed1));
+        }
     }
 
     private static <T> T assertTrueEventually(Supplier<T> task) {
@@ -270,6 +321,8 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
         private boolean consumed0;
         private boolean consumed1;
 
+        private boolean reordered;
+
         private TestExec(int id, Exec upstream) {
             super(id, upstream);
         }
@@ -292,6 +345,10 @@ public class QueryOperationHandlerTest2 extends SqlTestSupport {
                         assert value == VALUE_1;
 
                         consumed1 = true;
+
+                        if (!consumed0) {
+                            reordered = true;
+                        }
                     }
                 }
 
