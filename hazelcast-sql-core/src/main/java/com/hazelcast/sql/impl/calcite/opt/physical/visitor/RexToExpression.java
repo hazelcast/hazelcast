@@ -381,8 +381,7 @@ public final class RexToExpression {
                 break;
 
             case BIGINT:
-                BigDecimal decimalValue = literal.getValueAs(BigDecimal.class);
-                value = decimalValue == null ? null : decimalValue.longValue();
+                value = literal.getValueAs(Long.class);
                 break;
 
             case DECIMAL:
