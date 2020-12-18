@@ -83,7 +83,8 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             nodeServiceProvider,
             this,
             serializationService,
-            nodeServiceProvider.getLogger(QueryOperationWorkerPool.class)
+            nodeServiceProvider.getLogger(QueryOperationWorkerPool.class),
+            false
         );
 
         systemPool = new QueryOperationWorkerPool(
@@ -93,7 +94,8 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             nodeServiceProvider,
             this,
             serializationService,
-            nodeServiceProvider.getLogger(QueryOperationWorkerPool.class)
+            nodeServiceProvider.getLogger(QueryOperationWorkerPool.class),
+            true
         );
     }
 
@@ -145,6 +147,8 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
 
     @Override
     public void execute(QueryOperation operation) {
+        assert operation.isSystem() == QueryOperationWorkerPool.isSystemThread();
+
         if (operation instanceof QueryExecuteOperation) {
             handleExecute((QueryExecuteOperation) operation);
         } else if (operation instanceof QueryAbstractExchangeOperation) {

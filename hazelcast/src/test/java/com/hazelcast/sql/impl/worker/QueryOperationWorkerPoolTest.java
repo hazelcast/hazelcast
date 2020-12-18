@@ -195,7 +195,8 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
             localMemberIdProvider,
             operationHandler,
             new DefaultSerializationServiceBuilder().build(),
-            new NoLogFactory().getLogger("logger")
+            new NoLogFactory().getLogger("logger"),
+            false
         );
     }
 

@@ -32,7 +32,6 @@ import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutO
 /**
  * Thread pool that executes query operations.
  */
-// TODO: Rename
 public class QueryOperationWorkerPool {
 
     private final LocalMemberIdProvider localMemberIdProvider;
@@ -42,7 +41,6 @@ public class QueryOperationWorkerPool {
 
     private final ExecutorService exec;
 
-    // TODO: Remove context variables from here?
     public QueryOperationWorkerPool(
         String instanceName,
         String workerName,
@@ -50,14 +48,17 @@ public class QueryOperationWorkerPool {
         LocalMemberIdProvider localMemberIdProvider,
         QueryOperationHandler operationHandler,
         SerializationService serializationService,
-        ILogger logger
+        ILogger logger,
+        boolean system
     ) {
         this.localMemberIdProvider = localMemberIdProvider;
         this.operationHandler = operationHandler;
         this.serializationService = serializationService;
         this.logger = logger;
 
-        exec = new ForkJoinPool(threadCount, new WorkerThreadFactory(instanceName, workerName), new ExceptionHandler(), true);
+        WorkerThreadFactory threadFactory = new WorkerThreadFactory(instanceName, workerName, system);
+
+        exec = new ForkJoinPool(threadCount, threadFactory, new ExceptionHandler(), true);
     }
 
     public void submit(QueryOperationExecutable task) {
@@ -76,9 +77,24 @@ public class QueryOperationWorkerPool {
         exec.shutdownNow();
     }
 
+    public static boolean isSystemThread() {
+        Thread thread = Thread.currentThread();
+
+        return thread instanceof WorkerThread && ((WorkerThread) thread).isSystem();
+    }
+
     private static final class WorkerThread extends ForkJoinWorkerThread {
-        private WorkerThread(ForkJoinPool pool) {
+        /** Whether this is a system thread. */
+        private final boolean system;
+
+        private WorkerThread(ForkJoinPool pool, boolean system) {
             super(pool);
+
+            this.system = system;
+        }
+
+        private boolean isSystem() {
+            return system;
         }
     }
 
@@ -87,17 +103,19 @@ public class QueryOperationWorkerPool {
         private final AtomicLong counter = new AtomicLong();
         private final String instanceName;
         private final String workerName;
+        private final boolean system;
 
-        private WorkerThreadFactory(String instanceName, String workerName) {
+        private WorkerThreadFactory(String instanceName, String workerName, boolean system) {
             this.instanceName = instanceName;
             this.workerName = workerName;
+            this.system = system;
         }
 
         @Override
         public ForkJoinWorkerThread newThread(ForkJoinPool pool) {
             String name = QueryUtils.workerName(instanceName, workerName, counter.incrementAndGet());
 
-            WorkerThread thread = new WorkerThread(pool);
+            WorkerThread thread = new WorkerThread(pool, system);
             thread.setName(name);
 
             return thread;
