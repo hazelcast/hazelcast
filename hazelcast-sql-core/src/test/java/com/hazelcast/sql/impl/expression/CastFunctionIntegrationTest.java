@@ -847,6 +847,31 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure(0d, sql("this", TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DOUBLE, TIMESTAMP_WITH_TIME_ZONE));
     }
 
+    /**
+     * Tests that ensure tha our workaround to simplification of casts with approximate literals works fine.
+     * See {@code HazelcastSqlToRelConverter.convertCast(...)}.
+     */
+    @Test
+    public void testApproximateTypeSimplification() {
+        put(1);
+
+        checkValue0("select 1 = cast(1.0000001 as real) from map", BOOLEAN, false);
+        checkValue0("select 1.0E0 = cast(1.0000001 as real) from map", BOOLEAN, false);
+        checkValue0("select cast(1.0 as real) = cast(1.0000001 as real) from map", BOOLEAN, false);
+
+        checkValue0("select 1 = cast(1.00000001 as real) from map", BOOLEAN, true);
+        checkValue0("select 1.0E0 = cast(1.00000001 as real) from map", BOOLEAN, true);
+        checkValue0("select cast(1.0 as real) = cast(1.00000001 as real) from map", BOOLEAN, true);
+
+        checkValue0("select 1 = cast(1.000000000000001 as double) from map", BOOLEAN, false);
+        checkValue0("select 1.0E0 = cast(1.000000000000001 as double) from map", BOOLEAN, false);
+        checkValue0("select cast(1.0 as double) = cast(1.000000000000001 as double) from map", BOOLEAN, false);
+
+        checkValue0("select 1 = cast(1.0000000000000001 as double) from map", BOOLEAN, true);
+        checkValue0("select 1.0E0 = cast(1.0000000000000001 as double) from map", BOOLEAN, true);
+        checkValue0("select cast(1.0 as double) = cast(1.0000000000000001 as double) from map", BOOLEAN, true);
+    }
+
     @Test
     public void testDouble_literal_small() {
         put(1);

@@ -26,6 +26,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInfe
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;
@@ -43,6 +44,7 @@ import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.util.TimeString;
 
+import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -105,13 +107,16 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
      * Convert CAST exception fixing several Apache Calcite problems with literals along the way (see inline JavaDoc).
      */
     private RexNode convertCast(SqlCall call, Blackboard blackboard) {
-        RelDataType from = validator.getValidatedNodeType(call.operand(0));
+        SqlNode operand = call.operand(0);
+        RexNode convertedOperand = blackboard.convertExpression(operand);
+
+        RelDataType from = validator.getValidatedNodeType(operand);
         RelDataType to = validator.getValidatedNodeType(call);
 
         QueryDataType fromType = HazelcastTypeUtils.toHazelcastType(from.getSqlTypeName());
         QueryDataType toType = HazelcastTypeUtils.toHazelcastType(to.getSqlTypeName());
 
-        Literal literal = LiteralUtils.literal(call.operand(0));
+        Literal literal = LiteralUtils.literal(operand);
 
         if (literal != null && literal.getTypeName() != NULL) {
             // There is a bug in RexSimplify that incorrectly converts numeric literals from one numeric type to another.
@@ -147,6 +152,18 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
                 return getRexBuilder().makeLiteral(timeString, to, true);
             }
 
+            // Apache Calcite uses an expression simplification logic that treats CASTs with inexacat literals incorrectly.
+            // For example, "CAST(1.0 as DOUBLE) = CAST(1.0000000000000001 as DOUBLE)" is converted to "false", while it should
+            // be "true". See CastFunctionIntegrationTest.testApproximateTypeSimplification - it will fail without this fix.
+            if (fromType.getTypeFamily().isNumeric()) {
+                if (toType.getTypeFamily().isNumericApproximate()) {
+                    BigDecimal originalValue = ((SqlLiteral) operand).getValueAs(BigDecimal.class);
+                    Object convertedValue = toType.getConverter().convertToSelf(BigDecimalConverter.INSTANCE, originalValue);
+
+                    return getRexBuilder().makeLiteral(convertedValue, to, false);
+                }
+            }
+
             // Apache Calcite cannot handle conversion of literals to OBJECT type properly.
             // Currently we use SqlTypeName.OTHER as a backing type name for the OBJECT data type. Calcite throws errors
             // when attempting to invoke RexBuilder.makeCast with such a type (try commenting the lines below and then
@@ -165,8 +182,6 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         }
 
         // Delegate to Apache Calcite.
-        RexNode convertedOperand = blackboard.convertExpression(call.operand(0));
-
         return getRexBuilder().makeCast(to, convertedOperand);
     }
 

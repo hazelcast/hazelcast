@@ -104,6 +104,17 @@ public enum QueryDataTypeFamily {
         }
     }
 
+    public boolean isNumericApproximate() {
+        switch (this) {
+            case REAL:
+            case DOUBLE:
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
     public boolean isTemporal() {
         switch (this) {
             case TIME:
