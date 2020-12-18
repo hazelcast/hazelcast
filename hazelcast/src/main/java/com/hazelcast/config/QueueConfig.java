@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.collection.IQueue;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -410,11 +409,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         out.writeBoolean(statisticsEnabled);
         out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
-
-        // RU_COMPAT_4_0
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            out.writeUTF(priorityComparatorClassName);
-        }
+        out.writeUTF(priorityComparatorClassName);
     }
 
     @Override
@@ -429,11 +424,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         statisticsEnabled = in.readBoolean();
         splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
-
-        // RU_COMPAT_4_0
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            priorityComparatorClassName = in.readUTF();
-        }
+        priorityComparatorClassName = in.readUTF();
     }
 
     @Override

@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -314,11 +313,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
         out.writeByte(capacityPolicy.getId());
-
-        // RU_COMPAT_4_0
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            out.writeBoolean(statisticsEnabled);
-        }
+        out.writeBoolean(statisticsEnabled);
     }
 
     @Override
@@ -330,11 +325,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
         capacityPolicy = getById(in.readByte());
-
-        // RU_COMPAT_4_0
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            statisticsEnabled = in.readBoolean();
-        }
+        statisticsEnabled = in.readBoolean();
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity"})

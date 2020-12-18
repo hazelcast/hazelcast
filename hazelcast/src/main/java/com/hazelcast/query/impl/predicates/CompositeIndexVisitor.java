@@ -444,7 +444,5 @@ public class CompositeIndexVisitor extends AbstractVisitor {
             assert index == newSize;
             return new AndPredicate(predicates);
         }
-
     }
-
 }

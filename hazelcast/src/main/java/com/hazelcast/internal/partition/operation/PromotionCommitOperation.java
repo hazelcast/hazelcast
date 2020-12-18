@@ -152,17 +152,9 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         }
 
         long partitionStateStamp;
-        if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
-            partitionStateStamp = partitionService.getPartitionStateStamp();
-            if (partitionState.getStamp() == partitionStateStamp) {
-                return alreadyAppliedAllPromotions();
-            }
-        } else {
-            //RU_COMPAT_4_0
-            partitionStateStamp = partitionService.getPartitionStateVersion();
-            if (partitionState.getVersion() <= partitionStateStamp) {
-                return alreadyAppliedAllPromotions();
-            }
+        partitionStateStamp = partitionService.getPartitionStateStamp();
+        if (partitionState.getStamp() == partitionStateStamp) {
+            return alreadyAppliedAllPromotions();
         }
 
         filterAlreadyAppliedPromotions();

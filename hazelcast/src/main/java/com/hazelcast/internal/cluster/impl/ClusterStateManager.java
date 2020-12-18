@@ -22,7 +22,6 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -275,11 +274,7 @@ public class ClusterStateManager {
     private void checkMigrationsAndPartitionStateStamp(ClusterStateChange stateChange, long partitionStateStamp) {
         InternalPartitionService partitionService = node.getPartitionService();
         long thisPartitionStateStamp;
-        if (clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
-            thisPartitionStateStamp = partitionService.getPartitionStateStamp();
-        } else {
-            thisPartitionStateStamp = partitionService.getPartitionStateVersion();
-        }
+        thisPartitionStateStamp = partitionService.getPartitionStateStamp();
 
         if (partitionService.hasOnGoingMigrationLocal()) {
             throw new IllegalStateException("Still have pending migration tasks, "
