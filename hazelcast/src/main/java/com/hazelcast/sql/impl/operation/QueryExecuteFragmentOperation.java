@@ -28,7 +28,12 @@ import com.hazelcast.sql.impl.worker.QueryFragmentExecutable;
  */
 public class QueryExecuteFragmentOperation extends QueryOperation {
 
-    private final QueryFragmentExecutable fragment;
+    private QueryFragmentExecutable fragment;
+
+    @SuppressWarnings("unused")
+    public QueryExecuteFragmentOperation() {
+        // No-op
+    }
 
     public QueryExecuteFragmentOperation(QueryFragmentExecutable fragment) {
         this.fragment = fragment;
