@@ -151,6 +151,8 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
 
         if (operation instanceof QueryExecuteOperation) {
             handleExecute((QueryExecuteOperation) operation);
+        } else if (operation instanceof QueryExecuteFragmentOperation) {
+            handleExecuteFragment((QueryExecuteFragmentOperation) operation);
         } else if (operation instanceof QueryAbstractExchangeOperation) {
             handleExchange((QueryAbstractExchangeOperation) operation);
         } else if (operation instanceof QueryCancelOperation) {
@@ -227,13 +229,27 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             fragmentExecutables.add(fragmentExecutable);
         }
 
+        // At least one fragment should be produced, otherwise this member should have not received the "execute" message.
+        assert !fragmentExecutables.isEmpty();
+
         // Initialize the distributed state.
         state.getDistributedState().onStart(fragmentExecutables);
 
-        // Schedule initial processing of fragments.
-        for (QueryFragmentExecutable fragmentExecutable : fragmentExecutables) {
-            fragmentExecutable.schedule();
+        // Schedule initial processing of fragments. One fragment is executed in the current thread, others are
+        // distributed between other thread.
+        if (fragmentExecutables.size() > 1) {
+            for (int i = 1; i < fragmentExecutables.size(); i++) {
+                QueryExecuteFragmentOperation fragmentOperation = new QueryExecuteFragmentOperation(fragmentExecutables.get(i));
+
+                submitToPool(QueryOperationExecutable.local(fragmentOperation), false);
+            }
         }
+
+        fragmentExecutables.get(0).schedule();
+    }
+
+    private void handleExecuteFragment(QueryExecuteFragmentOperation operation) {
+        operation.getFragment().schedule();
     }
 
     private void handleExchange(QueryAbstractExchangeOperation operation) {

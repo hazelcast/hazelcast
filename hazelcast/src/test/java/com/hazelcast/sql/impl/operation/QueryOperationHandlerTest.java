@@ -19,11 +19,8 @@ package com.hazelcast.sql.impl.operation;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.SqlTestSupport;
@@ -39,7 +36,6 @@ import com.hazelcast.sql.impl.plan.node.UniInputPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
-import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -132,7 +128,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
 
         partitionMap = new HashMap<>();
         partitionMap.put(initiatorId, new PartitionIdSet(2, Collections.singletonList(1)));
-        partitionMap.put(participantId, new PartitionIdSet(1, Collections.singletonList(2)));
+        partitionMap.put(participantId, new PartitionIdSet(2, Collections.singletonList(2)));
 
         queryId = QueryId.create(initiatorId);
     }
@@ -491,17 +487,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
                 plan,
                 null,
                 null,
-                new QueryResultProducer() {
-                    @Override
-                    public ResultIterator<Row> iterator() {
-                        return null;
-                    }
-
-                    @Override
-                    public void onError(QueryException error) {
-                        // No-op
-                    }
-                },
+                TestQueryResultProducer.INSTANCE,
                 initiatorService.getOperationHandler()
             );
 
