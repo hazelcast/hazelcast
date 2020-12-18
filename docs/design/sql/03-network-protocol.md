@@ -15,7 +15,7 @@ principles. Section 3 explains the protocol.
 In this section, we summarize the fundamental principles that influence the protocol design:
 1. Low latency
 1. Fail-fast
-1. Ordered data exchange
+1. Ordered data processing
 
 ### 1.1 Low Latency
 
@@ -46,18 +46,14 @@ environments. We, therefore, do not reject the idea of implementing transparent 
 Instead, we treat the fail-fast behavior as a starting point for future improvements, which provides a good trade-off between
 the added value and implementation complexity.
 
-### 1.3 Ordered Data Exchange
+### 1.3 Ordered Data Processing
 
 The Hazelcast Mustang engine employs the **Volcano Model** approach, as described in [[2]]. Data flows from children relational
 operators to parents operators. The order of rows transferred between operators is essential for correctness. For example, a
 parent operator may expect the child operator to produce rows that are sorted on a particular attribute.
 
 Adjacent operators may be located on different members, exchanging data through network requests. The implementation must ensure
-that the order of rows is preserved during data transfer.
-
-It is possible to relax this requirement if the order of rows is somehow preserved at the engine level. But to achieve this, we
-would have to introduce TCP-like ordering and packet loss detection, which requires more RAM and additional network messages,
-reducing performance dramatically, which makes such design inappropriate for us.
+that the order of rows is preserved during processing.
 
 ## 2 Existing Infrastructure
 
@@ -81,14 +77,9 @@ Connections are established lazily between communicating members. The connection
 re-established later. Connection to a particular member is provided by the `EndpointManager` interface through
 `getConnection()` and `getOrConnect()` methods. Subsequent calls to these methods may return different connection objects.
 
-The order of the delivery of messages sent over a single `Connection` object is **not defined** in the general case. However,
-the current implementations have relatively strong ordering and delivery guarantees, because internally, they use a single
-socket connection:
-1. If a packet is delivered to a receiver, then all previous packets sent through the same connection are also delivered
-1. If sending of packet A happens-before sending of packet B, then submission of packet A for execution on the receiver
-happens-before the submission of packet B.
-
-Hazelcast Jet relies on these guarantees.
+The order of the delivery of messages sent over a single `Connection` object is **not defined** for the following reasons:
+1. Multiple physical connections could be used internally.
+1. An automatic reconnect could happen.
 
 ### 2.3 Operation
 
@@ -100,17 +91,14 @@ completion futures, timeouts, and retries.
 
 ### 2.4 Discussion
 
-The Hazelcast Mustang engine doesn't use `Operation` and `OperationService` abstractions for the following reasons. First, to
-satisfy the low-latency principle, the engine doesn't use the request-response messaging pattern for query initiation and data
-exchange. Second, due to fail-fast design choice, the engine doesn't need to keep data chunks on the sender side waiting for ack
-from the receiver. The fire-and-forget approach is used instead. Last, since `Operation` and `OperationService` interfaces do
-not guarantee that the same `Connection` object will be used between invocations, the ordering requirement cannot be satisfied.
+The Hazelcast Mustang engine doesn't use `Operation` and `OperationService` abstractions for the following reasons:
+1, To satisfy the low-latency principle, the engine doesn't use the request-response messaging pattern for query initiation 
+and data exchange. 
+1. Due to fail-fast design choice, the engine doesn't need to keep data chunks on the sender side waiting for ack
+from the receiver. The fire-and-forget approach is used instead. 
 
-Instead, `Packet` and `Connection` interfaces are used directly. For every stream of data, we obtain the `Connection` object
-from the connection manager. This object is used for the duration of query for the given stream, thus ensuring the ordering of
-data delivery.
-
-Future implementations of the `Connection` interface must provide the ordering guarantees, as described in Section 2.2.
+Instead, `Packet` and `Connection` interfaces are used directly. For every request, we obtain the `Connection` object
+from the connection manager. 
 
 ## 3 Protocol
 
@@ -223,9 +211,10 @@ the parent operator (downstream). A stream is uniquely identified by `[queryId, 
 where the `queryId` is a cluster-wide unique identifier of a query, and the `edgeId` is an identifier of the edge between
 two remote operators, which is unique for the query.
 
-Every stream uses the **same** `Connection` object for the duration of the query. This guarantees that the order of received
-rows is equal to the send order, as described in Section 1.3. If a connection is broken in the middle of query execution, the
-query is canceled with an error.
+A stream may produce zero, one or more batches with rows. A stream might be ordered or unordered depending on the plan. In 
+the ordered stream, batches must be processed on the receiver in the same order as they produced on the sender. In the unordered
+stream, batches might be processed in any order. To support the ordered case, every batch has a monotonically increasing 
+ordinal, that is used by the receiver to define the correct processing order, as described in Section 1.3.
 
 The original query plan is split into one or more **fragments**. The split occurs across relational operators that require
 data movement between members, called **exchanges**.
@@ -283,6 +272,7 @@ class QueryBatchOperation {
     RowBatch batch;        // Actual data      
     boolean last;          // Last batch flag
     long remainingCredits; // Used in the flow control as explained below
+    long ordinal;          // Monotonically increasing sequence number  
 }
 ```
 
@@ -301,6 +291,9 @@ credit because row size may vary significantly.
 
 Precise conditions which trigger the `flow_control` message, as well as the initial amount of credits are implementation-defined
 and are not part of the protocol.
+
+Similarly to the `batch` message, the `flow_control` message has a monotonically increasing ordinal to handle out-of-order
+delivery.
 
 *Snippet 11: An example of control flow protocol*
 ```
@@ -321,6 +314,7 @@ class QueryFlowControlOperation {
     QueryId id;             
     int edgeId;
     long remainingCredits;
+    long ordinal;            
 }
 ```
 
@@ -359,7 +353,7 @@ I              P1            P2
 
 When the batch arrives, and there is no active query associated with the given ID, we cannot distinguish between the query
 which has not started yet and the query which has been canceled. To mitigate this, we introduce a pair of messages to clean
-old batches:
+the outdated query handles:
 
 #### 3.5.2 Query Check
 
