@@ -33,6 +33,8 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -545,7 +547,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         boolean interrupted = false;
         try {
             for (; ; ) {
-                park();
+                manageParking(false, 0);
                 if (isDone()) {
                     return resolveAndThrowWithJoinConvention(state);
                 } else if (Thread.interrupted()) {
@@ -576,7 +578,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         boolean interrupted = false;
         try {
             for (; ; ) {
-                park();
+                manageParking(false, 0);
                 if (isDone()) {
                     return resolveAndThrowForJoinInternal(state);
                 } else if (Thread.interrupted()) {
@@ -609,7 +611,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         boolean interrupted = false;
         try {
             for (; ; ) {
-                park();
+                manageParking(false, 0);
                 if (isDone()) {
                     return resolveAndThrowIfException(state);
                 } else if (Thread.interrupted()) {
@@ -635,7 +637,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         try {
             long timeoutNanos = unit.toNanos(timeout);
             while (timeoutNanos > 0) {
-                parkNanos(timeoutNanos);
+                manageParking(true, timeoutNanos);
                 timeoutNanos = deadlineNanos - System.nanoTime();
 
                 if (isDone()) {
@@ -651,6 +653,50 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
         unregisterWaiter(Thread.currentThread());
         throw newTimeoutException(timeout, unit);
+    }
+
+    // Use when the caller thread is a ForkJoinWorkerThread
+    class ManagedBlocker implements ForkJoinPool.ManagedBlocker {
+        private boolean timed;
+        private long timeoutNanos;
+
+        ManagedBlocker(boolean timed, long timeoutNanos) {
+            this.timed = timed;
+            this.timeoutNanos = timeoutNanos;
+        }
+
+        @Override
+        public boolean isReleasable() {
+            return Thread.currentThread().isInterrupted()
+                    || isDone();
+        }
+
+        @Override
+        public boolean block() throws InterruptedException {
+            if (isReleasable()) {
+                return true;
+            } else if (!timed) {
+                park();
+            } else if (timeoutNanos > 0) {
+                parkNanos(timeoutNanos);
+            }
+            return isReleasable();
+        }
+    }
+
+    private void manageParking(boolean timed, long timeoutNanos) {
+        try {
+            // if the caller thread is a ForkJoinWorkerThread
+            if (ForkJoinTask.inForkJoinPool()) {
+                ForkJoinPool.managedBlock(new ManagedBlocker(timed, timeoutNanos));
+            } else if (!timed) {
+                park();
+            } else if (timeoutNanos > 0) {
+                parkNanos(timeoutNanos);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Override
@@ -738,7 +784,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     /**
-     *
      * @param waiter    the current wait node, see javadoc of {@link #state state field}
      * @param executor  the {@link Executor} on which to execute the action associated with {@code waiter}
      */
