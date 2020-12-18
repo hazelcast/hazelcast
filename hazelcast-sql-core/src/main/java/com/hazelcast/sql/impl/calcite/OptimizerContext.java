@@ -40,6 +40,7 @@ import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.Prepare;
+import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
 import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
@@ -184,6 +185,7 @@ public final class OptimizerContext {
 
         planner.clearRelTraitDefs();
         planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
+        planner.addRelTraitDef(RelCollationTraitDef.INSTANCE);
         planner.addRelTraitDef(distributionTraitDef);
 
         return planner;

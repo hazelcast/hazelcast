@@ -130,6 +130,10 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
         return enqueuedBatches == 0 && remainingStreams == 0;
     }
 
+    public boolean isOrdered() {
+        return ordered;
+    }
+
     public int getRemainingStreams() {
         return remainingStreams;
     }

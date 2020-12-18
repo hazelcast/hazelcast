@@ -39,12 +39,14 @@ public class ReceivePlanNodeTest extends SqlTestSupport {
     public void testState() {
         int id = 1;
         int edgeId = 2;
+        boolean ordered = true;
         List<QueryDataType> types = Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR);
 
-        ReceivePlanNode node = new ReceivePlanNode(id, edgeId, types);
+        ReceivePlanNode node = new ReceivePlanNode(id, edgeId, ordered, types);
 
         assertEquals(id, node.getId());
         assertEquals(edgeId, node.getEdgeId());
+        assertEquals(ordered, node.isOrdered());
         assertEquals(new PlanNodeSchema(types), node.getSchema());
     }
 
