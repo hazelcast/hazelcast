@@ -56,8 +56,8 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
         true
     );
 
-    private static final RelDataType TYPE_OBJECT = new HazelcastType(SqlTypeName.OTHER, false);
-    private static final RelDataType TYPE_OBJECT_NULLABLE = new HazelcastType(SqlTypeName.OTHER, true);
+    private static final RelDataType TYPE_OBJECT = new HazelcastType(SqlTypeName.ANY, false);
+    private static final RelDataType TYPE_OBJECT_NULLABLE = new HazelcastType(SqlTypeName.ANY, true);
 
     private HazelcastTypeFactory() {
         super(HazelcastTypeSystem.INSTANCE);
@@ -128,7 +128,7 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     private RelDataType createType(SqlTypeName typeName) {
         if (typeName == DECIMAL) {
             return super.createSqlType(DECIMAL, MAX_DECIMAL_PRECISION, MAX_DECIMAL_SCALE);
-        } else if (typeName == SqlTypeName.OTHER) {
+        } else if (typeName == SqlTypeName.ANY) {
             return TYPE_OBJECT;
         } else if (typeName == SqlTypeName.TIME) {
             return TYPE_TIME;
@@ -149,7 +149,7 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     public RelDataType createTypeWithNullability(RelDataType type, boolean nullable) {
         if (HazelcastTypeUtils.isNumericIntegerType(type.getSqlTypeName())) {
             return HazelcastIntegerType.create((HazelcastIntegerType) type, nullable);
-        } else if (type.getSqlTypeName() == SqlTypeName.OTHER) {
+        } else if (type.getSqlTypeName() == SqlTypeName.ANY) {
             return nullable ? TYPE_OBJECT_NULLABLE : TYPE_OBJECT;
         } else if (type.getSqlTypeName() == SqlTypeName.TIME) {
             return nullable ? TYPE_TIME_NULLABLE : TYPE_TIME;

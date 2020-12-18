@@ -112,7 +112,7 @@ public final class HazelcastIsTrueFalseNullPredicate extends HazelcastPostfixOpe
 
                 if (type.getSqlTypeName() == NULL) {
                     if (objectOperand) {
-                        type = HazelcastTypeUtils.createType(binding.getTypeFactory(), SqlTypeName.OTHER, type.isNullable());
+                        type = HazelcastTypeUtils.createType(binding.getTypeFactory(), SqlTypeName.ANY, type.isNullable());
                     } else {
                         type = HazelcastTypeUtils.createType(binding.getTypeFactory(), SqlTypeName.BOOLEAN, type.isNullable());
                     }

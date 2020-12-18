@@ -76,8 +76,8 @@ public final class HazelcastTypeUtils {
         CALCITE_TO_HZ.put(SqlTypeName.TIMESTAMP, QueryDataType.TIMESTAMP);
         CALCITE_TO_HZ.put(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE, QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
 
-        HZ_TO_CALCITE.put(QueryDataTypeFamily.OBJECT, SqlTypeName.OTHER);
-        CALCITE_TO_HZ.put(SqlTypeName.OTHER, QueryDataType.OBJECT);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.OBJECT, SqlTypeName.ANY);
+        CALCITE_TO_HZ.put(SqlTypeName.ANY, QueryDataType.OBJECT);
 
         HZ_TO_CALCITE.put(QueryDataTypeFamily.NULL, SqlTypeName.NULL);
         CALCITE_TO_HZ.put(SqlTypeName.NULL, QueryDataType.NULL);
@@ -88,7 +88,11 @@ public final class HazelcastTypeUtils {
     }
 
     public static SqlTypeName toCalciteType(QueryDataType type) {
-        return HZ_TO_CALCITE.get(type.getTypeFamily());
+        return toCalciteType(type.getTypeFamily());
+    }
+
+    public static SqlTypeName toCalciteType(QueryDataTypeFamily typeFamily) {
+        return HZ_TO_CALCITE.get(typeFamily);
     }
 
     public static QueryDataType toHazelcastType(SqlTypeName sqlTypeName) {

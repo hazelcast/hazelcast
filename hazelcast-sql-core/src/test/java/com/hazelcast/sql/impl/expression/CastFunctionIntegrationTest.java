@@ -290,7 +290,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(stringLiteral("foo"), TIMESTAMP_WITH_TIME_ZONE), PARSING, "CAST function cannot convert literal 'foo' to type TIMESTAMP_WITH_TIME_ZONE: Cannot parse VARCHAR value to TIMESTAMP_WITH_TIME_ZONE");
 
         // VARCHAR -> OBJECT
-        checkFailure0(sql(stringLiteral("foo"), OBJECT), PARSING, "CAST function cannot convert literal 'foo' to type OBJECT: Conversion of literals to OBJECT type is not allowed (consider adding an explicit CAST to another expression part)");
+        checkValue0(sql(stringLiteral("foo"), OBJECT), OBJECT, "foo");
     }
 
     @Test
@@ -324,7 +324,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql(literal(false), VARCHAR), VARCHAR, "false");
         checkValue0(sql(literal(true), BOOLEAN), BOOLEAN, true);
         checkValue0(sql(literal(false), BOOLEAN), BOOLEAN, false);
-        checkFailure0(sql(literal(true), OBJECT), PARSING, "CAST function cannot convert literal true to type OBJECT: Conversion of literals to OBJECT type is not allowed (consider adding an explicit CAST to another expression part)");
+        checkValue0(sql(literal(true), OBJECT), OBJECT, true);
 
         checkFailure0(sql(literal(true), TINYINT), PARSING, castError(BOOLEAN, TINYINT));
         checkFailure0(sql(literal(true), SMALLINT), PARSING, castError(BOOLEAN, SMALLINT));
@@ -412,7 +412,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal(1), TIMESTAMP), PARSING, castError(TINYINT, TIMESTAMP));
         checkFailure0(sql(literal(1), TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(TINYINT, TIMESTAMP_WITH_TIME_ZONE));
 
-        checkFailure0(sql(literal(1), OBJECT), PARSING, "CAST function cannot convert literal 1 to type OBJECT: Conversion of literals to OBJECT type is not allowed (consider adding an explicit CAST to another expression part)");
+        checkValue0(sql(literal(1), OBJECT), OBJECT, (byte) 1);
     }
 
     @Test
@@ -486,7 +486,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal(Short.MAX_VALUE), TIMESTAMP), PARSING, castError(SMALLINT, TIMESTAMP));
         checkFailure0(sql(literal(Short.MAX_VALUE), TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(SMALLINT, TIMESTAMP_WITH_TIME_ZONE));
 
-        checkFailure0(sql(literal(Short.MAX_VALUE), OBJECT), PARSING, "CAST function cannot convert literal 32767 to type OBJECT: Conversion of literals to OBJECT type is not allowed (consider adding an explicit CAST to another expression part)");
+        checkValue0(sql(literal(Short.MAX_VALUE), OBJECT), OBJECT, Short.MAX_VALUE);
     }
 
     @Test
@@ -560,7 +560,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal(Integer.MAX_VALUE), TIMESTAMP), PARSING, castError(INTEGER, TIMESTAMP));
         checkFailure0(sql(literal(Integer.MAX_VALUE), TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(INTEGER, TIMESTAMP_WITH_TIME_ZONE));
 
-        checkFailure0(sql(literal(Integer.MAX_VALUE), OBJECT), PARSING, "CAST function cannot convert literal 2147483647 to type OBJECT: Conversion of literals to OBJECT type is not allowed (consider adding an explicit CAST to another expression part)");
+        checkValue0(sql(literal(Integer.MAX_VALUE), OBJECT), OBJECT, Integer.MAX_VALUE);
     }
 
     @Test
@@ -634,7 +634,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal(Long.MAX_VALUE), TIMESTAMP), PARSING, castError(BIGINT, TIMESTAMP));
         checkFailure0(sql(literal(Long.MAX_VALUE), TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(BIGINT, TIMESTAMP_WITH_TIME_ZONE));
 
-        checkFailure0(sql(literal(Long.MAX_VALUE), OBJECT), PARSING, "CAST function cannot convert literal 9223372036854775807 to type OBJECT: Conversion of literals to OBJECT type is not allowed (consider adding an explicit CAST to another expression part)");
+        checkValue0(sql(literal(Long.MAX_VALUE), OBJECT), OBJECT, Long.MAX_VALUE);
     }
 
     @Test
@@ -761,7 +761,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal, TIMESTAMP), PARSING, castError(DECIMAL, TIMESTAMP));
         checkFailure0(sql(literal, TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DECIMAL, TIMESTAMP_WITH_TIME_ZONE));
 
-        checkFailure0(sql(literal, OBJECT), PARSING, "CAST function cannot convert literal 1.1 to type OBJECT: Conversion of literals to OBJECT type is not allowed (consider adding an explicit CAST to another expression part)");
+        checkValue0(sql(literal, OBJECT), OBJECT, decimalValue);
     }
 
     @Test
@@ -788,7 +788,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal, TIMESTAMP), PARSING, castError(DECIMAL, TIMESTAMP));
         checkFailure0(sql(literal, TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DECIMAL, TIMESTAMP_WITH_TIME_ZONE));
 
-        checkFailure0(sql(literal, OBJECT), PARSING, "CAST function cannot convert literal 92233720368547758070.1 to type OBJECT: Conversion of literals to OBJECT type is not allowed (consider adding an explicit CAST to another expression part)");
+        checkValue0(sql(literal, OBJECT), OBJECT, decimalValue);
     }
 
     @Test
@@ -897,7 +897,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal, TIMESTAMP), PARSING, castError(DOUBLE, TIMESTAMP));
         checkFailure0(sql(literal, TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DOUBLE, TIMESTAMP_WITH_TIME_ZONE));
 
-        checkFailure0(sql(literal, OBJECT), PARSING, "CAST function cannot convert literal 1.1E1 to type OBJECT: Conversion of literals to OBJECT type is not allowed (consider adding an explicit CAST to another expression part)");
+        checkValue0(sql(literal, OBJECT), OBJECT, 11d);
     }
 
     @Test
@@ -922,7 +922,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(literal, TIMESTAMP), PARSING, castError(DOUBLE, TIMESTAMP));
         checkFailure0(sql(literal, TIMESTAMP_WITH_TIME_ZONE), PARSING, castError(DOUBLE, TIMESTAMP_WITH_TIME_ZONE));
 
-        checkFailure0(sql(literal, OBJECT), PARSING, "CAST function cannot convert literal 1.1E100 to type OBJECT: Conversion of literals to OBJECT type is not allowed (consider adding an explicit CAST to another expression part)");
+        checkValue0(sql(literal, OBJECT), OBJECT, 1.1E100d);
     }
 
     @Test

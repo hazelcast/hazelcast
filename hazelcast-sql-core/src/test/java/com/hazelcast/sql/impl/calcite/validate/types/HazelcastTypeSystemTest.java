@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isObjectIdentifier;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isTimestampWithTimeZoneIdentifier;
 import static org.apache.calcite.sql.parser.SqlParserPos.ZERO;
+import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
 import static org.apache.calcite.sql.type.SqlTypeName.DATE;
@@ -101,7 +102,7 @@ public class HazelcastTypeSystemTest {
         assertPrecedence(type(DATE), type(TIME));
         assertPrecedence(type(TIMESTAMP), type(DATE));
         assertPrecedence(type(TIMESTAMP_WITH_LOCAL_TIME_ZONE), type(TIMESTAMP));
-        assertPrecedence(type(OTHER), type(TIMESTAMP_WITH_LOCAL_TIME_ZONE));
+        assertPrecedence(type(ANY), type(TIMESTAMP_WITH_LOCAL_TIME_ZONE));
     }
 
     @Test
