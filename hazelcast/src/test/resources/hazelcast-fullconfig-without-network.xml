@@ -1018,7 +1018,6 @@
 
     <sql>
         <executor-pool-size>16</executor-pool-size>
-        <operation-pool-size>8</operation-pool-size>
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 </hazelcast>

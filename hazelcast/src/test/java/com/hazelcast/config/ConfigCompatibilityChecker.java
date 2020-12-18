@@ -16,13 +16,6 @@
 
 package com.hazelcast.config;
 
-import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
-import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
-import static java.text.MessageFormat.format;
-import static java.util.Collections.singletonMap;
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
-import static org.junit.Assert.assertEquals;
-
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
@@ -43,6 +36,8 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.util.CollectionUtil;
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -53,7 +48,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-import org.apache.commons.lang3.ArrayUtils;
+
+import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
+import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
+import static java.text.MessageFormat.format;
+import static java.util.Collections.singletonMap;
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static org.junit.Assert.assertEquals;
 
 public class ConfigCompatibilityChecker {
 
@@ -827,7 +828,6 @@ public class ConfigCompatibilityChecker {
             }
 
             return c1.getExecutorPoolSize() == c2.getExecutorPoolSize()
-                    && c1.getOperationPoolSize() == c2.getOperationPoolSize()
                     && c1.getStatementTimeoutMillis() == c2.getStatementTimeoutMillis();
         }
 
