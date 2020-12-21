@@ -22,10 +22,8 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
-import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.version.MemberVersion;
 
 import javax.annotation.Nullable;
@@ -87,87 +85,8 @@ public final class QueryUtils {
      * @param columnType Internal type.
      * @return Public type.
      */
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public static SqlColumnMetadata getColumnMetadata(String columnName, QueryDataType columnType) {
-        SqlColumnType type;
-
-        switch (columnType.getTypeFamily()) {
-            case VARCHAR:
-                type = SqlColumnType.VARCHAR;
-
-                break;
-
-            case BOOLEAN:
-                type = SqlColumnType.BOOLEAN;
-
-                break;
-
-            case TINYINT:
-                type = SqlColumnType.TINYINT;
-
-                break;
-
-            case SMALLINT:
-                type = SqlColumnType.SMALLINT;
-
-                break;
-
-            case INTEGER:
-                type = SqlColumnType.INTEGER;
-
-                break;
-
-            case BIGINT:
-                type = SqlColumnType.BIGINT;
-
-                break;
-
-            case DECIMAL:
-                type = SqlColumnType.DECIMAL;
-
-                break;
-
-            case REAL:
-                type = SqlColumnType.REAL;
-
-                break;
-
-            case DOUBLE:
-                type = SqlColumnType.DOUBLE;
-
-                break;
-
-            case TIME:
-                type = SqlColumnType.TIME;
-
-                break;
-
-            case DATE:
-                type = SqlColumnType.DATE;
-
-                break;
-
-            case TIMESTAMP:
-                type = SqlColumnType.TIMESTAMP;
-
-                break;
-
-            case TIMESTAMP_WITH_TIME_ZONE:
-                type = SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
-
-                break;
-
-            case NULL:
-                type = SqlColumnType.NULL;
-                break;
-
-            default:
-                assert columnType.getTypeFamily() == QueryDataTypeFamily.OBJECT;
-
-                type = SqlColumnType.OBJECT;
-        }
-
-        return new SqlColumnMetadata(columnName, type);
+        return new SqlColumnMetadata(columnName, columnType.getTypeFamily().getPublicType());
     }
 
     /**

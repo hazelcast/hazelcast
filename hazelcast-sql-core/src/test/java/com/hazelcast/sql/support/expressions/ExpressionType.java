@@ -381,7 +381,7 @@ public abstract class ExpressionType<T> {
 
         @Override
         public QueryDataType getFieldConverterType() {
-            return QueryDataType.TIMESTAMP;
+            return QueryDataType.TIME;
         }
     }
 

@@ -44,7 +44,7 @@ public final class ShortConverter extends Converter {
         byte converted = (byte) casted;
 
         if (converted != casted) {
-            throw numericOverflow(QueryDataTypeFamily.TINYINT, val);
+            throw numericOverflowError(QueryDataTypeFamily.TINYINT);
         }
 
         return converted;

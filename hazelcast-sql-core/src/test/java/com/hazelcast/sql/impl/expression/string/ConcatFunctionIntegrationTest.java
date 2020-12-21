@@ -17,10 +17,12 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionType;
+import com.hazelcast.sql.support.expressions.ExpressionTypes;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,33 +30,48 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
-import java.util.List;
-
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.BIG_DECIMAL;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.BIG_INTEGER;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.BOOLEAN;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.BYTE;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.DOUBLE;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.FLOAT;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.INTEGER;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.LOCAL_DATE;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.LOCAL_DATE_TIME;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.LOCAL_TIME;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.LONG;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.OFFSET_DATE_TIME;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.SHORT;
+import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ConcatFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
+public class ConcatFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
-    public void test_literal() {
+    public void testColumn() {
+        for (ExpressionType<?> type1 : ExpressionTypes.all()) {
+            // Test supported types
+            for (ExpressionType<?> type2 : ExpressionTypes.all()) {
+                Class<? extends ExpressionBiValue> clazz = ExpressionBiValue.createBiClass(type1.typeName(), type2.typeName());
+
+                checkColumns(
+                    ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), type2.valueFrom()),
+                    "" + type1.valueFrom() + type2.valueFrom()
+                );
+
+                checkColumns(
+                    ExpressionBiValue.createBiValue(clazz, 0, null, type2.valueFrom()),
+                    null
+                );
+
+                checkColumns(
+                    ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), null),
+                    null
+                );
+
+                checkColumns(
+                    ExpressionBiValue.createBiValue(clazz, 0, null, null),
+                    null
+                );
+            }
+        }
+    }
+
+    @Test
+    public void testLiteral() {
         put("1");
 
         check("this || 2", "12");
         check("this || '2'", "12");
-        check("this || 2e0", "12.0");
+        check("this || 2e0", "12E0");
 
         check("this || true", "1true");
 
@@ -66,12 +83,18 @@ public class ConcatFunctionIntegrationTest extends SqlExpressionIntegrationTestS
     }
 
     @Test
-    public void test_parameter() {
+    public void testParameter() {
         put("1");
 
         check("this || ?", "12", "2");
         check("this || ?", "12", '2');
         check("this || ?", null, new Object[]{null});
+        check("this || ?", "12", 2);
+
+        check("this || ?", "1" + LOCAL_DATE_VAL, LOCAL_DATE_VAL);
+        check("this || ?", "1" + LOCAL_TIME_VAL, LOCAL_TIME_VAL);
+        check("this || ?", "1" + LOCAL_DATE_TIME_VAL, LOCAL_DATE_TIME_VAL);
+        check("this || ?", "1" + OFFSET_DATE_TIME_VAL, OFFSET_DATE_TIME_VAL);
 
         check("? || this", "21", "2");
         check("? || this", "21", '2');
@@ -84,48 +107,6 @@ public class ConcatFunctionIntegrationTest extends SqlExpressionIntegrationTestS
 
         check("? || null", null, "1");
         check("null || ?", null, "1");
-
-        checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR ", 2);
-        checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to VARCHAR ", LOCAL_DATE_VAL);
-        checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to VARCHAR ", LOCAL_TIME_VAL);
-        checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to VARCHAR ", LOCAL_DATE_TIME_VAL);
-        checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to VARCHAR ", OFFSET_DATE_TIME_VAL);
-    }
-
-    @Test
-    public void test_column() {
-        for (ExpressionType<?> type1 : supportedTypes()) {
-            // Test supported types
-            for (ExpressionType<?> type2 : supportedTypes()) {
-                Class<? extends ExpressionBiValue> clazz = ExpressionBiValue.createBiClass(type1.typeName(), type2.typeName());
-
-                checkColumn(
-                    ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), type2.valueFrom()),
-                    "" + type1.valueFrom() + type2.valueFrom()
-                );
-
-                checkColumn(
-                    ExpressionBiValue.createBiValue(clazz, 0, null, type2.valueFrom()),
-                    null
-                );
-
-                checkColumn(
-                    ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), null),
-                    null
-                );
-
-                checkColumn(
-                    ExpressionBiValue.createBiValue(clazz, 0, null, null),
-                    null
-                );
-            }
-        }
-    }
-
-    private void checkColumn(ExpressionBiValue value, String expectedResult) {
-        put(value);
-
-        check("field1 || field2", expectedResult);
     }
 
     /**
@@ -140,33 +121,32 @@ public class ConcatFunctionIntegrationTest extends SqlExpressionIntegrationTestS
         check("__key || field1 || field2", "123");
     }
 
+    @Test
+    public void testEquals() {
+        ConcatFunction function = ConcatFunction.create(ConstantExpression.create("1", VARCHAR), ConstantExpression.create("2", VARCHAR));
+
+        checkEquals(function, ConcatFunction.create(ConstantExpression.create("1", VARCHAR), ConstantExpression.create("2", VARCHAR)), true);
+        checkEquals(function, ConcatFunction.create(ConstantExpression.create("10", VARCHAR), ConstantExpression.create("2", VARCHAR)), false);
+        checkEquals(function, ConcatFunction.create(ConstantExpression.create("1", VARCHAR), ConstantExpression.create("20", VARCHAR)), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        ConcatFunction original = ConcatFunction.create(ConstantExpression.create("1", VARCHAR), ConstantExpression.create("2", VARCHAR));
+        ConcatFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_CONCAT);
+
+        checkEquals(original, restored, true);
+    }
+
+    private void checkColumns(ExpressionBiValue value, String expectedResult) {
+        put(value);
+
+        check("field1 || field2", expectedResult);
+    }
+
     private void check(String operands, String expectedResult, Object... params) {
         String sql = "SELECT " + operands + " FROM map";
 
-        checkValueInternal(sql, SqlColumnType.VARCHAR, expectedResult, params);
-    }
-
-    private void checkFailure(String operands, int expectedErrorCode, String expectedErrorMessage, Object... params) {
-        String sql = "SELECT " + operands + " FROM map";
-
-        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
-    }
-
-    private static List<ExpressionType<?>> supportedTypes() {
-        return Arrays.asList(
-            BOOLEAN,
-            BYTE,
-            SHORT,
-            INTEGER,
-            LONG,
-            BIG_DECIMAL,
-            BIG_INTEGER,
-            FLOAT,
-            DOUBLE,
-            LOCAL_DATE,
-            LOCAL_TIME,
-            LOCAL_DATE_TIME,
-            OFFSET_DATE_TIME
-        );
+        checkValue0(sql, SqlColumnType.VARCHAR, expectedResult, params);
     }
 }

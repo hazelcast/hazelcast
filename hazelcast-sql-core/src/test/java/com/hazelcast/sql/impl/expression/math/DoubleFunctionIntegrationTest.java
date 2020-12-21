@@ -16,9 +16,11 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,11 +35,21 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
+import static com.hazelcast.sql.SqlColumnType.DATE;
+import static com.hazelcast.sql.SqlColumnType.DOUBLE;
+import static com.hazelcast.sql.SqlColumnType.OBJECT;
+import static com.hazelcast.sql.SqlColumnType.TIME;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
+import static com.hazelcast.sql.SqlColumnType.VARCHAR;
+import static com.hazelcast.sql.impl.expression.math.DoubleFunction.COS;
+import static com.hazelcast.sql.impl.expression.math.DoubleFunction.SIN;
+
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class DoubleFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
-
+public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
     @Parameterized.Parameter
     public Mode mode;
 
@@ -61,107 +73,88 @@ public class DoubleFunctionIntegrationTest extends SqlExpressionIntegrationTestS
 
     @Test
     public void testColumn() {
-        checkColumn((byte) 1, 1d);
-        checkColumn((short) 1, 1d);
-        checkColumn(1, 1d);
-        checkColumn(1L, 1d);
-        checkColumn(1f, 1d);
-        checkColumn(1d, 1d);
-        checkColumn(BigInteger.ONE, 1d);
-        checkColumn(new BigDecimal("1.1"), 1.1d);
+        // NULL
+        putAndCheckValue(new ExpressionValue.DoubleVal(), sql("field1"), DOUBLE, null);
 
-        checkColumn("1", 1d);
-        checkColumn('1', 1d);
+        // Numeric
+        putAndCheckValue((byte) 1, sql("this"), DOUBLE, mode.process(1d));
+        putAndCheckValue((short) 1, sql("this"), DOUBLE, mode.process(1d));
+        putAndCheckValue(1, sql("this"), DOUBLE, mode.process(1d));
+        putAndCheckValue(1L, sql("this"), DOUBLE, mode.process(1d));
+        putAndCheckValue(1L, sql("this"), DOUBLE, mode.process(1d));
+        putAndCheckValue(BigInteger.ONE, sql("this"), DOUBLE, mode.process(1d));
+        putAndCheckValue(BigDecimal.ONE, sql("this"), DOUBLE, mode.process(1d));
+        putAndCheckValue(1f, sql("this"), DOUBLE, mode.process(1d));
+        putAndCheckValue(1d, sql("this"), DOUBLE, mode.process(1d));
 
-        put(new ExpressionValue.IntegerVal());
-        checkValue("field1", null);
-
-        checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-        checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-
-        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply '" + mode.mode + "' to arguments of type '" + mode.mode + "(<DATE>)'");
-        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply '" + mode.mode + "' to arguments of type '" + mode.mode + "(<TIME>)'");
-        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply '" + mode.mode + "' to arguments of type '" + mode.mode + "(<TIMESTAMP>)'");
-        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply '" + mode.mode + "' to arguments of type '" + mode.mode + "(<TIMESTAMP_WITH_TIME_ZONE>)'");
-        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "Cannot apply '" + mode.mode + "' to arguments of type '" + mode.mode + "(<OBJECT>)'");
-        checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply '" + mode.mode + "' to arguments of type '" + mode.mode + "(<BOOLEAN>)'");
-    }
-
-    private void checkColumn(Object value, double expectedArgument) {
-        put(value);
-
-        checkValue("this", mode.process(expectedArgument));
-    }
-
-    private void checkColumnFailure(Object value, int expectedErrorCode, String expectedErrorMessage) {
-        put(value);
-
-        checkFailure("this", expectedErrorCode, expectedErrorMessage);
-    }
-
-    @Test
-    public void testParameter() {
-        put(0);
-
-        checkParameter((byte) 1, 1d);
-        checkParameter((short) 1, 1d);
-        checkParameter(1, 1d);
-        checkParameter(1L, 1d);
-        checkParameter(1f, 1d);
-        checkParameter(1d, 1d);
-        checkParameter(BigInteger.ONE, 1d);
-        checkParameter(new BigDecimal("1.1"), 1.1d);
-
-        checkParameter("1.1", 1.1d);
-        checkParameter('1', 1d);
-
-        checkValue("?", null, new Object[] { null });
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to DOUBLE", true);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DOUBLE", "bad");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DOUBLE", 'b');
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to DOUBLE", LOCAL_DATE_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to DOUBLE", LOCAL_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to DOUBLE", LOCAL_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to DOUBLE", OFFSET_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DOUBLE", new ExpressionValue.ObjectVal());
-    }
-
-    private void checkParameter(Object param, double expectedArgument) {
-        checkValue("?", mode.process(expectedArgument), param);
+        // Other
+        putAndCheckFailure('1', sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, VARCHAR));
+        putAndCheckFailure("1", sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, VARCHAR));
+        putAndCheckFailure(true, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, BOOLEAN));
+        putAndCheckFailure(LOCAL_DATE_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, DATE));
+        putAndCheckFailure(LOCAL_TIME_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, TIME));
+        putAndCheckFailure(LOCAL_DATE_TIME_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, TIMESTAMP));
+        putAndCheckFailure(OFFSET_DATE_TIME_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(OBJECT_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, OBJECT));
     }
 
     @Test
     public void testLiteral() {
         put(0);
 
-        checkLiteral(0, 0d);
-        checkLiteral("1.1", 1.1d);
-        checkLiteral("'1.1'", 1.1d);
+        checkValue0(sql("null"), DOUBLE, null);
+        checkValue0(sql("1"), DOUBLE, mode.process(1d));
+        checkValue0(sql("1.0"), DOUBLE, mode.process(1d));
+        checkValue0(sql("1E0"), DOUBLE, mode.process(1d));
 
-        checkLiteral("null", null);
-
-        checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply '" + mode.mode + "' to arguments of type '" + mode.mode + "(<BOOLEAN>)'");
+        checkFailure0(sql("true"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, BOOLEAN));
+        checkFailure0(sql("'1'"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, VARCHAR));
     }
 
-    private void checkLiteral(Object literal, Double expectedArg) {
-        String literalString = literal.toString();
+    @Test
+    public void testParameter() {
+        put(0);
 
-        checkValue(literalString, mode.process(expectedArg));
+        checkValue0(sql("?"), DOUBLE, null, new Object[] { null });
+
+        checkValue0(sql("?"), DOUBLE, mode.process(1d), (byte) 1);
+        checkValue0(sql("?"), DOUBLE, mode.process(1d), (short) 1);
+        checkValue0(sql("?"), DOUBLE, mode.process(1d), 1);
+        checkValue0(sql("?"), DOUBLE, mode.process(1d), 1L);
+        checkValue0(sql("?"), DOUBLE, mode.process(1d), BigInteger.ONE);
+        checkValue0(sql("?"), DOUBLE, mode.process(1d), BigDecimal.ONE);
+        checkValue0(sql("?"), DOUBLE, mode.process(1d), 1f);
+        checkValue0(sql("?"), DOUBLE, mode.process(1d), 1d);
+
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, VARCHAR), '1');
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, VARCHAR), "1");
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, BOOLEAN), true);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, DATE), LOCAL_DATE_VAL);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, TIME), LOCAL_TIME_VAL);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, TIMESTAMP), LOCAL_DATE_TIME_VAL);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
+        checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, OBJECT), OBJECT_VAL);
     }
 
-    private void checkValue(Object operand, Object expectedValue, Object... params) {
-        String sql = "SELECT " + mode.mode + "(" + operand + ") FROM map";
-
-        checkValueInternal(sql, SqlColumnType.DOUBLE, expectedValue, params);
+    private String sql(String operand) {
+        return "SELECT " + mode.mode + "(" + operand + ") FROM map";
     }
 
-    private void checkFailure(Object operand, int expectedErrorCode, String expectedErrorMessage, Object... params) {
-        String sql = "SELECT " + mode.mode + "(" + operand + ") FROM map";
+    @Test
+    public void testEquals() {
+        DoubleFunction function = DoubleFunction.create(ConstantExpression.create(1d, QueryDataType.DOUBLE), COS);
 
-        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
+        checkEquals(function, DoubleFunction.create(ConstantExpression.create(1d, QueryDataType.DOUBLE), COS), true);
+        checkEquals(function, DoubleFunction.create(ConstantExpression.create(2d, QueryDataType.DOUBLE), COS), false);
+        checkEquals(function, DoubleFunction.create(ConstantExpression.create(1d, QueryDataType.DOUBLE), SIN), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        DoubleFunction original = DoubleFunction.create(ConstantExpression.create(1d, QueryDataType.DOUBLE), COS);
+        DoubleFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_DOUBLE);
+
+        checkEquals(original, restored, true);
     }
 
     private static final class Mode {

@@ -18,13 +18,9 @@ package com.hazelcast.sql.impl.calcite.schema;
 
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.TestTableResolver;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
-import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.calcite.rel.type.RelDataType;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,7 +32,6 @@ import java.util.List;
 
 import static com.hazelcast.sql.impl.QueryUtils.prepareSearchPaths;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -82,14 +77,5 @@ public class HazelcastSchemaUtilsTest {
         expectedPaths0.add(Collections.emptyList());
 
         assertEquals(expectedPaths0, paths);
-    }
-
-    @Test
-    public void testConvert() {
-        TableField field = new TableField("aField", QueryDataType.VARCHAR, false);
-
-        RelDataType relType = HazelcastSchemaUtils.convert(field, HazelcastTypeFactory.INSTANCE);
-
-        assertTrue(relType.isNullable());
     }
 }
