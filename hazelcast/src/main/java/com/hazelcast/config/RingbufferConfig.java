@@ -103,7 +103,7 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
         if (config.ringbufferStoreConfig != null) {
             this.ringbufferStoreConfig = new RingbufferStoreConfig(config.ringbufferStoreConfig);
         }
-        this.mergePolicyConfig = config.mergePolicyConfig;
+        this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
         this.splitBrainProtectionName = config.splitBrainProtectionName;
     }
 
