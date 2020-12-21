@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlExecute2Codec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
@@ -37,7 +37,7 @@ import java.util.List;
 /**
  * SQL query execute task.
  */
-public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCodec.RequestParameters> {
+public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecute2Codec.RequestParameters> {
     public SqlExecuteMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -88,8 +88,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
     }
 
     @Override
-    protected SqlExecuteCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SqlExecuteCodec.decodeRequest(clientMessage);
+    protected SqlExecute2Codec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SqlExecute2Codec.decodeRequest(clientMessage);
     }
 
     @SuppressWarnings("unchecked")
@@ -100,7 +100,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         List<List<Data>> rowPage = response0.getRowPage();
         Collection<Collection<Data>> rowPage0 = (Collection<Collection<Data>>) (Object) rowPage;
 
-        return SqlExecuteCodec.encodeResponse(
+        return SqlExecute2Codec.encodeResponse(
             response0.getQueryId(),
             response0.getRowMetadata(),
             rowPage0,

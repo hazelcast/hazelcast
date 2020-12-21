@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.client;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlExecute2Codec;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
@@ -26,20 +27,20 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.SqlErrorCode;
 
 import javax.annotation.Nonnull;
 import java.security.AccessControlException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -51,13 +52,8 @@ public class SqlClientService implements SqlService {
     private static final int SERVICE_ID_MASK = 0x00FF0000;
     private static final int SERVICE_ID_SHIFT = 16;
 
-    private static final int METHOD_ID_MASK = 0x0000FF00;
-    private static final int METHOD_ID_SHIFT = 8;
-
     /** ID of the SQL beta service. Should match the ID declared in Sql.yaml */
     private static final int SQL_SERVICE_ID = 33;
-
-    private static final int INVALID_MESSAGE_ID = 255;
 
     private final HazelcastClientInstanceImpl client;
 
@@ -86,7 +82,7 @@ public class SqlClientService implements SqlService {
                 params0.add(serializeParameter(param));
             }
 
-            ClientMessage requestMessage = SqlExecuteCodec.encodeRequest(
+            ClientMessage requestMessage = SqlExecute2Codec.encodeRequest(
                 statement.getSql(),
                 params0,
                 statement.getTimeoutMillis(),
@@ -96,7 +92,7 @@ public class SqlClientService implements SqlService {
 
             ClientMessage responseMessage = invoke(requestMessage, connection);
 
-            SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(responseMessage);
+            SqlExecute2Codec.ResponseParameters response = SqlExecute2Codec.decodeResponse(responseMessage);
 
             handleResponseError(response.error);
 
@@ -167,12 +163,12 @@ public class SqlClientService implements SqlService {
         }
 
         try {
-            ClientMessage requestMessage = SqlCloseCodec.encodeRequest(QueryId.create(UuidUtil.newSecureUUID()));
-
-            int messageType = requestMessage.getMessageType();
-            int messageTypeWithInvalidMethodId = (messageType & (~METHOD_ID_MASK)) | (INVALID_MESSAGE_ID << METHOD_ID_SHIFT);
-
-            requestMessage.setMessageType(messageTypeWithInvalidMethodId);
+            ClientMessage requestMessage = SqlExecuteCodec.encodeRequest(
+                "SELECT * FROM table",
+                Collections.emptyList(),
+                100L,
+                100
+            );
 
             invoke(requestMessage, connection);
         } catch (Exception e) {

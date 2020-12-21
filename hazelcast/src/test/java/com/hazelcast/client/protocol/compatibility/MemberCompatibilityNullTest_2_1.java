@@ -7360,7 +7360,6 @@ public class MemberCompatibilityNullTest_2_1 {
         assertTrue(isEqual(aListOfData, parameters.parameters));
         assertTrue(isEqual(aLong, parameters.timeoutMillis));
         assertTrue(isEqual(anInt, parameters.cursorBufferSize));
-        assertFalse(parameters.isSchemaExists);
     }
 
     @Test
