@@ -17,9 +17,11 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
-import com.hazelcast.sql.support.expressions.ExpressionValue;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,14 +34,29 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
 
+import static com.hazelcast.sql.SqlColumnType.BIGINT;
+import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
+import static com.hazelcast.sql.SqlColumnType.DATE;
+import static com.hazelcast.sql.SqlColumnType.DECIMAL;
+import static com.hazelcast.sql.SqlColumnType.DOUBLE;
+import static com.hazelcast.sql.SqlColumnType.INTEGER;
+import static com.hazelcast.sql.SqlColumnType.OBJECT;
+import static com.hazelcast.sql.SqlColumnType.REAL;
+import static com.hazelcast.sql.SqlColumnType.SMALLINT;
+import static com.hazelcast.sql.SqlColumnType.TIME;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
+import static com.hazelcast.sql.SqlColumnType.TINYINT;
+import static com.hazelcast.sql.SqlColumnType.VARCHAR;
+import static com.hazelcast.sql.impl.SqlErrorCode.DATA_EXCEPTION;
+import static com.hazelcast.sql.impl.SqlErrorCode.PARSING;
 import static java.util.Arrays.asList;
 
 @SuppressWarnings("SpellCheckingInspection")
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
-
+public class SubstringFunctionIntegrationTest extends ExpressionTestSupport {
     @Parameterized.Parameter
     public boolean useFunctionalSyntax;
 
@@ -52,217 +69,172 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
     }
 
     @Test
-    public void test_input() {
-        // String column
-        put("abcde");
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "abcde");
-        checkValueInternal(sql("this", "1", "1"), SqlColumnType.VARCHAR, "a");
-        checkValueInternal(sql("this", "1", "2"), SqlColumnType.VARCHAR, "ab");
-        checkValueInternal(sql("this", "1", "5"), SqlColumnType.VARCHAR, "abcde");
-        checkValueInternal(sql("this", "1", "6"), SqlColumnType.VARCHAR, "abcde");
-        checkFailureInternal(sql("this", "1", "-1"), SqlErrorCode.DATA_EXCEPTION, "SUBSTRING \"length\" operand cannot be negative");
+    public void testLogic() {
+        putAndCheckValue("abcde", sql2("null", "1"), VARCHAR, null);
+        putAndCheckValue("abcde", sql2("null", "null"), VARCHAR, null);
+        putAndCheckValue("abcde", sql2("this", "null"), VARCHAR, null);
+        putAndCheckValue("abcde", sql2("this", "1"), VARCHAR, "abcde");
+        putAndCheckValue("abcde", sql2("this", "2"), VARCHAR, "bcde");
+        putAndCheckValue("abcde", sql2("this", "5"), VARCHAR, "e");
+        putAndCheckValue("abcde", sql2("this", "6"), VARCHAR, "");
+        putAndCheckValue("abcde", sql2("this", "7"), VARCHAR, "");
+        putAndCheckFailure("abcde", sql2("this", "0"), DATA_EXCEPTION, "SUBSTRING \"start\" operand must be positive");
+        putAndCheckFailure("abcde", sql2("this", "-1"), DATA_EXCEPTION, "SUBSTRING \"start\" operand must be positive");
 
-        // Character column
-        put('a');
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "a");
-        checkValueInternal(sql("this", "2"), SqlColumnType.VARCHAR, "");
-        checkValueInternal(sql("this", "1", "1"), SqlColumnType.VARCHAR, "a");
+        putAndCheckValue("abcde", sql3("this", "1", "null"), VARCHAR, null);
+        putAndCheckValue("abcde", sql3("this", "null", "1"), VARCHAR, null);
+        putAndCheckValue("abcde", sql3("this", "null", "null"), VARCHAR, null);
+        putAndCheckValue("abcde", sql3("null", "null", "null"), VARCHAR, null);
+        putAndCheckValue("abcde", sql3("this", "1", "0"), VARCHAR, "");
+        putAndCheckValue("abcde", sql3("this", "1", "1"), VARCHAR, "a");
+        putAndCheckValue("abcde", sql3("this", "1", "2"), VARCHAR, "ab");
+        putAndCheckValue("abcde", sql3("this", "1", "5"), VARCHAR, "abcde");
+        putAndCheckValue("abcde", sql3("this", "1", "6"), VARCHAR, "abcde");
+        putAndCheckValue("abcde", sql3("this", "5", "6"), VARCHAR, "e");
+        putAndCheckFailure("abcde", sql3("this", "1", "-1"), DATA_EXCEPTION, "SUBSTRING \"length\" operand cannot be negative");
+    }
 
-        // Null value
-        put(new ExpressionValue.StringVal().field1(null));
-        checkValueInternal(sql("field1", "1"), SqlColumnType.VARCHAR, null);
-
-        // Other columns
-        put(true);
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "true");
-
-        put((byte) 1);
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "1");
-
-        put((short) 2);
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "2");
-
-        put(3);
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "3");
-
-        put(4L);
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "4");
-
-        put(new BigInteger("5"));
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "5");
-
-        put(new BigDecimal("6"));
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "6");
-
-        put(7f);
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "7.0");
-
-        put(8f);
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "8.0");
-
-        // Parameter
-        put(1);
-        checkValueInternal(sql("?", "1"), SqlColumnType.VARCHAR, "abcde", "abcde");
-        checkValueInternal(sql("?", "1"), SqlColumnType.VARCHAR, "a", 'a');
-        checkValueInternal(sql("?", "1"), SqlColumnType.VARCHAR, null, new Object[] { null });
-
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TINYINT to VARCHAR", (byte) 1);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from SMALLINT to VARCHAR", (short) 1);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BIGINT to VARCHAR", 1L);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to VARCHAR", BigInteger.ONE);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to VARCHAR", BigDecimal.ONE);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to VARCHAR", 1f);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to VARCHAR", 1d);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to VARCHAR", new ExpressionValue.ObjectVal());
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to VARCHAR", LOCAL_DATE_VAL);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to VARCHAR", LOCAL_TIME_VAL);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to VARCHAR", LOCAL_DATE_TIME_VAL);
-        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to VARCHAR", OFFSET_DATE_TIME_VAL);
+    @Test
+    public void testArg1() {
+        // Column
+        putAndCheckValue("abcde", sql2("this", "2"), VARCHAR, "bcde");
+        putAndCheckValue('a', sql2("this", "1"), VARCHAR, "a");
+        putAndCheckFailure(true, sql2("this", "1"), PARSING, signatureError(BOOLEAN, INTEGER));
+        putAndCheckFailure((byte) 1, sql2("this", "1"), PARSING, signatureError(TINYINT, INTEGER));
+        putAndCheckFailure((short) 1, sql2("this", "1"), PARSING, signatureError(SMALLINT, INTEGER));
+        putAndCheckFailure(1, sql2("this", "1"), PARSING, signatureError(INTEGER, INTEGER));
+        putAndCheckFailure(1L, sql2("this", "1"), PARSING, signatureError(BIGINT, INTEGER));
+        putAndCheckFailure(BigInteger.ONE, sql2("this", "1"), PARSING, signatureError(DECIMAL, INTEGER));
+        putAndCheckFailure(BigDecimal.ONE, sql2("this", "1"), PARSING, signatureError(DECIMAL, INTEGER));
+        putAndCheckFailure(1f, sql2("this", "1"), PARSING, signatureError(REAL, INTEGER));
+        putAndCheckFailure(1d, sql2("this", "1"), PARSING, signatureError(DOUBLE, INTEGER));
+        putAndCheckFailure(LOCAL_DATE_VAL, sql2("this", "1"), PARSING, signatureError(DATE, INTEGER));
+        putAndCheckFailure(LOCAL_TIME_VAL, sql2("this", "1"), PARSING, signatureError(TIME, INTEGER));
+        putAndCheckFailure(LOCAL_DATE_TIME_VAL, sql2("this", "1"), PARSING, signatureError(TIMESTAMP, INTEGER));
+        putAndCheckFailure(OFFSET_DATE_TIME_VAL, sql2("this", "1"), PARSING, signatureError(TIMESTAMP_WITH_TIME_ZONE, INTEGER));
+        putAndCheckFailure(OBJECT_VAL, sql2("field1", "1"), PARSING, signatureError(OBJECT, INTEGER));
 
         // Literal
-        checkValueInternal(sql("'abc'", "1"), SqlColumnType.VARCHAR, "abc");
-        checkValueInternal(sql("1", "1"), SqlColumnType.VARCHAR, "1");
+        checkValue0(sql2("null", "1"), VARCHAR, null);
+        checkValue0(sql2("'abcde'", "2"), VARCHAR, "bcde");
+        checkFailure0(sql2("true", "1"), PARSING, signatureError(BOOLEAN, INTEGER));
+        checkFailure0(sql2("1", "1"), PARSING, signatureError(TINYINT, INTEGER));
+        checkFailure0(sql2("1.1", "1"), PARSING, signatureError(DECIMAL, INTEGER));
+        checkFailure0(sql2("1.1E1", "1"), PARSING, signatureError(DOUBLE, INTEGER));
+
+        // Parameter
+        checkValue0(sql2("?", "1"), VARCHAR, null, (String) null);
+        checkValue0(sql2("?", "2"), VARCHAR, "bcde", "abcde");
+        checkValue0(sql2("?", "1"), VARCHAR, "a", 'a');
+        checkFailure0(sql2("?", "1"), DATA_EXCEPTION, parameterError(0, VARCHAR, BOOLEAN), true);
+        checkFailure0(sql2("?", "1"), DATA_EXCEPTION, parameterError(0, VARCHAR, TINYINT), (byte) 1);
+        checkFailure0(sql2("?", "1"), DATA_EXCEPTION, parameterError(0, VARCHAR, SMALLINT), (short) 1);
+        checkFailure0(sql2("?", "1"), DATA_EXCEPTION, parameterError(0, VARCHAR, INTEGER), 1);
+        checkFailure0(sql2("?", "1"), DATA_EXCEPTION, parameterError(0, VARCHAR, BIGINT), 1L);
+        checkFailure0(sql2("?", "1"), DATA_EXCEPTION, parameterError(0, VARCHAR, DECIMAL), BigInteger.ONE);
+        checkFailure0(sql2("?", "1"), DATA_EXCEPTION, parameterError(0, VARCHAR, DECIMAL), BigDecimal.ONE);
+        checkFailure0(sql2("?", "1"), DATA_EXCEPTION, parameterError(0, VARCHAR, REAL), 1f);
+        checkFailure0(sql2("?", "1"), DATA_EXCEPTION, parameterError(0, VARCHAR, DOUBLE), 1d);
+        checkFailure0(sql2("?", "1"), DATA_EXCEPTION, parameterError(0, VARCHAR, DATE), LOCAL_DATE_VAL);
+        checkFailure0(sql2("?", "1"), DATA_EXCEPTION, parameterError(0, VARCHAR, TIME), LOCAL_TIME_VAL);
+        checkFailure0(sql2("?", "1"), DATA_EXCEPTION, parameterError(0, VARCHAR, TIMESTAMP), LOCAL_DATE_TIME_VAL);
+        checkFailure0(sql2("?", "1"), DATA_EXCEPTION, parameterError(0, VARCHAR, TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
+        checkFailure0(sql2("?", "1"), DATA_EXCEPTION, parameterError(0, VARCHAR, OBJECT), OBJECT_VAL);
     }
 
     @Test
-    public void test_start() {
-        // Different values
-        put("abcde");
-        checkValueInternal(sql("this", "null"), SqlColumnType.VARCHAR, null);
-        checkValueInternal(sql("this", "1"), SqlColumnType.VARCHAR, "abcde");
-        checkValueInternal(sql("this", "2"), SqlColumnType.VARCHAR, "bcde");
-        checkValueInternal(sql("this", "5"), SqlColumnType.VARCHAR, "e");
-        checkValueInternal(sql("this", "6"), SqlColumnType.VARCHAR, "");
-        checkValueInternal(sql("this", "10"), SqlColumnType.VARCHAR, "");
-        checkFailureInternal(sql("this", "0"), SqlErrorCode.DATA_EXCEPTION, "SUBSTRING \"start\" operand must be positive");
-        checkFailureInternal(sql("this", "-1"), SqlErrorCode.DATA_EXCEPTION, "SUBSTRING \"start\" operand must be positive");
+    public void testArg2() {
+        // Column
+        putAndCheckFailure(true, sql2("'abcde'", "this"), PARSING, signatureError(VARCHAR, BOOLEAN));
+        putAndCheckValue((byte) 2, sql2("'abcde'", "this"), VARCHAR, "bcde");
+        putAndCheckValue((short) 2, sql2("'abcde'", "this"), VARCHAR, "bcde");
+        putAndCheckValue(2, sql2("'abcde'", "this"), VARCHAR, "bcde");
+        putAndCheckFailure(2L, sql2("'abcde'", "this"), PARSING,  signatureError(VARCHAR, BIGINT));
+        putAndCheckFailure(BigInteger.ONE, sql2("'abcde'", "this"), PARSING, signatureError(VARCHAR, DECIMAL));
+        putAndCheckFailure(BigDecimal.ONE, sql2("'abcde'", "this"), PARSING, signatureError(VARCHAR, DECIMAL));
+        putAndCheckFailure(2f, sql2("'abcde'", "this"), PARSING, signatureError(VARCHAR, REAL));
+        putAndCheckFailure(2d, sql2("'abcde'", "this"), PARSING, signatureError(VARCHAR, DOUBLE));
+        putAndCheckFailure(LOCAL_DATE_VAL, sql2("'abcde'", "this"), PARSING, signatureError(VARCHAR, DATE));
+        putAndCheckFailure(LOCAL_TIME_VAL, sql2("'abcde'", "this"), PARSING, signatureError(VARCHAR, TIME));
+        putAndCheckFailure(LOCAL_DATE_TIME_VAL, sql2("'abcde'", "this"), PARSING, signatureError(VARCHAR, TIMESTAMP));
+        putAndCheckFailure(OFFSET_DATE_TIME_VAL, sql2("'abcde'", "this"), PARSING, signatureError(VARCHAR, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(OBJECT_VAL, sql2("'abcde'", "this"), PARSING, signatureError(VARCHAR, OBJECT));
 
-        // Columns
-        put(new ExpressionValue.IntegerVal());
-        checkValueInternal(sql("'abcde'", "field1"), SqlColumnType.VARCHAR, null);
+        // Literal
+        checkValue0(sql2("'abcde'", "null"), VARCHAR, null);
+        checkFailure0(sql2("'abcde'", "true"), PARSING, signatureError(VARCHAR, BOOLEAN));
+        checkFailure0(sql2("'abcde'", "'2'"), PARSING, signatureError(VARCHAR, VARCHAR));
+        checkValue0(sql2("'abcde'", "2"), VARCHAR, "bcde");
+        checkFailure0(sql2("'abcde'", "2.2"), PARSING, signatureError(VARCHAR, DECIMAL));
+        checkFailure0(sql2("'abcde'", "2.2E2"), PARSING, signatureError(VARCHAR, DOUBLE));
 
-        put(true);
-        checkFailureInternal(sql("'abcde'", "this"), SqlErrorCode.PARSING, "Cannot apply 'SUBSTRING' to arguments of type 'SUBSTRING(<VARCHAR> FROM <BOOLEAN>)'");
-
-        put((byte) 2);
-        checkValueInternal(sql("'abcde'", "this"), SqlColumnType.VARCHAR, "bcde");
-
-        put((short) 2);
-        checkValueInternal(sql("'abcde'", "this"), SqlColumnType.VARCHAR, "bcde");
-
-        put(2);
-        checkValueInternal(sql("'abcde'", "this"), SqlColumnType.VARCHAR, "bcde");
-
-        put(2L);
-        checkValueInternal(sql("'abcde'", "this"), SqlColumnType.VARCHAR, "bcde");
-
-        put("2");
-        checkValueInternal(sql("'abcde'", "this"), SqlColumnType.VARCHAR, "bcde");
-
-        put('2');
-        checkValueInternal(sql("'abcde'", "this"), SqlColumnType.VARCHAR, "bcde");
-
-        // Parameters
-        put("abcde");
-        checkValueInternal(sql("this", "?"), SqlColumnType.VARCHAR, null, new Object[] { null});
-        checkValueInternal(sql("this", "?"), SqlColumnType.VARCHAR, "bcde", (byte) 2);
-        checkValueInternal(sql("this", "?"), SqlColumnType.VARCHAR, "bcde", (short) 2);
-        checkValueInternal(sql("this", "?"), SqlColumnType.VARCHAR, "bcde", 2);
-        checkValueInternal(sql("this", "?"), SqlColumnType.VARCHAR, "bcde", "2");
-        checkValueInternal(sql("this", "?"), SqlColumnType.VARCHAR, "bcde", '2');
-
-        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to INTEGER", "bad");
-        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to INTEGER", 'b');
-
-        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to INTEGER", true);
-        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BIGINT to INTEGER", 2L);
-        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", BigInteger.ONE);
-        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", BigDecimal.ONE);
-        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to INTEGER", 2f);
-        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to INTEGER", 2d);
-        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to INTEGER", LOCAL_DATE_VAL);
-        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to INTEGER", LOCAL_TIME_VAL);
-        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to INTEGER", LOCAL_DATE_TIME_VAL);
-        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to INTEGER", OFFSET_DATE_TIME_VAL);
-
-        // Literals
-        put("abcde");
-        checkValueInternal(sql("this", "2"), SqlColumnType.VARCHAR, "bcde");
-        checkValueInternal(sql("this", "'2'"), SqlColumnType.VARCHAR, "bcde");
-        checkValueInternal(sql("this", "null"), SqlColumnType.VARCHAR, null);
-        checkFailureInternal(sql("this", "true"), SqlErrorCode.PARSING, "Cannot apply 'SUBSTRING' to arguments of type 'SUBSTRING(<VARCHAR> FROM <BOOLEAN>)'");
+        // Parameter
+        checkValue0(sql2("'abcde'", "?"), VARCHAR, null, (Integer) null);
+        checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, BOOLEAN), true);
+        checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, VARCHAR), "2");
+        checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, VARCHAR), '2');
+        checkValue0(sql2("'abcde'", "?"), VARCHAR, "bcde", (byte) 2);
+        checkValue0(sql2("'abcde'", "?"), VARCHAR, "bcde", (short) 2);
+        checkValue0(sql2("'abcde'", "?"), VARCHAR, "bcde", 2);
+        checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, BIGINT), 2L);
+        checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, DECIMAL), BigInteger.ONE);
+        checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, DECIMAL), BigDecimal.ONE);
+        checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, REAL), 2f);
+        checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, DOUBLE), 2d);
+        checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, DATE), LOCAL_DATE_VAL);
+        checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, TIME), LOCAL_TIME_VAL);
+        checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, TIMESTAMP), LOCAL_DATE_TIME_VAL);
+        checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
+        checkFailure0(sql2("'abcde'", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, OBJECT), OBJECT_VAL);
     }
 
     @Test
-    public void test_length() {
-        // Different values
-        put(1);
-        checkValueInternal(sql("'abcde'", "2", "0"), SqlColumnType.VARCHAR, "");
-        checkValueInternal(sql("'abcde'", "2", "2"), SqlColumnType.VARCHAR, "bc");
-        checkValueInternal(sql("'abcde'", "2", "10"), SqlColumnType.VARCHAR, "bcde");
-        checkValueInternal(sql("'abcde'", "2", "null"), SqlColumnType.VARCHAR, null);
-        checkFailureInternal(sql("'abcde'", "2", "-1"), SqlErrorCode.DATA_EXCEPTION, "SUBSTRING \"length\" operand cannot be negative");
+    public void testArg3() {
+        // Column
+        putAndCheckFailure(true, sql3("'abcde'", "2", "this"), PARSING, signatureError(VARCHAR, INTEGER, BOOLEAN));
+        putAndCheckValue((byte) 2, sql3("'abcde'", "2", "this"), VARCHAR, "bc");
+        putAndCheckValue((short) 2, sql3("'abcde'", "2", "this"), VARCHAR, "bc");
+        putAndCheckValue(2, sql3("'abcde'", "2", "this"), VARCHAR, "bc");
+        putAndCheckFailure(2L, sql3("'abcde'", "2", "this"), PARSING,  signatureError(VARCHAR, INTEGER, BIGINT));
+        putAndCheckFailure(BigInteger.ONE, sql3("'abcde'", "2", "this"), PARSING, signatureError(VARCHAR, INTEGER, DECIMAL));
+        putAndCheckFailure(BigDecimal.ONE, sql3("'abcde'", "2", "this"), PARSING, signatureError(VARCHAR, INTEGER, DECIMAL));
+        putAndCheckFailure(2f, sql3("'abcde'", "2", "this"), PARSING, signatureError(VARCHAR, INTEGER, REAL));
+        putAndCheckFailure(2d, sql3("'abcde'", "2", "this"), PARSING, signatureError(VARCHAR, INTEGER, DOUBLE));
+        putAndCheckFailure(LOCAL_DATE_VAL, sql3("'abcde'", "2", "this"), PARSING, signatureError(VARCHAR, INTEGER, DATE));
+        putAndCheckFailure(LOCAL_TIME_VAL, sql3("'abcde'", "2", "this"), PARSING, signatureError(VARCHAR, INTEGER, TIME));
+        putAndCheckFailure(LOCAL_DATE_TIME_VAL, sql3("'abcde'", "2", "this"), PARSING, signatureError(VARCHAR, INTEGER, TIMESTAMP));
+        putAndCheckFailure(OFFSET_DATE_TIME_VAL, sql3("'abcde'", "2", "this"), PARSING, signatureError(VARCHAR, INTEGER, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(OBJECT_VAL, sql3("'abcde'", "2", "this"), PARSING, signatureError(VARCHAR, INTEGER, OBJECT));
 
-        // Columns
-        put(new ExpressionValue.IntegerVal());
-        checkValueInternal(sql("'abcde'", "2", "field1"), SqlColumnType.VARCHAR, null);
+        // Literal
+        checkValue0(sql3("'abcde'", "2", "null"), VARCHAR, null);
+        checkFailure0(sql3("'abcde'", "2", "true"), PARSING, signatureError(VARCHAR, INTEGER, BOOLEAN));
+        checkFailure0(sql3("'abcde'", "2", "'2'"), PARSING, signatureError(VARCHAR, INTEGER, VARCHAR));
+        checkValue0(sql3("'abcde'", "2", "2"), VARCHAR, "bc");
+        checkFailure0(sql3("'abcde'", "2", "2.2"), PARSING, signatureError(VARCHAR, INTEGER, DECIMAL));
+        checkFailure0(sql3("'abcde'", "2", "2.2E2"), PARSING, signatureError(VARCHAR, INTEGER, DOUBLE));
 
-        put(true);
-        checkFailureInternal(sql("'abcde'", "2", "this"), SqlErrorCode.PARSING, "Cannot apply 'SUBSTRING' to arguments of type 'SUBSTRING(<VARCHAR> FROM <TINYINT> FOR <BOOLEAN>)'");
-
-        put((byte) 2);
-        checkValueInternal(sql("'abcde'", "2", "this"), SqlColumnType.VARCHAR, "bc");
-
-        put((short) 2);
-        checkValueInternal(sql("'abcde'", "2", "this"), SqlColumnType.VARCHAR, "bc");
-
-        put(2);
-        checkValueInternal(sql("'abcde'", "2", "this"), SqlColumnType.VARCHAR, "bc");
-
-        put(2L);
-        checkValueInternal(sql("'abcde'", "2", "this"), SqlColumnType.VARCHAR, "bc");
-
-        // Parameters
-        put(1);
-        checkValueInternal(sql("'abcde'", "2", "?"), SqlColumnType.VARCHAR, null, new Object[] { null });
-        checkValueInternal(sql("'abcde'", "2", "?"), SqlColumnType.VARCHAR, "bc", (byte) 2);
-        checkValueInternal(sql("'abcde'", "2", "?"), SqlColumnType.VARCHAR, "bc", (short) 2);
-        checkValueInternal(sql("'abcde'", "2", "?"), SqlColumnType.VARCHAR, "bc", 2);
-        checkValueInternal(sql("'abcde'", "2", "?"), SqlColumnType.VARCHAR, "bc", "2");
-        checkValueInternal(sql("'abcde'", "2", "?"), SqlColumnType.VARCHAR, "bc", '2');
-
-        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to INTEGER", "bad");
-        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to INTEGER", 'b');
-
-        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to INTEGER", true);
-        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BIGINT to INTEGER", 2L);
-        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", new BigInteger("2"));
-        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", new BigDecimal("2"));
-        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to INTEGER", 2f);
-        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to INTEGER", 2d);
-        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to INTEGER", LOCAL_DATE_VAL);
-        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to INTEGER", LOCAL_TIME_VAL);
-        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to INTEGER", LOCAL_DATE_TIME_VAL);
-        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to INTEGER", OFFSET_DATE_TIME_VAL);
-
-        // Literals
-        put(1);
-
-        checkValueInternal(sql("'abcde'", "2", "2"), SqlColumnType.VARCHAR, "bc");
-        checkValueInternal(sql("'abcde'", "2", "'2'"), SqlColumnType.VARCHAR, "bc");
-        checkValueInternal(sql("'abcde'", "2", "null"), SqlColumnType.VARCHAR, null);
-        checkFailureInternal(sql("'abcde'", "2", "true"), SqlErrorCode.PARSING, "Cannot apply 'SUBSTRING' to arguments of type 'SUBSTRING(<VARCHAR> FROM <TINYINT> FOR <BOOLEAN>)'");
+        // Parameter
+        checkValue0(sql3("'abcde'", "2", "?"), VARCHAR, null, (Integer) null);
+        checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, BOOLEAN), true);
+        checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, VARCHAR), "2");
+        checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, VARCHAR), '2');
+        checkValue0(sql3("'abcde'", "2", "?"), VARCHAR, "bc", (byte) 2);
+        checkValue0(sql3("'abcde'", "2", "?"), VARCHAR, "bc", (short) 2);
+        checkValue0(sql3("'abcde'", "2", "?"), VARCHAR, "bc", 2);
+        checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, BIGINT), 2L);
+        checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, DECIMAL), BigInteger.ONE);
+        checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, DECIMAL), BigDecimal.ONE);
+        checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, REAL), 2f);
+        checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, DOUBLE), 2d);
+        checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, DATE), LOCAL_DATE_VAL);
+        checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, TIME), LOCAL_TIME_VAL);
+        checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, TIMESTAMP), LOCAL_DATE_TIME_VAL);
+        checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
+        checkFailure0(sql3("'abcde'", "2", "?"), DATA_EXCEPTION, parameterError(0, INTEGER, OBJECT), OBJECT_VAL);
     }
 
-    @Test
-    public void test_parameters_only() {
-        put(1);
-        checkValueInternal(sql("?", "?"), SqlColumnType.VARCHAR, "bcde", "abcde", 2);
-        checkValueInternal(sql("?", "?", "?"), SqlColumnType.VARCHAR, "bc", "abcde", 2, 2);
-    }
-
-    private String sql(String inputOperand, String fromOperand) {
+    private String sql2(String inputOperand, String fromOperand) {
         if (useFunctionalSyntax) {
             return "SELECT SUBSTRING(" + inputOperand + ", " + fromOperand + ") FROM map";
         } else {
@@ -270,11 +242,47 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         }
     }
 
-    private String sql(String inputOperand, String fromOperand, String forOperand) {
+    private String sql3(String inputOperand, String fromOperand, String forOperand) {
         if (useFunctionalSyntax) {
             return "SELECT SUBSTRING(" + inputOperand + ", " + fromOperand + ", " + forOperand + ") FROM map";
         } else {
             return "SELECT SUBSTRING(" + inputOperand + " FROM " + fromOperand + " FOR " + forOperand + ") FROM map";
         }
+    }
+
+    @Test
+    public void testEquals() {
+        Expression<?> input1 = ConstantExpression.create("a", QueryDataType.VARCHAR);
+        Expression<?> input2 = ConstantExpression.create("b", QueryDataType.VARCHAR);
+
+        Expression<?> start1 = ConstantExpression.create(1, QueryDataType.INT);
+        Expression<?> start2 = ConstantExpression.create(2, QueryDataType.INT);
+
+        Expression<?> length1 = ConstantExpression.create(10, QueryDataType.INT);
+        Expression<?> length2 = ConstantExpression.create(20, QueryDataType.INT);
+
+        SubstringFunction function = SubstringFunction.create(input1, start1, length1);
+
+        checkEquals(function, SubstringFunction.create(input1, start1, length1), true);
+        checkEquals(function, SubstringFunction.create(input2, start1, length1), false);
+        checkEquals(function, SubstringFunction.create(input1, start2, length1), false);
+        checkEquals(function, SubstringFunction.create(input1, start1, length2), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        SubstringFunction original = SubstringFunction.create(
+            ConstantExpression.create("a", QueryDataType.VARCHAR),
+            ConstantExpression.create(1, QueryDataType.INT),
+            ConstantExpression.create(10, QueryDataType.INT)
+        );
+
+        SubstringFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_SUBSTRING);
+
+        checkEquals(original, restored, true);
+    }
+
+    private static String signatureError(SqlColumnType... columnTypes) {
+        return signatureErrorFunction("SUBSTRING", columnTypes);
     }
 }

@@ -36,7 +36,6 @@ import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raftop.metadata.InitMetadataRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.PublishActiveCPMembersOp;
 import com.hazelcast.cp.internal.raftop.metadata.TerminateRaftNodesOp;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.Clock;
@@ -1073,10 +1072,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     private void sendMembershipEvents(Collection<CPMemberInfo> currentMembers, Collection<CPMemberInfo> newMembers) {
-        // RU_COMPAT_4_0
-        if (nodeEngine.getClusterService().getClusterVersion().isUnknownOrLessThan(Versions.V4_1)) {
-            return;
-        }
         if (!isMetadataGroupLeader()) {
              return;
         }

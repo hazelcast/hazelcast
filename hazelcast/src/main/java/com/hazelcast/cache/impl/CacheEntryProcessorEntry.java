@@ -21,7 +21,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 
-import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.MutableEntry;
 
@@ -67,9 +66,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
         this.completionId = completionId;
         this.startNanos = cacheRecordStore.cacheConfig.isStatisticsEnabled() ? Timer.nanos() : 0;
 
-        final Factory<ExpiryPolicy> expiryPolicyFactory =
-                cacheRecordStore.cacheConfig.getExpiryPolicyFactory();
-        this.expiryPolicy = expiryPolicyFactory.create();
+        this.expiryPolicy = cacheRecordStore.getExpiryPolicy(record, null);
     }
 
     @Override

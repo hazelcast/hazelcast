@@ -43,6 +43,7 @@ import com.hazelcast.spi.impl.proxyservice.impl.DistributedObjectEventPacket;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.InitializeDistributedObjectOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
+import com.hazelcast.spi.impl.tenantcontrol.impl.TenantControlReplicationOperation;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY;
@@ -78,6 +79,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int USERNAME_PWD_CRED = 23;
     public static final int SIMPLE_TOKEN_CRED = 24;
     public static final int DISTRIBUTED_OBJECT_EVENT_PACKET = 25;
+    public static final int APPEND_TENANT_CONTROL_OPERATION = 26;
 
     private static final DataSerializableFactory FACTORY = createFactoryInternal();
 
@@ -143,6 +145,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new SimpleTokenCredentials();
                     case DISTRIBUTED_OBJECT_EVENT_PACKET:
                         return new DistributedObjectEventPacket();
+                    case APPEND_TENANT_CONTROL_OPERATION:
+                        return new TenantControlReplicationOperation();
                     default:
                         return null;
                 }

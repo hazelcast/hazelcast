@@ -16,11 +16,13 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.CalciteConfiguration;
 import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.sql.SqlNode;
@@ -30,7 +32,6 @@ import org.apache.calcite.sql.parser.SqlParser.Config;
 import org.apache.calcite.sql.parser.SqlParserImplFactory;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
-import org.apache.calcite.sql.validate.SqlValidator;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -84,7 +85,7 @@ public class QueryParser {
         Config config = createConfig(sqlBackend.parserFactory());
         SqlParser parser = SqlParser.create(sql, config);
 
-        SqlValidator validator = sqlBackend.validator(catalogReader, typeFactory, conformance);
+        HazelcastSqlValidator validator = (HazelcastSqlValidator) sqlBackend.validator(catalogReader, typeFactory, conformance);
         SqlNode node = validator.validate(parser.parseStmt());
 
         SqlVisitor<Void> visitor = sqlBackend.unsupportedOperationVisitor(catalogReader);
@@ -92,7 +93,7 @@ public class QueryParser {
 
         return new QueryParseResult(
             node,
-            validator.getParameterRowType(node),
+            new QueryParameterMetadata(validator.getParameterConverters(node)),
             validator,
             sqlBackend
         );

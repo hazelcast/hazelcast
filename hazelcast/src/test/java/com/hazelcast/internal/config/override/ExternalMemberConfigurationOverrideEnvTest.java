@@ -17,7 +17,9 @@
 package com.hazelcast.internal.config.override;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
@@ -236,6 +238,17 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
+    public void shouldHandleMemcachedProtocolConfig() throws Exception {
+        Config config = new Config();
+        config.getNetworkConfig().getMemcacheProtocolConfig().setEnabled(false);
+
+        withEnvironmentVariable("HZ_NETWORK_MEMCACHEPROTOCOL_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getNetworkConfig().getMemcacheProtocolConfig().isEnabled());
+    }
+
+    @Test
     public void shouldHandleFlakeIdConfig() throws Exception {
         Config config = new Config();
         config.getFlakeIdGeneratorConfig("foo")
@@ -250,14 +263,147 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleMemcachedProtocolConfig() throws Exception {
+    public void shouldHandleQueueConfig() throws Exception {
         Config config = new Config();
-        config.getNetworkConfig().getMemcacheProtocolConfig().setEnabled(false);
+        config.getQueueConfig("foo")
+          .setBackupCount(4)
+          .setMaxSize(10);
 
-        withEnvironmentVariable("HZ_NETWORK_MEMCACHEPROTOCOL_ENABLED", "true")
+        withEnvironmentVariable("HZ_QUEUE_FOO_BACKUPCOUNT", "2")
           .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
 
-        assertTrue(config.getNetworkConfig().getMemcacheProtocolConfig().isEnabled());
+        assertEquals(2, config.getQueueConfig("foo").getBackupCount());
+        assertEquals(10, config.getQueueConfig("foo").getMaxSize());
+    }
+
+    @Test
+    public void shouldHandleListConfig() throws Exception {
+        Config config = new Config();
+        config.getListConfig("foo")
+          .setBackupCount(4)
+          .setMaxSize(10);
+
+        withEnvironmentVariable("HZ_LIST_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getListConfig("foo").getBackupCount());
+        assertEquals(10, config.getListConfig("foo").getMaxSize());
+    }
+
+    @Test
+    public void shouldHandleSetConfig() throws Exception {
+        Config config = new Config();
+        config.getSetConfig("foo")
+          .setBackupCount(4)
+          .setMaxSize(10);
+
+        withEnvironmentVariable("HZ_SET_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getSetConfig("foo").getBackupCount());
+        assertEquals(10, config.getSetConfig("foo").getMaxSize());
+    }
+
+    @Test
+    public void shouldHandleMapConfig() throws Exception {
+        Config config = new Config();
+        config.getMapConfig("foo")
+          .setBackupCount(4)
+          .setMaxIdleSeconds(100);
+
+        withEnvironmentVariable("HZ_MAP_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getMapConfig("foo").getBackupCount());
+        assertEquals(100, config.getMapConfig("foo").getMaxIdleSeconds());
+    }
+
+    @Test
+    public void shouldHandleMapMerkleTreeConfig() throws Exception {
+        Config config = new Config();
+        MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig()
+          .setEnabled(false)
+          .setDepth(5);
+
+        config.getMapConfig("foo1")
+          .setBackupCount(4)
+          .setMerkleTreeConfig(merkleTreeConfig);
+
+        withEnvironmentVariable("HZ_MAP_FOO1_BACKUPCOUNT", "2")
+          .and("HZ_MAP_FOO1_MERKLETREE_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getMapConfig("foo1").getBackupCount());
+        assertTrue(config.getMapConfig("foo1").getMerkleTreeConfig().isEnabled());
+        assertEquals(5, config.getMapConfig("foo1").getMerkleTreeConfig().getDepth());
+    }
+
+    @Test
+    public void shouldHandleMapEventJournalConfig() throws Exception {
+        Config config = new Config();
+        EventJournalConfig eventJournalConfig = new EventJournalConfig()
+          .setEnabled(false)
+          .setCapacity(10);
+
+        config.getMapConfig("foo1")
+          .setBackupCount(4)
+          .setEventJournalConfig(eventJournalConfig);
+
+        withEnvironmentVariable("HZ_MAP_FOO1_BACKUPCOUNT", "2")
+          .and("HZ_MAP_FOO1_EVENTJOURNAL_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getMapConfig("foo1").getBackupCount());
+        assertTrue(config.getMapConfig("foo1").getEventJournalConfig().isEnabled());
+        assertEquals(10, config.getMapConfig("foo1").getEventJournalConfig().getCapacity());
+    }
+
+    @Test
+    public void shouldHandleReplicatedMapConfig() throws Exception {
+        Config config = new Config();
+        config.getReplicatedMapConfig("foo")
+          .setAsyncFillup(false)
+          .setStatisticsEnabled(false);
+
+        withEnvironmentVariable("HZ_REPLICATEDMAP_FOO_ASYNCFILLUP", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getReplicatedMapConfig("foo").isAsyncFillup());
+        assertFalse(config.getReplicatedMapConfig("foo").isStatisticsEnabled());
+    }
+
+    @Test
+    public void shouldHandleMultiMapConfig() throws Exception {
+        Config config = new Config();
+        config.getMultiMapConfig("foo")
+          .setBackupCount(4)
+          .setBinary(false);
+
+        withEnvironmentVariable("HZ_MULTIMAP_FOO_BACKUPCOUNT", "2")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(2, config.getMultiMapConfig("foo").getBackupCount());
+        assertFalse(config.getMultiMapConfig("foo").isBinary());
+    }
+
+    @Test
+    public void shouldHandleAuditLogConfig() throws Exception {
+        Config config = new Config();
+        config.getAuditlogConfig()
+          .setEnabled(false)
+          .setFactoryClassName("com.acme.AuditlogToSyslogFactory")
+          .setProperty("host", "syslogserver.acme.com")
+          .setProperty("port", "514")
+          .setProperty("type", "tcp");
+
+        withEnvironmentVariable("HZ_AUDITLOG_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getAuditlogConfig().isEnabled());
+        assertEquals("com.acme.AuditlogToSyslogFactory", config.getAuditlogConfig().getFactoryClassName());
+        assertEquals("syslogserver.acme.com", config.getAuditlogConfig().getProperty("host"));
+        assertEquals("514", config.getAuditlogConfig().getProperty("port"));
+        assertEquals("tcp", config.getAuditlogConfig().getProperty("type"));
     }
 
     @Test(expected = InvalidConfigurationException.class)

@@ -18,7 +18,6 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AttributeConfig;
-import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.AutoDetectionConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheDeserializedValues;
@@ -62,7 +61,6 @@ import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MetricsJmxConfig;
@@ -343,7 +341,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         } else if (matches(CP_SUBSYSTEM.getName(), nodeName)) {
             handleCPSubsystem(node);
         } else if (matches(AUDITLOG.getName(), nodeName)) {
-            config.setAuditlogConfig(fillFactoryWithPropertiesConfig(node, new AuditlogConfig()));
+            fillFactoryWithPropertiesConfig(node, config.getAuditlogConfig());
         } else if (matches(METRICS.getName(), nodeName)) {
             handleMetrics(node);
         } else if (matches(INSTANCE_TRACKING.getName(), nodeName)) {
@@ -774,8 +772,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("outbound-ports", nodeName)) {
                 handleOutboundPorts(child);
             } else if (matches("public-address", nodeName)) {
-                String address = getTextContent(child);
-                config.getNetworkConfig().setPublicAddress(address);
+                config.getNetworkConfig().setPublicAddress(getTextContent(child));
             } else if (matches("join", nodeName)) {
                 handleJoin(child, false);
             } else if (matches("interfaces", nodeName)) {
@@ -1502,10 +1499,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleQueue(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        QueueConfig qConfig = new QueueConfig();
-        qConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        QueueConfig qConfig = config.getQueueConfig(name);
         handleQueueNode(node, qConfig);
     }
 
@@ -1551,10 +1546,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleList(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        ListConfig lConfig = new ListConfig();
-        lConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        ListConfig lConfig = config.getListConfig(name);
         handleListNode(node, lConfig);
     }
 
@@ -1583,10 +1576,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleSet(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        SetConfig sConfig = new SetConfig();
-        sConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        SetConfig sConfig = config.getSetConfig(name);
         handleSetNode(node, sConfig);
     }
 
@@ -1614,10 +1605,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleMultiMap(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        MultiMapConfig multiMapConfig = new MultiMapConfig();
-        multiMapConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        MultiMapConfig multiMapConfig = config.getMultiMapConfig(name);
         handleMultiMapNode(node, multiMapConfig);
     }
 
@@ -1662,10 +1651,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleReplicatedMap(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        final ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig();
-        replicatedMapConfig.setName(name);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        final ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(name);
         handleReplicatedMapNode(node, replicatedMapConfig);
     }
 
@@ -1692,8 +1679,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleMap(Node parentNode) throws Exception {
         String name = getAttribute(parentNode, "name");
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setName(name);
+        MapConfig mapConfig = config.getMapConfig(name);
         handleMapNode(parentNode, mapConfig);
     }
 
@@ -1723,11 +1709,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(node);
                 mapConfig.setMergePolicyConfig(mergePolicyConfig);
             } else if (matches("merkle-tree", nodeName)) {
-                MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
-                handleViaReflection(node, mapConfig, merkleTreeConfig);
+                handleViaReflection(node, mapConfig, mapConfig.getMerkleTreeConfig());
             } else if (matches("event-journal", nodeName)) {
-                EventJournalConfig eventJournalConfig = new EventJournalConfig();
-                handleViaReflection(node, mapConfig, eventJournalConfig);
+                handleViaReflection(node, mapConfig, mapConfig.getEventJournalConfig());
             } else if (matches("hot-restart", nodeName)) {
                 mapConfig.setHotRestartConfig(createHotRestartConfig(node));
             } else if (matches("read-backup-data", nodeName)) {

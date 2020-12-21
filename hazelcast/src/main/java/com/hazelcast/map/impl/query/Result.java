@@ -24,7 +24,7 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import java.util.Map;
 
 /**
- * Result of a Query. Each query type implements its own Result.
+ * Result of a query. Each query type implements its own Result.
  *
  * @param <T> type of the result for the concrete implementations
  */

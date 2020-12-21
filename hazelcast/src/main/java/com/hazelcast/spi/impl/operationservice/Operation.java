@@ -18,8 +18,8 @@ package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.ClusterClock;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -30,6 +30,9 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.SilentException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
+import com.hazelcast.spi.tenantcontrol.TenantControl.Closeable;
+import com.hazelcast.spi.tenantcontrol.Tenantable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -52,7 +55,7 @@ import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCE
  * {@link Operation#run()} method.
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:magicnumber"})
-public abstract class Operation implements DataSerializable {
+public abstract class Operation implements DataSerializable, Tenantable {
 
     /**
      * Marks an {@link Operation} as non-partition-specific.
@@ -89,6 +92,8 @@ public abstract class Operation implements DataSerializable {
     private transient ServerConnection connection;
     private transient OperationResponseHandler responseHandler;
     private transient long clientCallId = -1;
+    private transient Closeable tenantContext = () -> {
+    };
 
     protected Operation() {
         setFlag(true, BITMASK_VALIDATE_TARGET);
@@ -772,6 +777,63 @@ public abstract class Operation implements DataSerializable {
     protected void readInternal(ObjectDataInput in) throws IOException {
     }
 
+    @Override
+    public boolean requiresTenantContext() {
+        return false;
+    }
+
+    @Override
+    public TenantControl getTenantControl() {
+        return TenantControl.NOOP_TENANT_CONTROL;
+    }
+
+    public TenantControl getTenantControlOrNoop() {
+        TenantControl tc = getTenantControl();
+        // tenant control may be null in case the structure
+        // was destroyed while operations are still running
+        return tc != null ? tc : TenantControl.NOOP_TENANT_CONTROL;
+    }
+
+    /**
+     * checks if operation is ready to execute,
+     * if not, it will be pushed to the back of the queue
+     * Tenant's isAvailable() method is responsible for waiting
+     * so there is no tight loop
+     *
+     * @return true if ready
+     */
+    public boolean isTenantAvailable() {
+        return getTenantControlOrNoop().isAvailable(this);
+    }
+
+    /**
+     * Establish this tenant's thread-local context. The tenant control implementation
+     * can control the details of what kind of context to set and how to establish it.
+     */
+    public void pushThreadContext() {
+        tenantContext = getTenantControlOrNoop().setTenant();
+    }
+
+    /**
+     * Cleans up (closes) the thread context which was set up by
+     * {@link #pushThreadContext()}.
+     */
+    public void popThreadContext() {
+        tenantContext.close();
+        tenantContext = () -> {
+        };
+    }
+
+    /**
+     * Cleans up all of the thread context. This method should clear all potential
+     * context items, not just the ones set up in {@link #pushThreadContext()}
+     * This acts as a catch-all for any potential class class loader and thread-local
+     * leaks.
+     */
+    public void clearThreadContext() {
+        getTenantControlOrNoop().clearThreadContext();
+    }
+
     /**
      * A template method allows for additional information to be passed into
      * the {@link #toString()} method. So an Operation subclass can override
@@ -799,6 +861,7 @@ public abstract class Operation implements DataSerializable {
         sb.append(", invocationTime=").append(invocationTime).append(" (").append(timeToString(invocationTime)).append(")");
         sb.append(", waitTimeout=").append(waitTimeout);
         sb.append(", callTimeout=").append(callTimeout);
+        sb.append(", tenantControl=").append(getTenantControlOrNoop());
         toString(sb);
         sb.append('}');
         return sb.toString();

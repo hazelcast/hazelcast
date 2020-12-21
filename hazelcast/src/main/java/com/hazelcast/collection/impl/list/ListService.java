@@ -37,6 +37,7 @@ import com.hazelcast.internal.metrics.impl.ProviderHelper;
 import com.hazelcast.internal.monitor.impl.LocalListStatsImpl;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.services.TenantContextAwareService;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
@@ -49,7 +50,8 @@ import com.hazelcast.transaction.impl.Transaction;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class ListService extends CollectionService implements DynamicMetricsProvider, StatisticsAwareService<LocalListStats> {
+public class ListService extends CollectionService implements DynamicMetricsProvider,
+        StatisticsAwareService<LocalListStats>, TenantContextAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:listService";
 
@@ -62,11 +64,11 @@ public class ListService extends CollectionService implements DynamicMetricsProv
             new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
-            ListConfig lockConfig = nodeEngine.getConfig().findListConfig(name);
-            String splitBrainProtectionName = lockConfig.getSplitBrainProtectionName();
-            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
+                ListConfig lockConfig = nodeEngine.getConfig().findListConfig(name);
+                String splitBrainProtectionName = lockConfig.getSplitBrainProtectionName();
+                return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
         }
-    };
+            };
     private final ConcurrentMap<String, LocalListStatsImpl> statsMap = new ConcurrentHashMap<>();
     private final ConstructorFunction<String, LocalListStatsImpl> localCollectionStatsConstructorFunction =
             key -> new LocalListStatsImpl();

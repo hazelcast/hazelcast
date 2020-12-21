@@ -97,10 +97,10 @@ public final class DivideFunction<T> extends BiExpressionWithType<T> implements 
                 case DECIMAL:
                     return ((BigDecimal) left).divide((BigDecimal) right, DECIMAL_MATH_CONTEXT);
                 default:
-                    throw new IllegalArgumentException("unexpected result family: " + family);
+                    throw new IllegalArgumentException("Unexpected result family: " + family);
             }
         } catch (ArithmeticException e) {
-            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "division by zero");
+            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "Division by zero", e);
         }
     }
 

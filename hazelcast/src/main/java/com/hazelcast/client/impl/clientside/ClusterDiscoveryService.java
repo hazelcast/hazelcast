@@ -36,7 +36,7 @@ public class ClusterDiscoveryService {
                                    int maxTryCount, LifecycleService lifecycleService) {
         checkNotNull(candidateClusters, "candidateClusters cannot be null");
         checkTrue(!candidateClusters.isEmpty(), "candidateClusters cannot be empty");
-        checkTrue(maxTryCount >= 0, "maxTryCount must >= 0");
+        checkTrue(maxTryCount >= 0, "maxTryCount must be >= 0");
 
         this.candidateClusters = candidateClusters;
         this.maxTryCount = maxTryCount;
@@ -45,17 +45,13 @@ public class ClusterDiscoveryService {
 
     public boolean tryNextCluster(BiFunction<CandidateClusterContext, CandidateClusterContext, Boolean> function) {
         int tryCount = 0;
-
         while (lifecycleService.isRunning() && tryCount++ < maxTryCount) {
-
             for (int i = 0; i < candidateClusters.size(); i++) {
                 if (function.apply(current(), next())) {
                     return true;
                 }
             }
-
         }
-
         return false;
     }
 

@@ -20,6 +20,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CompositeValue;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -397,6 +398,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
         return output == null ? new Output(capacity) : output;
     }
 
+    @SuppressFBWarnings(value = "EQ_DOESNT_OVERRIDE_EQUALS")
     private static class Output extends ArrayList<Predicate> {
 
         private boolean requiresGeneration;
@@ -442,7 +444,5 @@ public class CompositeIndexVisitor extends AbstractVisitor {
             assert index == newSize;
             return new AndPredicate(predicates);
         }
-
     }
-
 }

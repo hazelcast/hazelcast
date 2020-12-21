@@ -132,7 +132,7 @@ public final class ObjectConverter extends Converter {
         Converter converter = Converters.getConverter(val.getClass());
 
         if (converter == this) {
-            throw cannotConvert(target, val);
+            throw cannotConvertError(target);
         }
 
         return converter;

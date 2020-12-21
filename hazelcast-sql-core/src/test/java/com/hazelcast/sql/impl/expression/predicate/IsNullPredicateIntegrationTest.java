@@ -18,7 +18,10 @@ package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.support.expressions.ExpressionType;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -61,60 +64,7 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class IsNullPredicateIntegrationTest extends SqlExpressionIntegrationTestSupport {
-    @Test
-    public void testLiteral() {
-        Class<? extends ExpressionValue> clazz = ExpressionValue.createClass(INTEGER);
-
-        int key = 0;
-        ExpressionValue value = ExpressionValue.create(clazz, 0, 1);
-
-        put(key, value);
-
-        checkLiteral("1", false);
-        checkLiteral("'1'", false);
-
-        checkLiteral("'a'", false);
-
-        checkLiteral("TRUE", false);
-        checkLiteral("true", false);
-        checkLiteral("'TRUE'", false);
-        checkLiteral("'true'", false);
-
-        checkLiteral("FALSE", false);
-        checkLiteral("false", false);
-        checkLiteral("'FALSE'", false);
-        checkLiteral("'false'", false);
-
-        checkLiteral("NULL", true);
-        checkLiteral("null", true);
-        checkLiteral("'NULL'", false);
-        checkLiteral("'null'", false);
-    }
-
-    private void checkLiteral(String literal, boolean expectedResult) {
-        checkLiteral(literal, "IS NULL", expectedResult);
-        checkLiteral(literal, "IS NOT NULL", !expectedResult);
-    }
-
-    private void checkLiteral(String literal, String function, boolean expectedResult) {
-        String expression = literal + " " + function;
-        String sql = "SELECT " + expression + " FROM map WHERE " + expression;
-
-        List<SqlRow> rows = execute(member, sql);
-
-        if (expectedResult) {
-            assertEquals(1, rows.size());
-
-            SqlRow row = rows.get(0);
-
-            assertEquals(SqlColumnType.BOOLEAN, row.getMetadata().getColumn(0).getType());
-            assertTrue(row.getObject(0));
-        } else {
-            assertEquals(0, rows.size());
-        }
-    }
-
+public class IsNullPredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testColumn() {
         checkColumn(BOOLEAN);
@@ -174,6 +124,50 @@ public class IsNullPredicateIntegrationTest extends SqlExpressionIntegrationTest
     }
 
     @Test
+    public void testLiteral() {
+        Class<? extends ExpressionValue> clazz = ExpressionValue.createClass(INTEGER);
+
+        int key = 0;
+        ExpressionValue value = ExpressionValue.create(clazz, 0, 1);
+
+        put(key, value);
+
+        checkLiteral("null", true);
+
+        checkLiteral("true", false);
+        checkLiteral("false", false);
+
+        checkLiteral("1", false);
+        checkLiteral("1.1", false);
+        checkLiteral("1.1E1", false);
+
+        checkLiteral("'a'", false);
+    }
+
+    private void checkLiteral(String literal, boolean expectedResult) {
+        checkLiteral(literal, "IS NULL", expectedResult);
+        checkLiteral(literal, "IS NOT NULL", !expectedResult);
+    }
+
+    private void checkLiteral(String literal, String function, boolean expectedResult) {
+        String expression = literal + " " + function;
+        String sql = "SELECT " + expression + " FROM map WHERE " + expression;
+
+        List<SqlRow> rows = execute(member, sql);
+
+        if (expectedResult) {
+            assertEquals(1, rows.size());
+
+            SqlRow row = rows.get(0);
+
+            assertEquals(SqlColumnType.BOOLEAN, row.getMetadata().getColumn(0).getType());
+            assertTrue(row.getObject(0));
+        } else {
+            assertEquals(0, rows.size());
+        }
+    }
+
+    @Test
     public void testParameter() {
         Class<? extends ExpressionValue> clazz = ExpressionValue.createClass(INTEGER);
 
@@ -185,29 +179,31 @@ public class IsNullPredicateIntegrationTest extends SqlExpressionIntegrationTest
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NULL", new Object[] { null }));
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS NOT NULL", new Object[] { null }));
 
-        checkNotNullParameter(key, BOOLEAN);
+        checkParameter(key, BOOLEAN);
 
-        checkNotNullParameter(key, BYTE);
-        checkNotNullParameter(key, SHORT);
-        checkNotNullParameter(key, INTEGER);
-        checkNotNullParameter(key, LONG);
-        checkNotNullParameter(key, BIG_INTEGER);
-        checkNotNullParameter(key, BIG_DECIMAL);
-        checkNotNullParameter(key, FLOAT);
-        checkNotNullParameter(key, DOUBLE);
+        checkParameter(key, BYTE);
+        checkParameter(key, SHORT);
+        checkParameter(key, INTEGER);
+        checkParameter(key, LONG);
+        checkParameter(key, BIG_INTEGER);
+        checkParameter(key, BIG_DECIMAL);
+        checkParameter(key, FLOAT);
+        checkParameter(key, DOUBLE);
 
-        checkNotNullParameter(key, STRING);
-        checkNotNullParameter(key, CHARACTER);
+        checkParameter(key, STRING);
+        checkParameter(key, CHARACTER);
 
-        checkNotNullParameter(key, LOCAL_DATE);
-        checkNotNullParameter(key, LOCAL_TIME);
-        checkNotNullParameter(key, LOCAL_DATE_TIME);
-        checkNotNullParameter(key, OFFSET_DATE_TIME);
+        checkParameter(key, LOCAL_DATE);
+        checkParameter(key, LOCAL_TIME);
+        checkParameter(key, LOCAL_DATE_TIME);
+        checkParameter(key, OFFSET_DATE_TIME);
 
-        checkNotNullParameter(key, OBJECT);
+        checkParameter(key, OBJECT);
     }
 
-    private void checkNotNullParameter(int key, ExpressionType<?> type) {
+    private void checkParameter(int key, ExpressionType<?> type) {
+        clearPlanCache(member);
+
         Object parameter = type.valueFrom();
 
         assertNotNull(parameter);
@@ -246,5 +242,39 @@ public class IsNullPredicateIntegrationTest extends SqlExpressionIntegrationTest
         }
 
         return res;
+    }
+
+    @Test
+    public void testEquality_isNull() {
+        ColumnExpression<?> column1 = ColumnExpression.create(1, QueryDataType.INT);
+        ColumnExpression<?> column2 = ColumnExpression.create(2, QueryDataType.INT);
+
+        checkEquals(IsNullPredicate.create(column1), IsNullPredicate.create(column1), true);
+        checkEquals(IsNullPredicate.create(column1), IsNullPredicate.create(column2), false);
+    }
+
+    @Test
+    public void testSerialization_isNull() {
+        IsNullPredicate original = IsNullPredicate.create(ColumnExpression.create(1, QueryDataType.INT));
+        IsNullPredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_IS_NULL);
+
+        checkEquals(original, restored, true);
+    }
+
+    @Test
+    public void testEquality_isNotNull() {
+        ColumnExpression<?> column1 = ColumnExpression.create(1, QueryDataType.INT);
+        ColumnExpression<?> column2 = ColumnExpression.create(2, QueryDataType.INT);
+
+        checkEquals(IsNotNullPredicate.create(column1), IsNotNullPredicate.create(column1), true);
+        checkEquals(IsNotNullPredicate.create(column1), IsNotNullPredicate.create(column2), false);
+    }
+
+    @Test
+    public void testSerialization_isNotNull() {
+        IsNotNullPredicate original = IsNotNullPredicate.create(ColumnExpression.create(1, QueryDataType.INT));
+        IsNotNullPredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_IS_NOT_NULL);
+
+        checkEquals(original, restored, true);
     }
 }
