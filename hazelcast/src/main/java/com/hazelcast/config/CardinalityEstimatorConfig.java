@@ -95,7 +95,7 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
 
     public CardinalityEstimatorConfig(CardinalityEstimatorConfig config) {
         this(config.getName(), config.getBackupCount(), config.getAsyncBackupCount(),
-                config.getSplitBrainProtectionName(), config.getMergePolicyConfig());
+                config.getSplitBrainProtectionName(), new MergePolicyConfig(config.getMergePolicyConfig()));
     }
 
     /**
