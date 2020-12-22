@@ -77,14 +77,14 @@ public abstract class ArithmeticOperatorIntegrationTest extends ExpressionTestSu
         checkValue0(sql("null", 1), TINYINT, null);
         checkValue0(sql(1, "null"), TINYINT, null);
 
-        checkValue0(sql("null", Byte.MAX_VALUE), SMALLINT, null);
-        checkValue0(sql(Byte.MAX_VALUE, "null"), SMALLINT, null);
+        checkValue0(sql("null", Byte.MAX_VALUE), TINYINT, null);
+        checkValue0(sql(Byte.MAX_VALUE, "null"), TINYINT, null);
 
-        checkValue0(sql("null", Short.MAX_VALUE), INTEGER, null);
-        checkValue0(sql(Short.MAX_VALUE, "null"), INTEGER, null);
+        checkValue0(sql("null", Short.MAX_VALUE), SMALLINT, null);
+        checkValue0(sql(Short.MAX_VALUE, "null"), SMALLINT, null);
 
-        checkValue0(sql("null", Integer.MAX_VALUE), BIGINT, null);
-        checkValue0(sql(Integer.MAX_VALUE, "null"), BIGINT, null);
+        checkValue0(sql("null", Integer.MAX_VALUE), INTEGER, null);
+        checkValue0(sql(Integer.MAX_VALUE, "null"), INTEGER, null);
 
         checkValue0(sql("null", Long.MAX_VALUE), BIGINT, null);
         checkValue0(sql(Long.MAX_VALUE, "null"), BIGINT, null);

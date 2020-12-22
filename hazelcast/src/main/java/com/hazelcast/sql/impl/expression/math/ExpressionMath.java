@@ -54,7 +54,7 @@ public final class ExpressionMath {
      * @return a division result.
      * @throws QueryException if overflow or division by zero is detected.
      */
-    public static long divideExact(long left, long right) {
+    public static long divide(long left, long right) {
         if (left == Long.MIN_VALUE && right == -1) {
             throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
                     "BIGINT overflow in '/' operator (consider adding explicit CAST to DECIMAL)");
@@ -75,7 +75,7 @@ public final class ExpressionMath {
      * @throws QueryException if division by zero is detected.
      */
     @SuppressWarnings("checkstyle:MagicNumber")
-    public static double divideExact(double left, double right) {
+    public static double divide(double left, double right) {
         if (right == +0.0 || right == -0.0) {
             throw new ArithmeticException("Division by zero");
         }
@@ -95,7 +95,7 @@ public final class ExpressionMath {
      * @throws QueryException if division by zero is detected.
      */
     @SuppressWarnings("checkstyle:MagicNumber")
-    public static float divideExact(float left, float right) {
+    public static float divide(float left, float right) {
         if (right == +0.0f || right == -0.0f) {
             throw new ArithmeticException("Division by zero");
         }
@@ -103,4 +103,21 @@ public final class ExpressionMath {
         return left / right;
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public static double remainder(double left, double right) {
+        if (right == +0.0 || right == -0.0) {
+            throw new ArithmeticException("Division by zero");
+        }
+
+        return left % right;
+    }
+
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public static float remainder(float left, float right) {
+        if (right == +0.0f || right == -0.0f) {
+            throw new ArithmeticException("Division by zero");
+        }
+
+        return left % right;
+    }
 }

@@ -161,6 +161,11 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void test_REMAINDER() {
+        check(sql("(1%?) || (1%?)"), 1, 1);
+    }
+
+    @Test
     public void test_UNARY_PLUS() {
         check(sql("(+?) || (+?)"), 1, 1);
     }

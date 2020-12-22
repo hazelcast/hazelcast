@@ -17,9 +17,9 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.BiExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -31,21 +31,17 @@ import java.math.BigDecimal;
 
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 
-/**
- * Implements evaluation of SQL divide operator.
- */
-public final class DivideFunction<T> extends BiExpressionWithType<T> implements IdentifiedDataSerializable {
-
-    public DivideFunction() {
+public final class RemainderFunction<T> extends BiExpressionWithType<T> implements IdentifiedDataSerializable {
+    public RemainderFunction() {
         // No-op.
     }
 
-    private DivideFunction(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
+    private RemainderFunction(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
         super(operand1, operand2, resultType);
     }
 
-    public static DivideFunction<?> create(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
-        return new DivideFunction<>(operand1, operand2, resultType);
+    public static RemainderFunction<?> create(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
+        return new RemainderFunction<>(operand1, operand2, resultType);
     }
 
     @Override
@@ -55,7 +51,7 @@ public final class DivideFunction<T> extends BiExpressionWithType<T> implements 
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.EXPRESSION_DIVIDE;
+        return SqlDataSerializerHook.EXPRESSION_REMAINDER;
     }
 
     @SuppressWarnings("unchecked")
@@ -83,19 +79,19 @@ public final class DivideFunction<T> extends BiExpressionWithType<T> implements 
         try {
             switch (family) {
                 case TINYINT:
-                    return (byte) (left.byteValue() / right.longValue());
+                    return (byte) (left.byteValue() % right.byteValue());
                 case SMALLINT:
-                    return (short) (left.shortValue() / right.longValue());
+                    return (short) (left.shortValue() % right.shortValue());
                 case INTEGER:
-                    return (int) (left.intValue() / right.longValue());
+                    return left.intValue() % right.intValue();
                 case BIGINT:
-                    return ExpressionMath.divide(left.longValue(), right.longValue());
+                    return left.longValue() % right.longValue();
                 case REAL:
-                    return ExpressionMath.divide(left.floatValue(), right.floatValue());
+                    return ExpressionMath.remainder(left.floatValue(), right.floatValue());
                 case DOUBLE:
-                    return ExpressionMath.divide(left.doubleValue(), right.doubleValue());
+                    return ExpressionMath.remainder(left.doubleValue(), right.doubleValue());
                 case DECIMAL:
-                    return ((BigDecimal) left).divide((BigDecimal) right, DECIMAL_MATH_CONTEXT);
+                    return ((BigDecimal) left).remainder((BigDecimal) right, DECIMAL_MATH_CONTEXT);
                 default:
                     throw new IllegalArgumentException("Unexpected result family: " + family);
             }
