@@ -92,13 +92,8 @@ public abstract class ArithmeticOperatorIntegrationTest extends ExpressionTestSu
         checkValue0(sql("null", "1.1"), DECIMAL, null);
         checkValue0(sql("1.1", "null"), DECIMAL, null);
 
-        if ("%".equals(operator())) {
-            checkFailure0(sql("null", "1.1E1"), SqlErrorCode.PARSING, signatureError(DOUBLE, DOUBLE));
-            checkFailure0(sql("1.1E1", "null"), SqlErrorCode.PARSING, signatureError(DOUBLE, DOUBLE));
-        } else {
-            checkValue0(sql("null", "1.1E1"), DOUBLE, null);
-            checkValue0(sql("1.1E1", "null"), DOUBLE, null);
-        }
+        checkValue0(sql("null", "1.1E1"), DOUBLE, null);
+        checkValue0(sql("1.1E1", "null"), DOUBLE, null);
     }
 
     protected void checkUnsupportedForAllTypesCommute(Object field1, SqlColumnType type1) {
