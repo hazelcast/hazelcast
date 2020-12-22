@@ -20,6 +20,7 @@ import com.hazelcast.config.SqlConfig;
 import com.hazelcast.internal.util.Preconditions;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -98,21 +99,32 @@ public final class SqlStatement {
     }
 
     /**
-     * Gets the current schema name.
+     * Gets the schema name.
      *
-     * @return the current schema name or {@code null} if there is none
+     * @return the schema name or {@code null} if there is none
+     * @since 4.2
      */
+    @Nullable
     public String getSchema() {
         return schema;
     }
 
     /**
-     * Sets the current schema name.
+     * Sets the schema name. The engine will try to resolve the non-qualified
+     * object identifiers from the statement in the given schema. If not found, the default
+     * search path will be used, which looks for objects in the predefined schemas {@code "partitioned"}
+     * and {@code "public"}.
+     * <p>
+     * The schema name is case sensitive. For example, {@code "foo"} and {@code "Foo"} are different schemas.
+     * <p>
+     * The default value is {@code null} meaning only the default search path is used.
      *
      * @param schema the current schema name
      * @return this instance for chaining
+     * @since 4.2
      */
-    public SqlStatement setSchema(String schema) {
+    @Nonnull
+    public SqlStatement setSchema(@Nullable String schema) {
         this.schema = schema;
 
         return this;
