@@ -35,9 +35,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Adds a migration listener to the cluster.
+ * Adds a Migration listener to the cluster.
  */
-@Generated("c27c878d20c773b7020245d4576c5f2b")
+@Generated("c1de358a5eeb994a93d1c9d264dcca29")
 public final class ClientAddMigrationListenerCodec {
     //hex: 0x001100
     public static final int REQUEST_MESSAGE_TYPE = 4352;
@@ -77,8 +77,8 @@ public final class ClientAddMigrationListenerCodec {
     }
 
     /**
-     * If set to true, the server adds the listener only to itself, otherwise
-     * the listener is added for all members in the cluster.
+     * if true only node that has the migration sends the request, if false
+     * sends all partition lost events.
      */
     public static boolean decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
