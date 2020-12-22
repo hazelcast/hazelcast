@@ -85,7 +85,7 @@ public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
             String clientVersion = endpoint.getClientVersion();
 
             return "Cannot process SQL client operation due to version mismatch "
-                + "(please ensure that a client and a member have the same version) "
+                + "(please ensure that the client and the member have the same version) "
                 + "[memberVersion=" + memberVersion + ", clientVersion=" + clientVersion + ']';
         }
 
