@@ -89,11 +89,11 @@ public final class DivideFunction<T> extends BiExpressionWithType<T> implements 
                 case INTEGER:
                     return (int) (left.intValue() / right.longValue());
                 case BIGINT:
-                    return ExpressionMath.divide(left.longValue(), right.longValue());
+                    return ExpressionMath.divideExact(left.longValue(), right.longValue());
                 case REAL:
-                    return ExpressionMath.divide(left.floatValue(), right.floatValue());
+                    return ExpressionMath.divideExact(left.floatValue(), right.floatValue());
                 case DOUBLE:
-                    return ExpressionMath.divide(left.doubleValue(), right.doubleValue());
+                    return ExpressionMath.divideExact(left.doubleValue(), right.doubleValue());
                 case DECIMAL:
                     return ((BigDecimal) left).divide((BigDecimal) right, DECIMAL_MATH_CONTEXT);
                 default:

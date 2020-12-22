@@ -46,20 +46,20 @@ public class ExpressionMathTest {
 
     @Test
     public void testLongDivideExactly() {
-        assertEquals(3L, ExpressionMath.divide(10L, 3L));
-        assertThrows(ArithmeticException.class, () -> ExpressionMath.divide(10L, 0L));
-        assertThrows(QueryException.class, () -> ExpressionMath.divide(Long.MIN_VALUE, -1L));
+        assertEquals(3L, ExpressionMath.divideExact(10L, 3L));
+        assertThrows(ArithmeticException.class, () -> ExpressionMath.divideExact(10L, 0L));
+        assertThrows(QueryException.class, () -> ExpressionMath.divideExact(Long.MIN_VALUE, -1L));
     }
 
     @Test
     public void testDoubleDivideExactly() {
-        assertEquals(10.0 / 3.0, ExpressionMath.divide(10.0, 3.0), 0.0);
-        assertThrows(ArithmeticException.class, () -> ExpressionMath.divide(10.0, 0.0));
+        assertEquals(10.0 / 3.0, ExpressionMath.divideExact(10.0, 3.0), 0.0);
+        assertThrows(ArithmeticException.class, () -> ExpressionMath.divideExact(10.0, 0.0));
     }
 
     @Test
     public void testFloatDivideExactly() {
-        assertEquals(10.0F / 3.0F, ExpressionMath.divide(10.0F, 3.0F), 0.0F);
-        assertThrows(ArithmeticException.class, () -> ExpressionMath.divide(10.0F, 0.0F));
+        assertEquals(10.0F / 3.0F, ExpressionMath.divideExact(10.0F, 3.0F), 0.0F);
+        assertThrows(ArithmeticException.class, () -> ExpressionMath.divideExact(10.0F, 0.0F));
     }
 }
