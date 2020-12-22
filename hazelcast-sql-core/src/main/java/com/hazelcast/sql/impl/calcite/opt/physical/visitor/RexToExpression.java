@@ -16,8 +16,9 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
+import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.calcite.SqlToQueryType;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -62,8 +63,12 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.fun.SqlTrimFunction;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.util.DateString;
+import org.apache.calcite.util.TimeString;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.CHARACTER_LENGTH;
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.CHAR_LENGTH;
@@ -89,6 +94,10 @@ public final class RexToExpression {
     public static Expression<?> convertLiteral(RexLiteral literal) {
         SqlTypeName type = literal.getType().getSqlTypeName();
 
+        if (literal.getValue() == null) {
+            return ConstantExpression.create(null, HazelcastTypeUtils.toHazelcastType(type));
+        }
+
         switch (type) {
             case BOOLEAN:
                 return convertBooleanLiteral(literal, type);
@@ -110,13 +119,14 @@ public final class RexToExpression {
             case NULL:
                 return ConstantExpression.create(null, QueryDataType.NULL);
 
-            case ANY:
-                // currently, the only possible literal of ANY type is NULL
-                assert literal.getValueAs(Object.class) == null;
-                return ConstantExpression.create(null, QueryDataType.OBJECT);
-
             case SYMBOL:
                 return SymbolExpression.create(literal.getValue());
+
+            case DATE:
+                return convertDateLiteral(literal);
+
+            case TIME:
+                return convertTimeLiteral(literal);
 
             default:
                 throw QueryException.error("Unsupported literal: " + literal);
@@ -135,7 +145,7 @@ public final class RexToExpression {
         "checkstyle:NPathComplexity"})
     public static Expression<?> convertCall(RexCall call, Expression<?>[] operands) {
         SqlOperator operator = call.getOperator();
-        QueryDataType resultType = SqlToQueryType.map(call.getType().getSqlTypeName());
+        QueryDataType resultType = HazelcastTypeUtils.toHazelcastType(call.getType().getSqlTypeName());
 
         switch (operator.getKind()) {
             case DEFAULT:
@@ -352,12 +362,13 @@ public final class RexToExpression {
     private static Expression<?> convertBooleanLiteral(RexLiteral literal, SqlTypeName type) {
         assert type == SqlTypeName.BOOLEAN;
         Boolean value = literal.getValueAs(Boolean.class);
-        return ConstantExpression.create(value, SqlToQueryType.map(type));
+        return ConstantExpression.create(value, HazelcastTypeUtils.toHazelcastType(type));
     }
 
-    private static Expression<?> convertNumericLiteral(RexLiteral literal, SqlTypeName type) {
+    private static Expression<?> convertNumericLiteral(RexLiteral literal, SqlTypeName targetType) {
         Object value;
-        switch (type) {
+
+        switch (targetType) {
             case TINYINT:
                 value = literal.getValueAs(Byte.class);
                 break;
@@ -371,10 +382,13 @@ public final class RexToExpression {
                 break;
 
             case BIGINT:
-                // XXX: Calcite returns unscaled value of the internally stored
-                // BigDecimal if a long value is requested on the literal.
-                BigDecimal decimalValue = literal.getValueAs(BigDecimal.class);
-                value = decimalValue == null ? null : decimalValue.longValue();
+                // Calcite incorrectly convers the DECIMAL literal to BIGINT using the "BigDecimal.unscaledValue" method.
+                // We fix it here.
+                if (literal.getTypeName() == SqlTypeName.DECIMAL) {
+                    value = literal.getValueAs(BigDecimal.class).longValue();
+                } else {
+                    value = literal.getValueAs(Long.class);
+                }
                 break;
 
             case DECIMAL:
@@ -390,10 +404,10 @@ public final class RexToExpression {
                 break;
 
             default:
-                throw new IllegalArgumentException("Unsupported literal type: " + type);
+                throw new IllegalArgumentException("Unsupported literal type: " + targetType);
         }
 
-        return ConstantExpression.create(value, SqlToQueryType.map(type));
+        return ConstantExpression.create(value, HazelcastTypeUtils.toHazelcastType(targetType));
     }
 
     private static Expression<?> convertStringLiteral(RexLiteral literal, SqlTypeName type) {
@@ -408,6 +422,30 @@ public final class RexToExpression {
                 throw new IllegalArgumentException("Unsupported literal type: " + type);
         }
 
-        return ConstantExpression.create(value, SqlToQueryType.map(type));
+        return ConstantExpression.create(value, HazelcastTypeUtils.toHazelcastType(type));
+    }
+
+    private static Expression<?> convertDateLiteral(RexLiteral literal) {
+        String dateString = literal.getValueAs(DateString.class).toString();
+
+        try {
+            LocalDate date = LocalDate.parse(dateString);
+
+            return ConstantExpression.create(date, QueryDataType.DATE);
+        } catch (Exception e) {
+            throw QueryException.dataException("Cannot convert literal to " + SqlColumnType.DATE + ": " + dateString);
+        }
+    }
+
+    public static Expression<?> convertTimeLiteral(RexLiteral literal) {
+        String timeString = literal.getValueAs(TimeString.class).toString();
+
+        try {
+            LocalTime time = LocalTime.parse(timeString);
+
+            return ConstantExpression.create(time, QueryDataType.TIME);
+        } catch (Exception e) {
+            throw QueryException.dataException("Cannot convert literal to " + SqlColumnType.TIME + ": " + timeString);
+        }
     }
 }

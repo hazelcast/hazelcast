@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.durableexecutor.DurableExecutorService;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -237,11 +236,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         out.writeInt(durability);
         out.writeInt(capacity);
         out.writeUTF(splitBrainProtectionName);
-
-        // RU_COMPAT_4_0
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            out.writeBoolean(statisticsEnabled);
-        }
+        out.writeBoolean(statisticsEnabled);
     }
 
     @Override
@@ -251,11 +246,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         durability = in.readInt();
         capacity = in.readInt();
         splitBrainProtectionName = in.readUTF();
-
-        // RU_COMPAT_4_0
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            statisticsEnabled = in.readBoolean();
-        }
+        statisticsEnabled = in.readBoolean();
     }
 
     @Override

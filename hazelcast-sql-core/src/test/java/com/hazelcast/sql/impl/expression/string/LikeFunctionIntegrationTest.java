@@ -18,9 +18,9 @@ package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
+import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,6 +30,8 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
+import static com.hazelcast.sql.SqlColumnType.TINYINT;
+import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -37,7 +39,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class LikeFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
+public class LikeFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void test_wildcards() {
         put("abcde");
@@ -131,18 +133,13 @@ public class LikeFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
     public void test_literals() {
         put("abcde");
 
-        check("20 LIKE 2", false);
-        check("20 LIKE '2'", false);
-        check("'20' LIKE 2", false);
+        checkFailure("20 LIKE 2", SqlErrorCode.PARSING, signatureErrorOperator("LIKE", TINYINT, TINYINT));
+        checkFailure("20 LIKE '2'", SqlErrorCode.PARSING, signatureErrorOperator("LIKE", TINYINT, VARCHAR));
+        checkFailure("'20' LIKE 2", SqlErrorCode.PARSING, signatureErrorOperator("LIKE", VARCHAR, TINYINT));
 
-        check("'20' LIKE 20", true);
-        check("20 LIKE '20'", true);
-        check("'20' LIKE '20'", true);
-
-        check("20 LIKE '2_'", true);
-
+        check("'20' LIKE '2_'", true);
         check("null LIKE '2_'", null);
-        check("20 LIKE null", null);
+        check("'20' LIKE null", null);
     }
 
     @Test

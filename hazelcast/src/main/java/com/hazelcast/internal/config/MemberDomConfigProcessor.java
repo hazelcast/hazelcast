@@ -18,7 +18,6 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AttributeConfig;
-import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.AutoDetectionConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheDeserializedValues;
@@ -62,7 +61,6 @@ import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MetricsJmxConfig;
@@ -343,7 +341,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         } else if (matches(CP_SUBSYSTEM.getName(), nodeName)) {
             handleCPSubsystem(node);
         } else if (matches(AUDITLOG.getName(), nodeName)) {
-            config.setAuditlogConfig(fillFactoryWithPropertiesConfig(node, new AuditlogConfig()));
+            fillFactoryWithPropertiesConfig(node, config.getAuditlogConfig());
         } else if (matches(METRICS.getName(), nodeName)) {
             handleMetrics(node);
         } else if (matches(INSTANCE_TRACKING.getName(), nodeName)) {
@@ -774,8 +772,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("outbound-ports", nodeName)) {
                 handleOutboundPorts(child);
             } else if (matches("public-address", nodeName)) {
-                String address = getTextContent(child);
-                config.getNetworkConfig().setPublicAddress(address);
+                config.getNetworkConfig().setPublicAddress(getTextContent(child));
             } else if (matches("join", nodeName)) {
                 handleJoin(child, false);
             } else if (matches("interfaces", nodeName)) {
@@ -1715,11 +1712,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 MergePolicyConfig mpConfig = createMergePolicyConfig(node, mapConfig.getMergePolicyConfig());
                 mapConfig.setMergePolicyConfig(mpConfig);
             } else if (matches("merkle-tree", nodeName)) {
-                MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
-                handleViaReflection(node, mapConfig, merkleTreeConfig);
+                handleViaReflection(node, mapConfig, mapConfig.getMerkleTreeConfig());
             } else if (matches("event-journal", nodeName)) {
-                EventJournalConfig eventJournalConfig = new EventJournalConfig();
-                handleViaReflection(node, mapConfig, eventJournalConfig);
+                handleViaReflection(node, mapConfig, mapConfig.getEventJournalConfig());
             } else if (matches("hot-restart", nodeName)) {
                 mapConfig.setHotRestartConfig(createHotRestartConfig(node));
             } else if (matches("read-backup-data", nodeName)) {

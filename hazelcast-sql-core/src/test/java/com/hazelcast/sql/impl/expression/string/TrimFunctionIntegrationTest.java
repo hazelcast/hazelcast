@@ -16,9 +16,12 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
-import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -28,381 +31,183 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+
+import static com.hazelcast.sql.SqlColumnType.BIGINT;
+import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
+import static com.hazelcast.sql.SqlColumnType.DATE;
+import static com.hazelcast.sql.SqlColumnType.DECIMAL;
+import static com.hazelcast.sql.SqlColumnType.DOUBLE;
+import static com.hazelcast.sql.SqlColumnType.INTEGER;
+import static com.hazelcast.sql.SqlColumnType.OBJECT;
+import static com.hazelcast.sql.SqlColumnType.REAL;
+import static com.hazelcast.sql.SqlColumnType.SMALLINT;
+import static com.hazelcast.sql.SqlColumnType.TIME;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
+import static com.hazelcast.sql.SqlColumnType.TINYINT;
+import static com.hazelcast.sql.SqlColumnType.VARCHAR;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
-    /**
-     * Test TRIM usage with custom characters.
-     * <p>
-     * We assume that behavior of the input operand is tested elsewhere.
-     */
+public class TrimFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
-    public void test_trim_3_arg() {
-        // Test normal behavior
-        put(1);
-
-        // Spaces
-        checkValueInternal("SELECT TRIM(LEADING ' ' FROM '  abc  ') FROM map", SqlColumnType.VARCHAR, "abc  ");
-        checkValueInternal("SELECT TRIM(TRAILING ' ' FROM '  abc  ') FROM map", SqlColumnType.VARCHAR, "  abc");
-        checkValueInternal("SELECT TRIM(BOTH ' ' FROM '  abc  ') FROM map", SqlColumnType.VARCHAR, "abc");
-        checkValueInternal("SELECT TRIM(' ' FROM '  abc  ') FROM map", SqlColumnType.VARCHAR, "abc");
-        checkValueInternal("SELECT TRIM(' ' FROM null) FROM map", SqlColumnType.VARCHAR, null);
-
-        // Empty operand should be no-op
-        checkValueInternal("SELECT TRIM(LEADING '' FROM ' ab ') FROM map", SqlColumnType.VARCHAR, " ab ");
-        checkValueInternal("SELECT TRIM(TRAILING '' FROM ' ab ') FROM map", SqlColumnType.VARCHAR, " ab ");
-        checkValueInternal("SELECT TRIM(BOTH '' FROM ' ab ') FROM map", SqlColumnType.VARCHAR, " ab ");
-
-        // Cannot trim anything because target values are "protected" with spaces
-        checkValueInternal("SELECT TRIM(LEADING 'ab' FROM ' ab ') FROM map", SqlColumnType.VARCHAR, " ab ");
-        checkValueInternal("SELECT TRIM(TRAILING 'ab' FROM ' ab ') FROM map", SqlColumnType.VARCHAR, " ab ");
-        checkValueInternal("SELECT TRIM(BOTH 'ab' FROM ' ab ') FROM map", SqlColumnType.VARCHAR, " ab ");
-
-        // Trim with custom characters
-        checkValueInternal("SELECT TRIM(LEADING 'ab' FROM 'ababab ab ababab') FROM map", SqlColumnType.VARCHAR, " ab ababab");
-        checkValueInternal("SELECT TRIM(TRAILING 'ab' FROM 'ababab ab ababab') FROM map", SqlColumnType.VARCHAR, "ababab ab ");
-        checkValueInternal("SELECT TRIM(BOTH 'ab' FROM 'ababab ab ababab') FROM map", SqlColumnType.VARCHAR, " ab ");
-
-        checkValueInternal("SELECT TRIM(LEADING 'ba' FROM 'ababab ab ababab') FROM map", SqlColumnType.VARCHAR, " ab ababab");
-        checkValueInternal("SELECT TRIM(TRAILING 'ba' FROM 'ababab ab ababab') FROM map", SqlColumnType.VARCHAR, "ababab ab ");
-        checkValueInternal("SELECT TRIM(BOTH 'ba' FROM 'ababab ab ababab') FROM map", SqlColumnType.VARCHAR, " ab ");
-
-        checkValueInternal("SELECT TRIM(LEADING 'a' FROM 'aa aba aa') FROM map", SqlColumnType.VARCHAR, " aba aa");
-        checkValueInternal("SELECT TRIM(TRAILING 'a' FROM 'aa aba aa') FROM map", SqlColumnType.VARCHAR, "aa aba ");
-        checkValueInternal("SELECT TRIM(BOTH 'a' FROM 'aa aba aa') FROM map", SqlColumnType.VARCHAR, " aba ");
-
-        checkValueInternal("SELECT TRIM(LEADING 'aa' FROM 'aa aba aa') FROM map", SqlColumnType.VARCHAR, " aba aa");
-        checkValueInternal("SELECT TRIM(TRAILING 'aa' FROM 'aa aba aa') FROM map", SqlColumnType.VARCHAR, "aa aba ");
-        checkValueInternal("SELECT TRIM(BOTH 'aa' FROM 'aa aba aa') FROM map", SqlColumnType.VARCHAR, " aba ");
-
-        // Test column
-        put(new ExpressionValue.StringVal());
-        checkValueInternal("SELECT TRIM(LEADING field1 FROM 'aa aba aa') FROM map", SqlColumnType.VARCHAR, null);
-        checkValueInternal("SELECT TRIM(TRAILING field1 FROM 'aa aba aa') FROM map", SqlColumnType.VARCHAR, null);
-        checkValueInternal("SELECT TRIM(BOTH field1 FROM 'aa aba aa') FROM map", SqlColumnType.VARCHAR, null);
-
-        put(new ExpressionValue.StringVal().field1("a"));
-        checkValueInternal("SELECT TRIM(LEADING field1 FROM 'aa aba aa') FROM map", SqlColumnType.VARCHAR, " aba aa");
-        checkValueInternal("SELECT TRIM(TRAILING field1 FROM 'aa aba aa') FROM map", SqlColumnType.VARCHAR, "aa aba ");
-        checkValueInternal("SELECT TRIM(BOTH field1 FROM 'aa aba aa') FROM map", SqlColumnType.VARCHAR, " aba ");
-
-        put(new ExpressionValue.CharacterVal().field1('a'));
-        checkValueInternal("SELECT TRIM(LEADING field1 FROM 'aa aba aa') FROM map", SqlColumnType.VARCHAR, " aba aa");
-        checkValueInternal("SELECT TRIM(TRAILING field1 FROM 'aa aba aa') FROM map", SqlColumnType.VARCHAR, "aa aba ");
-        checkValueInternal("SELECT TRIM(BOTH field1 FROM 'aa aba aa') FROM map", SqlColumnType.VARCHAR, " aba ");
-
-        put(new ExpressionValue.BigDecimalVal().field1(BigDecimal.ONE));
-        checkValueInternal("SELECT TRIM(LEADING field1 FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, " 121 11");
-        checkValueInternal("SELECT TRIM(TRAILING field1 FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, "11 121 ");
-        checkValueInternal("SELECT TRIM(BOTH field1 FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, " 121 ");
-
-        // Test parameter
-        put(1);
-
-        checkValueInternal("SELECT TRIM(LEADING ? FROM 'aa ab aa') FROM map", SqlColumnType.VARCHAR, null, new Object[] { null });
-        checkValueInternal("SELECT TRIM(TRAILING ? FROM 'aa ab aa') FROM map", SqlColumnType.VARCHAR, null, new Object[] { null });
-        checkValueInternal("SELECT TRIM(BOTH ? FROM 'aa ab aa') FROM map", SqlColumnType.VARCHAR, null, new Object[] { null });
-
-        checkValueInternal("SELECT TRIM(LEADING ? FROM 'aa ab aa') FROM map", SqlColumnType.VARCHAR, " ab aa", "a");
-        checkValueInternal("SELECT TRIM(TRAILING ? FROM 'aa ab aa') FROM map", SqlColumnType.VARCHAR, "aa ab ", "a");
-        checkValueInternal("SELECT TRIM(BOTH ? FROM 'aa ab aa') FROM map", SqlColumnType.VARCHAR, " ab ", "a");
-
-        checkValueInternal("SELECT TRIM(LEADING ? FROM 'aa ab aa') FROM map", SqlColumnType.VARCHAR, " ab aa", 'a');
-        checkValueInternal("SELECT TRIM(TRAILING ? FROM 'aa ab aa') FROM map", SqlColumnType.VARCHAR, "aa ab ", 'a');
-        checkValueInternal("SELECT TRIM(BOTH ? FROM 'aa ab aa') FROM map", SqlColumnType.VARCHAR, " ab ", 'a');
-
-        checkFailureInternal("SELECT TRIM(LEADING ? FROM 'aa ab aa') FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-        checkFailureInternal("SELECT TRIM(TRAILING ? FROM 'aa ab aa') FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-        checkFailureInternal("SELECT TRIM(BOTH ? FROM 'aa ab aa') FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-
-        checkValueInternal("SELECT TRIM(LEADING ? FROM ?) FROM map", SqlColumnType.VARCHAR, " aba aa", "a", "aa aba aa");
-        checkValueInternal("SELECT TRIM(TRAILING ? FROM ?) FROM map", SqlColumnType.VARCHAR, "aa aba ", "a", "aa aba aa");
-        checkValueInternal("SELECT TRIM(BOTH ? FROM ?) FROM map", SqlColumnType.VARCHAR, " aba ", "a", "aa aba aa");
-
-        // Test literals
-        checkValueInternal("SELECT TRIM(LEADING null FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, null);
-        checkValueInternal("SELECT TRIM(TRAILING null FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, null);
-        checkValueInternal("SELECT TRIM(BOTH null FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, null);
-
-        checkValueInternal("SELECT TRIM(LEADING 1 FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, " 121 11");
-        checkValueInternal("SELECT TRIM(TRAILING 1 FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, "11 121 ");
-        checkValueInternal("SELECT TRIM(BOTH 1 FROM '11 121 11') FROM map", SqlColumnType.VARCHAR, " 121 ");
-    }
-
-    /**
-     * Test typical TRIM usage when only spaces are removed
-     */
-    @Test
-    public void test_trim_2_arg() {
+    public void test2Arg() {
         // Columns
-        put("");
-        checkValueInternal("SELECT TRIM(LEADING this) FROM map", SqlColumnType.VARCHAR, "");
-        checkValueInternal("SELECT TRIM(TRAILING this) FROM map", SqlColumnType.VARCHAR, "");
-        checkValueInternal("SELECT TRIM(BOTH this) FROM map", SqlColumnType.VARCHAR, "");
+        putAndCheckValue(new ExpressionValue.StringVal(), "SELECT TRIM(LEADING field1) FROM map", VARCHAR, null);
+        putAndCheckValue(new ExpressionValue.StringVal(), "SELECT TRIM(TRAILING field1) FROM map", VARCHAR, null);
+        putAndCheckValue(new ExpressionValue.StringVal(), "SELECT TRIM(BOTH field1) FROM map", VARCHAR, null);
 
-        put("abc");
-        checkValueInternal("SELECT TRIM(LEADING this) FROM map", SqlColumnType.VARCHAR, "abc");
-        checkValueInternal("SELECT TRIM(TRAILING this) FROM map", SqlColumnType.VARCHAR, "abc");
-        checkValueInternal("SELECT TRIM(BOTH this) FROM map", SqlColumnType.VARCHAR, "abc");
+        putAndCheckValue(" abc ", "SELECT TRIM(LEADING this) FROM map", VARCHAR, "abc ");
+        putAndCheckValue(" abc ", "SELECT TRIM(TRAILING this) FROM map", VARCHAR, " abc");
+        putAndCheckValue(" abc ", "SELECT TRIM(BOTH this) FROM map", VARCHAR, "abc");
 
-        put(" abc");
-        checkValueInternal("SELECT TRIM(LEADING this) FROM map", SqlColumnType.VARCHAR, "abc");
-        checkValueInternal("SELECT TRIM(TRAILING this) FROM map", SqlColumnType.VARCHAR, " abc");
-        checkValueInternal("SELECT TRIM(BOTH this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put("  abc");
-        checkValueInternal("SELECT TRIM(LEADING this) FROM map", SqlColumnType.VARCHAR, "abc");
-        checkValueInternal("SELECT TRIM(TRAILING this) FROM map", SqlColumnType.VARCHAR, "  abc");
-        checkValueInternal("SELECT TRIM(BOTH this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put("abc ");
-        checkValueInternal("SELECT TRIM(LEADING this) FROM map", SqlColumnType.VARCHAR, "abc ");
-        checkValueInternal("SELECT TRIM(TRAILING this) FROM map", SqlColumnType.VARCHAR, "abc");
-        checkValueInternal("SELECT TRIM(BOTH this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put("abc  ");
-        checkValueInternal("SELECT TRIM(LEADING this) FROM map", SqlColumnType.VARCHAR, "abc  ");
-        checkValueInternal("SELECT TRIM(TRAILING this) FROM map", SqlColumnType.VARCHAR, "abc");
-        checkValueInternal("SELECT TRIM(BOTH this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put(" _ abc _ ");
-        checkValueInternal("SELECT TRIM(LEADING this) FROM map", SqlColumnType.VARCHAR, "_ abc _ ");
-        checkValueInternal("SELECT TRIM(TRAILING this) FROM map", SqlColumnType.VARCHAR, " _ abc _");
-        checkValueInternal("SELECT TRIM(BOTH this) FROM map", SqlColumnType.VARCHAR, "_ abc _");
-
-        put(new ExpressionValue.StringVal());
-        checkValueInternal("SELECT TRIM(LEADING field1) FROM map", SqlColumnType.VARCHAR, null);
-        checkValueInternal("SELECT TRIM(TRAILING field1) FROM map", SqlColumnType.VARCHAR, null);
-        checkValueInternal("SELECT TRIM(BOTH field1) FROM map", SqlColumnType.VARCHAR, null);
-
-        // Only one test for numeric column because we are going to restrict them anyway
-        put(BigDecimal.ONE);
-        checkValueInternal("SELECT TRIM(LEADING this) FROM map", SqlColumnType.VARCHAR, "1");
-        checkValueInternal("SELECT TRIM(TRAILING this) FROM map", SqlColumnType.VARCHAR, "1");
-        checkValueInternal("SELECT TRIM(BOTH this) FROM map", SqlColumnType.VARCHAR, "1");
-
-        // Parameters
-        put(1);
-        checkValueInternal("SELECT TRIM(LEADING ?) FROM map", SqlColumnType.VARCHAR, null, new Object[] { null });
-        checkValueInternal("SELECT TRIM(TRAILING ?) FROM map", SqlColumnType.VARCHAR, null, new Object[] { null });
-        checkValueInternal("SELECT TRIM(BOTH ?) FROM map", SqlColumnType.VARCHAR, null, new Object[] { null });
-
-        checkValueInternal("SELECT TRIM(LEADING ?) FROM map", SqlColumnType.VARCHAR, "abc ", " abc ");
-        checkValueInternal("SELECT TRIM(TRAILING ?) FROM map", SqlColumnType.VARCHAR, " abc", " abc ");
-        checkValueInternal("SELECT TRIM(BOTH ?) FROM map", SqlColumnType.VARCHAR, "abc", " abc ");
-
-        checkValueInternal("SELECT TRIM(LEADING ?) FROM map", SqlColumnType.VARCHAR, "a", 'a');
-        checkValueInternal("SELECT TRIM(TRAILING ?) FROM map", SqlColumnType.VARCHAR, "a", 'a');
-        checkValueInternal("SELECT TRIM(BOTH ?) FROM map", SqlColumnType.VARCHAR, "a", 'a');
-
-        checkFailureInternal("SELECT TRIM(LEADING ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-        checkFailureInternal("SELECT TRIM(TRAILING ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-        checkFailureInternal("SELECT TRIM(BOTH ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
+        putAndCheckFailure(true, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", BOOLEAN));
+        putAndCheckFailure((byte) 1, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TINYINT));
+        putAndCheckFailure((short) 1, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", SMALLINT));
+        putAndCheckFailure(1, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", INTEGER));
+        putAndCheckFailure(1L, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", BIGINT));
+        putAndCheckFailure(BigInteger.ONE, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DECIMAL));
+        putAndCheckFailure(BigDecimal.ONE, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DECIMAL));
+        putAndCheckFailure(1f, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", REAL));
+        putAndCheckFailure(1d, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DOUBLE));
+        putAndCheckFailure(LOCAL_DATE_VAL, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DATE));
+        putAndCheckFailure(LOCAL_TIME_VAL, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIME));
+        putAndCheckFailure(LOCAL_DATE_TIME_VAL, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIMESTAMP));
+        putAndCheckFailure(OFFSET_DATE_TIME_VAL, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(OBJECT_VAL, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", OBJECT));
 
         // Literals
-        checkValueInternal("SELECT TRIM(LEADING ' abc ') FROM map", SqlColumnType.VARCHAR, "abc ");
-        checkValueInternal("SELECT TRIM(TRAILING ' abc ') FROM map", SqlColumnType.VARCHAR, " abc");
-        checkValueInternal("SELECT TRIM(BOTH ' abc ') FROM map", SqlColumnType.VARCHAR, "abc");
+        checkValue0("SELECT TRIM(LEADING null) FROM map", VARCHAR, null);
+        checkValue0("SELECT TRIM(TRAILING null) FROM map", VARCHAR, null);
+        checkValue0("SELECT TRIM(BOTH null) FROM map", VARCHAR, null);
 
-        checkValueInternal("SELECT TRIM(LEADING null) FROM map", SqlColumnType.VARCHAR, null);
-        checkValueInternal("SELECT TRIM(TRAILING null) FROM map", SqlColumnType.VARCHAR, null);
-        checkValueInternal("SELECT TRIM(BOTH null) FROM map", SqlColumnType.VARCHAR, null);
+        checkValue0("SELECT TRIM(LEADING ' abc ') FROM map", VARCHAR, "abc ");
+        checkValue0("SELECT TRIM(TRAILING ' abc ') FROM map", VARCHAR, " abc");
+        checkValue0("SELECT TRIM(BOTH ' abc ') FROM map", VARCHAR, "abc");
 
-        checkValueInternal("SELECT TRIM(LEADING true) FROM map", SqlColumnType.VARCHAR, "true");
-        checkValueInternal("SELECT TRIM(TRAILING true) FROM map", SqlColumnType.VARCHAR, "true");
-        checkValueInternal("SELECT TRIM(BOTH true) FROM map", SqlColumnType.VARCHAR, "true");
+        checkFailure0("SELECT TRIM(LEADING 1) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TINYINT));
 
-        checkValueInternal("SELECT TRIM(LEADING 1) FROM map", SqlColumnType.VARCHAR, "1");
-        checkValueInternal("SELECT TRIM(TRAILING 1) FROM map", SqlColumnType.VARCHAR, "1");
-        checkValueInternal("SELECT TRIM(BOTH 1) FROM map", SqlColumnType.VARCHAR, "1");
+        // Parameters
+        checkValue0("SELECT TRIM(LEADING ?) FROM map", VARCHAR, null, new Object[] { null });
+        checkValue0("SELECT TRIM(TRAILING ?) FROM map", VARCHAR, null, new Object[] { null });
+        checkValue0("SELECT TRIM(BOTH ?) FROM map", VARCHAR, null, new Object[] { null });
 
-        checkValueInternal("SELECT TRIM(LEADING 1.1) FROM map", SqlColumnType.VARCHAR, "1.1");
-        checkValueInternal("SELECT TRIM(TRAILING 1.1) FROM map", SqlColumnType.VARCHAR, "1.1");
-        checkValueInternal("SELECT TRIM(BOTH 1.1) FROM map", SqlColumnType.VARCHAR, "1.1");
+        checkValue0("SELECT TRIM(LEADING ?) FROM map", VARCHAR, "abc ", " abc ");
+        checkValue0("SELECT TRIM(TRAILING ?) FROM map", VARCHAR, " abc", " abc ");
+        checkValue0("SELECT TRIM(BOTH ?) FROM map", VARCHAR, "abc", " abc ");
 
-        checkValueInternal("SELECT TRIM(LEADING 1.1E2) FROM map", SqlColumnType.VARCHAR, "110.0");
-        checkValueInternal("SELECT TRIM(TRAILING 1.1E2) FROM map", SqlColumnType.VARCHAR, "110.0");
-        checkValueInternal("SELECT TRIM(BOTH 1.1E2) FROM map", SqlColumnType.VARCHAR, "110.0");
+        checkFailure0("SELECT TRIM(LEADING ?) FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, INTEGER), 1);
     }
 
     @Test
-    public void test_trim_1_arg() {
+    public void test3Arg() {
         // Columns
-        put("abc");
-        checkValueInternal("SELECT TRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
+        putAndCheckValue(new ExpressionValue.StringVal(), "SELECT TRIM(LEADING field1 FROM 'abab_c_abab') FROM map", VARCHAR, null);
+        putAndCheckValue(new ExpressionValue.StringVal(), "SELECT TRIM(TRAILING field1 FROM 'abab_c_abab') FROM map", VARCHAR, null);
+        putAndCheckValue(new ExpressionValue.StringVal(), "SELECT TRIM(BOTH field1 FROM 'abab_c_abab') FROM map", VARCHAR, null);
 
-        put(" abc");
-        checkValueInternal("SELECT TRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
+        putAndCheckValue("ab", "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", VARCHAR, "_c_abab");
+        putAndCheckValue("ab", "SELECT TRIM(TRAILING this FROM 'abab_c_abab') FROM map", VARCHAR, "abab_c_");
+        putAndCheckValue("ab", "SELECT TRIM(BOTH this FROM 'abab_c_abab') FROM map", VARCHAR, "_c_");
 
-        put("  abc");
-        checkValueInternal("SELECT TRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put("abc ");
-        checkValueInternal("SELECT TRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put("abc  ");
-        checkValueInternal("SELECT TRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put(" _ abc _ ");
-        checkValueInternal("SELECT TRIM(this) FROM map", SqlColumnType.VARCHAR, "_ abc _");
-
-        put(new ExpressionValue.StringVal());
-        checkValueInternal("SELECT TRIM(field1) FROM map", SqlColumnType.VARCHAR, null);
-
-        // Only one test for numeric column because we are going to restrict them anyway
-        put(BigDecimal.ONE);
-        checkValueInternal("SELECT TRIM(this) FROM map", SqlColumnType.VARCHAR, "1");
-
-        // Parameters
-        put(1);
-        checkValueInternal("SELECT TRIM(?) FROM map", SqlColumnType.VARCHAR, null, new Object[] { null });
-        checkValueInternal("SELECT TRIM(?) FROM map", SqlColumnType.VARCHAR, "abc", " abc ");
-        checkValueInternal("SELECT TRIM(?) FROM map", SqlColumnType.VARCHAR, "a", 'a');
-
-        checkFailureInternal("SELECT TRIM(?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
+        putAndCheckFailure(true, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", BOOLEAN, VARCHAR));
+        putAndCheckFailure((byte) 1, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TINYINT, VARCHAR));
+        putAndCheckFailure((short) 1, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", SMALLINT, VARCHAR));
+        putAndCheckFailure(1, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", INTEGER, VARCHAR));
+        putAndCheckFailure(1L, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", BIGINT, VARCHAR));
+        putAndCheckFailure(BigInteger.ONE, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DECIMAL, VARCHAR));
+        putAndCheckFailure(BigDecimal.ONE, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DECIMAL, VARCHAR));
+        putAndCheckFailure(1f, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", REAL, VARCHAR));
+        putAndCheckFailure(1d, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DOUBLE, VARCHAR));
+        putAndCheckFailure(LOCAL_DATE_VAL, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DATE, VARCHAR));
+        putAndCheckFailure(LOCAL_TIME_VAL, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIME, VARCHAR));
+        putAndCheckFailure(LOCAL_DATE_TIME_VAL, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIMESTAMP, VARCHAR));
+        putAndCheckFailure(OFFSET_DATE_TIME_VAL, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIMESTAMP_WITH_TIME_ZONE, VARCHAR));
+        putAndCheckFailure(OBJECT_VAL, "SELECT TRIM(LEADING this FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", OBJECT, VARCHAR));
 
         // Literals
-        checkValueInternal("SELECT TRIM(' abc ') FROM map", SqlColumnType.VARCHAR, "abc");
-        checkValueInternal("SELECT TRIM(null) FROM map", SqlColumnType.VARCHAR, null);
-        checkValueInternal("SELECT TRIM(true) FROM map", SqlColumnType.VARCHAR, "true");
-        checkValueInternal("SELECT TRIM(1) FROM map", SqlColumnType.VARCHAR, "1");
-        checkValueInternal("SELECT TRIM(1.1) FROM map", SqlColumnType.VARCHAR, "1.1");
-        checkValueInternal("SELECT TRIM(1.1E2) FROM map", SqlColumnType.VARCHAR, "110.0");
+        checkValue0("SELECT TRIM(LEADING null FROM 'abab_c_abab') FROM map", VARCHAR, null);
+        checkValue0("SELECT TRIM(TRAILING null FROM 'abab_c_abab') FROM map", VARCHAR, null);
+        checkValue0("SELECT TRIM(BOTH null FROM 'abab_c_abab') FROM map", VARCHAR, null);
+
+        checkValue0("SELECT TRIM(LEADING 'ab' FROM 'abab_c_abab') FROM map", VARCHAR, "_c_abab");
+        checkValue0("SELECT TRIM(TRAILING 'ab' FROM 'abab_c_abab') FROM map", VARCHAR, "abab_c_");
+        checkValue0("SELECT TRIM(BOTH 'ab' FROM 'abab_c_abab') FROM map", VARCHAR, "_c_");
+
+        checkFailure0("SELECT TRIM(LEADING true FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", BOOLEAN, VARCHAR));
+        checkFailure0("SELECT TRIM(LEADING 1 FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TINYINT, VARCHAR));
+        checkFailure0("SELECT TRIM(LEADING 1.1 FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DECIMAL, VARCHAR));
+        checkFailure0("SELECT TRIM(LEADING 1.1E1 FROM 'abab_c_abab') FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DOUBLE, VARCHAR));
+
+        // Parameters
+        checkValue0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", VARCHAR, "_c_abab", "ab");
+        checkValue0("SELECT TRIM(TRAILING ? FROM 'abab_c_abab') FROM map", VARCHAR, "abab_c_", "ab");
+        checkValue0("SELECT TRIM(BOTH ? FROM 'abab_c_abab') FROM map", VARCHAR, "_c_", "ab");
+
+        checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, BOOLEAN), true);
+        checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, TINYINT), (byte) 1);
+        checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, SMALLINT), (short) 1);
+        checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, INTEGER), 1);
+        checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, BIGINT), 1L);
+        checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, DECIMAL), BigInteger.ONE);
+        checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, DECIMAL), BigDecimal.ONE);
+        checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, REAL), 1f);
+        checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, DOUBLE), 1d);
+        checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, DATE), LOCAL_DATE_VAL);
+        checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, TIME), LOCAL_TIME_VAL);
+        checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, TIMESTAMP), LOCAL_DATE_TIME_VAL);
+        checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
+        checkFailure0("SELECT TRIM(LEADING ? FROM 'abab_c_abab') FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, OBJECT), OBJECT_VAL);
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    @Test
+    public void testEquals() {
+        Expression<?> input1 = constant("a");
+        Expression<?> input2 = constant("b");
+
+        Expression<?> characters1 = constant("c");
+        Expression<?> characters2 = constant("d");
+
+        boolean leading1 = true;
+        boolean leading2 = false;
+
+        boolean trailing1 = true;
+        boolean trailing2 = false;
+
+        TrimFunction function = TrimFunction.create(input1, characters1, leading1, trailing1);
+
+        checkEquals(function, TrimFunction.create(input1, characters1, leading1, trailing1), true);
+        checkEquals(function, TrimFunction.create(input2, characters1, leading1, trailing1), false);
+        checkEquals(function, TrimFunction.create(input1, characters2, leading1, trailing1), false);
+        checkEquals(function, TrimFunction.create(input1, characters1, leading2, trailing1), false);
+        checkEquals(function, TrimFunction.create(input1, characters1, leading1, trailing2), false);
     }
 
     @Test
-    public void test_ltrim() {
-        // Columns
-        put("abc");
-        checkValueInternal("SELECT LTRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
+    public void testSerialization() {
+        TrimFunction original = TrimFunction.create(constant("a"), constant("b"), true, true);
+        TrimFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_TRIM);
 
-        put(" abc");
-        checkValueInternal("SELECT LTRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put("  abc");
-        checkValueInternal("SELECT LTRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put("abc ");
-        checkValueInternal("SELECT LTRIM(this) FROM map", SqlColumnType.VARCHAR, "abc ");
-
-        put("abc  ");
-        checkValueInternal("SELECT LTRIM(this) FROM map", SqlColumnType.VARCHAR, "abc  ");
-
-        put(" _ abc _ ");
-        checkValueInternal("SELECT LTRIM(this) FROM map", SqlColumnType.VARCHAR, "_ abc _ ");
-
-        put(new ExpressionValue.StringVal());
-        checkValueInternal("SELECT LTRIM(field1) FROM map", SqlColumnType.VARCHAR, null);
-
-        // Only one test for numeric column because we are going to restrict them anyway
-        put(BigDecimal.ONE);
-        checkValueInternal("SELECT LTRIM(this) FROM map", SqlColumnType.VARCHAR, "1");
-
-        // Parameters
-        put(1);
-        checkValueInternal("SELECT LTRIM(?) FROM map", SqlColumnType.VARCHAR, null, new Object[] { null });
-        checkValueInternal("SELECT LTRIM(?) FROM map", SqlColumnType.VARCHAR, "abc ", " abc ");
-        checkValueInternal("SELECT LTRIM(?) FROM map", SqlColumnType.VARCHAR, "a", 'a');
-
-        checkFailureInternal("SELECT LTRIM(?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-
-        // Literals
-        checkValueInternal("SELECT LTRIM(' abc ') FROM map", SqlColumnType.VARCHAR, "abc ");
-        checkValueInternal("SELECT LTRIM(null) FROM map", SqlColumnType.VARCHAR, null);
-        checkValueInternal("SELECT LTRIM(true) FROM map", SqlColumnType.VARCHAR, "true");
-        checkValueInternal("SELECT LTRIM(1) FROM map", SqlColumnType.VARCHAR, "1");
-        checkValueInternal("SELECT LTRIM(1.1) FROM map", SqlColumnType.VARCHAR, "1.1");
-        checkValueInternal("SELECT LTRIM(1.1E2) FROM map", SqlColumnType.VARCHAR, "110.0");
+        checkEquals(original, restored, true);
     }
 
     @Test
-    public void test_rtrim() {
-        // Columns
-        put("abc");
-        checkValueInternal("SELECT RTRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
+    public void testSimplification() {
+        TrimFunction function = TrimFunction.create(constant("a"), constant("b"), true, true);
+        assertEquals(ConstantExpression.create("b", QueryDataType.VARCHAR), function.getCharacters());
 
-        put(" abc");
-        checkValueInternal("SELECT RTRIM(this) FROM map", SqlColumnType.VARCHAR, " abc");
+        function = TrimFunction.create(constant("a"), constant(" "), true, true);
+        assertNull(function.getCharacters());
 
-        put("  abc");
-        checkValueInternal("SELECT RTRIM(this) FROM map", SqlColumnType.VARCHAR, "  abc");
-
-        put("abc ");
-        checkValueInternal("SELECT RTRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put("abc  ");
-        checkValueInternal("SELECT RTRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put(" _ abc _ ");
-        checkValueInternal("SELECT RTRIM(this) FROM map", SqlColumnType.VARCHAR, " _ abc _");
-
-        put(new ExpressionValue.StringVal());
-        checkValueInternal("SELECT RTRIM(field1) FROM map", SqlColumnType.VARCHAR, null);
-
-        // Only one test for numeric column because we are going to restrict them anyway
-        put(BigDecimal.ONE);
-        checkValueInternal("SELECT RTRIM(this) FROM map", SqlColumnType.VARCHAR, "1");
-
-        // Parameters
-        put(1);
-        checkValueInternal("SELECT RTRIM(?) FROM map", SqlColumnType.VARCHAR, null, new Object[] { null });
-        checkValueInternal("SELECT RTRIM(?) FROM map", SqlColumnType.VARCHAR, " abc", " abc ");
-        checkValueInternal("SELECT RTRIM(?) FROM map", SqlColumnType.VARCHAR, "a", 'a');
-
-        checkFailureInternal("SELECT RTRIM(?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-
-        // Literals
-        checkValueInternal("SELECT RTRIM(' abc ') FROM map", SqlColumnType.VARCHAR, " abc");
-        checkValueInternal("SELECT RTRIM(null) FROM map", SqlColumnType.VARCHAR, null);
-        checkValueInternal("SELECT RTRIM(true) FROM map", SqlColumnType.VARCHAR, "true");
-        checkValueInternal("SELECT RTRIM(1) FROM map", SqlColumnType.VARCHAR, "1");
-        checkValueInternal("SELECT RTRIM(1.1) FROM map", SqlColumnType.VARCHAR, "1.1");
-        checkValueInternal("SELECT RTRIM(1.1E2) FROM map", SqlColumnType.VARCHAR, "110.0");
+        function = TrimFunction.create(constant("a"), null, true, true);
+        assertNull(function.getCharacters());
     }
 
-    @Test
-    public void test_btrim() {
-        // Columns
-        put("abc");
-        checkValueInternal("SELECT BTRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put(" abc");
-        checkValueInternal("SELECT BTRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put("  abc");
-        checkValueInternal("SELECT BTRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put("abc ");
-        checkValueInternal("SELECT BTRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put("abc  ");
-        checkValueInternal("SELECT BTRIM(this) FROM map", SqlColumnType.VARCHAR, "abc");
-
-        put(" _ abc _ ");
-        checkValueInternal("SELECT BTRIM(this) FROM map", SqlColumnType.VARCHAR, "_ abc _");
-
-        put(new ExpressionValue.StringVal());
-        checkValueInternal("SELECT BTRIM(field1) FROM map", SqlColumnType.VARCHAR, null);
-
-        // Only one test for numeric column because we are going to restrict them anyway
-        put(BigDecimal.ONE);
-        checkValueInternal("SELECT BTRIM(this) FROM map", SqlColumnType.VARCHAR, "1");
-
-        // Parameters
-        put(1);
-        checkValueInternal("SELECT BTRIM(?) FROM map", SqlColumnType.VARCHAR, null, new Object[] { null });
-        checkValueInternal("SELECT BTRIM(?) FROM map", SqlColumnType.VARCHAR, "abc", " abc ");
-        checkValueInternal("SELECT BTRIM(?) FROM map", SqlColumnType.VARCHAR, "a", 'a');
-
-        checkFailureInternal("SELECT BTRIM(?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-
-        // Literals
-        checkValueInternal("SELECT BTRIM(' abc ') FROM map", SqlColumnType.VARCHAR, "abc");
-        checkValueInternal("SELECT BTRIM(null) FROM map", SqlColumnType.VARCHAR, null);
-        checkValueInternal("SELECT BTRIM(true) FROM map", SqlColumnType.VARCHAR, "true");
-        checkValueInternal("SELECT BTRIM(1) FROM map", SqlColumnType.VARCHAR, "1");
-        checkValueInternal("SELECT BTRIM(1.1) FROM map", SqlColumnType.VARCHAR, "1.1");
-        checkValueInternal("SELECT BTRIM(1.1E2) FROM map", SqlColumnType.VARCHAR, "110.0");
+    private ConstantExpression<?> constant(String value) {
+        return ConstantExpression.create(value, QueryDataType.VARCHAR);
     }
 }

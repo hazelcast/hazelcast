@@ -21,7 +21,7 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.query.impl.ComparableIdentifiedDataSerializable;
 import com.hazelcast.query.impl.TypeConverters;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.SqlToQueryType;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.logical.MapScanLogicalRel;
@@ -385,7 +385,7 @@ public final class IndexResolver {
 
         int columnIndex = ((RexInputRef) operand).getIndex();
 
-        QueryDataType type = SqlToQueryType.map(operand.getType().getSqlTypeName());
+        QueryDataType type = HazelcastTypeUtils.toHazelcastType(operand.getType().getSqlTypeName());
 
         // Create a value with "allowNulls=true"
         IndexFilterValue filterValue = new IndexFilterValue(
@@ -1191,8 +1191,8 @@ public final class IndexResolver {
                     return from;
                 }
 
-                QueryDataTypeFamily fromFamily = SqlToQueryType.map(fromType.getSqlTypeName()).getTypeFamily();
-                QueryDataTypeFamily toFamily = SqlToQueryType.map(toType.getSqlTypeName()).getTypeFamily();
+                QueryDataTypeFamily fromFamily = HazelcastTypeUtils.toHazelcastType(fromType.getSqlTypeName()).getTypeFamily();
+                QueryDataTypeFamily toFamily = HazelcastTypeUtils.toHazelcastType(toType.getSqlTypeName()).getTypeFamily();
 
                 if (QueryDataTypeUtils.isNumeric(fromFamily) && QueryDataTypeUtils.isNumeric(toFamily)) {
                     // Converting between numeric types

@@ -176,13 +176,6 @@ public interface IPartitionService extends CoreService {
     long getPartitionStateStamp();
 
     /**
-     * Returns version of the current partition state.
-     */
-    //RU_COMPAT_4_0
-    @Deprecated
-    int getPartitionStateVersion();
-
-    /**
      * Checks if there are any cluster-wide migrations.
      *
      * @return {@code true} if there are migrations, {@code false} otherwise.

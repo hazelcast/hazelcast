@@ -40,13 +40,6 @@ import static org.junit.Assert.assertNotSame;
 public class PartitionTableViewTest {
 
     @Test
-    public void test_getVersion() throws Exception {
-        int version = RandomPicker.getInt(1000);
-        PartitionTableView table = new PartitionTableView(createRandomPartitions(), version);
-        assertEquals(version, table.version());
-    }
-
-    @Test
     public void test_getStamp() throws Exception {
         InternalPartition[] partitions = createRandomPartitions();
         PartitionTableView table = new PartitionTableView(partitions);

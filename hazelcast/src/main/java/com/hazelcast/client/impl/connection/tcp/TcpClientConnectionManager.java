@@ -477,9 +477,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                         return true;
                     }
                 }
-                // If the address providers load no addresses, then the above loop is not entered
-                // and the lifecycle check is missing, hence we need to repeat the same check at this point.
                 triedAddresses.addAll(triedAddressesPerAttempt);
+                // If the address provider loads no addresses, then the above loop is not entered
+                // and the lifecycle check is missing, hence we need to repeat the same check at this point.
                 checkClientActive();
             } while (waitStrategy.sleep());
         } catch (ClientNotAllowedInClusterException | InvalidConfigurationException e) {
@@ -530,7 +530,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         } catch (NullPointerException e) {
             throw e;
         } catch (Exception e) {
-            logger.warning("Exception from AddressProvider: " + clusterDiscoveryService, e);
+            logger.warning("Exception from AddressProvider: " + addressProvider, e);
         }
         return addresses;
     }
