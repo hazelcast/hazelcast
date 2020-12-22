@@ -202,11 +202,11 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
           .setPolicy("foo")
           .setBatchSize(4);
 
-        withEnvironmentVariable("HZ_SCHEDULEDEXECUTORSERVICE_FOO1_MERGEPOLICY_CLASSNAME", "PutIfAbsentMergePolicy")
+        withEnvironmentVariable("HZ_SCHEDULEDEXECUTORSERVICE_FOO1_MERGEPOLICY_CLASSNAME", "CustomMergePolicy")
           .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
 
-        assertEquals("PutIfAbsentMergePolicy", config.getScheduledExecutorConfig("foo").getMergePolicyConfig().getPolicy());
-        assertEquals(4, config.getScheduledExecutorConfig("foo").getMergePolicyConfig().getBatchSize());
+        assertEquals("CustomMergePolicy", config.getScheduledExecutorConfig("foo1").getMergePolicyConfig().getPolicy());
+        assertEquals(4, config.getScheduledExecutorConfig("foo1").getMergePolicyConfig().getBatchSize());
     }
 
     @Test
