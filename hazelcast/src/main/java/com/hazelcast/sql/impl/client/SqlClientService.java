@@ -149,7 +149,7 @@ public class SqlClientService implements SqlService {
     }
 
     /**
-     * Invokes a method that do not have an associated handler on the server side.
+     * Invokes a method that does not have an associated handler on the server side.
      * For testing purposes only.
      */
     @SuppressWarnings("checkstyle:MagicNumber")
