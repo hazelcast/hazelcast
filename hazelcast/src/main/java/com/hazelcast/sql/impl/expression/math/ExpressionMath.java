@@ -102,22 +102,4 @@ public final class ExpressionMath {
 
         return left / right;
     }
-
-    @SuppressWarnings("checkstyle:MagicNumber")
-    public static double remainder(double left, double right) {
-        if (right == +0.0 || right == -0.0) {
-            throw new ArithmeticException("Division by zero");
-        }
-
-        return left % right;
-    }
-
-    @SuppressWarnings("checkstyle:MagicNumber")
-    public static float remainder(float left, float right) {
-        if (right == +0.0f || right == -0.0f) {
-            throw new ArithmeticException("Division by zero");
-        }
-
-        return left % right;
-    }
 }

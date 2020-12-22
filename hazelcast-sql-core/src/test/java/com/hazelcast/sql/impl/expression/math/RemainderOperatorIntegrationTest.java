@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -34,6 +35,7 @@ import static com.hazelcast.sql.SqlColumnType.DATE;
 import static com.hazelcast.sql.SqlColumnType.DECIMAL;
 import static com.hazelcast.sql.SqlColumnType.DOUBLE;
 import static com.hazelcast.sql.SqlColumnType.INTEGER;
+import static com.hazelcast.sql.SqlColumnType.NULL;
 import static com.hazelcast.sql.SqlColumnType.OBJECT;
 import static com.hazelcast.sql.SqlColumnType.REAL;
 import static com.hazelcast.sql.SqlColumnType.SMALLINT;
@@ -80,12 +82,6 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
         checkFields((byte) 3, decimal("1.4"), DECIMAL, decimal("0.2"));
         checkError((byte) 3, decimal("0.0"), DATA_EXCEPTION, divisionByZeroError());
 
-        checkFields((byte) 3, 1.4f, REAL, 3f % 1.4f);
-        checkError((byte) 3, 0.0f, DATA_EXCEPTION, divisionByZeroError());
-
-        checkFields((byte) 3, 1.4d, DOUBLE, 3d % 1.4d);
-        checkError((byte) 3, 0.0d, DATA_EXCEPTION, divisionByZeroError());
-
         // Parameters
         putAndCheckFailure((byte) 2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), CHAR_VAL);
         putAndCheckFailure((byte) 2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), STRING_VAL);
@@ -130,12 +126,6 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
 
         checkFields((short) 3, decimal("1.4"), DECIMAL, decimal("0.2"));
         checkError((short) 3, decimal("0.0"), DATA_EXCEPTION, divisionByZeroError());
-
-        checkFields((short) 3, 1.4f, REAL, 3f % 1.4f);
-        checkError((short) 3, 0.0f, DATA_EXCEPTION, divisionByZeroError());
-
-        checkFields((short) 3, 1.4d, DOUBLE, 3d % 1.4d);
-        checkError((short) 3, 0.0d, DATA_EXCEPTION, divisionByZeroError());
 
         // Parameters
         putAndCheckFailure((short) 2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), CHAR_VAL);
@@ -182,12 +172,6 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
         checkFields(3, decimal("1.4"), DECIMAL, decimal("0.2"));
         checkError(3, decimal("0.0"), DATA_EXCEPTION, divisionByZeroError());
 
-        checkFields(3, 1.4f, REAL, 3f % 1.4f);
-        checkError(3, 0.0f, DATA_EXCEPTION, divisionByZeroError());
-
-        checkFields(3, 1.4d, DOUBLE, 3d % 1.4d);
-        checkError(3, 0.0d, DATA_EXCEPTION, divisionByZeroError());
-
         // Parameters
         putAndCheckFailure(2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), CHAR_VAL);
         putAndCheckFailure(2, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), STRING_VAL);
@@ -233,12 +217,6 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
         checkFields(3L, decimal("1.4"), DECIMAL, decimal("0.2"));
         checkError(3L, decimal("0.0"), DATA_EXCEPTION, divisionByZeroError());
 
-        checkFields(3L, 1.4f, REAL, 3f % 1.4f);
-        checkError(3L, 0.0f, DATA_EXCEPTION, divisionByZeroError());
-
-        checkFields(3L, 1.4d, DOUBLE, 3d % 1.4d);
-        checkError(3L, 0.0d, DATA_EXCEPTION, divisionByZeroError());
-
         // Parameters
         putAndCheckFailure(2L, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), CHAR_VAL);
         putAndCheckFailure(2L, sql("this", "?"), DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), STRING_VAL);
@@ -271,8 +249,6 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
         checkFields(new BigInteger("3"), 2L, DECIMAL, decimal("1"));
         checkFields(new BigInteger("3"), new BigInteger("2"), DECIMAL, decimal("1"));
         checkFields(new BigInteger("3"), decimal("1.4"), DECIMAL, decimal("0.2"));
-        checkFields(new BigInteger("3"), 1.4f, REAL, 3.0f % 1.4f);
-        checkFields(new BigInteger("3"), 1.4d, DOUBLE, 3.0d % 1.4d);
 
         checkError(new BigInteger("3"), (byte) 0, DATA_EXCEPTION, divisionByZeroError());
         checkError(new BigInteger("3"), (short) 0, DATA_EXCEPTION, divisionByZeroError());
@@ -280,8 +256,6 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
         checkError(new BigInteger("3"), 0L, DATA_EXCEPTION, divisionByZeroError());
         checkError(new BigInteger("3"), BigInteger.ZERO, DATA_EXCEPTION, divisionByZeroError());
         checkError(new BigInteger("3"), BigDecimal.ZERO, DATA_EXCEPTION, divisionByZeroError());
-        checkError(new BigInteger("3"), 0.0f, DATA_EXCEPTION, divisionByZeroError());
-        checkError(new BigInteger("3"), 0.0d, DATA_EXCEPTION, divisionByZeroError());
         checkError(new BigInteger("3"), decimal("0"), DATA_EXCEPTION, divisionByZeroError());
 
         // Parameters
@@ -316,8 +290,6 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
         checkFields(new BigDecimal("3"), 2L, DECIMAL, decimal("1"));
         checkFields(new BigDecimal("3"), new BigInteger("2"), DECIMAL, decimal("1"));
         checkFields(new BigDecimal("3"), decimal("1.4"), DECIMAL, decimal("0.2"));
-        checkFields(new BigDecimal("3"), 1.4f, REAL, 3.0f % 1.4f);
-        checkFields(new BigDecimal("3"), 1.4d, DOUBLE, 3.0d % 1.4d);
 
         checkError(new BigDecimal("3"), (byte) 0, DATA_EXCEPTION, divisionByZeroError());
         checkError(new BigDecimal("3"), (short) 0, DATA_EXCEPTION, divisionByZeroError());
@@ -325,8 +297,6 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
         checkError(new BigDecimal("3"), 0L, DATA_EXCEPTION, divisionByZeroError());
         checkError(new BigDecimal("3"), BigInteger.ZERO, DATA_EXCEPTION, divisionByZeroError());
         checkError(new BigDecimal("3"), BigDecimal.ZERO, DATA_EXCEPTION, divisionByZeroError());
-        checkError(new BigDecimal("3"), 0.0f, DATA_EXCEPTION, divisionByZeroError());
-        checkError(new BigDecimal("3"), 0.0d, DATA_EXCEPTION, divisionByZeroError());
         checkError(new BigDecimal("3"), decimal("0"), DATA_EXCEPTION, divisionByZeroError());
 
         // Parameters
@@ -350,64 +320,12 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
 
     @Test
     public void testReal() {
-        putAndCheckValue(0f, sql("this", "null"), REAL, null);
-        putAndCheckValue(0f, sql("null", "this"), REAL, null);
-
-        checkFields(3.5f, 1.4f, REAL, 3.5f % 1.4f);
-        checkError(3f, +0.0f, DATA_EXCEPTION, divisionByZeroError());
-        checkError(3f, -0.0f, DATA_EXCEPTION, divisionByZeroError());
-
-        checkFields(3.5f, 1.4d, DOUBLE, 3.5d % 1.4d);
-        checkError(3f, +0.0d, DATA_EXCEPTION, divisionByZeroError());
-        checkError(3f, -0.0d, DATA_EXCEPTION, divisionByZeroError());
-
-        putAndCheckFailure(2f, sql("this", "?"), DATA_EXCEPTION, parameterError(0, REAL, VARCHAR), CHAR_VAL);
-        putAndCheckFailure(2f, sql("this", "?"), DATA_EXCEPTION, parameterError(0, REAL, VARCHAR), STRING_VAL);
-        putAndCheckFailure(2f, sql("this", "?"), DATA_EXCEPTION, parameterError(0, REAL, BOOLEAN), BOOLEAN_VAL);
-        putAndCheckValue(3.5f, sql("this", "?"), REAL, 1.5f, (byte) 2);
-        putAndCheckValue(3.5f, sql("this", "?"), REAL, 1.5f, (short) 2);
-        putAndCheckValue(3.5f, sql("this", "?"), REAL, 1.5f, 2);
-        putAndCheckValue(3.5f, sql("this", "?"), REAL, 1.5f, 2L);
-        putAndCheckValue(3.5f, sql("this", "?"), REAL, 1.5f, new BigInteger("2"));
-        putAndCheckValue(3.5f, sql("this", "?"), REAL, 3.5f % 1.4f, decimal("1.4"));
-        putAndCheckValue(3.5f, sql("this", "?"), REAL, 3.5f % 1.4f, 1.4f);
-        putAndCheckFailure(2f, sql("this", "?"), DATA_EXCEPTION, parameterError(0, REAL, DOUBLE), DOUBLE_VAL);
-        putAndCheckFailure(2f, sql("this", "?"), DATA_EXCEPTION, parameterError(0, REAL, DATE), LOCAL_DATE_VAL);
-        putAndCheckFailure(2f, sql("this", "?"), DATA_EXCEPTION, parameterError(0, REAL, TIME), LOCAL_TIME_VAL);
-        putAndCheckFailure(2f, sql("this", "?"), DATA_EXCEPTION, parameterError(0, REAL, TIMESTAMP), LOCAL_DATE_TIME_VAL);
-        putAndCheckFailure(2f, sql("this", "?"), DATA_EXCEPTION, parameterError(0, REAL, TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
-        putAndCheckFailure(2f, sql("this", "?"), DATA_EXCEPTION, parameterError(0, REAL, OBJECT), OBJECT_VAL);
+        checkUnsupportedForAllTypesCommute(1.0f, REAL);
     }
 
     @Test
     public void testDouble() {
-        putAndCheckValue(0d, sql("this", "null"), DOUBLE, null);
-        putAndCheckValue(0d, sql("null", "this"), DOUBLE, null);
-
-        checkFields(3.5d, 1.4f, DOUBLE, 3.5d % 1.4f);
-        checkError(3d, +0.0f, DATA_EXCEPTION, divisionByZeroError());
-        checkError(3d, -0.0f, DATA_EXCEPTION, divisionByZeroError());
-
-        checkFields(3.5f, 1.4d, DOUBLE, 3.5d % 1.4d);
-        checkError(3d, +0.0d, DATA_EXCEPTION, divisionByZeroError());
-        checkError(3d, -0.0d, DATA_EXCEPTION, divisionByZeroError());
-
-        putAndCheckFailure(2d, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DOUBLE, VARCHAR), CHAR_VAL);
-        putAndCheckFailure(2d, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DOUBLE, VARCHAR), STRING_VAL);
-        putAndCheckFailure(2d, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DOUBLE, BOOLEAN), BOOLEAN_VAL);
-        putAndCheckValue(3.5d, sql("this", "?"), DOUBLE, 1.5d, (byte) 2);
-        putAndCheckValue(3.5d, sql("this", "?"), DOUBLE, 1.5d, (short) 2);
-        putAndCheckValue(3.5d, sql("this", "?"), DOUBLE, 1.5d, 2);
-        putAndCheckValue(3.5d, sql("this", "?"), DOUBLE, 1.5d, 2L);
-        putAndCheckValue(3.5d, sql("this", "?"), DOUBLE, 1.5d, new BigInteger("2"));
-        putAndCheckValue(3.5d, sql("this", "?"), DOUBLE, 3.5d % 1.4d, decimal("1.4"));
-        putAndCheckValue(3.5d, sql("this", "?"), DOUBLE, 3.5d % 1.4f, 1.4f);
-        putAndCheckValue(3.5d, sql("this", "?"), DOUBLE, 3.5d % 1.4d, 1.4d);
-        putAndCheckFailure(2d, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DOUBLE, DATE), LOCAL_DATE_VAL);
-        putAndCheckFailure(2d, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DOUBLE, TIME), LOCAL_TIME_VAL);
-        putAndCheckFailure(2d, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DOUBLE, TIMESTAMP), LOCAL_DATE_TIME_VAL);
-        putAndCheckFailure(2d, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DOUBLE, TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
-        putAndCheckFailure(2d, sql("this", "?"), DATA_EXCEPTION, parameterError(0, DOUBLE, OBJECT), OBJECT_VAL);
+        checkUnsupportedForAllTypesCommute(1.0d, DOUBLE);
     }
 
     @Test
@@ -416,6 +334,41 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
         checkUnsupportedForAllTypesCommute(LOCAL_TIME_VAL, TIME);
         checkUnsupportedForAllTypesCommute(LOCAL_DATE_TIME_VAL, TIMESTAMP);
         checkUnsupportedForAllTypesCommute(OFFSET_DATE_TIME_VAL, TIMESTAMP_WITH_TIME_ZONE);
+    }
+
+    @Override
+    @Test
+    public void testNullLiteral() {
+        put(1);
+
+        checkFailure0(sql("null", "null"), SqlErrorCode.PARSING, signatureError(NULL, NULL));
+
+        checkFailure0(sql("'foo'", "null"), SqlErrorCode.PARSING, signatureError(VARCHAR, VARCHAR));
+        checkFailure0(sql("null", "'foo'"), SqlErrorCode.PARSING, signatureError(VARCHAR, VARCHAR));
+
+        checkFailure0(sql("true", "null"), SqlErrorCode.PARSING, signatureError(BOOLEAN, BOOLEAN));
+        checkFailure0(sql("null", "true"), SqlErrorCode.PARSING, signatureError(BOOLEAN, BOOLEAN));
+
+        checkValue0(sql("null", 1), TINYINT, null);
+        checkValue0(sql(1, "null"), TINYINT, null);
+
+        checkValue0(sql("null", Byte.MAX_VALUE), TINYINT, null);
+        checkValue0(sql(Byte.MAX_VALUE, "null"), TINYINT, null);
+
+        checkValue0(sql("null", Short.MAX_VALUE), SMALLINT, null);
+        checkValue0(sql(Short.MAX_VALUE, "null"), SMALLINT, null);
+
+        checkValue0(sql("null", Integer.MAX_VALUE), INTEGER, null);
+        checkValue0(sql(Integer.MAX_VALUE, "null"), INTEGER, null);
+
+        checkValue0(sql("null", Long.MAX_VALUE), BIGINT, null);
+        checkValue0(sql(Long.MAX_VALUE, "null"), BIGINT, null);
+
+        checkValue0(sql("null", "1.1"), DECIMAL, null);
+        checkValue0(sql("1.1", "null"), DECIMAL, null);
+
+        checkFailure0(sql("null", "1.1E1"), SqlErrorCode.PARSING, signatureError(DOUBLE, DOUBLE));
+        checkFailure0(sql("1.1E1", "null"), SqlErrorCode.PARSING, signatureError(DOUBLE, DOUBLE));
     }
 
     @Test

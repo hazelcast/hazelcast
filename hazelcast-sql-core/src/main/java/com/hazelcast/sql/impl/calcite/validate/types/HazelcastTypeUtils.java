@@ -183,6 +183,35 @@ public final class HazelcastTypeUtils {
         }
     }
 
+
+    /**
+     * @return {@code true} if the given type is an inexact numeric type, {@code false}
+     * otherwise.
+     * <p>
+     * Integer types are: REAL, DOUBLE.
+     */
+    public static boolean isNumericInexactType(RelDataType type) {
+        return isNumericInexactType(type.getSqlTypeName());
+    }
+
+    /**
+     * @return {@code true} if the given type is an inexact numeric type, {@code false}
+     * otherwise.
+     * <p>
+     * Inexact numeric types are: REAL, DOUBLE.
+     */
+    public static boolean isNumericInexactType(SqlTypeName typeName) {
+        switch (typeName) {
+            case REAL:
+            case FLOAT:
+            case DOUBLE:
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
     /**
      * Selects a type having a higher precedence from the two given types.
      * <p>

@@ -86,10 +86,6 @@ public final class RemainderFunction<T> extends BiExpressionWithType<T> implemen
                     return left.intValue() % right.intValue();
                 case BIGINT:
                     return left.longValue() % right.longValue();
-                case REAL:
-                    return ExpressionMath.remainder(left.floatValue(), right.floatValue());
-                case DOUBLE:
-                    return ExpressionMath.remainder(left.doubleValue(), right.doubleValue());
                 case DECIMAL:
                     return ((BigDecimal) left).remainder((BigDecimal) right, DECIMAL_MATH_CONTEXT);
                 default:
