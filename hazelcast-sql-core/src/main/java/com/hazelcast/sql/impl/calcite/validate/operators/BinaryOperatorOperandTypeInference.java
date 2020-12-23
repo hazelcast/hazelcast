@@ -36,6 +36,9 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
 
     @Override
     public void inferOperandTypes(SqlCallBinding binding, RelDataType returnType, RelDataType[] operandTypes) {
+        assert operandTypes.length == 2;
+        assert binding.getOperandCount() == 2;
+
         // Check if we have parameters. If yes, we will upcast integer literals to BIGINT as explained below
         boolean hasParameters = binding.operands().stream().anyMatch((operand) -> operand.getKind() == SqlKind.DYNAMIC_PARAM);
 
@@ -50,8 +53,8 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
                 unknownTypeOperandIndex = i;
             } else {
                 if (hasParameters && toHazelcastType(operandType.getSqlTypeName()).getTypeFamily().isNumericInteger()) {
-                    // If we are here, there is a parameter, and an exact numeric literal.
-                    // We upcast the type of the numeric literal to BIGINT, so that an expression `1 > ?` is resolved to
+                    // If we are here, the operands are a parameter and a numeric expression.
+                    // We upcast the type of the numeric expression to BIGINT, so that an expression `1 > ?` is resolved to
                     // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`
                     RelDataType newOperandType = HazelcastTypeUtils.createType(
                         binding.getTypeFactory(),

@@ -79,16 +79,13 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     private boolean requiresCast(SqlValidatorScope scope, SqlNode node, RelDataType to) {
         RelDataType from = validator.deriveType(scope, node);
 
-        // if the target is nullable, source may or may not be. If the target is non-null, the source must be too.
-        assert to.isNullable() || !from.isNullable();
-
         if (from.getSqlTypeName() == NULL || SqlUtil.isNullLiteral(node, false) || node.getKind() == SqlKind.DYNAMIC_PARAM) {
             // Never cast NULLs or dynamic params, just assign types to them
             return false;
         }
 
         // CAST is only required between different types.
-        return from.getSqlTypeName() != to.getSqlTypeName();
+        return !from.equals(to);
     }
 
     @Override
