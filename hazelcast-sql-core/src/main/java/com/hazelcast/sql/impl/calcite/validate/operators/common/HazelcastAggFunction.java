@@ -17,36 +17,38 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.common;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
+import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.SqlCallBinding;
+import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlSpecialOperator;
+import org.apache.calcite.sql.SqlOperandCountRange;
+import org.apache.calcite.sql.type.SqlOperandCountRanges;
+import org.apache.calcite.sql.type.SqlOperandTypeChecker;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
+import org.apache.calcite.util.Optionality;
 
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 
 /**
- * A common subclass for special operators.
+ * A common subclass for aggregate functions (in Jet).
  * <p>
  * See {@link HazelcastOperandTypeCheckerAware} for motivation.
  */
-public abstract class HazelcastSpecialOperator extends SqlSpecialOperator implements HazelcastOperandTypeCheckerAware {
-    protected HazelcastSpecialOperator(
-            String name,
-            SqlKind kind
-    ) {
-        super(name, kind, 2);
-    }
+public abstract class HazelcastAggFunction extends SqlAggFunction implements HazelcastOperandTypeCheckerAware {
 
-    protected HazelcastSpecialOperator(
-        String name,
-        SqlKind kind,
-        int prec,
-        boolean leftAssoc,
-        SqlReturnTypeInference returnTypeInference,
-        SqlOperandTypeInference operandTypeInference
+    public HazelcastAggFunction(
+            String name,
+            SqlKind kind,
+            SqlReturnTypeInference returnTypeInference,
+            SqlOperandTypeInference operandTypeInference,
+            SqlOperandTypeChecker operandTypeChecker,
+            SqlFunctionCategory funcType,
+            boolean requiresOrder,
+            boolean requiresOver,
+            Optionality requiresGroupOrder
     ) {
-        super(name, kind, prec, leftAssoc, wrap(returnTypeInference), operandTypeInference, null);
+        super(name, null, kind, wrap(returnTypeInference), operandTypeInference, operandTypeChecker, funcType, requiresOrder, requiresOver, requiresGroupOrder);
     }
 
     @Override
@@ -54,6 +56,11 @@ public abstract class HazelcastSpecialOperator extends SqlSpecialOperator implem
         HazelcastCallBinding bindingOverride = prepareBinding(callBinding);
 
         return checkOperandTypes(bindingOverride, throwOnFailure);
+    }
+
+    @Override
+    public SqlOperandCountRange getOperandCountRange() {
+        return SqlOperandCountRanges.between(1, 1);
     }
 
     protected abstract boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure);

@@ -27,7 +27,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import java.util.Arrays;
 
 /**
- * The special interface that provides an utility method to perform a recursive operand type inference before
+ * The special interface that provides a utility method to perform a recursive operand type inference before
  * checking the operand types. Without this logic, many expressions will fail to resolve their operand types.
  * See the {@code NestedExpressionIntegrationTest} test: if the recursive inference is skipped, many of tests
  * from this class will fail.

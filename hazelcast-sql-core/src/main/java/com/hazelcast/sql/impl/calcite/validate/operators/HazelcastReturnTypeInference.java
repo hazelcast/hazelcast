@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
 import com.hazelcast.sql.impl.calcite.HazelcastSqlToRelConverter;
+import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastAggFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastPostfixOperator;
@@ -27,26 +28,28 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlOperatorBinding;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
+import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
 /**
- * The inference strategy that allows to thransfer return type info between validation and conversion phases.
+ * The inference strategy that allows to transfer the return type info between validation and conversion phases.
  * <p>
- * When doing sql-to-rel conversion Apache Calcite ignores information about the inferred return types from the validation
+ * When doing sql-to-rel conversion, Apache Calcite ignores information about the inferred return types from the validation
  * phase. To fix this, we intercept {@link SqlCall} conversions in the {@link HazelcastSqlToRelConverter}, lookup the
- * real return type, and put it to the thread-local. Then, when the return type inference is invoked again during the
- * conversion phase, it uses the information from the thread-local, rather than trying to infer again.
+ * real return type, and put it to thread-local stack. Then, when the return type inference is invoked again during the
+ * conversion phase, it peeks the thread-local stack, rather than trying to infer again.
  * <p>
  * In order for this workaround to work, every operator must have {@code HazelcastReturnTypeInference} as a
  * return type inference strategy. This is controlled by the automated test. To simplify the development of operators,
  * we create a number of base operator classes that set the required return type inference: {@link HazelcastFunction},
  * {@link HazelcastPrefixOperator}, {@link HazelcastPostfixOperator}, {@link HazelcastBinaryOperator},
- * {@link HazelcastSpecialOperator}. Every defined operator should extend one of these classes.
+ * {@link HazelcastSpecialOperator}, {@link HazelcastAggFunction}. Every defined operator should extend one of these
+ * classes.
  */
 public final class HazelcastReturnTypeInference implements SqlReturnTypeInference {
 
-    private static final ThreadLocal<Deque<RelDataType>> QUEUE = new ThreadLocal<>();
+    private static final ThreadLocal<Deque<RelDataType>> QUEUE = ThreadLocal.withInitial(() -> new ArrayDeque<>(2));
 
     private final SqlReturnTypeInference delegate;
 
@@ -54,7 +57,11 @@ public final class HazelcastReturnTypeInference implements SqlReturnTypeInferenc
         this.delegate = delegate;
     }
 
-    public static HazelcastReturnTypeInference wrap(SqlReturnTypeInference delegate) {
+    @Nullable
+    public static HazelcastReturnTypeInference wrap(@Nullable SqlReturnTypeInference delegate) {
+        if (delegate == null) {
+            return null;
+        }
         return new HazelcastReturnTypeInference(delegate);
     }
 
@@ -70,15 +77,7 @@ public final class HazelcastReturnTypeInference implements SqlReturnTypeInferenc
     }
 
     public static void push(RelDataType callType) {
-        Deque<RelDataType> queue = QUEUE.get();
-
-        if (queue == null) {
-            queue = new ArrayDeque<>(2);
-
-            QUEUE.set(queue);
-        }
-
-        queue.push(callType);
+        QUEUE.get().push(callType);
     }
 
     public static void pop() {

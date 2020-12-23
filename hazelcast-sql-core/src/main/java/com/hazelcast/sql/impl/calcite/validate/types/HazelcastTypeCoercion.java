@@ -79,7 +79,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     private boolean requiresCast(SqlValidatorScope scope, SqlNode node, RelDataType to) {
         RelDataType from = validator.deriveType(scope, node);
 
-        assert from.isNullable() == to.isNullable();
+        // if the target is nullable, source may or may not be. If the target is non-null, the source must be too.
+        assert to.isNullable() || !from.isNullable();
 
         if (from.getSqlTypeName() == NULL || SqlUtil.isNullLiteral(node, false) || node.getKind() == SqlKind.DYNAMIC_PARAM) {
             // Never cast NULLs or dynamic params, just assign types to them
@@ -97,11 +98,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     @Override
     public boolean binaryComparisonCoercion(SqlCallBinding binding) {
-        throw new UnsupportedOperationException("Should not be called");
-    }
-
-    @Override
-    public boolean rowTypeCoercion(SqlValidatorScope scope, SqlNode query, int columnIndex, RelDataType targetType) {
         throw new UnsupportedOperationException("Should not be called");
     }
 
@@ -126,16 +122,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     @Override
     public boolean userDefinedFunctionCoercion(SqlValidatorScope scope, SqlCall call, SqlFunction function) {
-        throw new UnsupportedOperationException("Should not be called");
-    }
-
-    @Override
-    public boolean querySourceCoercion(
-        SqlValidatorScope scope,
-        RelDataType sourceRowType,
-        RelDataType targetRowType,
-        SqlNode query
-    ) {
         throw new UnsupportedOperationException("Should not be called");
     }
 }

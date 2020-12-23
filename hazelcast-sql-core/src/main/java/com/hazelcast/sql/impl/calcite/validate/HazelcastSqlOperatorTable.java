@@ -65,8 +65,6 @@ import static com.hazelcast.sql.impl.calcite.validate.HazelcastResources.RESOURC
  */
 @SuppressWarnings({"unused", "checkstyle:ClassDataAbstractionCoupling"})
 public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable {
-    /** Visitor to rewrite Calcite operators to Hazelcast operators. */
-    public static final HazelcastSqlOperatorTable.RewriteVisitor REWRITE_VISITOR = new HazelcastSqlOperatorTable.RewriteVisitor();
 
     //@formatter:off
 
@@ -187,9 +185,11 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     /**
      * Visitor that rewrites Calcite operators with operators from this table.
      */
-    public static final class RewriteVisitor extends SqlBasicVisitor<Void> {
-        private RewriteVisitor() {
-            // No-op.
+    static final class RewriteVisitor extends SqlBasicVisitor<Void> {
+        private final HazelcastSqlValidator validator;
+
+        RewriteVisitor(HazelcastSqlValidator validator) {
+            this.validator = validator;
         }
 
         @Override
@@ -211,7 +211,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
                 List<SqlOperator> resolvedOperators = new ArrayList<>(1);
 
-                HazelcastSqlOperatorTable.instance().lookupOperatorOverloads(
+                validator.getOperatorTable().lookupOperatorOverloads(
                     operator.getNameAsId(),
                     null,
                     operator.getSyntax(),

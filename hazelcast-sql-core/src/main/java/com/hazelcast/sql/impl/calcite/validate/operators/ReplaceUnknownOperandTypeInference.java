@@ -26,7 +26,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.createNullableType;
 
 /**
- * Type inference, that replaces unknown operands with the given types.
+ * Type inference that replaces unknown operands with the given types.
  */
 public class ReplaceUnknownOperandTypeInference implements SqlOperandTypeInference {
 
@@ -51,6 +51,10 @@ public class ReplaceUnknownOperandTypeInference implements SqlOperandTypeInferen
 
     @Override
     public void inferOperandTypes(SqlCallBinding callBinding, RelDataType returnType, RelDataType[] operandTypes) {
+        if (callBinding.getCall().isCountStar()) {
+            // ignore for the * in COUNT(*)
+            return;
+        }
         for (int i = 0; i < operandTypes.length; i++) {
             RelDataType operandType = callBinding.getOperandType(i);
 

@@ -169,19 +169,24 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
     /**
      * This method overcomes a bug in Apache Calcite that ignores previously resolved return types of the expression
-     * and instead attempts to infer them again using different logic. Without this fix, we will get type resolution
-     * errors after SQL-to-rel conversion.
+     * and instead attempts to infer them again using a different logic. Without this fix, we will get type resolution
+     * errors after a SQL-to-rel conversion.
      * <p>
      * The method relies on the fact that all operators use {@link HazelcastReturnTypeInference} as a top-level return type
      * inference method.
      * <ul>
-     *     <li>When a call node is observed for the first time, get it's return type and save it to a thread local variable</li>
-     *     <li>Then delegate back to original converter code</li>
-     *     <li>When converter attempts to resolve the return type of a call, he will get the previously saved type from
-     *     the thread-local variable</li>
+     *     <li>When a call node is observed for the first time, get its return type and save it to a thread-local variable
+     *     <li>Then delegate back to original converter code
+     *     <li>When converter attempts to resolve the return type of a call, it will get the previously saved type from
+     *     the thread-local variable
      * </ul>
      */
     private RexNode convertCall(SqlNode node, Blackboard blackboard) {
+        // ignore DEFAULT (used for default function arguments). It doesn't support getValidatedNodeType()
+        if (node.getKind() == SqlKind.DEFAULT) {
+            return null;
+        }
+
         if (callSet.add(node)) {
             try {
                 RelDataType type = validator.getValidatedNodeType(node);
