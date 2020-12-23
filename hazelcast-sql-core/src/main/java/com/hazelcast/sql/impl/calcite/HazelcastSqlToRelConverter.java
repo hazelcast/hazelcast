@@ -89,7 +89,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     }
 
     /**
-     * Convert the literal taking in count the type that we assigned to it during validation.
+     * Convert a literal taking into account the type that we assigned to it during validation.
      * Otherwise Apache Calcite will try to deduce literal type again, leading to incorrect exposed types.
      * <p>
      * For example, {@code [x:BIGINT > 1]} is interpreted as {@code [x:BIGINT > 1:BIGINT]} during the validation.
@@ -102,7 +102,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     }
 
     /**
-     * Convert CAST exception fixing several Apache Calcite problems with literals along the way (see inline JavaDoc).
+     * Convert CAST expression fixing several Apache Calcite problems with literals along the way (see inline JavaDoc).
      */
     private RexNode convertCast(SqlCall call, Blackboard blackboard) {
         SqlNode operand = call.operand(0);
@@ -122,7 +122,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             // to Primitive.number(Number) method, that does a conversion without checking for overflow. For example, the
             // expression [32767 AS TINYINT] is converted to -1, which is obviously incorrect.
             // To workaround the problem, we perform the conversion using our converters manually. If the conversion fails,
-            // we throw an error (it would have been thrown in runtime anyway), thus preventing Apache Calcite from entering
+            // we throw an error (it would have been thrown at runtime anyway), thus preventing Apache Calcite from entering
             // the problematic simplification routine.
             // Since this workaround moves conversion errors to the parsing phase, we conduct the conversion check for all
             // types to ensure that we throw consistent error messages for all literal-related conversions errors.
@@ -150,7 +150,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
                 return getRexBuilder().makeLiteral(timeString, to, true);
             }
 
-            // Apache Calcite uses an expression simplification logic that treats CASTs with inexacat literals incorrectly.
+            // Apache Calcite uses an expression simplification logic that treats CASTs with inexact literals incorrectly.
             // For example, "CAST(1.0 as DOUBLE) = CAST(1.0000000000000001 as DOUBLE)" is converted to "false", while it should
             // be "true". See CastFunctionIntegrationTest.testApproximateTypeSimplification - it will fail without this fix.
             if (fromType.getTypeFamily().isNumeric()) {

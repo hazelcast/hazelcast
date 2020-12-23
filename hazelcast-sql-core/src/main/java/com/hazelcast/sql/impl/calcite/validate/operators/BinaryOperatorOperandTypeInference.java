@@ -70,7 +70,7 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
             }
         }
 
-        // If we have [UNKNOWN, UNKNOWN] operands, throw an signature error, since we cannot deduce the return type
+        // If we have [UNKNOWN, UNKNOWN] operands, throw a signature error, since we cannot deduce the return type
         if (knownType == null) {
             throw new HazelcastCallBinding(binding).newValidationSignatureError();
         }
