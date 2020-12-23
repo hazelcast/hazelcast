@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl.portable;
 
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.serialization.impl.AbstractGenericRecord;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
@@ -29,6 +30,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.nio.Bits.BOOLEAN_SIZE_IN_BYTES;
@@ -40,13 +42,14 @@ import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 
-public class PortableInternalGenericRecord implements InternalGenericRecord {
+public class PortableInternalGenericRecord extends AbstractGenericRecord implements InternalGenericRecord {
     protected final ClassDefinition cd;
     protected final PortableSerializer serializer;
 
     private final BufferObjectDataInput in;
     private final int offset;
     private final boolean readGenericLazy;
+    private final int finalPosition;
 
     PortableInternalGenericRecord(PortableSerializer serializer, BufferObjectDataInput in,
                                   ClassDefinition cd, boolean readGenericLazy) {
@@ -58,7 +61,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
         int fieldCount;
         try {
             // final position after portable is read
-            in.readInt();
+            finalPosition = in.readInt();
             // field count
             fieldCount = in.readInt();
         } catch (IOException e) {
@@ -68,6 +71,10 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
             throw new IllegalStateException("Field count[" + fieldCount + "] in stream does not match " + cd);
         }
         this.offset = in.position();
+    }
+
+    public final void end() {
+        in.position(finalPosition);
     }
 
     public ClassDefinition getClassDefinition() {
@@ -388,6 +395,12 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
         throw new UnsupportedOperationException();
     }
 
+    @Nonnull
+    @Override
+    public Set<String> getFieldNames() {
+        return cd.getFieldNames();
+    }
+
     @Override
     public GenericRecord[] readGenericRecordArray(@Nonnull String fieldName) {
         return readNestedArray(fieldName, GenericRecord[]::new, false);
@@ -680,5 +693,10 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     @Override
     public Object readObject(String fieldName) {
         return readNested(fieldName, true);
+    }
+
+    @Override
+    protected Object getClassIdentifier() {
+        return cd;
     }
 }

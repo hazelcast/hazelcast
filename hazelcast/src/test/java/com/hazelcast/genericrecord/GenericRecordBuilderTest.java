@@ -16,6 +16,10 @@
 
 package com.hazelcast.genericrecord;
 
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.TestSerializationConstants;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
@@ -28,7 +32,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import static com.hazelcast.test.HazelcastTestSupport.assertThrows;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -91,5 +100,33 @@ public class GenericRecordBuilderTest {
         GenericRecord.Builder builder = GenericRecord.Builder.portable(classDefinition);
         builder.writeInt("myint", 1);
         assertThrows(HazelcastSerializationException.class, builder::build);
+    }
+
+    @Test
+    public void testWriteReadGenericRecordToObjectDataInput() throws IOException {
+        ClassDefinitionBuilder classDefinitionBuilder = new ClassDefinitionBuilder(1, 1);
+        classDefinitionBuilder.addIntField("age");
+        classDefinitionBuilder.addUTFField("name");
+        ClassDefinition classDefinition = classDefinitionBuilder.build();
+
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        BufferObjectDataOutput objectDataOutput = serializationService.createObjectDataOutput();
+
+        List<GenericRecord> list = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            GenericRecord record = GenericRecord.Builder.portable(classDefinition)
+                    .writeInt("age", i)
+                    .writeUTF("name", " " + i).build();
+            objectDataOutput.writeObject(record);
+            list.add(record);
+        }
+        byte[] bytes = objectDataOutput.toByteArray();
+
+        BufferObjectDataInput objectDataInput = serializationService.createObjectDataInput(bytes);
+
+        for (int i = 0; i < 10; i++) {
+            GenericRecord record = objectDataInput.readObject();
+            assertEquals(list.get(i), record);
+        }
     }
 }
