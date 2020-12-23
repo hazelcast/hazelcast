@@ -309,7 +309,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
     private <T> T readPortableGenericRecord(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
         int version = in.readInt();
         ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
-        GenericRecord reader = new PortableInternalGenericRecord(this, in, cd, false);
+        PortableInternalGenericRecord reader = new PortableInternalGenericRecord(this, in, cd, false);
         GenericRecord.Builder genericRecordBuilder = GenericRecord.Builder.portable(cd);
         for (String fieldName : cd.getFieldNames()) {
             switch (cd.getFieldType(fieldName)) {
@@ -377,6 +377,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                     throw new IllegalStateException("Unexpected value: " + cd.getFieldType(fieldName));
             }
         }
+        reader.end();
         return (T) genericRecordBuilder.build();
     }
 }
