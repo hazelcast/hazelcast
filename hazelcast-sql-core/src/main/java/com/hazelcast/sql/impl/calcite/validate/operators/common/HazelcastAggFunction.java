@@ -48,7 +48,8 @@ public abstract class HazelcastAggFunction extends SqlAggFunction implements Haz
             boolean requiresOver,
             Optionality requiresGroupOrder
     ) {
-        super(name, null, kind, wrap(returnTypeInference), operandTypeInference, operandTypeChecker, funcType, requiresOrder, requiresOver, requiresGroupOrder);
+        super(name, null, kind, wrap(returnTypeInference), operandTypeInference, operandTypeChecker,
+                funcType, requiresOrder, requiresOver, requiresGroupOrder);
     }
 
     @Override
