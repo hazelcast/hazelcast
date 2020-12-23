@@ -68,8 +68,12 @@ public final class OperatingSystemMXBeanSupport {
             OperatingSystemMXBean systemMXBean = OPERATING_SYSTEM_MX_BEAN;
             Method method = systemMXBean.getClass().getMethod(methodName);
 
-            // the method is public in Java 9
-            method.setAccessible(true);
+            try {
+                // the method is public in Java 9
+                method.setAccessible(true);
+            } catch (Exception e) {
+                return defaultValue;
+            }
 
             Object value = method.invoke(systemMXBean);
             if (value == null) {
