@@ -174,8 +174,18 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         this.internalService = internalService;
     }
 
+    /**
+     * For testing only.
+     */
     public SqlOptimizer getOptimizer() {
         return optimizer;
+    }
+
+    /**
+     * For testing only.
+     */
+    public void setOptimizer(SqlOptimizer optimizer) {
+        this.optimizer = optimizer;
     }
 
     public PlanCache getPlanCache() {
@@ -203,6 +213,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             }
 
             return query0(
+                statement.getSchema(),
                 statement.getSql(),
                 statement.getParameters(),
                 timeout,
@@ -221,7 +232,14 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         internalService.onPacket(packet);
     }
 
-    private SqlResult query0(String sql, List<Object> params, long timeout, int pageSize, SqlSecurityContext securityContext) {
+    private SqlResult query0(
+        String schema,
+        String sql,
+        List<Object> params,
+        long timeout,
+        int pageSize,
+        SqlSecurityContext securityContext
+    ) {
         // Validate and normalize
         if (sql == null || sql.isEmpty()) {
             throw QueryException.error("SQL statement cannot be empty.");
@@ -238,7 +256,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         }
 
         // Prepare and execute
-        SqlPlan plan = prepare(sql);
+        SqlPlan plan = prepare(schema, sql);
 
         if (securityContext.isSecurityEnabled()) {
             plan.checkPermissions(securityContext);
@@ -247,17 +265,17 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         return execute(plan, params0, timeout, pageSize);
     }
 
-    private SqlPlan prepare(String sql) {
-        List<List<String>> searchPaths = QueryUtils.prepareSearchPaths(Collections.emptyList(), tableResolvers);
+    private SqlPlan prepare(String schema, String sql) {
+        List<List<String>> searchPaths = prepareSearchPaths(schema);
 
         PlanCacheKey planKey = new PlanCacheKey(searchPaths, sql);
 
         SqlPlan plan = planCache.get(planKey);
 
         if (plan == null) {
-            SqlCatalog schema = new SqlCatalog(tableResolvers);
+            SqlCatalog catalog = new SqlCatalog(tableResolvers);
 
-            plan = optimizer.prepare(new OptimizationTask(sql, searchPaths, schema));
+            plan = optimizer.prepare(new OptimizationTask(sql, searchPaths, catalog));
 
             if (plan instanceof CacheablePlan) {
                 CacheablePlan plan0 = (CacheablePlan) plan;
@@ -267,6 +285,18 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         }
 
         return plan;
+    }
+
+    private List<List<String>> prepareSearchPaths(String schema) {
+        List<List<String>> currentSearchPaths;
+
+        if (schema == null || schema.isEmpty()) {
+            currentSearchPaths = Collections.emptyList();
+        } else {
+            currentSearchPaths = Collections.singletonList(Collections.singletonList(schema));
+        }
+
+        return QueryUtils.prepareSearchPaths(currentSearchPaths, tableResolvers);
     }
 
     private SqlResult execute(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
