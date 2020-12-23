@@ -39,7 +39,7 @@
     <powermock.version>2.0.9</powermock.version>
     <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
 
-    <hazelcast.version>4.1</hazelcast.version>
+    <hazelcast.version>4.1.1</hazelcast.version>
 
     <maven.checkstyle.plugin.version>3.1.1</maven.checkstyle.plugin.version>
     <maven.findbugs.plugin.version>3.0.5</maven.findbugs.plugin.version>
