@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.LazyMapEntry;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 
 import java.util.Iterator;
 import java.util.List;
