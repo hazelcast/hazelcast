@@ -54,6 +54,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.core.JetProperties.JET_IMDG_VERSION_CHECK_DISABLED;
 import static com.hazelcast.jet.core.JetProperties.JET_SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.jet.core.JetProperties.JOB_RESULTS_TTL_SECONDS;
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
@@ -62,6 +63,8 @@ import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetClientConfig;
 import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetJetConfig;
 import static com.hazelcast.spi.properties.ClusterProperty.SHUTDOWNHOOK_ENABLED;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.System.getProperty;
 
 /**
  * Entry point to the Jet product.
@@ -258,15 +261,28 @@ public final class Jet {
             Properties p = new Properties();
             p.load(resource);
             String jetHzVersion = p.getProperty("jet.hazelcast.version");
+
             if (!hzVersion.equals(jetHzVersion)) {
-                throw new JetException("Jet uses Hazelcast IMDG version " + jetHzVersion + " however " +
+                String message = "Jet uses Hazelcast IMDG version " + jetHzVersion + " however " +
                         "version " + hzVersion + " was found in the classpath. " +
                         " As Jet already shades Hazelcast jars there is no need to explicitly " +
-                        "add a dependency to it.");
+                        "add a dependency to it.";
+                boolean errorOnMismatch = !versionCheckDisabled();
+                if (errorOnMismatch) {
+                    throw new JetException(message);
+                } else {
+                    LOGGER.warning(message);
+                }
             }
         } catch (IOException e) {
             LOGGER.warning("Could not read the file jet-runtime.properties", e);
         }
+    }
+
+    private static boolean versionCheckDisabled() {
+        String rawValue = getProperty(JET_IMDG_VERSION_CHECK_DISABLED.getName(),
+                JET_IMDG_VERSION_CHECK_DISABLED.getDefaultValue());
+        return parseBoolean(rawValue);
     }
 
     private static synchronized void configureJetService(JetConfig jetConfig) {
