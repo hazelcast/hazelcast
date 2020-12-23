@@ -14,23 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.optimizer;
-
-import com.hazelcast.sql.impl.security.SqlSecurityContext;
+package com.hazelcast.sql;
 
 /**
- * Abstraction over execution plan that allows for specialization for an execution backend.
+ * The expected statement result type.
  */
-public interface SqlPlan {
-    /**
-     * Check whether the user has enough permissions to execute this plan.
-     *
-     * @param context security context
-     */
-    void checkPermissions(SqlSecurityContext context);
+public enum SqlExpectedResultType {
+    /** The statement may produce either rows or an update count. */
+    ANY,
 
-    /**
-     * @return {@code true} if the query produces rows, {@code false} otherwise
-     */
-    boolean producesRows();
+    /** The statement must produce rows. An exception is thrown is the statement produces an update count. */
+    ROWS,
+
+    /** The statement must produce an update count. An exception is thrown is the statement produces rows. */
+    UPDATE_COUNT;
 }

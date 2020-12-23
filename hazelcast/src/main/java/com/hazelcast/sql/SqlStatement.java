@@ -49,6 +49,7 @@ public final class SqlStatement {
     private long timeout = DEFAULT_TIMEOUT;
     private int cursorBufferSize = DEFAULT_CURSOR_BUFFER_SIZE;
     private String schema;
+    private SqlExpectedResultType expectedResultType = SqlExpectedResultType.ANY;
 
     public SqlStatement(@Nonnull String sql) {
         setSql(sql);
@@ -57,12 +58,20 @@ public final class SqlStatement {
     /**
      * Copying constructor.
      */
-    private SqlStatement(String sql, List<Object> parameters, long timeout, int cursorBufferSize, String schema) {
+    private SqlStatement(
+        String sql,
+        List<Object> parameters,
+        long timeout,
+        int cursorBufferSize,
+        String schema,
+        SqlExpectedResultType expectedResultType
+    ) {
         this.sql = sql;
         this.parameters = parameters;
         this.timeout = timeout;
         this.cursorBufferSize = cursorBufferSize;
         this.schema = schema;
+        this.expectedResultType = expectedResultType;
     }
 
     /**
@@ -274,13 +283,38 @@ public final class SqlStatement {
     }
 
     /**
+     * Gets the expected result type.
+     *
+     * @return expected result type
+     */
+    @Nonnull
+    public SqlExpectedResultType getExpectedResultType() {
+        return expectedResultType;
+    }
+
+    /**
+     * Sets the expected result type.
+     *
+     * @param expectedResultType expected result type
+     * @return this instance for chaining
+     */
+    @Nonnull
+    public SqlStatement setExpectedResultType(@Nonnull SqlExpectedResultType expectedResultType) {
+        Preconditions.checkNotNull(expectedResultType, "Expected result type cannot be null");
+
+        this.expectedResultType = expectedResultType;
+
+        return this;
+    }
+
+    /**
      * Creates a copy of this instance
      *
      * @return Copy of this instance
      */
     @Nonnull
     public SqlStatement copy() {
-        return new SqlStatement(sql, new ArrayList<>(parameters), timeout, cursorBufferSize, schema);
+        return new SqlStatement(sql, new ArrayList<>(parameters), timeout, cursorBufferSize, schema, expectedResultType);
     }
 
     @Override
@@ -299,7 +333,8 @@ public final class SqlStatement {
             && Objects.equals(parameters, sqlStatement.parameters)
             && timeout == sqlStatement.timeout
             && cursorBufferSize == sqlStatement.cursorBufferSize
-            && Objects.equals(schema, sqlStatement.schema);
+            && Objects.equals(schema, sqlStatement.schema)
+            && expectedResultType == sqlStatement.expectedResultType;
     }
 
     @Override
@@ -310,6 +345,7 @@ public final class SqlStatement {
         result = 31 * result + (int) (timeout ^ (timeout >>> 32));
         result = 31 * result + cursorBufferSize;
         result = 31 * result + (schema != null ? schema.hashCode() : 0);
+        result = 31 * result + expectedResultType.ordinal();
 
         return result;
     }
@@ -322,6 +358,7 @@ public final class SqlStatement {
             + ", parameters=" + parameters
             + ", timeout=" + timeout
             + ", cursorBufferSize=" + cursorBufferSize
+            + ", expectedResultType=" + expectedResultType
             + '}';
     }
 }

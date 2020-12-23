@@ -127,6 +127,11 @@ public class Plan implements CacheablePlan {
         }
     }
 
+    @Override
+    public boolean producesRows() {
+        return true;
+    }
+
     public Map<UUID, PartitionIdSet> getPartitionMap() {
         return partMap;
     }

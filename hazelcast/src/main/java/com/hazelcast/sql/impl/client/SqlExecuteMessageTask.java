@@ -56,6 +56,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecute2Cod
             query.setSchema(parameters.schema);
             query.setTimeoutMillis(parameters.timeoutMillis);
             query.setCursorBufferSize(parameters.cursorBufferSize);
+            query.setExpectedResultType(SqlClientUtils.expectedResultTypeToEnum(parameters.expectedResultType));
 
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
