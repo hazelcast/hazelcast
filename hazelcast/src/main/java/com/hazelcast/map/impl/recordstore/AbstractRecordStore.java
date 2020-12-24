@@ -146,7 +146,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public Record createRecord(Data key, Object value, long ttlMillis, long maxIdle, long now) {
+    public Record createRecord(Object value, long ttlMillis, long maxIdle, long now) {
         Record record = recordFactory.newRecord(value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
@@ -157,7 +157,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public Record createRecord(Data key, Record fromRecord, long nowInMillis) {
+    public Record createRecord(Record fromRecord, long nowInMillis) {
         Record newRecord = recordFactory.newRecord(fromRecord == null ? null : fromRecord.getValue());
         if (fromRecord != null) {
             Records.copyMetadataFrom(fromRecord, newRecord);

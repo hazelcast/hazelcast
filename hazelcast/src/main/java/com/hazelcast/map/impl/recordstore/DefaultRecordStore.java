@@ -159,7 +159,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public Record putReplicatedRecordLegacy(Data dataKey, Record replicatedRecord, long nowInMillis,
                                             boolean populateIndexes) {
-        Record newRecord = createRecord(dataKey, replicatedRecord, nowInMillis);
+        Record newRecord = createRecord(replicatedRecord, nowInMillis);
         storage.put(dataKey, newRecord);
         getExpirySystem().addExpiry(dataKey, replicatedRecord.getTtl(),
                 replicatedRecord.getMaxIdle(), nowInMillis);
@@ -172,7 +172,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public Record putReplicatedRecord(Data dataKey, Record replicatedRecord,
                                       ExpiryMetadata expiryMetadata,
                                       boolean populateIndexes, long nowInMillis) {
-        Record newRecord = createRecord(dataKey, replicatedRecord, nowInMillis);
+        Record newRecord = createRecord(replicatedRecord, nowInMillis);
         storage.put(dataKey, newRecord);
         getExpirySystem().addExpiry0(dataKey, expiryMetadata.getTtl(),
                 expiryMetadata.getMaxIdle(), expiryMetadata.getExpirationTime());
@@ -912,7 +912,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                   EntryEventType entryEventType, boolean store,
                                   boolean backup) {
 
-        Record record = createRecord(key, newValue, ttlMillis, maxIdleMillis, now);
+        Record record = createRecord(newValue, ttlMillis, maxIdleMillis, now);
         if (store) {
             putIntoMapStore(record, key, newValue, now, transactionId);
         }
