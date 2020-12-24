@@ -234,7 +234,10 @@ public class MigrationManager {
                 } else {
                     operationService.execute(op);
                 }
-                removeActiveMigration(partitionId);
+
+                // We remove active migration in the end of the FinalizeMigrationOperation to make sure
+                // the cluster comes to a SAFE state only when indexes on partitions being populated
+                // completely.
             } else {
                 PartitionReplica partitionOwner = partitionStateManager.getPartitionImpl(partitionId).getOwnerReplicaOrNull();
                 if (localReplica.equals(partitionOwner)) {
@@ -324,7 +327,7 @@ public class MigrationManager {
      * removed.
      * Acquires the partition service lock.
      */
-    private boolean removeActiveMigration(int partitionId) {
+    public boolean removeActiveMigration(int partitionId) {
         partitionServiceLock.lock();
         try {
             if (activeMigrationInfo != null) {
