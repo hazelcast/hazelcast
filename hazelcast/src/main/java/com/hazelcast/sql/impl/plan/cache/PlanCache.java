@@ -103,4 +103,11 @@ public class PlanCache implements CachedPlanInvalidationCallback {
     private boolean remove(CacheablePlan plan) {
         return plans.remove(plan.getPlanKey(), plan);
     }
+
+    /**
+     * For testing only.
+     */
+    public ConcurrentHashMap<PlanCacheKey, CacheablePlan> getPlans() {
+        return plans;
+    }
 }

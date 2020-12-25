@@ -148,8 +148,16 @@ public class Plan implements CacheablePlan {
         return fragments.get(index);
     }
 
+    public List<PlanNode> getFragments() {
+        return fragments;
+    }
+
     public PlanFragmentMapping getFragmentMapping(int index) {
         return fragmentMappings.get(index);
+    }
+
+    public List<PlanFragmentMapping> getFragmentMappings() {
+        return fragmentMappings;
     }
 
     public Map<Integer, Integer> getOutboundEdgeMap() {
