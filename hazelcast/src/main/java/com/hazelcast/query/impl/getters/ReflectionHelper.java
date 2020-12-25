@@ -176,6 +176,10 @@ public final class ReflectionHelper {
         }
     }
 
+    public static Getter createGetter(Object obj, String attribute) {
+        return createGetter(obj, attribute, true);
+    }
+
     public static Object extractValue(Object object, String attributeName, boolean failOnMissingAttribute) throws Exception {
         return createGetter(object, attributeName, failOnMissingAttribute).getValue(object);
     }
