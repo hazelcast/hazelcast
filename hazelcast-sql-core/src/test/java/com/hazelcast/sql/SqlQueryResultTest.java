@@ -127,7 +127,7 @@ public class SqlQueryResultTest extends SqlTestSupport {
 
         private boolean producesRows;
 
-        public TestPlan(Plan plan) {
+        private TestPlan(Plan plan) {
             super(
                 plan.getPartitionMap(),
                 plan.getFragments(),
