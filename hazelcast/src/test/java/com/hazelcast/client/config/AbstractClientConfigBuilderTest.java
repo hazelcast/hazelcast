@@ -135,6 +135,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals(ByteOrder.BIG_ENDIAN, serializationConfig.getByteOrder());
         assertTrue(serializationConfig.isCheckClassDefErrors());
         assertFalse(serializationConfig.isAllowUnsafe());
+        assertFalse(serializationConfig.isAllowOverrideDefaultSerializers());
         assertFalse(serializationConfig.isEnableCompression());
         assertTrue(serializationConfig.isEnableSharedObject());
         assertTrue(serializationConfig.isUseNativeByteOrder());
