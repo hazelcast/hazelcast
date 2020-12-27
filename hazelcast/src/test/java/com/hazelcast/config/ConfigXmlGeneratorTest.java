@@ -672,6 +672,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         SerializationConfig expectedConfig = new SerializationConfig()
                 .setAllowUnsafe(true)
+                .setAllowOverrideDefaultSerializers(true)
                 .setPortableVersion(2)
                 .setByteOrder(ByteOrder.BIG_ENDIAN)
                 .setUseNativeByteOrder(true)
@@ -689,6 +690,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         SerializationConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSerializationConfig();
 
         assertEquals(expectedConfig.isAllowUnsafe(), actualConfig.isAllowUnsafe());
+        assertEquals(expectedConfig.isAllowOverrideDefaultSerializers(), actualConfig.isAllowOverrideDefaultSerializers());
         assertEquals(expectedConfig.getPortableVersion(), actualConfig.getPortableVersion());
         assertEquals(expectedConfig.getByteOrder(), actualConfig.getByteOrder());
         assertEquals(expectedConfig.isUseNativeByteOrder(), actualConfig.isUseNativeByteOrder());
