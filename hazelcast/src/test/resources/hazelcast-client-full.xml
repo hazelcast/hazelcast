@@ -199,6 +199,7 @@
         <enable-compression>false</enable-compression>
         <enable-shared-object>true</enable-shared-object>
         <allow-unsafe>false</allow-unsafe>
+        <allow-override-default-serializers>false</allow-override-default-serializers>
         <data-serializable-factories>
             <data-serializable-factory factory-id="1">com.hazelcast.examples.DataSerializableFactory
             </data-serializable-factory>
