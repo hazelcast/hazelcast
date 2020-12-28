@@ -34,11 +34,15 @@ import java.io.IOException;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class CustomSerializationOverrideDefaultTest {
 
+
+  // 1 boolean flag + 8 integer
+  private static int OPTIONAL_INTEGER_SIZE = 9;
 
   @Test(expected = IllegalArgumentException.class)
   public void testSerializerDefault_canNotOverride() {
@@ -47,18 +51,6 @@ public class CustomSerializationOverrideDefaultTest {
 
   @Test
   public void testSerializerDefault_canOverride() {
-    testUsageOfCustomSerializer(true);
-  }
-
-  @Test
-  public void testSerializerDefaultOverridden_systemPropertyTrue_canOverride() {
-    ClusterProperty.SERIALIZATION_ALLOW_OVERRIDE_DEFAULT_SERIALIZERS.setSystemProperty("true");
-    testUsageOfCustomSerializer(false);
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testSerializerDefaultOverridden_systemPropertyFalse_canNotOverride() {
-    ClusterProperty.SERIALIZATION_ALLOW_OVERRIDE_DEFAULT_SERIALIZERS.setSystemProperty("false");
     testUsageOfCustomSerializer(true);
   }
 
@@ -78,6 +70,7 @@ public class CustomSerializationOverrideDefaultTest {
 
     final Optional<Integer> answer = Optional.of(42);
     final Data d = ss.toData(answer);
+    assertEquals(OPTIONAL_INTEGER_SIZE, d.dataSize());
     final Optional<Integer> deserializedAnswer = ss.toObject(d);
 
     assertEquals(answer, deserializedAnswer);
@@ -95,6 +88,8 @@ public class CustomSerializationOverrideDefaultTest {
 
     final Optional<Integer> answer = Optional.of(42);
     final Data d = ss.toData(answer);
+    // string Optional[Integer.MAX_VALUE] from TestOptionalSerializer
+    assertNotEquals(OPTIONAL_INTEGER_SIZE, d.dataSize());
     final Optional<Integer> deserializedAnswer = ss.toObject(d);
 
     assertEquals(Optional.of(Integer.MAX_VALUE), deserializedAnswer);
