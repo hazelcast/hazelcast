@@ -57,7 +57,7 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
     }
 
     @Test
-    public void testTinyint() {
+    public void testTinyint_left() {
         // NULL
         putAndCheckValue((byte) 0, sql("this", "null"), TINYINT, null);
         putAndCheckValue((byte) 0, sql("null", "this"), TINYINT, null);
@@ -102,7 +102,7 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
     }
 
     @Test
-    public void testSmallint() {
+    public void testSmallint_left() {
         // NULL
         putAndCheckValue((short) 0, sql("this", "null"), SMALLINT, null);
         putAndCheckValue((short) 0, sql("null", "this"), SMALLINT, null);
@@ -147,7 +147,7 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
     }
 
     @Test
-    public void testInteger() {
+    public void testInteger_left() {
         // NULL
         putAndCheckValue(0, sql("this", "null"), INTEGER, null);
         putAndCheckValue(0, sql("null", "this"), INTEGER, null);
@@ -192,7 +192,7 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
     }
 
     @Test
-    public void testBigint() {
+    public void testBigint_left() {
         // NULL
         putAndCheckValue(0L, sql("this", "null"), BIGINT, null);
         putAndCheckValue(0L, sql("null", "this"), BIGINT, null);
@@ -237,7 +237,7 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
     }
 
     @Test
-    public void testDecimal_BigInteger() {
+    public void testDecimal_BigInteger_left() {
         // NULL
         putAndCheckValue(BigInteger.ZERO, sql("this", "null"), DECIMAL, null);
         putAndCheckValue(BigInteger.ZERO, sql("null", "this"), DECIMAL, null);
@@ -278,7 +278,7 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
     }
 
     @Test
-    public void testDecimal_BigDecimal() {
+    public void testDecimal_BigDecimal_left() {
         // NULL
         putAndCheckValue(BigDecimal.ZERO, sql("this", "null"), DECIMAL, null);
         putAndCheckValue(BigDecimal.ZERO, sql("null", "this"), DECIMAL, null);
@@ -319,17 +319,17 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
     }
 
     @Test
-    public void testReal() {
+    public void testReal_left() {
         checkUnsupportedForAllTypesCommute(1.0f, REAL);
     }
 
     @Test
-    public void testDouble() {
+    public void testDouble_left() {
         checkUnsupportedForAllTypesCommute(1.0d, DOUBLE);
     }
 
     @Test
-    public void testTemporal() {
+    public void testTemporal_left() {
         checkUnsupportedForAllTypesCommute(LOCAL_DATE_VAL, DATE);
         checkUnsupportedForAllTypesCommute(LOCAL_TIME_VAL, TIME);
         checkUnsupportedForAllTypesCommute(LOCAL_DATE_TIME_VAL, TIMESTAMP);
