@@ -42,7 +42,7 @@ public class CustomSerializationOverrideDefaultTest {
 
 
   // 1 boolean flag + 8 integer
-  private static int OPTIONAL_INTEGER_SIZE = 9;
+  private static final int OPTIONAL_INTEGER_SIZE = 9;
 
   @Test(expected = IllegalArgumentException.class)
   public void testSerializerDefault_canNotOverride() {
