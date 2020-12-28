@@ -72,6 +72,23 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testHits_can_still_be_seen_when_all_entries_are_removed_due_to_the_expiry() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 10; i++) {
+            map.set(i, i);
+            map.get(i);
+        }
+
+        // set ttl to entries (this also increases hits)
+        for (int i = 0; i < 10; i++) {
+            map.set(i, i, 1, TimeUnit.SECONDS);
+        }
+
+        assertSizeEventually(0, map);
+        assertEquals(20, getMapStats().getHits());
+    }
+
+    @Test
     public void testPutAndHitsGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
