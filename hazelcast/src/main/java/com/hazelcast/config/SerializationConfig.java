@@ -548,6 +548,7 @@ public class SerializationConfig {
             && enableCompression == that.enableCompression
             && enableSharedObject == that.enableSharedObject
             && allowUnsafe == that.allowUnsafe
+            && allowOverrideDefaultSerializers == that.allowOverrideDefaultSerializers
             && dataSerializableFactoryClasses.equals(that.dataSerializableFactoryClasses)
             && dataSerializableFactories.equals(that.dataSerializableFactories)
             && portableFactoryClasses.equals(that.portableFactoryClasses)
@@ -563,6 +564,7 @@ public class SerializationConfig {
     public int hashCode() {
         return Objects.hash(portableVersion, dataSerializableFactoryClasses, dataSerializableFactories, portableFactoryClasses,
             portableFactories, globalSerializerConfig, serializerConfigs, checkClassDefErrors, useNativeByteOrder, byteOrder,
-            enableCompression, enableSharedObject, allowUnsafe, classDefinitions, javaSerializationFilterConfig);
+            enableCompression, enableSharedObject, allowUnsafe, allowOverrideDefaultSerializers,
+            classDefinitions, javaSerializationFilterConfig);
     }
 }
