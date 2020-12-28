@@ -45,7 +45,7 @@ public final class SqlClientUtils {
         );
     }
 
-    public static byte expectedResultTypeToBytes(SqlExpectedResultType expectedResultType) {
+    public static byte expectedResultTypeToByte(SqlExpectedResultType expectedResultType) {
         switch (expectedResultType) {
             case ANY:
                 return EXPECTED_RESULT_TYPE_ANY;
