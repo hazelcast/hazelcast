@@ -301,141 +301,6 @@ public class SqlBasicTest extends SqlTestSupport {
         }
     }
 
-    @Test
-    public void testSelectWithOrderBy() {
-        // Get proper map
-        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
-
-        // Populate map with values
-        Map<Object, AbstractPojo> data = new HashMap<>();
-
-        for (long i = 0; i < dataSetSize; i++) {
-            data.put(key(i), value(i));
-        }
-
-        map.putAll(data);
-
-        map.addIndex(new IndexConfig().setName("Index_" + randomName())
-                .setType(IndexType.SORTED).addAttribute("intVal").addAttribute("decimalVal"));
-
-
-        assertEquals(dataSetSize, map.size());
-
-        // Execute query
-        boolean portable = serializationMode == SerializationMode.PORTABLE;
-
-        boolean multiPageClient;
-
-        try (SqlResult res = queryWithOrderBy()) {
-            multiPageClient = memberClientCursors() > 0;
-
-            SqlRowMetadata rowMetadata = res.getRowMetadata();
-
-            checkRowMetadata(rowMetadata);
-
-            Set<Long> uniqueKeys = new HashSet<>();
-
-            Iterator<SqlRow> rowIterator = res.iterator();
-
-            Long prevKey = null;
-            while (rowIterator.hasNext()) {
-                SqlRow row = rowIterator.next();
-
-                assertEquals(rowMetadata, res.getRowMetadata());
-
-                Long key0 = row.getObject(rowMetadata.findColumn(adjustFieldName("key")));
-                assertNotNull(key0);
-                if (prevKey != null) {
-                    assertTrue(prevKey <= key0);
-                }
-                prevKey = key0;
-
-                AbstractPojoKey key = key(key0);
-                AbstractPojo val = map.get(key);
-
-                checkRowValue(SqlColumnType.BIGINT, key.getKey(), row, "key");
-                checkRowValue(SqlColumnType.BOOLEAN, val.isBooleanVal(), row, "booleanVal");
-                checkRowValue(SqlColumnType.TINYINT, val.getTinyIntVal(), row, "tinyIntVal");
-                checkRowValue(SqlColumnType.SMALLINT, val.getSmallIntVal(), row, "smallIntVal");
-                checkRowValue(SqlColumnType.INTEGER, val.getIntVal(), row, "intVal");
-                checkRowValue(SqlColumnType.BIGINT, val.getBigIntVal(), row, "bigIntVal");
-                checkRowValue(SqlColumnType.REAL, val.getRealVal(), row, "realVal");
-                checkRowValue(SqlColumnType.DOUBLE, val.getDoubleVal(), row, "doubleVal");
-
-                if (!portable) {
-                    checkRowValue(SqlColumnType.DECIMAL, new BigDecimal(val.getDecimalBigIntegerVal()), row, "decimalBigIntegerVal");
-                    checkRowValue(SqlColumnType.DECIMAL, val.getDecimalVal(), row, "decimalVal");
-                }
-
-                checkRowValue(SqlColumnType.VARCHAR, Character.toString(val.getCharVal()), row, "charVal");
-                checkRowValue(SqlColumnType.VARCHAR, val.getVarcharVal(), row, "varcharVal");
-
-                if (!portable) {
-                    checkRowValue(SqlColumnType.DATE, val.getDateVal(), row, "dateVal");
-                    checkRowValue(SqlColumnType.TIME, val.getTimeVal(), row, "timeVal");
-                    checkRowValue(SqlColumnType.TIMESTAMP, val.getTimestampVal(), row, "timestampVal");
-
-                    checkRowValue(
-                            SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                            OffsetDateTime.ofInstant(val.getTsTzDateVal().toInstant(), ZoneId.systemDefault()),
-                            row,
-                            "tsTzDateVal"
-                    );
-
-                    checkRowValue(
-                            SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                            val.getTsTzCalendarVal().toZonedDateTime().toOffsetDateTime(),
-                            row,
-                            "tsTzCalendarVal"
-                    );
-
-                    checkRowValue(
-                            SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                            OffsetDateTime.ofInstant(val.getTsTzInstantVal(), ZoneId.systemDefault()),
-                            row,
-                            "tsTzInstantVal"
-                    );
-
-                    checkRowValue(
-                            SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                            val.getTsTzOffsetDateTimeVal(),
-                            row,
-                            "tsTzOffsetDateTimeVal"
-                    );
-
-                    checkRowValue(
-                            SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                            val.getTsTzZonedDateTimeVal().toOffsetDateTime(),
-                            row,
-                            "tsTzZonedDateTimeVal"
-                    );
-
-                    checkRowValue(SqlColumnType.OBJECT, val.getObjectVal(), row, "objectVal");
-                    checkRowValue(SqlColumnType.OBJECT, null, row, "nullVal");
-                }
-
-                if (portable) {
-                    checkRowValue(SqlColumnType.OBJECT, ((PortablePojo) val).getPortableVal(), row, "portableVal");
-                    checkRowValue(SqlColumnType.VARCHAR, null, row, "nullVal");
-                }
-
-                uniqueKeys.add(key0);
-
-                assertThrows(IndexOutOfBoundsException.class, () -> row.getObject(-1));
-                assertThrows(IndexOutOfBoundsException.class, () -> row.getObject(row.getMetadata().getColumnCount()));
-                assertThrows(NullPointerException.class, () -> row.getObject(null));
-                assertThrows(IllegalArgumentException.class, () -> row.getObject("unknown_field"));
-            }
-
-            assertThrows(NoSuchElementException.class, rowIterator::next);
-
-            assertThrows(IllegalStateException.class, res::iterator);
-
-            assertEquals(dataSetSize, uniqueKeys.size());
-        }
-    }
-
-
     private int memberClientCursors() {
         return sqlInternalService(member1).getClientStateRegistry().getCursorCount()
             + sqlInternalService(member2).getClientStateRegistry().getCursorCount();
@@ -490,17 +355,6 @@ public class SqlBasicTest extends SqlTestSupport {
             return getTarget().getSql().execute(new SqlStatement(sql).setCursorBufferSize(cursorBufferSize));
         }
     }
-
-    private SqlResult queryWithOrderBy() {
-        String sql = sqlWithOrderBy();
-
-        if (cursorBufferSize == SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE) {
-            return getTarget().getSql().execute(sql);
-        } else {
-            return getTarget().getSql().execute(new SqlStatement(sql).setCursorBufferSize(cursorBufferSize));
-        }
-    }
-
 
     private List<String> fields() {
         if (serializationMode == SerializationMode.PORTABLE) {
@@ -609,28 +463,6 @@ public class SqlBasicTest extends SqlTestSupport {
 
         return res.toString();
     }
-
-    private String sqlWithOrderBy() {
-        List<String> fields = fields();
-
-        StringBuilder res = new StringBuilder("SELECT ");
-
-        for (int i = 0; i < fields.size(); i++) {
-            String field = adjustFieldName(fields.get(i));
-
-            if (i != 0) {
-                res.append(", ");
-            }
-
-            res.append(field);
-        }
-
-        res.append(" FROM ").append(mapName());
-        res.append(" ORDER BY ").append("intVal ASC, decimalVal ASC");
-
-        return res.toString();
-    }
-
 
     private boolean isPortable() {
         return serializationMode == SerializationMode.PORTABLE;

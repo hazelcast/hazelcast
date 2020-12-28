@@ -38,39 +38,25 @@ import java.util.List;
  */
 public class SortMergeExchangePhysicalRel extends AbstractExchangePhysicalRel {
     private final RelCollation collation;
-    private final RexNode fetch;
-    private final RexNode offset;
 
     public SortMergeExchangePhysicalRel(
-            RelOptCluster cluster,
-            RelTraitSet traitSet,
-            RelNode input,
-            RelCollation collation,
-            RexNode fetch,
-            RexNode offset
+        RelOptCluster cluster,
+        RelTraitSet traitSet,
+        RelNode input,
+        RelCollation collation
     ) {
         super(cluster, traitSet, input);
 
         this.collation = collation;
-        this.fetch = fetch;
-        this.offset = offset;
     }
 
     public RelCollation getCollation() {
         return collation;
     }
 
-    public RexNode getFetch() {
-        return fetch;
-    }
-
-    public RexNode getOffset() {
-        return offset;
-    }
-
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new SortMergeExchangePhysicalRel(getCluster(), traitSet, sole(inputs), collation, fetch, offset);
+        return new SortMergeExchangePhysicalRel(getCluster(), traitSet, sole(inputs), collation);
     }
 
     @Override
@@ -84,6 +70,6 @@ public class SortMergeExchangePhysicalRel extends AbstractExchangePhysicalRel {
     public final RelWriter explainTerms(RelWriter pw) {
         super.explainTerms(pw);
 
-        return pw.item("collation", collation.getFieldCollations()).item("fetch", fetch).item("offset", offset);
+        return pw.item("collation", collation.getFieldCollations());
     }
 }

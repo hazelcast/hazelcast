@@ -43,7 +43,7 @@ import static java.util.Collections.emptySet;
 public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     private final ConcurrentSkipListMap<Comparable, Map<Data, QueryableEntry>> recordMap =
-            new ConcurrentSkipListMap<>(Comparables.COMPARATOR);
+        new ConcurrentSkipListMap<>(Comparables.COMPARATOR);
 
     private final IndexFunctor<Comparable, QueryableEntry> addFunctor;
     private final IndexFunctor<Comparable, Data> removeFunctor;
@@ -173,11 +173,11 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public Iterator<QueryableEntry> getSqlRecordIterator(
-            Comparable from,
-            boolean fromInclusive,
-            Comparable to,
-            boolean toInclusive,
-            boolean descending
+        Comparable from,
+        boolean fromInclusive,
+        Comparable to,
+        boolean toInclusive,
+        boolean descending
     ) {
         int order = Comparables.compare(from, to);
 

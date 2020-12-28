@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
@@ -241,19 +242,19 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
 
         MapIndexScanPlanNode scanNode = new MapIndexScanPlanNode(
-                pollId(rel),
-                table.getMapName(),
-                table.getKeyDescriptor(),
-                table.getValueDescriptor(),
-                getScanFieldPaths(table),
-                schemaBefore.getTypes(),
-                hazelcastTable.getProjects(),
-                rel.getIndex().getName(),
-                rel.getIndex().getComponentsCount(),
-                rel.getIndexFilter(),
-                rel.getConverterTypes(),
-                convertFilter(schemaBefore, rel.getRemainderExp()),
-                rel.getDescending()
+            pollId(rel),
+            table.getMapName(),
+            table.getKeyDescriptor(),
+            table.getValueDescriptor(),
+            getScanFieldPaths(table),
+            schemaBefore.getTypes(),
+            hazelcastTable.getProjects(),
+            rel.getIndex().getName(),
+            rel.getIndex().getComponentsCount(),
+            rel.getIndexFilter(),
+            rel.getConverterTypes(),
+            convertFilter(schemaBefore, rel.getRemainderExp()),
+            rel.getDescending()
         );
 
         pushUpstream(scanNode);
@@ -264,7 +265,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onSort(SortPhysicalRel rel) {
-        throw new HazelcastException("ORDER BY clause without matching index is not supported.");
+        throw QueryException.error("Cannot perform ORDER BY clause without matching index."
+            + " Create a SORTED index for the ordering fields. For nested sorting use SORTED composite index.");
     }
 
     @Override
@@ -343,10 +345,10 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         int id = pollId(rel);
 
         UnicastSendPlanNode sendNode = new UnicastSendPlanNode(
-                id,
-                upstreamNode,
-                edge,
-                AllFieldsRowPartitioner.INSTANCE
+            id,
+            upstreamNode,
+            edge,
+            AllFieldsRowPartitioner.INSTANCE
         );
 
         addFragment(sendNode, dataMemberMapping());
@@ -365,11 +367,11 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         // Create a receiver and push it to stack.
         ReceiveSortMergePlanNode receiveNode = new ReceiveSortMergePlanNode(
-                id,
-                edge,
-                sendNode.getSchema().getTypes(),
-                expressions,
-                ascs
+            id,
+            edge,
+            sendNode.getSchema().getTypes(),
+            expressions,
+            ascs
         );
 
         pushUpstream(receiveNode);
@@ -412,7 +414,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /**
      * Create new fragment and clear intermediate state.
      *
-     * @param node Node.
+     * @param node    Node.
      * @param mapping Fragment mapping mode.
      */
     private void addFragment(PlanNode node, PlanFragmentMapping mapping) {

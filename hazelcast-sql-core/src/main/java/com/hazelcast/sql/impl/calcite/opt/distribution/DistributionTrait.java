@@ -77,12 +77,11 @@ public class DistributionTrait implements RelTrait {
     }
 
     /**
-     * Check if the result set of the node having this trait is guaranteed to exist on all members that will execute a
+     * Checks whtehr the result set of the node having this trait is guaranteed to exist on all members that will execute a
      * fragment with this node.
      *
      * @return {@code true} if the full result set exists on all participants of the fragment hosting this node.
      */
-    @SuppressWarnings("RedundantIfStatement")
     public boolean isFullResultSetOnAllParticipants() {
         if (traitDef.getMemberCount() == 1) {
             // If the plan is created for a single member, then the condition is true by definition.

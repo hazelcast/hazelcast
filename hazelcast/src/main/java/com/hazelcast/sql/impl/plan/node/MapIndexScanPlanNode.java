@@ -48,19 +48,19 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public MapIndexScanPlanNode(
-            int id,
-            String mapName,
-            QueryTargetDescriptor keyDescriptor,
-            QueryTargetDescriptor valueDescriptor,
-            List<QueryPath> fieldPaths,
-            List<QueryDataType> fieldTypes,
-            List<Integer> projects,
-            String indexName,
-            int indexComponentCount,
-            IndexFilter indexFilter,
-            List<QueryDataType> converterTypes,
-            Expression<Boolean> remainderFilter,
-            boolean descending
+        int id,
+        String mapName,
+        QueryTargetDescriptor keyDescriptor,
+        QueryTargetDescriptor valueDescriptor,
+        List<QueryPath> fieldPaths,
+        List<QueryDataType> fieldTypes,
+        List<Integer> projects,
+        String indexName,
+        int indexComponentCount,
+        IndexFilter indexFilter,
+        List<QueryDataType> converterTypes,
+        Expression<Boolean> remainderFilter,
+        boolean descending
     ) {
         super(id, mapName, keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projects, remainderFilter);
 
@@ -145,10 +145,10 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
         MapIndexScanPlanNode that = (MapIndexScanPlanNode) o;
 
         return indexComponentCount == that.indexComponentCount
-                && indexName.equals(that.indexName)
-                && Objects.equals(indexFilter, that.indexFilter)
-                && Objects.equals(converterTypes, that.converterTypes)
-                && descending == that.descending;
+            && indexName.equals(that.indexName)
+            && Objects.equals(indexFilter, that.indexFilter)
+            && Objects.equals(converterTypes, that.converterTypes)
+            && descending == that.descending;
     }
 
     @Override
@@ -166,8 +166,8 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{id=" + id + ", mapName=" + mapName + ", fieldPaths=" + fieldPaths
-                + ", projects=" + projects + ", indexName=" + indexName + ", indexFilter=" + indexFilter
-                + ", remainderFilter=" + filter
-                + ", descending=" + descending + '}';
+            + ", projects=" + projects + ", indexName=" + indexName + ", indexFilter=" + indexFilter
+            + ", remainderFilter=" + filter
+            + ", descending=" + descending + '}';
     }
 }

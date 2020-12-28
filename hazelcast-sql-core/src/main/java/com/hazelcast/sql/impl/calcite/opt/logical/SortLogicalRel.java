@@ -24,6 +24,9 @@ import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rex.RexNode;
 
+/**
+ * Logical sorting.
+ */
 public class SortLogicalRel extends Sort implements LogicalRel {
     public SortLogicalRel(
             RelOptCluster cluster,

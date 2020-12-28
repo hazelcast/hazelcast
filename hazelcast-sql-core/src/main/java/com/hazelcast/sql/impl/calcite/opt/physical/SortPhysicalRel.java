@@ -29,20 +29,19 @@ import org.apache.calcite.rex.RexNode;
  * Physical sort performed locally. Throws unsupported exception at runtime.
  */
 public class SortPhysicalRel extends Sort implements PhysicalRel {
+
     public SortPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
             RelNode child,
-            RelCollation collation,
-            RexNode offset,
-            RexNode fetch
+            RelCollation collation
     ) {
-        super(cluster, traits, child, collation, offset, fetch);
+        super(cluster, traits, child, collation, null, null);
     }
 
     @Override
     public final Sort copy(RelTraitSet traitSet, RelNode input, RelCollation collation, RexNode offset, RexNode fetch) {
-        return new SortPhysicalRel(getCluster(), traitSet, input, collation, offset, fetch);
+        return new SortPhysicalRel(getCluster(), traitSet, input, collation);
     }
 
     @Override

@@ -50,8 +50,8 @@ public final class ProjectPhysicalRule extends RelOptRule {
 
     private ProjectPhysicalRule() {
         super(
-                OptUtils.parentChild(ProjectLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
-                ProjectPhysicalRule.class.getSimpleName()
+            OptUtils.parentChild(ProjectLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
+            ProjectPhysicalRule.class.getSimpleName()
         );
     }
 
@@ -66,11 +66,11 @@ public final class ProjectPhysicalRule extends RelOptRule {
 
         for (InputAndTraitSet transform : transforms) {
             ProjectPhysicalRel newProject = new ProjectPhysicalRel(
-                    logicalProject.getCluster(),
-                    transform.getTraitSet(),
-                    transform.getInput(),
-                    logicalProject.getProjects(),
-                    logicalProject.getRowType()
+                logicalProject.getCluster(),
+                transform.getTraitSet(),
+                transform.getInput(),
+                logicalProject.getProjects(),
+                logicalProject.getRowType()
             );
 
             call.transformTo(newProject);
@@ -89,17 +89,17 @@ public final class ProjectPhysicalRule extends RelOptRule {
         Collection<RelNode> physicalInputs = OptUtils.getPhysicalRelsFromSubset(convertedInput);
 
         // Initialize a field index to the project index map
-        Map<Integer, Integer> inputFieldIndex2ProjectIndex = new HashMap<>();
+        Map<Integer, Integer> inputFieldIndex2ProjectIndexMap = new HashMap<>();
         for (int i = 0; i < projects.size(); ++i) {
             RexNode projectExp = projects.get(i);
-            ProjectFieldVisitor projectFieldVisitor = new ProjectFieldVisitor(inputFieldIndex2ProjectIndex, i);
+            ProjectFieldVisitor projectFieldVisitor = new ProjectFieldVisitor(inputFieldIndex2ProjectIndexMap, i);
             projectExp.accept(projectFieldVisitor);
         }
 
         for (RelNode physicalInput : physicalInputs) {
             RelTraitSet traitSet = createPhysicalTraitSet(physicalInput);
             RelCollation transformedCollation =
-                    convertCollation(inputFieldIndex2ProjectIndex, traitSet.getTrait(RelCollationTraitDef.INSTANCE));
+                convertCollation(inputFieldIndex2ProjectIndexMap, traitSet.getTrait(RelCollationTraitDef.INSTANCE));
             RelTraitSet finalTraitSet = OptUtils.traitPlus(traitSet, transformedCollation);
 
             res.add(new InputAndTraitSet(physicalInput, finalTraitSet));
@@ -108,6 +108,13 @@ public final class ProjectPhysicalRule extends RelOptRule {
         return res;
     }
 
+    /**
+     * Transforms the collation remapping the collation fields in accordance with the
+     * project fields.
+     * @param inputFieldIndex2ProjectIndex a mapping from the input index field to the project index
+     * @param collation an initial collation
+     * @return the transformed collation
+     */
     private static RelCollation convertCollation(Map<Integer, Integer> inputFieldIndex2ProjectIndex, RelCollation collation) {
         List<RelFieldCollation> transformedFields = new ArrayList<>(collation.getFieldCollations().size());
 
@@ -116,18 +123,18 @@ public final class ProjectPhysicalRule extends RelOptRule {
             Integer projectFiledIndex = inputFieldIndex2ProjectIndex.get(fieldIndex);
             if (projectFiledIndex == null) {
                 // Project removes the field and we loose a sorting property
-                // for the subsequent fields in collation
+                // for the subsequent fields in the collation
                 break;
             }
             RelFieldCollation transformedFieldCollation =
-                    new RelFieldCollation(projectFiledIndex, fieldCollation.getDirection());
+                new RelFieldCollation(projectFiledIndex, fieldCollation.getDirection());
             transformedFields.add(transformedFieldCollation);
         }
 
         return RelCollations.of(transformedFields);
     }
 
-    // A helper class to initialize input to project field index mapping.
+    // A helper class to initialize an input to project field index mapping.
     private static final class ProjectFieldVisitor extends RexVisitorImpl<Void> {
 
         private final Map<Integer, Integer> inputFieldToProjectField;
@@ -141,7 +148,6 @@ public final class ProjectPhysicalRule extends RelOptRule {
 
         @Override
         public Void visitInputRef(RexInputRef projectInput) {
-
             int inputFiledIndex = projectInput.getIndex();
             inputFieldToProjectField.put(inputFiledIndex, projectIndex);
             return null;

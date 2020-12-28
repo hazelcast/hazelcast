@@ -25,15 +25,18 @@ import org.apache.calcite.rel.convert.ConverterRule;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.logical.LogicalSort;
 
+/**
+ * Converts abstract sorting to logical sorting.
+ */
 public final class SortLogicalRule extends ConverterRule {
     public static final RelOptRule INSTANCE = new SortLogicalRule();
 
     private SortLogicalRule() {
         super(
-                LogicalSort.class,
-                Convention.NONE,
-                HazelcastConventions.LOGICAL,
-                SortLogicalRule.class.getSimpleName()
+            LogicalSort.class,
+            Convention.NONE,
+            HazelcastConventions.LOGICAL,
+            SortLogicalRule.class.getSimpleName()
         );
     }
 
@@ -43,12 +46,12 @@ public final class SortLogicalRule extends ConverterRule {
         RelNode input = sort.getInput();
 
         return new SortLogicalRel(
-                sort.getCluster(),
-                OptUtils.toLogicalConvention(sort.getTraitSet()),
-                OptUtils.toLogicalInput(input),
-                sort.getCollation(),
-                sort.offset,
-                sort.fetch
+            sort.getCluster(),
+            OptUtils.toLogicalConvention(sort.getTraitSet()),
+            OptUtils.toLogicalInput(input),
+            sort.getCollation(),
+            sort.offset,
+            sort.fetch
         );
     }
 }

@@ -127,15 +127,15 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     private final Map<Integer, Map<UUID, OutboundHandler>> outboxes = new HashMap<>();
 
     public CreateExecPlanNodeVisitor(
-            QueryOperationHandler operationHandler,
-            NodeServiceProvider nodeServiceProvider,
-            InternalSerializationService serializationService,
-            UUID localMemberId,
-            QueryExecuteOperation operation,
-            FlowControlFactory flowControlFactory,
-            PartitionIdSet localParts,
-            int outboxBatchSize,
-            CreateExecPlanNodeVisitorHook hook
+        QueryOperationHandler operationHandler,
+        NodeServiceProvider nodeServiceProvider,
+        InternalSerializationService serializationService,
+        UUID localMemberId,
+        QueryExecuteOperation operation,
+        FlowControlFactory flowControlFactory,
+        PartitionIdSet localParts,
+        int outboxBatchSize,
+        CreateExecPlanNodeVisitorHook hook
     ) {
         this.operationHandler = operationHandler;
         this.nodeServiceProvider = nodeServiceProvider;
@@ -153,10 +153,10 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         assert stack.size() == 1;
 
         exec = new RootExec(
-                node.getId(),
-                pop(),
-                operation.getRootConsumer(),
-                operation.getRootBatchSize()
+            node.getId(),
+            pop(),
+            operation.getRootConsumer(),
+            operation.getRootBatchSize()
         );
     }
 
@@ -172,13 +172,13 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
         // Create and register inbox.
         Inbox inbox = new Inbox(
-                operationHandler,
-                operation.getQueryId(),
-                edgeId,
-                node.getSchema().getEstimatedRowSize(),
-                localMemberId,
-                fragmentMemberCount,
-                createFlowControl(edgeId)
+            operationHandler,
+            operation.getQueryId(),
+            edgeId,
+            node.getSchema().getEstimatedRowSize(),
+            localMemberId,
+            fragmentMemberCount,
+            createFlowControl(edgeId)
         );
 
         inboxes.put(edgeId, inbox);
@@ -208,23 +208,23 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         QueryExecuteOperationFragment sendFragment = operation.getFragments().get(sendFragmentPos);
 
         StripedInbox inbox = new StripedInbox(
-                operationHandler,
-                operation.getQueryId(),
-                edgeId,
-                node.getSchema().getEstimatedRowSize(),
-                localMemberId,
-                getFragmentMembers(sendFragment),
-                createFlowControl(edgeId)
+            operationHandler,
+            operation.getQueryId(),
+            edgeId,
+            node.getSchema().getEstimatedRowSize(),
+            localMemberId,
+            getFragmentMembers(sendFragment),
+            createFlowControl(edgeId)
         );
 
         inboxes.put(edgeId, inbox);
 
         // Instantiate executor and put it to stack.
         ReceiveSortMergeExec res = new ReceiveSortMergeExec(
-                node.getId(),
-                inbox,
-                node.getExpressions(),
-                node.getAscs()
+            node.getId(),
+            inbox,
+            node.getExpressions(),
+            node.getAscs()
         );
 
         push(res);
@@ -253,14 +253,14 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
         for (UUID receiveMemberId : receiveFragmentMemberIds) {
             Outbox outbox = new Outbox(
-                    operationHandler,
-                    operation.getQueryId(),
-                    edgeId,
-                    rowWidth,
-                    localMemberId,
-                    receiveMemberId,
-                    outboxBatchSize,
-                    operation.getEdgeInitialMemoryMap().get(edgeId)
+                operationHandler,
+                operation.getQueryId(),
+                edgeId,
+                rowWidth,
+                localMemberId,
+                receiveMemberId,
+                outboxBatchSize,
+                operation.getEdgeInitialMemoryMap().get(edgeId)
             );
 
             edgeOutboxes.put(receiveMemberId, outbox);
@@ -274,9 +274,9 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     @Override
     public void onProjectNode(ProjectPlanNode node) {
         Exec res = new ProjectExec(
-                node.getId(),
-                pop(),
-                node.getProjects()
+            node.getId(),
+            pop(),
+            node.getProjects()
         );
 
         push(res);
@@ -285,9 +285,9 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     @Override
     public void onFilterNode(FilterPlanNode node) {
         Exec res = new FilterExec(
-                node.getId(),
-                pop(),
-                node.getFilter()
+            node.getId(),
+            pop(),
+            node.getFilter()
         );
 
         push(res);
@@ -296,7 +296,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     @Override
     public void onEmptyNode(EmptyPlanNode node) {
         Exec res = new EmptyExec(
-                node.getId()
+            node.getId()
         );
 
         push(res);
@@ -317,16 +317,16 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
                 res = new EmptyExec(node.getId());
             } else {
                 res = new MapScanExec(
-                        node.getId(),
-                        map,
-                        localParts,
-                        node.getKeyDescriptor(),
-                        node.getValueDescriptor(),
-                        node.getFieldPaths(),
-                        node.getFieldTypes(),
-                        node.getProjects(),
-                        node.getFilter(),
-                        serializationService
+                    node.getId(),
+                    map,
+                    localParts,
+                    node.getKeyDescriptor(),
+                    node.getValueDescriptor(),
+                    node.getFieldPaths(),
+                    node.getFieldTypes(),
+                    node.getProjects(),
+                    node.getFilter(),
+                    serializationService
                 );
             }
         }
@@ -349,21 +349,21 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
                 res = new EmptyExec(node.getId());
             } else {
                 res = new MapIndexScanExec(
-                        node.getId(),
-                        map,
-                        localParts,
-                        node.getKeyDescriptor(),
-                        node.getValueDescriptor(),
-                        node.getFieldPaths(),
-                        node.getFieldTypes(),
-                        node.getProjects(),
-                        node.getFilter(),
-                        serializationService,
-                        node.getIndexName(),
-                        node.getIndexComponentCount(),
-                        node.getIndexFilter(),
-                        node.getConverterTypes(),
-                        node.getDescending()
+                    node.getId(),
+                    map,
+                    localParts,
+                    node.getKeyDescriptor(),
+                    node.getValueDescriptor(),
+                    node.getFieldPaths(),
+                    node.getFieldTypes(),
+                    node.getProjects(),
+                    node.getFilter(),
+                    serializationService,
+                    node.getIndexName(),
+                    node.getIndexComponentCount(),
+                    node.getIndexFilter(),
+                    node.getConverterTypes(),
+                    node.getDescending()
                 );
             }
         }

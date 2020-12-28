@@ -46,8 +46,8 @@ public final class SortPhysicalRule extends RelOptRule {
 
     private SortPhysicalRule() {
         super(
-                OptUtils.parentChild(SortLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
-                SortPhysicalRule.class.getSimpleName()
+            OptUtils.parentChild(SortLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
+            SortPhysicalRule.class.getSimpleName()
         );
     }
 
@@ -79,8 +79,8 @@ public final class SortPhysicalRule extends RelOptRule {
         for (RelNode physicalInput : OptUtils.getPhysicalRelsFromSubset(convertedInput)) {
             // Check whether local sorting is needed
             boolean requiresLocalSort = requiresLocalSort(
-                    logicalSort.getCollation(),
-                    physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE)
+                logicalSort.getCollation(),
+                physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE)
             );
 
             RelNode rel;
@@ -88,7 +88,7 @@ public final class SortPhysicalRule extends RelOptRule {
             if (requiresLocalSort) {
                 rel = createLocalSort(logicalSort, physicalInput);
             } else {
-                rel = createLocalNoSort(physicalInput, logicalSort.fetch, logicalSort.offset);
+                rel = createLocalNoSort(physicalInput);
             }
 
             // Add merge phase if needed.
@@ -107,7 +107,7 @@ public final class SortPhysicalRule extends RelOptRule {
         }
 
         // Pick up a plan that doesn't require local sorting,
-        // otherwise an exception will be thrown once local sort
+        // otherwise an exception will be thrown when local sort
         // is touched in runtime.
         if (noLocalSortRels.size() > 0) {
             return noLocalSortRels;
@@ -152,41 +152,35 @@ public final class SortPhysicalRule extends RelOptRule {
     private static SortPhysicalRel createLocalSort(SortLogicalRel logicalSort, RelNode physicalInput) {
         // Input traits are propagated, but new collation is used.
         RelTraitSet traitSet = OptUtils.traitPlus(physicalInput.getTraitSet(),
-                logicalSort.getCollation()
+            logicalSort.getCollation()
         );
 
         return new SortPhysicalRel(
-                logicalSort.getCluster(),
-                traitSet,
-                physicalInput,
-                logicalSort.getCollation(),
-                logicalSort.offset,
-                logicalSort.fetch
+            logicalSort.getCluster(),
+            traitSet,
+            physicalInput,
+            logicalSort.getCollation()
         );
     }
 
-    private RelNode createLocalNoSort(RelNode input, RexNode fetch, RexNode offset) {
-        assert offset == null;
-
+    private RelNode createLocalNoSort(RelNode input) {
         return input;
     }
 
     private static RelNode createMerge(RelNode physicalInput, SortLogicalRel logicalSort) {
         RelTraitSet traitSet = OptUtils.traitPlus(physicalInput.getTraitSet(),
-                logicalSort.getCollation(),
-                OptUtils.getDistributionDef(physicalInput).getTraitRoot()
+            logicalSort.getCollation(),
+            OptUtils.getDistributionDef(physicalInput).getTraitRoot()
         );
 
         assert !logicalSort.getCollation().getFieldCollations().isEmpty();
 
         // Perform merge with sorting.
         return new SortMergeExchangePhysicalRel(
-                logicalSort.getCluster(),
-                traitSet,
-                physicalInput,
-                logicalSort.getCollation(),
-                logicalSort.fetch,
-                logicalSort.offset
+            logicalSort.getCluster(),
+            traitSet,
+            physicalInput,
+            logicalSort.getCollation()
         );
 
     }
