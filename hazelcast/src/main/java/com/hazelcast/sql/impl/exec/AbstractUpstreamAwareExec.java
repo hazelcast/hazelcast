@@ -54,23 +54,4 @@ public abstract class AbstractUpstreamAwareExec extends AbstractExec {
         // No-op.
     }
 
-    @Override
-    public boolean canReset() {
-        return state.canReset();
-    }
-
-    @Override
-    protected void reset0() {
-        state.reset();
-
-        reset1();
-    }
-
-    /**
-     * Internal reset routine.
-     */
-    protected void reset1() {
-        // No-op.
-    }
-
 }

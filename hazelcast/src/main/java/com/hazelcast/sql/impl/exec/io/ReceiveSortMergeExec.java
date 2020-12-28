@@ -116,11 +116,6 @@ public class ReceiveSortMergeExec extends AbstractExec {
         return new SortKey(key, stripe);
     }
 
-    @Override
-    public boolean canReset() {
-        return false;
-    }
-
     private final class Source implements MergeSortSource {
         private static final int INDEX_BEFORE = -1;
 

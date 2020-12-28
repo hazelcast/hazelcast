@@ -115,19 +115,6 @@ public class UpstreamState implements Iterable<Row> {
         return state == FETCHED_DONE && !iter.hasNext();
     }
 
-    public boolean canReset() {
-        return upstream.canReset();
-    }
-
-    public void reset() {
-        upstream.reset();
-
-        currentBatch = EmptyRowBatch.INSTANCE;
-        currentBatchPos = 0;
-
-        state = null;
-    }
-
     @SuppressWarnings("NullableProblems")
     @Override
     public Iterator<Row> iterator() {

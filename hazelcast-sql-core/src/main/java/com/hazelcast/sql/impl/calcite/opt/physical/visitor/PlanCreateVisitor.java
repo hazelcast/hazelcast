@@ -16,11 +16,9 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
