@@ -527,6 +527,7 @@ public class SerializationConfig {
                 + ", byteOrder=" + byteOrder
                 + ", useNativeByteOrder=" + useNativeByteOrder
                 + ", javaSerializationFilterConfig=" + javaSerializationFilterConfig
+                + ", allowOverrideDefaultSerializers=" + allowOverrideDefaultSerializers
                 + '}';
     }
 
