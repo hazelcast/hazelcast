@@ -39,14 +39,8 @@ public class MergeSort {
     /** Current items. */
     private final PriorityQueue<SortKey> heap;
 
-    /** Optional limit on the number of returned results. */
-    private final int limit;
-
     /** Sources which are not in the heap yet. */
     private final Set<Integer> missingSourceIndexes = new HashSet<>();
-
-    /** Number of returned rows. */
-    private int returnedCount;
 
     /** Whether the sorting is finished. */
     private boolean done;
@@ -59,7 +53,6 @@ public class MergeSort {
     public MergeSort(MergeSortSource[] sources, SortKeyComparator comparator, int limit) {
         this.sources = sources;
         this.heap = new PriorityQueue<>(comparator);
-        this.limit = limit > 0 ? limit : UNLIMITED;
 
         for (int i = 0; i < sources.length; i++) {
             missingSourceIndexes.add(i);
@@ -127,7 +120,7 @@ public class MergeSort {
         List<Row> rows = new ArrayList<>();
 
         while (true) {
-            if (heap.isEmpty() || (limit > 0 && returnedCount == limit)) {
+            if (heap.isEmpty()) {
                 done = true;
 
                 return rows;
@@ -160,8 +153,6 @@ public class MergeSort {
                     return rows;
                 }
             }
-
-            returnedCount++;
         }
     }
 
