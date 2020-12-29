@@ -16,9 +16,11 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.BiExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -75,6 +77,13 @@ public final class ComparisonPredicate extends BiExpression<Boolean> implements 
         Object right = operand2.eval(row, context);
         if (right == null) {
             return null;
+        }
+
+        Class<?> leftClass = left.getClass();
+        Class<?> rightClass = right.getClass();
+
+        if (!(left instanceof Comparable && leftClass.equals(rightClass))) {
+            throw QueryException.error("trying to compare two incomparable objects");
         }
 
         Comparable leftComparable = (Comparable) left;

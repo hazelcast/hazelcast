@@ -33,6 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -249,7 +250,45 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
                         ExpressionTypes.LOCAL_TIME,
                         ExpressionTypes.LOCAL_DATE_TIME,
                         ExpressionTypes.OFFSET_DATE_TIME));
-        checkUnsupportedColumnColumn(ExpressionTypes.OBJECT, ExpressionTypes.allExcept());
+    }
+
+    @Test
+    public void testComparable_to_Comparable() {
+        ExpressionBiValue value = ExpressionBiValue.createBiValue(
+                ExpressionBiValue.createBiClass(ExpressionTypes.OBJECT, ExpressionTypes.OBJECT),
+                new ComparableImpl(1),
+                new ComparableImpl(1)
+        );
+
+        put(value);
+
+        check("field1", "field2", new ComparableImpl(1).compareTo(new ComparableImpl(1)));
+    }
+
+    @Test
+    public void testDifferentClassThatImplementsComparableInterface() {
+        ExpressionBiValue value = ExpressionBiValue.createBiValue(
+                ExpressionBiValue.createBiClass(ExpressionTypes.OBJECT, ExpressionTypes.OBJECT),
+                new ComparableImpl(1),
+                new ComparableImpl2(1)
+        );
+
+        put(value);
+
+        checkFailure("field1", "field2", -1, "trying to compare two incomparable objects");
+    }
+
+    @Test
+    public void testNonComparableObjects() {
+        ExpressionBiValue value = ExpressionBiValue.createBiValue(
+                ExpressionBiValue.createBiClass(ExpressionTypes.OBJECT, ExpressionTypes.OBJECT),
+                new NonComparable(),
+                new NonComparable()
+        );
+
+        put(value);
+
+        checkFailure("field1", "field2", -1, "trying to compare two incomparable objects");
     }
 
     @Test
@@ -709,5 +748,34 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
             this.value = value;
             this.type = type;
         }
+    }
+
+    static class ComparableImpl implements Comparable<ComparableImpl>, Serializable {
+        int innerField;
+
+        public ComparableImpl(int innerField) {
+            this.innerField = innerField;
+        }
+
+        @Override
+        public int compareTo(ComparableImpl that) {
+            return Integer.compare(this.innerField, that.innerField);
+        }
+    }
+
+    static class ComparableImpl2 implements Comparable<ComparableImpl2>, Serializable {
+        int innerField;
+
+        public ComparableImpl2(int innerField) {
+            this.innerField = innerField;
+        }
+
+        @Override
+        public int compareTo(ComparableImpl2 that) {
+            return Integer.compare(this.innerField, that.innerField);
+        }
+    }
+
+    static class NonComparable implements Serializable {
     }
 }
