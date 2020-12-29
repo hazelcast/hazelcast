@@ -25,7 +25,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.record.Record.NOT_CACHED;
