@@ -50,6 +50,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Always accessed by same single thread.
  * One instance of this class is created for every {@link RecordStore}.
  */
+// TODO make expiry system efficient to scan and try to use HashMap iterator
 public class ExpirySystem {
     final RecordStore recordStore;
     final MapServiceContext mapServiceContext;
