@@ -254,41 +254,45 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void testComparable_to_Comparable() {
-        ExpressionBiValue value = ExpressionBiValue.createBiValue(
-                ExpressionBiValue.createBiClass(ExpressionTypes.OBJECT, ExpressionTypes.OBJECT),
-                new ComparableImpl(1),
-                new ComparableImpl(1)
-        );
-
-        put(value);
-
+        putBiValue(new ComparableImpl(1), new ComparableImpl(1));
         check("field1", "field2", new ComparableImpl(1).compareTo(new ComparableImpl(1)));
+
+        putBiValue(new ComparableImpl(1), new ComparableImpl(2));
+        check("field1", "field2", new ComparableImpl(1).compareTo(new ComparableImpl(2)));
+
+        putBiValue(new ComparableImpl(2), new ComparableImpl(1));
+        check("field1", "field2", new ComparableImpl(2).compareTo(new ComparableImpl(1)));
+    }
+
+    @Test
+    public void testComparable_to_NonComparable() {
+        putBiValue(new NonComparable(), new NonComparable());
+
+        checkFailure("field1", "field2", -1, "trying to compare two incomparable objects");
     }
 
     @Test
     public void testDifferentClassThatImplementsComparableInterface() {
-        ExpressionBiValue value = ExpressionBiValue.createBiValue(
-                ExpressionBiValue.createBiClass(ExpressionTypes.OBJECT, ExpressionTypes.OBJECT),
-                new ComparableImpl(1),
-                new ComparableImpl2(1)
-        );
-
-        put(value);
+        putBiValue(new ComparableImpl(1), new ComparableImpl2(1));
 
         checkFailure("field1", "field2", -1, "trying to compare two incomparable objects");
     }
 
     @Test
     public void testNonComparableObjects() {
+        putBiValue(new NonComparable(), new NonComparable());
+
+        checkFailure("field1", "field2", -1, "trying to compare two incomparable objects");
+    }
+
+    private void putBiValue(Object field1, Object field2) {
         ExpressionBiValue value = ExpressionBiValue.createBiValue(
                 ExpressionBiValue.createBiClass(ExpressionTypes.OBJECT, ExpressionTypes.OBJECT),
-                new NonComparable(),
-                new NonComparable()
+                field1,
+                field2
         );
 
         put(value);
-
-        checkFailure("field1", "field2", -1, "trying to compare two incomparable objects");
     }
 
     @Test
@@ -753,7 +757,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     static class ComparableImpl implements Comparable<ComparableImpl>, Serializable {
         int innerField;
 
-        public ComparableImpl(int innerField) {
+        ComparableImpl(int innerField) {
             this.innerField = innerField;
         }
 
@@ -766,7 +770,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     static class ComparableImpl2 implements Comparable<ComparableImpl2>, Serializable {
         int innerField;
 
-        public ComparableImpl2(int innerField) {
+        ComparableImpl2(int innerField) {
             this.innerField = innerField;
         }
 
