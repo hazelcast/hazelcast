@@ -46,16 +46,23 @@ public final class Records {
      * Maps RecordReaderWriter objects to their 4.1 equivalents. This is used to
      * support compatibility between 4.1 and 4.2 during rolling upgrades.
      */
-    private static final Map<RecordReaderWriter, RecordReaderWriter> RU_COMPAT_MAP
-            = new EnumMap<RecordReaderWriter, RecordReaderWriter>(RecordReaderWriter.class) {{
-        put(SIMPLE_DATA_RECORD_READER_WRITER, DATA_RECORD_READER_WRITER);
-        put(SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER, DATA_RECORD_READER_WRITER);
-        put(SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER, DATA_RECORD_READER_WRITER);
-        put(DATA_RECORD_READER_WRITER, DATA_RECORD_READER_WRITER);
-        put(DATA_RECORD_WITH_STATS_READER_WRITER, DATA_RECORD_WITH_STATS_READER_WRITER);
-    }};
+    private static final Map<RecordReaderWriter, RecordReaderWriter> RU_COMPAT_MAP = createAndInitRuCompatMap();
 
     private Records() {
+    }
+
+    private static EnumMap<RecordReaderWriter, RecordReaderWriter> createAndInitRuCompatMap() {
+        EnumMap<RecordReaderWriter, RecordReaderWriter> ruCompatMap = new EnumMap<>(RecordReaderWriter.class);
+        ruCompatMap.put(SIMPLE_DATA_RECORD_READER_WRITER, DATA_RECORD_READER_WRITER);
+        ruCompatMap.put(SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER, DATA_RECORD_READER_WRITER);
+        ruCompatMap.put(SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER, DATA_RECORD_READER_WRITER);
+        ruCompatMap.put(DATA_RECORD_READER_WRITER, DATA_RECORD_READER_WRITER);
+        ruCompatMap.put(DATA_RECORD_WITH_STATS_READER_WRITER, DATA_RECORD_WITH_STATS_READER_WRITER);
+
+        assert ruCompatMap.size() == RecordReaderWriter.values().length
+                : "Missing enum mapping for RU compatibility";
+
+        return ruCompatMap;
     }
 
     public static void writeRecord(ObjectDataOutput out, Record record,
