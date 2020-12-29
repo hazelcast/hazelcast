@@ -16,9 +16,11 @@
 
 package com.hazelcast.sql.impl.state;
 
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlColumnMetadata;
+import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.QueryException;
@@ -32,6 +34,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.DONE;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.TIMEOUT;
@@ -46,10 +49,10 @@ public class QueryClientStateRegistry {
     private final ConcurrentHashMap<QueryId, QueryClientState> clientCursors = new ConcurrentHashMap<>();
 
     public SqlPage registerAndFetch(
-        UUID clientId,
-        AbstractSqlResult result,
-        int cursorBufferSize,
-        InternalSerializationService serializationService
+            UUID clientId,
+            AbstractSqlResult result,
+            int cursorBufferSize,
+            InternalSerializationService serializationService
     ) {
         QueryClientState clientCursor = new QueryClientState(clientId, result);
 
@@ -64,10 +67,10 @@ public class QueryClientStateRegistry {
     }
 
     public SqlPage fetch(
-        UUID clientId,
-        QueryId queryId,
-        int cursorBufferSize,
-        InternalSerializationService serializationService
+            UUID clientId,
+            QueryId queryId,
+            int cursorBufferSize,
+            InternalSerializationService serializationService
     ) {
         QueryClientState clientCursor = getClientCursor(clientId, queryId);
 
@@ -92,18 +95,20 @@ public class QueryClientStateRegistry {
     }
 
     private SqlPage fetchInternal(
-        QueryClientState clientCursor,
-        int cursorBufferSize,
-        InternalSerializationService serializationService,
-        boolean isFirstPage
+            QueryClientState clientCursor,
+            int cursorBufferSize,
+            InternalSerializationService serializationService,
+            boolean isFirstPage
     ) {
         ResultIterator<SqlRow> iterator = clientCursor.getIterator();
 
         try {
-            List<List<Data>> page = new ArrayList<>(cursorBufferSize);
+            List<SqlColumnMetadata> columns = clientCursor.getSqlResult().getRowMetadata().getColumns();
+            List<List<Object>> page = new ArrayList<>(columns.size());
             boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService, isFirstPage);
 
-            return new SqlPage(page, last);
+            List<SqlColumnType> sqlColumnTypes = columns.stream().map(SqlColumnMetadata::getType).collect(Collectors.toList());
+            return new SqlPage(sqlColumnTypes, page, last);
         } catch (HazelcastSqlException e) {
             // We use public API to extract results from the cursor. The cursor may throw HazelcastSqlException only. When
             // it happens, the cursor is already closed with the error, so we just re-throw.
@@ -122,12 +127,11 @@ public class QueryClientStateRegistry {
     }
 
     private static boolean fetchPage(
-        ResultIterator<SqlRow> iterator,
-        List<List<Data>> page,
-        int cursorBufferSize,
-        InternalSerializationService serializationService,
-        boolean isFirstPage
-    ) {
+            ResultIterator<SqlRow> iterator,
+            List<List<Object>> page,
+            int cursorBufferSize,
+            InternalSerializationService serializationService,
+            boolean isFirstPage) {
         assert cursorBufferSize > 0;
 
         if (isFirstPage) {
@@ -148,28 +152,29 @@ public class QueryClientStateRegistry {
         }
 
         HasNextResult hasNextResult;
+        int count = 0;
         do {
+            count++;
             SqlRow row = iterator.next();
-            List<Data> convertedRow = convertRow(row, serializationService);
-
-            page.add(convertedRow);
+            int columnCount = row.getMetadata().getColumnCount();
+            for (int i = 0; i < columnCount; i++) {
+                List<Object> convertedColum = page.get(i);
+                if (convertedColum == null) {
+                    convertedColum = new ArrayList<>(cursorBufferSize);
+                }
+                Object object = row.getObject(i);
+                if (object instanceof Portable) {
+                    convertedColum.add(serializationService.toData(object));
+                } else {
+                    convertedColum.add(object);
+                }
+            }
             hasNextResult = iterator.hasNext(0, SECONDS);
-        } while (hasNextResult == YES && page.size() < cursorBufferSize);
+        } while (hasNextResult == YES && count < cursorBufferSize);
 
         return hasNextResult == DONE;
     }
 
-    private static List<Data> convertRow(SqlRow row, InternalSerializationService serializationService) {
-        int columnCount = row.getMetadata().getColumnCount();
-
-        List<Data> values = new ArrayList<>(columnCount);
-
-        for (int i = 0; i < columnCount; i++) {
-            values.add(serializationService.toData(row.getObject(i)));
-        }
-
-        return values;
-    }
 
     public void close(UUID clientId, QueryId queryId) {
         QueryClientState clientCursor = getClientCursor(clientId, queryId);
@@ -203,7 +208,7 @@ public class QueryClientStateRegistry {
         }
     }
 
-    private QueryClientState getClientCursor(UUID clientId, QueryId queryId) {
+    public QueryClientState getClientCursor(UUID clientId, QueryId queryId) {
         QueryClientState cursor = clientCursors.get(queryId);
 
         if (cursor == null || !cursor.getClientId().equals(clientId)) {

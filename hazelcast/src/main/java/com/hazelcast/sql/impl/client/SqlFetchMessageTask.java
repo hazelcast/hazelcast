@@ -17,60 +17,67 @@
 package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.SqlExecute2Codec;
+import com.hazelcast.client.impl.protocol.codec.SqlFetch2Codec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.impl.SqlInternalService;
 
+import java.security.AccessControlException;
 import java.security.Permission;
-import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 
 /**
  * SQL query fetch task.
  */
-public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.RequestParameters> {
+public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetch2Codec.RequestParameters> {
+
     public SqlFetchMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Object call() throws Exception {
-        UUID localMemberId = nodeEngine.getLocalMember().getUuid();
+
         SqlInternalService service = nodeEngine.getSqlService().getInternalService();
 
-        try {
-            SqlPage page = service.getClientStateRegistry().fetch(
+        return service.getClientStateRegistry().fetch(
                 endpoint.getUuid(),
                 parameters.queryId,
                 parameters.cursorBufferSize,
                 serializationService
-            );
-
-            return new SqlFetchResponse(page.getRows(), page.isLast(), null);
-        } catch (Exception e) {
-            SqlError error = SqlClientUtils.exceptionToClientError(e, localMemberId);
-
-            return new SqlFetchResponse(null, false, error);
-        }
+        );
     }
 
     @Override
-    protected SqlFetchCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SqlFetchCodec.decodeRequest(clientMessage);
+    protected SqlFetch2Codec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SqlFetch2Codec.decodeRequest(clientMessage);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        SqlFetchResponse response0 = ((SqlFetchResponse) response);
+        SqlPage page = ((SqlPage) response);
+        return SqlFetch2Codec.encodeResponse(page, null);
+    }
 
-        List<List<Data>> rowPage = response0.getRowPage();
-        Collection<Collection<Data>> rowPage0 = (Collection<Collection<Data>>) (Object) rowPage;
-
-        return SqlFetchCodec.encodeResponse(rowPage0, response0.isRowPageLast(), response0.getError());
+    @Override
+    protected ClientMessage encodeException(Throwable throwable) {
+        if (throwable instanceof AccessControlException) {
+            return super.encodeException(throwable);
+        }
+        if (!(throwable instanceof Exception)) {
+            return super.encodeException(throwable);
+        }
+        SqlError error = SqlClientUtils.exceptionToClientError((Exception) throwable, nodeEngine.getLocalMember().getUuid());
+        return SqlExecute2Codec.encodeResponse(
+                null,
+                null,
+                null,
+                -1,
+                error
+        );
     }
 
     @Override
@@ -90,7 +97,7 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters.queryId, parameters.cursorBufferSize } ;
+        return new Object[]{parameters.queryId, parameters.cursorBufferSize};
     }
 
     @Override

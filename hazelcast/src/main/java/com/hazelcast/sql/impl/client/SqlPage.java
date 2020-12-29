@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.client;
 
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.sql.SqlColumnType;
 
 import java.util.List;
 import java.util.Objects;
@@ -26,16 +26,22 @@ import java.util.Objects;
  */
 public class SqlPage {
 
-    private final List<List<Data>> rows;
+    private final List<List<Object>> columns;
+    private final List<SqlColumnType> columnTypes;
     private final boolean last;
 
-    public SqlPage(List<List<Data>> rows, boolean last) {
-        this.rows = rows;
+    public SqlPage(List<SqlColumnType> columnTypes, List<List<Object>> columns, boolean last) {
+        this.columnTypes = columnTypes;
+        this.columns = columns;
         this.last = last;
     }
 
-    public List<List<Data>> getRows() {
-        return rows;
+    public List<SqlColumnType> getColumnTypes() {
+        return columnTypes;
+    }
+
+    public List<List<Object>> getColumns() {
+        return columns;
     }
 
     public boolean isLast() {
@@ -54,19 +60,11 @@ public class SqlPage {
 
         SqlPage page = (SqlPage) o;
 
-        if (last != page.last) {
-            return false;
-        }
-
-        return Objects.equals(rows, page.rows);
+        return Objects.equals(columns, page.columns);
     }
 
     @Override
     public int hashCode() {
-        int result = rows != null ? rows.hashCode() : 0;
-
-        result = 31 * result + (last ? 1 : 0);
-
-        return result;
+        return columns != null ? columns.hashCode() : 0;
     }
 }

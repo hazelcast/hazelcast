@@ -118,16 +118,16 @@ public class SqlBasicTest extends SqlTestSupport {
 
         for (int pageSize : PAGE_SIZES) {
             for (int dataSetSize : DATA_SET_SIZES) {
-                for (SerializationMode serializationMode : SerializationMode.values()) {
-                    for (InMemoryFormat format : new InMemoryFormat[] { InMemoryFormat.OBJECT, InMemoryFormat.BINARY }) {
+//                for (SerializationMode serializationMode : SerializationMode.values()) {
+                    for (InMemoryFormat format : new InMemoryFormat[] {  InMemoryFormat.BINARY }) {
                         res.add(new Object[] {
                             pageSize,
                             dataSetSize,
-                            serializationMode,
+                            SerializationMode.PORTABLE,
                             format
                         });
                     }
-                }
+//                }
             }
         }
 
@@ -202,69 +202,12 @@ public class SqlBasicTest extends SqlTestSupport {
                 AbstractPojo val = map.get(key);
 
                 checkRowValue(SqlColumnType.BIGINT, key.getKey(), row, "key");
-                checkRowValue(SqlColumnType.BOOLEAN, val.isBooleanVal(), row, "booleanVal");
-                checkRowValue(SqlColumnType.TINYINT, val.getTinyIntVal(), row, "tinyIntVal");
-                checkRowValue(SqlColumnType.SMALLINT, val.getSmallIntVal(), row, "smallIntVal");
                 checkRowValue(SqlColumnType.INTEGER, val.getIntVal(), row, "intVal");
                 checkRowValue(SqlColumnType.BIGINT, val.getBigIntVal(), row, "bigIntVal");
-                checkRowValue(SqlColumnType.REAL, val.getRealVal(), row, "realVal");
-                checkRowValue(SqlColumnType.DOUBLE, val.getDoubleVal(), row, "doubleVal");
-
-                if (!portable) {
-                    checkRowValue(SqlColumnType.DECIMAL, new BigDecimal(val.getDecimalBigIntegerVal()), row, "decimalBigIntegerVal");
-                    checkRowValue(SqlColumnType.DECIMAL, val.getDecimalVal(), row, "decimalVal");
-                }
-
-                checkRowValue(SqlColumnType.VARCHAR, Character.toString(val.getCharVal()), row, "charVal");
                 checkRowValue(SqlColumnType.VARCHAR, val.getVarcharVal(), row, "varcharVal");
-
-                if (!portable) {
-                    checkRowValue(SqlColumnType.DATE, val.getDateVal(), row, "dateVal");
-                    checkRowValue(SqlColumnType.TIME, val.getTimeVal(), row, "timeVal");
-                    checkRowValue(SqlColumnType.TIMESTAMP, val.getTimestampVal(), row, "timestampVal");
-
-                    checkRowValue(
-                        SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                        OffsetDateTime.ofInstant(val.getTsTzDateVal().toInstant(), ZoneId.systemDefault()),
-                        row,
-                        "tsTzDateVal"
-                    );
-
-                    checkRowValue(
-                        SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                        val.getTsTzCalendarVal().toZonedDateTime().toOffsetDateTime(),
-                        row,
-                        "tsTzCalendarVal"
-                    );
-
-                    checkRowValue(
-                        SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                        OffsetDateTime.ofInstant(val.getTsTzInstantVal(), ZoneId.systemDefault()),
-                        row,
-                        "tsTzInstantVal"
-                    );
-
-                    checkRowValue(
-                        SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                        val.getTsTzOffsetDateTimeVal(),
-                        row,
-                        "tsTzOffsetDateTimeVal"
-                    );
-
-                    checkRowValue(
-                        SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                        val.getTsTzZonedDateTimeVal().toOffsetDateTime(),
-                        row,
-                        "tsTzZonedDateTimeVal"
-                    );
-
-                    checkRowValue(SqlColumnType.OBJECT, val.getObjectVal(), row, "objectVal");
-                    checkRowValue(SqlColumnType.OBJECT, null, row, "nullVal");
-                }
 
                 if (portable) {
                     checkRowValue(SqlColumnType.OBJECT, ((PortablePojo) val).getPortableVal(), row, "portableVal");
-                    checkRowValue(SqlColumnType.VARCHAR, null, row, "nullVal");
                 }
 
                 uniqueKeys.add(key0);
@@ -345,7 +288,7 @@ public class SqlBasicTest extends SqlTestSupport {
 
     private SqlResult query() {
         String sql = sql();
-
+        System.out.println(sql);
         if (cursorBufferSize == SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE) {
             return getTarget().getSql().execute(sql);
         } else {
@@ -357,17 +300,10 @@ public class SqlBasicTest extends SqlTestSupport {
         if (serializationMode == SerializationMode.PORTABLE) {
             return Arrays.asList(
                 "key",
-                "booleanVal",
-                "tinyIntVal",
-                "smallIntVal",
                 "intVal",
                 "bigIntVal",
-                "realVal",
-                "doubleVal",
-                "charVal",
                 "varcharVal",
-                "portableVal",
-                "nullVal"
+                "portableVal"
             );
         } else {
             return Arrays.asList(
@@ -401,17 +337,10 @@ public class SqlBasicTest extends SqlTestSupport {
         if (serializationMode == SerializationMode.PORTABLE) {
             return Arrays.asList(
                 SqlColumnType.BIGINT,
-                SqlColumnType.BOOLEAN,
-                SqlColumnType.TINYINT,
-                SqlColumnType.SMALLINT,
                 SqlColumnType.INTEGER,
                 SqlColumnType.BIGINT,
-                SqlColumnType.REAL,
-                SqlColumnType.DOUBLE,
                 SqlColumnType.VARCHAR,
-                SqlColumnType.VARCHAR,
-                SqlColumnType.OBJECT,
-                SqlColumnType.VARCHAR
+                SqlColumnType.OBJECT
             );
         } else {
             return Arrays.asList(

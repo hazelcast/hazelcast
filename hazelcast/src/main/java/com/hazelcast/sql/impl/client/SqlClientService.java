@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlExecute2Codec;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlFetch2Codec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
@@ -52,7 +53,9 @@ public class SqlClientService implements SqlService {
     private static final int SERVICE_ID_MASK = 0x00FF0000;
     private static final int SERVICE_ID_SHIFT = 16;
 
-    /** ID of the SQL beta service. Should match the ID declared in Sql.yaml */
+    /**
+     * ID of the SQL beta service. Should match the ID declared in Sql.yaml
+     */
     private static final int SQL_SERVICE_ID = 33;
 
     private final HazelcastClientInstanceImpl client;
@@ -68,8 +71,8 @@ public class SqlClientService implements SqlService {
 
         if (connection == null) {
             throw rethrow(QueryException.error(
-                SqlErrorCode.CONNECTION_PROBLEM,
-                "Client must be connected to at least one data member to execute SQL queries"
+                    SqlErrorCode.CONNECTION_PROBLEM,
+                    "Client must be connected to at least one data member to execute SQL queries"
             ));
         }
 
@@ -83,11 +86,11 @@ public class SqlClientService implements SqlService {
             }
 
             ClientMessage requestMessage = SqlExecute2Codec.encodeRequest(
-                statement.getSql(),
-                params0,
-                statement.getTimeoutMillis(),
-                statement.getCursorBufferSize(),
-                statement.getSchema()
+                    statement.getSql(),
+                    params0,
+                    statement.getTimeoutMillis(),
+                    statement.getCursorBufferSize(),
+                    statement.getSchema()
             );
 
             ClientMessage responseMessage = invoke(requestMessage, connection);
@@ -97,14 +100,14 @@ public class SqlClientService implements SqlService {
             handleResponseError(response.error);
 
             return new SqlClientResult(
-                this,
-                connection,
-                response.queryId,
-                response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
-                response.rowPage,
-                response.rowPageLast,
-                statement.getCursorBufferSize(),
-                response.updateCount
+                    this,
+                    connection,
+                    response.queryId,
+                    response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
+                    response.rowPage.getColumns(),
+                    response.rowPage.isLast(),
+                    statement.getCursorBufferSize(),
+                    response.updateCount
             );
         } catch (Exception e) {
             throw rethrow(e, connection);
@@ -115,18 +118,18 @@ public class SqlClientService implements SqlService {
      * Fetch the next page of the given query.
      *
      * @param connection Connection.
-     * @param queryId Query ID.
+     * @param queryId    Query ID.
      * @return Pair: fetched rows + last page flag.
      */
     public SqlPage fetch(Connection connection, QueryId queryId, int cursorBufferSize) {
         try {
-            ClientMessage requestMessage = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
+            ClientMessage requestMessage = SqlFetch2Codec.encodeRequest(queryId, cursorBufferSize);
             ClientMessage responseMessage = invoke(requestMessage, connection);
-            SqlFetchCodec.ResponseParameters responseParameters = SqlFetchCodec.decodeResponse(responseMessage);
+            SqlFetch2Codec.ResponseParameters responseParameters = SqlFetch2Codec.decodeResponse(responseMessage);
 
             handleResponseError(responseParameters.error);
 
-            return new SqlPage(responseParameters.rowPage, responseParameters.rowPageLast);
+            return responseParameters.rowPage;
         } catch (Exception e) {
             throw rethrow(e, connection);
         }
@@ -136,7 +139,7 @@ public class SqlClientService implements SqlService {
      * Close remote query cursor.
      *
      * @param connection Connection.
-     * @param queryId Query ID.
+     * @param queryId    Query ID.
      */
     void close(Connection connection, QueryId queryId) {
         try {
@@ -158,17 +161,17 @@ public class SqlClientService implements SqlService {
 
         if (connection == null) {
             throw rethrow(QueryException.error(
-                SqlErrorCode.CONNECTION_PROBLEM,
-                "Client is not connected to topology"
+                    SqlErrorCode.CONNECTION_PROBLEM,
+                    "Client is not connected to topology"
             ));
         }
 
         try {
             ClientMessage requestMessage = SqlExecuteCodec.encodeRequest(
-                "SELECT * FROM table",
-                Collections.emptyList(),
-                100L,
-                100
+                    "SELECT * FROM table",
+                    Collections.emptyList(),
+                    100L,
+                    100
             );
 
             invoke(requestMessage, connection);
@@ -182,17 +185,17 @@ public class SqlClientService implements SqlService {
             return getSerializationService().toData(parameter);
         } catch (Exception e) {
             throw rethrow(
-                QueryException.error("Failed to serialize query parameter " + parameter + ": " + e.getMessage())
+                    QueryException.error("Failed to serialize query parameter " + parameter + ": " + e.getMessage())
             );
         }
     }
 
-    Object deserializeRowValue(Data data) {
+    Object deserializeRowValue(Object data) {
         try {
             return getSerializationService().toObject(data);
         } catch (Exception e) {
             throw rethrow(
-                QueryException.error("Failed to deserialize query result value: " + e.getMessage())
+                    QueryException.error("Failed to deserialize query result value: " + e.getMessage())
             );
         }
     }
@@ -222,8 +225,8 @@ public class SqlClientService implements SqlService {
     private RuntimeException rethrow(Exception cause, Connection connection) {
         if (!connection.isAlive()) {
             return QueryUtils.toPublicException(
-                QueryException.memberConnection(connection.getRemoteAddress()),
-                getClientId()
+                    QueryException.memberConnection(connection.getRemoteAddress()),
+                    getClientId()
             );
         }
 

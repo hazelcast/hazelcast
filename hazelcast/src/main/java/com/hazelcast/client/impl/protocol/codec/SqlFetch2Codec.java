@@ -34,77 +34,54 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Starts execution of an SQL query (as of 4.2).
+ * Fetches the next row page.
  */
-@Generated("b47c8b319ab762ea78e025462b7fe57d")
-public final class SqlExecute2Codec {
-    //hex: 0x210400
-    public static final int REQUEST_MESSAGE_TYPE = 2163712;
-    //hex: 0x210401
-    public static final int RESPONSE_MESSAGE_TYPE = 2163713;
-    private static final int REQUEST_TIMEOUT_MILLIS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET = REQUEST_TIMEOUT_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+@Generated("30e29e7465729e41a83edf791e4e0d21")
+public final class SqlFetch2Codec {
+    //hex: 0x210500
+    public static final int REQUEST_MESSAGE_TYPE = 2163968;
+    //hex: 0x210501
+    public static final int RESPONSE_MESSAGE_TYPE = 2163969;
+    private static final int REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_UPDATE_COUNT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_UPDATE_COUNT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private SqlExecute2Codec() {
+    private SqlFetch2Codec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
-         * Query string.
+         * Query ID.
          */
-        public java.lang.String sql;
-
-        /**
-         * Query parameters.
-         */
-        public java.util.List<com.hazelcast.internal.serialization.Data> parameters;
-
-        /**
-         * Timeout in milliseconds.
-         */
-        public long timeoutMillis;
+        public com.hazelcast.sql.impl.QueryId queryId;
 
         /**
          * Cursor buffer size.
          */
         public int cursorBufferSize;
-
-        /**
-         * Schema name.
-         */
-        public @Nullable java.lang.String schema;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String sql, java.util.Collection<com.hazelcast.internal.serialization.Data> parameters, long timeoutMillis, int cursorBufferSize, @Nullable java.lang.String schema) {
+    public static ClientMessage encodeRequest(com.hazelcast.sql.impl.QueryId queryId, int cursorBufferSize) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("Sql.Execute2");
+        clientMessage.setOperationName("Sql.Fetch2");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
-        encodeLong(initialFrame.content, REQUEST_TIMEOUT_MILLIS_FIELD_OFFSET, timeoutMillis);
         encodeInt(initialFrame.content, REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET, cursorBufferSize);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, sql);
-        ListMultiFrameCodec.encode(clientMessage, parameters, DataCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, schema, StringCodec::encode);
+        SqlQueryIdCodec.encode(clientMessage, queryId);
         return clientMessage;
     }
 
-    public static SqlExecute2Codec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static SqlFetch2Codec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.timeoutMillis = decodeLong(initialFrame.content, REQUEST_TIMEOUT_MILLIS_FIELD_OFFSET);
         request.cursorBufferSize = decodeInt(initialFrame.content, REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET);
-        request.sql = StringCodec.decode(iterator);
-        request.parameters = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
-        request.schema = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        request.queryId = SqlQueryIdCodec.decode(iterator);
         return request;
     }
 
@@ -112,51 +89,31 @@ public final class SqlExecute2Codec {
     public static class ResponseParameters {
 
         /**
-         * Query ID.
-         */
-        public @Nullable com.hazelcast.sql.impl.QueryId queryId;
-
-        /**
-         * Row metadata.
-         */
-        public @Nullable java.util.List<com.hazelcast.sql.SqlColumnMetadata> rowMetadata;
-
-        /**
          * Row page.
          */
         public @Nullable com.hazelcast.sql.impl.client.SqlPage rowPage;
-
-        /**
-         * The number of updated rows.
-         */
-        public long updateCount;
 
         /**
          * Error object.
          */
         public @Nullable com.hazelcast.sql.impl.client.SqlError error;
     }
-    public static ClientMessage encodeResponse(@Nullable com.hazelcast.sql.impl.QueryId queryId, @Nullable java.util.List<com.hazelcast.sql.SqlColumnMetadata> rowMetadata, @Nullable com.hazelcast.sql.impl.client.SqlPage rowPage, long updateCount, @Nullable com.hazelcast.sql.impl.client.SqlError error) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.sql.impl.client.SqlPage rowPage, @Nullable com.hazelcast.sql.impl.client.SqlError error) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        encodeLong(initialFrame.content, RESPONSE_UPDATE_COUNT_FIELD_OFFSET, updateCount);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, queryId, SqlQueryIdCodec::encode);
-        ListMultiFrameCodec.encodeNullable(clientMessage, rowMetadata, SqlColumnMetadataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, rowPage, SqlPageCodec::encode);
         CodecUtil.encodeNullable(clientMessage, error, SqlErrorCodec::encode);
         return clientMessage;
     }
 
-    public static SqlExecute2Codec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static SqlFetch2Codec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
-        response.updateCount = decodeLong(initialFrame.content, RESPONSE_UPDATE_COUNT_FIELD_OFFSET);
-        response.queryId = CodecUtil.decodeNullable(iterator, SqlQueryIdCodec::decode);
-        response.rowMetadata = ListMultiFrameCodec.decodeNullable(iterator, SqlColumnMetadataCodec::decode);
+        //empty initial frame
+        iterator.next();
         response.rowPage = CodecUtil.decodeNullable(iterator, SqlPageCodec::decode);
         response.error = CodecUtil.decodeNullable(iterator, SqlErrorCodec::decode);
         return response;
