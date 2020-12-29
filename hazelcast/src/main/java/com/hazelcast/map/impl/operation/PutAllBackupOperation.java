@@ -94,7 +94,6 @@ public class PutAllBackupOperation extends MapOperation
         return disableWanReplicationEvent;
     }
 
-    // TODO Rolling upgrade?
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
     protected void writeInternal(ObjectDataOutput out) throws IOException {
@@ -118,7 +117,7 @@ public class PutAllBackupOperation extends MapOperation
         super.readInternal(in);
 
         int size = in.readInt();
-        List keyRecordExpiry = new ArrayList<>(size * 2);
+        List keyRecordExpiry = new ArrayList<>(size * 3);
         for (int i = 0; i < size; i++) {
             keyRecordExpiry.add(IOUtil.readData(in));
 

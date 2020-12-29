@@ -80,7 +80,6 @@ public class PutBackupOperation
         return MapDataSerializerHook.PUT_BACKUP;
     }
 
-    // TODO Rolling upgrade
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);

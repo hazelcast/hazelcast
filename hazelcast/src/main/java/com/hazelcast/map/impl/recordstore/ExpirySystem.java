@@ -47,7 +47,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Always accessed by 1 thread.
+ * Always accessed by same single thread.
+ * One instance of this class is created for every {@link RecordStore}.
  */
 public class ExpirySystem {
     final RecordStore recordStore;

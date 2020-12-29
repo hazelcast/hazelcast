@@ -181,7 +181,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                     ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiry.get(i + 2);
 
                     if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_2)) {
-                        // TODO rolling upgrade
                         recordStore.putReplicatedRecord(dataKey, record, expiryMetadata, populateIndexes, nowInMillis);
                     } else {
                         recordStore.putReplicatedRecordLegacy(dataKey, record, nowInMillis, populateIndexes);
@@ -257,24 +256,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                     throw ExceptionUtil.rethrow(e);
                 }
             }, operation.getReplicaIndex() != 0, true);
-
-//            if (out.getVersion().isGreaterOrEqual(Versions.V4_2)) {
-//                ExpirySystem expirySystem = recordStore.getExpirySystem();
-//                Map<Data, ExpiryMetadata> expireTimeByKey = expirySystem.getExpireTimeByKey();
-//
-//                out.writeInt(expireTimeByKey == null ? 0 : expireTimeByKey.size());
-//                if (!MapUtil.isNullOrEmpty(expireTimeByKey)) {
-//                    for (Map.Entry<Data, ExpiryMetadata> metadataEntry : expireTimeByKey.entrySet()) {
-//                        Data key = metadataEntry.getKey();
-//                        ExpiryMetadata expiryMetadata = metadataEntry.getValue();
-//
-//                        IOUtil.writeData(out, key);
-//                        out.writeLong(expiryMetadata.getTtl());
-//                        out.writeLong(expiryMetadata.getMaxIdle());
-//                        out.writeLong(expiryMetadata.getExpirationTime());
-//                    }
-//                }
-//            }
         }
 
         out.writeInt(loaded.size());
@@ -302,7 +283,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
             int numOfRecords = in.readInt();
-            List keyRecordExpiry = new ArrayList<>(numOfRecords * 2);
+            List keyRecordExpiry = new ArrayList<>(numOfRecords * 3);
             for (int j = 0; j < numOfRecords; j++) {
                 Data dataKey = IOUtil.readData(in);
                 ExpiryMetadata expiryMetadata = new ExpirySystem.ExpiryMetadataImpl();
@@ -313,27 +294,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 keyRecordExpiry.add(expiryMetadata);
             }
             data.put(name, keyRecordExpiry);
-
-//            if (in.getVersion().isGreaterOrEqual(Versions.V4_2)) {
-//                int expirySize = in.readInt();
-//                if (expirySize != 0) {
-//                    Queue metadata = new ArrayDeque<>(expirySize);
-//                    for (int j = 0; j < expirySize; j++) {
-//                        Data key = IOUtil.readData(in);
-//                        long ttl = in.readLong();
-//                        long maxIdle = in.readLong();
-//                        long expiryTime = in.readLong();
-//
-//                        metadata.add(key);
-//                        metadata.add(ttl);
-//                        metadata.add(maxIdle);
-//                        metadata.add(expiryTime);
-//                    }
-//
-//                    expiryMetaData.put(name, metadata);
-//
-//                }
-//            }
         }
 
         int loadedSize = in.readInt();
