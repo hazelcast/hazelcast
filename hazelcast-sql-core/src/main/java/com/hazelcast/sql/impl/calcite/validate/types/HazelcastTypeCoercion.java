@@ -85,7 +85,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         }
 
         // CAST is only required between different types.
-        return !from.equals(to);
+        return from.getSqlTypeName() != to.getSqlTypeName();
     }
 
     @Override

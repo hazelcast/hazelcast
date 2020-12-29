@@ -74,9 +74,6 @@ interface HazelcastOperandTypeCheckerAware {
                 operandTypeInference.inferOperandTypes(binding, binding.getValidator().getUnknownType(), operandTypes);
 
                 for (int i = 0; i < binding.getOperandCount(); i++) {
-                if (binding.getOperandType(i).getSqlTypeName() != operandTypes[i].getSqlTypeName()) {
-                    validator.getTypeCoercion().coerceOperandType(binding.getScope(), binding.getCall(), i, operandTypes[i]);
-                }
                     validator.setValidatedNodeType(binding.operand(i), operandTypes[i]);
                 }
             }
