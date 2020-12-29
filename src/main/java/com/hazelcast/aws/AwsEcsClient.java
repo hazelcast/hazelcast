@@ -36,6 +36,8 @@ class AwsEcsClient implements AwsClient {
     private final AwsCredentialsProvider awsCredentialsProvider;
     private final String cluster;
 
+    private boolean isNoPublicIpAlreadyLogged;
+
     AwsEcsClient(String cluster, AwsEcsApi awsEcsApi, AwsEc2Api awsEc2Api, AwsMetadataApi awsMetadataApi,
                  AwsCredentialsProvider awsCredentialsProvider) {
         this.cluster = cluster;
@@ -71,13 +73,21 @@ class AwsEcsClient implements AwsClient {
      * <li>Task may not have public IP addresses</li>
      * <li>Task may not have access rights to query for public addresses</li>
      * </ul>
+     * <p>
+     * Also note that this is performed regardless of the configured use-public-ip value
+     * to make external smart clients able to work properly when possible.
      */
     private Map<String, String> fetchPublicAddresses(List<String> privateAddresses, AwsCredentials credentials) {
         try {
             return awsEc2Api.describeNetworkInterfaces(privateAddresses, credentials);
         } catch (Exception e) {
-            LOGGER.fine("Cannot fetch public IPs of ECS Tasks, only private addresses are used. If you need to access"
-                + " Hazelcast with public IP, please check if your Task has IAM role which allows querying EC2 API", e);
+            LOGGER.finest(e);
+            // Log warning only once.
+            if (!isNoPublicIpAlreadyLogged) {
+                LOGGER.warning("Cannot fetch the public IPs of ECS Tasks. You won't be able to use " +
+                        "Hazelcast Smart Client from outside of this VPC.");
+                isNoPublicIpAlreadyLogged = true;
+            }
 
             Map<String, String> map = new HashMap<>();
             privateAddresses.forEach(k -> map.put(k, null));
