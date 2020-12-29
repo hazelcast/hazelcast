@@ -17,14 +17,13 @@
 package com.hazelcast.spi.impl.operationservice;
 
 /**
- *  Indicates that the {@link Operation} carries the distributed data
- *  structure name that it is going to work on.
+ *  Indicates that {@link Operation} carries the distributed data structure name that is going to work on.
  */
 public interface NamedOperation {
 
     /**
-     * Returns the name of the distributed data structure that this operation
-     * operates upon.
+     * Returns the name of the distributed data structure.
+     * @return String name of the distributed data structure.
      */
     String getName();
 }

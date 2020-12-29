@@ -67,8 +67,8 @@ public class WaitStrategy {
 
         actualSleepTime = Math.min(actualSleepTime, clusterConnectTimeoutMillis - timePassed);
 
-        logger.warning(String.format("Unable to get live cluster connection, retry in %d ms, attempt: %d"
-                + ", cluster connect timeout: %d seconds"
+        logger.warning(String.format("Unable to get live cluster connection, retry in %d ms, attempt: %d "
+                + ", cluster connect timeout: %d seconds "
                 + ", max backoff millis: %d", actualSleepTime, attempt, clusterConnectTimeoutMillis, maxBackoffMillis));
 
         try {
