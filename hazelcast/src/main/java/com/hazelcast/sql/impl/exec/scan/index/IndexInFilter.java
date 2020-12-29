@@ -93,7 +93,7 @@ public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
             return Collections.emptyIterator();
         }
 
-        return new LazyIterator(index, evalContext, canonicalFilters.values());
+        return new LazyIterator(index, descending, evalContext, canonicalFilters.values());
     }
 
     @Override
@@ -155,10 +155,12 @@ public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
         private final InternalIndex index;
         private final ExpressionEvalContext evalContext;
         private final Iterator<IndexFilter> filterIterator;
+        private final boolean descending;
 
-        private LazyIterator(InternalIndex index, ExpressionEvalContext evalContext, Collection<IndexFilter> filters) {
+        private LazyIterator(InternalIndex index, boolean descending, ExpressionEvalContext evalContext, Collection<IndexFilter> filters) {
             this.index = index;
             this.evalContext = evalContext;
+            this.descending = descending;
 
             filterIterator = filters.iterator();
         }
@@ -168,7 +170,7 @@ public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
             while (filterIterator.hasNext()) {
                 IndexFilter filter = filterIterator.next();
 
-                Iterator<QueryableEntry> iterator = filter.getEntries(index, false, evalContext);
+                Iterator<QueryableEntry> iterator = filter.getEntries(index, descending, evalContext);
 
                 if (iterator.hasNext()) {
                     return iterator;
