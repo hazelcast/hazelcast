@@ -51,10 +51,6 @@ public class ReplaceUnknownOperandTypeInference implements SqlOperandTypeInferen
 
     @Override
     public void inferOperandTypes(SqlCallBinding callBinding, RelDataType returnType, RelDataType[] operandTypes) {
-        if (callBinding.getCall().isCountStar()) {
-            // ignore for the * in COUNT(*)
-            return;
-        }
         for (int i = 0; i < operandTypes.length; i++) {
             RelDataType operandType = callBinding.getOperandType(i);
 
