@@ -501,7 +501,7 @@ public class SqlBasicTest extends SqlTestSupport {
         }
     }
 
-    static SerializationConfig serializationConfig() {
+    public static SerializationConfig serializationConfig() {
         SerializationConfig serializationConfig = new SerializationConfig();
 
         serializationConfig.addPortableFactory(PORTABLE_FACTORY_ID, classId -> {

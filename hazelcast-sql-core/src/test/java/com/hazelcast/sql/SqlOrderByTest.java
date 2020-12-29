@@ -16,16 +16,20 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -59,14 +63,16 @@ import static com.hazelcast.sql.SqlBasicTest.SerializablePojoKey;
 import static com.hazelcast.sql.SqlBasicTest.SerializationMode;
 import static com.hazelcast.sql.SqlBasicTest.memberConfig;
 import static com.hazelcast.sql.SqlBasicTest.portableFieldName;
+import static com.hazelcast.sql.SqlBasicTest.serializationConfig;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
  * Test that covers basic column read operations through SQL.
  */
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("checkstyle:RedundantModifier")
 public class SqlOrderByTest extends SqlTestSupport {
@@ -77,6 +83,10 @@ public class SqlOrderByTest extends SqlTestSupport {
     private static final int[] PAGE_SIZES = {256};
     private static final int[] DATA_SET_SIZES = {4096};
     private static final SqlTestInstanceFactory FACTORY = SqlTestInstanceFactory.create();
+
+    private static TestHazelcastInstanceFactory factory;
+    private static List<HazelcastInstance> members;
+    private static HazelcastInstance member;
 
     private static HazelcastInstance member1;
     private static HazelcastInstance member2;
@@ -102,10 +112,10 @@ public class SqlOrderByTest extends SqlTestSupport {
                 for (SerializationMode serializationMode : SerializationMode.values()) {
                     for (InMemoryFormat format : new InMemoryFormat[]{InMemoryFormat.OBJECT, InMemoryFormat.BINARY}) {
                         res.add(new Object[]{
-                                pageSize,
-                                dataSetSize,
-                                serializationMode,
-                                format
+                            pageSize,
+                            dataSetSize,
+                            serializationMode,
+                            format
                         });
                     }
                 }
@@ -115,22 +125,15 @@ public class SqlOrderByTest extends SqlTestSupport {
         return res;
     }
 
-    @BeforeClass
-    public static void beforeClass() {
-        member1 = FACTORY.newHazelcastInstance(memberConfig());
-        member2 = FACTORY.newHazelcastInstance(memberConfig());
-    }
-
-    @AfterClass
-    public static void afterClass() {
-        FACTORY.shutdownAll();
-    }
-
     @Before
     public void before() {
-        member1.getMap(MAP_OBJECT).clear();
-        member1.getMap(MAP_BINARY).clear();
+        // Start members if needed
+        if (member1 == null) {
+            member1 = FACTORY.newHazelcastInstance(memberConfig());
+            member2 = FACTORY.newHazelcastInstance(memberConfig());
+        }
 
+        clearMap();
         // Get proper map
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
 
@@ -144,6 +147,27 @@ public class SqlOrderByTest extends SqlTestSupport {
         map.putAll(data);
     }
 
+    protected void clearMap() {
+        member1.getMap(MAP_OBJECT).clear();
+        member1.getMap(MAP_BINARY).clear();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        FACTORY.shutdownAll();
+    }
+
+    protected Config memberConfig() {
+        Config config = new Config().setSerializationConfig(serializationConfig());
+
+        config
+            .addMapConfig(new MapConfig(MAP_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
+            .addMapConfig(new MapConfig(MAP_BINARY).setInMemoryFormat(InMemoryFormat.BINARY));
+
+        return config;
+    }
+
+
     protected HazelcastInstance getTarget() {
         return member1;
     }
@@ -151,61 +175,61 @@ public class SqlOrderByTest extends SqlTestSupport {
     @Test
     public void testSelectWithOrderByDesc() {
         checkSelectWithOrderBy(Collections.singletonList(adjustFieldName("intVal")),
-                Collections.singletonList(adjustFieldName("intVal")), Collections.singletonList(true));
+            Collections.singletonList(adjustFieldName("intVal")), Collections.singletonList(true));
     }
 
     @Test
     public void testSelectWithOrderByAsc() {
         checkSelectWithOrderBy(Collections.singletonList(adjustFieldName("intVal")),
-                Collections.singletonList(adjustFieldName("intVal")), Collections.singletonList(false));
+            Collections.singletonList(adjustFieldName("intVal")), Collections.singletonList(false));
     }
 
     @Test
     public void testSelectWithOrderByDefault() {
         checkSelectWithOrderBy(Collections.singletonList(adjustFieldName("intVal")),
-                Collections.singletonList(adjustFieldName("intVal")), Collections.singletonList(null));
+            Collections.singletonList(adjustFieldName("intVal")), Collections.singletonList(null));
     }
 
     @Test
     public void testSelectWithOrderByDescDesc() {
         checkSelectWithOrderBy(Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal")),
-                Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal")),
-                Arrays.asList(true, true));
+            Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal")),
+            Arrays.asList(true, true));
     }
 
     @Test
     public void testSelectWithOrderByAscDesc() {
         assertThrows(HazelcastSqlException.class,
-                () -> checkSelectWithOrderBy(Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal")),
-                        Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal")),
-                        Arrays.asList(false, true)));
+            () -> checkSelectWithOrderBy(Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal")),
+                Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal")),
+                Arrays.asList(false, true)));
     }
 
     @Test
     public void testSelectWithOrderByDescDescDesc() {
         checkSelectWithOrderBy(Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal"), adjustFieldName("bigIntVal")),
-                Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal"), adjustFieldName("bigIntVal")),
-                Arrays.asList(true, true, true));
+            Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal"), adjustFieldName("bigIntVal")),
+            Arrays.asList(true, true, true));
     }
 
     @Test
     public void testSelectWithOrderByDescDescAsc() {
         assertThrows(HazelcastSqlException.class,
-                () -> checkSelectWithOrderBy(Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal"), adjustFieldName("bigIntVal")),
-                        Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal"), adjustFieldName("bigIntVal")),
-                        Arrays.asList(true, true, false)));
+            () -> checkSelectWithOrderBy(Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal"), adjustFieldName("bigIntVal")),
+                Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal"), adjustFieldName("bigIntVal")),
+                Arrays.asList(true, true, false)));
     }
 
     @Test
     public void testSelectWithOrderByAndProject() {
         // SELECT intVal, intVal + bigIntVal FROM t ORDER BY intVal, bigIntVal
         String sql = sqlWithOrderBy(Arrays.asList(adjustFieldName("intVal"),
-                adjustFieldName("intVal") + " + " + adjustFieldName("bigIntVal")),
-                Arrays.asList(adjustFieldName("intVal"), adjustFieldName("bigIntVal")), Arrays.asList(true, true));
+            adjustFieldName("intVal") + " + " + adjustFieldName("bigIntVal")),
+            Arrays.asList(adjustFieldName("intVal"), adjustFieldName("bigIntVal")), Arrays.asList(true, true));
         checkSelectWithOrderBy(Arrays.asList(adjustFieldName("intVal"), adjustFieldName("bigIntVal")),
-                sql,
-                Arrays.asList(adjustFieldName("intVal"), adjustFieldName("bigIntVal")),
-                Arrays.asList(true, true));
+            sql,
+            Arrays.asList(adjustFieldName("intVal"), adjustFieldName("bigIntVal")),
+            Arrays.asList(true, true));
     }
 
     @Test
@@ -213,17 +237,17 @@ public class SqlOrderByTest extends SqlTestSupport {
         //SELECT a, b FROM (SELECT intVal+bigIntVal a, intVal-bigIntVal b FROM p) ORDER BY a, b"
         String sql = "SELECT a, b FROM (SELECT intVal+bigIntVal a, intVal-bigIntVal b FROM p) ORDER BY a, b";
         assertThrows(HazelcastSqlException.class,
-                () -> checkSelectWithOrderBy(Arrays.asList(adjustFieldName("intVal"), adjustFieldName("bigIntVal")),
-                        sql,
-                        Collections.emptyList(),
-                        Collections.emptyList()));
+            () -> checkSelectWithOrderBy(Arrays.asList(adjustFieldName("intVal"), adjustFieldName("bigIntVal")),
+                sql,
+                Collections.emptyList(),
+                Collections.emptyList()));
     }
 
     public void checkSelectWithOrderBy(List<String> indexAttrs, List<String> orderFields, List<Boolean> orderDirections) {
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
 
         IndexConfig indexConfig = new IndexConfig().setName("Index_" + randomName())
-                .setType(IndexType.SORTED);
+            .setType(IndexType.SORTED);
 
         for (String indexAttr : indexAttrs) {
             indexConfig.addAttribute(indexAttr);
@@ -270,7 +294,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
 
         IndexConfig indexConfig = new IndexConfig().setName("Index_" + randomName())
-                .setType(IndexType.SORTED);
+            .setType(IndexType.SORTED);
 
         for (String indexAttr : indexAttrs) {
             indexConfig.addAttribute(indexAttr);
@@ -351,43 +375,43 @@ public class SqlOrderByTest extends SqlTestSupport {
     private List<String> fields() {
         if (serializationMode == SerializationMode.PORTABLE) {
             return Arrays.asList(
-                    "key",
-                    "booleanVal",
-                    "tinyIntVal",
-                    "smallIntVal",
-                    "intVal",
-                    "bigIntVal",
-                    "realVal",
-                    "doubleVal",
-                    "charVal",
-                    "varcharVal",
-                    "portableVal",
-                    "nullVal"
+                "key",
+                "booleanVal",
+                "tinyIntVal",
+                "smallIntVal",
+                "intVal",
+                "bigIntVal",
+                "realVal",
+                "doubleVal",
+                "charVal",
+                "varcharVal",
+                "portableVal",
+                "nullVal"
             );
         } else {
             return Arrays.asList(
-                    "key",
-                    "booleanVal",
-                    "tinyIntVal",
-                    "smallIntVal",
-                    "intVal",
-                    "bigIntVal",
-                    "realVal",
-                    "doubleVal",
-                    "decimalBigIntegerVal",
-                    "decimalVal",
-                    "charVal",
-                    "varcharVal",
-                    "dateVal",
-                    "timeVal",
-                    "timestampVal",
-                    "tsTzDateVal",
-                    "tsTzCalendarVal",
-                    "tsTzInstantVal",
-                    "tsTzOffsetDateTimeVal",
-                    "tsTzZonedDateTimeVal",
-                    "objectVal",
-                    "nullVal"
+                "key",
+                "booleanVal",
+                "tinyIntVal",
+                "smallIntVal",
+                "intVal",
+                "bigIntVal",
+                "realVal",
+                "doubleVal",
+                "decimalBigIntegerVal",
+                "decimalVal",
+                "charVal",
+                "varcharVal",
+                "dateVal",
+                "timeVal",
+                "timestampVal",
+                "tsTzDateVal",
+                "tsTzCalendarVal",
+                "tsTzInstantVal",
+                "tsTzOffsetDateTimeVal",
+                "tsTzZonedDateTimeVal",
+                "objectVal",
+                "nullVal"
             );
         }
     }
@@ -459,7 +483,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         return serializationMode == SerializationMode.PORTABLE;
     }
 
-    private String mapName() {
+    protected String mapName() {
         return inMemoryFormat == InMemoryFormat.OBJECT ? MAP_OBJECT : MAP_BINARY;
     }
 
