@@ -36,11 +36,13 @@ public class SortKeyComparator implements Comparator<SortKey> {
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public int compare(SortKey o1, SortKey o2) {
+        Object[] key1 = o1.getKey();
+        Object[] key2 = o2.getKey();
         for (int i = 0; i < ascs.size(); i++) {
             boolean asc = ascs.get(i);
 
-            Object item1 = o1.getKey().get(i);
-            Object item2 = o2.getKey().get(i);
+            Object item1 = key1[i];
+            Object item2 = key2[i];
 
             Comparable item1Comp = (Comparable) item1;
             Comparable item2Comp = (Comparable) item2;

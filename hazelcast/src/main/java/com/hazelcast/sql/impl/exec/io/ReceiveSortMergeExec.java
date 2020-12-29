@@ -16,20 +16,19 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
+import com.hazelcast.sql.impl.exec.sort.MergeSort;
+import com.hazelcast.sql.impl.exec.sort.MergeSortSource;
+import com.hazelcast.sql.impl.exec.sort.SortKey;
+import com.hazelcast.sql.impl.exec.sort.SortKeyComparator;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.exec.sort.MergeSortSource;
-import com.hazelcast.sql.impl.exec.sort.MergeSort;
-import com.hazelcast.sql.impl.exec.sort.SortKey;
-import com.hazelcast.sql.impl.exec.sort.SortKeyComparator;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -37,23 +36,31 @@ import java.util.List;
  */
 @SuppressWarnings("rawtypes")
 public class ReceiveSortMergeExec extends AbstractExec {
-    /** AbstractInbox to consume results from. */
+    /**
+     * AbstractInbox to consume results from.
+     */
     private final StripedInbox inbox;
 
-    /** Expressions. */
+    /**
+     * Expressions.
+     */
     private final List<Expression> expressions;
 
-    /** Sorter. */
+    /**
+     * Sorter.
+     */
     private final MergeSort sorter;
 
-    /** Current batch. */
+    /**
+     * Current batch.
+     */
     private RowBatch curBatch;
 
     public ReceiveSortMergeExec(
-            int id,
-            StripedInbox inbox,
-            List<Expression> expressions,
-            List<Boolean> ascs
+        int id,
+        StripedInbox inbox,
+        List<Expression> expressions,
+        List<Boolean> ascs
     ) {
         super(id);
 
@@ -102,15 +109,16 @@ public class ReceiveSortMergeExec extends AbstractExec {
     /**
      * Prepare sort key for the row.
      *
-     * @param row Row.
+     * @param row    Row.
      * @param stripe Source stripe.
      * @return Key.
      */
     private SortKey prepareSortKey(Row row, int stripe) {
-        List<Object> key = new ArrayList<>(expressions.size());
+        Object[] key = new Object[expressions.size()];
 
-        for (Expression<?> expression : expressions) {
-            key.add(expression.eval(row, ctx));
+        for (int i = 0; i < expressions.size(); ++i) {
+            Expression<?> expression = expressions.get(i);
+            key[i] = expression.eval(row, ctx);
         }
 
         return new SortKey(key, stripe);
@@ -119,22 +127,34 @@ public class ReceiveSortMergeExec extends AbstractExec {
     private final class Source implements MergeSortSource {
         private static final int INDEX_BEFORE = -1;
 
-        /** Index of stripe. */
+        /**
+         * Index of stripe.
+         */
         private final int index;
 
-        /** Current batch we are iterating over. */
+        /**
+         * Current batch we are iterating over.
+         */
         private RowBatch curBatch;
 
-        /** Current position in the batch. */
+        /**
+         * Current position in the batch.
+         */
         private int curRowIndex = INDEX_BEFORE;
 
-        /** Current key. */
+        /**
+         * Current key.
+         */
         private SortKey curKey;
 
-        /** Current row. */
+        /**
+         * Current row.
+         */
         private Row curRow;
 
-        /** Whether the last batch was polled. */
+        /**
+         * Whether the last batch was polled.
+         */
         private boolean last;
 
         private Source(int index) {

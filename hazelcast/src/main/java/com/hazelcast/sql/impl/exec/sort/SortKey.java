@@ -16,24 +16,22 @@
 
 package com.hazelcast.sql.impl.exec.sort;
 
-import java.util.List;
-
 /**
  * Single sort key.
  */
 public class SortKey {
     /** The key */
-    private final List<Object> key;
+    private final Object[] key;
 
     /** Index to make rows unique. */
     private final long index;
 
-    public SortKey(List<Object> key, long index) {
+    public SortKey(Object[] key, long index) {
         this.key = key;
         this.index = index;
     }
 
-    public List<Object> getKey() {
+    public Object[] getKey() {
         return key;
     }
 

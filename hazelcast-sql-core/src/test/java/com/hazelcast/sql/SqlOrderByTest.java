@@ -24,15 +24,12 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -61,11 +58,9 @@ import static com.hazelcast.sql.SqlBasicTest.PortablePojoKey;
 import static com.hazelcast.sql.SqlBasicTest.SerializablePojo;
 import static com.hazelcast.sql.SqlBasicTest.SerializablePojoKey;
 import static com.hazelcast.sql.SqlBasicTest.SerializationMode;
-import static com.hazelcast.sql.SqlBasicTest.memberConfig;
 import static com.hazelcast.sql.SqlBasicTest.portableFieldName;
 import static com.hazelcast.sql.SqlBasicTest.serializationConfig;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
