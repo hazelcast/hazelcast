@@ -265,9 +265,11 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void testComparable_to_NonComparable() {
-        putBiValue(new NonComparable(), new NonComparable());
+    public void testComparable_and_NonComparable() {
+        putBiValue(new ComparableImpl(1), new NonComparable());
+        checkFailure("field1", "field2", -1, "trying to compare two incomparable objects");
 
+        putBiValue(new NonComparable(), new ComparableImpl(1));
         checkFailure("field1", "field2", -1, "trying to compare two incomparable objects");
     }
 
