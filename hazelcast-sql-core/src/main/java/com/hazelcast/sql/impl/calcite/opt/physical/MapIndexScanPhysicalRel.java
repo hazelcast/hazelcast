@@ -113,7 +113,8 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         return super.explainTerms(pw)
             .item("index", index.getName())
             .item("indexExp", indexExp)
-            .item("remainderExp", remainderExp);
+            .item("remainderExp", remainderExp)
+            .item("descending", descending);
     }
 
     @Override
