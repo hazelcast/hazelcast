@@ -25,6 +25,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.hazelcast.map.impl.record.Record.NOT_CACHED;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_READER_WRITER;
@@ -45,23 +47,20 @@ public final class Records {
      * Maps RecordReaderWriter objects to their 4.1 equivalents. This is used to
      * support compatibility between 4.1 and 4.2 during rolling upgrades.
      */
-    private static final EnumMap<RecordReaderWriter, RecordReaderWriter>
-            RU_COMPAT_MAP = new EnumMap<>(RecordReaderWriter.class);
-
-    {
-        RU_COMPAT_MAP.put(SIMPLE_DATA_RECORD_READER_WRITER, DATA_RECORD_READER_WRITER);
-        RU_COMPAT_MAP.put(SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER, DATA_RECORD_READER_WRITER);
-        RU_COMPAT_MAP.put(SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER, DATA_RECORD_READER_WRITER);
-        RU_COMPAT_MAP.put(DATA_RECORD_READER_WRITER, DATA_RECORD_READER_WRITER);
-        RU_COMPAT_MAP.put(DATA_RECORD_WITH_STATS_READER_WRITER, DATA_RECORD_WITH_STATS_READER_WRITER);
-    }
+    private static final Map<RecordReaderWriter, RecordReaderWriter> RU_COMPAT_MAP
+            = new EnumMap<RecordReaderWriter, RecordReaderWriter>(RecordReaderWriter.class) {{
+        put(SIMPLE_DATA_RECORD_READER_WRITER, DATA_RECORD_READER_WRITER);
+        put(SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER, DATA_RECORD_READER_WRITER);
+        put(SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER, DATA_RECORD_READER_WRITER);
+        put(DATA_RECORD_READER_WRITER, DATA_RECORD_READER_WRITER);
+        put(DATA_RECORD_WITH_STATS_READER_WRITER, DATA_RECORD_WITH_STATS_READER_WRITER);
+    }};
 
     private Records() {
     }
 
     public static void writeRecord(ObjectDataOutput out, Record record,
                                    Data dataValue, ExpiryMetadata expiryMetadata) throws IOException {
-
         RecordReaderWriter readerWriter = record.getMatchingRecordReaderWriter();
         // RU_COMPAT_4_1
         if (out.getVersion().isGreaterOrEqual(Versions.V4_2)) {
