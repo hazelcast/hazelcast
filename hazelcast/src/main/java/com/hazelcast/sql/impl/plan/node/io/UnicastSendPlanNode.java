@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.plan.node.io;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.plan.node.UniInputPlanNode;
 import com.hazelcast.sql.impl.partitioner.RowPartitioner;
@@ -29,7 +31,7 @@ import java.util.Objects;
 /**
  * Node which unicasts data to remote stripes.
  */
-public class UnicastSendPlanNode extends UniInputPlanNode implements EdgeAwarePlanNode {
+public class UnicastSendPlanNode extends UniInputPlanNode implements EdgeAwarePlanNode, IdentifiedDataSerializable {
     /** Edge ID. */
     private int edgeId;
 
@@ -76,6 +78,16 @@ public class UnicastSendPlanNode extends UniInputPlanNode implements EdgeAwarePl
     public void readData1(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
         partitioner = in.readObject();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.NODE_UNICAST_SEND;
     }
 
     @Override

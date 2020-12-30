@@ -78,6 +78,7 @@ import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
+import com.hazelcast.sql.impl.plan.node.io.UnicastSendPlanNode;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
@@ -171,7 +172,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_SUBSTRING = 60;
     public static final int EXPRESSION_TRIM = 61;
 
-    public static final int EXPRESSION_REMAINDER = 62;
+    public static final int NODE_UNICAST_SEND = 62;
+
+    public static final int EXPRESSION_REMAINDER = 63;
 
     public static final int LEN = EXPRESSION_REMAINDER + 1;
 
@@ -260,6 +263,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_LIKE] = arg -> new LikeFunction();
         constructors[EXPRESSION_SUBSTRING] = arg -> new SubstringFunction();
         constructors[EXPRESSION_TRIM] = arg -> new TrimFunction();
+
+        constructors[NODE_UNICAST_SEND] = arg -> new UnicastSendPlanNode();
 
         constructors[EXPRESSION_REMAINDER] = arg -> new RemainderFunction<>();
 
