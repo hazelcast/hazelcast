@@ -1701,8 +1701,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("max-idle-seconds", nodeName)) {
                 mapConfig.setMaxIdleSeconds(getIntegerValue("max-idle-seconds", getTextContent(node)));
             } else if (matches("map-store", nodeName)) {
-                MapStoreConfig mapStoreConfig = createMapStoreConfig(node);
-                mapConfig.setMapStoreConfig(mapStoreConfig);
+                handleMapStoreConfig(node, mapConfig.getMapStoreConfig());
             } else if (matches("near-cache", nodeName)) {
                 mapConfig.setNearCacheConfig(handleNearCacheConfig(node));
             } else if (matches("merge-policy", nodeName)) {
@@ -2162,8 +2161,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         queryCacheConfig.setPredicateConfig(predicateConfig);
     }
 
-    private MapStoreConfig createMapStoreConfig(Node node) {
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+    private MapStoreConfig handleMapStoreConfig(Node node, MapStoreConfig mapStoreConfig) {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
