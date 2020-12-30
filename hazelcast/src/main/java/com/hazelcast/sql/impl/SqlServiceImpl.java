@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
@@ -54,6 +55,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Level;
+
+import static com.hazelcast.sql.SqlExpectedResultType.ANY;
+import static com.hazelcast.sql.SqlExpectedResultType.ROWS;
+import static com.hazelcast.sql.SqlExpectedResultType.UPDATE_COUNT;
 
 /**
  * Base SQL service implementation that bridges optimizer implementation, public and private APIs.
@@ -218,6 +223,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
                 statement.getParameters(),
                 timeout,
                 statement.getCursorBufferSize(),
+                statement.getExpectedResultType(),
                 securityContext
             );
         } catch (AccessControlException e) {
@@ -238,6 +244,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         List<Object> params,
         long timeout,
         int pageSize,
+        SqlExpectedResultType expectedResultType,
         SqlSecurityContext securityContext
     ) {
         // Validate and normalize
@@ -256,7 +263,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         }
 
         // Prepare and execute
-        SqlPlan plan = prepare(schema, sql);
+        SqlPlan plan = prepare(schema, sql, expectedResultType);
 
         if (securityContext.isSecurityEnabled()) {
             plan.checkPermissions(securityContext);
@@ -265,7 +272,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         return execute(plan, params0, timeout, pageSize);
     }
 
-    private SqlPlan prepare(String schema, String sql) {
+    private SqlPlan prepare(String schema, String sql, SqlExpectedResultType expectedResultType) {
         List<List<String>> searchPaths = prepareSearchPaths(schema);
 
         PlanCacheKey planKey = new PlanCacheKey(searchPaths, sql);
@@ -284,7 +291,25 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             }
         }
 
+        checkReturnType(plan, expectedResultType);
+
         return plan;
+    }
+
+    private void checkReturnType(SqlPlan plan, SqlExpectedResultType expectedResultType) {
+        if (expectedResultType == ANY) {
+            return;
+        }
+
+        boolean producesRows = plan.producesRows();
+
+        if (producesRows && expectedResultType == UPDATE_COUNT) {
+            throw QueryException.error("The statement doesn't produce update count");
+        }
+
+        if (!producesRows && expectedResultType == ROWS) {
+            throw QueryException.error("The statement doesn't produce rows");
+        }
     }
 
     private List<List<String>> prepareSearchPaths(String schema) {
