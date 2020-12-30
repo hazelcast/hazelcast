@@ -460,13 +460,11 @@ public class ClientServiceTest extends ClientTestSupport {
     @Test
     public void testClientListener_withShuttingDownOwnerMember() throws InterruptedException {
         Config config = new Config();
-        final CountDownLatch latch = new CountDownLatch(1);
         final AtomicInteger atomicInteger = new AtomicInteger();
         ListenerConfig listenerConfig = new ListenerConfig(new ClientListener() {
             @Override
             public void clientConnected(Client client) {
                 atomicInteger.incrementAndGet();
-                latch.countDown();
             }
 
             @Override
@@ -478,12 +476,12 @@ public class ClientServiceTest extends ClientTestSupport {
         config.addListenerConfig(listenerConfig);
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         //first member is owner connection
-        hazelcastFactory.newHazelcastClient();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         config.setProperty(ClusterProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(Integer.MAX_VALUE));
         hazelcastFactory.newHazelcastInstance(config);
         //make sure connected to second one before proceeding
-        assertOpenEventually(latch);
+        makeSureConnectedToServers(client, 2);
 
         //when first node is dead, client selects second one as owner
         instance.shutdown();
