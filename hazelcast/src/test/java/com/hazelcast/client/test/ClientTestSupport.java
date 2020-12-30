@@ -30,10 +30,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class ClientTestSupport extends HazelcastTestSupport {
 
@@ -80,6 +82,13 @@ public class ClientTestSupport extends HazelcastTestSupport {
     protected HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {
         HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
         return clientProxy.client;
+    }
+
+    protected void makeSureDisconnectedFromServer(final HazelcastInstance client, UUID memberUUID) {
+        assertTrueEventually(() -> {
+            ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
+            assertNull(connectionManager.getConnection(memberUUID));
+        });
     }
 
     protected void makeSureConnectedToServers(final HazelcastInstance client, final int numberOfServers) {
