@@ -30,10 +30,12 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
+
+import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
 /**
  * Filter that is composed of several equality filters.
@@ -71,7 +73,20 @@ public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
 
     @Override
     public Iterator<QueryableEntry> getEntries(InternalIndex index, boolean descending, ExpressionEvalContext evalContext) {
-        Map<Comparable, IndexFilter> canonicalFilters = new HashMap<>();
+
+        // Sort the filter Comparables
+        // NULLs are coming last if the sort is ASC
+        // NULLs are coming first if the sort is DESC
+        NavigableMap<Comparable, IndexFilter> canonicalFilters = new TreeMap<>((o1, o2) -> {
+            if (o1 == NULL) {
+                return o2 == NULL ? 0 : (descending ? -1 : 1);
+            }
+
+            if (o2 == NULL) {
+                return descending ? 1 : -1;
+            }
+            return o1.compareTo(o2);
+        });
 
         for (IndexFilter filter : filters) {
             Comparable filterComparable = filter.getComparable(evalContext);
@@ -93,7 +108,9 @@ public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
             return Collections.emptyIterator();
         }
 
-        return new LazyIterator(index, descending, evalContext, canonicalFilters.values());
+        Collection<IndexFilter> filters = descending ? canonicalFilters.descendingMap().values()
+            : canonicalFilters.values();
+        return new LazyIterator(index, descending, evalContext, filters);
     }
 
     @Override

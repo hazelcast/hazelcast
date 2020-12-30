@@ -23,16 +23,31 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-@RunWith(HazelcastParallelClassRunner.class)
+import java.util.Collection;
+
+import static java.util.Arrays.asList;
+
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IndexRangeFilterIteratorTest extends IndexFilterIteratorTestSupport {
+
+    @Parameterized.Parameters(name = "descendingDirection:{0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{{true}, {false}});
+    }
+
+    @Parameterized.Parameter
+    public boolean descendingDirection;
+
     @Test
     public void testIterator_simple_from() {
         HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
@@ -47,26 +62,26 @@ public class IndexRangeFilterIteratorTest extends IndexFilterIteratorTestSupport
         // Check missing value.
         map.put(0, new Value(0));
 
-        checkIterator(new IndexRangeFilter(intValue(1), true, null, false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(1), false, null, false).getEntries(index, false, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, null, false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, null, false).getEntries(index, descendingDirection, evalContext));
 
         // Check single value.
         map.put(1, new Value(1));
 
-        checkIterator(new IndexRangeFilter(intValue(1), true, null, false).getEntries(index, false, evalContext), 1);
-        checkIterator(new IndexRangeFilter(intValue(1), false, null, false).getEntries(index, false, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, null, false).getEntries(index, descendingDirection, evalContext), 1);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, null, false).getEntries(index, descendingDirection, evalContext));
 
         // Check multiple values.
         map.put(2, new Value(1));
         map.put(3, new Value(2));
         map.put(4, new Value(2));
 
-        checkIterator(new IndexRangeFilter(intValue(1), true, null, false).getEntries(index, false, evalContext), 1, 2, 3, 4);
-        checkIterator(new IndexRangeFilter(intValue(1), false, null, false).getEntries(index, false, evalContext), 3, 4);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, null, false).getEntries(index, descendingDirection, evalContext), 1, 2, 3, 4);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, null, false).getEntries(index, descendingDirection, evalContext), 3, 4);
 
         // Check null value.
-        checkIterator(new IndexRangeFilter(intValue(null, false), true, null, false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(null, false), false, null, false).getEntries(index, false, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(null, false), true, null, false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(null, false), false, null, false).getEntries(index, descendingDirection, evalContext));
     }
 
     @Test
@@ -83,26 +98,26 @@ public class IndexRangeFilterIteratorTest extends IndexFilterIteratorTestSupport
         // Check missing value.
         map.put(0, new Value(10));
 
-        checkIterator(new IndexRangeFilter(null, false, intValue(2), false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(null, false, intValue(2), true).getEntries(index, false, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(null, false, intValue(2), false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(null, false, intValue(2), true).getEntries(index, descendingDirection, evalContext));
 
         // Check single value.
         map.put(1, new Value(2));
 
-        checkIterator(new IndexRangeFilter(null, false, intValue(2), false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(null, false, intValue(2), true).getEntries(index, false, evalContext), 1);
+        checkIterator(descendingDirection, new IndexRangeFilter(null, false, intValue(2), false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(null, false, intValue(2), true).getEntries(index, descendingDirection, evalContext), 1);
 
         // Check multiple values.
         map.put(2, new Value(2));
         map.put(3, new Value(1));
         map.put(4, new Value(1));
 
-        checkIterator(new IndexRangeFilter(null, false, intValue(2), false).getEntries(index, false, evalContext), 3, 4);
-        checkIterator(new IndexRangeFilter(null, false, intValue(2), true).getEntries(index, false, evalContext), 1, 2, 3, 4);
+        checkIterator(descendingDirection, new IndexRangeFilter(null, false, intValue(2), false).getEntries(index, descendingDirection, evalContext), 3, 4);
+        checkIterator(descendingDirection, new IndexRangeFilter(null, false, intValue(2), true).getEntries(index, descendingDirection, evalContext), 1, 2, 3, 4);
 
         // Check null value.
-        checkIterator(new IndexRangeFilter(null, false, intValue(null, false), false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(null, false, intValue(null, false), true).getEntries(index, false, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(null, false, intValue(null, false), false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(null, false, intValue(null, false), true).getEntries(index, descendingDirection, evalContext));
     }
 
     @Test
@@ -120,25 +135,25 @@ public class IndexRangeFilterIteratorTest extends IndexFilterIteratorTestSupport
         map.put(0, new Value(0));
         map.put(1, new Value(10));
 
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(5), false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(1), true, intValue(5), false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(5), true).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(1), true, intValue(5), true).getEntries(index, false, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(5), false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, intValue(5), false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(5), true).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, intValue(5), true).getEntries(index, descendingDirection, evalContext));
 
         // Check left bound
         map.put(2, new Value(1));
 
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(5), false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(1), true, intValue(5), false).getEntries(index, false, evalContext), 2);
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(5), true).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(1), true, intValue(5), true).getEntries(index, false, evalContext), 2);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(5), false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, intValue(5), false).getEntries(index, descendingDirection, evalContext), 2);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(5), true).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, intValue(5), true).getEntries(index, descendingDirection, evalContext), 2);
 
         map.put(3, new Value(1));
 
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(5), false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(1), true, intValue(5), false).getEntries(index, false, evalContext), 2, 3);
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(5), true).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(1), true, intValue(5), true).getEntries(index, false, evalContext), 2, 3);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(5), false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, intValue(5), false).getEntries(index, descendingDirection, evalContext), 2, 3);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(5), true).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, intValue(5), true).getEntries(index, descendingDirection, evalContext), 2, 3);
 
         map.remove(2);
         map.remove(3);
@@ -146,17 +161,17 @@ public class IndexRangeFilterIteratorTest extends IndexFilterIteratorTestSupport
         // Check right bound
         map.put(2, new Value(5));
 
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(5), false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(1), true, intValue(5), false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(5), true).getEntries(index, false, evalContext), 2);
-        checkIterator(new IndexRangeFilter(intValue(1), true, intValue(5), true).getEntries(index, false, evalContext), 2);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(5), false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, intValue(5), false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(5), true).getEntries(index, descendingDirection, evalContext), 2);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, intValue(5), true).getEntries(index, descendingDirection, evalContext), 2);
 
         map.put(3, new Value(5));
 
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(5), false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(1), true, intValue(5), false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(5), true).getEntries(index, false, evalContext), 2, 3);
-        checkIterator(new IndexRangeFilter(intValue(1), true, intValue(5), true).getEntries(index, false, evalContext), 2, 3);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(5), false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, intValue(5), false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(5), true).getEntries(index, descendingDirection, evalContext), 2, 3);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, intValue(5), true).getEntries(index, descendingDirection, evalContext), 2, 3);
 
         map.remove(2);
         map.remove(3);
@@ -164,17 +179,17 @@ public class IndexRangeFilterIteratorTest extends IndexFilterIteratorTestSupport
         // Check middle
         map.put(2, new Value(3));
 
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(5), false).getEntries(index, false, evalContext), 2);
-        checkIterator(new IndexRangeFilter(intValue(1), true, intValue(5), false).getEntries(index, false, evalContext), 2);
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(5), true).getEntries(index, false, evalContext), 2);
-        checkIterator(new IndexRangeFilter(intValue(1), true, intValue(5), true).getEntries(index, false, evalContext), 2);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(5), false).getEntries(index, descendingDirection, evalContext), 2);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, intValue(5), false).getEntries(index, descendingDirection, evalContext), 2);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(5), true).getEntries(index, descendingDirection, evalContext), 2);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, intValue(5), true).getEntries(index, descendingDirection, evalContext), 2);
 
         map.put(3, new Value(3));
 
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(5), false).getEntries(index, false, evalContext), 2, 3);
-        checkIterator(new IndexRangeFilter(intValue(1), true, intValue(5), false).getEntries(index, false, evalContext), 2, 3);
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(5), true).getEntries(index, false, evalContext), 2, 3);
-        checkIterator(new IndexRangeFilter(intValue(1), true, intValue(5), true).getEntries(index, false, evalContext), 2, 3);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(5), false).getEntries(index, descendingDirection, evalContext), 2, 3);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, intValue(5), false).getEntries(index, descendingDirection, evalContext), 2, 3);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(5), true).getEntries(index, descendingDirection, evalContext), 2, 3);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, intValue(5), true).getEntries(index, descendingDirection, evalContext), 2, 3);
 
         map.remove(2);
         map.remove(3);
@@ -187,15 +202,15 @@ public class IndexRangeFilterIteratorTest extends IndexFilterIteratorTestSupport
         map.put(6, new Value(5));
         map.put(7, new Value(5));
 
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(5), false).getEntries(index, false, evalContext), 4, 5);
-        checkIterator(new IndexRangeFilter(intValue(1), true, intValue(5), false).getEntries(index, false, evalContext), 2, 3, 4, 5);
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(5), true).getEntries(index, false, evalContext), 4, 5, 6, 7);
-        checkIterator(new IndexRangeFilter(intValue(1), true, intValue(5), true).getEntries(index, false, evalContext), 2, 3, 4, 5, 6, 7);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(5), false).getEntries(index, descendingDirection, evalContext), 4, 5);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, intValue(5), false).getEntries(index, descendingDirection, evalContext), 2, 3, 4, 5);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(5), true).getEntries(index, descendingDirection, evalContext), 4, 5, 6, 7);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), true, intValue(5), true).getEntries(index, descendingDirection, evalContext), 2, 3, 4, 5, 6, 7);
 
         // Check null value.
-        checkIterator(new IndexRangeFilter(intValue(null, false), false, intValue(5), false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(null, false), false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(null, false), false, intValue(null, false), false).getEntries(index, false, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(null, false), false, intValue(5), false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(1), false, intValue(null, false), false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValue(null, false), false, intValue(null, false), false).getEntries(index, descendingDirection, evalContext));
     }
 
     /**
@@ -224,10 +239,10 @@ public class IndexRangeFilterIteratorTest extends IndexFilterIteratorTestSupport
         map.put(9, new Value(2, 5));
         map.put(10, new Value(2, 6));
 
-        checkIterator(new IndexRangeFilter(intValues(1, 1), false, intValues(1, 5), false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValues(1, 1), false, intValues(1, 5), true).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValues(1, 1), true, intValues(1, 5), false).getEntries(index, false, evalContext));
-        checkIterator(new IndexRangeFilter(intValues(1, 1), true, intValues(1, 5), true).getEntries(index, false, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValues(1, 1), false, intValues(1, 5), false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValues(1, 1), false, intValues(1, 5), true).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValues(1, 1), true, intValues(1, 5), false).getEntries(index, descendingDirection, evalContext));
+        checkIterator(descendingDirection, new IndexRangeFilter(intValues(1, 1), true, intValues(1, 5), true).getEntries(index, descendingDirection, evalContext));
 
         map.put(11, new Value(1, 1));
         map.put(12, new Value(1, 1));
@@ -236,9 +251,9 @@ public class IndexRangeFilterIteratorTest extends IndexFilterIteratorTestSupport
         map.put(15, new Value(1, 5));
         map.put(16, new Value(1, 5));
 
-        checkIterator(new IndexRangeFilter(intValues(1, 1), false, intValues(1, 5), false).getEntries(index, false, evalContext), 13, 14);
-        checkIterator(new IndexRangeFilter(intValues(1, 1), false, intValues(1, 5), true).getEntries(index, false, evalContext), 13, 14, 15, 16);
-        checkIterator(new IndexRangeFilter(intValues(1, 1), true, intValues(1, 5), false).getEntries(index, false, evalContext), 11, 12, 13, 14);
-        checkIterator(new IndexRangeFilter(intValues(1, 1), true, intValues(1, 5), true).getEntries(index, false, evalContext), 11, 12, 13, 14, 15, 16);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValues(1, 1), false, intValues(1, 5), false).getEntries(index, descendingDirection, evalContext), 13, 14);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValues(1, 1), false, intValues(1, 5), true).getEntries(index, descendingDirection, evalContext), 13, 14, 15, 16);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValues(1, 1), true, intValues(1, 5), false).getEntries(index, descendingDirection, evalContext), 11, 12, 13, 14);
+        checkIterator(descendingDirection, new IndexRangeFilter(intValues(1, 1), true, intValues(1, 5), true).getEntries(index, descendingDirection, evalContext), 11, 12, 13, 14, 15, 16);
     }
 }

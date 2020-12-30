@@ -153,16 +153,32 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         ConcurrentNavigableMap navigableMap = descending ? recordMap.descendingMap() : recordMap;
         switch (comparison) {
             case LESS:
-                iterator = navigableMap.headMap(searchedValue, false).values().iterator();
+                if (descending) {
+                    iterator = navigableMap.tailMap(searchedValue, false).values().iterator();
+                } else {
+                    iterator = navigableMap.headMap(searchedValue, false).values().iterator();
+                }
                 break;
             case LESS_OR_EQUAL:
-                iterator = navigableMap.headMap(searchedValue, true).values().iterator();
+                if (descending) {
+                    iterator = navigableMap.tailMap(searchedValue, true).values().iterator();
+                } else {
+                    iterator = navigableMap.headMap(searchedValue, true).values().iterator();
+                }
                 break;
             case GREATER:
-                iterator = navigableMap.tailMap(searchedValue, false).values().iterator();
+                if (descending) {
+                    iterator = navigableMap.headMap(searchedValue, false).values().iterator();
+                } else {
+                    iterator = navigableMap.tailMap(searchedValue, false).values().iterator();
+                }
                 break;
             case GREATER_OR_EQUAL:
-                iterator = navigableMap.tailMap(searchedValue, true).values().iterator();
+                if (descending) {
+                    iterator = navigableMap.headMap(searchedValue, true).values().iterator();
+                } else {
+                    iterator = navigableMap.tailMap(searchedValue, true).values().iterator();
+                }
                 break;
             default:
                 throw new IllegalArgumentException("Unrecognized comparison: " + comparison);
@@ -172,6 +188,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:NPathComplexity")
     public Iterator<QueryableEntry> getSqlRecordIterator(
         Comparable from,
         boolean fromInclusive,
@@ -198,7 +215,12 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         }
 
         ConcurrentNavigableMap navigableMap = descending ? recordMap.descendingMap() : recordMap;
-        return new IndexEntryFlatteningIterator(navigableMap.subMap(from, fromInclusive, to, toInclusive).values().iterator());
+        Comparable from0 = descending ? to : from;
+        boolean fromInclusive0 = descending ? toInclusive : fromInclusive;
+        Comparable to0 = descending ? from : to;
+        boolean toInclusive0 = descending ? fromInclusive : toInclusive;
+        return new IndexEntryFlatteningIterator(
+            navigableMap.subMap(from0, fromInclusive0, to0, toInclusive0).values().iterator());
     }
 
     @Override

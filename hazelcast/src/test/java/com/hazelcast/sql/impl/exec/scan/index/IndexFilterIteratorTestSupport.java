@@ -56,7 +56,7 @@ public class IndexFilterIteratorTestSupport extends IndexFilterTestSupport {
         return mapContainer.getIndexes().getIndex(INDEX_NAME);
     }
 
-    protected static <T> void checkIterator(Iterator<QueryableEntry> iterator, T... expectedKeys) {
+    protected static <T> void checkIterator(boolean expectedDescending, Iterator<QueryableEntry> iterator, T... expectedKeys) {
         Set<T> expected;
 
         if (expectedKeys != null) {
@@ -69,12 +69,29 @@ public class IndexFilterIteratorTestSupport extends IndexFilterTestSupport {
 
         Set<T> actual = new HashSet<>();
 
+        Object prevValue = null;
         while (iterator.hasNext()) {
-            Object key = iterator.next().getKey();
+            QueryableEntry entry = iterator.next();
+            Object key = entry.getKey();
+            Object value = entry.getValue();
 
             if (key instanceof Data) {
                 key = getSerializationService().toObject(key);
             }
+
+            if (value instanceof Data) {
+                value = getSerializationService().toObject(value);
+            }
+
+            if (prevValue != null) {
+                int cmp = ((Value) prevValue).compareTo((Value) value, expectedDescending);
+                if (expectedDescending) {
+                    assertTrue("Wrong collation, prevValue " + prevValue + ", value " + value, cmp >= 0);
+                } else {
+                    assertTrue("Wrong collation, prevValue " + prevValue + ", value " + value, cmp <= 0);
+                }
+            }
+            prevValue = value;
 
             assertTrue("Duplicate key: " + key, actual.add((T) key));
         }
@@ -94,6 +111,37 @@ public class IndexFilterIteratorTestSupport extends IndexFilterTestSupport {
         public Value(Integer value1, Integer value2) {
             this.value1 = value1;
             this.value2 = value2;
+        }
+
+        public int compareTo(Value o, boolean descending) {
+            // NULLs are coming last if the sort is ASC
+            // NULLs are coming first if the sort is DESC
+
+            if (value1 == null) {
+                return o.value1 == null ? 0 : (descending ? -1 : 1);
+            }
+            if (o.value1 == null) {
+                return descending ? 1 : -1;
+            }
+            int cmp1 = Integer.compare(value1, o.value1);
+            if (cmp1 == 0) {
+
+                if (value2 == null) {
+                    return o.value2 == null ? 0 : (descending ? -1 : 1);
+                }
+
+                if (o.value2 == null) {
+                    return descending ? 1 : -1;
+                }
+
+                return Integer.compare(value2, o.value2);
+            }
+            return cmp1;
+        }
+
+        @Override
+        public String toString() {
+            return "[" + value1 + ", " + value2 + "]";
         }
     }
 }
