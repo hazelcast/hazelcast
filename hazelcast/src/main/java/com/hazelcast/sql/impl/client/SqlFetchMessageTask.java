@@ -17,8 +17,6 @@
 package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.SqlExecute2Codec;
-import com.hazelcast.client.impl.protocol.codec.SqlFetch2Codec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -26,12 +24,11 @@ import com.hazelcast.sql.impl.SqlInternalService;
 
 import java.security.AccessControlException;
 import java.security.Permission;
-import java.util.UUID;
 
 /**
  * SQL query fetch task.
  */
-public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetch2Codec.RequestParameters> {
+public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.RequestParameters> {
 
     public SqlFetchMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -51,15 +48,15 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetch2Codec.R
     }
 
     @Override
-    protected SqlFetch2Codec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SqlFetch2Codec.decodeRequest(clientMessage);
+    protected SqlFetchCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SqlFetchCodec.decodeRequest(clientMessage);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     protected ClientMessage encodeResponse(Object response) {
         SqlPage page = ((SqlPage) response);
-        return SqlFetch2Codec.encodeResponse(page, null);
+        return SqlFetchCodec.encodeResponse(page, null);
     }
 
     @Override
@@ -71,11 +68,8 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetch2Codec.R
             return super.encodeException(throwable);
         }
         SqlError error = SqlClientUtils.exceptionToClientError((Exception) throwable, nodeEngine.getLocalMember().getUuid());
-        return SqlExecute2Codec.encodeResponse(
+        return SqlFetchCodec.encodeResponse(
                 null,
-                null,
-                null,
-                -1,
                 error
         );
     }

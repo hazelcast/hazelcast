@@ -19,9 +19,7 @@ package com.hazelcast.sql.impl.client;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlExecute2Codec;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlFetch2Codec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
@@ -85,7 +83,7 @@ public class SqlClientService implements SqlService {
                 params0.add(serializeParameter(param));
             }
 
-            ClientMessage requestMessage = SqlExecute2Codec.encodeRequest(
+            ClientMessage requestMessage = SqlExecuteCodec.encodeRequest(
                     statement.getSql(),
                     params0,
                     statement.getTimeoutMillis(),
@@ -95,7 +93,7 @@ public class SqlClientService implements SqlService {
 
             ClientMessage responseMessage = invoke(requestMessage, connection);
 
-            SqlExecute2Codec.ResponseParameters response = SqlExecute2Codec.decodeResponse(responseMessage);
+            SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(responseMessage);
 
             handleResponseError(response.error);
 
@@ -123,9 +121,9 @@ public class SqlClientService implements SqlService {
      */
     public SqlPage fetch(Connection connection, QueryId queryId, int cursorBufferSize) {
         try {
-            ClientMessage requestMessage = SqlFetch2Codec.encodeRequest(queryId, cursorBufferSize);
+            ClientMessage requestMessage = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
             ClientMessage responseMessage = invoke(requestMessage, connection);
-            SqlFetch2Codec.ResponseParameters responseParameters = SqlFetch2Codec.decodeResponse(responseMessage);
+            SqlFetchCodec.ResponseParameters responseParameters = SqlFetchCodec.decodeResponse(responseMessage);
 
             handleResponseError(responseParameters.error);
 
@@ -171,7 +169,8 @@ public class SqlClientService implements SqlService {
                     "SELECT * FROM table",
                     Collections.emptyList(),
                     100L,
-                    100
+                    100,
+                    null
             );
 
             invoke(requestMessage, connection);

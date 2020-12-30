@@ -34,19 +34,21 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
+ * THIS MESSAGE IS NO LONGER USED BUT KEPT FOR BACKWARD COMPATIBILITY TESTS
  * Fetches the next row page.
  */
-@Generated("30e29e7465729e41a83edf791e4e0d21")
-public final class SqlFetch2Codec {
-    //hex: 0x210500
-    public static final int REQUEST_MESSAGE_TYPE = 2163968;
-    //hex: 0x210501
-    public static final int RESPONSE_MESSAGE_TYPE = 2163969;
+@Generated("40b58f32851811342796fb108be5b35d")
+public final class SqlFetch_reservedCodec {
+    //hex: 0x210200
+    public static final int REQUEST_MESSAGE_TYPE = 2163200;
+    //hex: 0x210201
+    public static final int RESPONSE_MESSAGE_TYPE = 2163201;
     private static final int REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int RESPONSE_ROW_PAGE_LAST_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_ROW_PAGE_LAST_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
-    private SqlFetch2Codec() {
+    private SqlFetch_reservedCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -66,7 +68,7 @@ public final class SqlFetch2Codec {
     public static ClientMessage encodeRequest(com.hazelcast.sql.impl.QueryId queryId, int cursorBufferSize) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("Sql.Fetch2");
+        clientMessage.setOperationName("Sql.Fetch_reserved");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
@@ -76,7 +78,7 @@ public final class SqlFetch2Codec {
         return clientMessage;
     }
 
-    public static SqlFetch2Codec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static SqlFetch_reservedCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -91,30 +93,36 @@ public final class SqlFetch2Codec {
         /**
          * Row page.
          */
-        public @Nullable com.hazelcast.sql.impl.client.SqlPage rowPage;
+        public @Nullable java.util.List<java.util.List<com.hazelcast.internal.serialization.Data>> rowPage;
+
+        /**
+         * Whether the row page is the last.
+         */
+        public boolean rowPageLast;
 
         /**
          * Error object.
          */
         public @Nullable com.hazelcast.sql.impl.client.SqlError error;
     }
-    public static ClientMessage encodeResponse(@Nullable com.hazelcast.sql.impl.client.SqlPage rowPage, @Nullable com.hazelcast.sql.impl.client.SqlError error) {
+    public static ClientMessage encodeResponse(@Nullable java.util.Collection<java.util.Collection<com.hazelcast.internal.serialization.Data>> rowPage, boolean rowPageLast, @Nullable com.hazelcast.sql.impl.client.SqlError error) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeBoolean(initialFrame.content, RESPONSE_ROW_PAGE_LAST_FIELD_OFFSET, rowPageLast);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, rowPage, SqlPageCodec::encode);
+        ListMultiFrameCodec.encodeNullable(clientMessage, rowPage, ListCNDataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, error, SqlErrorCodec::encode);
         return clientMessage;
     }
 
-    public static SqlFetch2Codec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static SqlFetch_reservedCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        response.rowPage = CodecUtil.decodeNullable(iterator, SqlPageCodec::decode);
+        ClientMessage.Frame initialFrame = iterator.next();
+        response.rowPageLast = decodeBoolean(initialFrame.content, RESPONSE_ROW_PAGE_LAST_FIELD_OFFSET);
+        response.rowPage = ListMultiFrameCodec.decodeNullable(iterator, ListCNDataCodec::decode);
         response.error = CodecUtil.decodeNullable(iterator, SqlErrorCodec::decode);
         return response;
     }

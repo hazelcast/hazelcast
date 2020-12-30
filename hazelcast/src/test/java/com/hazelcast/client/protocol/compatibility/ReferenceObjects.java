@@ -815,5 +815,5 @@ public class ReferenceObjects {
     public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId());
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID);
-    public static SqlPage aSqlPage = new SqlPage(null, Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);
+    public static SqlPage aSqlPage = new SqlPage(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);
 }
