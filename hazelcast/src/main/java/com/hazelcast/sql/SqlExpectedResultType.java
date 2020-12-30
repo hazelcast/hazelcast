@@ -18,6 +18,8 @@ package com.hazelcast.sql;
 
 /**
  * The expected statement result type.
+ *
+ * @since 4.2
  */
 public enum SqlExpectedResultType {
     /** The statement may produce either rows or an update count. */

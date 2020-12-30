@@ -286,6 +286,7 @@ public final class SqlStatement {
      * Gets the expected result type.
      *
      * @return expected result type
+     * @since 4.2
      */
     @Nonnull
     public SqlExpectedResultType getExpectedResultType() {
@@ -297,6 +298,7 @@ public final class SqlStatement {
      *
      * @param expectedResultType expected result type
      * @return this instance for chaining
+     * @since 4.2
      */
     @Nonnull
     public SqlStatement setExpectedResultType(@Nonnull SqlExpectedResultType expectedResultType) {
