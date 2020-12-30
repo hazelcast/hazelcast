@@ -885,7 +885,7 @@ public final class IndexResolver {
      * @param index        available indexes
      * @return index scan or {@code null}
      */
-    public static RelNode createFullIndexScan(
+    private static RelNode createFullIndexScan(
         MapScanLogicalRel scan,
         DistributionTrait distribution,
         MapTableIndex index,
