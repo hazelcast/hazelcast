@@ -41,13 +41,17 @@ public enum PartitionGroupMetaData {
     public static final String PARTITION_GROUP_ZONE = "hazelcast.partition.group.zone";
 
     /**
-     * Metadata key definition for a low-latency link inside the same data center but for different racks
+     * Metadata key definition for a low-latency link inside the same data center but for different racks.
+     * This field is maintained for backwards compatibility.Its use is discouraged and will be removed in a future version.
      */
+    @Deprecated
     public static final String PARTITION_GROUP_RACK = "hazelcast.partition.group.rack";
 
     /**
-     * Metadata key definition for a low-latency link on a shared physical node, in case of virtualization being used
+     * Metadata key definition for a low-latency link on a shared physical node, in case of virtualization being used.
+     * This field is maintained for backwards compatibility.Its use is discouraged and will be removed in a future version.
      */
+    @Deprecated
     public static final String PARTITION_GROUP_HOST = "hazelcast.partition.group.host";
 
     /**
