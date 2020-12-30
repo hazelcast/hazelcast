@@ -26,6 +26,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -78,11 +79,18 @@ public final class ComparisonPredicate extends BiExpression<Boolean> implements 
             return null;
         }
 
-        Class<?> leftClass = left.getClass();
-        Class<?> rightClass = right.getClass();
+        if (this.operand1.getType().getTypeFamily() == QueryDataTypeFamily.OBJECT) {
+            Class<?> leftClass = left.getClass();
+            Class<?> rightClass = right.getClass();
 
-        if (!(left instanceof Comparable && leftClass.equals(rightClass))) {
-            throw QueryException.error("trying to compare two incomparable objects");
+            if (!leftClass.equals(rightClass)) {
+                throw QueryException.error("Cannot compare two OBJECT values, because they have different classes");
+            }
+
+            if (!(left instanceof Comparable)) {
+                throw QueryException.error("Cannot compare OBJECT value because it doesn't implement Comparable interface");
+            }
+
         }
 
         Comparable leftComparable = (Comparable) left;

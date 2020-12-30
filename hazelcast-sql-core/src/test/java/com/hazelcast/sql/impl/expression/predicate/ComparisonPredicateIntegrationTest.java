@@ -250,6 +250,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
                         ExpressionTypes.LOCAL_TIME,
                         ExpressionTypes.LOCAL_DATE_TIME,
                         ExpressionTypes.OFFSET_DATE_TIME));
+        checkUnsupportedColumnColumn(ExpressionTypes.OBJECT, ExpressionTypes.allExcept(ExpressionTypes.OBJECT));
     }
 
     @Test
@@ -267,24 +268,24 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testComparable_and_NonComparable() {
         putBiValue(new ComparableImpl(1), new NonComparable());
-        checkFailure("field1", "field2", -1, "trying to compare two incomparable objects");
+        checkFailure("field1", "field2", SqlErrorCode.GENERIC, "Cannot compare two OBJECT values, because they have different classes");
 
         putBiValue(new NonComparable(), new ComparableImpl(1));
-        checkFailure("field1", "field2", -1, "trying to compare two incomparable objects");
+        checkFailure("field1", "field2", SqlErrorCode.GENERIC, "Cannot compare two OBJECT values, because they have different classes");
     }
 
     @Test
     public void testDifferentClassThatImplementsComparableInterface() {
         putBiValue(new ComparableImpl(1), new ComparableImpl2(1));
 
-        checkFailure("field1", "field2", -1, "trying to compare two incomparable objects");
+        checkFailure("field1", "field2", SqlErrorCode.GENERIC, "Cannot compare two OBJECT values, because they have different classes");
     }
 
     @Test
     public void testNonComparableObjects() {
         putBiValue(new NonComparable(), new NonComparable());
 
-        checkFailure("field1", "field2", -1, "trying to compare two incomparable objects");
+        checkFailure("field1", "field2", SqlErrorCode.GENERIC, "Cannot compare OBJECT value because it doesn't implement Comparable interface");
     }
 
     private void putBiValue(Object field1, Object field2) {
