@@ -31,7 +31,7 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.writebehind.TxnReservedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.memory.NativeOutOfMemoryError;

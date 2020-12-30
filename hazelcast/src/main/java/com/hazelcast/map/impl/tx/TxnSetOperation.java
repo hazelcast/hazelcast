@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.BasePutOperation;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.eventservice.EventService;

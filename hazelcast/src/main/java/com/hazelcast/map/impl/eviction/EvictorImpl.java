@@ -22,7 +22,7 @@ import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.ExpiryReason;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
 import com.hazelcast.map.impl.recordstore.LazyEvictableEntryView;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.Storage;

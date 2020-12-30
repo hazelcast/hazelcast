@@ -22,7 +22,7 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;

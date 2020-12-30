@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 

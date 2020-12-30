@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 

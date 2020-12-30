@@ -21,8 +21,8 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
-import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
-import com.hazelcast.map.impl.recordstore.ExpirySystem;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadataImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -68,7 +68,7 @@ public class PutWithExpiryBackupOperation
         super.readInternal(in);
 
         dataKey = IOUtil.readData(in);
-        expiryMetadata = new ExpirySystem.ExpiryMetadataImpl();
+        expiryMetadata = new ExpiryMetadataImpl();
         record = Records.readRecord(in, expiryMetadata);
     }
 }

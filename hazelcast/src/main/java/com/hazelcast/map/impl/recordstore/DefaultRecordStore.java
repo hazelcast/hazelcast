@@ -48,6 +48,8 @@ import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -472,7 +474,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } else {
             mutationObserver.onRemoveRecord(dataKey, record);
         }
-        informEvicted(dataKey);
+        removeKeyFromExpirySystem(dataKey);
         storage.removeRecord(dataKey, record);
     }
 
@@ -484,7 +486,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             value = record.getValue();
             mapDataStore.flush(key, value, backup);
             mutationObserver.onEvictRecord(key, record);
-            key = informEvicted(key);
+            key = removeKeyFromExpirySystem(key);
             storage.removeRecord(key, record);
             if (!backup) {
                 mapServiceContext.interceptRemove(interceptorRegistry, value);
@@ -493,9 +495,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return value;
     }
 
-    private Data informEvicted(Data key) {
+    private Data removeKeyFromExpirySystem(Data key) {
         Data backingDataKeyFormat = storage.toBackingDataKeyFormat(key);
-        expirySystem.informEvicted(backingDataKeyFormat);
+        expirySystem.removeKeyFromExpirySystem(backingDataKeyFormat);
         return backingDataKeyFormat;
     }
 
@@ -517,7 +519,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return;
         }
         mutationObserver.onRemoveRecord(key, record);
-        informEvicted(key);
+        removeKeyFromExpirySystem(key);
         storage.removeRecord(key, record);
         if (persistenceEnabledFor(provenance)) {
             mapDataStore.removeBackup(key, now, transactionId);
@@ -593,7 +595,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (record != null) {
                 onStore(record);
                 mutationObserver.onRemoveRecord(key, record);
-                informEvicted(key);
+                removeKeyFromExpirySystem(key);
                 storage.removeRecord(key, record);
                 updateStatsOnRemove(now);
             }
@@ -973,7 +975,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 }
                 onStore(record);
                 mutationObserver.onRemoveRecord(key, record);
-                informEvicted(key);
+                removeKeyFromExpirySystem(key);
                 storage.removeRecord(key, record);
                 return true;
             }
@@ -1118,7 +1120,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             onStore(record);
         }
         mutationObserver.onRemoveRecord(key, record);
-        informEvicted(key);
+        removeKeyFromExpirySystem(key);
         storage.removeRecord(key, record);
         return oldValue;
     }

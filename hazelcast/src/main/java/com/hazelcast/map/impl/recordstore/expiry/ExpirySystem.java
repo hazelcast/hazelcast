@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.recordstore;
+package com.hazelcast.map.impl.recordstore.expiry;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
@@ -23,11 +23,10 @@ import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -36,15 +35,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateExpirationTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTLMillis;
 import static com.hazelcast.map.impl.record.Record.UNSET;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Always accessed by same single thread.
@@ -52,9 +48,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 // TODO make expiry system efficient to scan and try to use HashMap iterator
 public class ExpirySystem {
+
     final RecordStore recordStore;
     final MapServiceContext mapServiceContext;
 
+    // TODO expiryDelayMillis
     private final long expiryDelayMillis;
     private final MapContainer mapContainer;
     private final ClearExpiredRecordsTask clearExpiredRecordsTask;
@@ -75,10 +73,7 @@ public class ExpirySystem {
         this.mapServiceContext = mapServiceContext;
     }
 
-    public Map<Data, ExpiryMetadata> getExpireTimeByKey() {
-        return expireTimeByKey;
-    }
-
+    // this method is overridden
     protected Map<Data, ExpiryMetadata> createExpiryTimeByKeyMap() {
         // only reason we use CHM is, its iterator
         // doesn't throw concurrent modification exception.
@@ -98,7 +93,7 @@ public class ExpirySystem {
         return Collections.emptyMap();
     }
 
-    @NotNull
+    // this method is overridden
     protected ExpiryMetadata createExpiryMetadata(long ttlMillis, long maxIdleMillis, long expirationTime) {
         return new ExpiryMetadataImpl(ttlMillis, maxIdleMillis, expirationTime);
     }
@@ -161,13 +156,11 @@ public class ExpirySystem {
             return ExpiryReason.NOT_EXPIRED;
         }
         ExpiryMetadata expiryMetadata = expireTimeByKey.get(key);
-        //System.err.println("hasExpired --> now: " + now + ", " + expiryMetadata);
         return hasExpired0(expiryMetadata, now);
     }
 
     // TODO add expiry delay for backup replica
     public ExpiryReason hasExpired0(ExpiryMetadata expiryMetadata, long now) {
-        //System.err.println(expiryMetadata);
         boolean expired = expiryMetadata != null
                 && expiryMetadata.getExpirationTime() <= now;
         if (expired) {
@@ -213,16 +206,10 @@ public class ExpirySystem {
             }
         }
 
-        //System.err.println("evictedEntryCount: " + evictedEntryCount);
-
         accumulateOrSendExpiredKey(null);
     }
 
     private int evictExpiredEntriesInternal(int maxIterationCount, long now, boolean backup) {
-//        if (backup) {
-//            System.err.println("backup");
-//        }
-
         Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (expireTimeByKey.isEmpty()) {
             return 0;
@@ -255,10 +242,6 @@ public class ExpirySystem {
 
         for (int i = 0; i < dataKeyAndExpiryReason.size(); i += 2) {
             Data key = (Data) dataKeyAndExpiryReason.get(i);
-
-            //System.err.println(mapServiceContext.getNodeEngine().getLocalMember() + ", key=" + mapServiceContext.toObject(key));
-
-
             ExpiryReason reason = (ExpiryReason) dataKeyAndExpiryReason.get(i + 1);
             recordStore.evictExpiredAndPublishExpiryEvent(key, reason, backup);
 
@@ -267,16 +250,17 @@ public class ExpirySystem {
         return evictedEntryCount;
     }
 
+    // this method is overridden
     protected void callIterRemove(Iterator<Map.Entry<Data, ExpiryMetadata>> expirationIterator) {
         expirationIterator.remove();
     }
 
-    @NotNull
+    // this method is overridden
     protected Iterator<Map.Entry<Data, ExpiryMetadata>> getIterator(Map<Data, ExpiryMetadata> expireTimeByKey) {
         return expireTimeByKey.entrySet().iterator();
     }
 
-    public void informEvicted(Data key) {
+    public void removeKeyFromExpirySystem(Data key) {
         Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (expireTimeByKey.isEmpty()) {
             return;
@@ -284,6 +268,7 @@ public class ExpirySystem {
         callRemove(key, expireTimeByKey);
     }
 
+    // this method is overridden
     protected void callRemove(Data key, Map<Data, ExpiryMetadata> expireTimeByKey) {
         expireTimeByKey.remove(key);
     }
@@ -305,60 +290,8 @@ public class ExpirySystem {
         return Math.round(maxIterationCount);
     }
 
-    public boolean isTtlOrMaxIdleDefined(Record record) {
-        long ttl = record.getTtl();
-        long maxIdle = record.getMaxIdle();
-        return isTtlDefined(ttl) || isMaxIdleDefined(maxIdle);
-    }
-
-    // this method is overridden on ee
-
-    protected boolean isTtlDefined(long ttl) {
-        return ttl > 0L && ttl < Long.MAX_VALUE;
-    }
-
-    protected boolean isMaxIdleDefined(long maxIdle) {
-        return maxIdle > 0L && maxIdle < Long.MAX_VALUE;
-    }
-
-    boolean isIdleExpired(Data dataKey, long now, boolean backup) {
-        assert dataKey != null;
-
-        if (backup && mapServiceContext.getClearExpiredRecordsTask().canPrimaryDriveExpiration()) {
-            // don't check idle expiry on backup
-            return false;
-        }
-
-        long nextExpiryTime = backup ? now + expiryDelayMillis : now;
-        ExpiryReason expiryReason = hasExpired(dataKey, nextExpiryTime);
-        return expiryReason == ExpiryReason.IDLENESS;
-    }
-
-    boolean isTTLExpired(Data dataKey, long now, boolean backup) {
-        assert dataKey != null;
-        long nextExpiryTime = backup ? now + expiryDelayMillis : now;
-        ExpiryReason expiryReason = hasExpired(dataKey, nextExpiryTime);
-        return expiryReason == ExpiryReason.TTL;
-    }
-
-    private long getRecordMaxIdleOrConfig(Record record) {
-        if (record.getMaxIdle() != UNSET) {
-            return record.getMaxIdle();
-        }
-
-        return TimeUnit.SECONDS.toMillis(mapContainer.getMapConfig().getMaxIdleSeconds());
-    }
-
-    private long getRecordTTLOrConfig(Record record) {
-        if (record.getTtl() != UNSET) {
-            return record.getTtl();
-        }
-
-        return TimeUnit.SECONDS.toMillis(mapContainer.getMapConfig().getTimeToLiveSeconds());
-    }
-
     // null dataKey is used to trigger backup operation sending...
-    void accumulateOrSendExpiredKey(Data dataKey) {
+    public void accumulateOrSendExpiredKey(Data dataKey) {
         if (mapContainer.getTotalBackupCount() == 0) {
             return;
         }
@@ -369,117 +302,6 @@ public class ExpirySystem {
 
         clearExpiredRecordsTask.tryToSendBackupExpiryOp(recordStore, true);
     }
-
-    public static class ExpiryMetadataImpl implements ExpiryMetadata {
-        private int ttl;
-        private int maxIdle;
-        private int expirationTime;
-
-        public ExpiryMetadataImpl() {
-        }
-
-        public ExpiryMetadataImpl(long ttl, long maxIdle, long expirationTime) {
-            setTtl(ttl);
-            setMaxIdle(maxIdle);
-            setExpirationTime(expirationTime);
-        }
-
-        @Override
-        public long getTtl() {
-            return ttl == Integer.MAX_VALUE ? Long.MAX_VALUE : SECONDS.toMillis(ttl);
-        }
-
-        @Override
-        public int getRawTtl() {
-            return ttl;
-        }
-
-        @Override
-        public ExpiryMetadata setTtl(long ttl) {
-            long ttlSeconds = MILLISECONDS.toSeconds(ttl);
-            if (ttlSeconds == 0 && ttl != 0) {
-                ttlSeconds = 1;
-            }
-
-            this.ttl = ttlSeconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) ttlSeconds;
-            return this;
-        }
-
-        @Override
-        public ExpiryMetadata setRawTtl(int ttl) {
-            this.ttl = ttl;
-            return this;
-        }
-
-        @Override
-        public long getMaxIdle() {
-            return maxIdle == Integer.MAX_VALUE ? Long.MAX_VALUE : SECONDS.toMillis(maxIdle);
-        }
-
-        @Override
-        public int getRawMaxIdle() {
-            return maxIdle;
-        }
-
-        @Override
-        public ExpiryMetadata setMaxIdle(long maxIdle) {
-            long maxIdleSeconds = MILLISECONDS.toSeconds(maxIdle);
-            if (maxIdleSeconds == 0 && maxIdle != 0) {
-                maxIdleSeconds = 1;
-            }
-            this.maxIdle = maxIdleSeconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) maxIdleSeconds;
-            return this;
-        }
-
-        @Override
-        public ExpiryMetadata setRawMaxIdle(int maxIdle) {
-            this.maxIdle = maxIdle;
-            return this;
-        }
-
-        @Override
-        public long getExpirationTime() {
-            if (expirationTime == UNSET) {
-                return 0L;
-            }
-
-            if (expirationTime == Integer.MAX_VALUE) {
-                return Long.MAX_VALUE;
-            }
-
-            return recomputeWithBaseTime(expirationTime);
-        }
-
-        @Override
-        public int getRawExpirationTime() {
-            return expirationTime;
-        }
-
-        @Override
-        public ExpiryMetadata setExpirationTime(long expirationTime) {
-            this.expirationTime = expirationTime == Long.MAX_VALUE
-                    ? Integer.MAX_VALUE
-                    : stripBaseTime(expirationTime);
-            return this;
-        }
-
-        @Override
-        public ExpiryMetadata setRawExpirationTime(int expirationTime) {
-            this.expirationTime = expirationTime;
-            return this;
-        }
-
-        @Override
-        public String toString() {
-            return "ExpiryMetadata{"
-                    + "ttl=" + getTtl()
-                    + ", maxIdle=" + getMaxIdle()
-                    + ", expirationTime=" + getExpirationTime()
-                    + '}';
-        }
-    }
-
-
 }
 
 

@@ -20,8 +20,8 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
 import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
-import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
-import com.hazelcast.map.impl.recordstore.ExpirySystem;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadataImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,7 +30,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -81,9 +80,8 @@ public class RecordReaderWriterTest {
         assertEquals(writtenRecord, readRecord);
     }
 
-    @Nonnull
-    private ExpirySystem.ExpiryMetadataImpl newExpiryMetadata() {
-        return new ExpirySystem.ExpiryMetadataImpl();
+    private ExpiryMetadata newExpiryMetadata() {
+        return new ExpiryMetadataImpl();
     }
 
     @Test

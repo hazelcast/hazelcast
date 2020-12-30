@@ -32,8 +32,8 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
-import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
-import com.hazelcast.map.impl.recordstore.ExpirySystem;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadataImpl;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -286,7 +286,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             List keyRecordExpiry = new ArrayList<>(numOfRecords * 3);
             for (int j = 0; j < numOfRecords; j++) {
                 Data dataKey = IOUtil.readData(in);
-                ExpiryMetadata expiryMetadata = new ExpirySystem.ExpiryMetadataImpl();
+                ExpiryMetadata expiryMetadata = new ExpiryMetadataImpl();
                 Record record = Records.readRecord(in, expiryMetadata);
 
                 keyRecordExpiry.add(dataKey);

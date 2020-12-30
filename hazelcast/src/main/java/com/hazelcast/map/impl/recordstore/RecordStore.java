@@ -34,6 +34,9 @@ import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
@@ -121,14 +124,6 @@ public interface RecordStore<R extends Record> {
     boolean remove(Data dataKey, Object testValue);
 
     boolean setTtl(Data key, long ttl, boolean backup);
-
-    /**
-     * Checks whether ttl or maxIdle are set on the record.
-     *
-     * @param record the record to be checked
-     * @return {@code true} if ttl or maxIdle are defined on the {@code record}, otherwise {@code false}.
-     */
-    boolean isTtlOrMaxIdleDefined(Record record);
 
     /**
      * Callback which is called when the record is being accessed from the record or index store.
@@ -435,7 +430,7 @@ public interface RecordStore<R extends Record> {
     /**
      * Does post eviction operations like sending events
      *
-     * @param dataValue record to process
+     * @param dataValue    record to process
      * @param expiryReason
      */
     void doPostEvictionOperations(Data dataKey, Object dataValue,

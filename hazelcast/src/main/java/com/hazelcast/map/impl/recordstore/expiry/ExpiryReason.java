@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.recordstore;
+package com.hazelcast.map.impl.recordstore.expiry;
 
 public enum ExpiryReason {
     TTL,

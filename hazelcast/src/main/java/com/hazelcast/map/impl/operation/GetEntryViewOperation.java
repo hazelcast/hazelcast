@@ -23,7 +23,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.recordstore;
+package com.hazelcast.map.impl.recordstore.expiry;
 
 import static com.hazelcast.map.impl.record.Record.EPOCH_TIME;
 import static com.hazelcast.map.impl.record.Record.UNSET;

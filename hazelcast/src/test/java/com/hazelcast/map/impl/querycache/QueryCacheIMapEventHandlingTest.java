@@ -25,7 +25,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.query.Predicate;
