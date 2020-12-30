@@ -73,6 +73,9 @@ import static com.hazelcast.config.IndexType.SORTED;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
 import static java.util.Collections.singletonList;
+import static org.apache.calcite.rel.RelFieldCollation.Direction.DESCENDING;
+import static org.apache.calcite.rel.RelFieldCollation.Direction;
+
 
 /**
  * Helper class to resolve indexes.
@@ -128,11 +131,11 @@ public final class IndexResolver {
                 if (index.getType() == SORTED) {
                     // Only for SORTED index create full index scans that might be potentially
                     // utilized by sorting operator.
-                    RelNode rel = createFullIndexScan(scan, distribution, index, false);
-                    rels.add(rel);
+                    RelNode relAscending = createFullIndexScan(scan, distribution, index, false);
+                    rels.add(relAscending);
 
-                    rel = createFullIndexScan(scan, distribution, index, true);
-                    rels.add(rel);
+                    RelNode relDescending = replaceCollationDirection(relAscending, DESCENDING);
+                    rels.add(relDescending);
                 }
             }
 
@@ -165,13 +168,11 @@ public final class IndexResolver {
             // filters whenever possible.
 
             RelNode relAscending = createIndexScan(scan, distribution, index, conjunctions, candidates, false);
-            RelNode relDescending = createIndexScan(scan, distribution, index, conjunctions, candidates, true);
 
             if (relAscending != null) {
                 rels.add(relAscending);
-            }
-
-            if (relDescending != null) {
+                RelNode relDescending = replaceCollationDirection(relAscending, DESCENDING);
+                assert relDescending != null;
                 rels.add(relDescending);
             }
         }
@@ -179,6 +180,29 @@ public final class IndexResolver {
         return rels;
     }
 
+
+    /**
+     * Replaces a direction in the collation trait of the rel
+     *
+     * @param rel       the rel
+     * @param direction the collation
+     * @return the rel with changed collation
+     */
+    private static RelNode replaceCollationDirection(RelNode rel, Direction direction) {
+        RelCollation collation = rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+
+        List<RelFieldCollation> newFields = new ArrayList<>(collation.getFieldCollations().size());
+        for (RelFieldCollation fieldCollation : collation.getFieldCollations()) {
+            RelFieldCollation newFieldCollation = new RelFieldCollation(fieldCollation.getFieldIndex(), direction);
+            newFields.add(newFieldCollation);
+        }
+
+        RelCollation newCollation = RelCollations.of(newFields);
+        RelTraitSet traitSet = rel.getTraitSet();
+        traitSet = OptUtils.traitPlus(traitSet, newCollation);
+
+        return rel.copy(traitSet, rel.getInputs());
+    }
 
     /**
      * Filters out index scans which collation is covered (prefix based) by another index scan in the rels.
@@ -822,8 +846,7 @@ public final class IndexResolver {
             filter,
             converterTypes,
             exp,
-            remainderExp,
-            descending
+            remainderExp
         );
     }
 
@@ -894,8 +917,7 @@ public final class IndexResolver {
             null,
             Collections.emptyList(),
             null,
-            scanFilter,
-            descending
+            scanFilter
         );
     }
 

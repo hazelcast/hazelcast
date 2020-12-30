@@ -27,11 +27,16 @@ import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.metadata.RelMdUtil;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
+
+import static  org.apache.calcite.rel.RelFieldCollation.Direction;
+
 
 import java.util.List;
 
@@ -45,7 +50,6 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
     private final List<QueryDataType> converterTypes;
     private final RexNode indexExp;
     private final RexNode remainderExp;
-    private final boolean descending;
 
     public MapIndexScanPhysicalRel(
         RelOptCluster cluster,
@@ -55,8 +59,7 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         IndexFilter indexFilter,
         List<QueryDataType> converterTypes,
         RexNode indexExp,
-        RexNode remainderExp,
-        boolean descending
+        RexNode remainderExp
     ) {
         super(cluster, traitSet, table);
 
@@ -65,7 +68,6 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         this.converterTypes = converterTypes;
         this.indexExp = indexExp;
         this.remainderExp = remainderExp;
-        this.descending = descending;
     }
 
     public MapTableIndex getIndex() {
@@ -85,7 +87,10 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
     }
 
     public boolean getDescending() {
-        return descending;
+        RelCollation collation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+        assert collation != null && collation.getFieldCollations().size() > 0;
+        Direction direction = collation.getFieldCollations().get(0).getDirection();
+        return direction == Direction.DESCENDING ? true : false;
     }
 
     @Override
@@ -98,8 +103,7 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
             indexFilter,
             converterTypes,
             indexExp,
-            remainderExp,
-            descending
+            remainderExp
         );
     }
 
@@ -113,8 +117,7 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         return super.explainTerms(pw)
             .item("index", index.getName())
             .item("indexExp", indexExp)
-            .item("remainderExp", remainderExp)
-            .item("descending", descending);
+            .item("remainderExp", remainderExp);
     }
 
     @Override
