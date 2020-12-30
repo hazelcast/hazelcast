@@ -41,6 +41,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -250,8 +251,10 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
         //we are closing a connection and making sure It is not established ever again
         waitFlag.set(true);
+        UUID memberUUID = instance1.getLocalEndpoint().getUuid();
         instance1.shutdown();
 
+        makeSureDisconnectedFromServer(client, memberUUID);
         //we expect these operations to run without throwing exception, since they are done on live instance.
         clientMap.put(keyOwnedBy2, 1);
         assertEquals(1, clientMap.get(keyOwnedBy2));
