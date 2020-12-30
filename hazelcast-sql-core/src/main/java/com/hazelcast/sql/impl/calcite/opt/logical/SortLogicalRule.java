@@ -45,6 +45,8 @@ public final class SortLogicalRule extends ConverterRule {
         Sort sort = (Sort) rel;
         RelNode input = sort.getInput();
 
+        assert sort.offset == null;
+        assert sort.fetch == null;
         return new SortLogicalRel(
             sort.getCluster(),
             OptUtils.toLogicalConvention(sort.getTraitSet()),
