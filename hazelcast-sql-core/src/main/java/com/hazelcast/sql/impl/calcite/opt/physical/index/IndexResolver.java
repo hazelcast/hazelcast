@@ -131,11 +131,13 @@ public final class IndexResolver {
                 if (index.getType() == SORTED) {
                     // Only for SORTED index create full index scans that might be potentially
                     // utilized by sorting operator.
-                    RelNode relAscending = createFullIndexScan(scan, distribution, index, false);
-                    rels.add(relAscending);
+                    RelNode relAscending = createFullIndexScan(scan, distribution, index, false, true);
 
-                    RelNode relDescending = replaceCollationDirection(relAscending, DESCENDING);
-                    rels.add(relDescending);
+                    if (relAscending != null) {
+                        rels.add(relAscending);
+                        RelNode relDescending = replaceCollationDirection(relAscending, DESCENDING);
+                        rels.add(relDescending);
+                    }
                 }
             }
 
@@ -172,7 +174,6 @@ public final class IndexResolver {
             if (relAscending != null) {
                 rels.add(relAscending);
                 RelNode relDescending = replaceCollationDirection(relAscending, DESCENDING);
-                assert relDescending != null;
                 rels.add(relDescending);
             }
         }
@@ -883,13 +884,16 @@ public final class IndexResolver {
      * @param scan         the original scan operator
      * @param distribution the original distribution
      * @param index        available indexes
+     * @param descending   whether the collation is descending
+     * @param nonEmptyCollation whether to filter out full index scan with no collation
      * @return index scan or {@code null}
      */
     private static RelNode createFullIndexScan(
         MapScanLogicalRel scan,
         DistributionTrait distribution,
         MapTableIndex index,
-        boolean descending
+        boolean descending,
+        boolean nonEmptyCollation
     ) {
         assert isIndexSupported(index);
 
@@ -898,6 +902,10 @@ public final class IndexResolver {
         RelTraitSet traitSet = OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution);
 
         RelCollation relCollation = buildCollationTrait(scan, index, descending);
+        if (nonEmptyCollation && relCollation.getFieldCollations().size() == 0) {
+            // Don't make a full scan with empty collation
+            return null;
+        }
         traitSet = OptUtils.traitPlus(traitSet, relCollation);
 
         HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
@@ -948,7 +956,7 @@ public final class IndexResolver {
             return null;
         }
 
-        return createFullIndexScan(scan, distribution, firstIndex, false);
+        return createFullIndexScan(scan, distribution, firstIndex, false, false);
     }
 
     /**

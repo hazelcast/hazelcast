@@ -19,10 +19,9 @@ package com.hazelcast.sql.impl.plan.node.io;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
-import com.hazelcast.sql.impl.plan.node.ZeroInputPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
+import com.hazelcast.sql.impl.plan.node.ZeroInputPlanNode;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
