@@ -26,6 +26,7 @@ import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.impl.journal.MapEventJournalFunctions;
 
+import javax.annotation.Nonnull;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -127,6 +128,7 @@ public final class Util {
      * Currently it is an unsigned 16-digit hex number.
      */
     @SuppressWarnings("checkstyle:magicnumber")
+    @Nonnull
     public static String idToString(long id) {
         char[] buf = Arrays.copyOf(ID_TEMPLATE, ID_TEMPLATE.length);
         String hexStr = Long.toHexString(id);

@@ -119,6 +119,7 @@ Apache License, Version 2.0
   lang-mustache:7.0.0
   parent-join:7.0.0
   rank-eval:7.0.0
+  jansi:1.18
   LZ4 and xxHash:1.5.0
   SnakeYAML Engine:1.0
   snappy-java:1.1.1.3
@@ -147,6 +148,9 @@ BSD 3-Clause License
   ANTLR 4 Runtime:4.7.2
   commons-compiler:3.0.11
   janino:3.0.11
+  JLine Reader:3.16.0
+  JLine Terminal:3.16.0
+  JLine JANSI Terminal:3.16.0
 CC0
   reactive-streams:1.0.2
 EPL 2.0

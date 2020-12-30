@@ -35,9 +35,9 @@ These are some of the features on our roadmap:
 
 ## Installation
 
-When you use the distribution package, the `hazelcast-jet-sql` is not on
-the class path by default. Make sure to move the
-`hazelcast-jet-sql-{jet-version}.jar` file from the `opt/` to the `lib/`
+When you use the distribution package, the `hazelcast-jet-sql` is on
+the class path by default. Nevertheless, make sure to have the
+`hazelcast-jet-sql-{jet-version}.jar` file in the `lib/`
 directory.
 
 If you use Jet in embedded mode, besides the `hazelcast-jet` dependency
@@ -116,10 +116,59 @@ Connector](kafka-connector) page. The options not handled by Jet, such
 as the `bootstrap.servers` above, are all passed directly to the Kafka
 consumer or producer.
 
-// TODO document the CLI
+To submit the above query, you can use the SQL CLI or the Java API (we
+also plan to support JDBC and non-Java clients in the future):
 
-To submit the above query, use the Java API (we plan to support JDBC and
-non-Java clients in the future):
+#### Submitting the query on the CLI
+
+Before starting the CLI, make sure Hazelcast Jet server is running. If
+you don't have a running jet member, you can start a member using the
+following command:
+
+```bash
+$JET_HOME/bin/jet-start
+...
+```
+
+After that, you can start the Jet SQL CLI by running this command:
+
+```bash
+$ $JET_HOME/bin/jet sql
+Connected to Hazelcast Jet 4.4-SNAPSHOT at [192.168.1.5]:5701 (+0 more)
+Type 'help' for instructions
+sql>
+```
+
+This CLI uses Jet client to connect and send the SQL commands to the Jet
+cluster. This CLI overrides the client's cluster connect configurations
+so that if the client-server connection is lost, it tries to reconnect
+forever. CLI has multiline command support and it requires a semicolon
+to finalize the commands. So, make sure you use `;` at the end of your
+commands.  You can submit queries as follows:
+
+```bash
+sql> CREATE EXTERNAL MAPPING trades (
+    ticker VARCHAR,
+    price DECIMAL,
+    amount BIGINT)
+TYPE Kafka
+OPTIONS (
+    'valueFormat' = 'json',
+    'bootstrap.servers' = '127.0.0.1:9092'
+    /* ... more configuration options for the Kafka consumer */
+);
+sql> /* query text ending with semicolon*/
+...
+```
+
+When you send a streaming query, you can use `CTRL+C(SIGINT)` to cancel
+this query. Also, you can type `help` to see the available commands.
+
+> SQL CLI is in beta version and only use it in development environments.
+
+#### Submitting the query using Java API
+
+You can also use native Java API to execute SQL queries on Jet:
 
 ```java
 JetInstance inst = ...;
@@ -128,8 +177,8 @@ inst.getSql().execute( /* query text */ );
 
 ### Querying the Kafka Topic
 
-A SQL query can now be used to read from the `trades` topic, as if it
-was a table:
+After creating mapping, SQL query can now be used to read from the
+`trades` topic, as if it was a table:
 
 ```java
 JetInstance inst = ...;
