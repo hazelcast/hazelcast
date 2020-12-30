@@ -40,8 +40,8 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
     /** Field types. */
     private List<QueryDataType> fieldTypes;
 
-    /** Expressions to be used for sorting. */
-    private List<Expression> expressions;
+    /** Indexes of columns to be used for sorting. */
+    private List<Integer> columnIndexes;
 
     /** Sort directions. */
     private List<Boolean> ascs;
@@ -54,19 +54,19 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
             int id,
             int edgeId,
             List<QueryDataType> fieldTypes,
-            List<Expression> expressions,
+            List<Integer> columnIndexes,
             List<Boolean> ascs
     ) {
         super(id);
 
         this.edgeId = edgeId;
         this.fieldTypes = fieldTypes;
-        this.expressions = expressions;
+        this.columnIndexes = columnIndexes;
         this.ascs = ascs;
     }
 
-    public List<Expression> getExpressions() {
-        return expressions;
+    public List<Integer> getColumnIndexes() {
+        return columnIndexes;
     }
 
     public List<Boolean> getAscs() {
@@ -97,7 +97,7 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
     public void writeData0(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);
         SerializationUtil.writeList(fieldTypes, out);
-        out.writeObject(expressions);
+        out.writeObject(columnIndexes);
         out.writeObject(ascs);
     }
 
@@ -105,13 +105,13 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
     public void readData0(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
         fieldTypes = SerializationUtil.readList(in);
-        expressions = in.readObject();
+        columnIndexes = in.readObject();
         ascs = in.readObject();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, edgeId, expressions, ascs);
+        return Objects.hash(id, edgeId, columnIndexes, ascs);
     }
 
     @Override
@@ -126,12 +126,12 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
 
         ReceiveSortMergePlanNode that = (ReceiveSortMergePlanNode) o;
 
-        return id == that.id && edgeId == that.edgeId && expressions.equals(that.expressions) && ascs.equals(that.ascs);
+        return id == that.id && edgeId == that.edgeId && columnIndexes.equals(that.columnIndexes) && ascs.equals(that.ascs);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{id=" + id + ", edgeId=" + edgeId + ", expressions=" + expressions
+        return getClass().getSimpleName() + "{id=" + id + ", edgeId=" + edgeId + ", columnIndexes=" + columnIndexes
                 + ", ascs=" + ascs + '}';
     }
 }

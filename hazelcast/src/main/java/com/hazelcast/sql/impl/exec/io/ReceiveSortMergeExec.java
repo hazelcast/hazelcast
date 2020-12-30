@@ -42,9 +42,9 @@ public class ReceiveSortMergeExec extends AbstractExec {
     private final StripedInbox inbox;
 
     /**
-     * Expressions.
+     * Indexes of columns to be used for sorting.
      */
-    private final List<Expression> expressions;
+    private final List<Integer> columnIndexes;
 
     /**
      * Sorter.
@@ -59,13 +59,13 @@ public class ReceiveSortMergeExec extends AbstractExec {
     public ReceiveSortMergeExec(
         int id,
         StripedInbox inbox,
-        List<Expression> expressions,
+        List<Integer> columnIndexes,
         List<Boolean> ascs
     ) {
         super(id);
 
         this.inbox = inbox;
-        this.expressions = expressions;
+        this.columnIndexes = columnIndexes;
 
         MergeSortSource[] sources = new MergeSortSource[inbox.getStripeCount()];
 
@@ -114,11 +114,11 @@ public class ReceiveSortMergeExec extends AbstractExec {
      * @return Key.
      */
     private SortKey prepareSortKey(Row row, int stripe) {
-        Object[] key = new Object[expressions.size()];
+        Object[] key = new Object[columnIndexes.size()];
 
-        for (int i = 0; i < expressions.size(); ++i) {
-            Expression<?> expression = expressions.get(i);
-            key[i] = expression.eval(row, ctx);
+        for (int i = 0; i < columnIndexes.size(); ++i) {
+            int idx = columnIndexes.get(i);
+            key[i] = row.get(idx);
         }
 
         return new SortKey(key, stripe);

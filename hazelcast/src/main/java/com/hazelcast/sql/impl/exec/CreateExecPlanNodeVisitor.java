@@ -223,7 +223,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         ReceiveSortMergeExec res = new ReceiveSortMergeExec(
             node.getId(),
             inbox,
-            node.getExpressions(),
+            node.getColumnIndexes(),
             node.getAscs()
         );
 

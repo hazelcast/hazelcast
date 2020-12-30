@@ -37,7 +37,6 @@ import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootExchangePhysical
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.partitioner.AllFieldsRowPartitioner;
@@ -352,14 +351,14 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         addFragment(sendNode, dataMemberMapping());
 
         List<RelFieldCollation> collations = rel.getCollation().getFieldCollations();
-        List<Expression> expressions = new ArrayList<>(collations.size());
+        List<Integer> columnIndexes = new ArrayList<>(collations.size());
         List<Boolean> ascs = new ArrayList<>(collations.size());
 
         for (RelFieldCollation collation : collations) {
             RelFieldCollation.Direction direction = collation.getDirection();
             int idx = collation.getFieldIndex();
 
-            expressions.add(ColumnExpression.create(idx, upstreamNodeSchema.getType(idx)));
+            columnIndexes.add(idx);
             ascs.add(!direction.isDescending());
         }
 
@@ -368,7 +367,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             id,
             edge,
             sendNode.getSchema().getTypes(),
-            expressions,
+            columnIndexes,
             ascs
         );
 
