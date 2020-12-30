@@ -82,22 +82,21 @@ public class ReceiveSortMergeExec extends AbstractExec {
 
     @Override
     public IterationResult advance0() {
-        while (true) {
-            List<Row> rows = sorter.nextBatch();
-            boolean done = sorter.isDone();
+        List<Row> rows = sorter.nextBatch();
+        boolean done = sorter.isDone();
 
-            if (rows == null) {
-                curBatch = EmptyRowBatch.INSTANCE;
+        if (rows == null) {
+            curBatch = EmptyRowBatch.INSTANCE;
 
-                return done ? IterationResult.FETCHED_DONE : IterationResult.WAIT;
-            } else {
-                RowBatch batch = new ListRowBatch(rows);
+            return done ? IterationResult.FETCHED_DONE : IterationResult.WAIT;
+        } else {
+            RowBatch batch = new ListRowBatch(rows);
 
-                curBatch = batch;
+            curBatch = batch;
 
-                return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
-            }
+            return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
         }
+        
     }
 
     @Override
