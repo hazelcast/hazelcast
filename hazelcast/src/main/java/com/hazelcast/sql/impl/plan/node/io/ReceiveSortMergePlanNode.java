@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.plan.node.ZeroInputPlanNode;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -53,7 +54,7 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
     /**
      * Sort directions.
      */
-    private List<Boolean> ascs;
+    private boolean[] ascs;
 
     public ReceiveSortMergePlanNode() {
         // No-op.
@@ -64,7 +65,7 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
         int edgeId,
         List<QueryDataType> fieldTypes,
         List<Integer> columnIndexes,
-        List<Boolean> ascs
+        boolean[] ascs
     ) {
         super(id);
 
@@ -78,7 +79,7 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
         return columnIndexes;
     }
 
-    public List<Boolean> getAscs() {
+    public boolean[] getAscs() {
         return ascs;
     }
 
@@ -107,7 +108,10 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
         out.writeInt(edgeId);
         SerializationUtil.writeList(fieldTypes, out);
         out.writeObject(columnIndexes);
-        out.writeObject(ascs);
+        out.writeInt(ascs.length);
+        for (int i = 0; i < ascs.length; ++i) {
+            out.writeBoolean(ascs[i]);
+        }
     }
 
     @Override
@@ -115,7 +119,11 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
         edgeId = in.readInt();
         fieldTypes = SerializationUtil.readList(in);
         columnIndexes = in.readObject();
-        ascs = in.readObject();
+        int ascsLength = in.readInt();
+        ascs = new boolean[ascsLength];
+        for (int i = 0; i < ascsLength; ++i) {
+            ascs[i] = in.readBoolean();
+        }
     }
 
     @Override
@@ -147,7 +155,7 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
 
         return id == that.id && edgeId == that.edgeId
             && columnIndexes.equals(that.columnIndexes) && fieldTypes.equals(that.fieldTypes)
-            && ascs.equals(that.ascs);
+            && Arrays.equals(ascs, that.ascs);
     }
 
     @Override

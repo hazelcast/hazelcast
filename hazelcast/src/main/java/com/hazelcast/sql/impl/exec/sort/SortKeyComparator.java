@@ -26,10 +26,12 @@ import java.util.List;
  */
 @SuppressFBWarnings(value = "SE_COMPARATOR_SHOULD_BE_SERIALIZABLE", justification = "Never serialized")
 public class SortKeyComparator implements Comparator<SortKey> {
-    /** List of ascending collations. */
-    private final List<Boolean> ascs;
+    /**
+     * An array of ascending collations.
+     */
+    private final boolean[] ascs;
 
-    public SortKeyComparator(List<Boolean> ascs) {
+    public SortKeyComparator(boolean[] ascs) {
         this.ascs = ascs;
     }
 
@@ -38,8 +40,8 @@ public class SortKeyComparator implements Comparator<SortKey> {
     public int compare(SortKey o1, SortKey o2) {
         Object[] key1 = o1.getKey();
         Object[] key2 = o2.getKey();
-        for (int i = 0; i < ascs.size(); i++) {
-            boolean asc = ascs.get(i);
+        for (int i = 0; i < ascs.length; i++) {
+            boolean asc = ascs[i];
 
             Object item1 = key1[i];
             Object item2 = key2[i];

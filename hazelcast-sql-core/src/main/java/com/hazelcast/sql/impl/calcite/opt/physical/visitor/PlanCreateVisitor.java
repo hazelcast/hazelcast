@@ -352,14 +352,15 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         List<RelFieldCollation> collations = rel.getCollation().getFieldCollations();
         List<Integer> columnIndexes = new ArrayList<>(collations.size());
-        List<Boolean> ascs = new ArrayList<>(collations.size());
+        boolean[] ascs = new boolean[collations.size()];
 
-        for (RelFieldCollation collation : collations) {
+        for (int i = 0; i < collations.size(); ++i) {
+            RelFieldCollation collation = collations.get(i);
             RelFieldCollation.Direction direction = collation.getDirection();
             int idx = collation.getFieldIndex();
 
             columnIndexes.add(idx);
-            ascs.add(!direction.isDescending());
+            ascs[i] = !direction.isDescending();
         }
 
         // Create a receiver and push it to stack.

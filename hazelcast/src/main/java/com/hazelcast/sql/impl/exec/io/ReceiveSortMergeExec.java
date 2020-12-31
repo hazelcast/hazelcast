@@ -59,7 +59,7 @@ public class ReceiveSortMergeExec extends AbstractExec {
         int id,
         StripedInbox inbox,
         List<Integer> columnIndexes,
-        List<Boolean> ascs
+        boolean[] ascs
     ) {
         super(id);
 
