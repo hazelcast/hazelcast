@@ -16,6 +16,9 @@
 
 package com.hazelcast.sql.impl.exec.sort;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 /**
  * Single sort key.
  */
@@ -41,7 +44,7 @@ public class SortKey {
 
     @Override
     public int hashCode() {
-        return Long.hashCode(index);
+        return Objects.hash(index, key);
     }
 
     @Override
@@ -49,7 +52,7 @@ public class SortKey {
         if (obj instanceof SortKey) {
             SortKey other = (SortKey) obj;
 
-            return index == other.index;
+            return index == other.index && Arrays.equals(key, other.key);
         } else {
             return false;
         }
