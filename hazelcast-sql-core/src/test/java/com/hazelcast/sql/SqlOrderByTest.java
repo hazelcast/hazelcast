@@ -25,7 +25,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -75,45 +74,28 @@ public class SqlOrderByTest extends SqlTestSupport {
     private static final String MAP_OBJECT = "map_object";
     private static final String MAP_BINARY = "map_binary";
 
-    private static final int[] PAGE_SIZES = {256};
-    private static final int[] DATA_SET_SIZES = {4096};
+    private static final int DATA_SET_SIZE = 4096;
     private static final SqlTestInstanceFactory FACTORY = SqlTestInstanceFactory.create();
-
-    private static TestHazelcastInstanceFactory factory;
-    private static List<HazelcastInstance> members;
-    private static HazelcastInstance member;
 
     private static HazelcastInstance member1;
     private static HazelcastInstance member2;
 
     @Parameter
-    public int cursorBufferSize;
-
-    @Parameter(1)
-    public int dataSetSize;
-
-    @Parameter(2)
     public SerializationMode serializationMode;
 
-    @Parameter(3)
+    @Parameter(1)
     public InMemoryFormat inMemoryFormat;
 
-    @Parameters(name = "cursorBufferSize:{0}, dataSetSize:{1}, serializationMode:{2}, inMemoryFormat:{3}")
+    @Parameters(name = "serializationMode:{0}, inMemoryFormat:{1}")
     public static Collection<Object[]> parameters() {
         List<Object[]> res = new ArrayList<>();
 
-        for (int pageSize : PAGE_SIZES) {
-            for (int dataSetSize : DATA_SET_SIZES) {
-                for (SerializationMode serializationMode : SerializationMode.values()) {
-                    for (InMemoryFormat format : new InMemoryFormat[]{InMemoryFormat.OBJECT, InMemoryFormat.BINARY}) {
-                        res.add(new Object[]{
-                            pageSize,
-                            dataSetSize,
-                            serializationMode,
-                            format
-                        });
-                    }
-                }
+        for (SerializationMode serializationMode : SerializationMode.values()) {
+            for (InMemoryFormat format : new InMemoryFormat[]{InMemoryFormat.OBJECT, InMemoryFormat.BINARY}) {
+                res.add(new Object[]{
+                    serializationMode,
+                    format
+                });
             }
         }
 
@@ -135,7 +117,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         // Populate map with values
         Map<Object, AbstractPojo> data = new HashMap<>();
 
-        for (long i = 0; i < dataSetSize; i++) {
+        for (long i = 0; i < DATA_SET_SIZE; i++) {
             data.put(key(i), value(i));
         }
 
@@ -254,7 +236,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         map.addIndex(indexConfig2);
 
         String sql = "SELECT " + intValField + ", " + bigIntValField + " FROM " + mapName()
-            + " WHERE " + intValField + " = 1 ORDER BY "+ bigIntValField;
+            + " WHERE " + intValField + " = 1 ORDER BY " + bigIntValField;
 
         try (SqlResult res = query(sql)) {
 
@@ -291,7 +273,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         }
         map.addIndex(indexConfig);
 
-        assertEquals(dataSetSize, map.size());
+        assertEquals(DATA_SET_SIZE, map.size());
 
         StringBuilder orders = new StringBuilder();
         for (int i = 0; i < orderFields.size(); ++i) {
@@ -338,7 +320,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         }
         map.addIndex(indexConfig);
 
-        assertEquals(dataSetSize, map.size());
+        assertEquals(DATA_SET_SIZE, map.size());
 
         try (SqlResult res = query(sql)) {
 
@@ -401,11 +383,7 @@ public class SqlOrderByTest extends SqlTestSupport {
     }
 
     private SqlResult query(String sql) {
-        if (cursorBufferSize == SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE) {
-            return getTarget().getSql().execute(sql);
-        } else {
-            return getTarget().getSql().execute(new SqlStatement(sql).setCursorBufferSize(cursorBufferSize));
-        }
+        return getTarget().getSql().execute(sql);
     }
 
     private List<String> fields() {
