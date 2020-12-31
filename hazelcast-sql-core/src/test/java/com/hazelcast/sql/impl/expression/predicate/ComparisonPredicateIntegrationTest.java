@@ -35,6 +35,11 @@ import org.junit.runners.Parameterized;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -219,11 +224,128 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testUnsupported() {
         // Column/column
-        checkUnsupportedColumnColumn(ExpressionTypes.LOCAL_DATE, ExpressionTypes.allExcept());
-        checkUnsupportedColumnColumn(ExpressionTypes.LOCAL_TIME, ExpressionTypes.allExcept());
-        checkUnsupportedColumnColumn(ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.allExcept());
-        checkUnsupportedColumnColumn(ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.allExcept());
+        checkUnsupportedColumnColumn(ExpressionTypes.LOCAL_DATE, ExpressionTypes.allExcept(ExpressionTypes.LOCAL_DATE));
+        checkUnsupportedColumnColumn(ExpressionTypes.LOCAL_TIME, ExpressionTypes.allExcept(ExpressionTypes.LOCAL_TIME));
+        checkUnsupportedColumnColumn(ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.allExcept(ExpressionTypes.LOCAL_DATE_TIME));
+        checkUnsupportedColumnColumn(ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.allExcept(ExpressionTypes.OFFSET_DATE_TIME));
         checkUnsupportedColumnColumn(ExpressionTypes.OBJECT, ExpressionTypes.allExcept());
+    }
+
+    @Test
+    public void testLocalDate_to_LocalDate() {
+        putBiValue(
+            LocalDate.of(2020, 12, 30),
+            LocalDate.of(2020, 12, 30),
+            ExpressionTypes.LOCAL_DATE, ExpressionTypes.LOCAL_DATE
+        );
+
+        check("field1", "field2", LocalDate.of(2020, 12, 30).compareTo(LocalDate.of(2020, 12, 30)));
+    }
+
+    @Test
+    public void testLocalTime_to_LocalTime() {
+        putBiValue(
+            LocalTime.of(14, 2, 0),
+            LocalTime.of(14, 2, 0),
+            ExpressionTypes.LOCAL_TIME, ExpressionTypes.LOCAL_TIME
+        );
+
+        check("field1", "field2", LocalTime.of(14, 2, 0).compareTo(LocalTime.of(14, 2, 0)));
+    }
+
+    @Test
+    public void testLocalTime_to_LocalDate() {
+        putBiValue(
+            LocalTime.of(14, 2, 0),
+            LocalDate.of(2020, 12, 30),
+            ExpressionTypes.LOCAL_TIME, ExpressionTypes.LOCAL_DATE
+        );
+
+        checkFailure("field1", "field2", SqlErrorCode.PARSING, "Cannot apply '" + mode.token() + "' operator to [TIME, DATE] (consider adding an explicit CAST)");
+
+        putBiValue(
+            LocalDate.of(2020, 12, 30),
+            LocalTime.of(14, 2, 0),
+            ExpressionTypes.LOCAL_DATE, ExpressionTypes.LOCAL_TIME
+        );
+
+        checkFailure("field1", "field2", SqlErrorCode.PARSING, "Cannot apply '" + mode.token() + "' operator to [DATE, TIME] (consider adding an explicit CAST)");
+    }
+
+    @Test
+    public void testLocalDateTime_to_LocalDateTime() {
+        putBiValue(
+            LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+            LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+            ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.LOCAL_DATE_TIME
+        );
+
+        check("field1", "field2", LocalDateTime.of(2020, 12, 30, 14, 2, 0).compareTo(LocalDateTime.of(2020, 12, 30, 14, 2, 0)));
+    }
+
+
+    @Test
+    public void testLocalDateTime_to_LocalDate() {
+        putBiValue(
+            LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+            LocalDate.of(2020, 12, 30),
+            ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.LOCAL_DATE
+        );
+
+        check("field1", "field2", LocalDateTime.of(2020, 12, 30, 14, 2, 0).compareTo(LocalDate.of(2020, 12, 30).atStartOfDay()));
+
+        putBiValue(
+            LocalDate.of(2020, 12, 30),
+            LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+            ExpressionTypes.LOCAL_DATE, ExpressionTypes.LOCAL_DATE_TIME
+        );
+
+        check("field1", "field2", LocalDate.of(2020, 12, 30).atStartOfDay().compareTo(LocalDateTime.of(2020, 12, 30, 14, 2, 0)));
+    }
+
+    @Test
+    public void testLocalDateTimeWithTZ_LocalDateTimeWithTZ() {
+        putBiValue(
+            OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+            OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+            ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.OFFSET_DATE_TIME
+        );
+
+        check("field1", "field2",
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)
+                        .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
+    }
+
+    @Test
+    public void testLocalDateTimeWithTZ_to_LocalDate() {
+        putBiValue(
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+                LocalDate.of(2020, 12, 30), ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.LOCAL_DATE
+        );
+
+        check("field1", "field2",
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC).toLocalDateTime()
+                        .compareTo(LocalDate.of(2020, 12, 30).atStartOfDay()));
+
+        putBiValue(
+                LocalDate.of(2020, 12, 30),
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+                ExpressionTypes.LOCAL_DATE, ExpressionTypes.OFFSET_DATE_TIME
+        );
+
+        check("field1", "field2",
+                LocalDate.of(2020, 12, 30).atStartOfDay()
+                        .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC).toLocalDateTime()));
+    }
+
+    private void putBiValue(Object field1, Object field2, ExpressionType<?> type1, ExpressionType<?> type2) {
+        ExpressionBiValue value = ExpressionBiValue.createBiValue(
+                ExpressionBiValue.createBiClass(type1, type2),
+                field1,
+                field2
+        );
+
+        put(value);
     }
 
     protected Object[] getNumericValues() {

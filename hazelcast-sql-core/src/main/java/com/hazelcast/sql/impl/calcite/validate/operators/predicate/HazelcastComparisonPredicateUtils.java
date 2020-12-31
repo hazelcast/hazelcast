@@ -100,7 +100,7 @@ public final class HazelcastComparisonPredicateUtils {
         QueryDataType highHZType = HazelcastTypeUtils.toHazelcastType(highType.getSqlTypeName());
         QueryDataType lowHZType = HazelcastTypeUtils.toHazelcastType(lowType.getSqlTypeName());
 
-        if (highHZType.getTypeFamily().isTemporal() || highHZType.getTypeFamily() == QueryDataTypeFamily.OBJECT) {
+        if (highHZType.getTypeFamily() == QueryDataTypeFamily.OBJECT) {
             // Disallow comparisons for temporal and OBJECT types.
             if (throwOnFailure) {
                 throw callBinding.newValidationSignatureError();
@@ -121,6 +121,7 @@ public final class HazelcastComparisonPredicateUtils {
         }
 
         if (highHZType.getTypeFamily() != lowHZType.getTypeFamily()
+            && !(highHZType.getTypeFamily().isTemporal() && lowHZType.getTypeFamily().isTemporal())
             && !(highHZType.getTypeFamily().isNumeric() && lowHZType.getTypeFamily().isNumeric())) {
             // Types cannot be converted to each other, throw.
             if (throwOnFailure) {

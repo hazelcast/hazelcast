@@ -19,12 +19,14 @@ package com.hazelcast.sql.impl.expression.predicate;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.BiExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -75,6 +77,12 @@ public final class ComparisonPredicate extends BiExpression<Boolean> implements 
         Object right = operand2.eval(row, context);
         if (right == null) {
             return null;
+        }
+
+        QueryDataTypeFamily leftTypeFamily = this.operand1.getType().getTypeFamily();
+        QueryDataTypeFamily rightTypeFamily = this.operand2.getType().getTypeFamily();
+        if (leftTypeFamily != rightTypeFamily) {
+            throw QueryException.error(String.format("Cannot compare %s value with %s value", leftTypeFamily, rightTypeFamily));
         }
 
         Comparable leftComparable = (Comparable) left;
