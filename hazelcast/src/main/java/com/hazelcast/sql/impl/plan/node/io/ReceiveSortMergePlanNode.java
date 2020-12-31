@@ -130,7 +130,7 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, edgeId, columnIndexes, ascs);
+        return Objects.hash(id, edgeId, columnIndexes, fieldTypes, ascs);
     }
 
     @Override
@@ -145,7 +145,9 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
 
         ReceiveSortMergePlanNode that = (ReceiveSortMergePlanNode) o;
 
-        return id == that.id && edgeId == that.edgeId && columnIndexes.equals(that.columnIndexes) && ascs.equals(that.ascs);
+        return id == that.id && edgeId == that.edgeId
+            && columnIndexes.equals(that.columnIndexes) && fieldTypes.equals(that.fieldTypes)
+            && ascs.equals(that.ascs);
     }
 
     @Override
