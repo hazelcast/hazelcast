@@ -92,8 +92,9 @@ public final class ProjectPhysicalRule extends RelOptRule {
         Map<Integer, Integer> inputFieldIndex2ProjectIndexMap = new HashMap<>();
         for (int i = 0; i < projects.size(); ++i) {
             RexNode projectExp = projects.get(i);
-            ProjectFieldVisitor projectFieldVisitor = new ProjectFieldVisitor(inputFieldIndex2ProjectIndexMap, i);
-            projectExp.accept(projectFieldVisitor);
+            if (projectExp instanceof RexInputRef) {
+                inputFieldIndex2ProjectIndexMap.put(((RexInputRef) projectExp).getIndex(), i);
+            }
         }
 
         for (RelNode physicalInput : physicalInputs) {
@@ -111,8 +112,9 @@ public final class ProjectPhysicalRule extends RelOptRule {
     /**
      * Transforms the collation remapping the collation fields in accordance with the
      * project fields.
+     *
      * @param inputFieldIndex2ProjectIndex a mapping from the input index field to the project index
-     * @param collation an initial collation
+     * @param collation                    an initial collation
      * @return the transformed collation
      */
     private static RelCollation convertCollation(Map<Integer, Integer> inputFieldIndex2ProjectIndex, RelCollation collation) {
@@ -132,26 +134,6 @@ public final class ProjectPhysicalRule extends RelOptRule {
         }
 
         return RelCollations.of(transformedFields);
-    }
-
-    // A helper class to initialize an input to project field index mapping.
-    private static final class ProjectFieldVisitor extends RexVisitorImpl<Void> {
-
-        private final Map<Integer, Integer> inputFieldToProjectField;
-        private final int projectIndex;
-
-        private ProjectFieldVisitor(Map<Integer, Integer> inputFieldToProjectField, int projectIndex) {
-            super(false);
-            this.inputFieldToProjectField = inputFieldToProjectField;
-            this.projectIndex = projectIndex;
-        }
-
-        @Override
-        public Void visitInputRef(RexInputRef projectInput) {
-            int inputFiledIndex = projectInput.getIndex();
-            inputFieldToProjectField.put(inputFiledIndex, projectIndex);
-            return null;
-        }
     }
 
     /**
