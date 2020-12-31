@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.plan.node.io;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
 import com.hazelcast.sql.impl.plan.node.ZeroInputPlanNode;
@@ -32,17 +34,25 @@ import java.util.Objects;
  * Physical node which receives from remote stripes and performs sort-merge.
  */
 @SuppressWarnings("rawtypes")
-public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeAwarePlanNode {
-    /** Edge iD. */
+public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeAwarePlanNode, IdentifiedDataSerializable {
+    /**
+     * Edge iD.
+     */
     private int edgeId;
 
-    /** Field types. */
+    /**
+     * Field types.
+     */
     private List<QueryDataType> fieldTypes;
 
-    /** Indexes of columns to be used for sorting. */
+    /**
+     * Indexes of columns to be used for sorting.
+     */
     private List<Integer> columnIndexes;
 
-    /** Sort directions. */
+    /**
+     * Sort directions.
+     */
     private List<Boolean> ascs;
 
     public ReceiveSortMergePlanNode() {
@@ -50,11 +60,11 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
     }
 
     public ReceiveSortMergePlanNode(
-            int id,
-            int edgeId,
-            List<QueryDataType> fieldTypes,
-            List<Integer> columnIndexes,
-            List<Boolean> ascs
+        int id,
+        int edgeId,
+        List<QueryDataType> fieldTypes,
+        List<Integer> columnIndexes,
+        List<Boolean> ascs
     ) {
         super(id);
 
@@ -109,6 +119,16 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
     }
 
     @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.NODE_RECEIVE_MERGE_SORT;
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(id, edgeId, columnIndexes, ascs);
     }
@@ -131,6 +151,6 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{id=" + id + ", edgeId=" + edgeId + ", columnIndexes=" + columnIndexes
-                + ", ascs=" + ascs + '}';
+            + ", ascs=" + ascs + '}';
     }
 }
