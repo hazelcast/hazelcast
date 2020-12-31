@@ -28,6 +28,7 @@ import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.opt.physical.index.IndexResolver.createFullIndexScan;
@@ -68,7 +69,7 @@ public final class MapScanPhysicalRule extends RelOptRule {
 
         // Try adding index scans.
         List<MapTableIndex> indexes = table.getIndexes();
-        List<RelNode> indexScans = IndexResolver.createIndexScans(scan, distribution, indexes);
+        Collection<RelNode> indexScans = IndexResolver.createIndexScans(scan, distribution, indexes);
         transforms.addAll(indexScans);
 
         if (transforms.isEmpty() && table.isHd()) {

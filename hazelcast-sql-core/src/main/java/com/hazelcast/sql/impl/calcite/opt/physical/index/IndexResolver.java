@@ -91,13 +91,16 @@ public final class IndexResolver {
      * <p>
      * Analyzes the filter of the input scan operator, and produces zero, one or more {@link MapIndexScanPhysicalRel}
      * operators.
-     *
+     * <p>
+     * First, the full index scans are created and the covered (prefix-based) scans are excluded.
+     * Second, the lookups are created and if lookup's collation is equal to the full scan's collation,
+     * the latter one is excluded.
      * @param scan         scan operator to be analyzed
      * @param distribution distribution that will be passed to created index scan rels
      * @param indexes      indexes available on the map being scanned
      * @return zero, one or more index scan rels
      */
-    public static List<RelNode> createIndexScans(
+    public static Collection<RelNode> createIndexScans(
         MapScanLogicalRel scan,
         DistributionTrait distribution,
         List<MapTableIndex> indexes
@@ -121,28 +124,29 @@ public final class IndexResolver {
             return Collections.emptyList();
         }
 
-        List<RelNode> rels = new ArrayList<>(supportedIndexes.size());
+        List<RelNode> fullScanRels = new ArrayList<>(supportedIndexes.size());
 
-        if (filter == null) {
-            // There is no filter, still generate index scans for
-            // possible ORDER BY clause on the upper level
-            for (MapTableIndex index : supportedIndexes) {
+        // There is no filter, still generate index scans for
+        // possible ORDER BY clause on the upper level
+        for (MapTableIndex index : supportedIndexes) {
 
-                if (index.getType() == SORTED) {
-                    // Only for SORTED index create full index scans that might be potentially
-                    // utilized by sorting operator.
-                    RelNode relAscending = createFullIndexScan(scan, distribution, index, false, true);
+            if (index.getType() == SORTED) {
+                // Only for SORTED index create full index scans that might be potentially
+                // utilized by sorting operator.
+                RelNode relAscending = createFullIndexScan(scan, distribution, index, false, true);
 
-                    if (relAscending != null) {
-                        rels.add(relAscending);
-                        RelNode relDescending = replaceCollationDirection(relAscending, DESCENDING);
-                        rels.add(relDescending);
-                    }
+                if (relAscending != null) {
+                    fullScanRels.add(relAscending);
+                    RelNode relDescending = replaceCollationDirection(relAscending, DESCENDING);
+                    fullScanRels.add(relDescending);
                 }
             }
+        }
 
+        Map<RelCollation, RelNode> fullScanRelsMap = excludeCoveredCollations(fullScanRels);
+        if (filter == null) {
             // Exclude prefix-based covered index scans
-            return excludeCoveredCollations(rels);
+            return fullScanRelsMap.values();
         }
 
         // Convert expression into CNF. Examples:
@@ -165,6 +169,8 @@ public final class IndexResolver {
         }
 
 
+        List<RelNode> rels = new ArrayList<>(supportedIndexes.size());
+
         for (MapTableIndex index : supportedIndexes) {
             // Create index scan based on candidates, if possible. Candidates could be merged into more complex
             // filters whenever possible.
@@ -172,15 +178,31 @@ public final class IndexResolver {
             RelNode relAscending = createIndexScan(scan, distribution, index, conjunctions, candidates, false);
 
             if (relAscending != null) {
+                RelCollation relAscCollation = getCollation(relAscending);
+                if (fullScanRelsMap.containsKey(relAscCollation)) {
+                    // The fulls scan has the same collation, exclude it
+                    fullScanRelsMap.remove(relAscCollation);
+                }
+
                 rels.add(relAscending);
                 RelNode relDescending = replaceCollationDirection(relAscending, DESCENDING);
                 rels.add(relDescending);
+
+                RelCollation relDescCollation = getCollation(relDescending);
+                if (fullScanRelsMap.containsKey(relDescCollation)) {
+                    // The fulls scan has the same collation, exclude it
+                    fullScanRelsMap.remove(relDescCollation);
+                }
             }
         }
 
+        rels.addAll(fullScanRelsMap.values());
         return rels;
     }
 
+    private static RelCollation getCollation(RelNode rel) {
+        return rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+    }
 
     /**
      * Replaces a direction in the collation trait of the rel
@@ -209,10 +231,10 @@ public final class IndexResolver {
      * Filters out index scans which collation is covered (prefix based) by another index scan in the rels.
      *
      * @param rels the list of index scans
-     * @return the list of filtered out index scans
+     * @return a filtered out map of collation to rel
      */
     @SuppressWarnings("checkstyle:NPathComplexity")
-    private static List<RelNode> excludeCoveredCollations(List<RelNode> rels) {
+    private static Map<RelCollation, RelNode> excludeCoveredCollations(List<RelNode> rels) {
         // Order the index scans based on their collation
         TreeMap<RelCollation, RelNode> relsTreeMap = new TreeMap<>((coll1, coll2) -> {
             // Compare the collations field by field
@@ -250,7 +272,7 @@ public final class IndexResolver {
             relsTreeMap.put(rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE), rel);
         }
 
-        List<RelNode> resultRels = new ArrayList<>();
+        Map<RelCollation, RelNode> resultMap = new HashMap<>();
         Map.Entry<RelCollation, RelNode> prevEntry = null;
         // Go through the ordered collations and exclude covered ones
         for (Map.Entry<RelCollation, RelNode> entry : relsTreeMap.descendingMap().entrySet()) {
@@ -258,17 +280,17 @@ public final class IndexResolver {
             RelNode relNode = entry.getValue();
 
             if (prevEntry == null) {
-                resultRels.add(relNode);
+                resultMap.put(collation, relNode);
                 prevEntry = entry;
             } else {
                 RelCollation prevCollation = prevEntry.getKey();
                 if (!coveredCollation(prevCollation, collation)) {
                     prevEntry = entry;
-                    resultRels.add(relNode);
+                    resultMap.put(collation, relNode);
                 }
             }
         }
-        return resultRels;
+        return resultMap;
     }
 
     /**
@@ -881,10 +903,10 @@ public final class IndexResolver {
     /**
      * Creates an index scan without any filter.
      *
-     * @param scan         the original scan operator
-     * @param distribution the original distribution
-     * @param index        available indexes
-     * @param descending   whether the collation is descending
+     * @param scan              the original scan operator
+     * @param distribution      the original distribution
+     * @param index             available indexes
+     * @param descending        whether the collation is descending
      * @param nonEmptyCollation whether to filter out full index scan with no collation
      * @return index scan or {@code null}
      */

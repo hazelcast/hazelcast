@@ -238,6 +238,48 @@ public class SqlOrderByTest extends SqlTestSupport {
                 Collections.emptyList()));
     }
 
+    @Test
+    public void testSelectWithOrderByAndWhere() {
+        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+
+        String intValField = adjustFieldName("intVal");
+        String bigIntValField = adjustFieldName("bigIntVal");
+        IndexConfig indexConfig1 = new IndexConfig().setName("Index_" + randomName())
+            .setType(IndexType.SORTED).addAttribute(intValField);
+
+        IndexConfig indexConfig2 = new IndexConfig().setName("Index_" + randomName())
+            .setType(IndexType.SORTED).addAttribute(bigIntValField);
+
+        map.addIndex(indexConfig1);
+        map.addIndex(indexConfig2);
+
+        String sql = "SELECT " + intValField + ", " + bigIntValField + " FROM " + mapName()
+            + " WHERE " + intValField + " = 1 ORDER BY "+ bigIntValField;
+
+        try (SqlResult res = query(sql)) {
+
+            SqlRowMetadata rowMetadata = res.getRowMetadata();
+
+            Iterator<SqlRow> rowIterator = res.iterator();
+
+            SqlRow prevRow = null;
+            while (rowIterator.hasNext()) {
+                SqlRow row = rowIterator.next();
+
+                assertOrdered(prevRow, row, Collections.singletonList("bigIntVal"),
+                    Collections.singletonList(false), rowMetadata);
+
+                prevRow = row;
+            }
+
+            assertThrows(NoSuchElementException.class, rowIterator::next);
+
+            assertThrows(IllegalStateException.class, res::iterator);
+        }
+
+    }
+
+
     public void checkSelectWithOrderBy(List<String> indexAttrs, List<String> orderFields, List<Boolean> orderDirections) {
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
 
@@ -318,7 +360,6 @@ public class SqlOrderByTest extends SqlTestSupport {
             assertThrows(IllegalStateException.class, res::iterator);
         }
     }
-
 
     private void assertOrdered(SqlRow prevRow, SqlRow row, List<String> orderFields, List<Boolean> orderDirections, SqlRowMetadata rowMetadata) {
         if (prevRow == null) {
@@ -466,8 +507,6 @@ public class SqlOrderByTest extends SqlTestSupport {
 
 
     private String sqlWithOrderBy(String orderCondition) {
-        List<String> fields = fields();
-
         StringBuilder res = new StringBuilder(basicSql());
 
         res.append(" ORDER BY ").append(orderCondition);
