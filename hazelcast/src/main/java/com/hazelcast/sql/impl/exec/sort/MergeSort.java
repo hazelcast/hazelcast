@@ -30,27 +30,29 @@ import java.util.Set;
  * An utility class to perform merge sort with min-heap.
  */
 public class MergeSort {
-    /** Constant for unlimited number of rows. */
-    public static final int UNLIMITED = 0;
 
-    /** Sources. */
+    /**
+     * Sources.
+     */
     private final MergeSortSource[] sources;
 
-    /** Current items. */
+    /**
+     * Current items.
+     */
     private final PriorityQueue<SortKey> heap;
 
-    /** Sources which are not in the heap yet. */
+    /**
+     * Sources which are not in the heap yet.
+     */
     private final Set<Integer> missingSourceIndexes = new HashSet<>();
 
-    /** Whether the sorting is finished. */
+    /**
+     * Whether the sorting is finished.
+     */
     private boolean done;
 
-    public MergeSort(MergeSortSource[] sources, SortKeyComparator comparator) {
-        this(sources, comparator, UNLIMITED);
-    }
-
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
-    public MergeSort(MergeSortSource[] sources, SortKeyComparator comparator, int limit) {
+    public MergeSort(MergeSortSource[] sources, SortKeyComparator comparator) {
         this.sources = sources;
         this.heap = new PriorityQueue<>(comparator);
 
