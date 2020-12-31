@@ -190,9 +190,4 @@ public class PhysicalIndexExpressionTest extends IndexOptimizerTestSupport {
             checkNoIndex(sql, INT, INT, INT, INT, INT);
         }
     }
-
-    @RunWith(HazelcastSerialClassRunner.class)
-    @Category({QuickTest.class, ParallelJVMTest.class})
-    public static class PhysicalSortIndexTest extends OptimizerTestSupport {
-    }
 }
