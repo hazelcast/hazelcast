@@ -97,6 +97,10 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
             return rel;
         }
 
+        if (currentTrait.satisfies(targetTrait)) {
+            return rel;
+        }
+
         DistributionType currentType = currentTrait.getType();
         DistributionType targetType = targetTrait.getType();
 

@@ -77,7 +77,7 @@ public class DistributionTrait implements RelTrait {
     }
 
     /**
-     * Checks whtehr the result set of the node having this trait is guaranteed to exist on all members that will execute a
+     * Checks whether the result set of the node having this trait is guaranteed to exist on all members that will execute a
      * fragment with this node.
      *
      * @return {@code true} if the full result set exists on all participants of the fragment hosting this node.
@@ -100,7 +100,6 @@ public class DistributionTrait implements RelTrait {
 
         return false;
     }
-
 
     @Override
     public void register(RelOptPlanner planner) {
