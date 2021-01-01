@@ -52,7 +52,7 @@ public enum RecordReaderWriter {
             DataRecord record = new DataRecord();
             record.setValue(readData(in));
             record.setRawTtl(in.readInt());
-            record.setMaxIdle(in.readInt());
+            record.setRawMaxIdle(in.readInt());
             record.setRawCreationTime(in.readInt());
             record.setRawLastAccessTime(in.readInt());
             record.setRawLastUpdateTime(in.readInt());

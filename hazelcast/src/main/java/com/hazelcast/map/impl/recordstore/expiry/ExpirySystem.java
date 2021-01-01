@@ -80,7 +80,7 @@ public class ExpirySystem {
         return new ConcurrentHashMap<>();
     }
 
-    private Map<Data, ExpiryMetadata> getOrCreateExpireTimeByKeyMap(boolean createIfAbsent) {
+    protected Map<Data, ExpiryMetadata> getOrCreateExpireTimeByKeyMap(boolean createIfAbsent) {
         if (expireTimeByKey != null) {
             return expireTimeByKey;
         }
@@ -112,7 +112,7 @@ public class ExpirySystem {
             Map<Data, ExpiryMetadata> map = getOrCreateExpireTimeByKeyMap(false);
             if (!map.isEmpty()) {
                 Data nativeKey = recordStore.getStorage().toBackingDataKeyFormat(key);
-                map.remove(nativeKey);
+                callRemove(nativeKey, expireTimeByKey);
             }
             return;
         }
@@ -243,8 +243,7 @@ public class ExpirySystem {
         for (int i = 0; i < dataKeyAndExpiryReason.size(); i += 2) {
             Data key = (Data) dataKeyAndExpiryReason.get(i);
             ExpiryReason reason = (ExpiryReason) dataKeyAndExpiryReason.get(i + 1);
-            recordStore.evictExpiredAndPublishExpiryEvent(key, reason, backup);
-
+            recordStore.evictExpiredEntryAndPublishExpiryEvent(key, reason, backup);
         }
 
         return evictedEntryCount;
@@ -271,6 +270,11 @@ public class ExpirySystem {
     // this method is overridden
     protected void callRemove(Data key, Map<Data, ExpiryMetadata> expireTimeByKey) {
         expireTimeByKey.remove(key);
+    }
+
+    // this method is overridden
+    public void destroy() {
+        getOrCreateExpireTimeByKeyMap(false).clear();
     }
 
     /**
@@ -301,6 +305,12 @@ public class ExpirySystem {
         }
 
         clearExpiredRecordsTask.tryToSendBackupExpiryOp(recordStore, true);
+    }
+
+    // this method is overridden
+    public void clear() {
+        Map<Data, ExpiryMetadata> map = getOrCreateExpireTimeByKeyMap(false);
+        map.clear();
     }
 }
 

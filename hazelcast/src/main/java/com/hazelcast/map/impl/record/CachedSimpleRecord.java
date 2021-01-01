@@ -95,7 +95,7 @@ class CachedSimpleRecord extends SimpleRecord<Data> {
 
     @Override
     public String toString() {
-        return "CachedDataRecord{"
+        return "CachedSimpleRecord{"
                 + "cachedValue=" + cachedValue
                 + ", " + super.toString()
                 + "} ";

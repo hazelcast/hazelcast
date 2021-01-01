@@ -115,14 +115,14 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (expiryReason == ExpiryReason.NOT_EXPIRED) {
             return false;
         }
-        evictExpiredAndPublishExpiryEvent(key, expiryReason, backup);
+        evictExpiredEntryAndPublishExpiryEvent(key, expiryReason, backup);
         return true;
     }
 
     @Override
-    public void evictExpiredAndPublishExpiryEvent(Data key,
-                                                  ExpiryReason expiryReason,
-                                                  boolean backup) {
+    public void evictExpiredEntryAndPublishExpiryEvent(Data key,
+                                                       ExpiryReason expiryReason,
+                                                       boolean backup) {
         Object value = evict(key, backup);
         if (!backup) {
             publishExpirationEvent(key, value, expiryReason);

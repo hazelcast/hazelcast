@@ -913,7 +913,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                   long maxIdleMillis, long now, UUID transactionId,
                                   EntryEventType entryEventType, boolean store,
                                   boolean backup) {
-
         Record record = createRecord(newValue, ttlMillis, maxIdleMillis, now);
         if (store) {
             putIntoMapStore(record, key, newValue, now, transactionId);
@@ -1347,6 +1346,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             mutationObserver.onReset();
         } finally {
             mapDataStore.reset();
+            expirySystem.clear();
             storage.clear(false);
             stats.reset();
         }
@@ -1385,6 +1385,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     private void destroyStorageImmediate(boolean isDuringShutdown, boolean internal) {
         mutationObserver.onDestroy(isDuringShutdown, internal);
+        expirySystem.destroy();
         // Destroy storage in the end
         storage.destroy(isDuringShutdown);
     }
@@ -1406,6 +1407,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         try {
             mutationObserver.onClear();
         } finally {
+            expirySystem.clear();
             storage.clear(isDuringShutdown);
         }
     }

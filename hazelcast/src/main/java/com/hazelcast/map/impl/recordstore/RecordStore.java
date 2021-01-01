@@ -467,7 +467,7 @@ public interface RecordStore<R extends Record> {
      */
     boolean evictIfExpired(Data key, long now, boolean backup);
 
-    void evictExpiredAndPublishExpiryEvent(Data key, ExpiryReason expiryReason, boolean backup);
+    void evictExpiredEntryAndPublishExpiryEvent(Data key, ExpiryReason expiryReason, boolean backup);
 
     /**
      * Evicts entries from this record-store.
