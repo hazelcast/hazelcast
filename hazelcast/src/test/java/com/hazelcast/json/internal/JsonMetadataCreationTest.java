@@ -30,6 +30,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.MetadataStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.Metadata;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -308,7 +309,8 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(getBackupInstance(instances, partitionId, replicaIndex));
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         RecordStore recordStore = mapService.getMapServiceContext().getPartitionContainer(partitionId).getRecordStore(mapName);
-        return recordStore.getMetadataStore().get(keyData);
+        MetadataStore metadataStore = recordStore.getMetadataStore();
+        return metadataStore.get(keyData);
     }
 
     private void assertMetadataCreatedEventually(final String mapName) {
@@ -330,8 +332,9 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
             for (int j = 0; j < ENTRY_COUNT; j++) {
                 Record record = mapBackupAccessor.getRecord(createJsonValue("key", j));
                 assertNotNull(record);
-                assertMetadata("Replica index=" + i,
-                        getMetadata(mapName, createJsonValue("key", j), i));
+                HazelcastJsonValue jsonValue = createJsonValue("key", j);
+                Metadata metadata = getMetadata(mapName, jsonValue, i);
+                assertMetadata("Replica index=" + i, metadata);
             }
         }
     }

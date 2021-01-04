@@ -62,7 +62,7 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
     @Override
     public void onUpdateRecord(@Nonnull Data key, @Nonnull Record record,
                                Object oldValue, Object newValue, boolean backup) {
-        updateValueMetadataIfNecessary(key, record, oldValue, newValue);
+        updateValueMetadataIfNecessary(key, oldValue, newValue);
     }
 
     @Override
@@ -95,27 +95,27 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
         metadataStore.clear();
     }
 
-    protected Metadata getMetadata(Data dataKey, Record record) {
+    protected Metadata getMetadata(Data dataKey) {
         return metadataStore.get(dataKey);
     }
 
-    protected void setMetadata(Data dataKey, Record record, Metadata metadata) {
+    protected void setMetadata(Data dataKey, Metadata metadata) {
         metadataStore.set(dataKey, metadata);
     }
 
-    protected void removeMetadata(Data dataKey, Record record) {
+    protected void removeMetadata(Data dataKey) {
         metadataStore.remove(dataKey);
     }
 
     private void onPutInternal(Data dataKey, Record record) {
         Metadata metadata = initializeMetadata(dataKey, record.getValue());
         if (metadata != null) {
-            setMetadata(dataKey, record, metadata);
+            setMetadata(dataKey, metadata);
         }
     }
 
     @SuppressFBWarnings("NP_LOAD_OF_KNOWN_NULL_VALUE")
-    private void updateValueMetadataIfNecessary(Data dataKey, Record record,
+    private void updateValueMetadataIfNecessary(Data dataKey,
                                                 Object oldValue, Object updateValue) {
         Object valueMetadata = null;
         try {
@@ -132,19 +132,19 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
         }
         if (valueMetadata != null) {
             // There is some valueMetadata. We either set existing record.valueMetadata or create a new one.
-            Metadata existing = getMetadata(dataKey, record);
+            Metadata existing = getMetadata(dataKey);
             if (existing == null) {
                 existing = new Metadata();
-                setMetadata(dataKey, record, existing);
+                setMetadata(dataKey, existing);
             }
             existing.setValueMetadata(valueMetadata);
         } else {
             // Value metadata is empty. We either remove metadata altogether (if keyMetadata is null too)
             // or set valueMetadata to null.
-            Metadata existing = getMetadata(dataKey, record);
+            Metadata existing = getMetadata(dataKey);
             if (existing != null) {
                 if (existing.getKeyMetadata() == null) {
-                    removeMetadata(dataKey, record);
+                    removeMetadata(dataKey);
                 } else {
                     existing.setValueMetadata(valueMetadata);
                 }
