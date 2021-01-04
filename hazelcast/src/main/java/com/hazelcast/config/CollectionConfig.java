@@ -72,7 +72,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         this.maxSize = config.maxSize;
         this.statisticsEnabled = config.statisticsEnabled;
         this.splitBrainProtectionName = config.splitBrainProtectionName;
-        this.mergePolicyConfig = config.mergePolicyConfig;
+        this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
     }
 
     /**

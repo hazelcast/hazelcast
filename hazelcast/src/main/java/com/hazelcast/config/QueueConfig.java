@@ -91,7 +91,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         this.emptyQueueTtl = config.emptyQueueTtl;
         this.statisticsEnabled = config.statisticsEnabled;
         this.splitBrainProtectionName = config.splitBrainProtectionName;
-        this.mergePolicyConfig = config.mergePolicyConfig;
+        this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<>(config.getItemListenerConfigs());
         this.priorityComparatorClassName = config.priorityComparatorClassName;

@@ -77,7 +77,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig {
         this.asyncBackupCount = config.asyncBackupCount;
         this.statisticsEnabled = config.statisticsEnabled;
         this.splitBrainProtectionName = config.splitBrainProtectionName;
-        this.mergePolicyConfig = config.mergePolicyConfig;
+        this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
     }
 
     /**
