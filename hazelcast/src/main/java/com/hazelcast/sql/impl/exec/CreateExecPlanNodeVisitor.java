@@ -37,6 +37,7 @@ import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.partitioner.SingleValuePartitioner;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
@@ -375,7 +376,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     public void onUnicastSendNode(UnicastSendPlanNode node) {
         Outbox[] outboxes = prepareOutboxes(node);
 
-        assert outboxes.length == 1;
+        assert outboxes.length == 1 && node.getPartitioner().equals(SingleValuePartitioner.INSTANCE);
 
         exec = new SendExec(node.getId(), pop(), outboxes[0]);
     }
