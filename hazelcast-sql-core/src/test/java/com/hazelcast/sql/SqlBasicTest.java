@@ -730,6 +730,11 @@ public class SqlBasicTest extends SqlTestSupport {
     }
 
     static class SerializablePojo extends AbstractPojo implements Serializable {
+
+        public SerializablePojo() {
+            // no-op
+        }
+
         public SerializablePojo(long val) {
             super(val);
         }

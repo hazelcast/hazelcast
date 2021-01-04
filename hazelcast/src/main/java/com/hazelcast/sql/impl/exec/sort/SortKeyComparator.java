@@ -39,6 +39,9 @@ public class SortKeyComparator implements Comparator<SortKey> {
     public int compare(SortKey o1, SortKey o2) {
         Object[] key1 = o1.getKey();
         Object[] key2 = o2.getKey();
+
+        // We use the default ordering for the null values, that is
+        // null value is LESS than any other non-null value
         for (int i = 0; i < ascs.length; i++) {
             boolean asc = ascs[i];
 
@@ -48,7 +51,7 @@ public class SortKeyComparator implements Comparator<SortKey> {
             Comparable item1Comp = (Comparable) item1;
             Comparable item2Comp = (Comparable) item2;
 
-            int res = asc ? item1Comp.compareTo(item2Comp) : item2Comp.compareTo(item1Comp);
+            int res = compare(item1Comp, item2Comp, asc);
 
             if (res != 0) {
                 return res;
@@ -57,4 +60,21 @@ public class SortKeyComparator implements Comparator<SortKey> {
 
         return Long.compare(o1.getIndex(), o2.getIndex());
     }
+
+    private int compare(Comparable o1, Comparable o2, boolean asc) {
+        if (o1 == null && o2 == null) {
+            return 0;
+        }
+
+        if (o1 == null) {
+            return asc ? -1 : 1;
+        }
+
+        if (o2 == null) {
+            return asc ? 1 : -1;
+        }
+
+        return asc ? o1.compareTo(o2) : o2.compareTo(o1);
+    }
+
 }

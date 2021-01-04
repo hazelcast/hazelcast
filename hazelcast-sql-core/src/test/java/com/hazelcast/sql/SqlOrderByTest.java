@@ -117,8 +117,13 @@ public class SqlOrderByTest extends SqlTestSupport {
         // Populate map with values
         Map<Object, AbstractPojo> data = new HashMap<>();
 
+        int nullValueCount = 10;
         for (long i = 0; i < DATA_SET_SIZE; i++) {
-            data.put(key(i), value(i));
+            if (i % nullValueCount == 0) {
+                data.put(key(i), value());
+            } else {
+                data.put(key(i), value(i));
+            }
         }
 
         map.putAll(data);
@@ -203,10 +208,11 @@ public class SqlOrderByTest extends SqlTestSupport {
         String sql = sqlWithOrderBy(Arrays.asList(adjustFieldName("intVal"),
             adjustFieldName("intVal") + " + " + adjustFieldName("bigIntVal")),
             Arrays.asList(adjustFieldName("intVal"), adjustFieldName("bigIntVal")), Arrays.asList(true, true));
+
         checkSelectWithOrderBy(Arrays.asList(adjustFieldName("intVal"), adjustFieldName("bigIntVal")),
             sql,
-            Arrays.asList(adjustFieldName("intVal"), adjustFieldName("bigIntVal")),
-            Arrays.asList(true, true));
+            Arrays.asList(adjustFieldName("intVal")),
+            Arrays.asList(true));
     }
 
     @Test
@@ -225,7 +231,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
 
         String intValField = adjustFieldName("intVal");
-        String bigIntValField = adjustFieldName("bigIntVal");
+        String bigIntValField = adjustFieldName("realVal");
         IndexConfig indexConfig1 = new IndexConfig().setName("Index_" + randomName())
             .setType(IndexType.SORTED).addAttribute(intValField);
 
@@ -297,7 +303,6 @@ public class SqlOrderByTest extends SqlTestSupport {
             SqlRow prevRow = null;
             while (rowIterator.hasNext()) {
                 SqlRow row = rowIterator.next();
-
                 assertOrdered(prevRow, row, orderFields, orderDirections, rowMetadata);
 
                 prevRow = row;
@@ -309,7 +314,8 @@ public class SqlOrderByTest extends SqlTestSupport {
         }
     }
 
-    public void checkSelectWithOrderBy(List<String> indexAttrs, String sql, List<String> orderFields, List<Boolean> orderDirections) {
+
+    public void checkSelectWithOrderBy(List<String> indexAttrs, String sql, List<String> checkOrderFields, List<Boolean> orderDirections) {
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
 
         IndexConfig indexConfig = new IndexConfig().setName("Index_" + randomName())
@@ -332,8 +338,7 @@ public class SqlOrderByTest extends SqlTestSupport {
             while (rowIterator.hasNext()) {
                 SqlRow row = rowIterator.next();
 
-                assertOrdered(prevRow, row, orderFields, orderDirections, rowMetadata);
-
+                assertOrdered(prevRow, row, checkOrderFields, orderDirections, rowMetadata);
                 prevRow = row;
             }
 
@@ -355,14 +360,30 @@ public class SqlOrderByTest extends SqlTestSupport {
             Object fieldValue = row.getObject(rowMetadata.findColumn(fieldName));
 
             int cmp = 0;
-            if (fieldValue instanceof Integer) {
-                cmp = ((Integer) prevFieldValue).compareTo((Integer) fieldValue);
-            } else if (fieldValue instanceof Long) {
-                cmp = ((Long) prevFieldValue).compareTo((Long) fieldValue);
-            } else if (fieldValue instanceof String) {
-                cmp = ((String) prevFieldValue).compareTo((String) fieldValue);
+            if (fieldValue == null) {
+                // We use the default ordering for the null values, that is
+                // null value is LESS than any other non-null value
+                if (descending) {
+                    cmp = prevFieldValue == null ? 0 : -1;
+                } else {
+                    cmp = prevFieldValue == null ? 0 : 1;
+                }
+            } else if (prevFieldValue == null) {
+                if (descending) {
+                    cmp = fieldValue == null ? 0 : 1;
+                } else {
+                    cmp = fieldValue == null ? 0 : -1;
+                }
             } else {
-                fail("Not supported field type");
+                if (fieldValue instanceof Integer) {
+                    cmp = ((Integer) prevFieldValue).compareTo((Integer) fieldValue);
+                } else if (fieldValue instanceof Long) {
+                    cmp = ((Long) prevFieldValue).compareTo((Long) fieldValue);
+                } else if (fieldValue instanceof String) {
+                    cmp = ((String) prevFieldValue).compareTo((String) fieldValue);
+                } else {
+                    fail("Not supported field type");
+                }
             }
 
             if (cmp == 0) {
@@ -515,19 +536,23 @@ public class SqlOrderByTest extends SqlTestSupport {
         }
     }
 
-    private AbstractPojo value(long i) {
+    private AbstractPojo value() {
+        return value(null);
+    }
+
+    private AbstractPojo value(Long i) {
         switch (serializationMode) {
             case SERIALIZABLE:
-                return new SerializablePojo(i);
+                return i == null ? new SerializablePojo() : new SerializablePojo(i);
 
             case DATA_SERIALIZABLE:
-                return new DataSerializablePojo(i);
+                return i == null ? new DataSerializablePojo() : new DataSerializablePojo(i);
 
             case IDENTIFIED_DATA_SERIALIZABLE:
-                return new IdentifiedDataSerializablePojo(i);
+                return i == null ? new IdentifiedDataSerializablePojo() : new IdentifiedDataSerializablePojo(i);
 
             default:
-                return new PortablePojo(i);
+                return i == null ? new PortablePojo() : new PortablePojo(i);
         }
     }
 
