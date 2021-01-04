@@ -359,6 +359,21 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
+    public void shouldHandleMapMapStoreConfig() throws Exception {
+        Config config = new Config();
+        config.getMapConfig("foo")
+          .getMapStoreConfig()
+          .setEnabled(true)
+          .setWriteBatchSize(10);
+
+        withEnvironmentVariable("HZ_MAP_FOO_MAPSTORE_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getMapConfig("foo").getMapStoreConfig().isEnabled());
+        assertEquals(10, config.getMapConfig("foo").getMapStoreConfig().getWriteBatchSize());
+    }
+
+    @Test
     public void shouldHandleReplicatedMapConfig() throws Exception {
         Config config = new Config();
         config.getReplicatedMapConfig("foo")
