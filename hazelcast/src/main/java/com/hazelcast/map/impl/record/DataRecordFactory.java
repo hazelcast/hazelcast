@@ -52,15 +52,15 @@ public class DataRecordFactory implements RecordFactory<Data> {
 
                 if (hasEviction) {
                     if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LRU) {
-                        return new SimpleRecordWithLRUEviction<Data>(valueData);
+                        return new SimpleRecordWithLRUEviction<>(valueData);
                     }
 
                     if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LFU) {
-                        return new SimpleRecordWithLFUEviction<Data>(valueData);
+                        return new SimpleRecordWithLFUEviction<>(valueData);
                     }
                 }
 
-                return new SimpleRecord<Data>(valueData);
+                return new SimpleRecord<>(valueData);
             default:
                 if (statisticsEnabled) {
                     return new CachedDataRecordWithStats(valueData);

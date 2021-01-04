@@ -49,7 +49,7 @@ public enum RecordReaderWriter {
         @Override
         public Record readRecord(ObjectDataInput in,
                                  ExpiryMetadata expiryMetadata) throws IOException {
-            DataRecord record = new DataRecord();
+            Record record = new DataRecord();
             record.setValue(readData(in));
             record.setRawTtl(in.readInt());
             record.setRawMaxIdle(in.readInt());
@@ -85,7 +85,7 @@ public enum RecordReaderWriter {
         @Override
         public Record readRecord(ObjectDataInput in,
                                  ExpiryMetadata expiryMetadata) throws IOException {
-            DataRecordWithStats record = new DataRecordWithStats();
+            Record record = new DataRecordWithStats();
             record.setValue(readData(in));
             record.setRawTtl(in.readInt());
             record.setRawMaxIdle(in.readInt());
@@ -216,7 +216,7 @@ public enum RecordReaderWriter {
             case TypeId.SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_TYPE_ID:
                 return SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER;
             default:
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("Not known RecordReaderWriter type-id: " + id);
         }
     }
 

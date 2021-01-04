@@ -16,15 +16,15 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER;
 
 /**
- * Used when {@link com.hazelcast.config.MapConfig#statisticsEnabled}
- * is {@code false}, {@link
- * com.hazelcast.config.MapConfig#cacheDeserializedValues} is not
+ * Used when {@link MapConfig#isStatisticsEnabled()} is {@code
+ * false}, {@link MapConfig#getCacheDeserializedValues()} is not
  * {@link com.hazelcast.config.CacheDeserializedValues#NEVER}
  * and eviction is configured.
  *

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.Data;
 
 import java.util.Objects;
@@ -24,12 +25,12 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
 /**
- * Used when {@link com.hazelcast.config.MapConfig#statisticsEnabled}
- * is {@code false} and {@link
- * com.hazelcast.config.MapConfig#cacheDeserializedValues} is not
- * {@link com.hazelcast.config.CacheDeserializedValues#NEVER}.
+ * Used when {@link MapConfig#isStatisticsEnabled()} is {@code
+ * false} and {@link MapConfig#getCacheDeserializedValues()} is
+ * not {@link com.hazelcast.config.CacheDeserializedValues#NEVER}.
  *
  * @see CachedSimpleRecordWithLFUEviction
+ * @see CachedSimpleRecordWithLRUEviction
  */
 class CachedSimpleRecord extends SimpleRecord<Data> {
     private static final AtomicReferenceFieldUpdater<CachedSimpleRecord, Object> CACHED_VALUE =
