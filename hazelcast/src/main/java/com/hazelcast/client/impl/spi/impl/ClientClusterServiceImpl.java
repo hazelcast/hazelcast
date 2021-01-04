@@ -35,12 +35,10 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import javax.annotation.Nonnull;
 import java.net.InetSocketAddress;
@@ -80,7 +78,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
     private final Set<String> labels;
     private final ILogger logger;
-    private final ClientConnectionManager connectionManager;
     private final Object clusterViewLock = new Object();
     //read and written under clusterViewLock
     private CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
@@ -99,7 +96,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         this.client = client;
         labels = unmodifiableSet(client.getClientConfig().getLabels());
         logger = client.getLoggingService().getLogger(ClientClusterService.class);
-        connectionManager = client.getConnectionManager();
     }
 
     @Override
@@ -271,15 +267,8 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
         List<MembershipEvent> events = new LinkedList<>();
 
-        // removal events should be added before added events
         for (Member member : deadMembers) {
             events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED, currentMembers));
-            Connection connection = connectionManager.getConnection(member.getUuid());
-            if (connection != null) {
-                connection.close(null,
-                        new TargetDisconnectedException("The client has closed the connection to this member,"
-                                + " after receiving a member left event from the cluster. " + connection));
-            }
         }
         for (Member member : newMembers) {
             events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_ADDED, currentMembers));
