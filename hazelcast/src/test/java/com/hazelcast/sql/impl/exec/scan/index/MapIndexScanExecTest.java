@@ -40,7 +40,7 @@ import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -49,21 +49,25 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapIndexScanExecTest extends SqlTestSupport {
 
@@ -72,6 +76,14 @@ public class MapIndexScanExecTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";
     private static final String INDEX_NAME = "index";
+
+    @Parameterized.Parameters(name = "descendingDirection:{0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{{true}, {false}});
+    }
+
+    @Parameterized.Parameter
+    public boolean descendingDirection;
 
     private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
 
@@ -403,6 +415,7 @@ public class MapIndexScanExecTest extends SqlTestSupport {
         List<QueryPath> fieldPaths = Collections.singletonList(valuePath(null));
         List<QueryDataType> fieldTypes = Collections.singletonList(QueryDataType.INT);
         List<Integer> projects = Collections.singletonList(0);
+        List<Boolean> ascs = Collections.singletonList(descendingDirection);
 
         MapIndexScanExec exec = new MapIndexScanExec(
                 1,
@@ -419,7 +432,7 @@ public class MapIndexScanExecTest extends SqlTestSupport {
                 expectedComponentCount,
                 indexFilter,
                 converterTypes,
-                Collections.singletonList(true)
+                ascs
         );
 
         exec.setup(emptyFragmentContext());
