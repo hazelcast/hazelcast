@@ -72,15 +72,17 @@ import static com.hazelcast.config.IndexType.HASH;
 import static com.hazelcast.config.IndexType.SORTED;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static java.util.Collections.singletonList;
-import static org.apache.calcite.rel.RelFieldCollation.Direction.DESCENDING;
 import static org.apache.calcite.rel.RelFieldCollation.Direction;
-
+import static org.apache.calcite.rel.RelFieldCollation.Direction.ASCENDING;
+import static org.apache.calcite.rel.RelFieldCollation.Direction.DESCENDING;
 
 /**
  * Helper class to resolve indexes.
  */
-@SuppressWarnings("rawtypes")
+@SuppressWarnings({"rawtypes", "checkstyle:MethodCount"})
 public final class IndexResolver {
     private IndexResolver() {
         // No-op.
@@ -95,11 +97,13 @@ public final class IndexResolver {
      * First, the full index scans are created and the covered (prefix-based) scans are excluded.
      * Second, the lookups are created and if lookup's collation is equal to the full scan's collation,
      * the latter one is excluded.
+     *
      * @param scan         scan operator to be analyzed
      * @param distribution distribution that will be passed to created index scan rels
      * @param indexes      indexes available on the map being scanned
      * @return zero, one or more index scan rels
      */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     public static Collection<RelNode> createIndexScans(
         MapScanLogicalRel scan,
         DistributionTrait distribution,
@@ -133,7 +137,8 @@ public final class IndexResolver {
             if (index.getType() == SORTED) {
                 // Only for SORTED index create full index scans that might be potentially
                 // utilized by sorting operator.
-                RelNode relAscending = createFullIndexScan(scan, distribution, index, false, true);
+                List<Boolean> ascs = buildFieldDirections(index, true);
+                RelNode relAscending = createFullIndexScan(scan, distribution, index, ascs, true);
 
                 if (relAscending != null) {
                     fullScanRels.add(relAscending);
@@ -168,14 +173,13 @@ public final class IndexResolver {
             return Collections.emptyList();
         }
 
-
         List<RelNode> rels = new ArrayList<>(supportedIndexes.size());
 
         for (MapTableIndex index : supportedIndexes) {
             // Create index scan based on candidates, if possible. Candidates could be merged into more complex
             // filters whenever possible.
-
-            RelNode relAscending = createIndexScan(scan, distribution, index, conjunctions, candidates, false);
+            List<Boolean> ascs = buildFieldDirections(index, true);
+            RelNode relAscending = createIndexScan(scan, distribution, index, conjunctions, candidates, ascs);
 
             if (relAscending != null) {
                 RelCollation relAscCollation = getCollation(relAscending);
@@ -206,7 +210,6 @@ public final class IndexResolver {
 
     /**
      * Replaces a direction in the collation trait of the rel
-     *
      * @param rel       the rel
      * @param direction the collation
      * @return the rel with changed collation
@@ -747,6 +750,7 @@ public final class IndexResolver {
      * @param index        index to be considered
      * @param conjunctions CNF components of the original map filter
      * @param candidates   resolved candidates
+     * @param ascs         a list of index field collations
      * @return index scan or {@code null}.
      */
     public static RelNode createIndexScan(
@@ -755,7 +759,7 @@ public final class IndexResolver {
         MapTableIndex index,
         List<RexNode> conjunctions,
         Map<Integer, List<IndexComponentCandidate>> candidates,
-        boolean descending
+        List<Boolean> ascs
     ) {
         List<IndexComponentFilter> filters = new ArrayList<>(index.getFieldOrdinals().size());
 
@@ -805,7 +809,7 @@ public final class IndexResolver {
         }
 
         // Now as filters are determined, construct the physical entity.
-        return createIndexScan(scan, distribution, index, conjunctions, filters, descending);
+        return createIndexScan(scan, distribution, index, conjunctions, filters, ascs);
     }
 
     private static MapIndexScanPhysicalRel createIndexScan(
@@ -814,7 +818,7 @@ public final class IndexResolver {
         MapTableIndex index,
         List<RexNode> conjunctions,
         List<IndexComponentFilter> filterDescriptors,
-        boolean descending
+        List<Boolean> ascs
     ) {
         // Collect filters and relevant expressions
         List<IndexFilter> filters = new ArrayList<>(filterDescriptors.size());
@@ -840,7 +844,7 @@ public final class IndexResolver {
         RelTraitSet traitSet = OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution);
 
         // Make a collation trait
-        RelCollation relCollation = buildCollationTrait(scan, index, descending);
+        RelCollation relCollation = buildCollationTrait(scan, index, ascs);
         traitSet = OptUtils.traitPlus(traitSet, relCollation);
 
         // Prepare table
@@ -876,28 +880,47 @@ public final class IndexResolver {
     /**
      * Builds a collation with collation fields re-mapped according with the table projects
      *
-     * @param scan       the logical map scan
-     * @param index      the index
-     * @param descending whether the collation is descending
+     * @param scan  the logical map scan
+     * @param index the index
+     * @param ascs  the collation of index fields
      * @return the new collation trait
      */
     private static RelCollation buildCollationTrait(MapScanLogicalRel scan,
                                                     MapTableIndex index,
-                                                    boolean descending) {
+                                                    List<Boolean> ascs) {
         List<RelFieldCollation> fields = new ArrayList<>(index.getFieldOrdinals().size());
         HazelcastTable table = scan.getTableUnwrapped();
-        for (Integer indexFieldOrdinal : index.getFieldOrdinals()) {
+
+        for (int i = 0; i < index.getFieldOrdinals().size(); ++i) {
+            Integer indexFieldOrdinal = index.getFieldOrdinals().get(i);
+
             int remappedIndexFieldOrdinal = table.getProjects().indexOf(indexFieldOrdinal);
             if (remappedIndexFieldOrdinal == -1) {
                 // The field is not used in the query
                 break;
             }
-            RelFieldCollation.Direction direction = descending ? RelFieldCollation.Direction.DESCENDING
-                : RelFieldCollation.Direction.ASCENDING;
+            Direction direction = ascs.get(i) ? ASCENDING : DESCENDING;
             RelFieldCollation fieldCollation = new RelFieldCollation(remappedIndexFieldOrdinal, direction);
             fields.add(fieldCollation);
         }
+
         return RelCollations.of(fields);
+    }
+
+    /**
+     * Builds a list of all ascending or all descending field directions for the index fields
+     *
+     * @param allAscending whether all fields are ascending
+     * @return the list of field directions
+     */
+    private static List<Boolean> buildFieldDirections(MapTableIndex index, boolean allAscending) {
+        List<Boolean> ascs = new ArrayList<>(index.getFieldOrdinals().size());
+
+        for (int i = 0; i < index.getFieldOrdinals().size(); ++i) {
+            Boolean asc = allAscending ? TRUE : FALSE;
+            ascs.add(asc);
+        }
+        return ascs;
     }
 
     /**
@@ -906,7 +929,7 @@ public final class IndexResolver {
      * @param scan              the original scan operator
      * @param distribution      the original distribution
      * @param index             available indexes
-     * @param descending        whether the collation is descending
+     * @param ascs              the collation of index fields
      * @param nonEmptyCollation whether to filter out full index scan with no collation
      * @return index scan or {@code null}
      */
@@ -914,7 +937,7 @@ public final class IndexResolver {
         MapScanLogicalRel scan,
         DistributionTrait distribution,
         MapTableIndex index,
-        boolean descending,
+        List<Boolean> ascs,
         boolean nonEmptyCollation
     ) {
         assert isIndexSupported(index);
@@ -923,7 +946,7 @@ public final class IndexResolver {
 
         RelTraitSet traitSet = OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution);
 
-        RelCollation relCollation = buildCollationTrait(scan, index, descending);
+        RelCollation relCollation = buildCollationTrait(scan, index, ascs);
         if (nonEmptyCollation && relCollation.getFieldCollations().size() == 0) {
             // Don't make a full scan with empty collation
             return null;
@@ -978,7 +1001,8 @@ public final class IndexResolver {
             return null;
         }
 
-        return createFullIndexScan(scan, distribution, firstIndex, false, false);
+        List<Boolean> ascs = buildFieldDirections(firstIndex, true);
+        return createFullIndexScan(scan, distribution, firstIndex, ascs, false);
     }
 
     /**

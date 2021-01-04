@@ -47,7 +47,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
         InternalIndex index,
         int expectedComponentCount,
         IndexFilter indexFilter,
-        boolean descending,
+        List<Boolean> ascs,
         List<QueryDataType> expectedConverterTypes,
         ExpressionEvalContext evalContext
     ) {
@@ -55,7 +55,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
             mapName,
             index,
             indexFilter,
-            descending,
+            ascs,
             evalContext,
             expectedComponentCount,
             expectedConverterTypes
@@ -109,11 +109,14 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
         String mapName,
         InternalIndex index,
         IndexFilter indexFilter,
-        boolean descending,
+        List<Boolean> ascs,
         ExpressionEvalContext evalContext,
         int expectedComponentCount,
         List<QueryDataType> expectedConverterTypes
     ) {
+        // Now, the index subsystem supports only either all ascending or all descending directions
+        assert ascs != null && ascs.size() > 0;
+        boolean descending = !ascs.get(0);
         if (indexFilter == null) {
             // No filter => this is a full scan (e.g. for HD)
             return index.getSqlRecordIterator(descending);

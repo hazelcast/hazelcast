@@ -40,6 +40,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -74,7 +75,7 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
             indexFilter,
             converterTypes,
             remainderFilter,
-            false
+            Collections.singletonList(false)
         );
 
         assertEquals(id, node.getId());
@@ -113,6 +114,8 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
 
         int indexComponentCount1 = 1;
         int indexComponentCount2 = 2;
+        List<Boolean> ascs1 = Arrays.asList(true);
+        List<Boolean> ascs2 = Arrays.asList(true, true);
 
         IndexFilter indexFilter1 = new IndexRangeFilter();
         IndexFilter indexFilter2 = new IndexInFilter();
@@ -136,7 +139,7 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
             indexFilter1,
             converterTypes1,
             remainderFilter1,
-            false
+            ascs1
         );
 
         checkEquals(
@@ -154,7 +157,7 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
                 indexFilter1,
                 converterTypes1,
                 remainderFilter1,
-                false
+                ascs1
             ),
             true
         );
@@ -174,7 +177,7 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
                 indexFilter1,
                 converterTypes1,
                 remainderFilter1,
-                false
+                ascs1
             ),
             false
         );
@@ -194,7 +197,7 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
                 indexFilter1,
                 converterTypes1,
                 remainderFilter1,
-                false
+                ascs1
             ),
             false
         );
@@ -214,7 +217,7 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
                 indexFilter1,
                 converterTypes1,
                 remainderFilter1,
-                false
+                ascs1
             ),
             false
         );
@@ -234,7 +237,7 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
                 indexFilter1,
                 converterTypes1,
                 remainderFilter1,
-                false
+                ascs1
             ),
             false
         );
@@ -254,7 +257,7 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
                 indexFilter1,
                 converterTypes1,
                 remainderFilter1,
-                false
+                ascs1
             ),
             false
         );
@@ -274,7 +277,7 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
                 indexFilter1,
                 converterTypes1,
                 remainderFilter1,
-                false
+                ascs1
             ),
             false
         );
@@ -294,7 +297,7 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
                 indexFilter1,
                 converterTypes1,
                 remainderFilter1,
-                false
+                ascs1
             ),
             false
         );
@@ -314,7 +317,7 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
                 indexFilter1,
                 converterTypes1,
                 remainderFilter1,
-                false
+                ascs1
             ),
             false
         );
@@ -334,7 +337,7 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
                 indexFilter1,
                 converterTypes1,
                 remainderFilter1,
-                false
+                ascs2
             ),
             false
         );
@@ -354,7 +357,7 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
                 indexFilter2,
                 converterTypes1,
                 remainderFilter1,
-                false
+                ascs1
             ),
             false
         );
@@ -374,7 +377,7 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
                 indexFilter1,
                 converterTypes2,
                 remainderFilter1,
-                false
+                ascs1
             ),
             false
         );
@@ -394,7 +397,7 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
                 indexFilter1,
                 converterTypes1,
                 remainderFilter2,
-                false
+                ascs1
             ),
             false
         );
@@ -415,7 +418,7 @@ public class MapIndexScanPlanNodeTest extends SqlTestSupport {
             new IndexRangeFilter(),
             Collections.singletonList(QueryDataType.INT),
             new ConstantPredicateExpression(true),
-            false
+            Collections.singletonList(false)
         );
 
         MapIndexScanPlanNode restored = serializeAndCheck(original, SqlDataSerializerHook.NODE_MAP_INDEX_SCAN);

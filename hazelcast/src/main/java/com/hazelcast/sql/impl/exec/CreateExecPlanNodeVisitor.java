@@ -363,7 +363,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
                     node.getIndexComponentCount(),
                     node.getIndexFilter(),
                     node.getConverterTypes(),
-                    node.getDescending()
+                    node.getAscs()
                 );
             }
         }

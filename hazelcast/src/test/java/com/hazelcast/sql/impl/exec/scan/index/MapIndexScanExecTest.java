@@ -419,7 +419,7 @@ public class MapIndexScanExecTest extends SqlTestSupport {
                 expectedComponentCount,
                 indexFilter,
                 converterTypes,
-                false
+                Collections.singletonList(true)
         );
 
         exec.setup(emptyFragmentContext());

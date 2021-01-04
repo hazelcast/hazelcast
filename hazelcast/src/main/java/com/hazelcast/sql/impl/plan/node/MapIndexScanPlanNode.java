@@ -40,7 +40,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
     private int indexComponentCount;
     private IndexFilter indexFilter;
     private List<QueryDataType> converterTypes;
-    private boolean descending;
+    private List<Boolean> ascs;
 
     public MapIndexScanPlanNode() {
         // No-op.
@@ -60,7 +60,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
         IndexFilter indexFilter,
         List<QueryDataType> converterTypes,
         Expression<Boolean> remainderFilter,
-        boolean descending
+        List<Boolean> ascs
     ) {
         super(id, mapName, keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projects, remainderFilter);
 
@@ -68,7 +68,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
         this.indexComponentCount = indexComponentCount;
         this.indexFilter = indexFilter;
         this.converterTypes = converterTypes;
-        this.descending = descending;
+        this.ascs = ascs;
     }
 
     public String getIndexName() {
@@ -87,8 +87,8 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
         return converterTypes;
     }
 
-    public boolean getDescending() {
-        return descending;
+    public List<Boolean> getAscs() {
+        return ascs;
     }
 
     @Override
@@ -114,7 +114,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
         out.writeInt(indexComponentCount);
         out.writeObject(indexFilter);
         SerializationUtil.writeList(converterTypes, out);
-        out.writeBoolean(descending);
+        SerializationUtil.writeList(ascs, out);
     }
 
     @Override
@@ -125,7 +125,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
         indexComponentCount = in.readInt();
         indexFilter = in.readObject();
         converterTypes = SerializationUtil.readList(in);
-        descending = in.readBoolean();
+        ascs = SerializationUtil.readList(in);
     }
 
     @Override
@@ -148,7 +148,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
             && indexName.equals(that.indexName)
             && Objects.equals(indexFilter, that.indexFilter)
             && Objects.equals(converterTypes, that.converterTypes)
-            && descending == that.descending;
+            && Objects.equals(ascs, that.ascs);
     }
 
     @Override
@@ -159,7 +159,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
         result = 31 * result + indexComponentCount;
         result = 31 * result + (indexFilter != null ? indexFilter.hashCode() : 0);
         result = 31 * result + (converterTypes != null ? converterTypes.hashCode() : 0);
-        result = 31 * result + Boolean.hashCode(descending);
+        result = 31 * result + ascs.hashCode();
         return result;
     }
 
@@ -168,6 +168,6 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
         return getClass().getSimpleName() + "{id=" + id + ", mapName=" + mapName + ", fieldPaths=" + fieldPaths
             + ", projects=" + projects + ", indexName=" + indexName + ", indexFilter=" + indexFilter
             + ", remainderFilter=" + filter
-            + ", descending=" + descending + '}';
+            + ", ascs=" + ascs + '}';
     }
 }

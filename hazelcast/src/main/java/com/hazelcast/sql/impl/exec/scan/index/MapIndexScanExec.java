@@ -49,8 +49,8 @@ public class MapIndexScanExec extends MapScanExec {
     /** Stamp to ensure that indexed partitions are stable throughout query execution. */
     private Long partitionStamp;
 
-    // Whether the index entries are ordered descending
-    private boolean descending;
+    // The collation of index entries
+    private List<Boolean> ascs;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public MapIndexScanExec(
@@ -68,7 +68,7 @@ public class MapIndexScanExec extends MapScanExec {
         int componentCount,
         IndexFilter indexFilter,
         List<QueryDataType> converterTypes,
-        boolean descending
+        List<Boolean> ascs
     ) {
         super(
             id,
@@ -87,7 +87,7 @@ public class MapIndexScanExec extends MapScanExec {
         this.componentCount = componentCount;
         this.indexFilter = indexFilter;
         this.converterTypes = converterTypes;
-        this.descending = descending;
+        this.ascs = ascs;
     }
 
     @Override
@@ -119,7 +119,7 @@ public class MapIndexScanExec extends MapScanExec {
             throw invalidIndexStamp();
         }
 
-        return new MapIndexScanExecIterator(mapName, index, componentCount, indexFilter, descending, converterTypes, ctx);
+        return new MapIndexScanExecIterator(mapName, index, componentCount, indexFilter, ascs, converterTypes, ctx);
     }
 
     @Override
@@ -141,6 +141,6 @@ public class MapIndexScanExec extends MapScanExec {
     public String toString() {
         return getClass().getSimpleName() + "{mapName=" + mapName + ", fieldPaths=" + fieldPaths + ", projects=" + projects
             + "indexName=" + indexName + ", indexFilter=" + indexFilter + ", remainderFilter=" + filter
-            + ", partitionCount=" + partitions.size() + ", descending=" + descending + '}';
+            + ", partitionCount=" + partitions.size() + ", ascs=" + ascs + '}';
     }
 }

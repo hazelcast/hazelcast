@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.exec.sort;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Comparator;
-import java.util.List;
 
 /**
  * Comparator fot the sort key.
