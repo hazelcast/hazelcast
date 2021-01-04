@@ -99,6 +99,11 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     }
 
     @Override
+    public boolean rowTypeCoercion(SqlValidatorScope scope, SqlNode query, int columnIndex, RelDataType targetType) {
+        throw new UnsupportedOperationException("Should not be called");
+    }
+
+    @Override
     public boolean caseWhenCoercion(SqlCallBinding callBinding) {
         throw new UnsupportedOperationException("Should not be called");
     }
@@ -119,6 +124,16 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     @Override
     public boolean userDefinedFunctionCoercion(SqlValidatorScope scope, SqlCall call, SqlFunction function) {
+        throw new UnsupportedOperationException("Should not be called");
+    }
+
+    @Override
+    public boolean querySourceCoercion(
+        SqlValidatorScope scope,
+        RelDataType sourceRowType,
+        RelDataType targetRowType,
+        SqlNode query
+    ) {
         throw new UnsupportedOperationException("Should not be called");
     }
 }
