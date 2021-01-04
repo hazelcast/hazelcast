@@ -29,7 +29,7 @@ import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_READE
 public abstract class AbstractRecord<V> implements Record<V> {
 
     private static final int NUMBER_OF_LONGS = 1;
-    private static final int NUMBER_OF_INTS = 6;
+    private static final int NUMBER_OF_INTS = 4;
 
     protected long version;
 

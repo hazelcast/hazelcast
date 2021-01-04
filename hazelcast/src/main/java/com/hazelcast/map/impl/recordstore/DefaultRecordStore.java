@@ -902,7 +902,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             record.onAccess(now);
         }
         if (store) {
-            newValue = putIntoMapStore(record, key, newValue, now, transactionId);
+            newValue = putIntoMapStore(record, key, newValue,
+                    ttl, maxIdle, now, transactionId);
         }
         storage.updateRecordValue(key, record, newValue);
         getExpirySystem().addExpiry(key, ttl, maxIdle, now);
@@ -916,7 +917,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                   boolean backup) {
         Record record = createRecord(newValue, ttlMillis, maxIdleMillis, now);
         if (store) {
-            putIntoMapStore(record, key, newValue, now, transactionId);
+            putIntoMapStore(record, key, newValue, ttlMillis, maxIdleMillis, now, transactionId);
         }
         storage.put(key, record);
         getExpirySystem().addExpiry(key, ttlMillis, maxIdleMillis, now);
@@ -929,9 +930,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     protected Object putIntoMapStore(Record record, Data key, Object newValue,
+                                     long ttlMillis, long maxIdleMillis,
                                      long now, UUID transactionId) {
         newValue = mapDataStore.add(key, newValue,
-                getExpirySystem().getExpiredMetadata(key).getExpirationTime(),
+                getExpirySystem().getExpirationTime(ttlMillis, maxIdleMillis, now),
                 now, transactionId);
         if (mapDataStore.isPostProcessingMapStore()) {
             storage.updateRecordValue(key, record, newValue);

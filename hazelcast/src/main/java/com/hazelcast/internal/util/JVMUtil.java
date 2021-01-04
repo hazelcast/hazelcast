@@ -96,7 +96,7 @@ public final class JVMUtil {
      *
      * @param runtime
      * @return an approximation to the total amount of memory currently
- *             used, measured in bytes.
+     * used, measured in bytes.
      */
     public static long usedMemory(final Runtime runtime) {
         long totalBegin;

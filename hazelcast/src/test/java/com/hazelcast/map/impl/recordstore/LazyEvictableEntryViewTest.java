@@ -44,8 +44,8 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LazyEvictableEntryViewTest {
 
-    private static final int WITH_COMPRESSED_OOPS_ENTRY_VIEW_COST_IN_BYTES = 85;
-    private static final int WITH_OOPS_ENTRY_VIEW_COST_IN_BYTES = 97;
+    private static final int WITH_COMPRESSED_OOPS_ENTRY_VIEW_COST_IN_BYTES = 73;
+    private static final int WITH_OOPS_ENTRY_VIEW_COST_IN_BYTES = 85;
 
     private final String key = "key";
     private final String value = "value";
@@ -96,7 +96,7 @@ public class LazyEvictableEntryViewTest {
 
     @Test
     public void test_getExpirationTime() throws Exception {
-        assertEquals(0, view.getExpirationTime());
+        assertEquals(Long.MAX_VALUE, view.getExpirationTime());
     }
 
     @Test
@@ -126,7 +126,7 @@ public class LazyEvictableEntryViewTest {
 
     @Test
     public void test_getTtl() throws Exception {
-        assertEquals(0, view.getTtl());
+        assertEquals(Long.MAX_VALUE, view.getTtl());
     }
 
     @Test

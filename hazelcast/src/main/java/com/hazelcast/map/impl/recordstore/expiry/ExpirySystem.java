@@ -107,6 +107,13 @@ public class ExpirySystem {
         addExpiry0(key, ttlMillis, maxIdleMillis, expirationTime);
     }
 
+    public long getExpirationTime(long ttl, long maxIdle, long now) {
+        MapConfig mapConfig = mapContainer.getMapConfig();
+        long ttlMillis = pickTTLMillis(ttl, mapConfig);
+        long maxIdleMillis = pickMaxIdleMillis(maxIdle, mapConfig);
+        return calculateExpirationTime(ttlMillis, maxIdleMillis, now);
+    }
+
     public void addExpiry0(Data key, long ttlMillis, long maxIdleMillis, long expirationTime) {
         if (expirationTime == Long.MAX_VALUE) {
             Map<Data, ExpiryMetadata> map = getOrCreateExpireTimeByKeyMap(false);
