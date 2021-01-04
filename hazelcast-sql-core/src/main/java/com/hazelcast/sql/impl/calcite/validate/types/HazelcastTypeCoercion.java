@@ -85,7 +85,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         }
 
         // CAST is only required between different types.
-        return from.getSqlTypeName() != to.getSqlTypeName();
+        return !from.equals(to);
     }
 
     @Override
@@ -98,10 +98,10 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         throw new UnsupportedOperationException("Should not be called");
     }
 
-    @Override
-    public boolean rowTypeCoercion(SqlValidatorScope scope, SqlNode query, int columnIndex, RelDataType targetType) {
-        throw new UnsupportedOperationException("Should not be called");
-    }
+//    @Override
+//    public boolean rowTypeCoercion(SqlValidatorScope scope, SqlNode query, int columnIndex, RelDataType targetType) {
+//        return super.rowTypeCoercion(scope, query, columnIndex, targetType);
+//    }
 
     @Override
     public boolean caseWhenCoercion(SqlCallBinding callBinding) {
@@ -127,13 +127,13 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         throw new UnsupportedOperationException("Should not be called");
     }
 
-    @Override
-    public boolean querySourceCoercion(
-        SqlValidatorScope scope,
-        RelDataType sourceRowType,
-        RelDataType targetRowType,
-        SqlNode query
-    ) {
-        throw new UnsupportedOperationException("Should not be called");
-    }
+//    @Override
+//    public boolean querySourceCoercion(
+//        SqlValidatorScope scope,
+//        RelDataType sourceRowType,
+//        RelDataType targetRowType,
+//        SqlNode query
+//    ) {
+//        throw new UnsupportedOperationException("Should not be called");
+//    }
 }
