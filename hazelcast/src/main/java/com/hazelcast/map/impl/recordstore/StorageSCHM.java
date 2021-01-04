@@ -16,12 +16,13 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 
 /**
  * An extended {@link SampleableConcurrentHashMap} with {@link IMap} specifics.
@@ -34,15 +35,18 @@ public class StorageSCHM<R extends Record> extends SampleableConcurrentHashMap<D
     private static final int DEFAULT_INITIAL_CAPACITY = 256;
 
     private final SerializationService serializationService;
+    private final ExpirySystem expirySystem;
 
-    public StorageSCHM(SerializationService serializationService) {
+    public StorageSCHM(SerializationService serializationService, ExpirySystem expirySystem) {
         super(DEFAULT_INITIAL_CAPACITY);
 
         this.serializationService = serializationService;
+        this.expirySystem = expirySystem;
     }
 
     @Override
     protected <E extends SamplingEntry> E createSamplingEntry(Data key, R record) {
-        return (E) new LazyEvictableEntryView<>(key, record, serializationService);
+        return (E) new LazyEvictableEntryView<>(key, record,
+                expirySystem.getExpiredMetadata(key), serializationService);
     }
 }

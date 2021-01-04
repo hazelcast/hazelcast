@@ -25,35 +25,13 @@ import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_
 abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
 
     private int lastStoredTime = UNSET;
-    private int expirationTime = UNSET;
 
     AbstractRecordWithStats() {
     }
 
     @Override
     public long getCost() {
-        final int numberOfIntFields = 2;
-        return super.getCost() + numberOfIntFields * INT_SIZE_IN_BYTES;
-    }
-
-    @Override
-    public long getExpirationTime() {
-        if (expirationTime == UNSET) {
-            return 0L;
-        }
-
-        if (expirationTime == Integer.MAX_VALUE) {
-            return Long.MAX_VALUE;
-        }
-
-        return recomputeWithBaseTime(expirationTime);
-    }
-
-    @Override
-    public void setExpirationTime(long expirationTime) {
-        this.expirationTime = expirationTime == Long.MAX_VALUE
-                ? Integer.MAX_VALUE
-                : stripBaseTime(expirationTime);
+        return super.getCost() + INT_SIZE_IN_BYTES;
     }
 
     @Override
@@ -81,16 +59,6 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
     }
 
     @Override
-    public int getRawExpirationTime() {
-        return expirationTime;
-    }
-
-    @Override
-    public void setRawExpirationTime(int time) {
-        this.expirationTime = time;
-    }
-
-    @Override
     public RecordReaderWriter getMatchingRecordReaderWriter() {
         return DATA_RECORD_WITH_STATS_READER_WRITER;
     }
@@ -106,14 +74,13 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
             return false;
         }
 
-        return expirationTime == that.expirationTime;
+        return true;
     }
 
     @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + lastStoredTime;
-        result = 31 * result + expirationTime;
         return result;
     }
 
@@ -121,7 +88,6 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
     public String toString() {
         return "AbstractRecordWithStats{"
                 + "lastStoredTime=" + lastStoredTime
-                + ", expirationTime=" + expirationTime
                 + "} " + super.toString();
     }
 }

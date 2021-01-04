@@ -44,8 +44,8 @@ public class TxnSetBackupOperation extends PutBackupOperation {
 
     @Override
     protected void runInternal() {
-        Record currentRecord = recordStore.putBackupTxn(dataKey, record, isPutTransient(),
-                getCallerProvenance(), transactionId);
+        Record currentRecord = recordStore.putBackupTxn(dataKey, record,
+                expiryMetadata, isPutTransient(), getCallerProvenance(), transactionId);
         Records.copyMetadataFrom(record, currentRecord);
         recordStore.forceUnlock(dataKey);
     }

@@ -17,10 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.record.Record;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -29,26 +26,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class ExpirationTimeSetter {
 
     private ExpirationTimeSetter() {
-    }
-
-    /**
-     * Sets expiration time if statistics are enabled.
-     */
-    public static void setExpirationTime(Record record) {
-        long expirationTime = calculateExpirationTime(record);
-        record.setExpirationTime(expirationTime);
-    }
-
-    public static long calculateExpirationTime(Record record) {
-        // calculate TTL expiration time
-        long ttl = checkedTime(record.getTtl());
-        long ttlExpirationTime = sumForExpiration(ttl, getLifeStartTime(record));
-
-        // calculate MaxIdle expiration time
-        long maxIdle = checkedTime(record.getMaxIdle());
-        long maxIdleExpirationTime = sumForExpiration(maxIdle, getIdlenessStartTime(record));
-        // select most nearest expiration time
-        return Math.min(ttlExpirationTime, maxIdleExpirationTime);
     }
 
     public static long calculateExpirationTime(long ttlMillis, long maxIdleMillis, long now) {
@@ -61,27 +38,6 @@ public final class ExpirationTimeSetter {
         long maxIdleExpirationTime = sumForExpiration(maxIdle, now);
         // select most nearest expiration time
         return Math.min(ttlExpirationTime, maxIdleExpirationTime);
-    }
-
-    /**
-     * Returns last-access-time of an entry if it was accessed before, otherwise it returns creation-time of the entry.
-     * This calculation is required for max-idle-seconds expiration, because after first creation of an entry via
-     * {@link IMap#put}, the {@code lastAccessTime} is zero till the first access.
-     * Any subsequent get or update operation after first put will increase the {@code lastAccessTime}.
-     */
-    public static long getIdlenessStartTime(Record record) {
-        long lastAccessTime = record.getLastAccessTime();
-        return lastAccessTime <= 0 ? record.getCreationTime() : lastAccessTime;
-    }
-
-    /**
-     * Returns last-update-time of an entry if it was updated before, otherwise it returns creation-time of the entry.
-     * This calculation is required for time-to-live expiration, because after first creation of an entry via
-     * {@link IMap#put}, the {@code lastUpdateTime} is zero till the first update.
-     */
-    public static long getLifeStartTime(Record record) {
-        long lastUpdateTime = record.getLastUpdateTime();
-        return lastUpdateTime <= 0 ? record.getCreationTime() : lastUpdateTime;
     }
 
     private static long checkedTime(long time) {
@@ -101,23 +57,6 @@ public final class ExpirationTimeSetter {
             return Long.MAX_VALUE;
         }
         return expirationTime;
-    }
-
-    /**
-     * Updates records TTL and expiration time.
-     *
-     * @param record             record to be updated
-     * @param operationTTLMillis user provided TTL during operation call like put with TTL
-     * @param mapConfig          map config object
-     */
-    public static void setExpirationTimes(Record record, long operationTTLMillis,
-                                          long operationMaxIdleMillis, MapConfig mapConfig) {
-        long ttlMillis = pickTTLMillis(operationTTLMillis, mapConfig);
-        long maxIdleMillis = pickMaxIdleMillis(operationMaxIdleMillis, mapConfig);
-
-        record.setTtl(ttlMillis);
-        record.setMaxIdle(maxIdleMillis);
-        setExpirationTime(record);
     }
 
     /**
@@ -155,23 +94,5 @@ public final class ExpirationTimeSetter {
 
         // if we are here, entry should live forever
         return Long.MAX_VALUE;
-    }
-
-    /**
-     * On backup partitions, this method delays key's expiration.
-     */
-    public static long calculateExpirationWithDelay(long timeInMillis, long delayMillis, boolean backup) {
-        checkNotNegative(timeInMillis, "timeInMillis can't be negative");
-
-        if (backup) {
-            long delayedTime = timeInMillis + delayMillis;
-            // check for a potential long overflow
-            if (delayedTime < 0) {
-                return Long.MAX_VALUE;
-            } else {
-                return delayedTime;
-            }
-        }
-        return timeInMillis;
     }
 }

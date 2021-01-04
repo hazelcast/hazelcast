@@ -44,8 +44,6 @@ import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
-
 /**
  * Contains record store common parts.
  */
@@ -63,6 +61,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final MapDataStore<Data, Object> mapDataStore;
     protected final SerializationService serializationService;
     protected final CompositeMutationObserver<Record> mutationObserver;
+    protected final MetadataStore metadataStore = new MetadataStore();
     protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
 
     protected Storage<Data, Record> storage;
@@ -90,6 +89,11 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         addMutationObservers();
     }
 
+    @Override
+    public MetadataStore getMetadataStore() {
+        return metadataStore;
+    }
+
     // Overridden in EE.
     protected void addMutationObservers() {
         // Add observer for event journal
@@ -101,18 +105,13 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
         // Add observer for json metadata
         if (mapContainer.getMapConfig().getMetadataPolicy() == MetadataPolicy.CREATE_ON_UPDATE) {
-            addJsonMetadataMutationObserver();
+            mutationObserver.add(new JsonMetadataMutationObserver(serializationService,
+                    JsonMetadataInitializer.INSTANCE, metadataStore));
         }
 
         // Add observer for indexing
         indexingObserver = new IndexingMutationObserver<>(this, serializationService);
         mutationObserver.add(indexingObserver);
-    }
-
-    // Overridden in EE.
-    protected void addJsonMetadataMutationObserver() {
-        mutationObserver.add(new JsonMetadataMutationObserver(serializationService,
-                JsonMetadataInitializer.INSTANCE));
     }
 
     public IndexingMutationObserver<Record> getIndexingObserver() {
@@ -151,7 +150,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
 
-        setExpirationTimes(record, ttlMillis, maxIdle, mapContainer.getMapConfig());
         updateStatsOnPut(false, now);
         return record;
     }
@@ -167,7 +165,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     public Storage createStorage(RecordFactory recordFactory, InMemoryFormat memoryFormat) {
-        return new StorageImpl(memoryFormat, serializationService);
+        return new StorageImpl(memoryFormat, getExpirySystem(), serializationService);
     }
 
     @Override

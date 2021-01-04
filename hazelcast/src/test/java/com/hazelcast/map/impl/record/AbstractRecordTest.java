@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -43,7 +43,6 @@ public class AbstractRecordTest {
     private ObjectRecord record;
     private ObjectRecord recordSameAttributes;
     private ObjectRecord recordOtherVersion;
-    private ObjectRecord recordOtherTtl;
     private ObjectRecord recordOtherCreationTime;
     private ObjectRecord recordOtherHits;
     private ObjectRecord recordOtherLastAccessTime;
@@ -58,9 +57,6 @@ public class AbstractRecordTest {
 
         recordOtherVersion = new ObjectRecord(VALUE);
         recordOtherVersion.setVersion(42);
-
-        recordOtherTtl = new ObjectRecord(VALUE);
-        recordOtherTtl.setTtl(2342);
 
         recordOtherCreationTime = new ObjectRecord(VALUE);
         recordOtherCreationTime.setCreationTime(Clock.currentTimeMillis());
@@ -98,7 +94,6 @@ public class AbstractRecordTest {
         assertNotEquals(record, new Object());
 
         assertNotEquals(record, recordOtherVersion);
-        assertNotEquals(record, recordOtherTtl);
         assertNotEquals(record, recordOtherCreationTime);
         assertNotEquals(record, recordOtherHits);
         assertNotEquals(record, recordOtherLastAccessTime);
@@ -112,7 +107,6 @@ public class AbstractRecordTest {
 
         assumeDifferentHashCodes();
         assertNotEquals(record.hashCode(), recordOtherVersion.hashCode());
-        assertNotEquals(record.hashCode(), recordOtherTtl.hashCode());
         assertNotEquals(record.hashCode(), recordOtherCreationTime.hashCode());
         assertNotEquals(record.hashCode(), recordOtherHits.hashCode());
         assertNotEquals(record.hashCode(), recordOtherLastAccessTime.hashCode());

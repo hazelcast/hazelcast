@@ -114,21 +114,18 @@ public class RecordReaderWriterTest {
     }
 
     private Record populateAndGetRecord(Record writtenRecord, ExpiryMetadata expiryMetadata) {
-        writtenRecord.setTtl(1);
-        writtenRecord.setMaxIdle(2);
         writtenRecord.setVersion(3);
         writtenRecord.setLastUpdateTime(4);
         writtenRecord.setLastAccessTime(5);
         writtenRecord.setLastStoredTime(6);
-        writtenRecord.setExpirationTime(7);
         writtenRecord.setCreationTime(8);
         writtenRecord.setVersion(9);
         writtenRecord.setHits(10);
         writtenRecord.setValue(ss.toData(11));
 
-        expiryMetadata.setTtl(writtenRecord.getTtl());
-        expiryMetadata.setMaxIdle(writtenRecord.getMaxIdle());
-        expiryMetadata.setExpirationTime(writtenRecord.getExpirationTime());
+        expiryMetadata.setTtl(1);
+        expiryMetadata.setMaxIdle(2);
+        expiryMetadata.setExpirationTime(7);
         return writtenRecord;
     }
 
@@ -154,12 +151,8 @@ public class RecordReaderWriterTest {
 
     private static Record copyMetadata(Record fromRecord, Record toRecord) {
         toRecord.setHits(fromRecord.getHits());
-        toRecord.setTtl(fromRecord.getTtl());
-        toRecord.setMaxIdle(fromRecord.getMaxIdle());
         toRecord.setVersion(fromRecord.getVersion());
-        toRecord.setMetadata(fromRecord.getMetadata());
         toRecord.setCreationTime(fromRecord.getCreationTime());
-        toRecord.setExpirationTime(fromRecord.getExpirationTime());
         toRecord.setLastAccessTime(fromRecord.getLastAccessTime());
         toRecord.setLastStoredTime(fromRecord.getLastStoredTime());
         toRecord.setLastUpdateTime(fromRecord.getLastUpdateTime());

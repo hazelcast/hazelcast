@@ -92,11 +92,8 @@ public final class Records {
      */
     public static Record copyMetadataFrom(Record fromRecord, Record toRecord) {
         toRecord.setHits(fromRecord.getHits());
-        toRecord.setTtl(fromRecord.getTtl());
-        toRecord.setMaxIdle(fromRecord.getMaxIdle());
         toRecord.setVersion(fromRecord.getVersion());
         toRecord.setCreationTime(fromRecord.getCreationTime());
-        toRecord.setExpirationTime(fromRecord.getExpirationTime());
         toRecord.setLastAccessTime(fromRecord.getLastAccessTime());
         toRecord.setLastStoredTime(fromRecord.getLastStoredTime());
         toRecord.setLastUpdateTime(fromRecord.getLastUpdateTime());

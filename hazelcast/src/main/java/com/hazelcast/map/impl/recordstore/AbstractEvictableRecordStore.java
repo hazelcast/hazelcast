@@ -26,6 +26,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
 import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -38,7 +39,6 @@ import java.util.Queue;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.core.EntryEventType.EXPIRED;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 
@@ -198,29 +198,29 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         record.onAccess(now);
         updateStatsOnGet(now);
         expirySystem.extendExpiryTime(dataKey, now);
-        // TODO set same expiry  time to record also
-        setExpirationTime(record);
     }
 
-    protected void mergeRecordExpiration(Data key, Record record, MapMergeTypes mergingEntry, long now) {
-        mergeRecordExpiration(record, mergingEntry.getTtl(), mergingEntry.getMaxIdle(), mergingEntry.getCreationTime(),
+    protected void mergeRecordExpiration(Data key, Record record, MapMergeTypes mergingEntry) {
+        mergeRecordExpiration(record, mergingEntry.getCreationTime(),
                 mergingEntry.getLastAccessTime(), mergingEntry.getLastUpdateTime());
-        getExpirySystem().addExpiry(key, mergingEntry.getTtl(),
-                mergingEntry.getMaxIdle(), mergingEntry.getExpirationTime());
-    }
-
-    private void mergeRecordExpiration(Record record, long ttlMillis, Long maxIdleMillis,
-                                       long creationTime, long lastAccessTime, long lastUpdateTime) {
-        record.setTtl(ttlMillis);
         // WAN events received from source cluster also carry null maxIdle
         // see com.hazelcast.map.impl.wan.WanMapEntryView.getMaxIdle
-        if (maxIdleMillis != null) {
-            record.setMaxIdle(maxIdleMillis);
+        Long maxIdle = mergingEntry.getMaxIdle();
+        if (maxIdle != null) {
+            getExpirySystem().addExpiry(key, mergingEntry.getTtl(),
+                    maxIdle, mergingEntry.getExpirationTime());
+        } else {
+            ExpiryMetadata expiredMetadata = getExpirySystem().getExpiredMetadata(key);
+            getExpirySystem().addExpiry(key, mergingEntry.getTtl(),
+                    expiredMetadata.getMaxIdle(), mergingEntry.getExpirationTime());
         }
+    }
+
+    private void mergeRecordExpiration(Record record,
+                                       long creationTime,
+                                       long lastAccessTime, long lastUpdateTime) {
         record.setCreationTime(creationTime);
         record.setLastAccessTime(lastAccessTime);
         record.setLastUpdateTime(lastUpdateTime);
-
-        setExpirationTime(record);
     }
 }

@@ -16,10 +16,7 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.query.impl.Metadata;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-import java.util.Objects;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
@@ -34,8 +31,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
     private static final int NUMBER_OF_LONGS = 1;
     private static final int NUMBER_OF_INTS = 6;
 
-    protected int ttl;
-    protected int maxIdle;
     protected long version;
 
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
@@ -45,8 +40,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
     private volatile int lastUpdateTime = UNSET;
 
     private int creationTime = UNSET;
-    // TODO add cost of metadata to memory-cost calculations
-    private transient Metadata metadata;
 
     AbstractRecord() {
     }
@@ -54,16 +47,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
     @Override
     public RecordReaderWriter getMatchingRecordReaderWriter() {
         return DATA_RECORD_READER_WRITER;
-    }
-
-    @Override
-    public void setMetadata(Metadata metadata) {
-        this.metadata = metadata;
-    }
-
-    @Override
-    public Metadata getMetadata() {
-        return metadata;
     }
 
     @Override
@@ -142,15 +125,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     @Override
-    public long getExpirationTime() {
-        return UNSET;
-    }
-
-    @Override
-    public void setExpirationTime(long expirationTime) {
-    }
-
-    @Override
     public long getLastStoredTime() {
         return UNSET;
     }
@@ -171,12 +145,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
         AbstractRecord<?> that = (AbstractRecord<?>) o;
 
-        if (ttl != that.ttl) {
-            return false;
-        }
-        if (maxIdle != that.maxIdle) {
-            return false;
-        }
         if (version != that.version) {
             return false;
         }
@@ -192,29 +160,17 @@ public abstract class AbstractRecord<V> implements Record<V> {
         if (creationTime != that.creationTime) {
             return false;
         }
-        return Objects.equals(metadata, that.metadata);
+        return true;
     }
 
     @Override
     public int hashCode() {
-        int result = 31 * ttl + maxIdle;
-        result = 31 * result + (int) (version ^ (version >>> 32));
+        int result = 31 * (int) (version ^ (version >>> 32));
         result = 31 * result + hits;
         result = 31 * result + lastAccessTime;
         result = 31 * result + lastUpdateTime;
         result = 31 * result + creationTime;
-        result = 31 * result + (metadata != null ? metadata.hashCode() : 0);
         return result;
-    }
-
-    @Override
-    public int getRawTtl() {
-        return ttl;
-    }
-
-    @Override
-    public int getRawMaxIdle() {
-        return maxIdle;
     }
 
     @Override
@@ -230,16 +186,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
     @Override
     public int getRawLastUpdateTime() {
         return lastUpdateTime;
-    }
-
-    @Override
-    public void setRawTtl(int ttl) {
-        this.ttl = ttl;
-    }
-
-    @Override
-    public void setRawMaxIdle(int maxIdle) {
-        this.maxIdle = maxIdle;
     }
 
     @Override
@@ -268,26 +214,13 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     @Override
-    public int getRawExpirationTime() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setRawExpirationTime(int time) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public String toString() {
         return "AbstractRecord{"
-                + ", ttl=" + ttl
-                + ", maxIdle=" + maxIdle
                 + ", version=" + version
                 + ", hits=" + hits
                 + ", lastAccessTime=" + lastAccessTime
                 + ", lastUpdateTime=" + lastUpdateTime
                 + ", creationTime=" + creationTime
-                + ", metadata=" + metadata
                 + '}';
     }
 }

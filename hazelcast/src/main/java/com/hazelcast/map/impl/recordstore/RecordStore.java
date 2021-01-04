@@ -98,7 +98,7 @@ public interface RecordStore<R extends Record> {
     /**
      * @return current record after put.
      */
-    R putBackupTxn(Data dataKey, Record newRecord, boolean putTransient,
+    R putBackupTxn(Data dataKey, Record newRecord, ExpiryMetadata expiryMetadata, boolean putTransient,
                    CallerProvenance provenance, UUID transactionId);
 
     /**
@@ -504,6 +504,8 @@ public interface RecordStore<R extends Record> {
      * Initialize the recordStore after creation
      */
     void init();
+
+    MetadataStore getMetadataStore();
 
     Storage getStorage();
 

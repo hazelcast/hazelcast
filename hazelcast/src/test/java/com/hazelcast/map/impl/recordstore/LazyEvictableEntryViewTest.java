@@ -24,6 +24,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -68,7 +69,7 @@ public class LazyEvictableEntryViewTest {
         DataRecordFactory recordFactory = new DataRecordFactory(mapContainer, serializationService);
         Data key = serializationService.toData(this.key);
         recordInstance = recordFactory.newRecord(value);
-        return new LazyEvictableEntryView(key, recordInstance, serializationService);
+        return new LazyEvictableEntryView(key, recordInstance, ExpiryMetadata.NULL, serializationService);
     }
 
     @Test

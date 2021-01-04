@@ -51,16 +51,14 @@ public enum RecordReaderWriter {
                                  ExpiryMetadata expiryMetadata) throws IOException {
             Record record = new DataRecord();
             record.setValue(readData(in));
-            record.setRawTtl(in.readInt());
-            record.setRawMaxIdle(in.readInt());
+            expiryMetadata.setRawTtl(in.readInt());
+            expiryMetadata.setRawMaxIdle(in.readInt());
             record.setRawCreationTime(in.readInt());
             record.setRawLastAccessTime(in.readInt());
             record.setRawLastUpdateTime(in.readInt());
             record.setHits(in.readInt());
             record.setVersion(in.readLong());
 
-            expiryMetadata.setRawTtl(record.getRawTtl());
-            expiryMetadata.setRawMaxIdle(record.getRawMaxIdle());
             return record;
         }
 
@@ -87,19 +85,16 @@ public enum RecordReaderWriter {
                                  ExpiryMetadata expiryMetadata) throws IOException {
             Record record = new DataRecordWithStats();
             record.setValue(readData(in));
-            record.setRawTtl(in.readInt());
-            record.setRawMaxIdle(in.readInt());
+            expiryMetadata.setRawTtl(in.readInt());
+            expiryMetadata.setRawMaxIdle(in.readInt());
             record.setRawCreationTime(in.readInt());
             record.setRawLastAccessTime(in.readInt());
             record.setRawLastUpdateTime(in.readInt());
             record.setHits(in.readInt());
             record.setVersion(in.readLong());
             record.setRawLastStoredTime(in.readInt());
-            record.setRawExpirationTime(in.readInt());
+            expiryMetadata.setRawExpirationTime(in.readInt());
 
-            expiryMetadata.setRawTtl(record.getRawTtl());
-            expiryMetadata.setRawMaxIdle(record.getRawMaxIdle());
-            expiryMetadata.setRawExpirationTime(record.getRawExpirationTime());
             return record;
         }
 

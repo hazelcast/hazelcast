@@ -37,13 +37,16 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
  */
 public class JsonMetadataMutationObserver implements MutationObserver<Record> {
 
-    private SerializationService serializationService;
-    private MetadataInitializer metadataInitializer;
+    private final SerializationService serializationService;
+    private final MetadataInitializer metadataInitializer;
+    private final MetadataStore metadataStore;
 
     public JsonMetadataMutationObserver(SerializationService serializationService,
-                                        MetadataInitializer metadataInitializer) {
+                                        MetadataInitializer metadataInitializer,
+                                        MetadataStore metadataStore) {
         this.serializationService = serializationService;
         this.metadataInitializer = metadataInitializer;
+        this.metadataStore = metadataStore;
     }
 
     @Override
@@ -69,39 +72,39 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
 
     @Override
     public void onRemoveRecord(Data key, Record record) {
-        // no-op
+        metadataStore.remove(key);
     }
 
     @Override
     public void onEvictRecord(Data key, Record record) {
-        // no-op
+        metadataStore.remove(key);
     }
 
     @Override
     public void onReset() {
-        // no-op
+        metadataStore.clear();
     }
 
     @Override
     public void onClear() {
-        // no-op
+        metadataStore.clear();
     }
 
     @Override
     public void onDestroy(boolean isDuringShutdown, boolean internal) {
-        // no-op
+        metadataStore.clear();
     }
 
     protected Metadata getMetadata(Data dataKey, Record record) {
-        return record.getMetadata();
+        return metadataStore.get(dataKey);
     }
 
     protected void setMetadata(Data dataKey, Record record, Metadata metadata) {
-        record.setMetadata(metadata);
+        metadataStore.set(dataKey, metadata);
     }
 
     protected void removeMetadata(Data dataKey, Record record) {
-        record.setMetadata(null);
+        metadataStore.remove(dataKey);
     }
 
     private void onPutInternal(Data dataKey, Record record) {

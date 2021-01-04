@@ -42,16 +42,6 @@ class SimpleRecord<V> implements Record<V> {
     }
 
     @Override
-    public void setMetadata(Metadata metadata) {
-        this.metadata = metadata;
-    }
-
-    @Override
-    public Metadata getMetadata() {
-        return metadata;
-    }
-
-    @Override
     public final long getVersion() {
         return 0;
     }
@@ -126,15 +116,6 @@ class SimpleRecord<V> implements Record<V> {
     }
 
     @Override
-    public long getExpirationTime() {
-        return UNSET;
-    }
-
-    @Override
-    public void setExpirationTime(long expirationTime) {
-    }
-
-    @Override
     public long getLastStoredTime() {
         return UNSET;
     }
@@ -153,16 +134,6 @@ class SimpleRecord<V> implements Record<V> {
     }
 
     @Override
-    public int getRawTtl() {
-        return 0;
-    }
-
-    @Override
-    public int getRawMaxIdle() {
-        return 0;
-    }
-
-    @Override
     public int getRawCreationTime() {
         return 0;
     }
@@ -175,14 +146,6 @@ class SimpleRecord<V> implements Record<V> {
     @Override
     public int getRawLastUpdateTime() {
         return 0;
-    }
-
-    @Override
-    public void setRawTtl(int ttl) {
-    }
-
-    @Override
-    public void setRawMaxIdle(int maxIdle) {
     }
 
     @Override
@@ -204,16 +167,6 @@ class SimpleRecord<V> implements Record<V> {
 
     @Override
     public void setRawLastStoredTime(int time) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int getRawExpirationTime() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setRawExpirationTime(int time) {
         throw new UnsupportedOperationException();
     }
 

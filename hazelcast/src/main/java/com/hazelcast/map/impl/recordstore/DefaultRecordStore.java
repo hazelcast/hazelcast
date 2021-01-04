@@ -76,7 +76,6 @@ import static com.hazelcast.core.EntryEventType.LOADED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.map.impl.record.Record.UNSET;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
@@ -158,13 +157,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return storage.get(key);
     }
 
+    // TODO legacy ttl maxidle
     @Override
     public Record putReplicatedRecordLegacy(Data dataKey, Record replicatedRecord, long nowInMillis,
                                             boolean populateIndexes) {
         Record newRecord = createRecord(replicatedRecord, nowInMillis);
         storage.put(dataKey, newRecord);
-        getExpirySystem().addExpiry(dataKey, replicatedRecord.getTtl(),
-                replicatedRecord.getMaxIdle(), nowInMillis);
+//        getExpirySystem().addExpiry(dataKey, replicatedRecord.getTtl(),
+//                replicatedRecord.getMaxIdle(), nowInMillis);
         mutationObserver.onReplicationPutRecord(dataKey, newRecord, populateIndexes);
         updateStatsOnPut(replicatedRecord.getHits(), nowInMillis);
         return newRecord;
@@ -199,10 +199,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Record putBackupTxn(Data dataKey, Record newRecord, boolean putTransient,
-                               CallerProvenance provenance, UUID transactionId) {
+    public Record putBackupTxn(Data dataKey, Record newRecord, ExpiryMetadata expiryMetadata,
+                               boolean putTransient, CallerProvenance provenance, UUID transactionId) {
         return putBackupInternal(dataKey, newRecord.getValue(),
-                newRecord.getTtl(), newRecord.getMaxIdle(), putTransient, provenance, transactionId);
+                expiryMetadata.getTtl(), expiryMetadata.getMaxIdle(), putTransient, provenance, transactionId);
     }
 
     @Override
@@ -226,7 +226,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (putTransient) {
                 mapDataStore.addTransient(key, now);
             } else {
-                mapDataStore.addBackup(key, value, record.getExpirationTime(), now, transactionId);
+                mapDataStore.addBackup(key, value,
+                        getExpirySystem().getExpiredMetadata(key).getExpirationTime(),
+                        now, transactionId);
             }
         }
         return record;
@@ -899,7 +901,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (countAsAccess) {
             record.onAccess(now);
         }
-        setExpirationTimes(record, ttl, maxIdle, mapContainer.getMapConfig());
         if (store) {
             newValue = putIntoMapStore(record, key, newValue, now, transactionId);
         }
@@ -929,7 +930,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     protected Object putIntoMapStore(Record record, Data key, Object newValue,
                                      long now, UUID transactionId) {
-        newValue = mapDataStore.add(key, newValue, record.getExpirationTime(),
+        newValue = mapDataStore.add(key, newValue,
+                getExpirySystem().getExpiredMetadata(key).getExpirationTime(),
                 now, transactionId);
         if (mapDataStore.isPostProcessingMapStore()) {
             storage.updateRecordValue(key, record, newValue);
@@ -980,7 +982,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
 
             if (valueComparator.isEqual(newValue, oldValue, serializationService)) {
-                mergeRecordExpiration(key, record, mergingEntry, now);
+                mergeRecordExpiration(key, record, mergingEntry);
                 return true;
             }
 
