@@ -138,6 +138,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         // Float
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", REAL), REAL, null);
         putAndCheckValue(string("1.1"), sql("this", REAL), REAL, 1.1f);
+//        putAndCheckValue(string("1e42"), sql("this", REAL), REAL, Float.POSITIVE_INFINITY);
         putAndCheckFailure("bad", sql("this", REAL), DATA_EXCEPTION, "Cannot parse VARCHAR value to REAL");
 
         // Double

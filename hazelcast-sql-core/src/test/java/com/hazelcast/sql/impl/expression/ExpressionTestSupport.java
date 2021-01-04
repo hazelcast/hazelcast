@@ -61,9 +61,9 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     public static final float FLOAT_VAL = 1f;
     public static final double DOUBLE_VAL = 1d;
     public static final LocalDate LOCAL_DATE_VAL = LocalDate.parse("2020-01-01");
-    public static final LocalTime LOCAL_TIME_VAL = LocalTime.parse("00:00");
-    public static final LocalDateTime LOCAL_DATE_TIME_VAL = LocalDateTime.parse("2020-01-01T00:00");
-    public static final OffsetDateTime OFFSET_DATE_TIME_VAL = OffsetDateTime.parse("2020-01-01T00:00+00:00");
+    public static final LocalTime LOCAL_TIME_VAL = LocalTime.parse("01:42");
+    public static final LocalDateTime LOCAL_DATE_TIME_VAL = LocalDateTime.parse("2020-01-01T01:42");
+    public static final OffsetDateTime OFFSET_DATE_TIME_VAL = OffsetDateTime.parse("2020-01-01T01:42-05:00");
     public static final ExpressionValue OBJECT_VAL = new ExpressionValue.ObjectVal();
 
     protected static final Object SKIP_VALUE_CHECK = new Object();

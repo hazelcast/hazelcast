@@ -160,7 +160,7 @@ public class PhysicalIndexExpressionTest extends IndexOptimizerTestSupport {
     @Test
     public void test_is_null() {
         checkIndexForCondition("f IS NULL", "IS NULL($1)");
-        checkNoIndexForCondition("(f+?) IS NULL", "OR(IS NULL($1), IS NULL(?0))");
+        checkNoIndexForCondition("(f+?) IS NULL", "OR(IS NULL(CAST($1):BIGINT(64)), IS NULL(?0))");
     }
 
     @Test
