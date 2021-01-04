@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.query.impl.Metadata;
 
 import java.util.Objects;
 
@@ -31,8 +30,6 @@ import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECOR
 @SuppressWarnings({"checkstyle:methodcount", "VolatileLongOrDoubleField"})
 class SimpleRecord<V> implements Record<V> {
     protected volatile V value;
-    // TODO remove metadata also.
-    private transient Metadata metadata;
 
     SimpleRecord() {
     }

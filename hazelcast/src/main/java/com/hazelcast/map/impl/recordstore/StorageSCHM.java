@@ -32,10 +32,11 @@ import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 @SerializableByConvention
 public class StorageSCHM<R extends Record> extends SampleableConcurrentHashMap<Data, R> {
 
+    private static final long serialVersionUID = -1133966339806826032L;
     private static final int DEFAULT_INITIAL_CAPACITY = 256;
 
-    private final SerializationService serializationService;
-    private final ExpirySystem expirySystem;
+    private final transient SerializationService serializationService;
+    private final transient ExpirySystem expirySystem;
 
     public StorageSCHM(SerializationService serializationService, ExpirySystem expirySystem) {
         super(DEFAULT_INITIAL_CAPACITY);
