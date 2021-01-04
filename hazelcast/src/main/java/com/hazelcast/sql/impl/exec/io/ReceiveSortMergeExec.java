@@ -96,7 +96,6 @@ public class ReceiveSortMergeExec extends AbstractExec {
 
             return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
         }
-        
     }
 
     @Override

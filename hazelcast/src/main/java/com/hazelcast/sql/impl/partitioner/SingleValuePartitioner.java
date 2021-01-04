@@ -24,28 +24,19 @@ import com.hazelcast.sql.impl.row.Row;
 import java.io.IOException;
 
 /**
- * Hash function which uses all row columns to calculate the hash.
+ * Partitioner that is not making actual partitioning mapping all rows to the same partition.
  */
-public class AllFieldsRowPartitioner extends AbstractFieldsRowPartitioner {
-    /** Singleton instance. */
-    public static final AllFieldsRowPartitioner INSTANCE = new AllFieldsRowPartitioner();
+public final class SingleValuePartitioner implements RowPartitioner {
 
-    public AllFieldsRowPartitioner() {
+    public static final SingleValuePartitioner INSTANCE = new SingleValuePartitioner();
+
+    private SingleValuePartitioner() {
         // No-op.
     }
 
-    @SuppressWarnings("checkstyle:MagicNumber")
     @Override
-    protected int getHash(Row row, InternalSerializationService serializationService) {
-        int res = 0;
-
-        for (int idx = 0; idx < row.getColumnCount(); idx++) {
-            int hash = getFieldHash(row.get(idx), serializationService);
-
-            res = 31 * res + hash;
-        }
-
-        return res;
+    public int getPartition(Row row, int partitionCount, InternalSerializationService serializationService) {
+        return 0;
     }
 
     @Override
@@ -65,7 +56,7 @@ public class AllFieldsRowPartitioner extends AbstractFieldsRowPartitioner {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof AllFieldsRowPartitioner;
+        return obj instanceof SingleValuePartitioner;
     }
 
     @Override
