@@ -42,7 +42,7 @@
 
         <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.1.1</maven.checkstyle.plugin.version>
-        <maven.spotbuts.plugin.version>4.1.4</maven.spotbuts.plugin.version>
+        <maven.spotbuts.plugin.version>4.2.0</maven.spotbuts.plugin.version>
         <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.8.6</maven.jacoco.plugin.version>
     </properties>
