@@ -25,13 +25,15 @@ import java.io.IOException;
 
 import static com.hazelcast.internal.nio.IOUtil.readData;
 import static com.hazelcast.internal.nio.IOUtil.writeData;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 /**
  * Used when reading and writing records
  * for backup and replication operations
  */
 public enum RecordReaderWriter {
-
+    // RU_COMPAT_4_1
+    // Remove enum DATA_RECORD_READER_WRITER in 4.3
     DATA_RECORD_READER_WRITER(TypeId.DATA_RECORD_TYPE_ID) {
         @Override
         void writeRecord(ObjectDataOutput out, Record record, Data dataValue,
@@ -39,9 +41,9 @@ public enum RecordReaderWriter {
             writeData(out, dataValue);
             out.writeInt(expiryMetadata.getRawTtl());
             out.writeInt(expiryMetadata.getRawMaxIdle());
-            out.writeInt(record.getRawCreationTime());
-            out.writeInt(record.getRawLastAccessTime());
-            out.writeInt(record.getRawLastUpdateTime());
+            out.writeInt(UNSET);
+            out.writeInt(UNSET);
+            out.writeInt(UNSET);
             out.writeInt(record.getHits());
             out.writeLong(record.getVersion());
         }
@@ -61,7 +63,6 @@ public enum RecordReaderWriter {
 
             return record;
         }
-
     },
 
     DATA_RECORD_WITH_STATS_READER_WRITER(TypeId.DATA_RECORD_WITH_STATS_TYPE_ID) {
@@ -97,7 +98,6 @@ public enum RecordReaderWriter {
 
             return record;
         }
-
     },
 
     SIMPLE_DATA_RECORD_READER_WRITER(TypeId.SIMPLE_DATA_RECORD_TYPE_ID) {
@@ -190,7 +190,6 @@ public enum RecordReaderWriter {
     }
 
     private static class TypeId {
-
         private static final byte DATA_RECORD_TYPE_ID = 1;
         private static final byte DATA_RECORD_WITH_STATS_TYPE_ID = 2;
         private static final byte SIMPLE_DATA_RECORD_TYPE_ID = 3;
