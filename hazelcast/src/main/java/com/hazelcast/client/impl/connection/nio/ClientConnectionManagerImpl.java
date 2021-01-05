@@ -586,20 +586,24 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return onAuthenticated(connection, response);
     }
 
-    private void fireConnectionAddedEvent(ClientConnection connection) {
-        executor.execute(() -> {
-            for (ConnectionListener connectionListener : connectionListeners) {
-                connectionListener.connectionAdded(connection);
-            }
-        });
-    }
-
-    private void fireConnectionRemovedEvent(ClientConnection connection) {
-        executor.execute(() -> {
-            for (ConnectionListener listener : connectionListeners) {
-                listener.connectionRemoved(connection);
-            }
-        });
+    private void fireConnectionEvent(ClientConnection connection, boolean isAdded) {
+        if (!isAlive()) {
+            return;
+        }
+        try {
+            executor.execute(() -> {
+                for (ConnectionListener listener : connectionListeners) {
+                    if (isAdded) {
+                        listener.connectionAdded(connection);
+                    } else {
+                        listener.connectionRemoved(connection);
+                    }
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            //RejectedExecutionException thrown when the client is shutting down
+            EmptyStatement.ignore(e);
+        }
     }
 
     private boolean useAnyOutboundPort() {
@@ -721,7 +725,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     triggerClusterReconnection();
                 }
 
-                fireConnectionRemovedEvent(connection);
+                fireConnectionEvent(connection, false);
             } else if (logger.isFinestEnabled()) {
                 logger.finest("Destroying a connection, but there is no mapping " + endpoint + ":" + memberUuid
                         + " -> " + connection + " in the connection map.");
@@ -862,7 +866,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     + ", server version: " + response.serverHazelcastVersion
                     + ", local address: " + connection.getLocalSocketAddress());
 
-            fireConnectionAddedEvent(connection);
+            fireConnectionEvent(connection, true);
         }
 
         // It could happen that this connection is already closed and
