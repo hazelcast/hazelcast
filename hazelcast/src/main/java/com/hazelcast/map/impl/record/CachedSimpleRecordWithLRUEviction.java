@@ -56,6 +56,16 @@ class CachedSimpleRecordWithLRUEviction extends CachedSimpleRecord {
     }
 
     @Override
+    public int getRawLastAccessTime() {
+        return lastAccessTime;
+    }
+
+    @Override
+    public void setRawLastAccessTime(int lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
+    }
+
+    @Override
     public RecordReaderWriter getMatchingRecordReaderWriter() {
         return SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER;
     }

@@ -160,10 +160,6 @@ public class ExpirySystem {
     }
 
     public ExpiryReason hasExpired(Data key, long now, boolean backup) {
-        if (backup && canPrimaryDriveExpiration) {
-            return ExpiryReason.NOT_EXPIRED;
-        }
-
         Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (expireTimeByKey.isEmpty()) {
             return ExpiryReason.NOT_EXPIRED;
@@ -174,15 +170,16 @@ public class ExpirySystem {
 
     // TODO add expiry delay for backup replica
     private ExpiryReason hasExpired0(ExpiryMetadata expiryMetadata, long now, boolean backup) {
-        if (backup && canPrimaryDriveExpiration) {
-            return ExpiryReason.NOT_EXPIRED;
-        }
-
         boolean expired = expiryMetadata != null
                 && expiryMetadata.getExpirationTime() <= now;
         if (expired) {
-            return expiryMetadata.getTtl() > expiryMetadata.getMaxIdle()
+            ExpiryReason expiryReason = expiryMetadata.getTtl() > expiryMetadata.getMaxIdle()
                     ? ExpiryReason.IDLENESS : ExpiryReason.TTL;
+            if (expiryReason == ExpiryReason.IDLENESS
+                    && backup && canPrimaryDriveExpiration) {
+                return ExpiryReason.NOT_EXPIRED;
+            }
+            return expiryReason;
         }
         return ExpiryReason.NOT_EXPIRED;
     }

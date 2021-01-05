@@ -40,10 +40,12 @@ import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.PredicateBuilderImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
+import com.hazelcast.test.annotation.HeavilyMultiThreadedTestLimiter;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -52,6 +54,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -75,6 +78,7 @@ import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.max;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
+import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -84,9 +88,22 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
+@ConfigureParallelRunnerWith(HeavilyMultiThreadedTestLimiter.class)
 public class EvictionTest extends HazelcastTestSupport {
+
+    @Parameterized.Parameter
+    public boolean statisticsEnabled;
+
+    @Parameterized.Parameters(name = "statisticsEnabled:{0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {true},
+                {false},
+        });
+    }
 
     @Rule
     public final OverridePropertyRule overrideTaskSecondsRule = set(PROP_TASK_PERIOD_SECONDS, String.valueOf(1));
@@ -185,18 +202,21 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testMaxIdle_readThroughOrderedIndex() {
+        assumeTrue(statisticsEnabled);
         assumeTrue(updateRecordAccessTime());
         testMaxIdle_readThroughIndex(IndexType.SORTED);
     }
 
     @Test
     public void testMaxIdle_readThroughUnorderedIndex() {
+        assumeTrue(statisticsEnabled);
         assumeTrue(updateRecordAccessTime());
         testMaxIdle_readThroughIndex(IndexType.HASH);
     }
 
     @Test
     public void testMaxIdle_readThroughBitmapIndex() {
+        assumeTrue(statisticsEnabled);
         testMaxIdle_readThroughIndex(IndexType.BITMAP);
     }
 
@@ -1310,6 +1330,8 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        return smallInstanceConfig();
+        Config config = smallInstanceConfig();
+        config.getMapConfig("default").setStatisticsEnabled(statisticsEnabled);
+        return config;
     }
 }
