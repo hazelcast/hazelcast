@@ -20,7 +20,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
-import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_READER_WRITER;
+import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_STATS_READER_WRITER;
 
 /**
  * @param <V> the type of the value of Record.
@@ -29,7 +29,7 @@ import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_READE
 public abstract class AbstractRecord<V> implements Record<V> {
 
     private static final int NUMBER_OF_LONGS = 1;
-    private static final int NUMBER_OF_INTS = 4;
+    private static final int NUMBER_OF_INTS = 5;
 
     protected long version;
 
@@ -40,13 +40,14 @@ public abstract class AbstractRecord<V> implements Record<V> {
     private volatile int lastUpdateTime = UNSET;
 
     private int creationTime = UNSET;
+    private int lastStoredTime = UNSET;
 
     AbstractRecord() {
     }
 
     @Override
     public RecordReaderWriter getMatchingRecordReaderWriter() {
-        return DATA_RECORD_READER_WRITER;
+        return DATA_RECORD_WITH_STATS_READER_WRITER;
     }
 
     @Override
@@ -126,11 +127,16 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public long getLastStoredTime() {
-        return UNSET;
+        if (lastStoredTime == UNSET) {
+            return 0L;
+        }
+
+        return recomputeWithBaseTime(lastStoredTime);
     }
 
     @Override
     public void setLastStoredTime(long lastStoredTime) {
+        this.lastStoredTime = stripBaseTime(lastStoredTime);
     }
 
     @Override
@@ -160,6 +166,9 @@ public abstract class AbstractRecord<V> implements Record<V> {
         if (creationTime != that.creationTime) {
             return false;
         }
+        if (lastStoredTime != that.lastStoredTime) {
+            return false;
+        }
         return true;
     }
 
@@ -170,6 +179,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
         result = 31 * result + lastAccessTime;
         result = 31 * result + lastUpdateTime;
         result = 31 * result + creationTime;
+        result = 31 * result + lastStoredTime;
         return result;
     }
 
@@ -205,12 +215,12 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public int getRawLastStoredTime() {
-        throw new UnsupportedOperationException();
+        return lastStoredTime;
     }
 
     @Override
     public void setRawLastStoredTime(int time) {
-        throw new UnsupportedOperationException();
+        this.lastStoredTime = time;
     }
 
     @Override

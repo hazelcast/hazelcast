@@ -18,15 +18,16 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.internal.serialization.Data;
 
+import static com.hazelcast.internal.util.JVMUtil.OBJECT_HEADER_SIZE;
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
-public class DataRecordWithStats extends AbstractRecordWithStats<Data> {
+class DataRecordWithStats extends AbstractRecord<Data> {
     protected volatile Data value;
 
-    public DataRecordWithStats() {
+    DataRecordWithStats() {
     }
 
-    public DataRecordWithStats(Data value) {
+    DataRecordWithStats(Data value) {
         super();
         this.value = value;
     }
@@ -36,7 +37,8 @@ public class DataRecordWithStats extends AbstractRecordWithStats<Data> {
      */
     @Override
     public long getCost() {
-        return super.getCost() + REFERENCE_COST_IN_BYTES + (value == null ? 0L : value.getHeapCost());
+        return super.getCost() + OBJECT_HEADER_SIZE + REFERENCE_COST_IN_BYTES
+                + (value == null ? 0L : value.getHeapCost());
     }
 
     @Override

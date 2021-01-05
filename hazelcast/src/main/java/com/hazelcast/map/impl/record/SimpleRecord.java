@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.Data;
 
 import java.util.Objects;
 
+import static com.hazelcast.internal.util.JVMUtil.OBJECT_HEADER_SIZE;
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECORD_READER_WRITER;
 
@@ -124,7 +125,8 @@ class SimpleRecord<V> implements Record<V> {
     @Override
     public long getCost() {
         if (value instanceof Data) {
-            return REFERENCE_COST_IN_BYTES + ((Data) value).getHeapCost();
+            return OBJECT_HEADER_SIZE
+                    + REFERENCE_COST_IN_BYTES + ((Data) value).getHeapCost();
         } else {
             return 0;
         }

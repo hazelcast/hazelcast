@@ -49,7 +49,7 @@ public enum RecordReaderWriter {
         @Override
         public Record readRecord(ObjectDataInput in,
                                  ExpiryMetadata expiryMetadata) throws IOException {
-            Record record = new DataRecord();
+            Record record = new DataRecordWithStats();
             record.setValue(readData(in));
             expiryMetadata.setRawTtl(in.readInt());
             expiryMetadata.setRawMaxIdle(in.readInt());

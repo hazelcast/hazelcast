@@ -36,8 +36,6 @@ class CachedSimpleRecord extends SimpleRecord<Data> {
     private static final AtomicReferenceFieldUpdater<CachedSimpleRecord, Object> CACHED_VALUE =
             AtomicReferenceFieldUpdater.newUpdater(CachedSimpleRecord.class, Object.class, "cachedValue");
 
-    private static final int CACHED_VALUE_REF_COST_IN_BYTES = REFERENCE_COST_IN_BYTES;
-
     private transient volatile Object cachedValue;
 
     CachedSimpleRecord() {
@@ -49,7 +47,7 @@ class CachedSimpleRecord extends SimpleRecord<Data> {
 
     @Override
     public long getCost() {
-        return super.getCost() + CACHED_VALUE_REF_COST_IN_BYTES;
+        return super.getCost() + REFERENCE_COST_IN_BYTES;
     }
 
     @Override

@@ -49,14 +49,14 @@ public class EntryCostEstimatorTest
 
     @Test
     public void smoke() {
-        SizeEstimatorTestMapBuilder<Long, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Long, Long>(factory);
+        SizeEstimatorTestMapBuilder<Long, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<>(factory);
         testMapBuilder.withNodeCount(1).withBackupCount(0).build(getConfig());
         assertEquals(0, testMapBuilder.totalHeapCost());
     }
 
     @Test
     public void testSinglePut() {
-        SizeEstimatorTestMapBuilder<Integer, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Integer, Long>(factory);
+        SizeEstimatorTestMapBuilder<Integer, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<>(factory);
         IMap<Integer, Long> map = testMapBuilder.withNodeCount(1).withBackupCount(0).build(getConfig());
         map.put(0, 10L);
         assertEquals(ENTRY_COST_IN_BYTES, testMapBuilder.totalHeapCost());
@@ -66,7 +66,7 @@ public class EntryCostEstimatorTest
     public void testExactHeapCostAfterUpdateWithMultipleBackupNodes() {
         int putCount = 1;
         int nodeCount = 1;
-        SizeEstimatorTestMapBuilder<Integer, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Integer, Long>(factory);
+        SizeEstimatorTestMapBuilder<Integer, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<>(factory);
         IMap<Integer, Long> map = testMapBuilder.withNodeCount(nodeCount).withBackupCount(nodeCount - 1).build(getConfig());
         for (int i = 0; i < putCount; i++) {
             map.put(i, System.currentTimeMillis());
@@ -246,7 +246,7 @@ public class EntryCostEstimatorTest
             if (backupCount > nodeCount - 1) {
                 throw new IllegalArgumentException("backupCount > nodeCount - 1");
             }
-            config.getMapConfig(mapName).setBackupCount(backupCount).setStatisticsEnabled(false);
+            config.getMapConfig(mapName).setBackupCount(backupCount).setStatisticsEnabled(true);
             nodes = instanceFactory.newInstances(config, nodeCount);
             return nodes[0].getMap(mapName);
         }

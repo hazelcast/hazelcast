@@ -52,11 +52,6 @@ public class RecordReaderWriterTest {
     }
 
     @Test
-    public void data_record_matching_reader_writer_id_is_data_record_reader_writer_id() {
-        assertEquals(DATA_RECORD_READER_WRITER, new DataRecord().getMatchingRecordReaderWriter());
-    }
-
-    @Test
     public void data_record_with_stats_matching_reader_writer_id_is_data_record_with_stats_reader_writer_id() {
         assertEquals(DATA_RECORD_WITH_STATS_READER_WRITER, new DataRecordWithStats().getMatchingRecordReaderWriter());
     }
@@ -71,15 +66,6 @@ public class RecordReaderWriterTest {
         assertEquals(DATA_RECORD_WITH_STATS_READER_WRITER, new ObjectRecordWithStats().getMatchingRecordReaderWriter());
     }
 
-    @Test
-    public void written_and_read_data_record_are_equal() throws IOException {
-        ExpiryMetadata expiryMetadata = newExpiryMetadata();
-        Record<Data> writtenRecord = populateAndGetRecord(new DataRecord(), expiryMetadata);
-        Record<Data> readRecord = writeReadAndGet(writtenRecord, writtenRecord.getValue(), expiryMetadata);
-
-        assertEquals(writtenRecord, readRecord);
-    }
-
     private ExpiryMetadata newExpiryMetadata() {
         return new ExpiryMetadataImpl();
     }
@@ -91,16 +77,6 @@ public class RecordReaderWriterTest {
         Record<Data> readRecord = writeReadAndGet(writtenRecord, writtenRecord.getValue(), expiryMetadata);
 
         assertEquals(writtenRecord, readRecord);
-    }
-
-    @Test
-    public void written_and_read_object_record_are_equal() throws IOException {
-        ExpiryMetadata expiryMetadata = newExpiryMetadata();
-        Record writtenRecord = populateAndGetRecord(new ObjectRecord(), expiryMetadata);
-        Data dataValue = ss.toData(writtenRecord.getValue());
-        Record<Data> readRecord = writeReadAndGet(writtenRecord, dataValue, expiryMetadata);
-
-        assertEquals(asDataRecord(writtenRecord, dataValue), readRecord);
     }
 
     @Test
@@ -135,12 +111,6 @@ public class RecordReaderWriterTest {
         Records.writeRecord(out, expectedRecord, dataValue, expiryMetadata);
         ObjectDataInputStream in = new ObjectDataInputStream(new ByteArrayInputStream(outputStream.toByteArray()), ss);
         return Records.readRecord(in, expiryMetadata);
-    }
-
-    private static Record<Data> asDataRecord(Record fromRecord, Data value) {
-        DataRecord toRecord = new DataRecord(value);
-        toRecord.setValue(value);
-        return copyMetadata(fromRecord, toRecord);
     }
 
     private static Record<Data> asDataRecordWithStats(Record fromRecord, Data value) {
