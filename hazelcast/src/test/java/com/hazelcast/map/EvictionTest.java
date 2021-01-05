@@ -810,6 +810,8 @@ public class EvictionTest extends HazelcastTestSupport {
      */
     @Test
     public void testContainsKeyShouldDelayEviction() {
+        assumeTrue(statisticsEnabled);
+
         String mapName = randomMapName();
         int waitSeconds = 2;
 
@@ -1304,7 +1306,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     protected MapConfig newMapConfig(String mapName) {
-        return new MapConfig(mapName);
+        return new MapConfig(mapName).setStatisticsEnabled(statisticsEnabled);
     }
 
     private Config newConfig(String mapName, int maxSize, MaxSizePolicy maxSizePolicy) {

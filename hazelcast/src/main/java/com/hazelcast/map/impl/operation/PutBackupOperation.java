@@ -25,12 +25,13 @@ import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadataImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 
 public class PutBackupOperation
-        extends MapOperation implements BackupOperation {
+        extends MapOperation implements BackupOperation, Versioned {
 
     protected Record<Data> record;
     protected Data dataKey;

@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadataImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
@@ -33,7 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PutAllBackupOperation extends MapOperation
-        implements PartitionAwareOperation, BackupOperation {
+        implements PartitionAwareOperation, BackupOperation, Versioned {
 
     private boolean disableWanReplicationEvent;
     private List keyValueRecordExpiry;

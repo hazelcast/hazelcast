@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.EnumMap;
@@ -69,7 +70,8 @@ public final class Records {
                                    Data dataValue, ExpiryMetadata expiryMetadata) throws IOException {
         RecordReaderWriter readerWriter = record.getMatchingRecordReaderWriter();
         // RU_COMPAT_4_1
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+        Version version = out.getVersion();
+        if (version.isGreaterOrEqual(Versions.V4_2)) {
             out.writeByte(readerWriter.getId());
         } else {
             readerWriter = RU_COMPAT_MAP.get(readerWriter);
