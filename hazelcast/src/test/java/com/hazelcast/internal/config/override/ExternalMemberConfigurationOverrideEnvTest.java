@@ -18,8 +18,10 @@ package com.hazelcast.internal.config.override;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MerkleTreeConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
@@ -464,6 +466,22 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
 
         assertEquals("PutIfAbsentMergePolicy", config.getMapConfig("foo").getMergePolicyConfig().getPolicy());
         assertEquals(4, config.getMapConfig("foo").getMergePolicyConfig().getBatchSize());
+    }
+
+    @Test
+    public void shouldHandleMapConfigNearCache() throws Exception {
+        Config config = new Config();
+        NearCacheConfig nearCacheConfig = new NearCacheConfig()
+          .setMaxIdleSeconds(10)
+          .setInMemoryFormat(InMemoryFormat.NATIVE);
+        config.getMapConfig("foo").setNearCacheConfig(nearCacheConfig);
+
+
+        withEnvironmentVariable("HZ_MAP_FOO_NEARCACHE_MAXIDLESECONDS", "5")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals(5, config.getMapConfig("foo").getNearCacheConfig().getMaxIdleSeconds());
+        assertEquals(InMemoryFormat.NATIVE, config.getMapConfig("foo").getNearCacheConfig().getInMemoryFormat());
     }
 
     @Test

@@ -1706,7 +1706,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("map-store", nodeName)) {
                 handleMapStoreConfig(node, mapConfig.getMapStoreConfig());
             } else if (matches("near-cache", nodeName)) {
-                mapConfig.setNearCacheConfig(handleNearCacheConfig(node));
+                mapConfig.setNearCacheConfig(handleNearCacheConfig(node, mapConfig.getNearCacheConfig()));
             } else if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mpConfig = createMergePolicyConfig(node, mapConfig.getMergePolicyConfig());
                 mapConfig.setMergePolicyConfig(mpConfig);
@@ -1745,9 +1745,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addMapConfig(mapConfig);
     }
 
-    private NearCacheConfig handleNearCacheConfig(Node node) {
+    private NearCacheConfig handleNearCacheConfig(Node node, NearCacheConfig existingNearCacheConfig) {
         String name = getAttribute(node, "name");
-        NearCacheConfig nearCacheConfig = new NearCacheConfig(name);
+        NearCacheConfig nearCacheConfig = existingNearCacheConfig != null
+          ? existingNearCacheConfig
+          : new NearCacheConfig(name);
+
         Boolean serializeKeys = null;
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
