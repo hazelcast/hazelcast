@@ -54,6 +54,7 @@ public class ExpirySystem {
 
     // TODO expiryDelayMillis
     private final long expiryDelayMillis;
+    private final boolean canPrimaryDriveExpiration;
     private final MapContainer mapContainer;
     private final ClearExpiredRecordsTask clearExpiredRecordsTask;
     private final InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<>();
@@ -71,6 +72,7 @@ public class ExpirySystem {
         this.expiryDelayMillis = hazelcastProperties.getMillis(ClusterProperty.MAP_EXPIRY_DELAY_SECONDS);
         this.mapContainer = mapContainer;
         this.mapServiceContext = mapServiceContext;
+        this.canPrimaryDriveExpiration = mapServiceContext.getClearExpiredRecordsTask().canPrimaryDriveExpiration();
     }
 
     // this method is overridden
@@ -157,17 +159,25 @@ public class ExpirySystem {
         expiryMetadata.setExpirationTime(expirationTime);
     }
 
-    public ExpiryReason hasExpired(Data key, long now) {
+    public ExpiryReason hasExpired(Data key, long now, boolean backup) {
+        if (backup && canPrimaryDriveExpiration) {
+            return ExpiryReason.NOT_EXPIRED;
+        }
+
         Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (expireTimeByKey.isEmpty()) {
             return ExpiryReason.NOT_EXPIRED;
         }
         ExpiryMetadata expiryMetadata = expireTimeByKey.get(key);
-        return hasExpired0(expiryMetadata, now);
+        return hasExpired0(expiryMetadata, now, backup);
     }
 
     // TODO add expiry delay for backup replica
-    public ExpiryReason hasExpired0(ExpiryMetadata expiryMetadata, long now) {
+    private ExpiryReason hasExpired0(ExpiryMetadata expiryMetadata, long now, boolean backup) {
+        if (backup && canPrimaryDriveExpiration) {
+            return ExpiryReason.NOT_EXPIRED;
+        }
+
         boolean expired = expiryMetadata != null
                 && expiryMetadata.getExpirationTime() <= now;
         if (expired) {
@@ -238,7 +248,7 @@ public class ExpirySystem {
             Data key = entry.getKey();
             ExpiryMetadata expiryMetadata = entry.getValue();
 
-            ExpiryReason expiryReason = hasExpired0(expiryMetadata, now);
+            ExpiryReason expiryReason = hasExpired0(expiryMetadata, now, backup);
             if (expiryReason != ExpiryReason.NOT_EXPIRED && !recordStore.isLocked(key)) {
                 dataKeyAndExpiryReason.add(key);
                 dataKeyAndExpiryReason.add(expiryReason);
