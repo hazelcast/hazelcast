@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -31,43 +30,41 @@ import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AbstractRecordTest {
 
-    private static final Data KEY = mock(Data.class);
     private static final Object VALUE = new Object();
 
-    private ObjectRecord record;
-    private ObjectRecord recordSameAttributes;
-    private ObjectRecord recordOtherVersion;
-    private ObjectRecord recordOtherCreationTime;
-    private ObjectRecord recordOtherHits;
-    private ObjectRecord recordOtherLastAccessTime;
-    private ObjectRecord recordOtherLastUpdateTime;
+    private Record record;
+    private Record recordSameAttributes;
+    private Record recordOtherVersion;
+    private Record recordOtherCreationTime;
+    private Record recordOtherHits;
+    private Record recordOtherLastAccessTime;
+    private Record recordOtherLastUpdateTime;
 
     @Before
     public void setUp() throws Exception {
-        record = new ObjectRecord(VALUE);
+        record = new ObjectRecordWithStats(VALUE);
 
-        recordSameAttributes = new ObjectRecord();
+        recordSameAttributes = new ObjectRecordWithStats();
         recordSameAttributes.setValue(VALUE);
 
-        recordOtherVersion = new ObjectRecord(VALUE);
+        recordOtherVersion = new ObjectRecordWithStats(VALUE);
         recordOtherVersion.setVersion(42);
 
-        recordOtherCreationTime = new ObjectRecord(VALUE);
+        recordOtherCreationTime = new ObjectRecordWithStats(VALUE);
         recordOtherCreationTime.setCreationTime(Clock.currentTimeMillis());
 
-        recordOtherHits = new ObjectRecord(VALUE);
+        recordOtherHits = new ObjectRecordWithStats(VALUE);
         recordOtherHits.setHits(23);
 
-        recordOtherLastAccessTime = new ObjectRecord(VALUE);
+        recordOtherLastAccessTime = new ObjectRecordWithStats(VALUE);
         recordOtherLastAccessTime.setLastAccessTime(Clock.currentTimeMillis());
 
-        recordOtherLastUpdateTime = new ObjectRecord(VALUE);
+        recordOtherLastUpdateTime = new ObjectRecordWithStats(VALUE);
         recordOtherLastUpdateTime.setLastUpdateTime(Clock.currentTimeMillis() + 10000);
     }
 

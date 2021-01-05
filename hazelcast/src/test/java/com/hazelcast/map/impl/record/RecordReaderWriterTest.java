@@ -34,10 +34,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_READER_WRITER;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_STATS_READER_WRITER;
 import static org.junit.Assert.assertEquals;
-
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -54,11 +52,6 @@ public class RecordReaderWriterTest {
     @Test
     public void data_record_with_stats_matching_reader_writer_id_is_data_record_with_stats_reader_writer_id() {
         assertEquals(DATA_RECORD_WITH_STATS_READER_WRITER, new DataRecordWithStats().getMatchingRecordReaderWriter());
-    }
-
-    @Test
-    public void object_record_matching_reader_writer_id_is_data_record_reader_writer_id() {
-        assertEquals(DATA_RECORD_READER_WRITER, new ObjectRecord().getMatchingRecordReaderWriter());
     }
 
     @Test

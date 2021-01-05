@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.internal.serialization.Data;
 
-import static com.hazelcast.internal.util.JVMUtil.OBJECT_HEADER_SIZE;
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
 class DataRecordWithStats extends AbstractRecord<Data> {
@@ -28,8 +27,7 @@ class DataRecordWithStats extends AbstractRecord<Data> {
     }
 
     DataRecordWithStats(Data value) {
-        super();
-        this.value = value;
+        setValue(value);
     }
 
     /**
@@ -37,7 +35,7 @@ class DataRecordWithStats extends AbstractRecord<Data> {
      */
     @Override
     public long getCost() {
-        return super.getCost() + OBJECT_HEADER_SIZE + REFERENCE_COST_IN_BYTES
+        return super.getCost() + REFERENCE_COST_IN_BYTES
                 + (value == null ? 0L : value.getHeapCost());
     }
 

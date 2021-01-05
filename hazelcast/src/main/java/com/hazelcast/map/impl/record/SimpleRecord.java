@@ -36,12 +36,12 @@ class SimpleRecord<V> implements Record<V> {
     }
 
     SimpleRecord(V value) {
-        this.value = value;
+        setValue(value);
     }
 
     @Override
     public final long getVersion() {
-        return 0;
+        return UNSET;
     }
 
     @Override
@@ -50,7 +50,7 @@ class SimpleRecord<V> implements Record<V> {
 
     @Override
     public long getLastAccessTime() {
-        return 0;
+        return UNSET;
     }
 
     @Override
@@ -59,7 +59,7 @@ class SimpleRecord<V> implements Record<V> {
 
     @Override
     public long getLastUpdateTime() {
-        return 0;
+        return UNSET;
     }
 
     @Override
@@ -68,7 +68,7 @@ class SimpleRecord<V> implements Record<V> {
 
     @Override
     public long getCreationTime() {
-        return 0;
+        return UNSET;
     }
 
     @Override
@@ -77,7 +77,7 @@ class SimpleRecord<V> implements Record<V> {
 
     @Override
     public int getHits() {
-        return 0;
+        return UNSET;
     }
 
     @Override
@@ -134,29 +134,32 @@ class SimpleRecord<V> implements Record<V> {
 
     @Override
     public int getRawCreationTime() {
-        return 0;
-    }
-
-    @Override
-    public int getRawLastAccessTime() {
-        return 0;
-    }
-
-    @Override
-    public int getRawLastUpdateTime() {
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void setRawCreationTime(int creationTime) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getRawLastAccessTime() {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void setRawLastAccessTime(int lastAccessTime) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getRawLastUpdateTime() {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void setRawLastUpdateTime(int lastUpdateTime) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -184,19 +187,13 @@ class SimpleRecord<V> implements Record<V> {
             return false;
         }
 
-        if (!super.equals(o)) {
-            return false;
-        }
-
-        SimpleRecord that = (SimpleRecord) o;
+        SimpleRecord<?> that = (SimpleRecord<?>) o;
         return Objects.equals(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + value.hashCode();
-        return result;
+        return value.hashCode();
     }
 
     @Override

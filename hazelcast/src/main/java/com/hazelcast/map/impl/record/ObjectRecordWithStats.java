@@ -23,8 +23,7 @@ class ObjectRecordWithStats extends AbstractRecord<Object> {
     }
 
     ObjectRecordWithStats(Object value) {
-        super();
-        this.value = value;
+        setValue(value);
     }
 
     @Override

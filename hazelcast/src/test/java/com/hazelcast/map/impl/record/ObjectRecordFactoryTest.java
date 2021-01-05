@@ -37,7 +37,7 @@ public class ObjectRecordFactoryTest extends AbstractRecordFactoryTest<Object> {
 
     @Override
     Class<?> getRecordClass() {
-        return ObjectRecord.class;
+        return SimpleRecord.class;
     }
 
     @Override
@@ -47,7 +47,7 @@ public class ObjectRecordFactoryTest extends AbstractRecordFactoryTest<Object> {
 
     @Override
     Class<?> getCachedRecordClass() {
-        return ObjectRecord.class;
+        return SimpleRecord.class;
     }
 
     @Override

@@ -55,6 +55,6 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
             }
         }
 
-        return new ObjectRecord(objectValue);
+        return new SimpleRecord<>(objectValue);
     }
 }

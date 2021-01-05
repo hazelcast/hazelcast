@@ -82,7 +82,6 @@ class CachedSimpleRecord extends SimpleRecord<Data> {
 
         CachedSimpleRecord that = (CachedSimpleRecord) o;
         return Objects.equals(cachedValue, that.cachedValue);
-
     }
 
     @Override
