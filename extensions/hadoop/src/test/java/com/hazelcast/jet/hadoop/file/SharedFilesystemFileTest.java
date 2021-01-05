@@ -22,15 +22,11 @@ import com.hazelcast.jet.pipeline.file.FileSources;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assumptions.assumeThat;
 
 public class SharedFilesystemFileTest extends BaseFileFormatTest {
 
-
     @Test
     public void shouldReadFileOnlyOnceOnSharedFilesystem() {
-        assumeThat(useHadoop).isFalse();
-
         FileSourceBuilder<String> source = FileSources.files(currentDir + "/src/test/resources/directory/")
                                                       .format(FileFormat.lines())
                                                       .sharedFileSystem(true);

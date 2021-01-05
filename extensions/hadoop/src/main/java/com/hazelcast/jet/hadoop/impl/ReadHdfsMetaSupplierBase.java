@@ -19,6 +19,7 @@ package com.hazelcast.jet.hadoop.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.pipeline.file.impl.FileProcessorMetaSupplier;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
@@ -50,7 +51,7 @@ import static java.util.stream.Stream.concat;
  * Base class that contains shared logic between HDFS processor meta suppliers
  * which are using the old and the new MapReduce API.
  */
-public abstract class ReadHdfsMetaSupplierBase implements ProcessorMetaSupplier {
+public abstract class ReadHdfsMetaSupplierBase<R> implements ProcessorMetaSupplier, FileProcessorMetaSupplier<R> {
 
     protected transient ILogger logger;
 

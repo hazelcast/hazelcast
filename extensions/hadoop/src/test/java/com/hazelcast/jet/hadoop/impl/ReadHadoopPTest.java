@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.hadoop.impl.ReadHadoopPTest.EMapperType.CUSTOM_WITH_NULLS;
 import static java.lang.Integer.parseInt;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -75,6 +76,9 @@ public class ReadHadoopPTest extends HadoopTestSupport {
     @Parameterized.Parameter(1)
     public EMapperType projectionType;
 
+    @Parameterized.Parameter(2)
+    public Boolean sharedFileSystem;
+
     private Configuration jobConf;
     private Path directory;
     private Set<org.apache.hadoop.fs.Path> paths = new HashSet<>();
@@ -87,7 +91,8 @@ public class ReadHadoopPTest extends HadoopTestSupport {
                         org.apache.hadoop.mapreduce.lib.input.TextInputFormat.class,
                         org.apache.hadoop.mapred.SequenceFileInputFormat.class,
                         org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat.class),
-                Arrays.asList(EMapperType.values()));
+                Arrays.asList(EMapperType.values()),
+                Arrays.asList(true, false));
     }
 
     @BeforeClass
@@ -126,6 +131,7 @@ public class ReadHadoopPTest extends HadoopTestSupport {
                 org.apache.hadoop.mapred.FileInputFormat.addInputPath(jobConf, path);
             }
         }
+        jobConf.setBoolean(HadoopSources.SHARED_LOCAL_FS, sharedFileSystem);
     }
 
     @Test
@@ -133,14 +139,13 @@ public class ReadHadoopPTest extends HadoopTestSupport {
         IList<Object> sinkList = instance().getList(randomName());
         Pipeline p = Pipeline.create();
         p.readFrom(HadoopSources.inputFormat(jobConf, projectionType.mapper))
-         .setLocalParallelism(4)
-         .writeTo(Sinks.list(sinkList))
-         .setLocalParallelism(1);
+                .setLocalParallelism(4)
+                .writeTo(Sinks.list(sinkList))
+                .setLocalParallelism(1);
 
         instance().newJob(p).join();
-
-        assertEquals(projectionType == EMapperType.CUSTOM_WITH_NULLS ? 8 : 16,
-                sinkList.size());
+        int expected = paths.size() * ENTRIES.length * (sharedFileSystem ? 1 : 2);
+        assertEquals(projectionType == CUSTOM_WITH_NULLS ? expected / 2 : expected, sinkList.size());
         assertTrue(sinkList.get(0).toString().contains("value"));
     }
 
@@ -177,11 +182,11 @@ public class ReadHadoopPTest extends HadoopTestSupport {
         for (int i = 0; i < lists.length; i++) {
             int finalI = i;
             stream = stream.flatMap(tuple -> lists[finalI].stream()
-                                                          .map(item -> {
-                                                              Object[] res = Arrays.copyOf(tuple, tuple.length + 1);
-                                                              res[tuple.length] = item;
-                                                              return res;
-                                                          }));
+                    .map(item -> {
+                        Object[] res = Arrays.copyOf(tuple, tuple.length + 1);
+                        res[tuple.length] = item;
+                        return res;
+                    }));
         }
         return stream.collect(toList());
     }
@@ -210,7 +215,7 @@ public class ReadHadoopPTest extends HadoopTestSupport {
         }
     }
 
-    private enum EMapperType {
+    enum EMapperType {
         DEFAULT(Util::entry),
         CUSTOM((k, v) -> v.toString()),
         CUSTOM_WITH_NULLS((k, v) -> parseInt(v.toString().substring(4, 5)) % 2 == 0 ? v.toString() : null);

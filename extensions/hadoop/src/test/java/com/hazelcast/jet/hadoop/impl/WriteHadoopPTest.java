@@ -130,17 +130,20 @@ public class WriteHadoopPTest extends HadoopTestSupport {
     }
 
     private Configuration getReadJobConf(org.apache.hadoop.fs.Path path) throws IOException {
+        Configuration configuration;
         if (inputFormatClass.getPackage().getName().contains("mapreduce")) {
             Job job = Job.getInstance();
             job.setInputFormatClass(inputFormatClass);
             org.apache.hadoop.mapreduce.lib.input.FileInputFormat.addInputPath(job, path);
-            return job.getConfiguration();
+            configuration = job.getConfiguration();
         } else {
             JobConf conf = new JobConf();
             conf.setInputFormat(inputFormatClass);
             FileInputFormat.addInputPath(conf, path);
-            return conf;
+            configuration = conf;
         }
+        configuration.setBoolean(HadoopSources.SHARED_LOCAL_FS, true);
+        return configuration;
     }
 
     private Configuration getSinkConf(org.apache.hadoop.fs.Path path) throws IOException {

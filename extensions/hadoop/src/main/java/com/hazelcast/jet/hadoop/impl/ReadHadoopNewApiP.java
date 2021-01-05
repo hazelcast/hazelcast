@@ -27,16 +27,22 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.hadoop.HadoopSources;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.pipeline.file.impl.FileProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.file.impl.FileTraverser;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.MRJobConfig;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.InvalidInputException;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
@@ -46,6 +52,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -128,7 +135,20 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
         return inputFormat;
     }
 
-    public static class MetaSupplier<K, V, R> extends ReadHdfsMetaSupplierBase implements FileProcessorMetaSupplier<R> {
+    private static <K, V> List<InputSplit> getSplits(Configuration configuration) throws Exception {
+        InputFormat<K, V> inputFormat = extractInputFormat(configuration);
+        Job job = Job.getInstance(configuration);
+        try {
+            return inputFormat.getSplits(job);
+        } catch (InvalidInputException e) {
+            String directory = configuration.get(INPUT_DIR, "");
+            ILogger logger = Logger.getLogger(ReadHadoopNewApiP.class);
+            logger.fine("The directory " + directory + " does not exists. This source will emit 0 items.");
+            return emptyList();
+        }
+    }
+
+    public static class MetaSupplier<K, V, R> extends ReadHdfsMetaSupplierBase<R> {
 
         static final long serialVersionUID = 1L;
 
@@ -150,16 +170,19 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
         @Override
         public void init(@Nonnull Context context) throws Exception {
             super.init(context);
-
-            List<InputSplit> splits = getSplits(configuration);
-            IndexedInputSplit[] indexedInputSplits = new IndexedInputSplit[splits.size()];
-            Arrays.setAll(indexedInputSplits, i -> new IndexedInputSplit(i, splits.get(i)));
-            Address[] addresses = context.jetInstance().getCluster().getMembers()
-                                         .stream()
-                                         .map(Member::getAddress)
-                                         .toArray(Address[]::new);
-            assigned = assignSplitsToMembers(indexedInputSplits, addresses);
-            printAssignments(assigned);
+            if (shouldSplitOnMembers(configuration)) {
+                assigned = new HashMap<>();
+            } else {
+                List<InputSplit> splits = getSplits(configuration);
+                IndexedInputSplit[] indexedInputSplits = new IndexedInputSplit[splits.size()];
+                Arrays.setAll(indexedInputSplits, i -> new IndexedInputSplit(i, splits.get(i)));
+                Address[] addresses = context.jetInstance().getCluster().getMembers()
+                        .stream()
+                        .map(Member::getAddress)
+                        .toArray(Address[]::new);
+                assigned = assignSplitsToMembers(indexedInputSplits, addresses);
+                printAssignments(assigned);
+            }
         }
 
         @Nonnull
@@ -171,18 +194,6 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
         @Override
         public FileTraverser<R> traverser() throws Exception {
             return new HadoopFileTraverser<>(configuration, getSplits(configuration), projectionFn);
-        }
-
-        private List<InputSplit> getSplits(Configuration configuration) throws Exception {
-            InputFormat<K, V> inputFormat = extractInputFormat(configuration);
-            Job job = Job.getInstance(configuration);
-            try {
-                return inputFormat.getSplits(job);
-            } catch (InvalidInputException e) {
-                String directory = job.getConfiguration().get(INPUT_DIR, "");
-                logger.fine("The directory " + directory + " does not exists. This source will emit 0 items.");
-                return emptyList();
-            }
         }
     }
 
@@ -212,19 +223,52 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
         @Nonnull
         @Override
         public List<Processor> get(int count) {
-            Map<Integer, List<IndexedInputSplit>> processorToSplits = Util.distributeObjects(count, assignedSplits);
-
-            return processorToSplits
+            List<InputSplit> inputSplits;
+            if (shouldSplitOnMembers(configuration)) {
+                inputSplits = uncheckCall(() -> getSplits(configuration));
+            } else {
+                inputSplits = assignedSplits.stream().map(IndexedInputSplit::getNewSplit).collect(toList());
+            }
+            return Util.distributeObjects(count, inputSplits)
                     .values().stream()
-                    .map(splits -> {
-                                List<InputSplit> mappedSplits = splits
-                                        .stream()
-                                        .map(IndexedInputSplit::getNewSplit)
-                                        .collect(toList());
-                                return new ReadHadoopNewApiP<>(configuration, mappedSplits, projectionFn);
-                            }
-                    ).collect(toList());
+                    .map(splits -> new ReadHadoopNewApiP<>(configuration, splits, projectionFn))
+                    .collect(toList());
         }
+    }
+
+    /**
+     * If all the input paths are of LocalFileSystem and not marked as shared
+     * (see {@link HadoopSources#SHARED_LOCAL_FS}), split the input paths on
+     * members.
+     */
+    private static boolean shouldSplitOnMembers(Configuration configuration) {
+        // If the local file system is marked as shared, don't split on members
+        if (configuration.getBoolean(HadoopSources.SHARED_LOCAL_FS, false)) {
+            return false;
+        }
+        // Local file system is not marked as shared, throw exception if
+        // there are local file system and remote file system in the inputs.
+        Job job = uncheckCall(() -> Job.getInstance(configuration));
+        Path[] inputPaths = FileInputFormat.getInputPaths(job);
+        boolean hasLocalFileSystem = false;
+        boolean hasRemoteFileSystem = false;
+        for (Path inputPath : inputPaths) {
+            if (isLocalFileSystem(inputPath, configuration)) {
+                hasLocalFileSystem = true;
+            } else {
+                hasRemoteFileSystem = true;
+            }
+        }
+        if (hasLocalFileSystem && hasRemoteFileSystem) {
+            throw new IllegalArgumentException(
+                    "LocalFileSystem should be marked as shared when used with other remote file systems");
+        }
+        return hasLocalFileSystem;
+    }
+
+    private static boolean isLocalFileSystem(Path inputPath, Configuration configuration) {
+        FileSystem fileSystem = uncheckCall(() -> inputPath.getFileSystem(configuration));
+        return fileSystem instanceof LocalFileSystem || fileSystem instanceof RawLocalFileSystem;
     }
 
     private static final class HadoopFileTraverser<K, V, R> implements FileTraverser<R> {

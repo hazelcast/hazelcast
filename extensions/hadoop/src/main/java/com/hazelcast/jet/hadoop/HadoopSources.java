@@ -62,11 +62,29 @@ public final class HadoopSources {
      *
      * <pre>{@code
      *     Configuration conf = new Configuration();
-     *     conf.set(HadoopSources.COPY_ON_READ, "false");
+     *     conf.setBoolean(HadoopSources.COPY_ON_READ, false);
      *     BatchSource<Entry<K, V>> source = HadoopSources.inputFormat(conf);
      * }</pre>
      */
     public static final String COPY_ON_READ = "jet.source.copyonread";
+
+    /**
+     * When reading files from local file system using Hadoop, each processor
+     * reads files from its own local file system. If the local file system
+     * is shared between members, e.g NFS mounted filesystem, you should
+     * configure this property as {@code true}.
+     * <p>
+     * Here is how you can configure the source. Default value is {@code false}:
+     *
+     * <pre>{@code
+     *     Configuration conf = new Configuration();
+     *     conf.setBoolean(HadoopSources.SHARED_LOCAL_FS, true);
+     *     BatchSource<Entry<K, V>> source = HadoopSources.inputFormat(conf);
+     * }</pre>
+     *
+     * @since 4.4
+     */
+    public static final String SHARED_LOCAL_FS = "jet.source.sharedlocalfs";
 
     private HadoopSources() {
     }

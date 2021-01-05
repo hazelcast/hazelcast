@@ -19,6 +19,7 @@ package com.hazelcast.jet.hadoop.impl;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.hadoop.HadoopSources;
 import com.hazelcast.jet.pipeline.file.AvroFileFormat;
 import com.hazelcast.jet.pipeline.file.CsvFileFormat;
 import com.hazelcast.jet.pipeline.file.FileFormat;
@@ -104,6 +105,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
             Configuration configuration = job.getConfiguration();
             configuration.setBoolean(FileInputFormat.INPUT_DIR_NONRECURSIVE_IGNORE_SUBDIRS, true);
             configuration.setBoolean(FileInputFormat.INPUT_DIR_RECURSIVE, false);
+            configuration.setBoolean(HadoopSources.SHARED_LOCAL_FS, fsc.isSharedFileSystem());
             for (Entry<String, String> option : fsc.getOptions().entrySet()) {
                 configuration.set(option.getKey(), option.getValue());
             }
