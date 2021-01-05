@@ -16,18 +16,21 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
+
 import com.hazelcast.jet.core.processor.Processors;
-import com.hazelcast.jet.pipeline.test.Assertions;
-import com.hazelcast.jet.pipeline.test.ParallelBatchP;
-import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
+import com.hazelcast.jet.pipeline.test.AssertionSinks;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -35,40 +38,69 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import javax.annotation.Nonnull;
+import java.io.Serializable;
+
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.IntStream;
+import java.util.Map;
+import java.util.concurrent.CompletionException;
+import java.util.stream.LongStream;
 
 import static com.hazelcast.function.Functions.wholeItem;
-import static java.util.stream.Collectors.toList;
+import static com.hazelcast.jet.core.test.JetAssert.assertFalse;
+import static com.hazelcast.jet.core.test.JetAssert.assertTrue;
+import static com.hazelcast.jet.core.test.JetAssert.fail;
 
+
+/**
+ *  The tests of this class run on the same Jet cluster. In order for
+ *  the tests to run quickly, we do not start a new cluster after each
+ *  test. But if some test spoils the cluster, it may also cause other
+ *  tests to fail. But since we did not expect this case, we preferred
+ *  performance in this tradeoff. Isolation between tests is provided
+ *  by using different mapJournals in each test.
+ */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-public class OrderedBatchProcessingTest extends JetTestSupport {
+public class OrderedProcessingMultipleMemberTest extends JetTestSupport implements Serializable {
 
     // Used to set the LP of the stage with the higher value than upstream parallelism
     private static final int HIGH_LOCAL_PARALLELISM = 11;
     // Used to set the LP of the stage with the smaller value than upstream parallelism
     private static final int LOW_LOCAL_PARALLELISM = 2;
+    private static final int INSTANCE_COUNT = 2;
+
     private static Pipeline p;
-    private static JetInstance jet;
+    private static JetInstance[] instances;
 
     @Parameter(value = 0)
-    public FunctionEx<BatchStage<Integer>, BatchStage<Integer>> transform;
+    public int idx;
 
     @Parameter(value = 1)
+    public FunctionEx<StreamStage<Map.Entry<Long, Long>>, StreamStage<Map.Entry<Long, Long>>> transform;
+
+    @Parameter(value = 2)
     public String transformName;
 
     @BeforeClass
     public static void setupClass() {
-        jet = Jet.newJetInstance();
+        int testCount = 16;
+        JetConfig config = new JetConfig();
+        for (int idx = 0; idx < testCount; idx++) {
+            EventJournalConfig eventJournalConfig = config.getHazelcastConfig()
+                    .getMapConfig("test-map-" + idx)
+                    .getEventJournalConfig();
+            eventJournalConfig.setEnabled(true);
+            eventJournalConfig.setCapacity(30000); // 30000/271 ~= 111 item per partition
+        }
+        instances = new JetInstance[INSTANCE_COUNT];
+        for (int i = 0; i < INSTANCE_COUNT; i++) {
+            instances[i] = Jet.newJetInstance(config);
+        }
     }
 
     @Before
@@ -78,99 +110,116 @@ public class OrderedBatchProcessingTest extends JetTestSupport {
 
     @AfterClass
     public static void cleanup() {
-        jet.shutdown();
+        for (int i = 0; i < INSTANCE_COUNT; i++) {
+            instances[i].shutdown();
+        }
     }
 
-    @Parameters(name = "{index}: transform={1}")
+    @Parameters(name = "{index}: transform={2}")
     public static Collection<Object[]> data() {
         return Arrays.asList(
                 createParamSet(
+                        0,
                         stage -> stage
                                 .map(FunctionEx.identity())
                                 .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
                         "map-high"
                 ),
                 createParamSet(
+                        1,
                         stage -> stage
                                 .flatMap(Traversers::singleton)
                                 .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
                         "flat-map-high"
                 ),
                 createParamSet(
+                        2,
                         stage -> stage
                                 .mapUsingIMap("test-map", wholeItem(), (x, ignored) -> x)
                                 .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
                         "map-using-imap-high"
                 ),
                 createParamSet(
+                        3,
                         stage -> stage
                                 .mapUsingReplicatedMap("test-map", wholeItem(), (x, ignored) -> x)
                                 .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
                         "map-using-replicated-map-high"
                 ),
                 createParamSet(
+                        4,
                         stage -> stage
                                 .filter(PredicateEx.alwaysTrue())
                                 .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
                         "filter-high"
                 ),
                 createParamSet(
+                        5,
                         stage -> stage
                                 .mapStateful(LongAccumulator::new, (s, x) -> x)
                                 .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
                         "map-stateful-global-high"
                 ),
                 createParamSet(
+                        6,
                         stage -> stage
-                                .<Integer>customTransform("custom-transform",
+                                .<Map.Entry<Long, Long>>customTransform("custom-transform",
                                         Processors.mapP(FunctionEx.identity()))
                                 .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
                         "custom-transform-high"
                 ),
                 createParamSet(
+                        7,
                         stage -> stage
                                 .map(FunctionEx.identity())
                                 .setLocalParallelism(LOW_LOCAL_PARALLELISM),
                         "map-low"
                 ),
                 createParamSet(
+                        8,
                         stage -> stage
                                 .flatMap(Traversers::singleton)
                                 .setLocalParallelism(LOW_LOCAL_PARALLELISM),
                         "flat-map-low"
                 ),
                 createParamSet(
+                        9,
                         stage -> stage
                                 .mapUsingIMap("test-map", wholeItem(), (x, ignored) -> x)
                                 .setLocalParallelism(LOW_LOCAL_PARALLELISM),
                         "map-using-imap-low"
                 ),
                 createParamSet(
+                        10,
                         stage -> stage
                                 .mapUsingReplicatedMap("test-map", wholeItem(), (x, ignored) -> x)
                                 .setLocalParallelism(LOW_LOCAL_PARALLELISM),
                         "map-using-replicated-map-low"
                 ),
                 createParamSet(
+                        11,
                         stage -> stage
                                 .filter(PredicateEx.alwaysTrue())
                                 .setLocalParallelism(LOW_LOCAL_PARALLELISM),
                         "filter-low"
                 ),
                 createParamSet(
+                        12,
                         stage -> stage
                                 .mapStateful(LongAccumulator::new, (s, x) -> x)
                                 .setLocalParallelism(LOW_LOCAL_PARALLELISM),
                         "map-stateful-global-low"
                 ),
                 createParamSet(
+                        13,
                         stage -> stage
-                                .<Integer>customTransform("custom-transform",
+                                .<Map.Entry<Long, Long>>customTransform("custom-transform",
                                         Processors.mapP(FunctionEx.identity()))
                                 .setLocalParallelism(LOW_LOCAL_PARALLELISM),
                         "custom-transform-low"
                 ),
                 createParamSet(
+                        14,
                         stage -> stage
                                 .map(FunctionEx.identity())
                                 .setLocalParallelism(HIGH_LOCAL_PARALLELISM)
@@ -178,6 +227,7 @@ public class OrderedBatchProcessingTest extends JetTestSupport {
                                 .setLocalParallelism(LOW_LOCAL_PARALLELISM),
                         "map-high-filter-low"
                 ), createParamSet(
+                        15,
                         stage -> stage
                                 .map(FunctionEx.identity())
                                 .setLocalParallelism(LOW_LOCAL_PARALLELISM)
@@ -189,66 +239,66 @@ public class OrderedBatchProcessingTest extends JetTestSupport {
     }
 
     private static Object[] createParamSet(
-            FunctionEx<BatchStage<Integer>, BatchStage<Integer>> transform,
+            int idx,
+            FunctionEx<StreamStage<Map.Entry<Long, Long>>, StreamStage<Map.Entry<Long, Long>>> transform,
             String transformName
     ) {
-        return new Object[]{transform, transformName};
+        return new Object[]{idx, transform, transformName};
     }
 
     @Test
-    public void when_source_is_non_partitioned() {
-        int itemCount = 250;
-        List<Integer> sequence = IntStream.range(0, itemCount).boxed().collect(toList());
+    public void multiple_nodes() {
+        int itemCount = 250; // because of mapJournal's capacity, increasing this value too much can break the test
+        int keyCount = 8;
 
+        String mapName = "test-map-" + idx;
+        StreamStage<Map.Entry<Long, Long>> srcStage = p.readFrom(
+                Sources.<Long, Long>mapJournal(mapName, JournalInitialPosition.START_FROM_OLDEST)
+        ).withoutTimestamps();
+        StreamStage<Map.Entry<Long, Long>> applied = srcStage.apply(transform);
 
-        BatchStage<Integer> srcStage = p.readFrom(TestSources.items(sequence));
+        applied.groupingKey(Map.Entry::getKey)
+                .mapStateful(() -> create(keyCount), this::orderValidator)
+                .writeTo(AssertionSinks.assertCollectedEventually(60,
+                        list -> {
+                            assertTrue("when", itemCount <= list.size());
+                            assertFalse("There is some reordered items in the list", list.contains(false));
+                        }
+                ));
 
-        BatchStage<Integer> applied = srcStage.apply(transform);
+        IMap<Long, Long> testMap = instances[0].getMap(mapName);
+        LongStream.range(0, itemCount)
+                .boxed()
+                .forEachOrdered(i -> testMap.put(i % keyCount, i));
 
-        applied.filter(i -> i < itemCount)
-                .apply(Assertions.assertOrdered(sequence));
-
-        jet.newJob(p).join();
+        Job job = instances[0].newJob(p);
+        try {
+            job.join();
+            fail("Job should have completed with an AssertionCompletedException, but completed normally");
+        } catch (CompletionException e) {
+            testMap.clear();
+            String errorMsg = e.getCause().getMessage();
+            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
+                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+        }
     }
 
-    @Test
-    public void when_source_is_parallel() {
-        int itemCount = 250;
-        List<Integer> sequence1 = IntStream.range(0, itemCount).boxed().collect(toList());
-        List<Integer> sequence2 = IntStream.range(itemCount, 2 * itemCount).boxed().collect(toList());
-        List<Integer> sequence3 = IntStream.range(2 * itemCount, 3 * itemCount).boxed().collect(toList());
-        List<Integer> sequence4 = IntStream.range(3 * itemCount, 4 * itemCount).boxed().collect(toList());
-
-        BatchStage<Integer> srcStage = p.readFrom(
-                itemsParallel(Arrays.asList(sequence1, sequence2, sequence3, sequence4))
-        );
-
-        BatchStage<Integer> applied = srcStage.apply(transform);
-
-        applied.filter(i -> i < itemCount)
-                .apply(Assertions.assertOrdered(sequence1));
-        applied.filter(i -> itemCount <= i && i < 2 * itemCount)
-                .apply(Assertions.assertOrdered(sequence2));
-        applied.filter(i -> 2 * itemCount <= i && i < 3 * itemCount)
-                .apply(Assertions.assertOrdered(sequence3));
-        applied.filter(i -> 3 * itemCount <= i && i < 4 * itemCount)
-                .apply(Assertions.assertOrdered(sequence4));
-
-        jet.newJob(p).join();
+    private static LongAccumulator[] create(int keyCount) {
+        LongAccumulator[] state = new LongAccumulator[keyCount];
+        for (int i = 0; i < keyCount; i++) {
+            state[i] = new LongAccumulator(Long.MIN_VALUE);
+        }
+        return state;
     }
 
-    /**
-     * Returns a batch source that emits the items supplied in the iterables.
-     * It emits the items from different iterables in parallel, but preserves
-     * the order within each iterable.
-     *
-     * @since 4.4
-     */
-    @Nonnull
-    public static <T> BatchSource<T> itemsParallel(@Nonnull List<? extends Iterable<T>> iterables) {
-        Objects.requireNonNull(iterables, "iterables");
-        return Sources.batchFromProcessor("itemsParallel",
-                ProcessorMetaSupplier.of(iterables.size(), () -> new ParallelBatchP<>(iterables))
-        );
+    private boolean orderValidator(LongAccumulator[] s, Long key, Map.Entry<Long, Long> entry) {
+        LongAccumulator acc = s[key.intValue()];
+        long value = entry.getValue();
+        if (acc.get() >= value) {
+            return false;
+        } else {
+            acc.set(value);
+            return true;
+        }
     }
 }

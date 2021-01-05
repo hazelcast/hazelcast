@@ -18,6 +18,7 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
+import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traversers;
@@ -29,10 +30,12 @@ import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.jet.pipeline.test.GeneratorFunction;
 import com.hazelcast.jet.pipeline.test.ParallelStreamP;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -64,6 +67,8 @@ public class OrderedStreamProcessingTest extends JetTestSupport implements Seria
     private static final int HIGH_LOCAL_PARALLELISM = 11;
     // Used to set the LP of the stage with the smaller value than upstream parallelism
     private static final int LOW_LOCAL_PARALLELISM = 2;
+    private static final int ITEM_COUNT = 250;
+
     private static Pipeline p;
     private static JetInstance jet;
 
@@ -73,14 +78,18 @@ public class OrderedStreamProcessingTest extends JetTestSupport implements Seria
     @Parameter(value = 1)
     public String transformName;
 
-    @Before
-    public void setup() {
-        jet = createJetMember();
-        p = Pipeline.create();
+    @BeforeClass
+    public static void setupClass() {
+        jet = Jet.newJetInstance();
     }
 
-    @After
-    public void after() {
+    @Before
+    public void setup() {
+        p = Pipeline.create().setPreserveOrder(true);
+    }
+
+    @AfterClass
+    public static void cleanup() {
         jet.shutdown();
     }
 
@@ -110,8 +119,7 @@ public class OrderedStreamProcessingTest extends JetTestSupport implements Seria
                                 .mapStateful(LongAccumulator::new, (s, x) -> x)
                                 .setLocalParallelism(HIGH_LOCAL_PARALLELISM),
                         "map-stateful-global-high"
-                )
-                ,
+                ),
                 createParamSet(
                         stage -> stage
                                 .mapStateful(LongAccumulator::new, (s, x) -> x)
@@ -160,8 +168,7 @@ public class OrderedStreamProcessingTest extends JetTestSupport implements Seria
                                 .mapStateful(LongAccumulator::new, (s, x) -> x)
                                 .setLocalParallelism(LOW_LOCAL_PARALLELISM),
                         "map-stateful-global-low"
-                )
-                ,
+                ),
                 createParamSet(
                         stage -> stage
                                 .mapStateful(LongAccumulator::new, (s, x) -> x)
@@ -212,11 +219,36 @@ public class OrderedStreamProcessingTest extends JetTestSupport implements Seria
         return new Object[]{transform, transformName};
     }
 
+    @Test
+    public void when_source_is_non_partitioned() {
+        int validatedItemCount = ITEM_COUNT;
+        int itemsPerSecond = 5 * ITEM_COUNT;
+
+        List<Long> sequence = LongStream.range(0, validatedItemCount).boxed().collect(toList());
+
+        StreamStage<Long> srcStage = p.readFrom(TestSources.itemStream(itemsPerSecond, (ts, seq) -> seq))
+                .withIngestionTimestamps();
+
+        StreamStage<Long> applied = srcStage.apply(transform);
+
+        applied.writeTo(AssertionSinks.assertCollectedEventually(60,
+                        list -> Assert.assertArrayEquals(list.toArray(), sequence.toArray())));
+
+        Job job = jet.newJob(p);
+        try {
+            job.join();
+            fail("Job should have completed with an AssertionCompletedException, but completed normally");
+        } catch (CompletionException e) {
+            String errorMsg = e.getCause().getMessage();
+            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
+                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+        }
+    }
 
     @Test
-    public void ordered_stream_processing_test() {
-        int itemCount = 250;
-        int eventsPerSecondPerGenerator = 25;
+    public void when_source_is_parallel() {
+        int validatedItemCountPerGenerator = ITEM_COUNT;
+        int eventsPerSecondPerGenerator = 5 * ITEM_COUNT;
         int generatorCount = 4;
 
         // Generate monotonic increasing items that are distinct for each generator.
@@ -235,12 +267,11 @@ public class OrderedStreamProcessingTest extends JetTestSupport implements Seria
         applied.mapStateful(() -> create(generatorCount), this::orderValidator)
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
                         list -> {
-                            assertTrue("when", itemCount <= list.size());
+                            assertTrue("when", validatedItemCountPerGenerator <= list.size());
                             assertFalse("There is some reordered items in the list", list.contains(false));
                         }
                 ));
 
-        p.setPreserveOrder(true);
         Job job = jet.newJob(p);
         try {
             job.join();
@@ -253,10 +284,10 @@ public class OrderedStreamProcessingTest extends JetTestSupport implements Seria
     }
 
     @Test
-    public void ordered_stream_processing_test2() {
-        int eventsPerSecondPerGenerator = 30;
+    public void when_source_is_parallel_2() {
+        int validatedItemCountPerGenerator = ITEM_COUNT;
+        int eventsPerSecondPerGenerator = 5 * ITEM_COUNT;
         int generatorCount = 4;
-        int itemCount = 200;
 
         // Generate monotonic increasing items that are distinct for each generator.
         GeneratorFunction<Long> generator1 = (ts, seq) -> generatorCount * seq;
@@ -264,10 +295,14 @@ public class OrderedStreamProcessingTest extends JetTestSupport implements Seria
         GeneratorFunction<Long> generator3 = (ts, seq) -> generatorCount * seq + 2;
         GeneratorFunction<Long> generator4 = (ts, seq) -> generatorCount * seq + 3;
 
-        List<Long> sequence1 = LongStream.range(0, itemCount).map(i -> generatorCount * i).boxed().collect(toList());
-        List<Long> sequence2 = LongStream.range(0, itemCount).map(i -> generatorCount * i + 1).boxed().collect(toList());
-        List<Long> sequence3 = LongStream.range(0, itemCount).map(i -> generatorCount * i + 2).boxed().collect(toList());
-        List<Long> sequence4 = LongStream.range(0, itemCount).map(i -> generatorCount * i + 3).boxed().collect(toList());
+        List<Long> sequence1 = LongStream.range(0, validatedItemCountPerGenerator)
+                .map(i -> generatorCount * i).boxed().collect(toList());
+        List<Long> sequence2 = LongStream.range(0, validatedItemCountPerGenerator)
+                .map(i -> generatorCount * i + 1).boxed().collect(toList());
+        List<Long> sequence3 = LongStream.range(0, validatedItemCountPerGenerator)
+                .map(i -> generatorCount * i + 2).boxed().collect(toList());
+        List<Long> sequence4 = LongStream.range(0, validatedItemCountPerGenerator)
+                .map(i -> generatorCount * i + 3).boxed().collect(toList());
 
         StreamStage<Long> srcStage = p.readFrom(itemsParallel(
                 eventsPerSecondPerGenerator,
@@ -289,8 +324,6 @@ public class OrderedStreamProcessingTest extends JetTestSupport implements Seria
         applied.filter(i -> i % generatorCount == 3)
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
                         list -> Assert.assertArrayEquals(list.toArray(), sequence4.toArray())));
-
-        p.setPreserveOrder(true);
 
         Job job = jet.newJob(p);
         try {
@@ -319,9 +352,7 @@ public class OrderedStreamProcessingTest extends JetTestSupport implements Seria
      * generated. The source is not fault-tolerant. If the job restarts, all
      * the generator functions are reset and emit everything from the start.
      *
-     * @since 4.4
      */
-    @Nonnull
     private static <T> StreamSource<T> itemsParallel(
             long eventsPerSecondPerGenerator, @Nonnull List<? extends GeneratorFunction<T>> generatorFns
     ) {
