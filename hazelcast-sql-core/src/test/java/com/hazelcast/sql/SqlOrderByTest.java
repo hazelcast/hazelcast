@@ -251,6 +251,28 @@ public class SqlOrderByTest extends SqlTestSupport {
     }
 
     @Test
+    public void testSelectWithOrderByNoIndex() {
+        try {
+            checkSelectWithOrderBy(Collections.emptyList(),
+                Arrays.asList("intVal"),
+                Arrays.asList(true));
+            fail("Order by without matching index should fail");
+        } catch(HazelcastSqlException e) {
+            assertEquals(String.format("Cannot perform ORDER BY clause without a matching index. Add a SORTED index to the map %s on the field(s) [intVal].", mapName()),
+                e.getMessage());
+        }
+
+        try {
+            checkSelectWithOrderBy(Collections.emptyList(),
+                Arrays.asList("intVal", "realVal"),
+                Arrays.asList(true, true));
+            fail("Order by without matching index should fail");
+        } catch(HazelcastSqlException e) {
+            assertEquals(String.format("Cannot perform ORDER BY clause without a matching index. Add a SORTED composite index to the map %s on the field(s) [intVal, realVal].", mapName()) , e.getMessage());
+        }
+    }
+
+    @Test
     public void testSelectWithOrderByAndProject() {
         // SELECT intVal, intVal + bigIntVal FROM t ORDER BY intVal, bigIntVal
         String sql = sqlWithOrderBy(Arrays.asList("intVal",
@@ -266,12 +288,17 @@ public class SqlOrderByTest extends SqlTestSupport {
     @Test
     public void testSelectWithOrderByAndProject2() {
         //SELECT a, b FROM (SELECT intVal+bigIntVal a, intVal-bigIntVal b FROM p) ORDER BY a, b"
-        String sql = "SELECT a, b FROM (SELECT intVal+bigIntVal a, intVal-bigIntVal b FROM p) ORDER BY a, b";
-        assertThrows(HazelcastSqlException.class,
-            () -> checkSelectWithOrderBy(Arrays.asList("intVal", "bigIntVal"),
+        String sql = String.format("SELECT a, b FROM (SELECT intVal+bigIntVal a, intVal-bigIntVal b FROM %s) ORDER BY a, b", mapName());
+        try {
+            checkSelectWithOrderBy(Arrays.asList("intVal", "bigIntVal"),
                 sql,
                 Collections.emptyList(),
-                Collections.emptyList()));
+                Collections.emptyList());
+            fail("Order by on top of project should fail");
+        } catch(HazelcastSqlException e) {
+            assertEquals("Cannot perform ORDER BY on top of operator ProjectPhysicalRel. ORDER BY clause is supported only on top of the map index scan operator matching the sorting fields.", e.getMessage());
+        }
+
     }
 
     @Test
@@ -337,7 +364,9 @@ public class SqlOrderByTest extends SqlTestSupport {
         for (String indexAttr : indexAttrs) {
             indexConfig.addAttribute(indexAttr);
         }
-        map.addIndex(indexConfig);
+        if (indexAttrs.size() > 0) {
+            map.addIndex(indexConfig);
+        }
 
         assertEquals(DATA_SET_SIZE, map.size());
 

@@ -60,7 +60,10 @@ import com.hazelcast.sql.impl.plan.node.io.UnicastSendPlanNode;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelFieldCollation;
+import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexNode;
@@ -262,8 +265,39 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onSort(SortPhysicalRel rel) {
-        throw QueryException.error("Cannot perform ORDER BY clause without matching index."
-            + " Create a SORTED index for the ordering fields. For nested sorting use SORTED composite index.");
+        RelNode input = rel.getInput();
+        RelCollation collation = rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+        if (input instanceof MapScanPhysicalRel) {
+            MapScanPhysicalRel mapScanRel = (MapScanPhysicalRel) input;
+            StringBuilder msgBuilder = new StringBuilder("Cannot perform ORDER BY clause without a matching index. ");
+            HazelcastTable table = mapScanRel.getTableUnwrapped();
+            AbstractMapTable map = mapScanRel.getMap();
+
+            msgBuilder.append("Add a SORTED ");
+            if (collation.getFieldCollations().size() > 1) {
+                msgBuilder.append("composite ");
+            }
+            msgBuilder.append("index to the map ");
+            msgBuilder.append(map.getMapName());
+            msgBuilder.append(" on the field(s) [");
+            for (int i = 0; i < collation.getFieldCollations().size(); ++i) {
+                RelFieldCollation fieldCollation = collation.getFieldCollations().get(i);
+                int queryFieldIndex = fieldCollation.getFieldIndex();
+                int tableIndex = table.getProjects().get(queryFieldIndex);
+                MapTableField field = map.getField(tableIndex);
+                msgBuilder.append(field.getName());
+                if (i < collation.getFieldCollations().size() - 1) {
+                    msgBuilder.append(", ");
+                }
+            }
+            msgBuilder.append("].");
+            throw QueryException.error(msgBuilder.toString());
+        } else {
+            StringBuilder msgBuilder = new StringBuilder();
+            msgBuilder.append(String.format("Cannot perform ORDER BY on top of operator %s. ", rel.getInput().getRelTypeName()));
+            msgBuilder.append("ORDER BY clause is supported only on top of the map index scan operator matching the sorting fields.");
+            throw QueryException.error(msgBuilder.toString());
+        }
     }
 
     @Override
