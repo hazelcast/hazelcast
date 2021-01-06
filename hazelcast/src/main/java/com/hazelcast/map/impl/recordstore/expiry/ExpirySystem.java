@@ -148,7 +148,7 @@ public class ExpirySystem {
 
     // TODO add test for this.
     public void extendExpiryTime(Data dataKey, long now) {
-        if(isEmpty()){
+        if (isEmpty()) {
             return;
         }
 
