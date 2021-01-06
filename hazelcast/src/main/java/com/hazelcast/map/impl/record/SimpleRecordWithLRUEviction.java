@@ -73,6 +73,16 @@ class SimpleRecordWithLRUEviction<V> extends SimpleRecord<V> {
     }
 
     @Override
+    public void onAccess(long now) {
+        onAccessSafe(now);
+    }
+
+    @Override
+    public void onAccessSafe(long now) {
+        setLastAccessTime(now);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

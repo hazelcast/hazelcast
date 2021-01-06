@@ -63,6 +63,15 @@ class SimpleRecordWithLFUEviction<V> extends SimpleRecord<V> {
     }
 
     @Override
+    public void onAccess(long now) {
+        int hits = getHits();
+        if (hits < Integer.MAX_VALUE) {
+            // protect against potential overflow
+            setHits(hits + 1);
+        }
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

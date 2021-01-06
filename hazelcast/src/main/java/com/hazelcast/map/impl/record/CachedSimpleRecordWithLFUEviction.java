@@ -41,11 +41,6 @@ class CachedSimpleRecordWithLFUEviction extends CachedSimpleRecord {
     }
 
     @Override
-    public long getCost() {
-        return super.getCost() + INT_SIZE_IN_BYTES;
-    }
-
-    @Override
     public int getHits() {
         return hits;
     }
@@ -53,6 +48,20 @@ class CachedSimpleRecordWithLFUEviction extends CachedSimpleRecord {
     @Override
     public void setHits(int hits) {
         this.hits = hits;
+    }
+
+    @Override
+    public long getCost() {
+        return super.getCost() + INT_SIZE_IN_BYTES;
+    }
+
+    @Override
+    public void onAccess(long now) {
+        int hits = getHits();
+        if (hits < Integer.MAX_VALUE) {
+            // protect against potential overflow
+            setHits(hits + 1);
+        }
     }
 
     @Override

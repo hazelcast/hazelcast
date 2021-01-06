@@ -133,6 +133,26 @@ class SimpleRecord<V> implements Record<V> {
     }
 
     @Override
+    public void onAccess(long now) {
+        // NOP
+    }
+
+    @Override
+    public void onAccessSafe(long now) {
+        // NOP
+    }
+
+    @Override
+    public void onUpdate(long now) {
+        // NOP
+    }
+
+    @Override
+    public void onStore() {
+        // NOP
+    }
+
+    @Override
     public int getRawCreationTime() {
         throw new UnsupportedOperationException();
     }

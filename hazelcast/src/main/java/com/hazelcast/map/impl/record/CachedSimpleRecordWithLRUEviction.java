@@ -41,11 +41,6 @@ class CachedSimpleRecordWithLRUEviction extends CachedSimpleRecord {
     }
 
     @Override
-    public long getCost() {
-        return super.getCost() + INT_SIZE_IN_BYTES;
-    }
-
-    @Override
     public long getLastAccessTime() {
         return recomputeWithBaseTime(lastAccessTime);
     }
@@ -63,6 +58,21 @@ class CachedSimpleRecordWithLRUEviction extends CachedSimpleRecord {
     @Override
     public void setRawLastAccessTime(int lastAccessTime) {
         this.lastAccessTime = lastAccessTime;
+    }
+
+    @Override
+    public long getCost() {
+        return super.getCost() + INT_SIZE_IN_BYTES;
+    }
+
+    @Override
+    public void onAccess(long now) {
+        onAccessSafe(now);
+    }
+
+    @Override
+    public void onAccessSafe(long now) {
+        setLastAccessTime(now);
     }
 
     @Override

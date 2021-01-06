@@ -21,6 +21,7 @@ import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -73,6 +74,10 @@ public class ExpirySystem {
         this.mapContainer = mapContainer;
         this.mapServiceContext = mapServiceContext;
         this.canPrimaryDriveExpiration = mapServiceContext.getClearExpiredRecordsTask().canPrimaryDriveExpiration();
+    }
+
+    public boolean isEmpty() {
+        return MapUtil.isNullOrEmpty(expireTimeByKey);
     }
 
     // this method is overridden
@@ -143,6 +148,10 @@ public class ExpirySystem {
 
     // TODO add test for this.
     public void extendExpiryTime(Data dataKey, long now) {
+        if(isEmpty()){
+            return;
+        }
+
         Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (expireTimeByKey.isEmpty()) {
             return;
