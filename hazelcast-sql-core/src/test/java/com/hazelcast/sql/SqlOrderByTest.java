@@ -36,6 +36,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,7 +46,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
+import static com.hazelcast.config.IndexType.HASH;
+import static com.hazelcast.config.IndexType.SORTED;
 import static com.hazelcast.sql.SqlBasicTest.AbstractPojo;
 import static com.hazelcast.sql.SqlBasicTest.AbstractPojoKey;
 import static com.hazelcast.sql.SqlBasicTest.DataSerializablePojo;
@@ -57,7 +62,8 @@ import static com.hazelcast.sql.SqlBasicTest.PortablePojoKey;
 import static com.hazelcast.sql.SqlBasicTest.SerializablePojo;
 import static com.hazelcast.sql.SqlBasicTest.SerializablePojoKey;
 import static com.hazelcast.sql.SqlBasicTest.SerializationMode;
-import static com.hazelcast.sql.SqlBasicTest.portableFieldName;
+import static com.hazelcast.sql.SqlBasicTest.SerializationMode.IDENTIFIED_DATA_SERIALIZABLE;
+import static com.hazelcast.sql.SqlBasicTest.SerializationMode.SERIALIZABLE;
 import static com.hazelcast.sql.SqlBasicTest.serializationConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -77,8 +83,7 @@ public class SqlOrderByTest extends SqlTestSupport {
     private static final int DATA_SET_SIZE = 4096;
     private static final SqlTestInstanceFactory FACTORY = SqlTestInstanceFactory.create();
 
-    private static HazelcastInstance member1;
-    private static HazelcastInstance member2;
+    private static List<HazelcastInstance> members;
 
     @Parameter
     public SerializationMode serializationMode;
@@ -86,16 +91,22 @@ public class SqlOrderByTest extends SqlTestSupport {
     @Parameter(1)
     public InMemoryFormat inMemoryFormat;
 
-    @Parameters(name = "serializationMode:{0}, inMemoryFormat:{1}")
+    @Parameter(2)
+    public int membersCount;
+
+    @Parameters(name = "serializationMode:{0}, inMemoryFormat:{1}, membersCount:{2}")
     public static Collection<Object[]> parameters() {
         List<Object[]> res = new ArrayList<>();
 
-        for (SerializationMode serializationMode : SerializationMode.values()) {
-            for (InMemoryFormat format : new InMemoryFormat[]{InMemoryFormat.OBJECT, InMemoryFormat.BINARY}) {
-                res.add(new Object[]{
-                    serializationMode,
-                    format
-                });
+        for (int membersCount : Arrays.asList(1, 3)) {
+            for (SerializationMode serializationMode : Arrays.asList(SERIALIZABLE, IDENTIFIED_DATA_SERIALIZABLE)) {
+                for (InMemoryFormat format : new InMemoryFormat[]{InMemoryFormat.OBJECT, InMemoryFormat.BINARY}) {
+                    res.add(new Object[]{
+                        serializationMode,
+                        format,
+                        membersCount
+                    });
+                }
             }
         }
 
@@ -105,9 +116,11 @@ public class SqlOrderByTest extends SqlTestSupport {
     @Before
     public void before() {
         // Start members if needed
-        if (member1 == null) {
-            member1 = FACTORY.newHazelcastInstance(memberConfig());
-            member2 = FACTORY.newHazelcastInstance(memberConfig());
+        if (members == null) {
+            members = new ArrayList<>(membersCount);
+            for (int i = 0; i < membersCount; ++i) {
+                members.add(FACTORY.newHazelcastInstance(memberConfig()));
+            }
         }
 
         clearMap();
@@ -117,12 +130,26 @@ public class SqlOrderByTest extends SqlTestSupport {
         // Populate map with values
         Map<Object, AbstractPojo> data = new HashMap<>();
 
-        int nullValueCount = 10;
-        for (long i = 0; i < DATA_SET_SIZE; i++) {
-            if (i % nullValueCount == 0) {
-                data.put(key(i), value());
+        Random r = ThreadLocalRandom.current();
+        int nextNullValue = Math.max(1, r.nextInt(5));
+        int nextSameValues = Math.max(1, r.nextInt(5));
+        int skipFirstEntries = 20;
+        long idx = 0;
+        while (idx < DATA_SET_SIZE) {
+            if (idx % nextNullValue == 0 && idx >= skipFirstEntries) {
+                data.put(key(idx++), value());
+                nextNullValue = Math.max(1, r.nextInt(5));
+            } else if (idx % nextSameValues == 0 && idx >= skipFirstEntries) {
+                int sameValuesCount = r.nextInt(5);
+                long value = idx;
+                while (sameValuesCount > 0 && idx < DATA_SET_SIZE) {
+                    data.put(key(idx++), value(value));
+                    sameValuesCount--;
+                }
+                nextSameValues = Math.max(1, r.nextInt(5));
             } else {
-                data.put(key(i), value(i));
+                data.put(key(idx), value(idx));
+                idx++;
             }
         }
 
@@ -130,8 +157,8 @@ public class SqlOrderByTest extends SqlTestSupport {
     }
 
     protected void clearMap() {
-        member1.getMap(MAP_OBJECT).clear();
-        member1.getMap(MAP_BINARY).clear();
+        getTarget().getMap(MAP_OBJECT).clear();
+        getTarget().getMap(MAP_BINARY).clear();
     }
 
     @AfterClass
@@ -151,67 +178,88 @@ public class SqlOrderByTest extends SqlTestSupport {
 
 
     protected HazelcastInstance getTarget() {
-        return member1;
+        return members.get(0);
     }
 
     @Test
     public void testSelectWithOrderByDesc() {
-        checkSelectWithOrderBy(Collections.singletonList(adjustFieldName("intVal")),
-            Collections.singletonList(adjustFieldName("intVal")), Collections.singletonList(true));
+        checkSelectWithOrderBy(Collections.singletonList("intVal"),
+            Collections.singletonList("intVal"), Collections.singletonList(true));
     }
 
     @Test
     public void testSelectWithOrderByAsc() {
-        checkSelectWithOrderBy(Collections.singletonList(adjustFieldName("intVal")),
-            Collections.singletonList(adjustFieldName("intVal")), Collections.singletonList(false));
+        checkSelectWithOrderBy(Collections.singletonList("intVal"),
+            Collections.singletonList("intVal"), Collections.singletonList(false));
     }
 
     @Test
     public void testSelectWithOrderByDefault() {
-        checkSelectWithOrderBy(Collections.singletonList(adjustFieldName("intVal")),
-            Collections.singletonList(adjustFieldName("intVal")), Collections.singletonList(null));
+        checkSelectWithOrderBy(Collections.singletonList("intVal"),
+            Collections.singletonList("intVal"), Collections.singletonList(null));
+    }
+
+    @Test
+    public void testSelectWithOrderByDefaultAllTypes() {
+        List<String> fields = Arrays.asList(
+            "booleanVal",
+            "tinyIntVal",
+            "smallIntVal",
+            "intVal",
+            "bigIntVal",
+            "realVal",
+            "doubleVal",
+            "decimalBigIntegerVal",
+            "decimalVal",
+            "charVal",
+            "varcharVal");
+
+        List<Boolean> orderDirections = new ArrayList<>(fields.size());
+        fields.forEach(entry -> orderDirections.add(true));
+
+        checkSelectWithOrderBy(fields, fields, orderDirections);
     }
 
     @Test
     public void testSelectWithOrderByDescDesc() {
-        checkSelectWithOrderBy(Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal")),
-            Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal")),
+        checkSelectWithOrderBy(Arrays.asList("intVal", "varcharVal"),
+            Arrays.asList("intVal", "varcharVal"),
             Arrays.asList(true, true));
     }
 
     @Test
     public void testSelectWithOrderByAscDesc() {
         assertThrows(HazelcastSqlException.class,
-            () -> checkSelectWithOrderBy(Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal")),
-                Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal")),
+            () -> checkSelectWithOrderBy(Arrays.asList("intVal", "varcharVal"),
+                Arrays.asList("intVal", "varcharVal"),
                 Arrays.asList(false, true)));
     }
 
     @Test
     public void testSelectWithOrderByDescDescDesc() {
-        checkSelectWithOrderBy(Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal"), adjustFieldName("bigIntVal")),
-            Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal"), adjustFieldName("bigIntVal")),
+        checkSelectWithOrderBy(Arrays.asList("intVal", "varcharVal", "bigIntVal"),
+            Arrays.asList("intVal", "varcharVal", "bigIntVal"),
             Arrays.asList(true, true, true));
     }
 
     @Test
     public void testSelectWithOrderByDescDescAsc() {
         assertThrows(HazelcastSqlException.class,
-            () -> checkSelectWithOrderBy(Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal"), adjustFieldName("bigIntVal")),
-                Arrays.asList(adjustFieldName("intVal"), adjustFieldName("varcharVal"), adjustFieldName("bigIntVal")),
+            () -> checkSelectWithOrderBy(Arrays.asList("intVal", "varcharVal", "bigIntVal"),
+                Arrays.asList("intVal", "varcharVal", "bigIntVal"),
                 Arrays.asList(true, true, false)));
     }
 
     @Test
     public void testSelectWithOrderByAndProject() {
         // SELECT intVal, intVal + bigIntVal FROM t ORDER BY intVal, bigIntVal
-        String sql = sqlWithOrderBy(Arrays.asList(adjustFieldName("intVal"),
-            adjustFieldName("intVal") + " + " + adjustFieldName("bigIntVal")),
-            Arrays.asList(adjustFieldName("intVal"), adjustFieldName("bigIntVal")), Arrays.asList(true, true));
+        String sql = sqlWithOrderBy(Arrays.asList("intVal",
+            "intVal + bigIntVal"),
+            Arrays.asList("intVal", "bigIntVal"), Arrays.asList(true, true));
 
-        checkSelectWithOrderBy(Arrays.asList(adjustFieldName("intVal"), adjustFieldName("bigIntVal")),
+        checkSelectWithOrderBy(Arrays.asList("intVal", "bigIntVal"),
             sql,
-            Arrays.asList(adjustFieldName("intVal")),
+            Arrays.asList("intVal"),
             Arrays.asList(true));
     }
 
@@ -220,7 +268,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         //SELECT a, b FROM (SELECT intVal+bigIntVal a, intVal-bigIntVal b FROM p) ORDER BY a, b"
         String sql = "SELECT a, b FROM (SELECT intVal+bigIntVal a, intVal-bigIntVal b FROM p) ORDER BY a, b";
         assertThrows(HazelcastSqlException.class,
-            () -> checkSelectWithOrderBy(Arrays.asList(adjustFieldName("intVal"), adjustFieldName("bigIntVal")),
+            () -> checkSelectWithOrderBy(Arrays.asList("intVal", "bigIntVal"),
                 sql,
                 Collections.emptyList(),
                 Collections.emptyList()));
@@ -229,50 +277,62 @@ public class SqlOrderByTest extends SqlTestSupport {
     @Test
     public void testSelectWithOrderByAndWhere() {
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+        String intValField = "intVal";
+        String realValField = "realVal";
+        addIndex(Arrays.asList(intValField), SORTED);
+        addIndex(Arrays.asList(realValField), SORTED);
 
-        String intValField = adjustFieldName("intVal");
-        String bigIntValField = adjustFieldName("realVal");
-        IndexConfig indexConfig1 = new IndexConfig().setName("Index_" + randomName())
-            .setType(IndexType.SORTED).addAttribute(intValField);
+        String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
+            + " WHERE " + intValField + " = 1 ORDER BY " + realValField;
 
-        IndexConfig indexConfig2 = new IndexConfig().setName("Index_" + randomName())
-            .setType(IndexType.SORTED).addAttribute(bigIntValField);
-
-        map.addIndex(indexConfig1);
-        map.addIndex(indexConfig2);
-
-        String sql = "SELECT " + intValField + ", " + bigIntValField + " FROM " + mapName()
-            + " WHERE " + intValField + " = 1 ORDER BY " + bigIntValField;
-
-        try (SqlResult res = query(sql)) {
-
-            SqlRowMetadata rowMetadata = res.getRowMetadata();
-
-            Iterator<SqlRow> rowIterator = res.iterator();
-
-            SqlRow prevRow = null;
-            while (rowIterator.hasNext()) {
-                SqlRow row = rowIterator.next();
-
-                assertOrdered(prevRow, row, Collections.singletonList("bigIntVal"),
-                    Collections.singletonList(false), rowMetadata);
-
-                prevRow = row;
-            }
-
-            assertThrows(NoSuchElementException.class, rowIterator::next);
-
-            assertThrows(IllegalStateException.class, res::iterator);
-        }
-
+        assertSqlResultOrdered(sql, Arrays.asList(realValField), Arrays.asList(false), 1);
     }
 
+    @Test
+    public void testSelectWithOrderByAndWhere2Conditions() {
+        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+        String intValField = "intVal";
+        String realValField = "realVal";
+        addIndex(Arrays.asList(intValField, realValField), SORTED);
 
-    public void checkSelectWithOrderBy(List<String> indexAttrs, List<String> orderFields, List<Boolean> orderDirections) {
+        String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
+            + " WHERE " + intValField + " = 1 AND " + realValField + " = 1 ORDER BY " + intValField;
+
+        assertSqlResultOrdered(sql, Arrays.asList(realValField), Arrays.asList(false), 1);
+    }
+
+    @Test
+    public void testSelectWithOrderByAndWhere2ConditionsHashIndex() {
+        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+        String intValField = "intVal";
+        String realValField = "realVal";
+        addIndex(Arrays.asList(intValField, realValField), HASH);
+        addIndex(Arrays.asList(intValField), SORTED);
+
+        String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
+            + " WHERE " + intValField + " = 1 AND " + realValField + " = 1 ORDER BY " + intValField;
+
+        assertSqlResultOrdered(sql, Arrays.asList(realValField), Arrays.asList(false), 1);
+    }
+
+    private void addIndex(List<String> fieldNames, IndexType type) {
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
 
         IndexConfig indexConfig = new IndexConfig().setName("Index_" + randomName())
-            .setType(IndexType.SORTED);
+            .setType(type);
+
+        for (String fieldName : fieldNames) {
+            indexConfig.addAttribute(fieldName);
+        }
+
+        map.addIndex(indexConfig);
+    }
+
+    private void checkSelectWithOrderBy(List<String> indexAttrs, List<String> orderFields, List<Boolean> orderDirections) {
+        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+
+        IndexConfig indexConfig = new IndexConfig().setName("Index_" + randomName())
+            .setType(SORTED);
 
         for (String indexAttr : indexAttrs) {
             indexConfig.addAttribute(indexAttr);
@@ -294,6 +354,10 @@ public class SqlOrderByTest extends SqlTestSupport {
             }
         }
         String sql = sqlWithOrderBy(orders.toString());
+        assertSqlResultOrdered(sql, orderFields, orderDirections, map.size());
+    }
+
+    private void assertSqlResultOrdered(String sql, List<String> orderFields, List<Boolean> orderDirections, int expectedCount) {
         try (SqlResult res = query(sql)) {
 
             SqlRowMetadata rowMetadata = res.getRowMetadata();
@@ -301,25 +365,27 @@ public class SqlOrderByTest extends SqlTestSupport {
             Iterator<SqlRow> rowIterator = res.iterator();
 
             SqlRow prevRow = null;
+            int count = 0;
             while (rowIterator.hasNext()) {
                 SqlRow row = rowIterator.next();
                 assertOrdered(prevRow, row, orderFields, orderDirections, rowMetadata);
+                System.out.println(row);
 
                 prevRow = row;
+                count++;
             }
-
+            assertEquals(expectedCount, count);
             assertThrows(NoSuchElementException.class, rowIterator::next);
 
             assertThrows(IllegalStateException.class, res::iterator);
         }
     }
 
-
-    public void checkSelectWithOrderBy(List<String> indexAttrs, String sql, List<String> checkOrderFields, List<Boolean> orderDirections) {
+    private void checkSelectWithOrderBy(List<String> indexAttrs, String sql, List<String> checkOrderFields, List<Boolean> orderDirections) {
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
 
         IndexConfig indexConfig = new IndexConfig().setName("Index_" + randomName())
-            .setType(IndexType.SORTED);
+            .setType(SORTED);
 
         for (String indexAttr : indexAttrs) {
             indexConfig.addAttribute(indexAttr);
@@ -328,24 +394,7 @@ public class SqlOrderByTest extends SqlTestSupport {
 
         assertEquals(DATA_SET_SIZE, map.size());
 
-        try (SqlResult res = query(sql)) {
-
-            SqlRowMetadata rowMetadata = res.getRowMetadata();
-
-            Iterator<SqlRow> rowIterator = res.iterator();
-
-            SqlRow prevRow = null;
-            while (rowIterator.hasNext()) {
-                SqlRow row = rowIterator.next();
-
-                assertOrdered(prevRow, row, checkOrderFields, orderDirections, rowMetadata);
-                prevRow = row;
-            }
-
-            assertThrows(NoSuchElementException.class, rowIterator::next);
-
-            assertThrows(IllegalStateException.class, res::iterator);
-        }
+        assertSqlResultOrdered(sql, checkOrderFields, orderDirections, map.size());
     }
 
     private void assertOrdered(SqlRow prevRow, SqlRow row, List<String> orderFields, List<Boolean> orderDirections, SqlRowMetadata rowMetadata) {
@@ -363,26 +412,30 @@ public class SqlOrderByTest extends SqlTestSupport {
             if (fieldValue == null) {
                 // We use the default ordering for the null values, that is
                 // null value is LESS than any other non-null value
-                if (descending) {
-                    cmp = prevFieldValue == null ? 0 : -1;
-                } else {
-                    cmp = prevFieldValue == null ? 0 : 1;
-                }
+                cmp = prevFieldValue == null ? 0 : 1;
             } else if (prevFieldValue == null) {
-                if (descending) {
-                    cmp = fieldValue == null ? 0 : 1;
-                } else {
-                    cmp = fieldValue == null ? 0 : -1;
-                }
+                cmp = fieldValue == null ? 0 : -1;
             } else {
                 if (fieldValue instanceof Integer) {
                     cmp = ((Integer) prevFieldValue).compareTo((Integer) fieldValue);
                 } else if (fieldValue instanceof Long) {
                     cmp = ((Long) prevFieldValue).compareTo((Long) fieldValue);
+                } else if (fieldValue instanceof Float) {
+                    cmp = ((Float) prevFieldValue).compareTo((Float) fieldValue);
+                } else if (fieldValue instanceof Double) {
+                    cmp = ((Double) prevFieldValue).compareTo((Double) fieldValue);
                 } else if (fieldValue instanceof String) {
                     cmp = ((String) prevFieldValue).compareTo((String) fieldValue);
+                } else if (fieldValue instanceof Boolean) {
+                    cmp = ((Boolean) prevFieldValue).compareTo((Boolean) fieldValue);
+                } else if (fieldValue instanceof Byte) {
+                    cmp = ((Byte) prevFieldValue).compareTo((Byte) fieldValue);
+                } else if (fieldValue instanceof Short) {
+                    cmp = ((Short) prevFieldValue).compareTo((Short) fieldValue);
+                } else if (fieldValue instanceof BigDecimal) {
+                    cmp = ((BigDecimal) prevFieldValue).compareTo((BigDecimal) fieldValue);
                 } else {
-                    fail("Not supported field type");
+                    fail("Not supported field type " + fieldValue.getClass());
                 }
             }
 
@@ -391,12 +444,12 @@ public class SqlOrderByTest extends SqlTestSupport {
                 continue;
             } else if (cmp < 0) {
                 if (descending != null && descending) {
-                    fail("For field " + fieldName + " the values " + prevFieldValue + ", " + fieldValue + " are not ordered ascending");
+                    fail("For field " + fieldName + " the values " + prevFieldValue + ", " + fieldValue + " are not ordered descending");
                 }
                 return;
             } else if (cmp > 0) {
                 if (descending == null || !descending) {
-                    fail("For field " + fieldName + " the values " + prevFieldValue + ", " + fieldValue + " are not ordered descending");
+                    fail("For field " + fieldName + " the values " + prevFieldValue + ", " + fieldValue + " are not ordered ascending");
                 }
                 return;
             }
@@ -457,7 +510,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         StringBuilder res = new StringBuilder("SELECT ");
 
         for (int i = 0; i < fields.size(); i++) {
-            String field = adjustFieldName(fields.get(i));
+            String field = fields.get(i);
 
             if (i != 0) {
                 res.append(", ");
@@ -512,10 +565,6 @@ public class SqlOrderByTest extends SqlTestSupport {
         return res.toString();
     }
 
-    private boolean isPortable() {
-        return serializationMode == SerializationMode.PORTABLE;
-    }
-
     protected String mapName() {
         return inMemoryFormat == InMemoryFormat.OBJECT ? MAP_OBJECT : MAP_BINARY;
     }
@@ -555,14 +604,4 @@ public class SqlOrderByTest extends SqlTestSupport {
                 return i == null ? new PortablePojo() : new PortablePojo(i);
         }
     }
-
-
-    private String adjustFieldName(String fieldName) {
-        if (isPortable()) {
-            fieldName = portableFieldName(fieldName);
-        }
-
-        return fieldName;
-    }
-
 }
