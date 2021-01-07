@@ -599,8 +599,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         long now = getNow();
 
         Record record = getRecordOrNull(key, now, backup);
-        if (record == null
-                && (mapDataStore != EMPTY_MAP_DATA_STORE || !expirySystem.isEmpty())) {
+        if (record == null) {
             record = loadRecordOrNull(key, backup, callerAddress);
             record = evictIfExpired(key, now, backup) ? null : record;
         } else if (touch) {
