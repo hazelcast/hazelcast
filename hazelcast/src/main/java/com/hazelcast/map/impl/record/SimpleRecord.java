@@ -31,6 +31,7 @@ import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECOR
 @SuppressWarnings({"checkstyle:methodcount", "VolatileLongOrDoubleField"})
 class SimpleRecord<V> implements Record<V> {
     protected volatile V value;
+    private int version;
 
     SimpleRecord() {
     }
@@ -40,12 +41,13 @@ class SimpleRecord<V> implements Record<V> {
     }
 
     @Override
-    public final long getVersion() {
-        return UNSET;
+    public final int getVersion() {
+        return version;
     }
 
     @Override
-    public final void setVersion(long version) {
+    public final void setVersion(int version) {
+        this.version = version;
     }
 
     @Override

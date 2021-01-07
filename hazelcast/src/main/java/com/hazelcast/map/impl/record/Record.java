@@ -65,9 +65,9 @@ public interface Record<V> {
      */
     long getCost();
 
-    long getVersion();
+    int getVersion();
 
-    void setVersion(long version);
+    void setVersion(int version);
 
     /**
      * Get current cache value or null.
@@ -161,7 +161,12 @@ public interface Record<V> {
     }
 
     default void onUpdate(long now) {
-        setVersion(getVersion() + 1);
+        int version = getVersion();
+        if (version < Integer.MAX_VALUE) {
+            // protect against potential overflow
+            setVersion(version + 1);
+        }
+
         setLastUpdateTime(now);
     }
 

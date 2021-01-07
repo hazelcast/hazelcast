@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.record;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.util.JVMUtil.OBJECT_HEADER_SIZE;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_STATS_READER_WRITER;
 
@@ -29,10 +28,9 @@ import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_
 @SuppressWarnings({"checkstyle:methodcount", "VolatileLongOrDoubleField"})
 public abstract class AbstractRecord<V> implements Record<V> {
 
-    private static final int NUMBER_OF_LONGS = 1;
-    private static final int NUMBER_OF_INTS = 5;
+    private static final int NUMBER_OF_INTS = 6;
 
-    protected long version;
+    protected int version;
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "Record can be accessed by only its own partition thread.")
     protected volatile int hits;
@@ -51,12 +49,12 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     @Override
-    public final long getVersion() {
+    public final int getVersion() {
         return version;
     }
 
     @Override
-    public final void setVersion(long version) {
+    public final void setVersion(int version) {
         this.version = version;
     }
 
@@ -103,7 +101,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
     @Override
     public long getCost() {
         return OBJECT_HEADER_SIZE
-                + (NUMBER_OF_LONGS * LONG_SIZE_IN_BYTES)
                 + (NUMBER_OF_INTS * INT_SIZE_IN_BYTES);
     }
 
