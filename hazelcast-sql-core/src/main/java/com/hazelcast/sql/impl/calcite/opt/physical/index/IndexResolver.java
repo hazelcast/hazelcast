@@ -189,13 +189,16 @@ public final class IndexResolver {
                 }
 
                 rels.add(relAscending);
-                RelNode relDescending = replaceCollationDirection(relAscending, DESCENDING);
-                rels.add(relDescending);
 
-                RelCollation relDescCollation = getCollation(relDescending);
-                if (fullScanRelsMap.containsKey(relDescCollation)) {
-                    // The fulls scan has the same collation, exclude it
-                    fullScanRelsMap.remove(relDescCollation);
+                if (relAscCollation.getFieldCollations().size() > 0) {
+                    RelNode relDescending = replaceCollationDirection(relAscending, DESCENDING);
+                    rels.add(relDescending);
+
+                    RelCollation relDescCollation = getCollation(relDescending);
+                    if (fullScanRelsMap.containsKey(relDescCollation)) {
+                        // The fulls scan has the same collation, exclude it
+                        fullScanRelsMap.remove(relDescCollation);
+                    }
                 }
             }
         }
@@ -888,6 +891,9 @@ public final class IndexResolver {
     private static RelCollation buildCollationTrait(MapScanLogicalRel scan,
                                                     MapTableIndex index,
                                                     List<Boolean> ascs) {
+        if (index.getType() != SORTED) {
+            return RelCollations.of(Collections.emptyList());
+        }
         List<RelFieldCollation> fields = new ArrayList<>(index.getFieldOrdinals().size());
         HazelcastTable table = scan.getTableUnwrapped();
 
