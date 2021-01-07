@@ -172,7 +172,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public int hashCode() {
-        int result = 31 * (int) (version ^ (version >>> 32));
+        int result = version;
         result = 31 * result + hits;
         result = 31 * result + lastAccessTime;
         result = 31 * result + lastUpdateTime;

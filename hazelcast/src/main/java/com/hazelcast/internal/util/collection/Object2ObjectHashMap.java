@@ -592,7 +592,6 @@ public class Object2ObjectHashMap<K, V> implements Map<K, V> {
     public final class EntryIterator
             extends AbstractIterator
             implements Iterator<Entry<K, V>>, Entry<K, V> {
-        private static final long serialVersionUID = 7273758986584625427L;
 
         @SuppressWarnings("unchecked")
         public K getKey() {

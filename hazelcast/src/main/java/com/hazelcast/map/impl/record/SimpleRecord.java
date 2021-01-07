@@ -205,19 +205,25 @@ class SimpleRecord<V> implements Record<V> {
         }
 
         SimpleRecord<?> that = (SimpleRecord<?>) o;
+
+        if (version != that.version) {
+            return false;
+        }
         return Objects.equals(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        return value.hashCode();
+        int result = value != null ? value.hashCode() : 0;
+        result = 31 * result + version;
+        return result;
     }
 
     @Override
     public String toString() {
         return "SimpleRecord{"
                 + "value=" + value
-                + ", " + super.toString()
-                + "} ";
+                + ", version=" + version
+                + '}';
     }
 }

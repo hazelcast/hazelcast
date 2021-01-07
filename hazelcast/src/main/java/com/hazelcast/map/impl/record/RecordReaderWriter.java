@@ -184,10 +184,6 @@ public enum RecordReaderWriter {
         }
     };
 
-    private static int longToIntVersion(long version) {
-        return version >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) version;
-    }
-
     private byte id;
 
     RecordReaderWriter(byte id) {
@@ -221,6 +217,10 @@ public enum RecordReaderWriter {
             default:
                 throw new IllegalArgumentException("Not known RecordReaderWriter type-id: " + id);
         }
+    }
+
+    private static int longToIntVersion(long version) {
+        return version >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) version;
     }
 
     abstract void writeRecord(ObjectDataOutput out,
