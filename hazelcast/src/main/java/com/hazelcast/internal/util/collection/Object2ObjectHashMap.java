@@ -17,7 +17,6 @@ package com.hazelcast.internal.util.collection;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.io.Serializable;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
 import java.util.Arrays;
@@ -35,9 +34,8 @@ import static java.util.Objects.requireNonNull;
 /**
  * A open addressing with linear probing hash map.
  */
-public class Object2ObjectHashMap<K, V> implements Map<K, V>, Serializable {
-    static final int MIN_CAPACITY = 8;
-    private static final long serialVersionUID = -1549211171492606678L;
+public class Object2ObjectHashMap<K, V> implements Map<K, V> {
+    private static final int MIN_CAPACITY = 8;
     private static final float DEFAULT_LOAD_FACTOR = 0.55f;
 
     private final float loadFactor;
@@ -463,8 +461,7 @@ public class Object2ObjectHashMap<K, V> implements Map<K, V>, Serializable {
     /**
      * Base iterator impl.
      */
-    abstract class AbstractIterator implements Serializable {
-        private static final long serialVersionUID = -6722944592177026218L;
+    abstract class AbstractIterator {
         /**
          * Is position valid.
          */
@@ -565,7 +562,7 @@ public class Object2ObjectHashMap<K, V> implements Map<K, V>, Serializable {
      * An iterator over keys.
      */
     @SuppressFBWarnings("SE_INNER_CLASS")
-    public final class KeyIterator extends AbstractIterator implements Iterator<K>, Serializable {
+    public final class KeyIterator extends AbstractIterator implements Iterator<K> {
         private static final long serialVersionUID = 2381081253326969359L;
 
         @SuppressWarnings("unchecked")
@@ -579,8 +576,7 @@ public class Object2ObjectHashMap<K, V> implements Map<K, V>, Serializable {
      * An iterator over values.
      */
     @SuppressFBWarnings("SE_INNER_CLASS")
-    public final class ValueIterator extends AbstractIterator implements Iterator<V>, Serializable {
-        private static final long serialVersionUID = -9021925571373462472L;
+    public final class ValueIterator extends AbstractIterator implements Iterator<V> {
 
         public V next() {
             findNext();
@@ -595,7 +591,7 @@ public class Object2ObjectHashMap<K, V> implements Map<K, V>, Serializable {
     @SuppressFBWarnings({"PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS", "SE_INNER_CLASS"})
     public final class EntryIterator
             extends AbstractIterator
-            implements Iterator<Entry<K, V>>, Entry<K, V>, Serializable {
+            implements Iterator<Entry<K, V>>, Entry<K, V> {
         private static final long serialVersionUID = 7273758986584625427L;
 
         @SuppressWarnings("unchecked")
@@ -716,8 +712,7 @@ public class Object2ObjectHashMap<K, V> implements Map<K, V>, Serializable {
      * A key set implementation.
      */
     @SuppressFBWarnings("SE_INNER_CLASS")
-    public final class KeySet extends AbstractSet<K> implements Serializable {
-        private static final long serialVersionUID = 9104229702905879053L;
+    public final class KeySet extends AbstractSet<K> {
         private final KeyIterator keyIterator = shouldAvoidAllocation ? new KeyIterator() : null;
 
         /**
@@ -778,8 +773,7 @@ public class Object2ObjectHashMap<K, V> implements Map<K, V>, Serializable {
      * A collection of values.
      */
     @SuppressFBWarnings("SE_INNER_CLASS")
-    public final class ValueCollection extends AbstractCollection<V> implements Serializable {
-        private static final long serialVersionUID = 4700865656461554026L;
+    public final class ValueCollection extends AbstractCollection<V> {
         private final ValueIterator valueIterator = shouldAvoidAllocation ? new ValueIterator() : null;
 
         /**
@@ -825,8 +819,7 @@ public class Object2ObjectHashMap<K, V> implements Map<K, V>, Serializable {
      * An entry set implementation.
      */
     @SuppressFBWarnings("SE_INNER_CLASS")
-    public final class EntrySet extends AbstractSet<Map.Entry<K, V>> implements Serializable {
-        private static final long serialVersionUID = 7025830249792699509L;
+    public final class EntrySet extends AbstractSet<Map.Entry<K, V>> {
         private final EntryIterator entryIterator = shouldAvoidAllocation ? new EntryIterator() : null;
 
         /**
