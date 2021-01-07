@@ -1506,8 +1506,6 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testIfWeCarryRecordVersionInfoToReplicas() {
-        assumeThat(statisticsEnabled, is(true));
-
         String mapName = randomMapName();
         int mapSize = 1000;
         int expectedRecordVersion = 3;
