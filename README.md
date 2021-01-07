@@ -333,6 +333,10 @@ Additionally:
 
 All these features are already included in [Hazelcast Helm Charts](#helm-chart).
 
+## CP Subsystem
+
+Hazelcast CP Subsystem can be used safely in Kubernetes only if CP Subsystem Persistence is enabled (Enterprise Feature). Otherwise, a CP Subsystem Group may not recover after scaling the cluster or performing the rolling upgrade operation.
+
 ## Plugin Usages
 
 Apart from embedding Hazelcast in your application as described above, there are multiple other scenarios of how to use the Hazelcast Kubernetes plugin.
