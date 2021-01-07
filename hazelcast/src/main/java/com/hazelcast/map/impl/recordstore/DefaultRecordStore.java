@@ -157,27 +157,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return storage.get(key);
     }
 
-    // TODO legacy ttl maxidle
-    @Override
-    public Record putReplicatedRecordLegacy(Data dataKey, Record replicatedRecord, long nowInMillis,
-                                            boolean populateIndexes) {
-        Record newRecord = createRecord(replicatedRecord, nowInMillis);
-        storage.put(dataKey, newRecord);
-//        getExpirySystem().addExpiry(dataKey, replicatedRecord.getTtl(),
-//                replicatedRecord.getMaxIdle(), nowInMillis);
-        mutationObserver.onReplicationPutRecord(dataKey, newRecord, populateIndexes);
-        updateStatsOnPut(replicatedRecord.getHits(), nowInMillis);
-        return newRecord;
-    }
-
     @Override
     public Record putReplicatedRecord(Data dataKey, Record replicatedRecord,
                                       ExpiryMetadata expiryMetadata,
                                       boolean populateIndexes, long nowInMillis) {
         Record newRecord = createRecord(replicatedRecord, nowInMillis);
         storage.put(dataKey, newRecord);
-        getExpirySystem().addExpiry0(dataKey, expiryMetadata.getTtl(),
-                expiryMetadata.getMaxIdle(), expiryMetadata.getExpirationTime());
+        getExpirySystem().addKeyIfExpirable(dataKey, expiryMetadata.getTtl(),
+                expiryMetadata.getMaxIdle(), expiryMetadata.getExpirationTime(), true);
         mutationObserver.onReplicationPutRecord(dataKey, newRecord, populateIndexes);
         updateStatsOnPut(replicatedRecord.getHits(), nowInMillis);
 
@@ -907,7 +894,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     ttl, maxIdle, now, transactionId);
         }
         storage.updateRecordValue(key, record, newValue);
-        getExpirySystem().addExpiry(key, ttl, maxIdle, now);
+        getExpirySystem().addKeyIfExpirable(key, ttl, maxIdle, now, false);
         mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
     }
 
@@ -921,7 +908,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             putIntoMapStore(record, key, newValue, ttlMillis, maxIdleMillis, now, transactionId);
         }
         storage.put(key, record);
-        getExpirySystem().addExpiry(key, ttlMillis, maxIdleMillis, now);
+        getExpirySystem().addKeyIfExpirable(key, ttlMillis, maxIdleMillis, now, false);
         if (entryEventType == EntryEventType.LOADED) {
             mutationObserver.onLoadRecord(key, record, backup);
         } else {
@@ -933,9 +920,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     protected Object putIntoMapStore(Record record, Data key, Object newValue,
                                      long ttlMillis, long maxIdleMillis,
                                      long now, UUID transactionId) {
-        newValue = mapDataStore.add(key, newValue,
-                getExpirySystem().getExpirationTime(ttlMillis, maxIdleMillis, now),
-                now, transactionId);
+        long expirationTime = getExpirySystem().calculateExpirationTime(ttlMillis, maxIdleMillis, now);
+        newValue = mapDataStore.add(key, newValue, expirationTime, now, transactionId);
         if (mapDataStore.isPostProcessingMapStore()) {
             storage.updateRecordValue(key, record, newValue);
         }

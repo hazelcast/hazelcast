@@ -22,12 +22,17 @@ import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.internal.util.collection.Object2ObjectHashMap;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.ExpirationTimeSetter;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -35,32 +40,42 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateExpirationTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTLMillis;
 import static com.hazelcast.map.impl.record.Record.UNSET;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
- * Always accessed by same single thread.
- * One instance of this class is created for every {@link RecordStore}.
+ * This class has all logic to remove expired entries. Expiry reason
+ * can be ttl or idleness. An instance of this class is created for
+ * each {@link RecordStore} and it is always accessed by same single thread.
  */
-// TODO make expiry system efficient to scan and try to use HashMap iterator
 public class ExpirySystem {
-
-    final RecordStore recordStore;
-    final MapServiceContext mapServiceContext;
+    private static final long DEFAULT_MAX_EXPIRED_KEY_SCAN_TIMEOUT_NANOS
+            = TimeUnit.MILLISECONDS.toNanos(1);
+    private static final String PROP_MAX_EXPIRED_KEY_SCAN_TIMEOUT_NANOS
+            = "hazelcast.internal.map.expired.key.scan.timeout.nanos";
+    private static final HazelcastProperty MAX_EXPIRED_KEY_SCAN_TIMEOUT_NANOS
+            = new HazelcastProperty(PROP_MAX_EXPIRED_KEY_SCAN_TIMEOUT_NANOS,
+            DEFAULT_MAX_EXPIRED_KEY_SCAN_TIMEOUT_NANOS, NANOSECONDS);
+    private static final int ONE_HUNDRED_PERCENT = 100;
+    private static final int MIN_SCANNABLE_ENTRY_COUNT = 100;
 
     // TODO expiryDelayMillis
     private final long expiryDelayMillis;
+    private final long expiredKeyScanTimeoutNanos;
     private final boolean canPrimaryDriveExpiration;
+    private final ILogger logger;
+    private final RecordStore recordStore;
     private final MapContainer mapContainer;
+    private final MapServiceContext mapServiceContext;
     private final ClearExpiredRecordsTask clearExpiredRecordsTask;
     private final InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<>();
 
-    private Iterator<Map.Entry<Data, ExpiryMetadata>> expirationIterator;
+    private Iterator<Map.Entry<Data, ExpiryMetadata>> cachedExpirationIterator;
     private Map<Data, ExpiryMetadata> expireTimeByKey;
 
     public ExpirySystem(RecordStore recordStore,
@@ -69,11 +84,13 @@ public class ExpirySystem {
         this.recordStore = recordStore;
         this.clearExpiredRecordsTask = mapServiceContext.getExpirationManager().getTask();
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        this.logger = nodeEngine.getLogger(getClass());
         HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
         this.expiryDelayMillis = hazelcastProperties.getMillis(ClusterProperty.MAP_EXPIRY_DELAY_SECONDS);
         this.mapContainer = mapContainer;
         this.mapServiceContext = mapServiceContext;
         this.canPrimaryDriveExpiration = mapServiceContext.getClearExpiredRecordsTask().canPrimaryDriveExpiration();
+        this.expiredKeyScanTimeoutNanos = nodeEngine.getProperties().getNanos(MAX_EXPIRED_KEY_SCAN_TIMEOUT_NANOS);
     }
 
     public boolean isEmpty() {
@@ -82,9 +99,13 @@ public class ExpirySystem {
 
     // this method is overridden
     protected Map<Data, ExpiryMetadata> createExpiryTimeByKeyMap() {
-        // only reason we use CHM is, its iterator
-        // doesn't throw concurrent modification exception.
-        return new ConcurrentHashMap<>();
+        return new Object2ObjectHashMap<>();
+    }
+
+    // this method is overridden
+    public void clear() {
+        Map<Data, ExpiryMetadata> map = getOrCreateExpireTimeByKeyMap(false);
+        map.clear();
     }
 
     protected Map<Data, ExpiryMetadata> getOrCreateExpireTimeByKeyMap(boolean createIfAbsent) {
@@ -105,23 +126,21 @@ public class ExpirySystem {
         return new ExpiryMetadataImpl(ttlMillis, maxIdleMillis, expirationTime);
     }
 
-    public void addExpiry(Data key, long ttl, long maxIdle, long now) {
-        MapConfig mapConfig = mapContainer.getMapConfig();
-        long ttlMillis = pickTTLMillis(ttl, mapConfig);
-        long maxIdleMillis = pickMaxIdleMillis(maxIdle, mapConfig);
-        long expirationTime = calculateExpirationTime(ttlMillis, maxIdleMillis, now);
+    public void addKeyIfExpirable(Data key, long ttl, long maxIdle,
+                                  long nowOrExpirationTime, boolean hasPreCalculatedExpiryTime) {
 
-        addExpiry0(key, ttlMillis, maxIdleMillis, expirationTime);
+        if (hasPreCalculatedExpiryTime) {
+            addKeyIfExpirableInternal(key, ttl, maxIdle, nowOrExpirationTime);
+        } else {
+            MapConfig mapConfig = mapContainer.getMapConfig();
+            long ttlMillis = pickTTLMillis(ttl, mapConfig);
+            long maxIdleMillis = pickMaxIdleMillis(maxIdle, mapConfig);
+            long expirationTime = ExpirationTimeSetter.calculateExpirationTime(ttlMillis, maxIdleMillis, nowOrExpirationTime);
+            addKeyIfExpirableInternal(key, ttlMillis, maxIdleMillis, expirationTime);
+        }
     }
 
-    public long getExpirationTime(long ttl, long maxIdle, long now) {
-        MapConfig mapConfig = mapContainer.getMapConfig();
-        long ttlMillis = pickTTLMillis(ttl, mapConfig);
-        long maxIdleMillis = pickMaxIdleMillis(maxIdle, mapConfig);
-        return calculateExpirationTime(ttlMillis, maxIdleMillis, now);
-    }
-
-    public void addExpiry0(Data key, long ttlMillis, long maxIdleMillis, long expirationTime) {
+    private void addKeyIfExpirableInternal(Data key, long ttlMillis, long maxIdleMillis, long expirationTime) {
         if (expirationTime == Long.MAX_VALUE) {
             Map<Data, ExpiryMetadata> map = getOrCreateExpireTimeByKeyMap(false);
             if (!map.isEmpty()) {
@@ -146,6 +165,21 @@ public class ExpirySystem {
         mapServiceContext.getExpirationManager().scheduleExpirationTask();
     }
 
+    public long calculateExpirationTime(long ttl, long maxIdle, long now) {
+        MapConfig mapConfig = mapContainer.getMapConfig();
+        long ttlMillis = pickTTLMillis(ttl, mapConfig);
+        long maxIdleMillis = pickMaxIdleMillis(maxIdle, mapConfig);
+        return ExpirationTimeSetter.calculateExpirationTime(ttlMillis, maxIdleMillis, now);
+    }
+
+    public void removeKeyFromExpirySystem(Data key) {
+        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
+        if (expireTimeByKey.isEmpty()) {
+            return;
+        }
+        callRemove(key, expireTimeByKey);
+    }
+
     // TODO add test for this.
     public void extendExpiryTime(Data dataKey, long now) {
         if (isEmpty()) {
@@ -163,7 +197,7 @@ public class ExpirySystem {
             return;
         }
 
-        long expirationTime = calculateExpirationTime(expiryMetadata.getTtl(),
+        long expirationTime = ExpirationTimeSetter.calculateExpirationTime(expiryMetadata.getTtl(),
                 expiryMetadata.getMaxIdle(), now);
         expiryMetadata.setExpirationTime(expirationTime);
     }
@@ -174,11 +208,11 @@ public class ExpirySystem {
             return ExpiryReason.NOT_EXPIRED;
         }
         ExpiryMetadata expiryMetadata = expireTimeByKey.get(key);
-        return hasExpired0(expiryMetadata, now, backup);
+        return hasExpired(expiryMetadata, now, backup);
     }
 
     // TODO add expiry delay for backup replica
-    private ExpiryReason hasExpired0(ExpiryMetadata expiryMetadata, long now, boolean backup) {
+    private ExpiryReason hasExpired(ExpiryMetadata expiryMetadata, long now, boolean backup) {
         boolean expired = expiryMetadata != null
                 && expiryMetadata.getExpirationTime() <= now;
         if (expired) {
@@ -203,73 +237,77 @@ public class ExpirySystem {
         return expiryMetadata != null ? expiryMetadata : ExpiryMetadata.NULL;
     }
 
-    /**
-     * Returns {@code true} if this record store has at least one candidate entry
-     * for expiration (idle or tll) otherwise returns {@code false}.
-     */
-    public boolean isRecordStoreExpirable() {
-        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
-        return !expireTimeByKey.isEmpty();
-    }
-
     @SuppressWarnings("checkstyle:magicnumber")
-    public void evictExpiredEntries(long now, int percentage, boolean backup) {
-        int maxIterationCount = 100;
-        int maxRetry = 3;
-        int loop = 0;
-        int evictedEntryCount = 0;
-        while (true) {
-            evictedEntryCount += evictExpiredEntriesInternal(maxIterationCount, now, backup);
-            if (evictedEntryCount >= maxIterationCount) {
-                break;
-            }
-            loop++;
-            if (loop > maxRetry) {
-                break;
-            }
+    public void evictExpiredEntries(int percentage, long now, boolean backup) {
+        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
+        if (expireTimeByKey.isEmpty()) {
+            return;
         }
+
+        // Find max scannable key count
+        int expirableKeysMapSize = expireTimeByKey.size();
+        int keyCountInPercentage = (int) (1D * expirableKeysMapSize * percentage / ONE_HUNDRED_PERCENT);
+        int maxScannableKeyCount = Math.max(MIN_SCANNABLE_ENTRY_COUNT, keyCountInPercentage);
+
+        // Get cachedExpirationIterator or init it if it has no next entry.
+        if (cachedExpirationIterator == null || !cachedExpirationIterator.hasNext()) {
+            cachedExpirationIterator = initIteratorOf(expireTimeByKey);
+        }
+
+        scanAndEvictExpiredKeys(cachedExpirationIterator, maxScannableKeyCount, now, backup);
 
         accumulateOrSendExpiredKey(null);
     }
 
-    private int evictExpiredEntriesInternal(int maxIterationCount, long now, boolean backup) {
-        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
-        if (expireTimeByKey.isEmpty()) {
-            return 0;
-        }
-
-        int evictedEntryCount = 0;
-//        if (expirationIterator == null || !expirationIterator.hasNext()) {
-        expirationIterator = getIterator(expireTimeByKey);
-//        }
-
-        List dataKeyAndExpiryReason = new ArrayList<>();
-        int checkedEntryCount = 0;
-        // TODO how many entry will be checked?
-        while (expirationIterator.hasNext()) {
-            if (checkedEntryCount++ == maxIterationCount) {
-                break;
-            }
-            Map.Entry<Data, ExpiryMetadata> entry = expirationIterator.next();
+    private void scanAndEvictExpiredKeys(Iterator<Map.Entry<Data, ExpiryMetadata>> cachedExpirationIterator,
+                                         int maxScannableKeyCount, long now, boolean backup) {
+        // Scan to find expired keys.
+        long scanLoopStartNanos = System.nanoTime();
+        List expiredKeyExpiryReasonList = new ArrayList<>();
+        int scannedKeyCount = 0;
+        int expiredKeyCount = 0;
+        do {
+            Map.Entry<Data, ExpiryMetadata> entry = cachedExpirationIterator.next();
+            scannedKeyCount++;
             Data key = entry.getKey();
             ExpiryMetadata expiryMetadata = entry.getValue();
 
-            ExpiryReason expiryReason = hasExpired0(expiryMetadata, now, backup);
+            ExpiryReason expiryReason = hasExpired(expiryMetadata, now, backup);
             if (expiryReason != ExpiryReason.NOT_EXPIRED && !recordStore.isLocked(key)) {
-                dataKeyAndExpiryReason.add(key);
-                dataKeyAndExpiryReason.add(expiryReason);
-                callIterRemove(expirationIterator);
-                evictedEntryCount++;
+                // add key and expiryReason to list to evict them later
+                expiredKeyExpiryReasonList.add(key);
+                expiredKeyExpiryReasonList.add(expiryReason);
+                // remove expired key from expirySystem
+                callIterRemove(cachedExpirationIterator);
+                expiredKeyCount++;
             }
-        }
 
-        for (int i = 0; i < dataKeyAndExpiryReason.size(); i += 2) {
-            Data key = (Data) dataKeyAndExpiryReason.get(i);
-            ExpiryReason reason = (ExpiryReason) dataKeyAndExpiryReason.get(i + 1);
+            // if timed out while looping, break this loop to free
+            // partition thread and to align running-in-constant-time
+            // behavior with eviction just check timeout after
+            // scanning Evictor.SAMPLE_COUNT number of keys.
+            if (scannedKeyCount % Evictor.SAMPLE_COUNT == 0
+                    && (System.nanoTime() - scanLoopStartNanos) >= expiredKeyScanTimeoutNanos) {
+                break;
+            }
+
+        } while (scannedKeyCount < maxScannableKeyCount
+                && cachedExpirationIterator.hasNext());
+
+        // Evict expired keys
+        for (int i = 0; i < expiredKeyExpiryReasonList.size(); i += 2) {
+            Data key = (Data) expiredKeyExpiryReasonList.get(i);
+            ExpiryReason reason = (ExpiryReason) expiredKeyExpiryReasonList.get(i + 1);
             recordStore.evictExpiredEntryAndPublishExpiryEvent(key, reason, backup);
         }
 
-        return evictedEntryCount;
+        if (logger.isFinestEnabled()) {
+            logger.finest(String.format("mapName: %s, partitionId: %d, partitionSize: %d, "
+                            + "remainingKeyCountToExpire: %d, maxScannableKeyCount: %d, "
+                            + "scannedKeyCount: %d, expiredKeyCount: %d"
+                    , recordStore.getName(), recordStore.getPartitionId(), recordStore.size()
+                    , expireTimeByKey.size(), maxScannableKeyCount, scannedKeyCount, expiredKeyCount));
+        }
     }
 
     // this method is overridden
@@ -278,16 +316,8 @@ public class ExpirySystem {
     }
 
     // this method is overridden
-    protected Iterator<Map.Entry<Data, ExpiryMetadata>> getIterator(Map<Data, ExpiryMetadata> expireTimeByKey) {
+    protected Iterator<Map.Entry<Data, ExpiryMetadata>> initIteratorOf(Map<Data, ExpiryMetadata> expireTimeByKey) {
         return expireTimeByKey.entrySet().iterator();
-    }
-
-    public void removeKeyFromExpirySystem(Data key) {
-        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
-        if (expireTimeByKey.isEmpty()) {
-            return;
-        }
-        callRemove(key, expireTimeByKey);
     }
 
     // this method is overridden
@@ -298,23 +328,6 @@ public class ExpirySystem {
     // this method is overridden
     public void destroy() {
         getOrCreateExpireTimeByKeyMap(false).clear();
-    }
-
-    /**
-     * Intended to put an upper bound to iterations. Used in evictions.
-     *
-     * @param size       of iterate-able.
-     * @param percentage percentage of size.
-     * @return 100 If calculated iteration count is less than 100, otherwise returns calculated iteration count.
-     */
-    private static int getMaxIterationCount(int size, int percentage) {
-        final int defaultMaxIterationCount = 100;
-        final float oneHundred = 100F;
-        float maxIterationCount = size * (percentage / oneHundred);
-        if (maxIterationCount <= defaultMaxIterationCount) {
-            return defaultMaxIterationCount;
-        }
-        return Math.round(maxIterationCount);
     }
 
     // null dataKey is used to trigger backup operation sending...
@@ -328,12 +341,6 @@ public class ExpirySystem {
         }
 
         clearExpiredRecordsTask.tryToSendBackupExpiryOp(recordStore, true);
-    }
-
-    // this method is overridden
-    public void clear() {
-        Map<Data, ExpiryMetadata> map = getOrCreateExpireTimeByKeyMap(false);
-        map.clear();
     }
 }
 

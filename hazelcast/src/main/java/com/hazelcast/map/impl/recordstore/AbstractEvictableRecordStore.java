@@ -46,7 +46,6 @@ import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
  * Contains eviction specific functionality.
  */
 public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
-
     protected final Address thisAddress;
     protected final EventService eventService;
     protected final MapEventPublisher mapEventPublisher;
@@ -72,13 +71,13 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     @Override
-    public void evictExpiredEntries(int percentage, boolean backup) {
-        expirySystem.evictExpiredEntries(getNow(), percentage, backup);
+    public void evictExpiredEntries(int percentage, long now, boolean backup) {
+        expirySystem.evictExpiredEntries(percentage, now, backup);
     }
 
     @Override
     public boolean isExpirable() {
-        return expirySystem.isRecordStoreExpirable();
+        return !expirySystem.isEmpty();
     }
 
     @Override
@@ -207,12 +206,12 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         // see com.hazelcast.map.impl.wan.WanMapEntryView.getMaxIdle
         Long maxIdle = mergingEntry.getMaxIdle();
         if (maxIdle != null) {
-            getExpirySystem().addExpiry(key, mergingEntry.getTtl(),
-                    maxIdle, mergingEntry.getExpirationTime());
+            getExpirySystem().addKeyIfExpirable(key, mergingEntry.getTtl(),
+                    maxIdle, mergingEntry.getExpirationTime(), false);
         } else {
             ExpiryMetadata expiredMetadata = getExpirySystem().getExpiredMetadata(key);
-            getExpirySystem().addExpiry(key, mergingEntry.getTtl(),
-                    expiredMetadata.getMaxIdle(), mergingEntry.getExpirationTime());
+            getExpirySystem().addKeyIfExpirable(key, mergingEntry.getTtl(),
+                    expiredMetadata.getMaxIdle(), mergingEntry.getExpirationTime(), false);
         }
     }
 

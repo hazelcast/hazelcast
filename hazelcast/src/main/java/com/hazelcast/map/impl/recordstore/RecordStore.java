@@ -286,8 +286,6 @@ public interface RecordStore<R extends Record> {
      * @return current record after put
      * @see com.hazelcast.map.impl.operation.MapReplicationOperation
      */
-    R putReplicatedRecordLegacy(Data dataKey, R record, long nowInMillis, boolean indexesMustBePopulated);
-
     R putReplicatedRecord(Data dataKey, R record, ExpiryMetadata expiryMetadata,
                           boolean indexesMustBePopulated, long now);
 
@@ -392,11 +390,11 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Do expiration operations.
-     *
-     * @param percentage of max expirables according to the record store size.
+     *  @param percentage of max expirables according to the record store size.
+     * @param now now in millis
      * @param backup     <code>true</code> if a backup partition, otherwise <code>false</code>.
      */
-    void evictExpiredEntries(int percentage, boolean backup);
+    void evictExpiredEntries(int percentage, long now, boolean backup);
 
     /**
      * @return <code>true</code> if record store has at least one candidate entry
