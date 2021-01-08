@@ -20,6 +20,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.pipeline.file.FileSources;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -103,6 +104,8 @@ public final class FileSourceBuilder {
     /**
      * Convenience for {@link FileSourceBuilder#build(BiFunctionEx)}.
      * Source emits lines to downstream without any transformation.
+     *
+     * @deprecated Use {@link FileSources#files}. Will be removed in Jet 5.0.
      */
     @Nonnull
     public BatchSource<String> build() {
@@ -126,6 +129,8 @@ public final class FileSourceBuilder {
      *                    line. Gets the filename and line as parameters. It must be stateless and
      *                    {@linkplain Processor#isCooperative() cooperative}.
      * @param <T>         the type of the items the source emits
+     *
+     * @deprecated Use {@link FileSources#files}. Will be removed in Jet 5.0.
      */
     @Nonnull
     public <T> BatchSource<T> build(@Nonnull BiFunctionEx<String, String, ? extends T> mapOutputFn) {
@@ -157,6 +162,8 @@ public final class FileSourceBuilder {
      *                   {@code Path} as parameter and returns a {@code Stream}
      *                   of items. The function must be stateless.
      * @param <T>        the type of items returned from file reading
+     *
+     * @deprecated Use {@link FileSources#files}. Will be removed in Jet 5.0.
      */
     @Nonnull
     public <T> BatchSource<T> build(@Nonnull FunctionEx<? super Path, ? extends Stream<T>> readFileFn) {

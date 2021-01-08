@@ -41,6 +41,7 @@ import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -53,6 +54,7 @@ import org.apache.parquet.avro.AvroParquetInputFormat;
 
 import javax.annotation.Nonnull;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -63,6 +65,7 @@ import static com.hazelcast.jet.hadoop.HadoopProcessors.readHadoopP;
 import static com.hazelcast.jet.hadoop.HadoopSources.COPY_ON_READ;
 import static com.hazelcast.jet.hadoop.impl.CsvInputFormat.CSV_INPUT_FORMAT_BEAN_CLASS;
 import static com.hazelcast.jet.hadoop.impl.JsonInputFormat.JSON_INPUT_FORMAT_BEAN_CLASS;
+import static com.hazelcast.jet.hadoop.impl.JsonInputFormat.JSON_MULTILINE;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -70,13 +73,12 @@ import static java.util.Objects.requireNonNull;
  */
 public class HadoopFileSourceFactory implements FileSourceFactory {
 
-    private final Map<String, JobConfigurer> configurers;
+    private final Map<String, JobConfigurer> configurers = new HashMap<>();
 
     /**
      * Creates the HadoopSourceFactory.
      */
     public HadoopFileSourceFactory() {
-        configurers = new HashMap<>();
 
         addJobConfigurer(configurers, new AvroFormatJobConfigurer());
         addJobConfigurer(configurers, new CsvFormatJobConfigurer());
@@ -99,36 +101,57 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
     @Nonnull
     @Override
     public <T> ProcessorMetaSupplier create(@Nonnull FileSourceConfiguration<T> fsc) {
-        try {
-            Job job = Job.getInstance();
-
-            Configuration configuration = job.getConfiguration();
-            configuration.setBoolean(FileInputFormat.INPUT_DIR_NONRECURSIVE_IGNORE_SUBDIRS, true);
-            configuration.setBoolean(FileInputFormat.INPUT_DIR_RECURSIVE, false);
-            configuration.setBoolean(HadoopSources.SHARED_LOCAL_FS, fsc.isSharedFileSystem());
-            for (Entry<String, String> option : fsc.getOptions().entrySet()) {
-                configuration.set(option.getKey(), option.getValue());
-            }
-
-            Path inputPath = getInputPath(fsc);
-            FileInputFormat.addInputPath(job, inputPath);
-
-            FileFormat<T> fileFormat = requireNonNull(fsc.getFormat());
-            JobConfigurer configurer = this.configurers.get(fileFormat.format());
-            if (configurer == null) {
-                throw new JetException("Could not find JobConfigurer for FileFormat: " + fileFormat.format() + ". " +
-                        "Did you provide correct modules on classpath?");
-            }
-            configurer.configure(job, fileFormat);
-
-            return readHadoopP(SerializableConfiguration.asSerializable(configuration), configurer.projectionFn());
-        } catch (IOException e) {
-            throw new JetException("Could not create a source", e);
+        FileFormat<T> fileFormat = requireNonNull(fsc.getFormat());
+        JobConfigurer configurer = configurers.get(fileFormat.format());
+        if (configurer == null) {
+            throw new JetException("Could not find JobConfigurer for FileFormat: " + fileFormat.format() + ". " +
+                    "Did you provide correct modules on classpath?");
         }
+
+        return readHadoopP(configuration -> {
+            try {
+                configuration.setBoolean(FileInputFormat.INPUT_DIR_NONRECURSIVE_IGNORE_SUBDIRS, true);
+                configuration.setBoolean(FileInputFormat.INPUT_DIR_RECURSIVE, false);
+                configuration.setBoolean(HadoopSources.SHARED_LOCAL_FS, fsc.isSharedFileSystem());
+                configuration.setBoolean(HadoopSources.IGNORE_FILE_NOT_FOUND, fsc.isIgnoreFileNotFound());
+                for (Entry<String, String> option : fsc.getOptions().entrySet()) {
+                    configuration.set(option.getKey(), option.getValue());
+                }
+
+                // Some methods we use to configure actually take a Job
+                Job job = Job.getInstance(configuration);
+                Path inputPath = getInputPath(fsc, configuration);
+                FileInputFormat.addInputPath(job, inputPath);
+
+                configurer.configure(job, fileFormat);
+
+                // The job creates a copy of the configuration, so we need to copy the new setting to the original
+                // configuration instance
+                for (Entry<String, String> entry : job.getConfiguration()) {
+                    configuration.set(entry.getKey(), entry.getValue());
+                }
+            } catch (IOException e) {
+                throw new JetException("Could not create a source", e);
+            }
+        }, configurer.projectionFn());
     }
 
     @Nonnull
-    private <T> Path getInputPath(FileSourceConfiguration<T> fsc) {
+    private static <T> Path getInputPath(FileSourceConfiguration<T> fsc, Configuration configuration)
+            throws IOException {
+
+        // validate that fsc.getPath() is a directory, not a file to keep same behavior as local file connector and
+        // to avoid surprises for the user
+        Path path = new Path(fsc.getPath());
+        try {
+            FileSystem fs = path.getFileSystem(configuration);
+            if (!fs.getFileStatus(path).isDirectory()) {
+                throw new JetException("The given path (" + path + ") must point to a directory, not a file.");
+            }
+        } catch (FileNotFoundException e) {
+            throw new JetException("The directory " + path + " does not exists.");
+        }
+
         if (fsc.getGlob().equals("*")) {
             // * means all files in the directory, but also all directories
             // Hadoop interprets it as multiple input folders, resulting to processing files in 1st level
@@ -221,16 +244,18 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
         public <T> void configure(Job job, FileFormat<T> format) {
             JsonFileFormat<T> jsonFileFormat = (JsonFileFormat<T>) format;
             job.setInputFormatClass(JsonInputFormat.class);
-            job.getConfiguration().setBoolean(COPY_ON_READ, Boolean.FALSE);
 
+            Configuration configuration = job.getConfiguration();
+            configuration.setBoolean(COPY_ON_READ, Boolean.FALSE);
+            configuration.setBoolean(JSON_MULTILINE, jsonFileFormat.isMultiline());
             Class<?> clazz = jsonFileFormat.clazz();
             if (clazz != null) {
-                job.getConfiguration().set(JSON_INPUT_FORMAT_BEAN_CLASS, clazz.getCanonicalName());
+                configuration.set(JSON_INPUT_FORMAT_BEAN_CLASS, clazz.getCanonicalName());
             }
         }
 
         @Override
-        public BiFunctionEx<LongWritable, ?, ?> projectionFn() {
+        public BiFunctionEx<NullWritable, ?, ?> projectionFn() {
             return (k, v) -> v;
         }
 

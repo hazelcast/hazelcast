@@ -17,6 +17,7 @@
 package com.hazelcast.jet.hadoop;
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.hadoop.impl.SerializableConfiguration;
@@ -86,6 +87,11 @@ public final class HadoopSources {
      */
     public static final String SHARED_LOCAL_FS = "jet.source.sharedlocalfs";
 
+    /**
+     * @since 4.4
+     */
+    public static final String IGNORE_FILE_NOT_FOUND = "jet.source.ignorefilenotfound";
+
     private HadoopSources() {
     }
 
@@ -128,6 +134,44 @@ public final class HadoopSources {
     ) {
         return Sources.batchFromProcessor("readHadoop",
                 readHadoopP(SerializableConfiguration.asSerializable(configuration), projectionFn));
+    }
+
+    /**
+     * Returns a source that reads records from Apache Hadoop HDFS and emits
+     * the results of transforming each record (a key-value pair) with the
+     * supplied projection function.
+     * <p>
+     * This source splits and balances the input data among Jet {@linkplain
+     * Processor processors}, doing its best to achieve data locality. To this
+     * end the Jet cluster topology should be aligned with Hadoop's &mdash; on
+     * each Hadoop member there should be a Jet member.
+     * <p>
+     * The {@code configureFn} is used to configure the MR Job. The function is
+     * run on the coordinator node of the Jet Job, avoiding contacting the server
+     * from the machine where the job is submitted.
+     * <p>
+     * The new MapReduce API will be used.
+     * <p>
+     * The default local parallelism for this processor is 2 (or less if less CPUs
+     * are available).
+     * <p>
+     * This source does not save any state to snapshot. If the job is restarted,
+     * all entries will be emitted again.
+     *
+     * @param <K>           key type of the records
+     * @param <V>           value type of the records
+     * @param <E>           the type of the emitted value
+     * @param configureFn   function to configure the MR job
+     * @param projectionFn  function to create output objects from key and value.
+     *                      If the projection returns a {@code null} for an item, that item
+     *                      will be filtered out
+     */
+    @Nonnull
+    public static <K, V, E> BatchSource<E> inputFormat(
+            @Nonnull ConsumerEx<Configuration> configureFn,
+            @Nonnull BiFunctionEx<K, V, E> projectionFn
+    ) {
+        return Sources.batchFromProcessor("readHadoop", readHadoopP(configureFn, projectionFn));
     }
 
     /**

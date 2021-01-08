@@ -19,7 +19,9 @@ package com.hazelcast.jet.hadoop.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
@@ -142,9 +144,14 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
             return inputFormat.getSplits(job);
         } catch (InvalidInputException e) {
             String directory = configuration.get(INPUT_DIR, "");
-            ILogger logger = Logger.getLogger(ReadHadoopNewApiP.class);
-            logger.fine("The directory " + directory + " does not exists. This source will emit 0 items.");
-            return emptyList();
+            boolean ignoreFileNotFound = configuration.getBoolean(HadoopSources.IGNORE_FILE_NOT_FOUND, true);
+            if (ignoreFileNotFound) {
+                ILogger logger = Logger.getLogger(ReadHadoopNewApiP.class);
+                logger.fine("The directory " + directory + " does not exists. This source will emit 0 items.");
+                return emptyList();
+            } else {
+                throw new JetException("The input " + directory + " matches no files");
+            }
         }
     }
 
@@ -157,19 +164,26 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
          * SerializableJobConf}, which are serializable.
          */
         @SuppressFBWarnings("SE_BAD_FIELD")
-        private final Configuration configuration;
+        private Configuration configuration;
+        private final ConsumerEx<Configuration> configureFn;
         private final BiFunctionEx<K, V, R> projectionFn;
 
         private transient Map<Address, List<IndexedInputSplit>> assigned;
 
-        public MetaSupplier(@Nonnull Configuration configuration, @Nonnull BiFunctionEx<K, V, R> projectionFn) {
+        public MetaSupplier(
+                @Nonnull Configuration configuration,
+                @Nonnull ConsumerEx<Configuration> configureFn,
+                @Nonnull BiFunctionEx<K, V, R> projectionFn) {
             this.configuration = configuration;
+            this.configureFn = configureFn;
             this.projectionFn = projectionFn;
         }
 
         @Override
         public void init(@Nonnull Context context) throws Exception {
             super.init(context);
+            updateConfiguration();
+
             if (shouldSplitOnMembers(configuration)) {
                 assigned = new HashMap<>();
             } else {
@@ -193,12 +207,17 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
 
         @Override
         public FileTraverser<R> traverser() throws Exception {
+            updateConfiguration();
+
             return new HadoopFileTraverser<>(configuration, getSplits(configuration), projectionFn);
+        }
+
+        private void updateConfiguration() {
+            configureFn.accept(configuration);
         }
     }
 
     private static final class Supplier<K, V, R> implements ProcessorSupplier {
-
         static final long serialVersionUID = 1L;
 
         /**

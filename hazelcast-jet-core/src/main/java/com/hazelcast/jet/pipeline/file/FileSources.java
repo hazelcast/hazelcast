@@ -49,17 +49,18 @@ public final class FileSources {
      * <p>
      * The path must point to a directory. All files in the directory are
      * processed. Subdirectories are not processed recursively.
+     * The path must not contain any wildcard characters.
      * <p>
      * Example usage:
      * <pre>{@code
      * Pipeline p = Pipeline.create();
-     *         p.readFrom(FileSources.files("/path/to/file").build())
+     *         p.readFrom(FileSources.files("/path/to/directory").build())
      *          .map(line -> LogParser.parse(line))
      *          .filter(log -> log.level().equals("ERROR"))
      *          .writeTo(Sinks.logger());
      * }</pre>
      *
-     * @param path the path to the file
+     * @param path the path to the directory
      * @return the builder object with fluent API
      */
     public static FileSourceBuilder<String> files(String path) {

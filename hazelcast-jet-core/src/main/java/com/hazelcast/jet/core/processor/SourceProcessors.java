@@ -47,6 +47,7 @@ import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.jet.pipeline.file.FileSources;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
@@ -339,7 +340,22 @@ public final class SourceProcessors {
             boolean sharedFileSystem,
             @Nonnull FunctionEx<? super Path, ? extends Stream<I>> readFileFn
     ) {
-        return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem, readFileFn);
+        return readFilesP(directory, glob, sharedFileSystem, true, readFileFn);
+    }
+
+    /**
+     * Returns a supplier of processors for {@link FileSources#files(String)}
+     * to read local files.
+     */
+    @Nonnull
+    public static <I> ProcessorMetaSupplier readFilesP(
+            @Nonnull String directory,
+            @Nonnull String glob,
+            boolean sharedFileSystem,
+            boolean ignoreFileNotFound,
+            @Nonnull FunctionEx<? super Path, ? extends Stream<I>> readFileFn
+    ) {
+        return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem, ignoreFileNotFound, readFileFn);
     }
 
     /**

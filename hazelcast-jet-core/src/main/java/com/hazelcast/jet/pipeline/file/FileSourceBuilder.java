@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 
+import static com.hazelcast.jet.pipeline.file.WildcardMatcher.hasWildcard;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
@@ -62,11 +63,15 @@ public class FileSourceBuilder<T> {
     private FileFormat<T> format;
     private boolean useHadoop;
     private boolean sharedFileSystem;
+    private boolean ignoreFileNotFound;
 
     FileSourceBuilder(@Nonnull String path) {
         this.path = requireNonNull(path, "path must not be null");
+        if (hasWildcard(path)) {
+            throw new IllegalArgumentException("Provided path must not contain any wildcard characters, path: " + path);
+        }
         if (!(hasHadoopPrefix(path) || Paths.get(path).isAbsolute())) {
-            throw new IllegalArgumentException("Provided path must be absolute. path: " + path);
+            throw new IllegalArgumentException("Provided path must be absolute, path: " + path);
         }
     }
 
@@ -139,6 +144,28 @@ public class FileSourceBuilder<T> {
     }
 
     /**
+     * Set to true to ignore no matching files in the directory specified by
+     * {@code path}.
+     * <p>
+     * When there is no file matching the glob specified by
+     * {@link #glob(String)} (or the default glob) Jet throws an exception by
+     * default. This might be problematic in some cases, where the directory
+     * is empty. To override this behaviour set this to true.
+     * <p>
+     * If set to true and there are no files in the directory the source will
+     * produce 0 items.
+     * <p>
+     * Default value is {@code false}.
+     *
+     * @param ignoreFileNotFound true if no files in the specified directory should be accepted
+     */
+    @Nonnull
+    public FileSourceBuilder<T> ignoreFileNotFound(boolean ignoreFileNotFound) {
+        this.ignoreFileNotFound = ignoreFileNotFound;
+        return this;
+    }
+
+    /**
      * Specifies an arbitrary option for the underlying source. If you are
      * looking for a missing option, check out the {@link FileFormat} class
      * you're using, it offers parsing-related options.
@@ -179,7 +206,7 @@ public class FileSourceBuilder<T> {
         }
 
         FileSourceConfiguration<T> fsc = new FileSourceConfiguration<>(
-                path, glob, format, sharedFileSystem, options
+                path, glob, format, sharedFileSystem, ignoreFileNotFound, options
         );
 
         if (shouldUseHadoop()) {

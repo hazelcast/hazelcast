@@ -5,10 +5,7 @@ description: Unified API for reading files and improved packaging for cloud sour
 
 *Since 4.4.*
 
-> NOTE: The order of the following sections is in logical order, but
-> numbering follows the requirement document (PRD).
-
-## 2. Support for common formats and data sources
+## 1. Support for common formats and data sources
 
 Format and source of the data are seemingly orthogonal. You can read
 plain text files/csv/avro/.. etc from a local filesystem, S3 etc.
@@ -140,7 +137,7 @@ for Hadoop)
 We decided to use Hadoop to access all sources, with option without
 hadoop for local filesystems
 
-## 1. Loading data from a file Cookbook
+## 2. Loading data from a file Cookbook
 
 There is a section in the manual describing the new API and each module.
 

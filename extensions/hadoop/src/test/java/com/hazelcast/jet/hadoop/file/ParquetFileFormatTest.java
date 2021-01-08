@@ -118,6 +118,33 @@ public class ParquetFileFormatTest extends BaseFileFormatTest {
         }
     }
 
+    @Test
+    public void shouldReadWithProjection() throws Exception {
+        createParquetFile();
+
+        String schema = "{" +
+                "  \"type\": \"record\"," +
+                "  \"name\": \"SpecificUser\"," +
+                "  \"namespace\": \"com.hazelcast.jet.hadoop.file.generated\"," +
+                "  \"fields\": [" +
+                "    {" +
+                "      \"name\": \"name\"," +
+                "      \"type\": \"string\"" +
+                "    }" +
+                "  ]" +
+                "}";
+
+        FileSourceBuilder<SpecificUser> source = FileSources.files(currentDir + "/target/parquet")
+                                                            .glob("file.parquet")
+                                                            .option("parquet.avro.projection", schema)
+                                                            .format(FileFormat.parquet());
+
+        assertItemsInSource(source,
+                new SpecificUser("Frantisek", null),
+                new SpecificUser("Ali", null)
+        );
+    }
+
     private void createParquetFile() throws IOException {
         createParquetFile("file.parquet", new SpecificUser("Frantisek", 7), new SpecificUser("Ali", 42));
     }

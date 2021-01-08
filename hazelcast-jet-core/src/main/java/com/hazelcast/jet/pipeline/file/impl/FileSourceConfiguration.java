@@ -18,6 +18,7 @@ package com.hazelcast.jet.pipeline.file.impl;
 
 import com.hazelcast.jet.pipeline.file.FileFormat;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
@@ -31,12 +32,13 @@ import static java.util.Objects.requireNonNull;
  *
  * @param <T> type of items a source using this file format will emit
  */
-public class FileSourceConfiguration<T> {
+public class FileSourceConfiguration<T> implements Serializable {
 
     private final String path;
     private final String glob;
     private final FileFormat<T> format;
     private final boolean sharedFileSystem;
+    private final boolean ignoreFileNotFound;
 
     private final Map<String, String> options;
 
@@ -44,11 +46,12 @@ public class FileSourceConfiguration<T> {
      * Create FileSourceConfiguration instance
      */
     public FileSourceConfiguration(String path, String glob, FileFormat<T> format,
-                                   boolean sharedFileSystem, Map<String, String> options) {
+                                   boolean sharedFileSystem, boolean ignoreFileNotFound, Map<String, String> options) {
         this.path = requireNonNull(path);
         this.glob = requireNonNull(glob);
         this.format = requireNonNull(format);
         this.sharedFileSystem = sharedFileSystem;
+        this.ignoreFileNotFound = ignoreFileNotFound;
         this.options = requireNonNull(options);
     }
 
@@ -76,9 +79,15 @@ public class FileSourceConfiguration<T> {
     /**
      * Returns if the filesystem is shared. Only valid for local filesystem, distributed filesystems are always shared.
      */
-
     public boolean isSharedFileSystem() {
         return sharedFileSystem;
+    }
+
+    /**
+     * Returns if the Source should ignore no files at the location specified by the path and the glob
+     */
+    public boolean isIgnoreFileNotFound() {
+        return ignoreFileNotFound;
     }
 
     /**
@@ -95,6 +104,7 @@ public class FileSourceConfiguration<T> {
                 ", glob='" + glob + '\'' +
                 ", format=" + format +
                 ", sharedFileSystem=" + sharedFileSystem +
+                ", ignoreFileNotFound=" + ignoreFileNotFound +
                 ", options=" + options +
                 '}';
     }

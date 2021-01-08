@@ -21,11 +21,12 @@ import com.hazelcast.jet.pipeline.file.FileFormat;
 import org.apache.hadoop.mapreduce.Job;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 
 /**
  * Hadoop map-reduce job configurer.
  */
-public interface JobConfigurer {
+public interface JobConfigurer extends Serializable {
 
     /**
      * Configures the given job with the given file format.

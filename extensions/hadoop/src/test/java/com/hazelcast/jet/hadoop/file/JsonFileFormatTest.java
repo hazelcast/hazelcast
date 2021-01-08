@@ -17,18 +17,17 @@
 package com.hazelcast.jet.hadoop.file;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.io.JsonEOFException;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.hadoop.file.model.User;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.file.FileSources;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 public class JsonFileFormatTest extends BaseFileFormatTest {
 
@@ -66,7 +65,6 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
-    @Ignore("It's an issue, remove this @Ignore once it will be fixed")
     public void shouldReadPrettyPrintedJsonFile() {
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
                                                     .glob("pretty-printed-file-*.json")
@@ -127,6 +125,31 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
                                                     .glob("file-invalid.jsonl")
                                                     .format(FileFormat.json(User.class));
 
-        assertJobFailed(source, JsonEOFException.class, "Unexpected end-of-input");
+        assertJobFailed(source, JsonParseException.class, "Unexpected character");
+    }
+
+    @Test
+    public void shouldReadFileWithRecordsOnMultipleLines() {
+        FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
+                                                    .glob("file-multiline.jsonl")
+                                                    .format(FileFormat.json(User.class));
+
+        assertItemsInSource(source,
+                new User("Frantisek", 7),
+                new User("Ali", 42)
+        );
+    }
+
+    @Test
+    public void shouldFailReadingFileWithRecordsOnMultipleLinesWhenMultilineOff() {
+        assumeThat(useHadoop)
+                .describedAs("multiline(false) has no effect for local connector")
+                .isTrue();
+
+        FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
+                                                    .glob("file-multiline.jsonl")
+                                                    .format(FileFormat.json(User.class).multiline(false));
+
+        assertJobFailed(source, JsonParseException.class, "");
     }
 }

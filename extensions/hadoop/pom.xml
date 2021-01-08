@@ -97,13 +97,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Hadoop brings in jackson 2.8, our jackson support expects 2.10 if present at all -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson.jr.version}</version>
-            <scope>provided</scope>
-        </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-csv</artifactId>

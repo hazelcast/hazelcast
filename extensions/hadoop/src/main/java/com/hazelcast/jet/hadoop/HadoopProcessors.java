@@ -17,6 +17,7 @@
 package com.hazelcast.jet.hadoop;
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.hadoop.impl.ReadHadoopNewApiP;
@@ -24,6 +25,7 @@ import com.hazelcast.jet.hadoop.impl.ReadHadoopOldApiP;
 import com.hazelcast.jet.hadoop.impl.SerializableConfiguration;
 import com.hazelcast.jet.hadoop.impl.WriteHadoopNewApiP;
 import com.hazelcast.jet.hadoop.impl.WriteHadoopOldApiP;
+import com.hazelcast.jet.pipeline.file.FileSources;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.MRJobConfig;
@@ -47,14 +49,35 @@ public final class HadoopProcessors {
      */
     @Nonnull
     public static <K, V, R> ProcessorMetaSupplier readHadoopP(
-            @Nonnull Configuration configuration, @Nonnull BiFunctionEx<K, V, R> projectionFn
+            @Nonnull Configuration configuration,
+            @Nonnull BiFunctionEx<K, V, R> projectionFn
     ) {
         configuration = SerializableConfiguration.asSerializable(configuration);
         if (configuration.get(MRJobConfig.INPUT_FORMAT_CLASS_ATTR) != null) {
-            return new ReadHadoopNewApiP.MetaSupplier<>(configuration, projectionFn);
+            return new ReadHadoopNewApiP.MetaSupplier<>(configuration, ConsumerEx.noop(), projectionFn);
         } else {
             return new ReadHadoopOldApiP.MetaSupplier<>((JobConf) configuration, projectionFn);
         }
+    }
+
+    /**
+     * Returns a supplier of processors for {@link FileSources#files(String)}.
+     *
+     * The configuration happens via provided {@code configureFn} function on the
+     * job coordinator node. This is useful in cases where setting up the
+     * configuration requires access to the server and only the cluster members
+     * have the access.
+     */
+    @Nonnull
+    public static <K, V, R> ProcessorMetaSupplier readHadoopP(
+            @Nonnull ConsumerEx<Configuration> configureFn,
+            @Nonnull BiFunctionEx<K, V, R> projectionFn
+    ) {
+        return new ReadHadoopNewApiP.MetaSupplier<>(
+                SerializableConfiguration.asSerializable(new Configuration()),
+                configureFn,
+                projectionFn
+        );
     }
 
     /**

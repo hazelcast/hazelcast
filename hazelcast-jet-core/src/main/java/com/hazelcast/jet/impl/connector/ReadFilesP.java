@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -29,12 +30,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nonnull;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
@@ -65,6 +66,7 @@ public final class ReadFilesP<T> extends AbstractProcessor {
     private final String directory;
     private final String glob;
     private final boolean sharedFileSystem;
+    private final boolean ignoreFileNotFound;
     private final FunctionEx<? super Path, ? extends Stream<T>> readFileFn;
 
     private LocalFileTraverser<T> traverser;
@@ -73,11 +75,13 @@ public final class ReadFilesP<T> extends AbstractProcessor {
             @Nonnull String directory,
             @Nonnull String glob,
             boolean sharedFileSystem,
+            boolean ignoreFileNotFound,
             @Nonnull FunctionEx<? super Path, ? extends Stream<T>> readFileFn
     ) {
         this.directory = directory;
         this.glob = glob;
         this.sharedFileSystem = sharedFileSystem;
+        this.ignoreFileNotFound = ignoreFileNotFound;
         this.readFileFn = readFileFn;
     }
 
@@ -91,6 +95,7 @@ public final class ReadFilesP<T> extends AbstractProcessor {
                 logger,
                 directory,
                 glob,
+                ignoreFileNotFound,
                 path -> shouldProcessEvent(path, parallelism, processorIndex),
                 readFileFn
         );
@@ -125,11 +130,13 @@ public final class ReadFilesP<T> extends AbstractProcessor {
             @Nonnull String directory,
             @Nonnull String glob,
             boolean sharedFileSystem,
+            boolean ignoreFileNotFound,
             @Nonnull FunctionEx<? super Path, ? extends Stream<T>> readFileFn
     ) {
         checkSerializable(readFileFn, "readFileFn");
 
-        return new MetaSupplier<>(DEFAULT_LOCAL_PARALLELISM, directory, glob, sharedFileSystem, readFileFn);
+        return new MetaSupplier<>(DEFAULT_LOCAL_PARALLELISM, directory, glob, sharedFileSystem,
+                ignoreFileNotFound, readFileFn);
     }
 
     private static final class MetaSupplier<T> implements FileProcessorMetaSupplier<T> {
@@ -140,6 +147,7 @@ public final class ReadFilesP<T> extends AbstractProcessor {
         private final String directory;
         private final String glob;
         private final boolean sharedFileSystem;
+        private final boolean ignoreFileNotFound;
         private final FunctionEx<? super Path, ? extends Stream<T>> readFileFn;
 
         private MetaSupplier(
@@ -147,19 +155,22 @@ public final class ReadFilesP<T> extends AbstractProcessor {
                 String directory,
                 String glob,
                 boolean sharedFileSystem,
+                boolean ignoreFileNotFound,
                 FunctionEx<? super Path, ? extends Stream<T>> readFileFn
         ) {
             this.localParallelism = localParallelism;
             this.directory = directory;
             this.glob = glob;
             this.sharedFileSystem = sharedFileSystem;
+            this.ignoreFileNotFound = ignoreFileNotFound;
             this.readFileFn = readFileFn;
         }
 
         @Nonnull
         @Override
         public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address -> ProcessorSupplier.of(() -> new ReadFilesP<>(directory, glob, sharedFileSystem, readFileFn));
+            return address -> ProcessorSupplier.of(() -> new ReadFilesP<>(directory, glob, sharedFileSystem,
+                    ignoreFileNotFound, readFileFn));
         }
 
         @Override
@@ -169,7 +180,7 @@ public final class ReadFilesP<T> extends AbstractProcessor {
 
         @Override
         public FileTraverser<T> traverser() {
-            return new LocalFileTraverser<>(LOGGER, directory, glob, path -> true, readFileFn);
+            return new LocalFileTraverser<>(LOGGER, directory, glob, ignoreFileNotFound, path -> true, readFileFn);
         }
     }
 
@@ -178,36 +189,45 @@ public final class ReadFilesP<T> extends AbstractProcessor {
         private final ILogger logger;
         private final Path directory;
         private final String glob;
+        private final boolean ignoreFileNotFound;
         private final FunctionEx<? super Path, ? extends Stream<T>> readFileFn;
         private final Traverser<T> delegate;
 
         private DirectoryStream<Path> directoryStream;
         private Stream<T> fileStream;
+        private boolean hasResults;
 
         private LocalFileTraverser(
                 ILogger logger,
                 String directory,
                 String glob,
+                boolean ignoreFileNotFound,
                 Predicate<Path> pathFilterFn,
                 FunctionEx<? super Path, ? extends Stream<T>> readFileFn
         ) {
             this.logger = logger;
             this.directory = Paths.get(directory);
             this.glob = glob;
+            this.ignoreFileNotFound = ignoreFileNotFound;
             this.readFileFn = readFileFn;
             this.delegate = traverseIterator(uncheckCall(this::paths))
-                    .filter(path -> !Files.isDirectory(path) && pathFilterFn.test(path))
+                    .filter(path -> !Files.isDirectory(path))
+                    .peek(path -> hasResults = true)
+                    .filter(path -> pathFilterFn.test(path))
                     .flatMap(this::processFile);
         }
 
         private Iterator<Path> paths() throws IOException {
-            if (directory.toFile().exists()) {
-                directoryStream = Files.newDirectoryStream(directory, glob);
-                return directoryStream.iterator();
-            } else {
-                logger.fine("The directory " + directory + " does not exists. This processor will emit 0 items.");
-                return Collections.emptyIterator();
+            File file = directory.toFile();
+            if (!file.exists()) {
+                throw new JetException("The directory " + directory + " does not exists.");
             }
+            if (!file.isDirectory()) {
+                throw new JetException("The given path (" + directory + ") must point to a directory, not a file.");
+            }
+
+            directoryStream = Files.newDirectoryStream(directory, glob);
+            return directoryStream.iterator();
         }
 
         private Traverser<T> processFile(Path file) {
@@ -224,7 +244,11 @@ public final class ReadFilesP<T> extends AbstractProcessor {
 
         @Override
         public T next() {
-            return delegate.next();
+            T next = delegate.next();
+            if (next == null && !hasResults && !ignoreFileNotFound) {
+                throw new JetException("The glob " + glob + " matches no files in directory " + directory);
+            }
+            return next;
         }
 
         @Override

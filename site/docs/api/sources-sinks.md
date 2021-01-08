@@ -51,12 +51,13 @@ BatchSource<String> source = FileSources.files("/path/to/my/directory")
                                         .build();
 ```
 
-The `path` parameter takes an absolute path. It must point to a
-directory. The directory is not read recursively. The files in the
-directory can be filtered by specifying a glob parameter - a pattern
-with wildcard characters (`*`, `?`). For example, if a folder contains
-log files, named using `YYYY-MM-DD.log` pattern, you can read all the
-files from January 2020 by setting the following parameters:
+The `path` parameter takes an absolute path. It must point to a single
+directory, it must not contain any wildcard characters. The directory is
+not read recursively. The files in the directory can be filtered by
+specifying a glob parameter - a pattern with wildcard characters (`*`,
+`?`). For example, if a folder contains log files, named using
+`YYYY-MM-DD.log` pattern, you can read all the files from January 2020
+by setting the following parameters:
 
 ```java
 BatchSource<String> source = FileSources.files("/var/log/")
@@ -294,6 +295,14 @@ compile 'com.hazelcast.jet:hazelcast-jet-hadoop-all:{jet-version}'
 The basic authentication mechanisms are covered here. For additional
 ways to authenticate see the linked documentation for the services.
 
+Due to performance, the authentication is cached. This may cause issues
+when submitting multiple jobs with different credentials, or even the
+same jobs with new credentials, e.g. after credentials rotation.
+
+You can turn off authentication caching by setting
+`fs.<prefix>.impl.disable.cache` option to `true`. For the list of
+prefixes see the table above.
+
 #### Amazon S3
 
 Provide your AWS access key id and secret key with required access via
@@ -311,8 +320,10 @@ and
 Provide a location of the keyfile via
 `google.cloud.auth.service.account.json.keyfile` source option, using
 `FileSourceBuilder#option` method on the source builder. Note that
-the file must be available on the node where you submit the job and on
-the cluster members.
+the file must be available on all the cluster members.
+
+For additional ways to authenticate see
+[Google Cloud Hadoop connector](https://github.com/GoogleCloudDataproc/hadoop-connectors/blob/master/gcs/CONFIGURATION.md#authentication).
 
 #### Windows Azure Blob Storage
 

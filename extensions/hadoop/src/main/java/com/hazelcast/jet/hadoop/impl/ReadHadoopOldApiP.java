@@ -19,6 +19,7 @@ package com.hazelcast.jet.hadoop.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
@@ -26,6 +27,8 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.hadoop.HadoopSources;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.file.impl.FileTraverser;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
@@ -34,6 +37,7 @@ import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
+import org.apache.hadoop.mapred.InvalidInputException;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 
@@ -51,6 +55,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.hadoop.mapred.Reporter.NULL;
+import static org.apache.hadoop.mapreduce.lib.input.FileInputFormat.INPUT_DIR;
 
 /**
  * See {@link HadoopSources#inputFormat}.
@@ -82,6 +87,23 @@ public final class ReadHadoopOldApiP<K, V, R> extends AbstractProcessor {
         traverser.close();
     }
 
+    private static <K, V> InputSplit[] getSplits(JobConf jobConf, int numSplits) throws IOException {
+        InputFormat<K, V> inputFormat = jobConf.getInputFormat();
+        try {
+            return inputFormat.getSplits(jobConf, numSplits);
+        } catch (InvalidInputException e) {
+            String directory = jobConf.get(INPUT_DIR, "");
+            boolean ignoreFileNotFound = jobConf.getBoolean(HadoopSources.IGNORE_FILE_NOT_FOUND, true);
+            if (ignoreFileNotFound) {
+                ILogger logger = Logger.getLogger(ReadHadoopNewApiP.class);
+                logger.fine("The directory " + directory + " does not exists. This source will emit 0 items.");
+                return new InputSplit[]{};
+            } else {
+                throw new JetException("The input " + directory + " matches no files");
+            }
+        }
+    }
+
     public static class MetaSupplier<K, V, R> extends ReadHdfsMetaSupplierBase<R> {
 
         static final long serialVersionUID = 1L;
@@ -104,8 +126,7 @@ public final class ReadHadoopOldApiP<K, V, R> extends AbstractProcessor {
                 assigned = new HashMap<>();
             } else {
                 int totalParallelism = context.totalParallelism();
-                InputFormat inputFormat = jobConf.getInputFormat();
-                InputSplit[] splits = inputFormat.getSplits(jobConf, totalParallelism);
+                InputSplit[] splits = getSplits(jobConf, totalParallelism);
                 IndexedInputSplit[] indexedInputSplits = new IndexedInputSplit[splits.length];
                 Arrays.setAll(indexedInputSplits, i -> new IndexedInputSplit(i, splits[i]));
 
@@ -124,12 +145,11 @@ public final class ReadHadoopOldApiP<K, V, R> extends AbstractProcessor {
 
         @Override
         public FileTraverser<R> traverser() throws Exception {
-            InputFormat inputFormat = jobConf.getInputFormat();
-            return new HadoopFileTraverser<>(jobConf, asList(inputFormat.getSplits(jobConf, 1)), projectionFn);
+            return new HadoopFileTraverser<>(jobConf, asList(getSplits(jobConf, 1)), projectionFn);
         }
     }
 
-    private static class Supplier<K, V, R> implements ProcessorSupplier {
+    private static final class Supplier<K, V, R> implements ProcessorSupplier {
         static final long serialVersionUID = 1L;
 
         @SuppressFBWarnings("SE_BAD_FIELD")
@@ -137,18 +157,22 @@ public final class ReadHadoopOldApiP<K, V, R> extends AbstractProcessor {
         private final BiFunctionEx<K, V, R> projectionFn;
         private final List<IndexedInputSplit> assignedSplits;
 
-        Supplier(JobConf jobConf, List<IndexedInputSplit> assignedSplits, @Nonnull BiFunctionEx<K, V, R> projectionFn) {
+        private Supplier(
+                @Nonnull JobConf jobConf,
+                @Nonnull List<IndexedInputSplit> assignedSplits,
+                @Nonnull BiFunctionEx<K, V, R> projectionFn
+        ) {
             this.jobConf = jobConf;
             this.projectionFn = projectionFn;
             this.assignedSplits = assignedSplits;
         }
 
-        @Override
         @Nonnull
+        @Override
         public List<Processor> get(int count) {
             List<InputSplit> inputSplits;
             if (shouldSplitOnMembers(jobConf)) {
-                inputSplits = uncheckCall(() -> asList(jobConf.getInputFormat().getSplits(jobConf, count)));
+                inputSplits = uncheckCall(() -> asList(getSplits(jobConf, count)));
             } else {
                 inputSplits = assignedSplits.stream().map(IndexedInputSplit::getOldSplit).collect(toList());
             }

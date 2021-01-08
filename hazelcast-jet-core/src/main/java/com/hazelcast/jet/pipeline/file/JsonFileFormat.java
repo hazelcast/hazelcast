@@ -34,6 +34,7 @@ public class JsonFileFormat<T> implements FileFormat<T> {
     public static final String FORMAT_JSON = "json";
 
     private Class<T> clazz;
+    private boolean multiline = true;
 
     /**
      * Creates {@link JsonFileFormat}. See {@link FileFormat#json} for more
@@ -56,6 +57,28 @@ public class JsonFileFormat<T> implements FileFormat<T> {
     }
 
     /**
+     * Specifies if the Json parser should accept json records spanning
+     * multiple lines.
+     * <p>
+     * The parser handles JSON records spanning multiple lines by default,
+     * but it prevents reading the file in parallel when using the Hadoop
+     * based connector, because the file is split at arbitrary positions.
+     * <p>
+     * Set this to false when reading large JSON files using Hadoop
+     * connector. Each line in the file must contain exactly one JSON record.
+     * <p>
+     * This setting has no effect when Hadoop is not used.
+     *
+     * @param multiline true, if the JSON parser should accept records
+     *                  spanning multiple lines, defaults to true
+     */
+    @Nonnull
+    public JsonFileFormat<T> multiline(boolean multiline) {
+        this.multiline = multiline;
+        return this;
+    }
+
+    /**
      * Returns the class Jet will deserialize data into.
      * Null if not set.
      */
@@ -64,7 +87,16 @@ public class JsonFileFormat<T> implements FileFormat<T> {
         return clazz;
     }
 
-    @Nonnull @Override
+    /**
+     * Specifies if the Json parser should accept json records spanning
+     * multiple lines.
+     */
+    public boolean isMultiline() {
+        return multiline;
+    }
+
+    @Nonnull
+    @Override
     public String format() {
         return FORMAT_JSON;
     }
