@@ -1798,10 +1798,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleCache(Node node) throws Exception {
-        String name = getAttribute(node, "name");
-        CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
-        cacheConfig.setName(name);
-        handleCacheNode(node, cacheConfig);
+        handleCacheNode(node, config.getCacheConfig(getAttribute(node, "name")));
     }
 
     void handleCacheNode(Node node, CacheSimpleConfig cacheConfig) throws Exception {
