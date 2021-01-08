@@ -529,7 +529,7 @@ public class JobRepository {
         return ids;
     }
 
-    Collection<JobRecord> getJobRecords() {
+    public Collection<JobRecord> getJobRecords() {
         return jobRecords.values();
     }
 

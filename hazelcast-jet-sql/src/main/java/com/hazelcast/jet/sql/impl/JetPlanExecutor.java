@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
+import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
@@ -26,14 +28,25 @@ import com.hazelcast.jet.sql.impl.JetPlan.CreateSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.ExecutionPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.SelectOrSinkPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
+import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
+import com.hazelcast.sql.SqlColumnMetadata;
+import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlResultImpl;
+import com.hazelcast.sql.impl.row.HeapRow;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CancellationException;
+import java.util.stream.Stream;
+
+import static java.util.Collections.singletonList;
 
 class JetPlanExecutor {
 
@@ -95,11 +108,16 @@ class JetPlanExecutor {
 
     SqlResult execute(DropJobPlan plan) {
         Job job = jetInstance.getJob(plan.getJobName());
-        if (job == null || job.getStatus().isTerminal()) {
+        boolean jobTerminated = job != null && job.getStatus().isTerminal();
+        if (job == null || jobTerminated) {
             if (plan.isIfExists()) {
                 return SqlResultImpl.createUpdateCountResult(0);
             }
-            throw QueryException.error("Job doesn't exist or already terminated: " + plan.getJobName());
+            if (jobTerminated) {
+                throw QueryException.error("Job already terminated: " + plan.getJobName());
+            } else {
+                throw QueryException.error("Job doesn't exist: " + plan.getJobName());
+            }
         }
         if (plan.getWithSnapshotName() != null) {
             job.cancelAndExportSnapshot(plan.getWithSnapshotName());
@@ -134,7 +152,7 @@ class JetPlanExecutor {
         return SqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(ExecutionPlan plan) {
+    SqlResult execute(SelectOrSinkPlan plan) {
         if (plan.isInsert()) {
             if (plan.isStreaming()) {
                 // TODO [viliam] add test for this situation
@@ -165,5 +183,26 @@ class JetPlanExecutor {
 
             return new JetSqlResultImpl(plan.getQueryId(), queryResultProducer, plan.getRowMetadata());
         }
+    }
+
+    public SqlResult execute(ShowStatementPlan plan) {
+        SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", SqlColumnType.VARCHAR)));
+        Stream<String> rows;
+        if (plan.getShowTarget() == ShowStatementTarget.MAPPINGS) {
+            rows = catalog.getMappingNames().stream();
+        } else {
+            assert plan.getShowTarget() == ShowStatementTarget.JOBS;
+            JetService jetService = ((HazelcastInstanceImpl) jetInstance.getHazelcastInstance()).node.nodeEngine
+                    .getService(JetService.SERVICE_NAME);
+            rows = jetService.getJobRepository().getJobRecords().stream()
+                             .map(record -> record.getConfig().getName())
+                             .filter(Objects::nonNull);
+        }
+
+        return new JetSqlResultImpl(
+                QueryId.create(jetInstance.getHazelcastInstance().getLocalEndpoint().getUuid()),
+                new JetStaticQueryResultProducer(rows.sorted().map(name -> new HeapRow(new Object[]{name})).iterator()),
+                metadata
+        );
     }
 }

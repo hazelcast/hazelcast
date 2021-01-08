@@ -119,6 +119,20 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     /**
+     * Execute a query and wait until it completes. Assert that the returned
+     * rows contain the expected rows, in the given order.
+     *
+     * @param sql          The query
+     * @param expectedRows Expected rows
+     */
+    public static void assertRowsOrdered(String sql, List<Row> expectedRows) {
+        SqlService sqlService = instance().getSql();
+        List<Row> actualRows = new ArrayList<>();
+        sqlService.execute(sql).iterator().forEachRemaining(r -> actualRows.add(new Row(r)));
+        assertThat(actualRows).containsExactlyElementsOf(expectedRows);
+    }
+
+    /**
      * Create DDL for an IMap with the given {@code name}, that uses
      * java serialization for both key and value with the given classes.
      */

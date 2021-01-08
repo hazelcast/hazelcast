@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlOption;
+import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import org.apache.calcite.runtime.CalciteContextException;
@@ -176,6 +177,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
 
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
+        SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_MAPPINGS);
+        SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_JOBS);
 
         // Supported functions
         SUPPORTED_FUNCTIONS = new HashSet<>();

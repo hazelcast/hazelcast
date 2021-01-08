@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static java.util.Arrays.asList;
@@ -92,6 +93,11 @@ public class MappingCatalog implements TableResolver {
         if (!storage.remove(name) && !ifExists) {
             throw QueryException.error("Mapping does not exist: " + name);
         }
+    }
+
+    @Nonnull
+    public List<String> getMappingNames() {
+        return storage.values().stream().map(Mapping::name).collect(Collectors.toList());
     }
 
     @Nonnull

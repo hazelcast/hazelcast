@@ -33,6 +33,8 @@ data: {
       "com.hazelcast.jet.sql.impl.parse.SqlExtendedInsert"
       "com.hazelcast.jet.sql.impl.parse.SqlMappingColumn"
       "com.hazelcast.jet.sql.impl.parse.SqlOption"
+      "com.hazelcast.jet.sql.impl.parse.SqlShowStatement"
+      "com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget"
       "com.hazelcast.sql.impl.QueryException"
       "com.hazelcast.sql.impl.type.QueryDataType"
       "java.util.LinkedHashMap"
@@ -46,11 +48,13 @@ data: {
     keywords: [
       "IF"
       "JOB"
+      "JOBS"
       "MAPPING"
-      "SINK"
-      "SUSPEND"
+      "MAPPINGS"
       "RESUME"
+      "SINK"
       "SNAPSHOT"
+      "SUSPEND"
     ]
 
     # List of keywords from "keywords" section that are not reserved.
@@ -369,11 +373,13 @@ data: {
       # added by Hazelcast
       "EXTERNAL"
       "JOB"
+      "JOBS"
       "MAPPING"
-      "SINK"
-      "SUSPEND"
+      "MAPPINGS"
       "RESUME"
+      "SINK"
       "SNAPSHOT"
+      "SUSPEND"
     ]
 
     # List of non-reserved keywords to add;
@@ -397,6 +403,7 @@ data: {
     statementParserMethods: [
       "SqlAlterJob()"
       "SqlExtendedInsert()"
+      "SqlShowStatement()"
     ]
 
     # List of methods for parsing custom literals.

@@ -20,6 +20,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,6 +36,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class SqlJobManagementTest extends SimpleTestInClusterSupport {
+
+    private static final String COMPLETED_JOB_NAME = "completedJob";
 
     private static SqlService sqlService;
 
@@ -135,12 +138,28 @@ public class SqlJobManagementTest extends SimpleTestInClusterSupport {
     public void when_dropNonExistingJob_then_fail() {
         assertThatThrownBy(() ->
                 sqlService.execute("DROP JOB nonExistingJob"))
-                .hasMessageContaining("Job doesn't exist or already terminated");
+                .hasMessageContaining("Job doesn't exist: nonExistingJob");
     }
 
     @Test
     public void when_dropNonExistingJob_and_ifExists_then_ignore() {
         sqlService.execute("DROP JOB IF EXISTS nonExistingJob");
+    }
+
+    @Test
+    public void when_dropCompletedJob_then_fail() {
+        createCompletedJob();
+
+        assertThatThrownBy(() ->
+                sqlService.execute("DROP JOB " + COMPLETED_JOB_NAME))
+                .hasMessage("Job already terminated: " + COMPLETED_JOB_NAME);
+    }
+
+    @Test
+    public void when_dropCompletedJob_and_ifExists_then_ignore() {
+        createCompletedJob();
+
+        sqlService.execute("DROP JOB IF EXISTS " + COMPLETED_JOB_NAME);
     }
 
     @Test
@@ -224,6 +243,20 @@ public class SqlJobManagementTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void when_suspendResumeCompletedJob_then_fail() {
+        createCompletedJob();
+
+        assertThatThrownBy(() -> sqlService.execute("ALTER JOB " + COMPLETED_JOB_NAME + " SUSPEND"))
+                .hasMessageMatching("Cannot SUSPEND_GRACEFUL job [0-9a-f\\-]{19} because it already has a result: .*");
+
+        assertThatThrownBy(() -> sqlService.execute("ALTER JOB " + COMPLETED_JOB_NAME + " RESUME"))
+                .hasMessage("Job already completed");
+
+        assertThatThrownBy(() -> sqlService.execute("ALTER JOB " + COMPLETED_JOB_NAME + " RESTART"))
+                .hasMessageMatching("Cannot RESTART_GRACEFUL job [0-9a-f\\-]{19} because it already has a result: .*");
+    }
+
+    @Test
     public void when_snapshotExportWithoutOrReplace_then_orReplaceRequired() {
         sqlService.execute("CREATE MAPPING src TYPE TestStream");
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
@@ -271,6 +304,15 @@ public class SqlJobManagementTest extends SimpleTestInClusterSupport {
             sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM src");
             sqlService.execute("DROP JOB testJob");
         }
+    }
+
+    private void createCompletedJob() {
+        TestBatchSqlConnector.create(sqlService, "t", 1);
+        sqlService.execute(javaSerializableMapDdl("m", Integer.class, Integer.class));
+        sqlService.execute("create job " + COMPLETED_JOB_NAME + " as sink into m select v, v from t");
+        Job job = instance().getJob(COMPLETED_JOB_NAME);
+        assertNotNull(job);
+        job.join();
     }
 
     private long countActiveJobs() {

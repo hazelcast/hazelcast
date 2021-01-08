@@ -22,7 +22,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.ExecutionPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.SelectOrSinkPlan;
 import com.hazelcast.jet.sql.impl.schema.Mapping;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -122,7 +122,7 @@ public class JetPlanExecutorTest {
         // given
         QueryId queryId = QueryId.create(UuidUtil.newSecureUUID());
         SqlRowMetadata rowMetadata = rowMetadata();
-        ExecutionPlan plan = new ExecutionPlan(dag, false, false, queryId, rowMetadata, planExecutor, emptyList());
+        SelectOrSinkPlan plan = new SelectOrSinkPlan(dag, false, false, queryId, rowMetadata, planExecutor, emptyList());
 
         given(jetInstance.newJob(dag)).willReturn(job);
 
@@ -140,7 +140,7 @@ public class JetPlanExecutorTest {
         // given
         QueryId queryId = QueryId.create(UuidUtil.newSecureUUID());
         SqlRowMetadata rowMetadata = rowMetadata();
-        ExecutionPlan plan = new ExecutionPlan(dag, false, true, queryId, rowMetadata, planExecutor, emptyList());
+        SelectOrSinkPlan plan = new SelectOrSinkPlan(dag, false, true, queryId, rowMetadata, planExecutor, emptyList());
 
         given(jetInstance.newJob(dag)).willReturn(job);
 
@@ -157,7 +157,7 @@ public class JetPlanExecutorTest {
         // given
         QueryId queryId = QueryId.create(UuidUtil.newSecureUUID());
         SqlRowMetadata rowMetadata = rowMetadata();
-        ExecutionPlan plan = new ExecutionPlan(dag, true, true, queryId, rowMetadata, planExecutor, emptyList());
+        SelectOrSinkPlan plan = new SelectOrSinkPlan(dag, true, true, queryId, rowMetadata, planExecutor, emptyList());
 
         given(jetInstance.newJob(dag)).willReturn(job);
 

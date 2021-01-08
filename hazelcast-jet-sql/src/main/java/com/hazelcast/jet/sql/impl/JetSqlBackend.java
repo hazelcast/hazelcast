@@ -24,7 +24,8 @@ import com.hazelcast.jet.sql.impl.JetPlan.CreateSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.ExecutionPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.SelectOrSinkPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.calcite.parser.JetSqlParser;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
@@ -40,6 +41,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
+import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.jet.sql.impl.schema.Mapping;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
@@ -141,6 +143,7 @@ class JetSqlBackend implements SqlBackend {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:ReturnCount")
     public SqlPlan createPlan(
             OptimizationTask task,
             QueryParseResult parseResult,
@@ -162,6 +165,8 @@ class JetSqlBackend implements SqlBackend {
             return toCreateSnapshotPlan((SqlCreateSnapshot) node);
         } else if (node instanceof SqlDropSnapshot) {
             return toDropSnapshotPlan((SqlDropSnapshot) node);
+        } else if (node instanceof SqlShowStatement) {
+            return toShowStatementPlan((SqlShowStatement) node);
         } else {
             QueryConvertResult convertResult = context.convert(parseResult);
             return toPlan(convertResult.getRel(), convertResult.getFieldNames(), context);
@@ -198,7 +203,8 @@ class JetSqlBackend implements SqlBackend {
         QueryParseResult dmlParseResult =
                 new QueryParseResult(source, parseResult.getParameterRowType(), parseResult.getValidator(), this);
         QueryConvertResult dmlConvertedResult = context.convert(dmlParseResult);
-        ExecutionPlan dmlPlan = toPlan(dmlConvertedResult.getRel(), dmlConvertedResult.getFieldNames(), context);
+        SelectOrSinkPlan dmlPlan = toPlan(dmlConvertedResult.getRel(), dmlConvertedResult.getFieldNames(), context);
+        assert dmlPlan.isInsert();
 
         return new CreateJobPlan(
                 sqlCreateJob.name(),
@@ -225,7 +231,11 @@ class JetSqlBackend implements SqlBackend {
         return new DropSnapshotPlan(sqlNode.getSnapshotName(), sqlNode.isIfExists(), planExecutor);
     }
 
-    private ExecutionPlan toPlan(RelNode rel, List<String> fieldNames, OptimizerContext context) {
+    private SqlPlan toShowStatementPlan(SqlShowStatement sqlNode) {
+        return new ShowStatementPlan(sqlNode.getTarget(), planExecutor);
+    }
+
+    private SelectOrSinkPlan toPlan(RelNode rel, List<String> fieldNames, OptimizerContext context) {
         logger.fine("Before logical opt:\n" + RelOptUtil.toString(rel));
         LogicalRel logicalRel = optimizeLogical(context, rel);
         logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
@@ -238,12 +248,12 @@ class JetSqlBackend implements SqlBackend {
         List<Permission> permissions = extractPermissions(physicalRel);
         if (isInsert) {
             DAG dag = createDag(physicalRel);
-            return new ExecutionPlan(dag, isStreaming, true, null, null, planExecutor, permissions);
+            return new SelectOrSinkPlan(dag, isStreaming, true, null, null, planExecutor, permissions);
         } else {
             QueryId queryId = QueryId.create(nodeEngine.getLocalMember().getUuid());
             DAG dag = createDag(new JetRootRel(physicalRel, nodeEngine.getThisAddress(), queryId));
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema().getTypes());
-            return new ExecutionPlan(dag, isStreaming, false, queryId, rowMetadata, planExecutor, permissions);
+            return new SelectOrSinkPlan(dag, isStreaming, false, queryId, rowMetadata, planExecutor, permissions);
         }
     }
 

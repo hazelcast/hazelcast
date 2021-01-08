@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.validate;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
+import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
@@ -55,6 +56,10 @@ public class JetSqlValidator extends HazelcastSqlValidator {
 
         if (topNode.getKind().belongsTo(SqlKind.DDL)) {
             topNode.validate(this, getEmptyScope());
+            return topNode;
+        }
+
+        if (topNode instanceof SqlShowStatement) {
             return topNode;
         }
 

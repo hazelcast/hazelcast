@@ -15,8 +15,8 @@ client).
 
 If you want to submit a statement that is independent from the client
 session, use the `CREATE JOB` statement. Such a statement will complete
-quickly and let the job running in the cluster. You can also configure
-it to be fault-tolerant.
+quickly and the job will be running in the cluster. You can also
+configure such a job to be fault-tolerant.
 
 ### CREATE JOB Synopsis
 
@@ -70,7 +70,8 @@ SELECT * FROM my_source_topic
 DROP JOB [IF EXISTS] job_name [WITH SNAPSHOT snapshot_name]
 ```
 
-- `IF EXISTS`: return silently if the job doesn't exist
+- `IF EXISTS`: return silently if the job doesn't exist or already
+terminated
 
 - `WITH SNAPSHOT`: export a named snapshot before cancelling the job
   (Enterprise feature)
@@ -83,6 +84,18 @@ ALTER JOB job_name { SUSPEND | RESUME | RESTART }
 
 Get more details on Jet job management in the [Operations
 Guide](/docs/operations/job-management).
+
+### SHOW JOBS
+
+The command shows the names of all existing jobs, sorted by name:
+
+```sql
+SHOW JOBS
+```
+
+The list doesn't include jobs that finished (successfully or with an
+error). On the other hand, it includes jobs submitted through the Java
+API, if they have a name assigned.
 
 ## CREATE/DROP SNAPSHOT
 

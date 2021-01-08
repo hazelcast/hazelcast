@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob.AlterJobOperation;
+import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.Mapping;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -110,26 +111,26 @@ interface JetPlan extends SqlPlan {
         private final String jobName;
         private final JobConfig jobConfig;
         private final boolean ifNotExists;
-        private final ExecutionPlan executionPlan;
+        private final SelectOrSinkPlan dmlPlan;
         private final JetPlanExecutor planExecutor;
 
         CreateJobPlan(
                 String jobName,
                 JobConfig jobConfig,
                 boolean ifNotExists,
-                ExecutionPlan executionPlan,
+                SelectOrSinkPlan dmlPlan,
                 JetPlanExecutor planExecutor
         ) {
             this.jobName = jobName;
             this.jobConfig = jobConfig;
             this.ifNotExists = ifNotExists;
-            this.executionPlan = executionPlan;
+            this.dmlPlan = dmlPlan;
             this.planExecutor = planExecutor;
         }
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            executionPlan.checkPermissions(context);
+            dmlPlan.checkPermissions(context);
         }
 
         @Override
@@ -149,8 +150,8 @@ interface JetPlan extends SqlPlan {
             return ifNotExists;
         }
 
-        public ExecutionPlan getExecutionPlan() {
-            return executionPlan;
+        public SelectOrSinkPlan getExecutionPlan() {
+            return dmlPlan;
         }
     }
 
@@ -276,7 +277,7 @@ interface JetPlan extends SqlPlan {
         }
     }
 
-    class ExecutionPlan implements JetPlan {
+    class SelectOrSinkPlan implements JetPlan {
         private final DAG dag;
         private final boolean isStreaming;
         private final boolean isInsert;
@@ -285,7 +286,7 @@ interface JetPlan extends SqlPlan {
         private final JetPlanExecutor planExecutor;
         private final List<Permission> permissions;
 
-        ExecutionPlan(
+        SelectOrSinkPlan(
                 DAG dag,
                 boolean isStreaming,
                 boolean isInsert,
@@ -333,6 +334,30 @@ interface JetPlan extends SqlPlan {
 
         SqlRowMetadata getRowMetadata() {
             return rowMetadata;
+        }
+    }
+
+    class ShowStatementPlan implements JetPlan {
+
+        private final ShowStatementTarget showTarget;
+        private final JetPlanExecutor planExecutor;
+
+        ShowStatementPlan(ShowStatementTarget showTarget, JetPlanExecutor planExecutor) {
+            this.showTarget = showTarget;
+            this.planExecutor = planExecutor;
+        }
+
+        public ShowStatementTarget getShowTarget() {
+            return showTarget;
+        }
+
+        @Override
+        public SqlResult execute() {
+            return planExecutor.execute(this);
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
         }
     }
 }

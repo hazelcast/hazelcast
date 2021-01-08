@@ -134,6 +134,23 @@ SELECT * FROM information_schema.mappings
 SELECT * FROM information_schema.columns
 ```
 
+## SHOW MAPPINGS
+
+```sql
+SHOW [EXTERNAL] MAPPINGS
+```
+
+- `EXTERNAL`: an optional keyword, doesn't affect the semantics
+
+This command returns the names of existing external mappings. The output
+is a shortcut to this query:
+
+```sql
+SELECT mapping_name AS name
+FROM information_schema.mappings
+ORDER BY name
+```
+
 ## Custom connectors
 
 Implementation of custom SQL connectors is currently not a public API,
