@@ -17,6 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation;
@@ -110,6 +111,70 @@ public class RebalanceBatchStageTest extends PipelineTestSupport {
         execute();
         assertEquals(streamToString(input.stream(), formatFn),
                 streamToString(sinkStreamOf(String.class), identity()));
+    }
+
+    @Test
+    public void when_peekAndRebalanceAndMap_then_dagEdgeDistributed() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        BatchStage<Integer> srcStage = batchStageFromList(input);
+        FunctionEx<Integer, String> formatFn = i -> String.format("%04d-string", i);
+
+        // When
+        BatchStage<String> mapped = srcStage.peek().rebalance().map(formatFn);
+
+        // Then
+        mapped.writeTo(sink);
+        DAG dag = p.toDag();
+        Edge srcToMap = dag.getInboundEdges("map").get(0);
+        assertTrue("Rebalancing should make the edge distributed", srcToMap.isDistributed());
+        assertNull("Didn't rebalance by key, the edge must not be partitioned", srcToMap.getPartitioner());
+        execute();
+        assertEquals(streamToString(input.stream(), formatFn),
+                streamToString(sinkStreamOf(String.class), identity()));
+    }
+
+    @Test
+    public void when_peekAndRebalanceByKeyAndMap_then_dagEdgePartitionedDistributed() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        BatchStage<Integer> srcStage = batchStageFromList(input);
+        FunctionEx<Integer, String> formatFn = i -> String.format("%04d-string", i);
+
+        // When
+        BatchStage<String> mapped = srcStage.peek().rebalance(i -> i).map(formatFn);
+
+        // Then
+        mapped.writeTo(sink);
+        DAG dag = p.toDag();
+        Edge srcToMap = dag.getInboundEdges("map").get(0);
+        assertTrue("Rebalancing should make the edge distributed", srcToMap.isDistributed());
+        assertNotNull("Rebalancing by key, the edge must be partitioned", srcToMap.getPartitioner());
+        execute();
+        assertEquals(streamToString(input.stream(), formatFn),
+                streamToString(sinkStreamOf(String.class), identity()));
+    }
+
+    @Test(expected = JetException.class)
+    public void when_rebalanceAndPeekAndMap_then_dagEdgeDistributed() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        BatchStage<Integer> srcStage = batchStageFromList(input);
+        FunctionEx<Integer, String> formatFn = i -> String.format("%04d-string", i);
+
+        // When
+        BatchStage<String> mapped = srcStage.rebalance().peek().map(formatFn);
+    }
+
+    @Test(expected = JetException.class)
+    public void when_rebalanceByKeyAndPeekAndMap_then_dagEdgePartitionedDistributed() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        BatchStage<Integer> srcStage = batchStageFromList(input);
+        FunctionEx<Integer, String> formatFn = i -> String.format("%04d-string", i);
+
+        // When
+        BatchStage<String> mapped = srcStage.rebalance(i -> i).peek().map(formatFn);
     }
 
     @Test
