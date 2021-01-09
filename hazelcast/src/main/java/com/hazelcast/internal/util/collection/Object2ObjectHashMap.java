@@ -56,6 +56,10 @@ public class Object2ObjectHashMap<K, V> implements Map<K, V> {
         this(MIN_CAPACITY, DEFAULT_LOAD_FACTOR);
     }
 
+    public Object2ObjectHashMap(final boolean shouldAvoidAllocation) {
+        this(MIN_CAPACITY, DEFAULT_LOAD_FACTOR, shouldAvoidAllocation);
+    }
+
     /**
      * Create a map with initiail capacity and load factor.
      *
@@ -535,6 +539,10 @@ public class Object2ObjectHashMap<K, V> implements Map<K, V> {
                 }
             }
 
+            if (Object2ObjectHashMap.this.size > 0) {
+                reset();
+            }
+
             isPositionValid = false;
             throw new IllegalStateException();
         }
@@ -563,8 +571,6 @@ public class Object2ObjectHashMap<K, V> implements Map<K, V> {
      */
     @SuppressFBWarnings("SE_INNER_CLASS")
     public final class KeyIterator extends AbstractIterator implements Iterator<K> {
-        private static final long serialVersionUID = 2381081253326969359L;
-
         @SuppressWarnings("unchecked")
         public K next() {
             findNext();
@@ -577,7 +583,6 @@ public class Object2ObjectHashMap<K, V> implements Map<K, V> {
      */
     @SuppressFBWarnings("SE_INNER_CLASS")
     public final class ValueIterator extends AbstractIterator implements Iterator<V> {
-
         public V next() {
             findNext();
             return unmapNullValue(entries[keyPosition() + 1]);

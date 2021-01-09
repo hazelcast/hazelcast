@@ -99,7 +99,7 @@ public class ExpirySystem {
 
     // this method is overridden
     protected Map<Data, ExpiryMetadata> createExpiryTimeByKeyMap() {
-        return new Object2ObjectHashMap<>();
+        return new Object2ObjectHashMap<>(false);
     }
 
     // this method is overridden
@@ -191,7 +191,7 @@ public class ExpirySystem {
             return;
         }
 
-        ExpiryMetadata expiryMetadata = expireTimeByKey.get(dataKey);
+        ExpiryMetadata expiryMetadata = getExpiryMetadataForExpiryCheck(dataKey, expireTimeByKey);
         if (expiryMetadata == null
                 || expiryMetadata.getMaxIdle() == Long.MAX_VALUE) {
             return;
@@ -207,7 +207,7 @@ public class ExpirySystem {
         if (expireTimeByKey.isEmpty()) {
             return ExpiryReason.NOT_EXPIRED;
         }
-        ExpiryMetadata expiryMetadata = expireTimeByKey.get(key);
+        ExpiryMetadata expiryMetadata = getExpiryMetadataForExpiryCheck(key, expireTimeByKey);
         return hasExpired(expiryMetadata, now, backup);
     }
 
@@ -218,8 +218,8 @@ public class ExpirySystem {
         if (expired) {
             ExpiryReason expiryReason = expiryMetadata.getTtl() > expiryMetadata.getMaxIdle()
                     ? ExpiryReason.IDLENESS : ExpiryReason.TTL;
-            if (expiryReason == ExpiryReason.IDLENESS
-                    && backup && canPrimaryDriveExpiration) {
+            if (backup && canPrimaryDriveExpiration
+                    && expiryReason == ExpiryReason.IDLENESS) {
                 return ExpiryReason.NOT_EXPIRED;
             }
             return expiryReason;
@@ -267,7 +267,17 @@ public class ExpirySystem {
         int scannedKeyCount = 0;
         int expiredKeyCount = 0;
         do {
-            Map.Entry<Data, ExpiryMetadata> entry = cachedExpirationIterator.next();
+            Map.Entry<Data, ExpiryMetadata> entry;
+            try {
+                entry = cachedExpirationIterator.next();
+            } catch (IllegalStateException e) {
+                cachedExpirationIterator = initIteratorOf(expireTimeByKey);
+                if (cachedExpirationIterator.hasNext()) {
+                    entry = cachedExpirationIterator.next();
+                } else {
+                    break;
+                }
+            }
             scannedKeyCount++;
             Data key = entry.getKey();
             ExpiryMetadata expiryMetadata = entry.getValue();
@@ -308,6 +318,12 @@ public class ExpirySystem {
                     , recordStore.getName(), recordStore.getPartitionId(), recordStore.size()
                     , expireTimeByKey.size(), maxScannableKeyCount, scannedKeyCount, expiredKeyCount));
         }
+    }
+
+    // this method is overridden
+    protected ExpiryMetadata getExpiryMetadataForExpiryCheck(Data key,
+                                                             Map<Data, ExpiryMetadata> expireTimeByKey) {
+        return expireTimeByKey.get(key);
     }
 
     // this method is overridden
