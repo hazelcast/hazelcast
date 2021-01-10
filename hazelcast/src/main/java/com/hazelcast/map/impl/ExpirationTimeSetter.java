@@ -30,7 +30,8 @@ public final class ExpirationTimeSetter {
 
     public static long calculateExpirationTime(long ttlMillis, long maxIdleMillis, long now) {
         // select most nearest expiration time
-        return Math.min(ttlMillis, maxIdleMillis) + now;
+        long expiryTime = Math.min(ttlMillis, maxIdleMillis) + now;
+        return expiryTime <= 0 ? Long.MAX_VALUE : expiryTime;
     }
 
     private static long checkedTime(long time) {
