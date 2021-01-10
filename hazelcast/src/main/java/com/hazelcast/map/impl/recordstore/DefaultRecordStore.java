@@ -598,11 +598,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         long now = getNow();
 
         Record record = getRecordOrNull(key, now, backup);
-        if (record == null) {
+        if (record != null && touch) {
+            accessRecord(key, record, now);
+        } else if (record == null) {
             record = loadRecordOrNull(key, backup, callerAddress);
             record = evictIfExpired(key, now, backup) ? null : record;
-        } else if (touch) {
-            accessRecord(key, record, now);
         }
         Object value = record == null ? null : record.getValue();
         value = mapServiceContext.interceptGet(interceptorRegistry, value);
@@ -1126,11 +1126,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     protected Record getRecordOrNull(Data key, long now, boolean backup) {
         Record record = storage.get(key);
-        if (record == null) {
-            return null;
-        } else {
+        if (record != null) {
             return evictIfExpired(key, now, backup) ? null : record;
         }
+
+        return null;
     }
 
     protected void onStore(Record record) {

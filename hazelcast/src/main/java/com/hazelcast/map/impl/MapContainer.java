@@ -160,7 +160,7 @@ public class MapContainer {
                 .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
                 .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
                 .partitionCount(partitionCount)
-                .resultFilter(queryableEntry -> hasNotExpired(queryableEntry)).build();
+                .resultFilter(this::hasNotExpired).build();
     }
 
     /**

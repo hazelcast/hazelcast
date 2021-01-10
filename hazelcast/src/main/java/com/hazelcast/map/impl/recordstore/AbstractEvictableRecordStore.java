@@ -128,7 +128,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
     }
 
-    // TODO do we need to evict entry and publish expiry event, check master
     @Override
     public ExpiryReason hasExpired(Data key, long now, boolean backup) {
         if (expirySystem.isEmpty() || isLocked(key)) {
@@ -137,7 +136,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return expirySystem.hasExpired(key, now, backup);
     }
 
-    // TODO do we need to evict entry and publish expiry event, check master
     @Override
     public boolean isExpired(Data dataKey, long now, boolean backup) {
         return expirySystem.hasExpired(dataKey, now, backup)
