@@ -133,9 +133,6 @@ public class ExpirySystem {
             long ttlMillis = pickTTLMillis(ttl, mapConfig);
             long maxIdleMillis = pickMaxIdleMillis(maxIdle, mapConfig);
             long expirationTime = ExpirationTimeSetter.calculateExpirationTime(ttlMillis, maxIdleMillis, nowOrExpirationTime);
-
-            assert expirationTime >= 0;
-
             addKeyIfExpirableInternal(key, ttlMillis, maxIdleMillis, expirationTime);
         } else {
             addKeyIfExpirableInternal(key, ttl, maxIdle, nowOrExpirationTime);

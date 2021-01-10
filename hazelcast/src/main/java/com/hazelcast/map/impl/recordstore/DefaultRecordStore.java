@@ -869,7 +869,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                   EntryEventType entryEventType, boolean store,
                                   boolean backup) {
         Record record = createRecord(newValue, ttl, maxIdle, now);
-        if (store) {
+        if (mapDataStore != EMPTY_MAP_DATA_STORE && store) {
             putIntoMapStore(record, key, newValue, ttl, maxIdle, now, transactionId);
         }
         storage.put(key, record);
@@ -889,13 +889,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                 boolean store, boolean countAsAccess, boolean backup) {
         updateStatsOnPut(countAsAccess, now);
         record.onUpdate(now);
+
         if (countAsAccess) {
             record.onAccess(now);
         }
-        if (store) {
+
+        if (mapDataStore != EMPTY_MAP_DATA_STORE && store) {
             newValue = putIntoMapStore(record, key, newValue,
                     ttl, maxIdle, now, transactionId);
         }
+
         storage.updateRecordValue(key, record, newValue);
         expirySystem.addKeyIfExpirable(key, ttl, maxIdle, now, false);
 

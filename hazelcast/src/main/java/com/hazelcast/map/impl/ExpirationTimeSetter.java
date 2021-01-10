@@ -30,8 +30,13 @@ public final class ExpirationTimeSetter {
 
     public static long calculateExpirationTime(long ttlMillis, long maxIdleMillis, long now) {
         // select most nearest expiration time
-        long expiryTime = Math.min(ttlMillis, maxIdleMillis) + now;
-        return expiryTime <= 0 ? Long.MAX_VALUE : expiryTime;
+        long expiryTime = Math.min(ttlMillis, maxIdleMillis);
+        if (expiryTime == Long.MAX_VALUE) {
+            return expiryTime;
+        } else {
+            long nextExpiryTime = expiryTime + now;
+            return nextExpiryTime <= 0 ? Long.MAX_VALUE : nextExpiryTime;
+        }
     }
 
     private static long checkedTime(long time) {
@@ -64,6 +69,8 @@ public final class ExpirationTimeSetter {
         if (operationTTLMillis > 0) {
             // if user set operationTTLMillis when calling operation, use it
             return operationTTLMillis;
+        } else if (operationTTLMillis == 0) {
+            return Long.MAX_VALUE;
         } else if (mapConfig.getTimeToLiveSeconds() > 0) {
             // if this is the first creation of entry, try to get TTL from mapConfig
             return SECONDS.toMillis(mapConfig.getTimeToLiveSeconds());
@@ -77,6 +84,8 @@ public final class ExpirationTimeSetter {
         if (operationMaxIdleMillis > 0) {
             // if user set operationMaxIdleMillis when calling operation, use it
             return operationMaxIdleMillis;
+        } else if (operationMaxIdleMillis == 0) {
+            return Long.MAX_VALUE;
         } else if (mapConfig.getMaxIdleSeconds() > 0) {
             // if this is the first creation of entry, try to get max-idle from mapConfig
             return SECONDS.toMillis(mapConfig.getMaxIdleSeconds());
