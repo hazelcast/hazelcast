@@ -128,15 +128,14 @@ public class ExpirySystem {
 
     public void addKeyIfExpirable(Data key, long ttl, long maxIdle,
                                   long nowOrExpirationTime, boolean hasPreCalculatedExpiryTime) {
-
-        if (hasPreCalculatedExpiryTime) {
-            addKeyIfExpirableInternal(key, ttl, maxIdle, nowOrExpirationTime);
-        } else {
+        if (!hasPreCalculatedExpiryTime) {
             MapConfig mapConfig = mapContainer.getMapConfig();
             long ttlMillis = pickTTLMillis(ttl, mapConfig);
             long maxIdleMillis = pickMaxIdleMillis(maxIdle, mapConfig);
             long expirationTime = ExpirationTimeSetter.calculateExpirationTime(ttlMillis, maxIdleMillis, nowOrExpirationTime);
             addKeyIfExpirableInternal(key, ttlMillis, maxIdleMillis, expirationTime);
+        } else {
+            addKeyIfExpirableInternal(key, ttl, maxIdle, nowOrExpirationTime);
         }
     }
 

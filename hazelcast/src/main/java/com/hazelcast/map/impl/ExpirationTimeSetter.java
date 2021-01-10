@@ -29,15 +29,8 @@ public final class ExpirationTimeSetter {
     }
 
     public static long calculateExpirationTime(long ttlMillis, long maxIdleMillis, long now) {
-        // calculate TTL expiration time
-        long ttl = checkedTime(ttlMillis);
-        long ttlExpirationTime = sumForExpiration(ttl, now);
-
-        // calculate MaxIdle expiration time
-        long maxIdle = checkedTime(maxIdleMillis);
-        long maxIdleExpirationTime = sumForExpiration(maxIdle, now);
         // select most nearest expiration time
-        return Math.min(ttlExpirationTime, maxIdleExpirationTime);
+        return Math.min(ttlMillis, maxIdleMillis) + now;
     }
 
     private static long checkedTime(long time) {
@@ -67,32 +60,28 @@ public final class ExpirationTimeSetter {
      * @return TTL value in millis to set to record
      */
     public static long pickTTLMillis(long operationTTLMillis, MapConfig mapConfig) {
-        // if user set operationTTLMillis when calling operation, use it
         if (operationTTLMillis > 0) {
-            return checkedTime(operationTTLMillis);
+            // if user set operationTTLMillis when calling operation, use it
+            return operationTTLMillis;
+        } else if (mapConfig.getTimeToLiveSeconds() > 0) {
+            // if this is the first creation of entry, try to get TTL from mapConfig
+            return SECONDS.toMillis(mapConfig.getTimeToLiveSeconds());
+        } else {
+            // if we are here, entry should live forever
+            return Long.MAX_VALUE;
         }
-
-        // if this is the first creation of entry, try to get TTL from mapConfig
-        if (operationTTLMillis < 0 && mapConfig.getTimeToLiveSeconds() > 0) {
-            return checkedTime(SECONDS.toMillis(mapConfig.getTimeToLiveSeconds()));
-        }
-
-        // if we are here, entry should live forever
-        return Long.MAX_VALUE;
     }
 
     public static long pickMaxIdleMillis(long operationMaxIdleMillis, MapConfig mapConfig) {
-        // if user set operationMaxIdleMillis when calling operation, use it
         if (operationMaxIdleMillis > 0) {
-            return checkedTime(operationMaxIdleMillis);
+            // if user set operationMaxIdleMillis when calling operation, use it
+            return operationMaxIdleMillis;
+        } else if (mapConfig.getMaxIdleSeconds() > 0) {
+            // if this is the first creation of entry, try to get max-idle from mapConfig
+            return SECONDS.toMillis(mapConfig.getMaxIdleSeconds());
+        } else {
+            // if we are here, entry should live forever
+            return Long.MAX_VALUE;
         }
-
-        // if this is the first creation of entry, try to get MaxIdle from mapConfig
-        if (operationMaxIdleMillis < 0 && mapConfig.getMaxIdleSeconds() > 0) {
-            return checkedTime(SECONDS.toMillis(mapConfig.getMaxIdleSeconds()));
-        }
-
-        // if we are here, entry should live forever
-        return Long.MAX_VALUE;
     }
 }
