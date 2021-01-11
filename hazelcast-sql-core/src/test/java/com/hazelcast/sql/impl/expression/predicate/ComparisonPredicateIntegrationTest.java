@@ -255,7 +255,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void testLocalDate_to_LocalDate() {
+    public void testCompare_LocalDate_with_LocalDate() {
         putBiValue(
             LocalDate.of(2020, 12, 30),
             LocalDate.of(2020, 12, 30),
@@ -266,7 +266,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void testLocalTime_to_LocalTime() {
+    public void testCompare_LocalTime_with_LocalTime() {
         putBiValue(
             LocalTime.of(14, 2, 0),
             LocalTime.of(14, 2, 0),
@@ -277,7 +277,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void testLocalTime_to_LocalDate() {
+    public void testCompare_LocalTime_with_LocalDate() {
         putBiValue(
             LocalTime.of(14, 2, 0),
             LocalDate.of(2020, 12, 30),
@@ -298,7 +298,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void testLocalDateTime_to_LocalDateTime() {
+    public void testCompare_LocalDateTime_with_LocalDateTime() {
         putBiValue(
             LocalDateTime.of(2020, 12, 30, 14, 2, 0),
             LocalDateTime.of(2020, 12, 30, 14, 2, 0),
@@ -310,7 +310,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
 
 
     @Test
-    public void testLocalDateTime_to_LocalDate() {
+    public void testCompare_LocalDateTime_with_LocalDate() {
         putBiValue(
             LocalDateTime.of(2020, 12, 30, 14, 2, 0),
             LocalDate.of(2020, 12, 30),
@@ -329,7 +329,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void testLocalDateTimeWithTZ_LocalDateTimeWithTZ() {
+    public void testCompare_LocalDateTimeWithTZ_with_LocalDateTimeWithTZ() {
         putBiValue(
             OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
             OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
@@ -342,7 +342,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void testLocalDateTimeWithTZ_to_LocalDateTime() {
+    public void testCompare_LocalDateTimeWithTZ_with_LocalDateTime() {
         putBiValue(
                 OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
                 LocalDateTime.of(2020, 12, 30, 14, 2, 0), ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.LOCAL_DATE_TIME
@@ -364,15 +364,15 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void testLocalDateTimeWithTZ_to_LocalDate() {
+    public void testCompare_LocalDateTimeWithTZ_with_LocalDate() {
         putBiValue(
                 OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
                 LocalDate.of(2020, 12, 30), ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.LOCAL_DATE
         );
 
         check("field1", "field2",
-                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC).toLocalDateTime()
-                        .compareTo(LocalDate.of(2020, 12, 30).atStartOfDay()));
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 23, 0, 0), ZoneOffset.of("-05"))
+                        .compareTo(ZonedDateTime.of(LocalDate.of(2020, 12, 30).atStartOfDay(), ZoneId.systemDefault()).toOffsetDateTime()));
 
         putBiValue(
                 LocalDate.of(2020, 12, 30),
@@ -381,8 +381,8 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         );
 
         check("field1", "field2",
-                LocalDate.of(2020, 12, 30).atStartOfDay()
-                        .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC).toLocalDateTime()));
+                ZonedDateTime.of(LocalDate.of(2020, 12, 30).atStartOfDay(), ZoneId.systemDefault()).toOffsetDateTime()
+                        .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
     }
 
     private void putBiValue(Object field1, Object field2, ExpressionType<?> type1, ExpressionType<?> type2) {
