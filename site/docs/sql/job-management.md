@@ -102,11 +102,10 @@ API, if they have a name assigned.
 To export a snapshot for a running job use:
 
 ```sql
-CREATE [OR REPLACE] SNAPSHOT snapshot_name FOR JOB job_name
+CREATE OR REPLACE SNAPSHOT snapshot_name FOR JOB job_name
 ```
 
-- `OR REPLACE`: this option is ignored, Jet always replaces the snapshot
-  if it already exists
+- `OR REPLACE`: Jet always replaces the snapshot if it already exists
 
 - `snapshot_name`: the name of the saved snapshot
 
