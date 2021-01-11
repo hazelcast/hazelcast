@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -35,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BiPredicate;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
@@ -150,6 +152,26 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         // Prefix the UUID with some letters and remove dashes so that it doesn't start with
         // a number and is a valid SQL identifier without quoting.
         return "o_" + UuidUtil.newUnsecureUuidString().replace('-', '_');
+    }
+
+    /**
+     * Compares two lists. The lists are expected to contain elements of type
+     * Object[]. Useful for {@link TestSupport#outputChecker(BiPredicate)}.
+     */
+    public static boolean compareRowLists(List<?> expected, List<?> actual) {
+        if (expected.size() != actual.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < expected.size(); i++) {
+            Object[] expectedItem = (Object[]) expected.get(i);
+            Object[] actualItem = (Object[]) actual.get(i);
+            if (!Arrays.equals(expectedItem, actualItem)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

@@ -34,6 +34,12 @@ interface ValidatorResource {
     @BaseMessage("Grouping/aggregations not supported for a streaming query")
     ExInst<SqlValidatorException> streamingAggregationsNotSupported();
 
+    @BaseMessage("Sub-query not supported on the right side of a join")
+    ExInst<SqlValidatorException> joiningSubqueryNotSupported();
+
+    @BaseMessage("VALUES clause not supported on the right side of a join")
+    ExInst<SqlValidatorException> joiningValuesNotSupported();
+
     @BaseMessage("You must use CREATE JOB statement for a streaming DML query")
     ExInst<SqlValidatorException> mustUseCreateJob();
 }

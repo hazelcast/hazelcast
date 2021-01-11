@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.processor;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public abstract class AbstractAsyncTransformUsingServiceP<C, S> extends AbstractTransformUsingServiceP<C, S> {
 
@@ -69,7 +70,7 @@ public abstract class AbstractAsyncTransformUsingServiceP<C, S> extends Abstract
 
     public AbstractAsyncTransformUsingServiceP(
             @Nonnull ServiceFactory<C, S> serviceFactory,
-            @Nonnull C serviceContext,
+            @Nullable C serviceContext,
             int maxConcurrentOps,
             boolean preserveOrder
     ) {
@@ -77,5 +78,4 @@ public abstract class AbstractAsyncTransformUsingServiceP<C, S> extends Abstract
         this.maxConcurrentOps = maxConcurrentOps;
         this.preserveOrder = preserveOrder;
     }
-
 }

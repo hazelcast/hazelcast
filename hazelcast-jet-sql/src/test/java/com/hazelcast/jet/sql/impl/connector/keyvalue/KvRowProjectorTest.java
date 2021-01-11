@@ -16,11 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
+import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTarget;
@@ -70,6 +73,25 @@ public class KvRowProjectorTest {
         Object[] row = projector.project(entry(1, 8));
 
         assertThat(row).isNull();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void test_supplierSerialization() {
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+
+        KvRowProjector.Supplier original = KvRowProjector.supplier(
+                new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
+                new QueryDataType[]{QueryDataType.INT, QueryDataType.INT},
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                (Expression<Boolean>) ConstantExpression.create(Boolean.FALSE, QueryDataType.BOOLEAN),
+                asList(ConstantExpression.create(1, QueryDataType.INT), ConstantExpression.create("2", QueryDataType.INT))
+        );
+
+        KvRowProjector.Supplier serialized = serializationService.toObject(serializationService.toData(original));
+
+        assertThat(serialized).isEqualToComparingFieldByField(original);
     }
 
     private static final class IdentityTarget implements QueryTarget {

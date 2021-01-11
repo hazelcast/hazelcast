@@ -104,7 +104,7 @@ abstract class ValuesReduceRule extends RelOptRule {
             Values values
     ) {
         PlanNodeSchema schema = OptUtils.schema(values.getRowType());
-        RexVisitor<Expression<?>> converter = OptUtils.converter(schema);
+        RexVisitor<Expression<?>> converter = OptUtils.createRexToExpressionVisitor(schema);
 
         RelDataType rowType = null;
 

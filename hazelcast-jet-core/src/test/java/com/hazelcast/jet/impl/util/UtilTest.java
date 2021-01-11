@@ -16,14 +16,19 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.google.common.collect.ImmutableMap;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,6 +43,8 @@ import static com.hazelcast.jet.impl.util.Util.gcd;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.jet.impl.util.Util.roundRobinPart;
 import static com.hazelcast.jet.impl.util.Util.subtractClamped;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertArrayEquals;
@@ -224,5 +231,23 @@ public class UtilTest {
         assertEquals("00:12:22.855", formatJobDuration(742_855));
         assertEquals("106751991167d 07:12:55.807", formatJobDuration(Long.MAX_VALUE));
         assertEquals("-9223372036854775808", formatJobDuration(Long.MIN_VALUE));
+    }
+
+    @Test
+    public void test_assignPartitions() throws UnknownHostException {
+        Map<Address, List<Integer>> partitionsByMember = Util.assignPartitions(
+                new LinkedHashSet<>(asList(new Address("localhost", 5701), new Address("localhost", 5702))),
+                ImmutableMap.of(
+                        new Address("localhost", 5701), singletonList(1),
+                        new Address("localhost", 5702), singletonList(2),
+                        new Address("localhost", 5703), singletonList(3),
+                        new Address("localhost", 5704), singletonList(4),
+                        new Address("localhost", 5705), singletonList(5)
+                )
+        );
+
+        assertEquals(2, partitionsByMember.size());
+        assertEquals(asList(1, 3, 5), partitionsByMember.get(new Address("localhost", 5701)));
+        assertEquals(asList(2, 4), partitionsByMember.get(new Address("localhost", 5702)));
     }
 }

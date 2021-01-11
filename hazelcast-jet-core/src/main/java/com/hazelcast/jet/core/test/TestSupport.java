@@ -40,6 +40,7 @@ import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -91,7 +92,7 @@ import static java.util.stream.Collectors.toMap;
  *     method returned {@code false} and made a progress
  * </ul>
  *
- * The {@code init()} and {@code complete()} methods of {@link
+ * The {@code init()} and {@code close()} methods of {@link
  * ProcessorSupplier} and {@link ProcessorMetaSupplier} are called if you call
  * the {@link #verifyProcessor} using one of these.
  *
@@ -678,8 +679,9 @@ public final class TestSupport {
             List<?> expectedOutput = expected.get(i);
             List<?> actualOutput = actual.get(i);
             if (!outputChecker.test(expectedOutput, actualOutput)) {
-                assertEquals("processor output in mode \"" + mode
-                        + "\" doesn't match", listToString(expectedOutput), listToString(actualOutput));
+                assertEquals("processor output in mode \"" + mode + "\" doesn't match",
+                        "expected:\n" + listToString(expectedOutput),
+                        "actual:\n" + listToString(actualOutput));
             }
         }
     }
@@ -933,7 +935,12 @@ public final class TestSupport {
      */
     private static String listToString(List<?> list) {
         return list.stream()
-                   .map(String::valueOf)
+                   .map(obj -> {
+                       if (obj instanceof Object[]) {
+                           return Arrays.toString((Object[]) obj);
+                       }
+                       return String.valueOf(obj);
+                   })
                    .collect(Collectors.joining("\n"));
     }
 

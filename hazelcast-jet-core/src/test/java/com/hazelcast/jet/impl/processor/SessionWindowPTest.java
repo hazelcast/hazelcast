@@ -120,9 +120,9 @@ public class SessionWindowPTest {
         verifyProcessor(supplier)
                 .input(inbox)
                 .expectOutput(asList(
-                        new KeyedWindowResult<>(1, 22, "a", 3, false),
+                        new KeyedWindowResult<>(1, 22, "a", 3L, false),
                         new Watermark(25),
-                        new KeyedWindowResult<>(30, 50, "a", 3, false)));
+                        new KeyedWindowResult<>(30, 50, "a", 3L, false)));
     }
 
     @Test

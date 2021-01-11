@@ -45,6 +45,10 @@ public final class KvProcessors {
     private KvProcessors() {
     }
 
+    /**
+     * Returns a supplier of processors that convert a map entry represented as
+     *  {@code Entry<Object, Object>} to a row represented as {@code Object[]}.
+     */
     public static ProcessorSupplier rowProjector(
             QueryPath[] paths,
             QueryDataType[] types,
@@ -53,16 +57,22 @@ public final class KvProcessors {
             Expression<Boolean> predicate,
             List<Expression<?>> projection
     ) {
-        return new RowProjectorProcessorSupplier(paths, types, keyDescriptor, valueDescriptor, predicate, projection);
+        return new RowProjectorProcessorSupplier(
+                KvRowProjector.supplier(paths, types, keyDescriptor, valueDescriptor, predicate, projection));
     }
 
+    /**
+     * Returns a supplier of processors that convert a row represented as
+     * {@code Object[]} to an entry represented as {@code Entry<Object,
+     * Object>}.
+     */
     public static ProcessorSupplier entryProjector(
             QueryPath[] paths,
             QueryDataType[] types,
             UpsertTargetDescriptor keyDescriptor,
             UpsertTargetDescriptor valueDescriptor
     ) {
-        return new EntryProjectorProcessorSupplier(paths, types, keyDescriptor, valueDescriptor);
+        return new EntryProjectorProcessorSupplier(KvProjector.supplier(paths, types, keyDescriptor, valueDescriptor));
     }
 
     @SuppressFBWarnings(
@@ -71,14 +81,7 @@ public final class KvProcessors {
     )
     private static final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
-        private QueryPath[] paths;
-        private QueryDataType[] types;
-
-        private QueryTargetDescriptor keyDescriptor;
-        private QueryTargetDescriptor valueDescriptor;
-
-        private Expression<Boolean> predicate;
-        private List<Expression<?>> projection;
+        private KvRowProjector.Supplier projectorSupplier;
 
         private transient InternalSerializationService serializationService;
         private transient Extractors extractors;
@@ -87,22 +90,8 @@ public final class KvProcessors {
         private RowProjectorProcessorSupplier() {
         }
 
-        RowProjectorProcessorSupplier(
-                QueryPath[] paths,
-                QueryDataType[] types,
-                QueryTargetDescriptor keyDescriptor,
-                QueryTargetDescriptor valueDescriptor,
-                Expression<Boolean> predicate,
-                List<Expression<?>> projection
-        ) {
-            this.paths = paths;
-            this.types = types;
-
-            this.keyDescriptor = keyDescriptor;
-            this.valueDescriptor = valueDescriptor;
-
-            this.predicate = predicate;
-            this.projection = projection;
+        RowProjectorProcessorSupplier(KvRowProjector.Supplier projectorSupplier) {
+            this.projectorSupplier = projectorSupplier;
         }
 
         @Override
@@ -117,14 +106,7 @@ public final class KvProcessors {
             List<Processor> processors = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
                 ResettableSingletonTraverser<Object[]> traverser = new ResettableSingletonTraverser<>();
-                KvRowProjector projector = new KvRowProjector(
-                        paths,
-                        types,
-                        keyDescriptor.create(serializationService, extractors, true),
-                        valueDescriptor.create(serializationService, extractors, false),
-                        predicate,
-                        projection
-                );
+                KvRowProjector projector = projectorSupplier.get(serializationService, extractors);
                 Processor processor = new TransformP<Entry<Object, Object>, Object[]>(entry -> {
                     traverser.accept(projector.project(entry));
                     return traverser;
@@ -136,34 +118,12 @@ public final class KvProcessors {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(paths.length);
-            for (QueryPath path : paths) {
-                out.writeObject(path);
-            }
-            out.writeInt(types.length);
-            for (QueryDataType type : types) {
-                out.writeObject(type);
-            }
-            out.writeObject(keyDescriptor);
-            out.writeObject(valueDescriptor);
-            out.writeObject(predicate);
-            out.writeObject(projection);
+            out.writeObject(projectorSupplier);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            paths = new QueryPath[in.readInt()];
-            for (int i = 0; i < paths.length; i++) {
-                paths[i] = in.readObject();
-            }
-            types = new QueryDataType[in.readInt()];
-            for (int i = 0; i < types.length; i++) {
-                types[i] = in.readObject();
-            }
-            keyDescriptor = in.readObject();
-            valueDescriptor = in.readObject();
-            predicate = in.readObject();
-            projection = in.readObject();
+            projectorSupplier = in.readObject();
         }
     }
 
@@ -173,11 +133,7 @@ public final class KvProcessors {
     )
     private static final class EntryProjectorProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
-        private QueryPath[] paths;
-        private QueryDataType[] types;
-
-        private UpsertTargetDescriptor keyDescriptor;
-        private UpsertTargetDescriptor valueDescriptor;
+        private KvProjector.Supplier projectorSupplier;
 
         private transient InternalSerializationService serializationService;
 
@@ -185,17 +141,8 @@ public final class KvProcessors {
         private EntryProjectorProcessorSupplier() {
         }
 
-        EntryProjectorProcessorSupplier(
-                QueryPath[] paths,
-                QueryDataType[] types,
-                UpsertTargetDescriptor keyDescriptor,
-                UpsertTargetDescriptor valueDescriptor
-        ) {
-            this.paths = paths;
-            this.types = types;
-
-            this.keyDescriptor = keyDescriptor;
-            this.valueDescriptor = valueDescriptor;
+        EntryProjectorProcessorSupplier(KvProjector.Supplier projectorSupplier) {
+            this.projectorSupplier = projectorSupplier;
         }
 
         @Override
@@ -209,12 +156,7 @@ public final class KvProcessors {
             List<Processor> processors = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
                 ResettableSingletonTraverser<Object> traverser = new ResettableSingletonTraverser<>();
-                KvProjector projector = new KvProjector(
-                        paths,
-                        types,
-                        keyDescriptor.create(serializationService),
-                        valueDescriptor.create(serializationService)
-                );
+                KvProjector projector = projectorSupplier.get(serializationService);
                 Processor processor = new TransformP<Object[], Object>(row -> {
                     traverser.accept(projector.project(row));
                     return traverser;
@@ -226,30 +168,12 @@ public final class KvProcessors {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(paths.length);
-            for (QueryPath path : paths) {
-                out.writeObject(path);
-            }
-            out.writeInt(types.length);
-            for (QueryDataType type : types) {
-                out.writeObject(type);
-            }
-            out.writeObject(keyDescriptor);
-            out.writeObject(valueDescriptor);
+            out.writeObject(projectorSupplier);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            paths = new QueryPath[in.readInt()];
-            for (int i = 0; i < paths.length; i++) {
-                paths[i] = in.readObject();
-            }
-            types = new QueryDataType[in.readInt()];
-            for (int i = 0; i < types.length; i++) {
-                types[i] = in.readObject();
-            }
-            keyDescriptor = in.readObject();
-            valueDescriptor = in.readObject();
+            projectorSupplier = in.readObject();
         }
     }
 }

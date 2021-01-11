@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -28,8 +29,6 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitor;
 
 import java.util.List;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * Marker interface for physical relations.
@@ -43,15 +42,13 @@ public interface PhysicalRel extends RelNode {
         if (node == null) {
             return null;
         }
-        RexVisitor<Expression<?>> converter = OptUtils.converter(schema);
-        return (Expression<Boolean>) node.accept(converter);
+        RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(schema);
+        return (Expression<Boolean>) node.accept(visitor);
     }
 
     default List<Expression<?>> project(PlanNodeFieldTypeProvider schema, List<RexNode> nodes) {
-        RexVisitor<Expression<?>> converter = OptUtils.converter(schema);
-        return nodes.stream()
-                    .map(node -> (Expression<?>) node.accept(converter))
-                    .collect(toList());
+        RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(schema);
+        return Util.toList(nodes, node -> node.accept(visitor));
     }
 
     @Override

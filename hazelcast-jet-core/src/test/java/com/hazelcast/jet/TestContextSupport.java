@@ -20,16 +20,14 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.jet.core.Inbox;
-import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
+import com.hazelcast.jet.impl.processor.ProcessorWrapper;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
@@ -53,6 +51,10 @@ public final class TestContextSupport {
 
     public static ProcessorMetaSupplier adaptSupplier(ProcessorMetaSupplier processorMetaSupplier) {
         return new TestProcessorMetaSupplierAdapter(processorMetaSupplier);
+    }
+
+    public static ProcessorSupplier adaptSupplier(ProcessorSupplier processorSupplier) {
+        return new TestProcessorSupplierAdapter(processorSupplier);
     }
 
     private static final class TestProcessorMetaSupplierAdapter implements ProcessorMetaSupplier {
@@ -103,16 +105,15 @@ public final class TestContextSupport {
         }
     }
 
-    private static final class TestProcessorAdapter implements Processor {
+    private static final class TestProcessorAdapter extends ProcessorWrapper {
 
-        private final Processor delegate;
-
-        private TestProcessorAdapter(Processor delegate) {
-            this.delegate = delegate;
+        private TestProcessorAdapter(Processor wrapped) {
+            super(wrapped);
         }
 
         @Override
-        public void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
+        protected Context initContext(Context context) {
+            context = super.initContext(context);
             if (context instanceof TestProcessorContext) {
                 TestProcessorContext c = (TestProcessorContext) context;
                 NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.jetInstance().getHazelcastInstance()).node.nodeEngine;
@@ -121,42 +122,7 @@ public final class TestContextSupport {
                         c.processingGuarantee(), c.localParallelism(), c.memberIndex(), c.memberCount(),
                         new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService());
             }
-            delegate.init(outbox, context);
-        }
-
-        @Override
-        public boolean isCooperative() {
-            return delegate.isCooperative();
-        }
-
-        @Override
-        public void process(int ordinal, @Nonnull Inbox inbox) {
-            delegate.process(ordinal, inbox);
-        }
-
-        @Override
-        public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-            return delegate.tryProcessWatermark(watermark);
-        }
-
-        @Override
-        public boolean tryProcess() {
-            return delegate.tryProcess();
-        }
-
-        @Override
-        public boolean completeEdge(int ordinal) {
-            return delegate.completeEdge(ordinal);
-        }
-
-        @Override
-        public boolean complete() {
-            return delegate.complete();
-        }
-
-        @Override
-        public void close() throws Exception {
-            delegate.close();
+            return context;
         }
     }
 }

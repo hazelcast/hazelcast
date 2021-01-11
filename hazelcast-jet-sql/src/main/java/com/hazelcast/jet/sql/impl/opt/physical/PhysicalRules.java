@@ -32,6 +32,7 @@ public final class PhysicalRules {
                 ProjectPhysicalRule.INSTANCE,
                 FullScanPhysicalRule.INSTANCE,
                 AggregatePhysicalRule.INSTANCE,
+                JoinPhysicalRule.INSTANCE,
                 ValuesPhysicalRule.INSTANCE,
                 InsertPhysicalRule.INSTANCE,
                 new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)

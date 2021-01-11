@@ -16,16 +16,28 @@
 
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
+import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import java.io.IOException;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.sql.impl.type.converter.ToConverters.getToConverter;
 
+/**
+ * A utility to convert a row represented as {@code Object[]} to a
+ * key-value entry represented as {@code Entry<Object, Object>}.
+ * <p>
+ * {@link KvRowProjector} does the reverse.
+ */
 class KvProjector {
 
     private final QueryDataType[] types;
@@ -71,5 +83,76 @@ class KvProjector {
             injectors[i].set(value);
         }
         return entry(keyTarget.conclude(), valueTarget.conclude());
+    }
+
+    public static Supplier supplier(
+            QueryPath[] paths,
+            QueryDataType[] types,
+            UpsertTargetDescriptor keyDescriptor,
+            UpsertTargetDescriptor valueDescriptor
+    ) {
+        return new Supplier(paths, types, keyDescriptor, valueDescriptor);
+    }
+
+    public static final class Supplier implements DataSerializable {
+
+        private QueryPath[] paths;
+        private QueryDataType[] types;
+
+        private UpsertTargetDescriptor keyDescriptor;
+        private UpsertTargetDescriptor valueDescriptor;
+
+        @SuppressWarnings("unused")
+        private Supplier() {
+        }
+
+        private Supplier(
+                QueryPath[] paths,
+                QueryDataType[] types,
+                UpsertTargetDescriptor keyDescriptor,
+                UpsertTargetDescriptor valueDescriptor
+        ) {
+            this.paths = paths;
+            this.types = types;
+            this.keyDescriptor = keyDescriptor;
+            this.valueDescriptor = valueDescriptor;
+        }
+
+        public KvProjector get(InternalSerializationService serializationService) {
+            return new KvProjector(
+                    paths,
+                    types,
+                    keyDescriptor.create(serializationService),
+                    valueDescriptor.create(serializationService)
+            );
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(paths.length);
+            for (QueryPath path : paths) {
+                out.writeObject(path);
+            }
+            out.writeInt(types.length);
+            for (QueryDataType type : types) {
+                out.writeObject(type);
+            }
+            out.writeObject(keyDescriptor);
+            out.writeObject(valueDescriptor);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            paths = new QueryPath[in.readInt()];
+            for (int i = 0; i < paths.length; i++) {
+                paths[i] = in.readObject();
+            }
+            types = new QueryDataType[in.readInt()];
+            for (int i = 0; i < types.length; i++) {
+                types[i] = in.readObject();
+            }
+            keyDescriptor = in.readObject();
+            valueDescriptor = in.readObject();
+        }
     }
 }

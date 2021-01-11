@@ -26,6 +26,7 @@ import com.hazelcast.sql.impl.row.Row;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public final class ExpressionUtil {
@@ -57,6 +58,24 @@ public final class ExpressionUtil {
             }
             return result;
         };
+    }
+
+    /**
+     * Concatenates {@code leftRow} and {@code rightRow} into one, evaluates
+     * the {@code predicate} on it, and if the predicate passed, returns the
+     * joined row; returns {@code null} if the predicate didn't pass.
+     */
+    @Nullable
+    public static Object[] join(
+            @Nonnull Object[] leftRow,
+            @Nonnull Object[] rightRow,
+            @Nonnull Expression<Boolean> predicate
+    ) {
+        Object[] joined = Arrays.copyOf(leftRow, leftRow.length + rightRow.length);
+        System.arraycopy(rightRow, 0, joined, leftRow.length, rightRow.length);
+
+        Row row = new HeapRow(joined);
+        return Boolean.TRUE.equals(evaluate(predicate, row)) ? joined : null;
     }
 
     /**

@@ -22,19 +22,23 @@ import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
+import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
+import org.apache.calcite.sql.SqlJoin;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
+import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
 import static org.apache.calcite.sql.SqlKind.AGGREGATE;
+import static org.apache.calcite.sql.SqlKind.VALUES;
 
 public class JetSqlValidator extends HazelcastSqlValidator {
 
@@ -127,5 +131,24 @@ public class JetSqlValidator extends HazelcastSqlValidator {
         FindStreamingTablesVisitor visitor = new FindStreamingTablesVisitor();
         node.accept(visitor);
         return visitor.found;
+    }
+
+    @Override
+    protected void validateJoin(SqlJoin join, SqlValidatorScope scope) {
+        super.validateJoin(join, scope);
+
+        // the right side of a join must not be a subquery or a VALUES clause
+        join.getRight().accept(new SqlBasicVisitor<Void>() {
+            @Override
+            public Void visit(SqlCall call) {
+                if (call.getKind() == SqlKind.SELECT) {
+                    throw newValidationError(join, RESOURCE.joiningSubqueryNotSupported());
+                } else if (call.getKind() == VALUES) {
+                    throw newValidationError(join, RESOURCE.joiningValuesNotSupported());
+                }
+
+                return call.getOperator().acceptCall(this, call);
+            }
+        });
     }
 }

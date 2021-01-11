@@ -98,6 +98,6 @@ public class TestEmptyStreamSqlConnector implements SqlConnector {
             @Nonnull List<Expression<?>> projection
     ) {
         String vertexName = "TestEmptyStream[" + table.getSchemaName() + "." + table.getSqlName() + ']';
-        return dag.newVertex(vertexName, () -> new MockP().streaming());
+        return dag.newUniqueVertex(vertexName, () -> new MockP().streaming());
     }
 }

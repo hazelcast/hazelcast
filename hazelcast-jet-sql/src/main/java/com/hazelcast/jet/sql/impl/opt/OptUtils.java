@@ -223,7 +223,7 @@ public final class OptUtils {
         return new PlanNodeSchema(extractFieldTypes(rowType));
     }
 
-    public static RexVisitor<Expression<?>> converter(PlanNodeFieldTypeProvider schema) {
+    public static RexVisitor<Expression<?>> createRexToExpressionVisitor(PlanNodeFieldTypeProvider schema) {
         // TODO: pass actual parameter metadata, see JetSqlCoreBackendImpl#execute
         return new RexToExpressionVisitor(schema, new QueryParameterMetadata());
     }

@@ -19,8 +19,10 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 import com.hazelcast.sql.impl.calcite.opt.logical.FilterIntoScanLogicalRule;
 import com.hazelcast.sql.impl.calcite.opt.logical.ProjectIntoScanLogicalRule;
 import org.apache.calcite.rel.rules.FilterAggregateTransposeRule;
+import org.apache.calcite.rel.rules.FilterJoinRule.FilterIntoJoinRule;
 import org.apache.calcite.rel.rules.FilterMergeRule;
 import org.apache.calcite.rel.rules.FilterProjectTransposeRule;
+import org.apache.calcite.rel.rules.JoinProjectTransposeRule;
 import org.apache.calcite.rel.rules.ProjectFilterTransposeRule;
 import org.apache.calcite.rel.rules.ProjectMergeRule;
 import org.apache.calcite.rel.rules.ProjectRemoveRule;
@@ -41,6 +43,8 @@ public final class LogicalRules {
                 FilterMergeRule.INSTANCE,
                 FilterProjectTransposeRule.INSTANCE,
                 FilterIntoScanLogicalRule.INSTANCE,
+                FilterAggregateTransposeRule.INSTANCE,
+                FilterIntoJoinRule.FILTER_ON_JOIN,
                 ReduceExpressionsRule.FILTER_INSTANCE,
 
                 // Project rules
@@ -56,7 +60,11 @@ public final class LogicalRules {
 
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
-                FilterAggregateTransposeRule.INSTANCE,
+
+                // Join
+                JoinLogicalRule.INSTANCE,
+                JoinProjectTransposeRule.RIGHT_PROJECT_INCLUDE_OUTER,
+                ReduceExpressionsRule.JOIN_INSTANCE,
 
                 // Value rules
                 ValuesLogicalRule.INSTANCE,

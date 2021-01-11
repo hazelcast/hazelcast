@@ -29,7 +29,6 @@ import javax.annotation.Nonnull;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 
-
 /**
  * Base class for processor wrappers. Delegates all calls to the wrapped
  * processor.
@@ -60,7 +59,13 @@ public abstract class ProcessorWrapper implements Processor {
 
     @Override
     public final void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
+        context = initContext(context);
         outbox = wrapOutbox(outbox);
+        wrapped.init(outbox, context);
+        initWrapper(outbox, context);
+    }
+
+    protected Context initContext(Context context) {
         // Pass a logger with real class name to processor
         // We do this only if context is ProcCtx (that is, not for tests where TestProcessorContext can be used
         // and also other objects could be mocked or null, such as jetInstance())
@@ -73,8 +78,7 @@ public abstract class ProcessorWrapper implements Processor {
                     newLogger, c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(), c.processingGuarantee(),
                     c.localParallelism(), c.memberIndex(), c.memberCount(), c.tempDirectories(), c.serializationService());
         }
-        wrapped.init(outbox, context);
-        initWrapper(outbox, context);
+        return context;
     }
 
     protected Outbox wrapOutbox(Outbox outbox) {

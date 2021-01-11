@@ -37,6 +37,7 @@ import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -101,7 +102,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
      */
     private AsyncTransformUsingServiceUnorderedP(
             @Nonnull ServiceFactory<C, S> serviceFactory,
-            @Nonnull C serviceContext,
+            @Nullable C serviceContext,
             int maxConcurrentOps,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn,
             @Nonnull Function<? super T, ? extends K> extractKeyFn

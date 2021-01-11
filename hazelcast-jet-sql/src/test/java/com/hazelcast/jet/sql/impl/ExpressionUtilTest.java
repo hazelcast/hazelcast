@@ -21,16 +21,69 @@ import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.FunctionalPredicateExpression;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import org.junit.Test;
 
 import java.util.List;
 
+import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ExpressionUtilTest {
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void test_join_1() {
+        test_join(
+                (Expression<Boolean>) ConstantExpression.create(true, BOOLEAN),
+                new Object[]{1},
+                new Object[]{2},
+                new Object[]{1, 2});
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void test_join_2() {
+        test_join(
+                (Expression<Boolean>) ConstantExpression.create(true, BOOLEAN),
+                new Object[]{1},
+                new Object[]{2},
+                new Object[]{1, 2});
+    }
+
+    @Test
+    public void test_join_3() {
+        test_join(
+                ComparisonPredicate.create(
+                        ColumnExpression.create(0, INT),
+                        ColumnExpression.create(1, INT),
+                        ComparisonMode.GREATER_THAN),
+                new Object[]{1},
+                new Object[]{2},
+                null);
+    }
+
+    @Test
+    public void test_join_4() {
+        test_join(
+                ComparisonPredicate.create(
+                        ColumnExpression.create(0, INT),
+                        ColumnExpression.create(1, INT),
+                        ComparisonMode.LESS_THAN),
+                new Object[]{2},
+                new Object[]{1},
+                null);
+    }
+
+    private void test_join(Expression<Boolean> predicate, Object[] leftRow, Object[] rightRow, Object[] expected) {
+        Object[] joined = ExpressionUtil.join(leftRow, rightRow, predicate);
+
+        assertThat(joined).isEqualTo(expected);
+    }
 
     @Test
     public void test_evaluate() {

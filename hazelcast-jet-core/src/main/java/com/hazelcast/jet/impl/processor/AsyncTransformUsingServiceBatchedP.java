@@ -24,6 +24,7 @@ import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -43,7 +44,7 @@ import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithService.supp
  * @param <R> emitted item type
  */
 public final class AsyncTransformUsingServiceBatchedP<C, S, T, R>
-        extends AsyncTransformUsingServiceOrderedP<C, S, List<T>, R> {
+        extends AsyncTransformUsingServiceOrderedP<C, S, List<T>, Traverser<R>, R> {
 
     private final int maxBatchSize;
 
@@ -52,12 +53,12 @@ public final class AsyncTransformUsingServiceBatchedP<C, S, T, R>
      */
     private AsyncTransformUsingServiceBatchedP(
             @Nonnull ServiceFactory<C, S> serviceFactory,
-            @Nonnull C serviceContext,
+            @Nullable C serviceContext,
             int maxConcurrentOps,
             int maxBatchSize,
             @Nonnull BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<Traverser<R>>> callAsyncFn
     ) {
-        super(serviceFactory, serviceContext, maxConcurrentOps, callAsyncFn);
+        super(serviceFactory, serviceContext, maxConcurrentOps, callAsyncFn, (i, r) -> r);
         this.maxBatchSize = maxBatchSize;
     }
 

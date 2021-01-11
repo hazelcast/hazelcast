@@ -107,8 +107,7 @@ public class AllTypesSqlConnector implements SqlConnector {
         return false;
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
@@ -120,8 +119,7 @@ public class AllTypesSqlConnector implements SqlConnector {
         return FIELD_LIST;
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
@@ -137,8 +135,7 @@ public class AllTypesSqlConnector implements SqlConnector {
         return true;
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public Vertex fullScanReader(
             @Nonnull DAG dag,
             @Nonnull Table table,
@@ -148,7 +145,7 @@ public class AllTypesSqlConnector implements SqlConnector {
         Object[] row = ExpressionUtil.evaluate(predicate, projection, VALUES);
         BatchSource<Object[]> source = TestSources.items(singletonList(row));
         ProcessorMetaSupplier pms = ((BatchSourceTransform<Object[]>) source).metaSupplier;
-        return dag.newVertex(table.toString(), pms);
+        return dag.newUniqueVertex(table.toString(), pms);
     }
 
     public static class AllTypesTable extends JetTable {

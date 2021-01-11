@@ -17,7 +17,10 @@
 package com.hazelcast.jet.sql.impl.connector;
 
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -27,6 +30,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * An API to bridge Jet connectors and SQL. Allows the use of a Jet
@@ -184,7 +188,7 @@ public interface SqlConnector {
 
     /**
      * Creates a {@link Table} object with the given fields. Should return
-     * quickly; specificially it should not attempt to connect to the remote
+     * quickly; specifically it should not attempt to connect to the remote
      * service.
      * <p>
      * Jet calls this method for each statement execution and for each mapping.
@@ -213,10 +217,11 @@ public interface SqlConnector {
 
     /**
      * Returns a supplier for a source vertex reading the input according to
-     * the projection/predicate. The output type of the source is Object[].
+     * the {@code projection}/{@code predicate}. The output type of the source
+     * is Object[].
      * <p>
      * The field indexes in the predicate and projection refer to the
-     * zero-based indexes of the original fields of the {code table}. For
+     * zero-based indexes of the original fields of the {@code table}. For
      * example, if the table has fields {@code a, b, c} and the query is:
      * <pre>{@code
      *     SELECT b FROM t WHERE c=10
@@ -238,7 +243,68 @@ public interface SqlConnector {
     ) {
         assert !supportsFullScanReader();
         throw new UnsupportedOperationException("Full scan not supported for " + typeName());
+    }
 
+    /**
+     * Returns whether this connector supports the {@link #nestedLoopReader}.
+     * The default implementation returns {@code false}.
+     */
+    default boolean supportsNestedLoopReader() {
+        return false;
+    }
+
+    /**
+     * Creates a vertex to read the given {@code table} as a part of a
+     * nested-loop join. The vertex will receive items from the left side of
+     * the join as {@code Object[]}. For each record it must read the matching
+     * records from the {@code table}, according to the {@code joinInfo} and
+     * emit joined records, again as {@code Object[]}. The length of the output
+     * array is {@code inputRecordLength + projection.size()}. See {@link
+     * ExpressionUtil#join} for a utility to create output records.
+     * <p>
+     * The given {@code predicate} and {@code projection} apply only to the
+     * records of the {@code table} (i.e. of the right-side of the join, before
+     * joining). For example, if the table has fields {@code a, b, c} and the
+     * query is:
+     *
+     * <pre>{@code
+     *     SELECT l.v, r.b
+     *     FROM l
+     *     JOIN r ON l.v = r.b
+     *     WHERE r.c=10
+     * }</pre>
+     *
+     * then the projection will be <code>{1}</code> and the predicate will be
+     * <code>{2}=10</code>.
+     * <p>
+     * The predicates in the {@code joinInfo} apply to the joined record.
+     * <p>
+     * The implementation should do these steps for each received row:
+     * <ul>
+     *     <li>find rows in {@code table} matching the {@code predicate}
+     *     <li>join all these rows using {@link ExpressionUtil#join} with the
+     *         received row
+     *     <li>if no rows matched and {@code joinInfo.isLeftOuter() == true)},
+     *         the input row from the left side should be padded with {@code
+     *         null}s and returned
+     * </ul>
+     *
+     * @param table      the table object
+     * @param predicate  SQL expression to filter the rows
+     * @param projection the list of fields to return
+     * @param joinInfo   {@link JetJoinInfo}
+     * @return {@link VertexWithInputConfig}
+     */
+    @Nonnull
+    default VertexWithInputConfig nestedLoopReader(
+            @Nonnull DAG dag,
+            @Nonnull Table table,
+            @Nullable Expression<Boolean> predicate,
+            @Nonnull List<Expression<?>> projection,
+            @Nonnull JetJoinInfo joinInfo
+    ) {
+        assert !supportsNestedLoopReader();
+        throw new UnsupportedOperationException("Join not supported for " + typeName());
     }
 
     /**
@@ -267,5 +333,35 @@ public interface SqlConnector {
     ) {
         assert !supportsSink();
         throw new UnsupportedOperationException("Sink not supported for " + typeName());
+    }
+
+    /**
+     * Definition of a vertex along with a function to configure the input
+     * edge(s).
+     */
+    class VertexWithInputConfig {
+
+        private final Vertex vertex;
+        private final Consumer<Edge> configureEdgeFn;
+
+        /**
+         * Creates a Vertex with default edge config (local, unicast).
+         */
+        public VertexWithInputConfig(Vertex vertex) {
+            this(vertex, null);
+        }
+
+        public VertexWithInputConfig(Vertex vertex, Consumer<Edge> configureEdgeFn) {
+            this.vertex = vertex;
+            this.configureEdgeFn = configureEdgeFn;
+        }
+
+        public Vertex vertex() {
+            return vertex;
+        }
+
+        public Consumer<Edge> configureEdgeFn() {
+            return configureEdgeFn;
+        }
     }
 }

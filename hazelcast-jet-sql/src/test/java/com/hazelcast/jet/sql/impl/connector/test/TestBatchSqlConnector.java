@@ -208,7 +208,7 @@ public class TestBatchSqlConnector implements SqlConnector {
                 .collect(toList());
         BatchSource<Object[]> source = TestSources.itemsDistributed(items);
         ProcessorMetaSupplier pms = ((BatchSourceTransform<Object[]>) source).metaSupplier;
-        return dag.newVertex(table.toString(), pms);
+        return dag.newUniqueVertex(table.toString(), pms);
     }
 
     public static class TestValuesTable extends JetTable {

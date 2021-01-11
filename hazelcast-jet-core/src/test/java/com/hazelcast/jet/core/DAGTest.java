@@ -56,6 +56,16 @@ public class DAGTest {
     }
 
     @Test
+    public void when_newUniqueVertex_then_hasIt() {
+        DAG dag = new DAG();
+        Vertex a0 = dag.newUniqueVertex("a", PROCESSOR_SUPPLIER);
+        assertSame(a0, dag.getVertex("a"));
+
+        Vertex a1 = dag.newUniqueVertex("a", PROCESSOR_SUPPLIER);
+        assertSame(a1, dag.getVertex("a-2"));
+    }
+
+    @Test
     public void when_connectKnownVertices_then_success() {
         DAG dag = new DAG();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);

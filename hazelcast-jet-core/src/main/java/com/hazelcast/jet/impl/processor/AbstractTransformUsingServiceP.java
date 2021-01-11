@@ -20,6 +20,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class AbstractTransformUsingServiceP<C, S> extends AbstractProcessor {
 
@@ -29,7 +30,7 @@ public class AbstractTransformUsingServiceP<C, S> extends AbstractProcessor {
     // package-visible for test
     S service;
 
-    public AbstractTransformUsingServiceP(@Nonnull ServiceFactory<C, S> serviceFactory, @Nonnull C serviceContext) {
+    public AbstractTransformUsingServiceP(@Nonnull ServiceFactory<C, S> serviceFactory, @Nullable C serviceContext) {
         this.serviceContext = serviceContext;
         this.serviceFactory = serviceFactory;
     }

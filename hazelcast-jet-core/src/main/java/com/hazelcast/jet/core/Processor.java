@@ -166,8 +166,11 @@ public interface Processor {
      * <p>
      * If the method returns with items still present in the inbox, it will be
      * called again before proceeding to call any other method (except for
-     * {@link #snapshotCommitFinish}). There is at least one item in the inbox
-     * when this method is called.
+     * {@link #snapshotCommitFinish}), with the same items. In other words, no
+     * more items are added to the inbox if the previous call didn't return an
+     * empty inbox.
+     * <p>
+     * There is at least one item in the inbox when this method is called.
      * <p>
      * The default implementation throws an exception, it is suitable for source
      * processors.
@@ -384,9 +387,10 @@ public interface Processor {
      * #saveToSnapshot()}. This method may emit items to the outbox.
      * <p>
      * If this method returns with items still present in the inbox, it will
-     * be called again before proceeding to call any other methods. It is never
-     * called with an empty inbox. After all items are processed, {@link
-     * #finishSnapshotRestore()} is called.
+     * be called again before proceeding to call any other methods. No more
+     * items are added to the inbox if the method didn't return with an empty
+     * inbox. It is never called with an empty inbox. After all items are
+     * processed, {@link #finishSnapshotRestore()} is called.
      * <p>
      * If a transaction ID saved in {@link #snapshotCommitPrepare()} is
      * restored, this method should commit that transaction. If the processor

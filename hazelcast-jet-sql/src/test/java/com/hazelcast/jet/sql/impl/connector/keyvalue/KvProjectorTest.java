@@ -16,6 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -61,6 +64,22 @@ public class KvProjectorTest {
 
         assertThat(entry.getKey()).isEqualTo(2);
         assertThat(entry.getValue()).isEqualTo(4);
+    }
+
+    @Test
+    public void test_supplierSerialization() {
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+
+        KvProjector.Supplier original = KvProjector.supplier(
+                new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
+                new QueryDataType[]{QueryDataType.INT, QueryDataType.VARCHAR},
+                PrimitiveUpsertTargetDescriptor.INSTANCE,
+                PrimitiveUpsertTargetDescriptor.INSTANCE
+        );
+
+        KvProjector.Supplier serialized = serializationService.toObject(serializationService.toData(original));
+
+        assertThat(serialized).isEqualToComparingFieldByField(original);
     }
 
     private static final class MultiplyingTarget implements UpsertTarget {

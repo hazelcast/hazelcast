@@ -219,8 +219,8 @@ public class RoutingPolicyTest extends SimpleTestInClusterSupport {
         executeAndPeel(instance().newJob(dag));
     }
 
-    private Vertex consumer(int count) {
-        return new Vertex("consumer", consumerSup).localParallelism(count);
+    private Vertex consumer(int localParallelism) {
+        return new Vertex("consumer", consumerSup).localParallelism(localParallelism);
     }
 
     private static void assertDisjoint(Collection<Object> items, Collection<Object> items2) {
