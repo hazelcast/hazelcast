@@ -34,6 +34,7 @@ import java.util.Map;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_GLOB;
+import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_IGNORE_FILE_NOT_FOUND;
 import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_PATH;
 import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_SHARED_FILE_SYSTEM;
 import static java.util.Map.Entry;
@@ -101,9 +102,15 @@ abstract class MetadataResolver<T> {
             builder.sharedFileSystem(Boolean.parseBoolean(sharedFileSystem));
         }
 
+        String ignoreFileNotFound = (String) options.get(OPTION_IGNORE_FILE_NOT_FOUND);
+        if (ignoreFileNotFound != null) {
+            builder.ignoreFileNotFound(Boolean.parseBoolean(ignoreFileNotFound));
+        }
+
         for (Entry<String, ?> entry : options.entrySet()) {
             String key = entry.getKey();
-            if (OPTION_PATH.equals(key) || OPTION_GLOB.equals(key) || OPTION_SHARED_FILE_SYSTEM.equals(key)) {
+            if (OPTION_PATH.equals(key) || OPTION_GLOB.equals(key) || OPTION_SHARED_FILE_SYSTEM.equals(key) ||
+                    OPTION_IGNORE_FILE_NOT_FOUND.equals(key)) {
                 continue;
             }
 

@@ -39,6 +39,7 @@ public class FileSqlConnector implements SqlConnector {
     public static final String OPTION_PATH = "path";
     public static final String OPTION_GLOB = "glob";
     public static final String OPTION_SHARED_FILE_SYSTEM = "sharedFileSystem";
+    public static final String OPTION_IGNORE_FILE_NOT_FOUND = "ignoreFileNotFound";
     public static final String OPTION_OPTIONS = "options";
 
     static final FileSqlConnector INSTANCE = new FileSqlConnector();

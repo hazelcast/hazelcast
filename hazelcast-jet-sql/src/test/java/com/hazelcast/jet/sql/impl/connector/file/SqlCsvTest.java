@@ -32,6 +32,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.CSV_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_FORMAT;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlCsvTest extends SqlTestSupport {
@@ -247,5 +248,53 @@ public class SqlCsvTest extends SqlTestSupport {
                 + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "foo.csv" + '\''
                 + ")"
         );
+    }
+
+    @Test
+    public void when_fileDoesNotExist_thenThrowException() {
+        String name = randomName();
+
+        assertThatThrownBy(() ->
+                sqlService.execute("CREATE MAPPING " + name
+                        + " TYPE " + FileSqlConnector.TYPE_NAME + ' '
+                        + "OPTIONS ( "
+                        + '\'' + OPTION_FORMAT + "'='" + CSV_FORMAT + '\''
+                        + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
+                        + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "foo.csv" + '\''
+                        + ")"
+                )
+        ).hasMessageContaining("matches no files");
+    }
+
+    @Test
+    public void when_fileDoesNotExistAndIgnoreFileNotFound_thenReturnNoResults() {
+        String name = randomName();
+        sqlService.execute("CREATE MAPPING " + name + " (field INT) "
+                + " TYPE " + FileSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_FORMAT + "'='" + CSV_FORMAT + '\''
+                + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
+                + ", '" + FileSqlConnector.OPTION_IGNORE_FILE_NOT_FOUND + "'='" + "true" + '\''
+                + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "foo.csv" + '\''
+                + ")"
+        );
+
+        assertThat(sqlService.execute("SELECT * FROM " + name).iterator().hasNext())
+                .describedAs("no results from non existing file")
+                .isFalse();
+    }
+
+    @Test
+    public void when_fileDoesNotExist_thenTableFunctionThrowsException() {
+        assertThatThrownBy(() -> sqlService.execute(
+                "SELECT * "
+                        + " FROM TABLE ("
+                        + "csv_file ("
+                        + " path => '" + RESOURCES_PATH + "'"
+                        + " , glob => 'foo.csv'"
+                        + " , options => MAP['key', 'value']"
+                        + ")"
+                        + ")")
+        ).hasMessageContaining("matches no files");
     }
 }

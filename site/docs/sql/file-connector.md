@@ -31,6 +31,30 @@ above is considered local (i.e. files residing on Jet members), e.g.
 `glob` is a pattern to filter the files in the specified directory.
 The default value is '*', matching all files.
 
+## Ignore File Not Found
+
+When you create a mapping without a schema, or when you execute a
+`SELECT` query, the location specified by the `path` option is expected
+to contain at least one file matching the `glob`, otherwise an exception
+is thrown. This is to avoid hard to catch mistakes, such as typos. If
+you simply want to return zero results set the `ignoreFileNotFound`
+option to true. Note that in this case you must specify the schema.
+
+This option is not valid for file table functions (see below), because
+they always need at least one record to derive the schema from.
+
+The default value is `false`.
+
+## Shared File System option
+
+In case the `path` points to a location which is shared between the
+members, e.g. network mounted filesystem, you should set the
+`sharedFileSystem` option to `true`. The files will be assigned among
+the members and reading the files multiple times (once on each member)
+will be avoided.
+
+The default value is `false`.
+
 ## Serialization options
 
 `format` defines the serialization used to read the files. We assume all
