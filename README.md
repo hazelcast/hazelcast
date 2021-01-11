@@ -290,6 +290,11 @@ unless the
 header specifies another license. Please see the [Licensing
 section](https://jet-start.sh/license) for more information.
 
+## Credits
+
+We owe (the good parts of) our CLI tool's user experience to 
+[picocli](https://picocli.info/).
+
 ## Copyright
 
 Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
