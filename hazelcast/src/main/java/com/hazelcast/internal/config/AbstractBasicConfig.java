@@ -46,7 +46,7 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig>
     protected AbstractBasicConfig(AbstractBasicConfig config) {
         this.name = config.name;
         this.splitBrainProtectionName = config.splitBrainProtectionName;
-        this.mergePolicyConfig = config.mergePolicyConfig;
+        this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
     }
 
     /**

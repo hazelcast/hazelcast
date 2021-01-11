@@ -7458,6 +7458,7 @@ public class MemberCompatibilityTest_2_2 {
         assertTrue(isEqual(aLong, parameters.timeoutMillis));
         assertTrue(isEqual(anInt, parameters.cursorBufferSize));
         assertTrue(isEqual(aString, parameters.schema));
+        assertTrue(isEqual(aByte, parameters.expectedResultType));
     }
 
     @Test
