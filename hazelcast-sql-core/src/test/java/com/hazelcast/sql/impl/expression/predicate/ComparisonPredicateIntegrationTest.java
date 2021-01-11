@@ -39,7 +39,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -53,6 +55,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     private static final int RES_LT = -1;
     private static final int RES_GT = 1;
     private static final Integer RES_NULL = null;
+    private static final int HOUR = 60 * 60;
 
     @Parameterized.Parameter
     public Mode mode;
@@ -224,10 +227,30 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testUnsupported() {
         // Column/column
-        checkUnsupportedColumnColumn(ExpressionTypes.LOCAL_DATE, ExpressionTypes.allExcept(ExpressionTypes.LOCAL_DATE));
-        checkUnsupportedColumnColumn(ExpressionTypes.LOCAL_TIME, ExpressionTypes.allExcept(ExpressionTypes.LOCAL_TIME));
-        checkUnsupportedColumnColumn(ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.allExcept(ExpressionTypes.LOCAL_DATE_TIME));
-        checkUnsupportedColumnColumn(ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.allExcept(ExpressionTypes.OFFSET_DATE_TIME));
+        checkUnsupportedColumnColumn(
+                ExpressionTypes.LOCAL_DATE, ExpressionTypes.allExcept(
+                        ExpressionTypes.LOCAL_DATE,
+                        ExpressionTypes.LOCAL_TIME,
+                        ExpressionTypes.LOCAL_DATE_TIME,
+                        ExpressionTypes.OFFSET_DATE_TIME));
+        checkUnsupportedColumnColumn(
+                ExpressionTypes.LOCAL_TIME, ExpressionTypes.allExcept(
+                        ExpressionTypes.LOCAL_DATE,
+                        ExpressionTypes.LOCAL_TIME,
+                        ExpressionTypes.LOCAL_DATE_TIME,
+                        ExpressionTypes.OFFSET_DATE_TIME));
+        checkUnsupportedColumnColumn(
+                ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.allExcept(
+                        ExpressionTypes.LOCAL_DATE,
+                        ExpressionTypes.LOCAL_TIME,
+                        ExpressionTypes.LOCAL_DATE_TIME,
+                        ExpressionTypes.OFFSET_DATE_TIME));
+        checkUnsupportedColumnColumn(
+                ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.allExcept(
+                        ExpressionTypes.LOCAL_DATE,
+                        ExpressionTypes.LOCAL_TIME,
+                        ExpressionTypes.LOCAL_DATE_TIME,
+                        ExpressionTypes.OFFSET_DATE_TIME));
         checkUnsupportedColumnColumn(ExpressionTypes.OBJECT, ExpressionTypes.allExcept());
     }
 
@@ -261,7 +284,8 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
             ExpressionTypes.LOCAL_TIME, ExpressionTypes.LOCAL_DATE
         );
 
-        checkFailure("field1", "field2", SqlErrorCode.PARSING, "Cannot apply '" + mode.token() + "' operator to [TIME, DATE] (consider adding an explicit CAST)");
+        checkFailure("field1", "field2", SqlErrorCode.PARSING, "CAST function cannot convert value of type TIME to type DATE");
+        checkFailure("cast(field1 as date)", "field2", SqlErrorCode.PARSING, "CAST function cannot convert value of type TIME to type DATE");
 
         putBiValue(
             LocalDate.of(2020, 12, 30),
@@ -269,7 +293,8 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
             ExpressionTypes.LOCAL_DATE, ExpressionTypes.LOCAL_TIME
         );
 
-        checkFailure("field1", "field2", SqlErrorCode.PARSING, "Cannot apply '" + mode.token() + "' operator to [DATE, TIME] (consider adding an explicit CAST)");
+        checkFailure("field1", "field2", SqlErrorCode.PARSING, "CAST function cannot convert value of type TIME to type DATE");
+        checkFailure("cast(field1 as time)", "field2", SqlErrorCode.PARSING, "CAST function cannot convert value of type DATE to type TIME");
     }
 
     @Test
@@ -313,6 +338,28 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
 
         check("field1", "field2",
                 OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)
+                        .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
+    }
+
+    @Test
+    public void testLocalDateTimeWithTZ_to_LocalDateTime() {
+        putBiValue(
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+                LocalDateTime.of(2020, 12, 30, 14, 2, 0), ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.LOCAL_DATE_TIME
+        );
+
+        check("field1", "field2",
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)
+                        .compareTo(ZonedDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneId.systemDefault()).toOffsetDateTime()));
+
+        putBiValue(
+                LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+                ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.OFFSET_DATE_TIME
+        );
+
+        check("field1", "field2",
+                ZonedDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneId.systemDefault()).toOffsetDateTime()
                         .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
     }
 
