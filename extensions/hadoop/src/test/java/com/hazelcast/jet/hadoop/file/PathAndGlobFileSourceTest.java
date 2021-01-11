@@ -182,7 +182,7 @@ public class PathAndGlobFileSourceTest extends BaseFileFormatTest {
                                                       .glob("*")
                                                       .format(FileFormat.text());
 
-        assertJobFailed(source, JetException.class, "does not exists");
+        assertJobFailed(source, JetException.class, "does not exist");
     }
 
     @Test

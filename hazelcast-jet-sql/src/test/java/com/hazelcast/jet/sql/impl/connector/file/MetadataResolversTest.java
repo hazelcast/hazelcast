@@ -48,7 +48,7 @@ public class MetadataResolversTest {
     private MetadataResolvers resolvers;
 
     @Mock
-    private MetadataResolver resolver;
+    private MetadataResolver<?> resolver;
 
     @Mock
     private Metadata metadata;

@@ -220,7 +220,7 @@ public final class ReadFilesP<T> extends AbstractProcessor {
         private Iterator<Path> paths() throws IOException {
             File file = directory.toFile();
             if (!file.exists()) {
-                throw new JetException("The directory " + directory + " does not exists.");
+                throw new JetException("The directory '" + directory + "' does not exist.");
             }
             if (!file.isDirectory()) {
                 throw new JetException("The given path (" + directory + ") must point to a directory, not a file.");

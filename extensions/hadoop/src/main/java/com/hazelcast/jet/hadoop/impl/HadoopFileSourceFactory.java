@@ -149,7 +149,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
                 throw new JetException("The given path (" + path + ") must point to a directory, not a file.");
             }
         } catch (FileNotFoundException e) {
-            throw new JetException("The directory " + path + " does not exists.");
+            throw new JetException("The directory '" + path + "' does not exist.");
         }
 
         if (fsc.getGlob().equals("*")) {
