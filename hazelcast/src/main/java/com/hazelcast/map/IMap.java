@@ -73,7 +73,7 @@ import java.util.function.Function;
  * {@code entrySet}, return an <b>immutable</b> collection clone of the values.
  * The collection is <b>NOT</b> backed by the map, so changes to the map are
  * <b>NOT</b> reflected in the collection.</li>
- * <li>Since Hazelcast is compiled with Java 1.6, we can't override default
+ * <li>Since Hazelcast is compiled with Java 11, we can't override default
  * methods introduced in later Java versions, nor can we add documentation
  * to them. Methods, including but not limited to {@code computeIfPresent},
  * may behave incorrectly if the value passed to the update function is
