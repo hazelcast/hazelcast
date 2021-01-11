@@ -204,6 +204,10 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     }
 
     public SqlResult execute(@Nonnull SqlStatement statement, SqlSecurityContext securityContext) {
+        return execute(statement, securityContext, null);
+    }
+
+    public SqlResult execute(@Nonnull SqlStatement statement, SqlSecurityContext securityContext, QueryId queryId) {
         Preconditions.checkNotNull(statement, "Query cannot be null");
 
         try {
@@ -217,7 +221,12 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
                 timeout = queryTimeout;
             }
 
+            if (queryId == null) {
+                queryId = QueryId.create(nodeServiceProvider.getLocalMemberId());
+            }
+
             return query0(
+                queryId,
                 statement.getSchema(),
                 statement.getSql(),
                 statement.getParameters(),
@@ -239,6 +248,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     }
 
     private SqlResult query0(
+        QueryId queryId,
         String schema,
         String sql,
         List<Object> params,
@@ -269,7 +279,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             plan.checkPermissions(securityContext);
         }
 
-        return execute(plan, params0, timeout, pageSize);
+        return execute(queryId, plan, params0, timeout, pageSize);
     }
 
     private SqlPlan prepare(String schema, String sql, SqlExpectedResultType expectedResultType) {
@@ -324,22 +334,22 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         return QueryUtils.prepareSearchPaths(currentSearchPaths, tableResolvers);
     }
 
-    private SqlResult execute(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
+    private SqlResult execute(QueryId queryId, SqlPlan plan, List<Object> params, long timeout, int pageSize) {
         if (plan instanceof Plan) {
-            return executeImdg((Plan) plan, params, timeout, pageSize);
+            return executeImdg(queryId, (Plan) plan, params, timeout, pageSize);
         } else {
-            return executeJet(plan, params, timeout, pageSize);
+            return executeJet(queryId, plan, params, timeout, pageSize);
         }
     }
 
-    private SqlResult executeImdg(Plan plan, List<Object> params, long timeout, int pageSize) {
-        QueryState state = internalService.execute(plan, params, timeout, pageSize, planCache);
+    private SqlResult executeImdg(QueryId queryId, Plan plan, List<Object> params, long timeout, int pageSize) {
+        QueryState state = internalService.execute(queryId, plan, params, timeout, pageSize, planCache);
 
         return SqlResultImpl.createRowsResult(state);
     }
 
-    private SqlResult executeJet(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
-        return jetSqlCoreBackend.execute(plan, params, timeout, pageSize);
+    private SqlResult executeJet(QueryId queryId, SqlPlan plan, List<Object> params, long timeout, int pageSize) {
+        return jetSqlCoreBackend.execute(queryId, plan, params, timeout, pageSize);
     }
 
     /**

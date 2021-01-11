@@ -60,7 +60,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecute2Cod
 
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
-            AbstractSqlResult result = (AbstractSqlResult) sqlService.execute(query, sqlSecurityContext);
+            AbstractSqlResult result = (AbstractSqlResult) sqlService.execute(query, sqlSecurityContext, parameters.queryId);
 
             if (result.updateCount() >= 0) {
                 return SqlExecuteResponse.updateCountResponse(result.updateCount());
@@ -102,7 +102,6 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecute2Cod
         Collection<Collection<Data>> rowPage0 = (Collection<Collection<Data>>) (Object) rowPage;
 
         return SqlExecute2Codec.encodeResponse(
-            response0.getQueryId(),
             response0.getRowMetadata(),
             rowPage0,
             response0.isRowPageLast(),
@@ -133,7 +132,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecute2Cod
             parameters.parameters,
             parameters.timeoutMillis,
             parameters.cursorBufferSize,
-            parameters.schema
+            parameters.schema,
+            parameters.queryId
         } ;
     }
 

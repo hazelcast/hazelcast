@@ -7459,12 +7459,13 @@ public class MemberCompatibilityTest_2_2 {
         assertTrue(isEqual(anInt, parameters.cursorBufferSize));
         assertTrue(isEqual(aString, parameters.schema));
         assertTrue(isEqual(aByte, parameters.expectedResultType));
+        assertTrue(isEqual(anSqlQueryId, parameters.queryId));
     }
 
     @Test
     public void test_SqlExecute2Codec_encodeResponse() {
         int fileClientMessageIndex = 840;
-        ClientMessage encoded = SqlExecute2Codec.encodeResponse(anSqlQueryId, aListOfSqlColumnMetadata, aListOfListOfData, aBoolean, aLong, anSqlError);
+        ClientMessage encoded = SqlExecute2Codec.encodeResponse(aListOfSqlColumnMetadata, aListOfListOfData, aBoolean, aLong, anSqlError);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

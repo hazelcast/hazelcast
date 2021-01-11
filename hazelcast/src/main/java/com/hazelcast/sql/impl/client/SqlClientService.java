@@ -17,10 +17,10 @@
 package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlExecute2Codec;
-import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
@@ -40,7 +40,6 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import javax.annotation.Nonnull;
 import java.security.AccessControlException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,7 +63,7 @@ public class SqlClientService implements SqlService {
     @Nonnull
     @Override
     public SqlResult execute(@Nonnull SqlStatement statement) {
-        Connection connection = client.getConnectionManager().getRandomConnection(true);
+        ClientConnection connection = client.getConnectionManager().getRandomConnection(true);
 
         if (connection == null) {
             throw rethrow(QueryException.error(
@@ -72,6 +71,8 @@ public class SqlClientService implements SqlService {
                 "Client must be connected to at least one data member to execute SQL queries"
             ));
         }
+
+        QueryId id = QueryId.create(connection.getRemoteUuid());
 
         try {
             List<Object> params = statement.getParameters();
@@ -88,27 +89,52 @@ public class SqlClientService implements SqlService {
                 statement.getTimeoutMillis(),
                 statement.getCursorBufferSize(),
                 statement.getSchema(),
-                SqlClientUtils.expectedResultTypeToByte(statement.getExpectedResultType())
+                SqlClientUtils.expectedResultTypeToByte(statement.getExpectedResultType()),
+                id
             );
 
-            ClientMessage responseMessage = invoke(requestMessage, connection);
+            SqlClientResult res = new SqlClientResult(
+                this,
+                connection,
+                id,
+                statement.getCursorBufferSize()
+            );
 
-            SqlExecute2Codec.ResponseParameters response = SqlExecute2Codec.decodeResponse(responseMessage);
+            ClientInvocationFuture future = invokeAsync(requestMessage, connection);
+
+            future.whenComplete((message, error) -> handleExecuteResponse(connection, res, message, error));
+
+            return res;
+        } catch (Exception e) {
+            throw rethrow(e, connection);
+        }
+    }
+
+    private void handleExecuteResponse(
+        ClientConnection connection,
+        SqlClientResult res,
+        ClientMessage message,
+        Throwable error
+    ) {
+        if (error != null) {
+            res.onExecuteError(rethrow(error, connection));
+
+            return;
+        }
+
+        try {
+            SqlExecute2Codec.ResponseParameters response = SqlExecute2Codec.decodeResponse(message);
 
             handleResponseError(response.error);
 
-            return new SqlClientResult(
-                this,
-                connection,
-                response.queryId,
+            res.onExecuteResponse(
                 response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
                 response.rowPage,
                 response.rowPageLast,
-                statement.getCursorBufferSize(),
                 response.updateCount
             );
         } catch (Exception e) {
-            throw rethrow(e, connection);
+            res.onExecuteError(rethrow(e, connection));
         }
     }
 
@@ -133,6 +159,38 @@ public class SqlClientService implements SqlService {
         }
     }
 
+    public void fetchAsync(Connection connection, QueryId queryId, int cursorBufferSize, SqlClientResult res) {
+        try {
+            ClientMessage requestMessage = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
+
+            ClientInvocationFuture future = invokeAsync(requestMessage, connection);
+
+            future.whenComplete((message, error) -> handleFetchResponse(connection, res, message, error));
+        } catch (Exception e) {
+            throw rethrow(e, connection);
+        }
+    }
+
+    private void handleFetchResponse(Connection connection, SqlClientResult res, ClientMessage message, Throwable error) {
+        if (error != null) {
+            res.onFetchFinished(null, rethrow(error, connection));
+
+            return;
+        }
+
+        try {
+            SqlFetchCodec.ResponseParameters responseParameters = SqlFetchCodec.decodeResponse(message);
+
+            handleResponseError(responseParameters.error);
+
+            SqlPage page = new SqlPage(responseParameters.rowPage, responseParameters.rowPageLast);
+
+            res.onFetchFinished(page, null);
+        } catch (Exception e) {
+            res.onFetchFinished(null, rethrow(e, connection));
+        }
+    }
+
     /**
      * Close remote query cursor.
      *
@@ -150,11 +208,9 @@ public class SqlClientService implements SqlService {
     }
 
     /**
-     * Invokes a method that does not have an associated handler on the server side.
-     * For testing purposes only.
+     * For testing only.
      */
-    @SuppressWarnings("checkstyle:MagicNumber")
-    public void missing() {
+    public ClientMessage invokeOnRandomConnection(ClientMessage message) {
         Connection connection = client.getConnectionManager().getRandomConnection(false);
 
         if (connection == null) {
@@ -165,14 +221,7 @@ public class SqlClientService implements SqlService {
         }
 
         try {
-            ClientMessage requestMessage = SqlExecuteCodec.encodeRequest(
-                "SELECT * FROM table",
-                Collections.emptyList(),
-                100L,
-                100
-            );
-
-            invoke(requestMessage, connection);
+            return invoke(message, connection);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -198,7 +247,7 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    private UUID getClientId() {
+    public UUID getClientId() {
         return client.getLocalEndpoint().getUuid();
     }
 
@@ -206,10 +255,14 @@ public class SqlClientService implements SqlService {
         return client.getSerializationService();
     }
 
-    private ClientMessage invoke(ClientMessage request, Connection connection) throws Exception {
+    private ClientInvocationFuture invokeAsync(ClientMessage request, Connection connection) {
         ClientInvocation invocation = new ClientInvocation(client, request, null, connection);
 
-        ClientInvocationFuture fut = invocation.invoke();
+        return invocation.invoke();
+    }
+
+    private ClientMessage invoke(ClientMessage request, Connection connection) throws Exception {
+        ClientInvocationFuture fut = invokeAsync(request, connection);
 
         return fut.get();
     }
@@ -220,7 +273,7 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    private RuntimeException rethrow(Exception cause, Connection connection) {
+    private RuntimeException rethrow(Throwable cause, Connection connection) {
         if (!connection.isAlive()) {
             return QueryUtils.toPublicException(
                 QueryException.memberConnection(connection.getRemoteAddress()),
@@ -231,13 +284,13 @@ public class SqlClientService implements SqlService {
         return rethrow(cause);
     }
 
-    RuntimeException rethrow(Exception cause) {
+    RuntimeException rethrow(Throwable cause) {
         // Make sure that AccessControlException is thrown as a top-level exception
         if (cause.getCause() instanceof AccessControlException) {
             return (AccessControlException) cause.getCause();
         }
 
-        throw QueryUtils.toPublicException(cause, getClientId());
+        return QueryUtils.toPublicException(cause, getClientId());
     }
 
     public static boolean isSqlMessage(int messageType) {

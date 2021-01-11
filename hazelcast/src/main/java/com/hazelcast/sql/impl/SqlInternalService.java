@@ -123,6 +123,7 @@ public class SqlInternalService {
      * @return Query state.
      */
     public QueryState execute(
+        QueryId queryId,
         Plan plan,
         List<Object> params,
         long timeout,
@@ -149,6 +150,7 @@ public class SqlInternalService {
         BlockingRootResultConsumer consumer = new BlockingRootResultConsumer();
 
         QueryState state = stateRegistry.onInitiatorQueryStarted(
+            queryId,
             localMemberId,
             timeout,
             plan,

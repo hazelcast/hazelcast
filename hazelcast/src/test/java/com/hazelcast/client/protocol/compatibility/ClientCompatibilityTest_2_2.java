@@ -6597,7 +6597,7 @@ public class ClientCompatibilityTest_2_2 {
     @Test
     public void test_SqlExecute2Codec_encodeRequest() {
         int fileClientMessageIndex = 839;
-        ClientMessage encoded = SqlExecute2Codec.encodeRequest(aString, aListOfData, aLong, anInt, aString, aByte);
+        ClientMessage encoded = SqlExecute2Codec.encodeRequest(aString, aListOfData, aLong, anInt, aString, aByte, anSqlQueryId);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6607,7 +6607,6 @@ public class ClientCompatibilityTest_2_2 {
         int fileClientMessageIndex = 840;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlExecute2Codec.ResponseParameters parameters = SqlExecute2Codec.decodeResponse(fromFile);
-        assertTrue(isEqual(anSqlQueryId, parameters.queryId));
         assertTrue(isEqual(aListOfSqlColumnMetadata, parameters.rowMetadata));
         assertTrue(isEqual(aListOfListOfData, parameters.rowPage));
         assertTrue(isEqual(aBoolean, parameters.rowPageLast));

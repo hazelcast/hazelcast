@@ -7459,12 +7459,13 @@ public class MemberCompatibilityNullTest_2_2 {
         assertTrue(isEqual(anInt, parameters.cursorBufferSize));
         assertTrue(isEqual(null, parameters.schema));
         assertTrue(isEqual(aByte, parameters.expectedResultType));
+        assertTrue(isEqual(null, parameters.queryId));
     }
 
     @Test
     public void test_SqlExecute2Codec_encodeResponse() {
         int fileClientMessageIndex = 840;
-        ClientMessage encoded = SqlExecute2Codec.encodeResponse(null, null, null, aBoolean, aLong, null);
+        ClientMessage encoded = SqlExecute2Codec.encodeResponse(null, null, aBoolean, aLong, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

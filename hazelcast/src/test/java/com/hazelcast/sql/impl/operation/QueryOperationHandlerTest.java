@@ -512,6 +512,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         );
 
         QueryId queryId = initiatorService.getStateRegistry().onInitiatorQueryStarted(
+            QueryId.create(initiatorId),
             initiatorId,
             timeout,
             plan,
