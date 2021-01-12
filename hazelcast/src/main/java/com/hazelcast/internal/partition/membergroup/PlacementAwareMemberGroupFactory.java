@@ -43,16 +43,16 @@ public class PlacementAwareMemberGroupFactory extends BackupSafeMemberGroupFacto
     protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> allMembers) {
         Map<String, MemberGroup> groups = createHashMap(allMembers.size());
         for (Member member : allMembers) {
-            final String nodeInfo = member.getAttribute(PartitionGroupMetaData.PARTITION_GROUP_PLACEMENT);
-            if (nodeInfo == null) {
+            String placementInfo = member.getAttribute(PartitionGroupMetaData.PARTITION_GROUP_PLACEMENT);
+            if (placementInfo == null) {
                 throw new IllegalArgumentException("Not enough metadata information is provided. "
                         + "A group name indicating the placement group must be provided with "
                         + "PLACEMENT_AWARE partition group.");
             }
-            MemberGroup group = groups.get(nodeInfo);
+            MemberGroup group = groups.get(placementInfo);
             if (group == null) {
                 group = new DefaultMemberGroup();
-                groups.put(nodeInfo, group);
+                groups.put(placementInfo, group);
             }
             group.addMember(member);
         }
