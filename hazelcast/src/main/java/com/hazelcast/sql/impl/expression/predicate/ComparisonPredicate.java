@@ -84,11 +84,15 @@ public final class ComparisonPredicate extends BiExpression<Boolean> implements 
             Class<?> rightClass = right.getClass();
 
             if (!leftClass.equals(rightClass)) {
-                throw QueryException.error("Cannot compare two OBJECT values, because they have different classes");
+                throw QueryException.error(
+                        "Cannot compare two OBJECT values, because "
+                                + "left operand has " + leftClass + " type and "
+                                + "right operand has " + rightClass + " type");
             }
 
             if (!(left instanceof Comparable)) {
-                throw QueryException.error("Cannot compare OBJECT value because it doesn't implement Comparable interface");
+                throw QueryException.error(
+                        "Cannot compare OBJECT value because " + leftClass + " doesn't implement Comparable interface");
             }
 
         }
