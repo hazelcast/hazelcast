@@ -182,7 +182,12 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
      * </ul>
      */
     private RexNode convertCall(SqlNode node, Blackboard blackboard) {
-        // ignore DEFAULT (used for default function arguments). It doesn't support getValidatedNodeType()
+        // Ignore DEFAULT (used for default function arguments). This node isn't
+        // present in the original parse tree and at the validation time, but is
+        // added later when converting by SqlCallBinding.permutedCall(), which
+        // adjusts the actual function arguments to the formal arguments, adding
+        // this node for the missing arguments. If we called getValidatedNodeType()
+        // for DEFAULT node, it will fail.
         if (node.getKind() == SqlKind.DEFAULT) {
             return null;
         }
