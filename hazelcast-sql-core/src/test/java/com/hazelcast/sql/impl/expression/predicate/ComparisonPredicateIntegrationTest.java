@@ -268,24 +268,38 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testComparable_and_NonComparable() {
         putBiValue(new ComparableImpl(1), new NonComparable());
-        checkFailure("field1", "field2", SqlErrorCode.GENERIC, "Cannot compare two OBJECT values, because they have different classes");
+        checkFailure(
+                "field1", "field2", SqlErrorCode.GENERIC,
+                "Cannot compare two OBJECT values, because "
+                        + "left operand has " + ComparableImpl.class + " type and "
+                        + "right operand has " + NonComparable.class + " type");
 
         putBiValue(new NonComparable(), new ComparableImpl(1));
-        checkFailure("field1", "field2", SqlErrorCode.GENERIC, "Cannot compare two OBJECT values, because they have different classes");
+        checkFailure(
+                "field1", "field2", SqlErrorCode.GENERIC,
+                "Cannot compare two OBJECT values, because "
+                        + "left operand has " + NonComparable.class + " type and "
+                        + "right operand has " + ComparableImpl.class + " type");
     }
 
     @Test
     public void testDifferentClassThatImplementsComparableInterface() {
         putBiValue(new ComparableImpl(1), new ComparableImpl2(1));
 
-        checkFailure("field1", "field2", SqlErrorCode.GENERIC, "Cannot compare two OBJECT values, because they have different classes");
+        checkFailure(
+                "field1", "field2", SqlErrorCode.GENERIC,
+                "Cannot compare two OBJECT values, because "
+                        + "left operand has " + ComparableImpl.class + " type and "
+                        + "right operand has " + ComparableImpl2.class + " type");
     }
 
     @Test
     public void testNonComparableObjects() {
         putBiValue(new NonComparable(), new NonComparable());
 
-        checkFailure("field1", "field2", SqlErrorCode.GENERIC, "Cannot compare OBJECT value because it doesn't implement Comparable interface");
+        checkFailure(
+                "field1", "field2", SqlErrorCode.GENERIC,
+                "Cannot compare OBJECT value because " + NonComparable.class + " doesn't implement Comparable interface");
     }
 
     private void putBiValue(Object field1, Object field2) {
