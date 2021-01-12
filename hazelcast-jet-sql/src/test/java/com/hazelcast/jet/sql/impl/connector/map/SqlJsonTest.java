@@ -203,7 +203,7 @@ public class SqlJsonTest extends SqlTestSupport {
         when_explicitTopLevelField_then_fail("this", "__key");
     }
 
-    public void when_explicitTopLevelField_then_fail(String field, String otherField) {
+    private void when_explicitTopLevelField_then_fail(String field, String otherField) {
         String name = randomName();
         assertThatThrownBy(() ->
                 sqlService.execute("CREATE MAPPING " + name + " ("
@@ -216,7 +216,31 @@ public class SqlJsonTest extends SqlTestSupport {
                         + ")"
                 ))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessage("Invalid external name: " + field);
+                .hasMessage("Cannot use the '" + field + "' field with JSON serialization");
+    }
+
+    @Test
+    public void test_writingToTopLevel() {
+        String mapName = randomName();
+        sqlService.execute("CREATE MAPPING " + mapName + "("
+                + "id INT EXTERNAL NAME \"__key.id\""
+                + ", name VARCHAR"
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + ")"
+        );
+
+        assertThatThrownBy(() ->
+                sqlService.execute("SINK INTO " + mapName + "(__key, name) VALUES('{\"id\":1}', null)"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
+
+        assertThatThrownBy(() ->
+                sqlService.execute("SINK INTO " + mapName + "(id, this) VALUES(1, '{\"name\":\"foo\"}')"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
     }
 
     @Test

@@ -263,23 +263,24 @@ public class SqlPojoTest extends SqlTestSupport {
 
     public void test_writingToTopLevel(boolean explicit) {
         String topicName = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + topicName + "(" +
-                "__key INT," +
-                (explicit ? "this OBJECT," : "") +
-                "name VARCHAR)" +
-                " TYPE " + KafkaSqlConnector.TYPE_NAME + "\n"
+        sqlService.execute("CREATE MAPPING " + topicName + "("
+                + "__key INT"
+                + (explicit ? ", this OBJECT" : "")
+                + ", name VARCHAR"
+                + ") TYPE " + KafkaSqlConnector.TYPE_NAME + "\n"
                 + "OPTIONS (\n"
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',\n"
-                + '\'' + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "',\n"
-                + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',\n"
-                + '\'' + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + "'\n"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "'\n"
+                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "'\n"
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "'\n"
+                + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + "'\n"
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", 'key.serializer'='" + IntegerSerializer.class.getCanonicalName() + '\''
                 + ", 'key.deserializer'='" + IntegerDeserializer.class.getCanonicalName() + '\''
                 + ", 'value.serializer'='" + PersonSerializer.class.getCanonicalName() + '\''
                 + ", 'value.deserializer'='" + PersonDeserializer.class.getCanonicalName() + '\''
                 + ", 'auto.offset.reset'='earliest'"
-                + ")");
+                + ")"
+        );
 
         if (explicit) {
             assertThatThrownBy(() ->

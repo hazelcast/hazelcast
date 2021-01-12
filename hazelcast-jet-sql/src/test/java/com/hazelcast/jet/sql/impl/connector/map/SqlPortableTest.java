@@ -428,11 +428,11 @@ public class SqlPortableTest extends SqlTestSupport {
 
     public void test_writingToTopLevelWhileNestedFieldMapped(boolean explicit) {
         String mapName = randomName();
-        sqlService.execute("CREATE MAPPING " + mapName + "(" +
-                "__key INT," +
-                (explicit ? "this OBJECT," : "") +
-                "name VARCHAR)" +
-                " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
+        sqlService.execute("CREATE MAPPING " + mapName + "("
+                + "__key INT"
+                + (explicit ? ", this OBJECT" : "")
+                + ", name VARCHAR"
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
                 + "OPTIONS (\n"
                 + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "'\n"
                 + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "'\n"
@@ -440,7 +440,8 @@ public class SqlPortableTest extends SqlTestSupport {
                 + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + "'\n"
                 + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + "'\n"
                 + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + "'\n"
-                + ")");
+                + ")"
+        );
 
         if (explicit) {
             assertThatThrownBy(() ->

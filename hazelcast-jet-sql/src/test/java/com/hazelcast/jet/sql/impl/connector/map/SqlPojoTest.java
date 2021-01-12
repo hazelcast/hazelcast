@@ -389,17 +389,18 @@ public class SqlPojoTest extends SqlTestSupport {
 
     private void test_writingToTopLevel(boolean explicit) {
         String mapName = randomName();
-        sqlService.execute("CREATE MAPPING " + mapName + "(" +
-                "__key INT," +
-                (explicit ? "this OBJECT," : "") +
-                "name VARCHAR)" +
-                " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
+        sqlService.execute("CREATE MAPPING " + mapName + "("
+                + "__key INT"
+                + (explicit ? ", this OBJECT" : "")
+                + ", name VARCHAR"
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
                 + "OPTIONS (\n"
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',\n"
-                + '\'' + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "',\n"
-                + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',\n"
-                + '\'' + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + "'\n"
-                + ")");
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "'\n"
+                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "'\n"
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "'\n"
+                + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + "'\n"
+                + ")"
+        );
 
         if (explicit) {
             assertThatThrownBy(() ->

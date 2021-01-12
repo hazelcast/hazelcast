@@ -55,8 +55,8 @@ OPTIONS (
     'keyFormat' = 'java',
     'keyJavaClass' = 'java.lang.String',
     'valueFormat' = 'avro',
-    'bootstrap.servers' = '10.0.1.120',
-    'schema.registry.url' = 'http://10.0.1.120:58819/'
+    'bootstrap.servers' = '127.0.0.1:9092',
+    'schema.registry.url' = 'http://127.0.0.1:8081/'
     'key.serializer' = 'org.apache.kafka.common.serialization.LongSerializer',
     'key.deserializer' = 'org.apache.kafka.common.serialization.LongDeserializer',
     'value.serializer' = 'io.confluent.kafka.serializers.KafkaAvroSerializer',
@@ -81,13 +81,14 @@ specify it:
 
 ```sql
 CREATE MAPPING my_topic(
-    __key BIGINT,
+    id BIGINT EXTERNAL NAME "__key.id",
     ticker VARCHAR,
     amount INT)
 TYPE Kafka
 OPTIONS (
     'keyFormat' = 'json',
-    'valueFormat' = 'json')
+    'valueFormat' = 'json',
+    'bootstrap.servers' = '127.0.0.1:9092')
 ```
 
 JSON's type system doesn't match SQL's exactly. For example, JSON
@@ -119,7 +120,8 @@ OPTIONS (
     'keyFormat' = 'java',
     'keyJavaClass' = 'java.lang.Long',
     'valueFormat' = 'java',
-    'valueJavaClass' = 'com.example.Person')
+    'valueJavaClass' = 'com.example.Person',
+    'bootstrap.servers' = '127.0.0.1:9092')
 ```
 
 If the Java class corresponds to one of the basic data types (numbers,

@@ -262,68 +262,10 @@ public class SqlAvroTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_avroPrimitiveValue_key() {
-        test_avroPrimitiveValue("__key");
-    }
-
-    @Test
-    public void test_avroPrimitiveValue_value() {
-        test_avroPrimitiveValue("this");
-    }
-
-    private void test_avroPrimitiveValue(String path) {
-        assertThatThrownBy(
-                () -> sqlService.execute("CREATE MAPPING " + randomName() + " ("
-                        + path + " INT"
-                        + ") TYPE Kafka "
-                        + "OPTIONS ("
-                        + "'keyFormat'='avro'"
-                        + ", 'valueFormat'='avro'"
-                        + ")"))
-                .hasMessage("Cannot use the '" + path + "' field with Avro serialization");
-    }
-
-    @Test
-    public void test_schemaIdForTwoQueriesIsEqual() {
-        String topicName = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + topicName + " (__key INT, field1 VARCHAR) "
-                + "TYPE Kafka "
-                + "OPTIONS ("
-                + "'keyFormat'='java'"
-                + ", 'keyJavaClass'='java.lang.Integer'"
-                + ", 'valueFormat'='avro'"
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'schema.registry.url'='" + schemaRegistry.getURI() + '\''
-                + ", 'auto.offset.reset'='earliest')"
-        );
-
-        sqlService.execute("INSERT INTO " + topicName + " VALUES(42, 'foo')");
-        sqlService.execute("INSERT INTO " + topicName + " VALUES(43, 'bar')");
-
-        try (KafkaConsumer<Integer, byte[]> consumer = kafkaTestSupport.createConsumer(
-                IntegerDeserializer.class, ByteArrayDeserializer.class, emptyMap(), topicName)
-        ) {
-            long timeLimit = System.nanoTime() + SECONDS.toNanos(10);
-            List<Integer> schemaIds = new ArrayList<>();
-            while (schemaIds.size() < 2) {
-                if (System.nanoTime() > timeLimit) {
-                    Assert.fail("Timeout waiting for the records from Kafka");
-                }
-                ConsumerRecords<Integer, byte[]> records = consumer.poll(Duration.ofMillis(100));
-                for (ConsumerRecord<Integer, byte[]> record : records) {
-                    int id = Bits.readInt(record.value(), 0, true);
-                    schemaIds.add(id);
-                }
-            }
-            assertEquals("The schemaIds of the two records don't match", schemaIds.get(0), schemaIds.get(1));
-        }
-    }
-
-    @Test
     public void when_createMappingNoColumns_then_fail() {
         assertThatThrownBy(() ->
-                sqlService.execute("CREATE MAPPING " + randomName() + " "
-                        + "TYPE Kafka "
+                sqlService.execute("CREATE MAPPING " + randomName() + ' '
+                        + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ('valueFormat'='avro')"))
                 .hasMessage("Column list is required for Avro format");
     }
@@ -348,9 +290,37 @@ public class SqlAvroTest extends SqlTestSupport {
                         + "OPTIONS ("
                         + '\'' + OPTION_KEY_FORMAT + "'='" + AVRO_FORMAT + '\''
                         + ", '" + OPTION_VALUE_FORMAT + "'='" + AVRO_FORMAT + '\''
+                        + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                        + ", 'auto.offset.reset'='earliest'"
                         + ")"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessage("Cannot use the '" + field + "' field with Avro serialization");
+    }
+
+    @Test
+    public void test_writingToTopLevel() {
+        String mapName = randomName();
+        sqlService.execute("CREATE MAPPING " + mapName + "("
+                           + "id INT EXTERNAL NAME \"__key.id\""
+                           + ", name VARCHAR"
+                           + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
+                           + "OPTIONS ("
+                           + '\'' + OPTION_KEY_FORMAT + "'='" + AVRO_FORMAT + '\''
+                           + ", '" + OPTION_VALUE_FORMAT + "'='" + AVRO_FORMAT + '\''
+                           + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                           + ", 'auto.offset.reset'='earliest'"
+                           + ")"
+        );
+
+        assertThatThrownBy(() ->
+                sqlService.execute("INSERT INTO " + mapName + "(__key, name) VALUES('{\"id\":1}', null)"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
+
+        assertThatThrownBy(() ->
+                sqlService.execute("INSERT INTO " + mapName + "(id, this) VALUES(1, '{\"name\":\"foo\"}')"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
     }
 
     @Test
@@ -411,6 +381,42 @@ public class SqlAvroTest extends SqlTestSupport {
                 "SELECT * FROM " + name,
                 singletonList(new Row("Alice", "Bob"))
         );
+    }
+
+    @Test
+    public void test_schemaIdForTwoQueriesIsEqual() {
+        String topicName = createRandomTopic();
+        sqlService.execute("CREATE MAPPING " + topicName + " (__key INT, field1 VARCHAR) "
+                           + "TYPE Kafka "
+                           + "OPTIONS ("
+                           + "'keyFormat'='java'"
+                           + ", 'keyJavaClass'='java.lang.Integer'"
+                           + ", 'valueFormat'='avro'"
+                           + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                           + ", 'schema.registry.url'='" + schemaRegistry.getURI() + '\''
+                           + ", 'auto.offset.reset'='earliest')"
+        );
+
+        sqlService.execute("INSERT INTO " + topicName + " VALUES(42, 'foo')");
+        sqlService.execute("INSERT INTO " + topicName + " VALUES(43, 'bar')");
+
+        try (KafkaConsumer<Integer, byte[]> consumer = kafkaTestSupport.createConsumer(
+                IntegerDeserializer.class, ByteArrayDeserializer.class, emptyMap(), topicName)
+        ) {
+            long timeLimit = System.nanoTime() + SECONDS.toNanos(10);
+            List<Integer> schemaIds = new ArrayList<>();
+            while (schemaIds.size() < 2) {
+                if (System.nanoTime() > timeLimit) {
+                    Assert.fail("Timeout waiting for the records from Kafka");
+                }
+                ConsumerRecords<Integer, byte[]> records = consumer.poll(Duration.ofMillis(100));
+                for (ConsumerRecord<Integer, byte[]> record : records) {
+                    int id = Bits.readInt(record.value(), 0, true);
+                    schemaIds.add(id);
+                }
+            }
+            assertEquals("The schemaIds of the two records don't match", schemaIds.get(0), schemaIds.get(1));
+        }
     }
 
     private static String createRandomTopic() {

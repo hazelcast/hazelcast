@@ -57,13 +57,17 @@ final class MetadataJsonResolver implements KvMetadataResolver {
             Map<String, String> options,
             InternalSerializationService serializationService
     ) {
+        if (userFields.isEmpty()) {
+            throw QueryException.error("Column list is required for JSON format");
+        }
+
         Map<QueryPath, MappingField> userFieldsByPath = extractFields(userFields, isKey);
 
         Map<String, MappingField> fields = new LinkedHashMap<>();
         for (Entry<QueryPath, MappingField> entry : userFieldsByPath.entrySet()) {
             QueryPath path = entry.getKey();
             if (path.getPath() == null) {
-                throw QueryException.error("Invalid external name: " + path.toString());
+                throw QueryException.error("Cannot use the '" + path + "' field with JSON serialization");
             }
             MappingField field = entry.getValue();
 
