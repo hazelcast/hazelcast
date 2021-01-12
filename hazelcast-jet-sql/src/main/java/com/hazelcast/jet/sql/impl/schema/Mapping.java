@@ -27,11 +27,12 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * An object stored in a ReplicatedMap for mappings created using DDL.
+ * An object stored in the internal storage for mappings created using DDL.
  */
 public class Mapping implements DataSerializable {
 
     private String name;
+    private String externalName;
     private String type;
     private List<MappingField> mappingFields;
     private Map<String, String> options;
@@ -42,11 +43,13 @@ public class Mapping implements DataSerializable {
 
     public Mapping(
             String name,
+            String externalName,
             String type,
             List<MappingField> fields,
             Map<String, String> options
     ) {
         this.name = name;
+        this.externalName = externalName;
         this.type = type;
         this.mappingFields = fields;
         this.options = options;
@@ -54,6 +57,10 @@ public class Mapping implements DataSerializable {
 
     public String name() {
         return name;
+    }
+
+    public String externalName() {
+        return externalName;
     }
 
     public String type() {
@@ -71,6 +78,7 @@ public class Mapping implements DataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
+        out.writeUTF(externalName);
         out.writeUTF(type);
         out.writeObject(mappingFields);
         out.writeObject(options);
@@ -79,6 +87,7 @@ public class Mapping implements DataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+        externalName = in.readUTF();
         type = in.readUTF();
         mappingFields = in.readObject();
         options = in.readObject();
@@ -94,13 +103,14 @@ public class Mapping implements DataSerializable {
         }
         Mapping mapping = (Mapping) o;
         return Objects.equals(name, mapping.name) &&
-                Objects.equals(type, mapping.type) &&
-                Objects.equals(mappingFields, mapping.mappingFields) &&
-                Objects.equals(options, mapping.options);
+               Objects.equals(externalName, mapping.externalName) &&
+               Objects.equals(type, mapping.type) &&
+               Objects.equals(mappingFields, mapping.mappingFields) &&
+               Objects.equals(options, mapping.options);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, mappingFields, options);
+        return Objects.hash(name, externalName, type, mappingFields, options);
     }
 }

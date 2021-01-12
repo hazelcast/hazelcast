@@ -29,7 +29,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_OBJECT_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 
@@ -41,7 +40,6 @@ final class PropertiesResolver {
     static final String VALUE_DESERIALIZER = "value.deserializer";
 
     private static final Set<String> NON_KAFKA_OPTIONS = new HashSet<String>() {{
-        add(OPTION_OBJECT_NAME);
         add(OPTION_KEY_FORMAT);
         add(OPTION_KEY_CLASS);
         add(OPTION_VALUE_FORMAT);

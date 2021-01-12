@@ -35,7 +35,6 @@ import static com.hazelcast.jet.core.TestUtil.createMap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_OBJECT_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.util.Arrays.asList;
@@ -230,11 +229,10 @@ public class SqlPrimitiveTest extends SqlTestSupport {
         String topicName = createRandomTopic();
         String tableName = randomName();
 
-        sqlService.execute("CREATE MAPPING " + tableName + ' '
+        sqlService.execute("CREATE MAPPING " + tableName + " EXTERNAL NAME " + topicName + ' '
                 + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '\'' + OPTION_OBJECT_NAME + "'='" + topicName + '\''
-                + ", '" + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
                 + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
                 + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''

@@ -59,7 +59,7 @@ public class JetSqlParserTest {
                 + "MAPPING "
                 + (ifNotExists ? "IF NOT EXISTS " : "")
                 + "mapping_name ("
-                + "column_name INT EXTERNAL NAME \"external.name\""
+                + "column_name INT EXTERNAL NAME \"external.column.name\""
                 + ")"
                 + "TYPE mapping_type "
                 + "OPTIONS("
@@ -71,11 +71,12 @@ public class JetSqlParserTest {
 
         // then
         assertThat(node.nameWithoutSchema()).isEqualTo("mapping_name");
+        assertThat(node.externalName()).isEqualTo("mapping_name");
         assertThat(node.type()).isEqualTo("mapping_type");
         assertThat(node.columns().findFirst())
                 .isNotEmpty().get()
                 .extracting(column -> new Object[]{column.name(), column.type(), column.externalName()})
-                .isEqualTo(new Object[]{"column_name", QueryDataType.INT, "external.name"});
+                .isEqualTo(new Object[]{"column_name", QueryDataType.INT, "external.column.name"});
         assertThat(node.options()).isEqualTo(ImmutableMap.of("option.key", "option.value"));
         assertThat(node.getReplace()).isEqualTo(replace);
         assertThat(node.ifNotExists()).isEqualTo(ifNotExists);
@@ -96,7 +97,22 @@ public class JetSqlParserTest {
     }
 
     @Test
-    public void test_createExternalMappingWithSchema() throws SqlParseException {
+    public void test_createMappingWithExternalName() throws SqlParseException {
+        // given
+        String sql = "CREATE MAPPING "
+                     + "mapping_name EXTERNAL NAME \"external.mapping.name\""
+                     + "TYPE mapping_type";
+
+        // when
+        SqlCreateMapping node = (SqlCreateMapping) parse(sql);
+
+        // then
+        assertThat(node.nameWithoutSchema()).isEqualTo("mapping_name");
+        assertThat(node.externalName()).isEqualTo("external.mapping.name");
+    }
+
+    @Test
+    public void test_createMappingWithSchema() throws SqlParseException {
         // given
         String sql = "CREATE MAPPING "
                 + "public.mapping_name "
@@ -107,6 +123,7 @@ public class JetSqlParserTest {
 
         // then
         assertThat(node.nameWithoutSchema()).isEqualTo("mapping_name");
+        assertThat(node.externalName()).isEqualTo("mapping_name");
     }
 
     @Test

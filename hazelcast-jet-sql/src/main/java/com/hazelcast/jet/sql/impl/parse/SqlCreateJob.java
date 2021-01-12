@@ -65,7 +65,7 @@ public class SqlCreateJob extends SqlCreate {
         this.options = requireNonNull(options, "Options should not be null");
         this.sqlInsert = requireNonNull(sqlInsert, "A DML statement is mandatory");
 
-        Preconditions.checkTrue(name.names.size() == 1, name.toString());
+        Preconditions.checkTrue(name.isSimple(), name.toString());
 
         jobConfig.setName(name.toString());
     }

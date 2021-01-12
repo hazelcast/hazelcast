@@ -52,7 +52,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @RunWith(JUnitParamsRunner.class)
 public class JetPlanExecutorTest {
@@ -77,7 +77,7 @@ public class JetPlanExecutorTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         given(job.getFuture()).willReturn(new CompletableFuture<>());
     }
 
@@ -165,11 +165,11 @@ public class JetPlanExecutorTest {
         assertThatThrownBy(() -> planExecutor.execute(plan))
                 .hasMessageContaining("Cannot execute a streaming DML statement without a CREATE JOB command");
 
-        verifyZeroInteractions(job);
+        verifyNoInteractions(job);
     }
 
     private static Mapping mapping() {
-        return new Mapping("name", "type", emptyList(), emptyMap());
+        return new Mapping("name", "name", "type", emptyList(), emptyMap());
     }
 
     private static SqlRowMetadata rowMetadata() {

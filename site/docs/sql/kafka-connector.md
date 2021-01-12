@@ -134,10 +134,10 @@ the class using reflection and use its properties as column names. It
 recognizes public fields and JavaBeans-style getters. If some property
 has a non-primitive type, it will be mapped under the `OBJECT` type.
 
-## External Name
+## External Column Name
 
 You rarely need to specify the columns in DDL. If you do, you might need
-to specify the external name.
+to specify the external name for the column.
 
 The entries in a map naturally have _key_ and _value_ elements. Because
 of this, the format of the external name must be either `__key.<name>`

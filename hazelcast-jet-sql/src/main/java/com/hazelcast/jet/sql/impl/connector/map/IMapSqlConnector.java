@@ -92,12 +92,11 @@ public class IMapSqlConnector implements SqlConnector {
     public final Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull String tableName,
+            @Nonnull String mappingName,
+            @Nonnull String externalName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields
     ) {
-        String mapName = options.getOrDefault(OPTION_OBJECT_NAME, tableName);
-
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
         KvMetadata keyMetadata = metadataResolvers.resolveMetadata(true, resolvedFields, options, ss);
@@ -107,15 +106,15 @@ public class IMapSqlConnector implements SqlConnector {
 
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = service.getMapServiceContext();
-        MapContainer container = context.getMapContainer(mapName);
+        MapContainer container = context.getMapContainer(externalName);
 
-        long estimatedRowCount = estimatePartitionedMapRowCount(nodeEngine, context, mapName);
+        long estimatedRowCount = estimatePartitionedMapRowCount(nodeEngine, context, externalName);
         boolean hd = container != null && container.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE;
 
         return new PartitionedMapTable(
                 schemaName,
-                tableName,
-                mapName,
+                mappingName,
+                externalName,
                 fields,
                 new ConstantTableStatistics(estimatedRowCount),
                 keyMetadata.getQueryTargetDescriptor(),

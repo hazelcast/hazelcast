@@ -84,11 +84,12 @@ public class FileSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull String name,
+            @Nonnull String mappingName,
+            @Nonnull String externalName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields
     ) {
-        return createTable(schemaName, name, options, resolvedFields);
+        return createTable(schemaName, mappingName, options, resolvedFields);
     }
 
     @Nonnull

@@ -29,7 +29,8 @@ based on it, only new jobs are affected.
 
 ```sql
 CREATE [OR REPLACE] [EXTERNAL] MAPPING [IF NOT EXISTS] mapping_name
-[ ( column_name column_type [EXTERNAL NAME external_name] [, ...] ) ]
+[EXTERNAL NAME external_mapping_name]
+[ ( column_name column_type [EXTERNAL NAME external_column_name] [, ...] ) ]
 TYPE type_identifier
 [ OPTIONS ( 'option_name' = 'option_value' [, ...] ) ]
 ```
@@ -43,25 +44,29 @@ TYPE type_identifier
 - `mapping_name`: an SQL identifier that identifies the mapping in SQL
   queries
 
+- `external_mapping_name`: an optional SQL identifier that identifies
+  the object in the external system. For example, for Kafka connector
+  it's the topic name, for IMap connector the map name. By default,
+  it's equal to the mapping name. Moreover, some connectors might choose
+  to ignore it (i.e. file connector).
+
 - `column_name`, `column_type`: the name and type of the column. For the
   list of supported types see the Hazelcast IMDG Reference Manual.
 
-- `external_name`: the optional external name of a column. If omitted,
-  Jet will generally assume it's equal to `column_name`, but a given
-  connector can implement specific rules. For example, the key-value
-  connectors such as IMap or Kafka assume the column to refer to a field
-  in the value part of a message, except for the special names `__key`
-  and `this` (referring to the key and the value, respectively). See the
-  connector specification for details.
+- `external_column_name`: the optional external name of a column. If
+  omitted, Jet will generally assume it's equal to `column_name`, but a
+  given connector can implement specific rules. For example, the
+  key-value connectors such as IMap or Kafka assume the column to refer
+  to a field in the value part of a message, except for the special
+  names `__key` and `this` (referring to the key and the value,
+  respectively). See the connector specification for details.
 
 - `type_identifier`: the connector type.
 
 - `option_name`, `option_value`: a connector-specific option. For a list
   of possible options, check out the connector javadoc. The
   `option_name` and `option_value` are string literals and must be
-  enclosed in apostrophes. The `objectName` option is common for all
-  connectors: it's the name of the object in the external system. By
-  default, it's equal to the mapping name.
+  enclosed in apostrophes.
 
 #### Auto-resolving of Columns and Options
 
@@ -94,8 +99,8 @@ the string value is a JSON object like this:
 
 ```json
 {
-    ticker: "CERP",
-    amountNormalized: 3000
+    "ticker": "CERP",
+    "amountNormalized": 3000
 }
 ```
 

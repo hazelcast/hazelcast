@@ -82,7 +82,13 @@ public class MappingCatalog implements TableResolver {
 
         SqlConnector connector = connectorCache.forType(type);
         List<MappingField> resolvedFields = connector.resolveAndValidateFields(nodeEngine, options, mapping.fields());
-        return new Mapping(mapping.name(), type, new ArrayList<>(resolvedFields), new HashMap<>(options));
+        return new Mapping(
+                mapping.name(),
+                mapping.externalName(),
+                type,
+                new ArrayList<>(resolvedFields),
+                new HashMap<>(options)
+        );
     }
 
     public void removeMapping(String name, boolean ifExists) {
@@ -121,6 +127,13 @@ public class MappingCatalog implements TableResolver {
 
     private Table toTable(Mapping mapping) {
         SqlConnector connector = connectorCache.forType(mapping.type());
-        return connector.createTable(nodeEngine, SCHEMA_NAME_PUBLIC, mapping.name(), mapping.options(), mapping.fields());
+        return connector.createTable(
+                nodeEngine,
+                SCHEMA_NAME_PUBLIC,
+                mapping.name(),
+                mapping.externalName(),
+                mapping.options(),
+                mapping.fields()
+        );
     }
 }

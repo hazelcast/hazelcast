@@ -142,14 +142,6 @@ public interface SqlConnector {
     String PARQUET_FORMAT = "parquet";
 
     /**
-     * A key in the table options (TO).
-     * <p>
-     * Specifies the accessed object name. If missing, the external table name
-     * itself is used.
-     */
-    String OPTION_OBJECT_NAME = "objectName";
-
-    /**
      * Return the name of the connector as seen in the {@code TYPE} clause in
      * the {@code CREATE EXTERNAL MAPPING} command.
      */
@@ -202,7 +194,8 @@ public interface SqlConnector {
     Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull String tableName,
+            @Nonnull String mappingName,
+            @Nonnull String externalName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields
     );

@@ -37,6 +37,7 @@ public class MappingTest {
     public void test_serialization() {
         Mapping original = new Mapping(
                 "mapping-name",
+                "mapping-name",
                 "mapping-type",
                 new ArrayList<>(singletonList(new MappingField("field-name", QueryDataType.INT, null))),
                 new HashMap<>(ImmutableMap.of("option.key", "option.value"))

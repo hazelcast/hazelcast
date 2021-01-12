@@ -179,6 +179,7 @@ class JetSqlBackend implements SqlBackend {
                 .collect(toList());
         Mapping mapping = new Mapping(
                 sqlCreateMapping.nameWithoutSchema(),
+                sqlCreateMapping.externalName(),
                 sqlCreateMapping.type(),
                 mappingFields,
                 sqlCreateMapping.options()

@@ -156,7 +156,7 @@ OPTIONS (
 | `STRING` | `VARCHAR` |
 | all other types | `OBJECT` |
 
-## External Name
+## External Column Name
 
 You rarely need to specify the columns in DDL. If you do, you might want
 to specify the external name. We don't support nested fields, hence the

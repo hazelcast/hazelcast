@@ -54,8 +54,8 @@ public class SqlCreateSnapshot extends SqlCreate {
         this.snapshotName = requireNonNull(snapshotName, "Snapshot name must not be null");
         this.jobName = requireNonNull(jobName, "Job name must not be null");
 
-        Preconditions.checkTrue(snapshotName.names.size() == 1, snapshotName.toString());
-        Preconditions.checkTrue(jobName.names.size() == 1, jobName.toString());
+        Preconditions.checkTrue(snapshotName.isSimple(), snapshotName.toString());
+        Preconditions.checkTrue(jobName.isSimple(), jobName.toString());
     }
 
     public String getSnapshotName() {

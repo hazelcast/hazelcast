@@ -152,6 +152,6 @@ public class MappingCatalogTest {
     }
 
     private static Mapping mapping() {
-        return new Mapping("name", "type", emptyList(), emptyMap());
+        return new Mapping("name", "external_name", "type", emptyList(), emptyMap());
     }
 }

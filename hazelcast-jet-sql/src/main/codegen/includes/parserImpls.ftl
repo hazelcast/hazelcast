@@ -22,6 +22,7 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     SqlParserPos startPos = span.pos();
 
     SqlIdentifier name;
+    SqlIdentifier externalName = null;
     SqlNodeList columns = SqlNodeList.EMPTY;
     SqlIdentifier type;
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
@@ -33,6 +34,9 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
         <IF> <NOT> <EXISTS> { ifNotExists = true; }
     ]
     name = CompoundIdentifier()
+    [
+        <EXTERNAL> <NAME> { externalName = SimpleIdentifier(); }
+    ]
     columns = MappingColumns()
     <TYPE>
     type = SimpleIdentifier()
@@ -43,6 +47,7 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     {
         return new SqlCreateMapping(
             name,
+            externalName,
             columns,
             type,
             sqlOptions,
@@ -94,7 +99,7 @@ SqlMappingColumn MappingColumn() :
     name = SimpleIdentifier() { span = span(); }
     type = SqlDataType()
     [
-        <EXTERNAL> <NAME> externalName = SimpleIdentifier()
+        <EXTERNAL> <NAME> { externalName = SimpleIdentifier(); }
     ]
     {
         return new SqlMappingColumn(name, type, externalName, span.end(this));

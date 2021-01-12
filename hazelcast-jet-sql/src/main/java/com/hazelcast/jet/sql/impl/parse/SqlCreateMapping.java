@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
+import com.hazelcast.internal.util.Preconditions;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -46,12 +47,14 @@ public class SqlCreateMapping extends SqlCreate {
             new SqlSpecialOperator("CREATE EXTERNAL MAPPING", SqlKind.CREATE_TABLE);
 
     private final SqlIdentifier name;
+    private final SqlIdentifier externalName;
     private final SqlNodeList columns;
     private final SqlIdentifier type;
     private final SqlNodeList options;
 
     public SqlCreateMapping(
             SqlIdentifier name,
+            SqlIdentifier externalName,
             SqlNodeList columns,
             SqlIdentifier type,
             SqlNodeList options,
@@ -62,13 +65,23 @@ public class SqlCreateMapping extends SqlCreate {
         super(OPERATOR, pos, replace, ifNotExists);
 
         this.name = requireNonNull(name, "Name should not be null");
+        this.externalName = externalName;
         this.columns = requireNonNull(columns, "Columns should not be null");
         this.type = requireNonNull(type, "Type should not be null");
         this.options = requireNonNull(options, "Options should not be null");
+
+        Preconditions.checkTrue(
+                externalName == null || externalName.isSimple(),
+                externalName == null ? null : externalName.toString()
+        );
     }
 
     public String nameWithoutSchema() {
         return name.names.get(name.names.size() - 1);
+    }
+
+    public String externalName() {
+        return externalName == null ? nameWithoutSchema() : externalName.getSimple();
     }
 
     public Stream<SqlMappingColumn> columns() {

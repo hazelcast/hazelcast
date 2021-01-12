@@ -61,7 +61,7 @@ public class JetSqlBackendTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
@@ -73,6 +73,7 @@ public class JetSqlBackendTest {
         // given
         SqlCreateMapping node = new SqlCreateMapping(
                 identifier("mapping_name"),
+                identifier("external_mapping_name"),
                 nodeList(column("column_name", INT, "external_column_name")),
                 identifier("mapping_type"),
                 nodeList(option("option_key", "option_value")),
@@ -87,6 +88,7 @@ public class JetSqlBackendTest {
 
         // then
         assertThat(plan.mapping().name()).isEqualTo("mapping_name");
+        assertThat(plan.mapping().externalName()).isEqualTo("external_mapping_name");
         assertThat(plan.mapping().type()).isEqualTo("mapping_type");
         assertThat(plan.mapping().fields())
                 .isEqualTo(singletonList(new MappingField("column_name", INT, "external_column_name")));
