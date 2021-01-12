@@ -130,7 +130,7 @@ public interface Index {
      * @param value value
      * @param descending whether the entries should come in the descending order.
      *                   {@code true} means a descending order,
-     *                   {@code false} means an ascending order.**
+     *                   {@code false} means an ascending order.
      * @return iterator over index entries that are matching the given comparions type and value
      */
     Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value, boolean descending);
@@ -142,7 +142,7 @@ public interface Index {
      * @param toInclusive upper bound inclusive flag
      * @param descending whether the entries should come in the descending order.
      *                   {@code true} means a descending order,
-     *                   {@code false} means an ascending order.*
+     *                   {@code false} means an ascending order.
      * @return iterator over index entries matching the given range
      */
     Iterator<QueryableEntry> getSqlRecordIterator(Comparable from, boolean fromInclusive, Comparable to,
