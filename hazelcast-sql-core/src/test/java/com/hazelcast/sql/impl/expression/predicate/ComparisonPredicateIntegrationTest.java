@@ -55,7 +55,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     private static final int RES_LT = -1;
     private static final int RES_GT = 1;
     private static final Integer RES_NULL = null;
-    private static final int HOUR = 60 * 60;
+    private static final ZoneId DEFAULT_TIME_ZONE = ZoneId.systemDefault();
 
     @Parameterized.Parameter
     public Mode mode;
@@ -230,12 +230,10 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         checkUnsupportedColumnColumn(
                 ExpressionTypes.LOCAL_DATE, ExpressionTypes.allExcept(
                         ExpressionTypes.LOCAL_DATE,
-                        ExpressionTypes.LOCAL_TIME,
                         ExpressionTypes.LOCAL_DATE_TIME,
                         ExpressionTypes.OFFSET_DATE_TIME));
         checkUnsupportedColumnColumn(
                 ExpressionTypes.LOCAL_TIME, ExpressionTypes.allExcept(
-                        ExpressionTypes.LOCAL_DATE,
                         ExpressionTypes.LOCAL_TIME,
                         ExpressionTypes.LOCAL_DATE_TIME,
                         ExpressionTypes.OFFSET_DATE_TIME));
@@ -277,27 +275,6 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void testCompare_LocalTime_with_LocalDate() {
-        putBiValue(
-            LocalTime.of(14, 2, 0),
-            LocalDate.of(2020, 12, 30),
-            ExpressionTypes.LOCAL_TIME, ExpressionTypes.LOCAL_DATE
-        );
-
-        checkFailure("field1", "field2", SqlErrorCode.PARSING, "CAST function cannot convert value of type TIME to type DATE");
-        checkFailure("cast(field1 as date)", "field2", SqlErrorCode.PARSING, "CAST function cannot convert value of type TIME to type DATE");
-
-        putBiValue(
-            LocalDate.of(2020, 12, 30),
-            LocalTime.of(14, 2, 0),
-            ExpressionTypes.LOCAL_DATE, ExpressionTypes.LOCAL_TIME
-        );
-
-        checkFailure("field1", "field2", SqlErrorCode.PARSING, "CAST function cannot convert value of type TIME to type DATE");
-        checkFailure("cast(field1 as time)", "field2", SqlErrorCode.PARSING, "CAST function cannot convert value of type DATE to type TIME");
-    }
-
-    @Test
     public void testCompare_LocalDateTime_with_LocalDateTime() {
         putBiValue(
             LocalDateTime.of(2020, 12, 30, 14, 2, 0),
@@ -329,6 +306,27 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void testCompare_LocalDateTime_with_LocalTime() {
+        putBiValue(
+                LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+                LocalTime.of(14, 2, 0),
+                ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.LOCAL_TIME
+        );
+
+        check("cast (field1 as TIME)", "field2", LocalDateTime.of(2020, 12, 30, 14, 2, 0).toLocalTime().compareTo(LocalTime.of(14, 2, 0)));
+        check("field1", "field2", LocalDateTime.of(2020, 12, 30, 14, 2, 0).compareTo(LocalDateTime.of(LocalDate.now(), LocalTime.of(14, 2, 0))));
+
+        putBiValue(
+                LocalTime.of(14, 2, 0),
+                LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+                ExpressionTypes.LOCAL_TIME, ExpressionTypes.LOCAL_DATE_TIME
+        );
+
+        check("field1", "cast (field2 as TIME)", LocalTime.of(14, 2, 0).compareTo(LocalDateTime.of(2020, 12, 30, 14, 2, 0).toLocalTime()));
+        check("field1", "field2", LocalDateTime.of(LocalDate.now(), LocalTime.of(14, 2, 0)).compareTo(LocalDateTime.of(2020, 12, 30, 14, 2, 0)));
+    }
+
+    @Test
     public void testCompare_LocalDateTimeWithTZ_with_LocalDateTimeWithTZ() {
         putBiValue(
             OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
@@ -350,7 +348,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
 
         check("field1", "field2",
                 OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)
-                        .compareTo(ZonedDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneId.systemDefault()).toOffsetDateTime()));
+                        .compareTo(ZonedDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), DEFAULT_TIME_ZONE).toOffsetDateTime()));
 
         putBiValue(
                 LocalDateTime.of(2020, 12, 30, 14, 2, 0),
@@ -359,7 +357,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         );
 
         check("field1", "field2",
-                ZonedDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneId.systemDefault()).toOffsetDateTime()
+                ZonedDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), DEFAULT_TIME_ZONE).toOffsetDateTime()
                         .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
     }
 
@@ -371,8 +369,8 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         );
 
         check("field1", "field2",
-                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 23, 0, 0), ZoneOffset.of("-05"))
-                        .compareTo(ZonedDateTime.of(LocalDate.of(2020, 12, 30).atStartOfDay(), ZoneId.systemDefault()).toOffsetDateTime()));
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)
+                        .compareTo(ZonedDateTime.of(LocalDate.of(2020, 12, 30).atStartOfDay(), DEFAULT_TIME_ZONE).toOffsetDateTime()));
 
         putBiValue(
                 LocalDate.of(2020, 12, 30),
@@ -381,7 +379,35 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         );
 
         check("field1", "field2",
-                ZonedDateTime.of(LocalDate.of(2020, 12, 30).atStartOfDay(), ZoneId.systemDefault()).toOffsetDateTime()
+                ZonedDateTime.of(LocalDate.of(2020, 12, 30).atStartOfDay(), DEFAULT_TIME_ZONE).toOffsetDateTime()
+                        .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
+    }
+
+    @Test
+    public void testCompare_LocalDateTimeWithTZ_with_LocalTime() {
+        putBiValue(
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+                LocalTime.of(14, 2, 0), ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.LOCAL_TIME
+        );
+
+        check("cast (field1 as TIME)", "field2",
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC).toLocalTime()
+                        .compareTo(LocalTime.of(14, 2, 0)));
+        check("field1", "field2",
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)
+                        .compareTo(OffsetDateTime.of(LocalDateTime.of(LocalDate.now(), LocalTime.of(14, 2, 0)), ZoneOffset.UTC)));
+
+        putBiValue(
+                LocalTime.of(14, 2, 0),
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+                ExpressionTypes.LOCAL_TIME, ExpressionTypes.OFFSET_DATE_TIME
+        );
+
+        check("field1", "cast (field2 as TIME)",
+                LocalTime.of(14, 2, 0).compareTo(
+                        OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC).toLocalTime()));
+        check("field1", "field2",
+                OffsetDateTime.of(LocalDateTime.of(LocalDate.now(), LocalTime.of(14, 2, 0)), ZoneOffset.UTC)
                         .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
     }
 

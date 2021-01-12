@@ -121,13 +121,15 @@ public final class HazelcastComparisonPredicateUtils {
         }
 
         if (highHZType.getTypeFamily() != lowHZType.getTypeFamily()
-            && !(highHZType.getTypeFamily().isTemporal() && lowHZType.getTypeFamily().isTemporal())
             && !(highHZType.getTypeFamily().isNumeric() && lowHZType.getTypeFamily().isNumeric())) {
-            // Types cannot be converted to each other, throw.
-            if (throwOnFailure) {
-                throw callBinding.newValidationSignatureError();
-            } else {
-                return false;
+
+            if (bothNotTemporal(highHZType, lowHZType) || nonConvertibleTemporalTypes(highHZType, lowHZType)) {
+                // Types cannot be converted to each other, throw.
+                if (throwOnFailure) {
+                    throw callBinding.newValidationSignatureError();
+                } else {
+                    return false;
+                }
             }
         }
 
@@ -137,6 +139,14 @@ public final class HazelcastComparisonPredicateUtils {
         validator.getTypeCoercion().coerceOperandType(callBinding.getScope(), callBinding.getCall(), lowIndex, newLowType);
 
         return true;
+    }
+
+    private static boolean nonConvertibleTemporalTypes(QueryDataType highHZType, QueryDataType lowHZType) {
+        return highHZType.getTypeFamily() == QueryDataTypeFamily.DATE && lowHZType.getTypeFamily() == QueryDataTypeFamily.TIME;
+    }
+
+    private static boolean bothNotTemporal(QueryDataType highHZType, QueryDataType lowHZType) {
+        return !(highHZType.getTypeFamily().isTemporal() && lowHZType.getTypeFamily().isTemporal());
     }
 
     private static void setNumericParameterConverter(HazelcastSqlValidator validator, SqlNode node, QueryDataType type) {
