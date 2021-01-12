@@ -261,7 +261,7 @@ public final class IndexResolver {
                 prevEntry = entry;
             } else {
                 RelCollation prevCollation = prevEntry.getKey();
-                if (!coveredCollation(prevCollation, collation)) {
+                if (!prevCollation.satisfies(collation)) {
                     prevEntry = entry;
                     resultMap.put(collation, relNode);
                 }
@@ -269,35 +269,6 @@ public final class IndexResolver {
         }
         return resultMap;
     }
-
-    /**
-     * Tests whether collation1 covers (prefix based) collation2
-     *
-     * @param collation1 the collation
-     * @param collation2 the collation
-     * @return {@code true} if collation1 covers collation2, otherwise {@code false}
-     */
-    private static boolean coveredCollation(RelCollation collation1, RelCollation collation2) {
-        if (collation1.getFieldCollations().size() < collation2.getFieldCollations().size()) {
-            return false;
-        }
-        for (int i = 0; i < collation1.getFieldCollations().size(); ++i) {
-            RelFieldCollation field1 = collation1.getFieldCollations().get(i);
-            if (i >= collation2.getFieldCollations().size()) {
-                // No need to check further, the collation2 is covered
-                return true;
-            } else {
-                RelFieldCollation field2 = collation2.getFieldCollations().get(i);
-                if (!field1.equals(field2)) {
-                    // collation1 doesn't cover the collation2
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
 
     /**
      * Decompose the original scan filter into CNF components.
