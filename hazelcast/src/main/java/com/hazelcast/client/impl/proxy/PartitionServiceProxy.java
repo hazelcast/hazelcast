@@ -129,6 +129,11 @@ public final class PartitionServiceProxy implements PartitionService {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void triggerRebalance() {
+        throw new UnsupportedOperationException();
+    }
+
     private ListenerMessageCodec createPartitionLostListenerCodec() {
         return new ListenerMessageCodec() {
             @Override

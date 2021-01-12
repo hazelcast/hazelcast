@@ -206,4 +206,11 @@ public interface IPartitionService extends CoreService {
      * @return array of {@link IPartition} instances
      */
     IPartition[] getPartitions();
+
+    /**
+     * Triggers partition rebalancing. If partition state is not yet initialized,
+     * then it performs first partition arrangement.
+     * Has no effect when invoked on a member other than master.
+     */
+    void rebalance();
 }

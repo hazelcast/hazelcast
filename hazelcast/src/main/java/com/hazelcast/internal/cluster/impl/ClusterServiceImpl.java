@@ -531,10 +531,12 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return membershipManager.isMissingMember(address, uuid);
     }
 
+    // todo remove
     public Collection<Member> getActiveAndMissingMembers() {
         return membershipManager.getActiveAndMissingMembers();
     }
 
+    // todo remove
     public void notifyForRemovedMember(MemberImpl member) {
         lock.lock();
         try {

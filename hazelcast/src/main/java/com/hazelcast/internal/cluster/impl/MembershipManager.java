@@ -778,6 +778,7 @@ public class MembershipManager {
 
     void onMemberRemove(MemberImpl deadMember) {
         // sync calls
+        // todo how does rebalance delay affect this method's sync guarantees?
         node.getPartitionService().memberRemoved(deadMember);
         nodeEngine.onMemberLeft(deadMember);
         node.getNodeExtension().onMemberListChange();

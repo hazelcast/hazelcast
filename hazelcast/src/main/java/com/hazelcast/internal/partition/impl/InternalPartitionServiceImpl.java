@@ -41,6 +41,7 @@ import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.PartitionServiceProxy;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.internal.partition.ReadonlyInternalPartition;
+import com.hazelcast.internal.partition.RebalanceMode;
 import com.hazelcast.internal.partition.operation.AssignPartitions;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.internal.partition.operation.PartitionStateCheckOperation;
@@ -143,6 +144,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
     private final AtomicReference<CountDownLatch> shutdownLatchRef = new AtomicReference<>();
 
+    private final boolean autoRebalance;
+
     private volatile Address latestMaster;
 
     /** Whether the master should fetch the partition tables from other nodes, can happen when node becomes new master. */
@@ -154,6 +157,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         this.node = node;
         this.nodeEngine = node.nodeEngine;
         this.logger = node.getLogger(InternalPartitionService.class);
+        this.autoRebalance = RebalanceMode.AUTO.equals(
+                                properties.getEnum(ClusterProperty.PARTITIONING_REBALANCE_MODE, RebalanceMode.class));
 
         partitionStateManager = new PartitionStateManager(node, this);
         migrationManager = new MigrationManager(node, this, lock);
@@ -356,10 +361,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             if (!member.localMember()) {
                 partitionStateManager.updateMemberGroupsSize();
             }
-            if (isLocalMemberMaster()) {
-                if (partitionStateManager.isInitialized()) {
-                    migrationManager.triggerControlTask();
-                }
+            // TODO do we need to track when partition assignments are dirty??
+            if (isLocalMemberMaster() && partitionStateManager.isInitialized() && autoRebalance) {
+                migrationManager.triggerControlTask();
             }
         } finally {
             lock.unlock();
@@ -387,8 +391,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                     assert !shouldFetchPartitionTables;
                     shouldFetchPartitionTables = true;
                 }
-                if (isMaster) {
-                    migrationManager.triggerControlTask();
+                // TODO do we need to track when partition assignments are dirty??
+                if (isMaster && autoRebalance) {
+                    migrationManager.triggerControlTaskWithDelay();
                 }
             }
 
@@ -411,8 +416,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
         lock.lock();
         try {
+            // TODO do we need to track when partition assignments are dirty??
             if (partitionStateManager.isInitialized()
-                    && migrationManager.shouldTriggerRepartitioningWhenClusterStateAllowsMigration()) {
+                    && migrationManager.shouldTriggerRepartitioningWhenClusterStateAllowsMigration()
+                    && autoRebalance) {
                 migrationManager.triggerControlTask();
             }
         } finally {
@@ -426,6 +433,23 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             return createPartitionStateInternal();
         }
         return null;
+    }
+
+    @Override
+    public void rebalance() {
+        lock.lock();
+        try {
+            logger.info("Rebalancing partitions due to explicit request");
+            if (isLocalMemberMaster()) {
+                if (partitionStateManager.isInitialized()) {
+                    migrationManager.triggerControlTask();
+                } else {
+                    firstArrangement();
+                }
+            }
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**

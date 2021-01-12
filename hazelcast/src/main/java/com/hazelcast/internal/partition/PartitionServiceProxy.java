@@ -16,12 +16,14 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.operation.RebalanceOperation;
 import com.hazelcast.internal.partition.operation.SafeStateCheckOperation;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionLostListener;
@@ -30,7 +32,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.internal.util.FutureUtil;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -189,6 +190,17 @@ public class PartitionServiceProxy implements PartitionService {
             return true;
         }
         return partitionService.getPartitionReplicaStateChecker().triggerAndWaitForReplicaSync(timeout, unit);
+    }
+
+    @Override
+    public void triggerRebalance() {
+        if (partitionService.isLocalMemberMaster()) {
+            partitionService.rebalance();
+        } else {
+            Operation rebalanceOp = new RebalanceOperation();
+            nodeEngine.getOperationService().invokeOnTarget(InternalPartitionService.SERVICE_NAME,
+                    rebalanceOp, nodeEngine.getMasterAddress()).joinInternal();
+        }
     }
 
     private boolean nodeActive() {

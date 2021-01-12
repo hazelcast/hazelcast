@@ -26,6 +26,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IndeterminateOperationStateException;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
@@ -638,6 +639,39 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty PARTITIONING_STRATEGY_CLASS
             = new HazelcastProperty("hazelcast.partitioning.strategy.class", "");
+
+    /**
+     * Determines whether cluster membership change triggers partition rebalancing
+     * automatically (default value {@code "auto"}) or explicit action is required
+     * for rebalancing to occur (value {@code "manual"}).
+     * todo: document interactions with cluster state
+     */
+    public static final HazelcastProperty PARTITIONING_REBALANCE_MODE
+            = new HazelcastProperty("hazelcast.partition.rebalance.mode", "auto");
+
+    /**
+     * Time (in seconds) to wait before triggering automatic partition rebalancing
+     * after a member leaves the cluster unexpectedly. Unexpectedly in this context
+     * means that a member leaves the cluster by means other than graceful shutdown:
+     * programmatic termination (eg {@link LifecycleService#terminate()}, a
+     * process crash or network partition.
+     * Default is 0, which means rebalancing is triggered immediately.
+     * Rebalancing delay is only applied when using the automatic partition
+     * rebalancing mode. When in manual mode, explicit user trigger is required
+     * to initiate partition rebalancing and it will not be subject to delay.
+     *
+     * Setting this to a higher value will allow some time for members that are gone
+     * to rejoin the cluster. The benefit is that partition rebalancing in this
+     * case will be avoided, saving the burden of migrating partition data over
+     * the network. While members are gone, operations on partitions
+     * for which the owner is missing may fail immediately or will be retried until
+     * the member rejoins or operation timeout is exceeded.
+     * Notice that this delay only applies when cluster members leave the cluster;
+     * when the cluster is being scaled up and members are being added, partition
+     * rebalancing will be triggered immediately (assuming automatic rebalancing).
+     */
+    public static final HazelcastProperty PARTITION_REBALANCE_DELAY_SECONDS
+            = new HazelcastProperty("hazelcast.partition.rebalance.delay.seconds", 0, SECONDS);
 
     /**
      * Time period to check if a client is still part of the cluster.

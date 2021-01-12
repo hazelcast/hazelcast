@@ -35,6 +35,7 @@ import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.PartitionStateVersionMismatchException;
+import com.hazelcast.internal.partition.RebalanceMode;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.MigrationPlanner.MigrationDecisionCallback;
 import com.hazelcast.internal.partition.operation.FinalizeMigrationOperation;
@@ -88,6 +89,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -102,6 +104,8 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeUnit.BOOLEAN;
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_REBALANCE_DELAY_SECONDS;
 
 /**
  * Maintains migration system state and manages migration operations performed within the cluster.
@@ -143,7 +147,15 @@ public class MigrationManager {
     private final int maxParallelMigrations;
     private final AtomicInteger migrationCount = new AtomicInteger();
     private final Set<MigrationInfo> finalizingMigrationsRegistry = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final boolean autoRebalance;
+    /**
+     * 0 when no delay is requested or autoRebalance is {@code false},
+     * otherwise the positive number of seconds to delay triggering
+     */
+    private final int autoRebalanceDelaySeconds;
+    private volatile ScheduledFuture<Void> scheduledControlTaskFuture;
 
+    @SuppressWarnings("checkstyle:ExecutableStatementCount")
     MigrationManager(Node node, InternalPartitionServiceImpl service, Lock partitionServiceLock) {
         this.node = node;
         this.nodeEngine = node.getNodeEngine();
@@ -166,6 +178,13 @@ public class MigrationManager {
                 executionService, migrationPauseDelayMs, 2 * migrationPauseDelayMs, this::resumeMigration);
         this.memberHeartbeatTimeoutMillis = properties.getMillis(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS);
         nodeEngine.getMetricsRegistry().registerStaticMetrics(stats, PARTITIONS_PREFIX);
+        this.autoRebalance = RebalanceMode.AUTO.equals(
+                properties.getEnum(ClusterProperty.PARTITIONING_REBALANCE_MODE, RebalanceMode.class));
+        this.autoRebalanceDelaySeconds = autoRebalance
+                        ? properties.getInteger(PARTITION_REBALANCE_DELAY_SECONDS)
+                        : 0;
+        checkNotNegative(autoRebalanceDelaySeconds,
+                PARTITION_REBALANCE_DELAY_SECONDS.getName() + " must be not negative");
     }
 
     @Probe(name = MIGRATION_METRIC_MIGRATION_MANAGER_MIGRATION_ACTIVE, unit = BOOLEAN)
@@ -593,7 +612,7 @@ public class MigrationManager {
     }
 
     /** Clears the migration queue and triggers the control task. Called on the master node. */
-    void triggerControlTask() {
+    public void triggerControlTask() {
         migrationQueue.clear();
         migrationThread.abortMigrationTask();
         if (stats.getRemainingMigrations() > 0) {
@@ -611,6 +630,19 @@ public class MigrationManager {
         migrationQueue.add(new ControlTask());
         if (logger.isFinestEnabled()) {
             logger.finest("Migration queue is cleared and control task is scheduled");
+        }
+    }
+
+    public void triggerControlTaskWithDelay() {
+        if (!autoRebalance) {
+            return;
+        }
+        if (autoRebalanceDelaySeconds == 0) {
+            triggerControlTask();
+        } else {
+            ExecutionService executionService = nodeEngine.getExecutionService();
+            scheduledControlTaskFuture = (ScheduledFuture<Void>) executionService.schedule(() -> triggerControlTask(),
+                    autoRebalanceDelaySeconds, TimeUnit.SECONDS);
         }
     }
 
@@ -690,6 +722,13 @@ public class MigrationManager {
     }
 
     void reset() {
+        try {
+            if (scheduledControlTaskFuture != null) {
+                scheduledControlTaskFuture.cancel(true);
+            }
+        } catch (Throwable t) {
+            logger.fine("Cancelling a scheduled control task threw an exception", t);
+        }
         migrationQueue.clear();
         migrationCount.set(0);
         activeMigrations.clear();
@@ -1904,7 +1943,7 @@ public class MigrationManager {
                                 present  = true;
                             }
                         }
-                        if (present) {
+                        if (present && autoRebalance) {
                             triggerControlTask();
                         }
                     }

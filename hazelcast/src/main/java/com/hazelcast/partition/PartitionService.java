@@ -154,4 +154,17 @@ public interface PartitionService {
      * @since 3.3
      */
     boolean forceLocalMemberToBeSafe(long timeout, TimeUnit unit);
+
+    /**
+     * Triggers partition rebalancing or first arrangement if partition state
+     * is not initialized yet.
+     * todo is "first arrangement" something that concerns users? does it make sense
+     *  to mention here?
+     *
+     * If there are active migrations, they will be completed before rebalancing
+     * is triggered. Pending migrations which are not yet being executed
+     * will be cancelled. If current cluster state does not allow migrations,
+     * then rebalancing will be not triggered.
+     */
+    void triggerRebalance();
 }

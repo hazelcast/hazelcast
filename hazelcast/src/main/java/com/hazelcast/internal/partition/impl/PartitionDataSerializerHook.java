@@ -37,6 +37,7 @@ import com.hazelcast.internal.partition.operation.PartitionStateOperation;
 import com.hazelcast.internal.partition.operation.PartitionStateCheckOperation;
 import com.hazelcast.internal.partition.operation.PromotionCommitOperation;
 import com.hazelcast.internal.partition.operation.PublishCompletedMigrationsOperation;
+import com.hazelcast.internal.partition.operation.RebalanceOperation;
 import com.hazelcast.internal.partition.operation.SafeStateCheckOperation;
 import com.hazelcast.internal.partition.operation.ShutdownRequestOperation;
 import com.hazelcast.internal.partition.operation.ShutdownResponseOperation;
@@ -78,8 +79,9 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
     public static final int REPLICA_MIGRATION_EVENT = 22;
     public static final int MIGRATION_EVENT = 23;
     public static final int PARTITION_LOST_EVENT = 24;
+    public static final int REBALANCE = 25;
 
-    private static final int LEN = PARTITION_LOST_EVENT + 1;
+    private static final int LEN = REBALANCE + 1;
 
     @Override
     public int getFactoryId() {
@@ -114,6 +116,7 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
         constructors[REPLICA_MIGRATION_EVENT] = arg -> new ReplicaMigrationEventImpl();
         constructors[MIGRATION_EVENT] = arg -> new MigrationStateImpl();
         constructors[PARTITION_LOST_EVENT] = arg -> new PartitionLostEventImpl();
+        constructors[REBALANCE] = arg -> new RebalanceOperation();
         return new ArrayDataSerializableFactory(constructors);
     }
 }
