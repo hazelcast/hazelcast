@@ -841,7 +841,7 @@ compile 'com.hazelcast.jet:hazelcast-jet-kafka:{jet-version}'
 
 <!--END_DOCUSAURUS_CODE_TABS-->
 
-#### Fault-tolerance
+#### Fault Tolerance
 
 One of the most important features of using Kafka as a source is that
 it's possible to replay data - which enables fault-tolerance. If the job
@@ -859,7 +859,7 @@ committing using `enable.auto.commit` and configuring
 [Kafka documentation](https://kafka.apache.org/22/documentation.html)
 for the descriptions of these properties.
 
-#### Transactional guarantees
+#### Transactional Guarantees
 
 As a sink, it provides exactly-once guarantees at the cost of using
 Kafka transactions: Jet commits the produced records after each snapshot
@@ -971,7 +971,7 @@ p.readFrom(Sources
  .writeTo(Sinks.logger());
 ```
 
-#### Source fault tolerance
+#### Source Fault Tolerance
 
 The source connector is fault-tolerant with the exactly-once guarantee
 (except for the non-durable topic consumer). Fault tolerance is achieved
@@ -1405,7 +1405,7 @@ want to avoid duplicate writes to the database, then a suitable
 _insert-or-update_ statement should be used instead of `INSERT`, such as
 `MERGE` or `REPLACE` or `INSERT .. ON CONFLICT ..`.
 
-#### Fault tolerance
+#### Fault Tolerance
 
 The JDBC sink supports the exactly-once guarantee. It uses two-phase XA
 transactions, the DML statements are committed consistently with the

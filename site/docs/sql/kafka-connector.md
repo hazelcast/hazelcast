@@ -10,7 +10,7 @@ Apache Kafka is schema-less, however SQL assumes a schema. We assume all
 messages in a topic are of the same type (with some exceptions). Kafka
 also supports several serialization options, see below.
 
-## Serialization options
+## Serialization Options
 
 To work with Kafka, you must specify the `keyFormat` and `valueFormat`
 options. Currently, even if you create a table mapping explicitly, we
@@ -73,7 +73,7 @@ option names containing the `.` must be enclosed in double quotes
 because the `.` is a reserved character in SQL, double quotes are used
 to quote identifiers: this way the `.` is interpreted literally.
 
-### JSON serialization
+### JSON Serialization
 
 You don't have to provide any options for the JSON format, but since
 Jet can't automatically determine the column list, you must explicitly

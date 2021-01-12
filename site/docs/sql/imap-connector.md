@@ -21,7 +21,7 @@ arbitrary record to derive the schema and serialization type. You need
 to have at least one record on each cluster member for this to work. If
 you can't ensure this, create the mapping explicitly.
 
-## Serialization options
+## Serialization Options
 
 The `keyFormat` and `valueFormat` options are mandatory. Currently, if
 you create the mapping explicitly, we can't resolve these from a sample.

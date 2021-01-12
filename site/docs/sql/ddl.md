@@ -63,7 +63,7 @@ TYPE type_identifier
   connectors: it's the name of the object in the external system. By
   default, it's equal to the mapping name.
 
-#### Auto-resolving of columns and options
+#### Auto-resolving of Columns and Options
 
 The columns in the column list are optional. The connector can also
 resolve the columns using the options you provide, or by sampling a
@@ -151,7 +151,7 @@ FROM information_schema.mappings
 ORDER BY name
 ```
 
-## Custom connectors
+## Custom Connectors
 
 Implementation of custom SQL connectors is currently not a public API,
 we plan to define an API in the future.

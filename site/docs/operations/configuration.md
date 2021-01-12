@@ -92,7 +92,7 @@ relevant system properties, `hazelcast.jet.config` and
 Each Jet job also has job-specific configuration options. These are covered
 in detail under [Job Management](job-management)
 
-## List of configuration options
+## List of Configuration Options
 
 The files `config/examples/hazelcast-jet-full-example.yaml`  and
 `config/examples/hazelcast-full-example.yaml` include  a description of
