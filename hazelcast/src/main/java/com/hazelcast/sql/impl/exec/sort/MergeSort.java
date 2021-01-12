@@ -161,4 +161,9 @@ public class MergeSort {
     public boolean isDone() {
         return done;
     }
+
+    // For unit testing only
+    public MergeSortSource[] getSources() {
+        return sources;
+    }
 }

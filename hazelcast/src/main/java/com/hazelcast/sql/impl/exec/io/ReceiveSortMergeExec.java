@@ -219,4 +219,9 @@ public class ReceiveSortMergeExec extends AbstractExec {
             return curRowIndex == INDEX_BEFORE;
         }
     }
+
+    // For unit testing only
+    public MergeSort getMergeSort() {
+        return sorter;
+    }
 }

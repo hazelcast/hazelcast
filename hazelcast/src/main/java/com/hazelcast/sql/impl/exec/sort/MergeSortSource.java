@@ -25,7 +25,7 @@ public interface MergeSortSource {
     /**
      * Try advancing the source.
      *
-     * @return {@code true} if advanced successfully, {@code false} in data is available at the moment. In the latter case
+     * @return {@code true} if advanced successfully, {@code false} if data is not available at the moment. In the latter case
      * {@link #isDone()} method should be called to distinguish between missing data and finished input stream.
      */
     boolean advance();
