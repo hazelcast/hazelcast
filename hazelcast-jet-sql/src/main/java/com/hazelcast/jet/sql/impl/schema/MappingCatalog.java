@@ -77,16 +77,12 @@ public class MappingCatalog implements TableResolver {
     }
 
     private Mapping resolveMapping(Mapping mapping) {
-        try {
-            String type = mapping.type();
-            Map<String, String> options = mapping.options();
+        String type = mapping.type();
+        Map<String, String> options = mapping.options();
 
-            SqlConnector connector = connectorCache.forType(type);
-            List<MappingField> resolvedFields = connector.resolveAndValidateFields(nodeEngine, options, mapping.fields());
-            return new Mapping(mapping.name(), type, new ArrayList<>(resolvedFields), new HashMap<>(options));
-        } catch (Exception e) {
-            throw QueryException.error(e.getMessage(), e);
-        }
+        SqlConnector connector = connectorCache.forType(type);
+        List<MappingField> resolvedFields = connector.resolveAndValidateFields(nodeEngine, options, mapping.fields());
+        return new Mapping(mapping.name(), type, new ArrayList<>(resolvedFields), new HashMap<>(options));
     }
 
     public void removeMapping(String name, boolean ifExists) {

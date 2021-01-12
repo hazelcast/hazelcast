@@ -166,7 +166,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                                    .nullDefault();
                     break;
                 default:
-                    throw QueryException.error("unknown type: " + type.getTypeFamily());
+                    throw QueryException.error("Unknown type: " + type.getTypeFamily());
             }
         }
         return schema.endRecord();

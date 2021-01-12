@@ -228,6 +228,10 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             throw QueryException.error("Unable to resolve table metadata. Missing '" + classNameProperty + "' option");
         }
 
-        return ReflectionUtils.loadClass(className);
+        try {
+            return ReflectionUtils.loadClass(className);
+        } catch (Exception e) {
+            throw QueryException.error("Unable to load class: '" + className + "'", e);
+        }
     }
 }
