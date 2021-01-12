@@ -242,36 +242,7 @@ public final class IndexResolver {
     @SuppressWarnings("checkstyle:NPathComplexity")
     private static Map<RelCollation, RelNode> excludeCoveredCollations(List<RelNode> rels) {
         // Order the index scans based on their collation
-        TreeMap<RelCollation, RelNode> relsTreeMap = new TreeMap<>((coll1, coll2) -> {
-            // Compare the collations field by field
-            int coll1Size = coll1.getFieldCollations().size();
-            int coll2Size = coll2.getFieldCollations().size();
-
-            for (int i = 0; i < coll1Size; ++i) {
-                if (i >= coll2Size) {
-                    // The coll1 has more fields and the prefixes are equal
-                    return 1;
-                }
-
-                RelFieldCollation fieldColl1 = coll1.getFieldCollations().get(i);
-                RelFieldCollation fieldColl2 = coll2.getFieldCollations().get(i);
-                // First, compare directions
-                int cmp = fieldColl1.getDirection().compareTo(fieldColl2.getDirection());
-                if (cmp == 0) {
-                    // Directions are the same
-                    if (fieldColl1.getFieldIndex() == fieldColl2.getFieldIndex()) {
-                        // And fieldIndex is the same, try the next field
-                        continue;
-                    } else {
-                        return Integer.compare(fieldColl1.getFieldIndex(), fieldColl2.getFieldIndex());
-                    }
-                }
-                return cmp;
-            }
-
-            // All the fields from coll1 are equal to the fields from coll2, compare the size
-            return Integer.compare(coll1Size, coll2Size);
-        });
+        TreeMap<RelCollation, RelNode> relsTreeMap = new TreeMap<>(new RelCollationComparator());
 
         // Put the rels into the ordered TreeMap
         for (RelNode rel : rels) {

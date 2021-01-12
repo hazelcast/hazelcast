@@ -386,6 +386,61 @@ public class PhysicalIndexScanTest extends IndexOptimizerTestSupport {
         assertEquals(DESCENDING, fieldCollation3.getDirection());
     }
 
+    @Test
+    public void testRelCollationComparator() {
+        RelCollationComparator comparator = new RelCollationComparator();
+
+        RelCollation coll1 = RelCollations.of(new RelFieldCollation(0, DESCENDING));
+
+        RelCollation coll2 = RelCollations.of(Collections.emptyList());
+
+        int cmp = comparator.compare(coll1, coll2);
+        assertTrue(cmp > 0);
+        cmp = comparator.compare(coll2, coll1);
+        assertTrue(cmp < 0);
+
+        coll2 = RelCollations.of(new RelFieldCollation(0, DESCENDING));
+        cmp = comparator.compare(coll1, coll2);
+        assertTrue(cmp == 0);
+
+        coll2 = RelCollations.of(new RelFieldCollation(0, ASCENDING));
+        cmp = comparator.compare(coll1, coll2);
+        assertTrue(cmp > 0);
+
+        coll2 = RelCollations.of(new RelFieldCollation(1, DESCENDING));
+        cmp = comparator.compare(coll1, coll2);
+        assertTrue(cmp < 0);
+
+        coll2 = RelCollations.of(new RelFieldCollation(0, DESCENDING),
+            new RelFieldCollation(1, ASCENDING));
+        cmp = comparator.compare(coll2, coll1);
+        assertTrue(cmp > 0);
+
+        coll1 = RelCollations.of(new RelFieldCollation(0, DESCENDING),
+            new RelFieldCollation(1, DESCENDING));
+
+        coll2 = RelCollations.of(new RelFieldCollation(0, DESCENDING),
+            new RelFieldCollation(1, DESCENDING),
+            new RelFieldCollation(2, ASCENDING));
+
+        // prefix
+        cmp = comparator.compare(coll1, coll2);
+        assertTrue(cmp < 0);
+
+        coll1 = RelCollations.of(new RelFieldCollation(0, DESCENDING),
+            new RelFieldCollation(3, DESCENDING));
+
+        coll2 = RelCollations.of(new RelFieldCollation(0, DESCENDING),
+            new RelFieldCollation(1, DESCENDING),
+            new RelFieldCollation(2, ASCENDING));
+
+        cmp = comparator.compare(coll1, coll2);
+        assertTrue(cmp > 0);
+
+        cmp = comparator.compare(coll2, coll2);
+        assertTrue(cmp == 0);
+    }
+
     private Collection<RelNode> createIndexScans(List<MapTableIndex> indexes, RexNode filter) {
         HazelcastSchema schema = createSchema(indexes);
 
