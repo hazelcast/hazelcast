@@ -87,7 +87,7 @@ public final class SortPhysicalRule extends RelOptRule {
             if (requiresLocalSort) {
                 rel = createLocalSort(logicalSort, physicalInput);
             } else {
-                rel = createLocalNoSort(physicalInput);
+                rel = physicalInput;
             }
 
             // Add merge phase if needed.
@@ -162,10 +162,6 @@ public final class SortPhysicalRule extends RelOptRule {
         );
     }
 
-    private RelNode createLocalNoSort(RelNode input) {
-        return input;
-    }
-
     private static RelNode createMerge(RelNode physicalInput, SortLogicalRel logicalSort) {
         RelTraitSet traitSet = OptUtils.traitPlus(physicalInput.getTraitSet(),
             logicalSort.getCollation(),
@@ -181,6 +177,5 @@ public final class SortPhysicalRule extends RelOptRule {
             physicalInput,
             logicalSort.getCollation()
         );
-
     }
 }
