@@ -26,16 +26,25 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
@@ -104,6 +113,9 @@ public class KvMetadataResolvers {
             }
         }
 
+        options = preprocessOptions(options, true);
+        options = preprocessOptions(options, false);
+
         List<MappingField> keyFields = findMetadataResolver(options, true)
                 .resolveAndValidateFields(true, userFields, options, ss);
         List<MappingField> valueFields = findMetadataResolver(options, false)
@@ -129,8 +141,92 @@ public class KvMetadataResolvers {
             Map<String, String> options,
             InternalSerializationService serializationService
     ) {
+        options = preprocessOptions(options, isKey);
         KvMetadataResolver resolver = findMetadataResolver(options, isKey);
         return requireNonNull(resolver.resolveMetadata(isKey, resolvedFields, options, serializationService));
+    }
+
+    @CheckReturnValue
+    private Map<String, String> preprocessOptions(Map<String, String> options, boolean isKey) {
+        String formatProperty = isKey ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT;
+
+        String formatValue = options.get(formatProperty);
+        if (formatValue == null) {
+            return options;
+        }
+        String classValue;
+        switch (formatValue) {
+            case "varchar":
+            case "character varying":
+            case "char varying":
+                classValue = String.class.getName();
+                break;
+
+            case "boolean":
+                classValue = Boolean.class.getName();
+                break;
+
+            case "tinyint":
+                classValue = Byte.class.getName();
+                break;
+
+            case "smallint":
+                classValue = Short.class.getName();
+                break;
+
+            case "integer":
+            case "int":
+                classValue = Integer.class.getName();
+                break;
+
+            case "bigint":
+                classValue = Long.class.getName();
+                break;
+
+            case "decimal":
+            case "dec":
+            case "numeric":
+                classValue = BigDecimal.class.getName();
+                break;
+
+            case "real":
+                classValue = Float.class.getName();
+                break;
+
+            case "double":
+            case "double precision":
+                classValue = Double.class.getName();
+                break;
+
+            case "time":
+                classValue = LocalTime.class.getName();
+                break;
+
+            case "date":
+                classValue = LocalDate.class.getName();
+                break;
+
+            case "timestamp":
+                classValue = LocalDateTime.class.getName();
+                break;
+
+            case "timestamp with time zone":
+                classValue = OffsetDateTime.class.getName();
+                break;
+
+            default:
+                classValue = null;
+        }
+
+        String classProperty = isKey ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS;
+        if (classValue != null && !options.containsKey(classProperty)) {
+            Map<String, String> newOptions = new HashMap<>(options);
+            newOptions.put(formatProperty, "java");
+            newOptions.put(classProperty, classValue);
+            return newOptions;
+        }
+
+        return options;
     }
 
     private KvMetadataResolver findMetadataResolver(Map<String, String> options, boolean isKey) {
