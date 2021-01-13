@@ -39,7 +39,7 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.partitioner.SingleValuePartitioner;
+import com.hazelcast.sql.impl.partitioner.ZeroPartitioner;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
@@ -380,7 +380,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             id,
             upstreamNode,
             edge,
-            SingleValuePartitioner.INSTANCE
+            ZeroPartitioner.INSTANCE
         );
 
         addFragment(sendNode, dataMemberMapping());

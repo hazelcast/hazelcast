@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.partitioner;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.io.IOException;
@@ -26,11 +28,11 @@ import java.io.IOException;
 /**
  * Partitioner that is not making actual partitioning mapping all rows to the same partition.
  */
-public final class SingleValuePartitioner implements RowPartitioner {
+public final class ZeroPartitioner implements RowPartitioner, IdentifiedDataSerializable {
 
-    public static final SingleValuePartitioner INSTANCE = new SingleValuePartitioner();
+    public static final ZeroPartitioner INSTANCE = new ZeroPartitioner();
 
-    private SingleValuePartitioner() {
+    public ZeroPartitioner() {
         // No-op.
     }
 
@@ -56,11 +58,21 @@ public final class SingleValuePartitioner implements RowPartitioner {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof SingleValuePartitioner;
+        return obj instanceof ZeroPartitioner;
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{}";
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.ZERO_PARTITIONER;
     }
 }
