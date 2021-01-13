@@ -34,7 +34,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -218,7 +217,7 @@ public class SortExecTest extends SqlTestSupport {
             new ReceiveSortMergeExec(
                 1,
                 inbox,
-                Collections.singletonList(0),
+                new int[]{0},
                 new boolean[]{true}
             );
 
@@ -332,7 +331,7 @@ public class SortExecTest extends SqlTestSupport {
             new ReceiveSortMergeExec(
                 1,
                 inbox,
-                Collections.singletonList(0),
+                new int[]{0},
                 new boolean[]{true}
             );
         receiveSortMergeExec.setup(emptyFragmentContext());
@@ -404,7 +403,7 @@ public class SortExecTest extends SqlTestSupport {
             new ReceiveSortMergeExec(
                 1,
                 inbox,
-                Collections.singletonList(0),
+                new int[]{0},
                 new boolean[]{true}
             );
         exec.setup(emptyFragmentContext());

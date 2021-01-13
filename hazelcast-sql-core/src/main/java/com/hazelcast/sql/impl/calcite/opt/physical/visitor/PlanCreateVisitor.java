@@ -386,7 +386,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         addFragment(sendNode, dataMemberMapping());
 
         List<RelFieldCollation> collations = rel.getCollation().getFieldCollations();
-        List<Integer> columnIndexes = new ArrayList<>(collations.size());
+        int[] columnIndexes = new int[collations.size()];
         boolean[] ascs = new boolean[collations.size()];
 
         for (int i = 0; i < collations.size(); ++i) {
@@ -394,7 +394,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             RelFieldCollation.Direction direction = collation.getDirection();
             int idx = collation.getFieldIndex();
 
-            columnIndexes.add(idx);
+            columnIndexes[i] = idx;
             ascs[i] = !direction.isDescending();
         }
 
