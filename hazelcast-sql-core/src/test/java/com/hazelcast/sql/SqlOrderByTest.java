@@ -27,7 +27,7 @@ import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -123,7 +123,6 @@ public class SqlOrderByTest extends SqlTestSupport {
             }
         }
 
-        clearMap();
         // Get proper map
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
 
@@ -156,14 +155,10 @@ public class SqlOrderByTest extends SqlTestSupport {
         map.putAll(data);
     }
 
-    protected void clearMap() {
-        getTarget().getMap(MAP_OBJECT).clear();
-        getTarget().getMap(MAP_BINARY).clear();
-    }
-
-    @AfterClass
-    public static void afterClass() {
+    @After
+    public void after() {
         FACTORY.shutdownAll();
+        members = null;
     }
 
     protected Config memberConfig() {
@@ -399,7 +394,6 @@ public class SqlOrderByTest extends SqlTestSupport {
             while (rowIterator.hasNext()) {
                 SqlRow row = rowIterator.next();
                 assertOrdered(prevRow, row, orderFields, orderDirections, rowMetadata);
-                System.out.println(row);
 
                 prevRow = row;
                 count++;
