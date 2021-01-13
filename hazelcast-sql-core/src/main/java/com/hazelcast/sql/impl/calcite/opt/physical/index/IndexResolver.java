@@ -182,10 +182,8 @@ public final class IndexResolver {
 
             if (relAscending != null) {
                 RelCollation relAscCollation = getCollation(relAscending);
-                if (fullScanRelsMap.containsKey(relAscCollation)) {
-                    // The fulls scan has the same collation, exclude it
-                    fullScanRelsMap.remove(relAscCollation);
-                }
+                // Exclude a full scan that has the same collation
+                fullScanRelsMap.remove(relAscCollation);
 
                 rels.add(relAscending);
 
@@ -194,10 +192,8 @@ public final class IndexResolver {
                     rels.add(relDescending);
 
                     RelCollation relDescCollation = getCollation(relDescending);
-                    if (fullScanRelsMap.containsKey(relDescCollation)) {
-                        // The fulls scan has the same collation, exclude it
-                        fullScanRelsMap.remove(relDescCollation);
-                    }
+                    // Exclude a full scan that has the same collation
+                    fullScanRelsMap.remove(relDescCollation);
                 }
             }
         }
@@ -212,6 +208,7 @@ public final class IndexResolver {
 
     /**
      * Replaces a direction in the collation trait of the rel
+     *
      * @param rel       the rel
      * @param direction the collation
      * @return the rel with changed collation
