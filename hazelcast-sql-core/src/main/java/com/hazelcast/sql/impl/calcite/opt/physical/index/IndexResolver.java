@@ -238,7 +238,7 @@ public final class IndexResolver {
     @SuppressWarnings("checkstyle:NPathComplexity")
     private static Map<RelCollation, RelNode> excludeCoveredCollations(List<RelNode> rels) {
         // Order the index scans based on their collation
-        TreeMap<RelCollation, RelNode> relsTreeMap = new TreeMap<>(new RelCollationComparator());
+        TreeMap<RelCollation, RelNode> relsTreeMap = new TreeMap<>(RelCollationComparator.INSTANCE);
 
         // Put the rels into the ordered TreeMap
         for (RelNode rel : rels) {

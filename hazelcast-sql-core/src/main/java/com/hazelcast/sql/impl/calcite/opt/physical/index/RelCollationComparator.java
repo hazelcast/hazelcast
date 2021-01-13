@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.index;
 
+import com.hazelcast.sql.impl.partitioner.ZeroPartitioner;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelFieldCollation;
 
@@ -28,6 +29,12 @@ import java.util.Comparator;
  * If one collation is a prefix of another one, the one with the bigger size is greater.
  */
 final class RelCollationComparator implements Comparator<RelCollation> {
+
+    public static final RelCollationComparator INSTANCE = new RelCollationComparator();
+
+    private RelCollationComparator() {
+        // no-op
+    }
 
     @Override
     public int compare(RelCollation coll1, RelCollation coll2) {

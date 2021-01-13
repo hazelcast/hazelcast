@@ -404,7 +404,7 @@ public class PhysicalIndexScanTest extends IndexOptimizerTestSupport {
 
     @Test
     public void testRelCollationComparator() {
-        RelCollationComparator comparator = new RelCollationComparator();
+        RelCollationComparator comparator = RelCollationComparator.INSTANCE;
 
         RelCollation coll1 = RelCollations.of(new RelFieldCollation(0, DESCENDING));
 
