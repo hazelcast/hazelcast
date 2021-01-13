@@ -1184,6 +1184,8 @@ public interface GeneralStage<T> extends Stage {
      * receive it. Its primary purpose is for development use, when running Jet
      * on a local machine.
      * <p>
+     * Note that peek after {@link #rebalance(FunctionEx)} operation is not supported.
+     * <p>
      * Sample usage:
      * <pre>{@code
      * users.peek(
@@ -1223,6 +1225,8 @@ public interface GeneralStage<T> extends Stage {
      * receive it. Its primary purpose is for development use, when running Jet
      * on a local machine.
      * <p>
+     * Note that peek after {@link #rebalance(FunctionEx)} operation is not supported.
+     * <p>
      * Sample usage:
      * <pre>{@code
      * users.peek(User::getName)
@@ -1249,6 +1253,8 @@ public interface GeneralStage<T> extends Stage {
      * The stage logs each item on whichever cluster member it happens to
      * receive it. Its primary purpose is for development use, when running Jet
      * on a local machine.
+     * <p>
+     * Note that peek after {@link #rebalance(FunctionEx)} is not supported.
      *
      * @return the newly attached stage
      * @see #peek(PredicateEx, FunctionEx)
