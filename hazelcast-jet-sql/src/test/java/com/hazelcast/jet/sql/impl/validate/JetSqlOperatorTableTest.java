@@ -17,9 +17,9 @@
 package com.hazelcast.jet.sql.impl.validate;
 
 import com.google.common.collect.ImmutableMap;
+import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunctionParameter;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastObjectType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import junitparams.JUnitParamsRunner;
@@ -27,13 +27,8 @@ import junitparams.Parameters;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.schema.FunctionParameter;
-import org.apache.calcite.schema.TableFunction;
 import org.apache.calcite.sql.SqlBasicCall;
-import org.apache.calcite.sql.SqlBasicTypeNameSpec;
-import org.apache.calcite.sql.SqlDataTypeSpec;
-import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.fun.SqlArrayValueConstructor;
 import org.apache.calcite.sql.fun.SqlMapValueConstructor;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -44,11 +39,16 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Arrays;
+
 import static java.util.Collections.singletonList;
-import static org.apache.calcite.sql.SqlLiteral.createApproxNumeric;
-import static org.apache.calcite.sql.SqlLiteral.createBoolean;
+import static org.apache.calcite.sql.SqlLiteral.createCharString;
 import static org.apache.calcite.sql.SqlLiteral.createExactNumeric;
+import static org.apache.calcite.sql.SqlLiteral.createNull;
 import static org.apache.calcite.sql.parser.SqlParserPos.ZERO;
+import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
+import static org.apache.calcite.sql.type.SqlTypeName.MAP;
+import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
@@ -59,57 +59,67 @@ public class JetSqlOperatorTableTest {
     private static final RelDataTypeFactory TYPE_FACTORY = HazelcastTypeFactory.INSTANCE;
 
     @Mock
-    private TableFunction tableFunction;
+    private JetTableFunction tableFunction;
 
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
+    @SuppressWarnings("unused")
+    private Object[] unsupportedNodes() {
+        return Arrays.stream(SqlTypeName.values())
+                     .filter(type -> type != INTEGER && type != VARCHAR && type != MAP)
+                     .map(type -> new Object[]{type})
+                     .toArray(Object[]::new);
+    }
+
+    @Test
+    @Parameters(method = "unsupportedNodes")
+    public void when_getRowTypeWithUnsupportedType_then_throws(SqlTypeName type) {
+        assertThatThrownBy(() -> function("unsupported", type))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unsupported type");
+    }
+
     @SuppressWarnings({"unused", "checkstyle:LineLength"})
-    private Object[] invalidNodes() {
+    private Object[] mismatchedNodes() {
         return new Object[]{
-                new Object[]{new SqlBasicCall(
-                        new SqlArrayValueConstructor(),
-                        new SqlNode[]{literal("value")},
-                        ZERO
-                )},
-                new Object[]{new SqlBasicCall(
-                        new HazelcastSqlCastFunction(),
-                        new SqlNode[]{literal("true"), new SqlDataTypeSpec(new SqlBasicTypeNameSpec(SqlTypeName.BOOLEAN, ZERO), ZERO)},
-                        ZERO
-                )},
-                new Object[]{createBoolean(true, ZERO)},
-                new Object[]{createExactNumeric("9223372036854775", ZERO)},
-                new Object[]{createApproxNumeric("9223372036854775.123", ZERO)}
+                new Object[]{createCharString("value", ZERO), INTEGER},
+                new Object[]{new SqlBasicCall(new SqlMapValueConstructor(), new SqlNode[]{literal("key"), literal("value")}, ZERO), INTEGER},
+                new Object[]{createExactNumeric("1", ZERO), VARCHAR},
+                new Object[]{new SqlBasicCall(new SqlMapValueConstructor(), new SqlNode[]{literal("key"), literal("value")}, ZERO), VARCHAR},
+                new Object[]{createExactNumeric("1", ZERO), MAP},
+                new Object[]{createCharString("value", ZERO), MAP},
         };
     }
 
     @Test
-    @Parameters(method = "invalidNodes")
-    public void when_getRowTypeWithInvalidNode_then_throws(SqlNode node) {
-        SqlUserDefinedTableFunction sqlFunction = function("invalid", SqlTypeName.VARCHAR);
+    @Parameters(method = "mismatchedNodes")
+    public void when_getRowTypeWithMismatchedType_then_throws(SqlNode node, SqlTypeName type) {
+        SqlUserDefinedTableFunction sqlFunction = function("mismatched", type);
 
         assertThatThrownBy(() -> sqlFunction.getRowType(TYPE_FACTORY, singletonList(node)))
                 .isInstanceOf(QueryException.class)
-                .hasMessageContaining("Actual argument");
+                .hasMessageContaining("Invalid argument of a call to function");
     }
 
     @SuppressWarnings({"unused", "checkstyle:LineLength"})
     private Object[] validNodes() {
         return new Object[]{
+                new Object[]{new SqlBasicCall(SqlStdOperatorTable.DEFAULT, new SqlNode[0], ZERO), INTEGER, null},
+                new Object[]{createNull(ZERO), INTEGER, null},
+                new Object[]{createExactNumeric("1", ZERO), INTEGER, 1},
+                new Object[]{new SqlBasicCall(SqlStdOperatorTable.DEFAULT, new SqlNode[0], ZERO), VARCHAR, null},
+                new Object[]{createNull(ZERO), VARCHAR, null},
+                new Object[]{createCharString("string", ZERO), VARCHAR, "string"},
+                new Object[]{new SqlBasicCall(SqlStdOperatorTable.DEFAULT, new SqlNode[0], ZERO), MAP, null},
+                new Object[]{createNull(ZERO), MAP, null},
                 new Object[]{
                         new SqlBasicCall(new SqlMapValueConstructor(), new SqlNode[]{literal("key"), literal("value")}, ZERO),
-                        SqlTypeName.MAP,
+                        MAP,
                         ImmutableMap.of("key", "value")
                 },
-                new Object[]{
-                        new SqlBasicCall(SqlStdOperatorTable.DEFAULT, new SqlNode[0], ZERO),
-                        SqlTypeName.VARCHAR,
-                        null
-                },
-                new Object[]{SqlLiteral.createNull(ZERO), SqlTypeName.VARCHAR, null},
-                new Object[]{SqlLiteral.createCharString("string", ZERO), SqlTypeName.VARCHAR, "string"},
         };
     }
 
@@ -143,7 +153,7 @@ public class JetSqlOperatorTableTest {
     @Test
     @Parameters(method = "invalidMapNodes")
     public void when_getRowTypeWithInvalidMapNode_then_throws(SqlNode node) {
-        SqlUserDefinedTableFunction sqlFunction = function("invalidMap", SqlTypeName.MAP);
+        SqlUserDefinedTableFunction sqlFunction = function("invalidMap", MAP);
 
         assertThatThrownBy(() -> sqlFunction.getRowType(TYPE_FACTORY, singletonList(node)))
                 .isInstanceOf(QueryException.class)
@@ -152,7 +162,7 @@ public class JetSqlOperatorTableTest {
 
     @Test
     public void when_duplicateEntryInMap_then_throws() {
-        SqlUserDefinedTableFunction sqlFunction = function("duplicatedMap", SqlTypeName.MAP);
+        SqlUserDefinedTableFunction sqlFunction = function("duplicatedMap", MAP);
 
         assertThatThrownBy(() -> sqlFunction.getRowType(TYPE_FACTORY, singletonList(new SqlBasicCall(
                 new SqlMapValueConstructor(),
@@ -169,6 +179,6 @@ public class JetSqlOperatorTableTest {
     }
 
     private static SqlNode literal(String value) {
-        return SqlLiteral.createCharString(value, ZERO);
+        return createCharString(value, ZERO);
     }
 }

@@ -26,7 +26,6 @@ import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.schema.FunctionParameter;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,6 +78,8 @@ public final class FileTableFunction extends JetTableFunction {
     private final List<FunctionParameter> parameters;
 
     private FileTableFunction(String format, List<FunctionParameter> parameters) {
+        super(FileSqlConnector.INSTANCE);
+
         this.format = format;
         this.parameters = parameters;
     }
@@ -86,11 +87,6 @@ public final class FileTableFunction extends JetTableFunction {
     @Override
     public List<FunctionParameter> getParameters() {
         return parameters;
-    }
-
-    @Override
-    public Type getElementType(List<Object> arguments) {
-        return Object[].class;
     }
 
     @Override

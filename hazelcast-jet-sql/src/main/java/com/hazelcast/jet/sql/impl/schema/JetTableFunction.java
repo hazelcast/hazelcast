@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeComparability;
@@ -30,13 +31,33 @@ import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.List;
 
 public abstract class JetTableFunction implements TableFunction {
 
+    private final SqlConnector connector;
+
+    protected JetTableFunction(SqlConnector connector) {
+        this.connector = connector;
+    }
+
+    public final boolean isStream() {
+        return connector.isStream();
+    }
+
+    public final HazelcastTable toTable(RelDataType rowType) {
+        return ((JetFunctionRelDataType) rowType).table();
+    }
+
     @Override
-    public final RelDataType getRowType(RelDataTypeFactory typeFactory, List<Object> arguments) {
+    public final Type getElementType(List<Object> arguments) {
+        return Object[].class;
+    }
+
+    @Override
+    public RelDataType getRowType(RelDataTypeFactory typeFactory, List<Object> arguments) {
         HazelcastTable table = toTable(arguments);
         RelDataType rowType = table.getRowType(typeFactory);
 
@@ -44,10 +65,6 @@ public abstract class JetTableFunction implements TableFunction {
     }
 
     protected abstract HazelcastTable toTable(List<Object> arguments);
-
-    public HazelcastTable toTable(RelDataType rowType) {
-        return ((JetFunctionRelDataType) rowType).table();
-    }
 
     /**
      * The only purpose of this class is to be able to pass the {@code

@@ -929,11 +929,25 @@ public class SqlAggregateTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_aggregatingStreamingFunction() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT COUNT(*) FROM TABLE(GENERATE_STREAM(1))"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("not supported");
+    }
+
+    @Test
     public void test_distinctStreamingSource() {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + " TYPE " + TestStreamSqlConnector.TYPE_NAME);
 
         assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM " + name))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("not supported");
+    }
+
+    @Test
+    public void test_distinctStreamingFunction() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT DISTINCT v FROM TABLE(GENERATE_STREAM(1))"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("not supported");
     }

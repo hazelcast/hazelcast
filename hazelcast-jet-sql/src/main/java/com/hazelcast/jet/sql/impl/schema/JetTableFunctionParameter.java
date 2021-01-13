@@ -22,6 +22,7 @@ import org.apache.calcite.schema.FunctionParameter;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.apache.calcite.sql.type.SqlTypeName.MAP;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
@@ -36,10 +37,10 @@ public class JetTableFunctionParameter implements FunctionParameter {
         this.ordinal = ordinal;
         this.name = name;
 
-        // supporting just string & map[string, string] parameters for now
+        // supporting just int, string & map[string, string] parameters for now
         // allowing other types requires at least proper validation
         // if/when implemented, consider using it in SqlOption as well
-        checkTrue(type == VARCHAR || type == MAP, "Unsupported type: " + type);
+        checkTrue(type == INTEGER || type == VARCHAR || type == MAP, "Unsupported type: " + type);
         this.type = type;
 
         this.required = required;
@@ -57,7 +58,7 @@ public class JetTableFunctionParameter implements FunctionParameter {
 
     @Override
     public RelDataType getType(RelDataTypeFactory typeFactory) {
-        return type == VARCHAR
+        return type == INTEGER || type == VARCHAR
                 ? typeFactory.createSqlType(type)
                 : typeFactory.createMapType(typeFactory.createSqlType(VARCHAR), typeFactory.createSqlType(VARCHAR));
     }

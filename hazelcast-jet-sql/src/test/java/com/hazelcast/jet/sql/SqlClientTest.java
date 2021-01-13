@@ -21,7 +21,6 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.sql.impl.connector.test.FailingTestSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestEmptyStreamSqlConnector;
-import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
@@ -70,8 +69,7 @@ public class SqlClientTest extends SqlTestSupport {
         JetInstance client = factory().newClient();
         SqlService sqlService = client.getSql();
 
-        sqlService.execute("CREATE MAPPING t TYPE " + TestStreamSqlConnector.TYPE_NAME);
-        sqlService.execute("SELECT * FROM t");
+        sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(100))");
 
         Job job = instance().getJobs().stream().filter(j -> !j.getStatus().isTerminal()).findFirst().orElse(null);
         assertNotNull("no active job found", job);

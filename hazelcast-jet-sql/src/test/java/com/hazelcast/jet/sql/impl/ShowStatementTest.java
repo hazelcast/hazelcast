@@ -22,7 +22,6 @@ import com.hazelcast.jet.core.TestProcessors;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
-import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
@@ -94,11 +93,10 @@ public class ShowStatementTest extends SqlTestSupport {
 
     @Test
     public void test_showJobs() {
-        sqlService.execute("create mapping t type " + TestStreamSqlConnector.TYPE_NAME);
         sqlService.execute(javaSerializableMapDdl("m", Integer.class, Integer.class));
         sqlService.execute("create job testJob as " +
                 "sink into m " +
-                "select v, v from t");
+                "select v, v from table(generate_stream(1))");
         assertRowsOrdered("show jobs", singletonList(new Row("testJob")));
     }
 
