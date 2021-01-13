@@ -162,15 +162,14 @@ public class KvMetadataResolvers {
 
     public static void maybeAddDefaultField(
             boolean isKey,
-            @Nonnull Map<QueryPath, MappingField> externalFieldsByPath,
+            @Nonnull List<MappingField> resolvedFields,
             @Nonnull List<TableField> tableFields
     ) {
-        // Add the default `__key` or `this` field as hidden, if not present in the external
-        // names (the path), nor in the field names
-        QueryPath path = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
-        if (!externalFieldsByPath.containsKey(path)
-                && tableFields.stream().noneMatch(f -> f.getName().equals(path.toString()))) {
-            tableFields.add(new MapTableField(path.toString(), QueryDataType.OBJECT, true, path));
+        // Add the default `__key` or `this` field as hidden, if present neither in the external
+        // names, nor in the field names
+        String fieldName = isKey ? KEY : VALUE;
+        if (resolvedFields.stream().noneMatch(f -> f.externalName().equals(fieldName) || f.name().equals(fieldName))) {
+            tableFields.add(new MapTableField(fieldName, QueryDataType.OBJECT, true, QueryPath.create(fieldName)));
         }
     }
 }

@@ -44,6 +44,7 @@ import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers.
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers.maybeAddDefaultField;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 /**
@@ -101,6 +102,11 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                     + mappingField.name() + "'");
         }
         String name = mappingField == null ? (isKey ? KEY : VALUE) : mappingField.name();
+        if (mappingField == null && userFields.stream().anyMatch(f -> f.name().equals(name))) {
+            // The user didn't specify the column himself, but he specified some other column under
+            // the name we would like to specify our column - we can't resolve any columns
+            return emptyList();
+        }
 
         MappingField field = new MappingField(name, type, path.toString());
 
@@ -175,7 +181,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         if (type != QueryDataType.OBJECT) {
             return resolvePrimitiveMetadata(isKey, externalFieldsByPath);
         } else {
-            return resolveObjectMetadata(isKey, externalFieldsByPath, clazz);
+            return resolveObjectMetadata(isKey, resolvedFields, externalFieldsByPath, clazz);
         }
     }
 
@@ -183,10 +189,10 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         QueryPath path = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
         MappingField mappingField = externalFieldsByPath.get(path);
 
-        TableField field = new MapTableField(mappingField.name(), mappingField.type(), false, path);
-
         return new KvMetadata(
-                singletonList(field),
+                mappingField != null
+                        ? singletonList(new MapTableField(mappingField.name(), mappingField.type(), false, path))
+                        : emptyList(),
                 GenericQueryTargetDescriptor.DEFAULT,
                 PrimitiveUpsertTargetDescriptor.INSTANCE
         );
@@ -194,6 +200,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
 
     private KvMetadata resolveObjectMetadata(
             boolean isKey,
+            List<MappingField> resolvedFields,
             Map<QueryPath, MappingField> externalFieldsByPath,
             Class<?> clazz
     ) {
@@ -212,7 +219,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             }
         }
 
-        maybeAddDefaultField(isKey, externalFieldsByPath, fields);
+        maybeAddDefaultField(isKey, resolvedFields, fields);
         return new KvMetadata(
                 fields,
                 GenericQueryTargetDescriptor.DEFAULT,

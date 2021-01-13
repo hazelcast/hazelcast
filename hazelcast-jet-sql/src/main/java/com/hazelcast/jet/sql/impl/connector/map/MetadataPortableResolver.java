@@ -168,7 +168,7 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             fields.add(new MapTableField(name, type, false, path));
         }
 
-        maybeAddDefaultField(isKey, externalFieldsByPath, fields);
+        maybeAddDefaultField(isKey, resolvedFields, fields);
         return new KvMetadata(
                 fields,
                 GenericQueryTargetDescriptor.DEFAULT,

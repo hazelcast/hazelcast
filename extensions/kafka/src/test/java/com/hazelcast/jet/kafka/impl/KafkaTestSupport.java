@@ -81,6 +81,7 @@ public class KafkaTestSupport {
 
     private KafkaServer kafkaServer;
     private KafkaProducer<Integer, String> producer;
+    private KafkaProducer<String, String> stringStringProducer;
     private int brokerPort = -1;
     private String brokerConnectionString;
 
@@ -175,6 +176,10 @@ public class KafkaTestSupport {
         return getProducer().send(new ProducerRecord<>(topic, key, value));
     }
 
+    public Future<RecordMetadata> produce(String topic, String key, String value) {
+        return getStringStringProducer().send(new ProducerRecord<>(topic, key, value));
+    }
+
     Future<RecordMetadata> produce(String topic, int partition, Long timestamp, Integer key, String value) {
         return getProducer().send(new ProducerRecord<>(topic, partition, timestamp, key, value));
     }
@@ -188,6 +193,17 @@ public class KafkaTestSupport {
             producer = new KafkaProducer<>(producerProps);
         }
         return producer;
+    }
+
+    private KafkaProducer<String, String> getStringStringProducer() {
+        if (stringStringProducer == null) {
+            Properties producerProps = new Properties();
+            producerProps.setProperty("bootstrap.servers", BROKER_HOST + ':' + brokerPort);
+            producerProps.setProperty("key.serializer", StringSerializer.class.getCanonicalName());
+            producerProps.setProperty("value.serializer", StringSerializer.class.getCanonicalName());
+            stringStringProducer = new KafkaProducer<>(producerProps);
+        }
+        return stringStringProducer;
     }
 
     public void resetProducer() {

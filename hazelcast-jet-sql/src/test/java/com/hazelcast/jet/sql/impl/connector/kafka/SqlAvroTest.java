@@ -56,6 +56,8 @@ import java.util.Properties;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.time.ZoneOffset.UTC;
@@ -280,7 +282,7 @@ public class SqlAvroTest extends SqlTestSupport {
         when_explicitTopLevelField_then_fail("this", "__key");
     }
 
-    public void when_explicitTopLevelField_then_fail(String field, String otherField) {
+    private void when_explicitTopLevelField_then_fail(String field, String otherField) {
         String name = randomName();
         assertThatThrownBy(() ->
                 sqlService.execute("CREATE MAPPING " + name + " ("
@@ -295,6 +297,31 @@ public class SqlAvroTest extends SqlTestSupport {
                         + ")"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessage("Cannot use the '" + field + "' field with Avro serialization");
+    }
+
+    @Test
+    public void test_valueFieldMappedUnderTopLevelKeyName() {
+        String name = createRandomTopic();
+        sqlService.execute("CREATE MAPPING " + name + "(\n"
+                + "__key INT EXTERNAL NAME id\n"
+                + ", name VARCHAR\n"
+                + ')' + "TYPE " + KafkaSqlConnector.TYPE_NAME + " \n"
+                + "OPTIONS (\n"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "'\n"
+                + ", '" + OPTION_KEY_CLASS + "'='" + String.class.getName() + "'\n"
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + AVRO_FORMAT + "'\n"
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + "'\n"
+                + ", 'schema.registry.url'='" + schemaRegistry.getURI() + "'\n"
+                + ", 'auto.offset.reset'='earliest'"
+                + ")"
+        );
+
+        sqlService.execute("INSERT INTO " + name + " VALUES(123, 'foo')");
+
+        assertRowsEventuallyInAnyOrder(
+                "select __key, name from " + name,
+                singletonList(new Row(123, "foo"))
+        );
     }
 
     @Test
