@@ -258,7 +258,7 @@ public class SqlOrderByTest extends SqlTestSupport {
                 Arrays.asList(true));
             fail("Order by without matching index should fail");
         } catch (HazelcastSqlException e) {
-            assertEquals(String.format("Cannot perform ORDER BY clause without a matching index. Add a SORTED index to the map %s on the field(s) [intVal].", mapName()),
+            assertEquals("Cannot execute ORDER BY clause, because its input is not sorted. Consider adding a SORTED index to the data source.",
                 e.getMessage());
         }
 
@@ -268,7 +268,8 @@ public class SqlOrderByTest extends SqlTestSupport {
                 Arrays.asList(true, true));
             fail("Order by without matching index should fail");
         } catch (HazelcastSqlException e) {
-            assertEquals(String.format("Cannot perform ORDER BY clause without a matching index. Add a SORTED composite index to the map %s on the field(s) [intVal, realVal].", mapName()) , e.getMessage());
+            assertEquals("Cannot execute ORDER BY clause, because its input is not sorted. Consider adding a SORTED index to the data source.",
+                e.getMessage());
         }
     }
 
@@ -296,7 +297,7 @@ public class SqlOrderByTest extends SqlTestSupport {
                 Collections.emptyList());
             fail("Order by on top of project should fail");
         } catch (HazelcastSqlException e) {
-            assertEquals("Cannot perform ORDER BY on top of operator ProjectPhysicalRel. ORDER BY clause is supported only on top of the map index scan operator matching the sorting fields.", e.getMessage());
+            assertEquals("Cannot execute ORDER BY clause, because its input is not sorted. Consider adding a SORTED index to the data source.", e.getMessage());
         }
 
     }
