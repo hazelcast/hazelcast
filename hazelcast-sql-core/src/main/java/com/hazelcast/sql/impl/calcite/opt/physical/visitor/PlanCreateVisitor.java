@@ -295,7 +295,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         } else {
             StringBuilder msgBuilder = new StringBuilder();
             msgBuilder.append(String.format("Cannot perform ORDER BY on top of operator %s. ", rel.getInput().getRelTypeName()));
-            msgBuilder.append("ORDER BY clause is supported only on top of the map index scan operator matching the sorting fields.");
+            msgBuilder.append("ORDER BY clause is supported only on top of the map index scan operator ");
+            msgBuilder.append("matching the sorting fields.");
             throw QueryException.error(msgBuilder.toString());
         }
     }

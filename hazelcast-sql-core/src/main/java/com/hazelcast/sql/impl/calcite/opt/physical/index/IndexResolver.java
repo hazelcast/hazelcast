@@ -103,7 +103,7 @@ public final class IndexResolver {
      * @param indexes      indexes available on the map being scanned
      * @return zero, one or more index scan rels
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "checkstyle:MethodLength"})
     public static Collection<RelNode> createIndexScans(
         MapScanLogicalRel scan,
         DistributionTrait distribution,
@@ -174,7 +174,6 @@ public final class IndexResolver {
         }
 
         List<RelNode> rels = new ArrayList<>(supportedIndexes.size());
-
         for (MapTableIndex index : supportedIndexes) {
             // Create index scan based on candidates, if possible. Candidates could be merged into more complex
             // filters whenever possible.
