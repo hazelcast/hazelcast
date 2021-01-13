@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.scan.index;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapContainer;
@@ -32,6 +33,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import static com.hazelcast.config.IndexType.SORTED;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 
@@ -56,7 +58,7 @@ public class IndexFilterIteratorTestSupport extends IndexFilterTestSupport {
         return mapContainer.getIndexes().getIndex(INDEX_NAME);
     }
 
-    protected static <T> void checkIterator(boolean expectedDescending, Iterator<QueryableEntry> iterator, T... expectedKeys) {
+    protected static <T> void checkIterator(IndexType indexType, boolean expectedDescending, Iterator<QueryableEntry> iterator, T... expectedKeys) {
         Set<T> expected;
 
         if (expectedKeys != null) {
@@ -83,13 +85,10 @@ public class IndexFilterIteratorTestSupport extends IndexFilterTestSupport {
                 value = getSerializationService().toObject(value);
             }
 
-            if (prevValue != null) {
+            if (indexType == SORTED && prevValue != null) {
                 int cmp = ((Value) prevValue).compareTo((Value) value, expectedDescending);
-                if (expectedDescending) {
-                    assertTrue("Wrong collation, prevValue " + prevValue + ", value " + value, cmp >= 0);
-                } else {
-                    assertTrue("Wrong collation, prevValue " + prevValue + ", value " + value, cmp <= 0);
-                }
+                assertTrue("Wrong collation, prevValue " + prevValue + ", value " + value + ", expectedDescending " + expectedDescending,
+                    cmp <= 0);
             }
             prevValue = value;
 
@@ -114,27 +113,25 @@ public class IndexFilterIteratorTestSupport extends IndexFilterTestSupport {
         }
 
         public int compareTo(Value o, boolean descending) {
-            // NULLs are coming last if the sort is ASC
-            // NULLs are coming first if the sort is DESC
-
+            // NULLs are less than any other value
             if (value1 == null) {
-                return o.value1 == null ? 0 : (descending ? -1 : 1);
+                return o.value1 == null ? 0 : (descending ? 1 : -1);
             }
             if (o.value1 == null) {
-                return descending ? 1 : -1;
+                return descending ? -1 : 1;
             }
-            int cmp1 = Integer.compare(value1, o.value1);
+            int cmp1 = descending ? Integer.compare(o.value1, value1) : Integer.compare(value1, o.value1);
             if (cmp1 == 0) {
 
                 if (value2 == null) {
-                    return o.value2 == null ? 0 : (descending ? -1 : 1);
+                    return o.value2 == null ? 0 : (descending ? 1 : -1);
                 }
 
                 if (o.value2 == null) {
-                    return descending ? 1 : -1;
+                    return descending ? -1 : 1;
                 }
 
-                return Integer.compare(value2, o.value2);
+                return descending ? Integer.compare(o.value2, value2) : Integer.compare(value2, o.value2);
             }
             return cmp1;
         }

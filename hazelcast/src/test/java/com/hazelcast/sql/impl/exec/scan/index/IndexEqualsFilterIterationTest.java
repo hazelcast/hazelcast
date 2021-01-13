@@ -69,27 +69,27 @@ public class IndexEqualsFilterIterationTest extends IndexFilterIteratorTestSuppo
         ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
 
         // Check missing value.
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValue(1)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValue(1)).getEntries(index, descendingDirection, evalContext));
 
         // Check single value.
         map.put(1, new Value(1));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValue(1)).getEntries(index, descendingDirection, evalContext), 1);
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValue(1)).getEntries(index, descendingDirection, evalContext), 1);
 
         // Check multiple values.
         map.put(2, new Value(1));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValue(1)).getEntries(index, descendingDirection, evalContext), 1, 2);
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValue(1)).getEntries(index, descendingDirection, evalContext), 1, 2);
 
         // Check null value.
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValue(null, false)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValue(null, true)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValue(null, false)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValue(null, true)).getEntries(index, descendingDirection, evalContext));
 
         map.put(3, new Value(null));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValue(null, false)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValue(null, true)).getEntries(index, descendingDirection, evalContext), 3);
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValue(null, false)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValue(null, true)).getEntries(index, descendingDirection, evalContext), 3);
 
         map.put(4, new Value(null));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValue(null, false)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValue(null, true)).getEntries(index, descendingDirection, evalContext), 3, 4);
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValue(null, false)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValue(null, true)).getEntries(index, descendingDirection, evalContext), 3, 4);
     }
 
     @Test
@@ -113,62 +113,62 @@ public class IndexEqualsFilterIterationTest extends IndexFilterIteratorTestSuppo
         ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
 
         // Check missing value.
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(1, 2)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(1, 2)).getEntries(index, descendingDirection, evalContext));
 
         map.put(1, new Value(1, 1));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(1, 2)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(1, 2)).getEntries(index, descendingDirection, evalContext));
 
         map.put(2, new Value(2, 1));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(1, 2)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(1, 2)).getEntries(index, descendingDirection, evalContext));
 
         // Check single value.
         map.put(3, new Value(1, 2));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(1, 2)).getEntries(index, descendingDirection, evalContext), 3);
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(1, 2)).getEntries(index, descendingDirection, evalContext), 3);
 
         // Check multiple values.
         map.put(4, new Value(1, 2));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(1, 2)).getEntries(index, descendingDirection, evalContext), 3, 4);
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(1, 2)).getEntries(index, descendingDirection, evalContext), 3, 4);
 
         // Check null values (first).
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, false, 2, false)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, true, 2, false)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, false, 2, false)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, true, 2, false)).getEntries(index, descendingDirection, evalContext));
 
         map.put(5, new Value(null, 2));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, false, 2, false)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, true, 2, false)).getEntries(index, descendingDirection, evalContext), 5);
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, false, 2, false)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, true, 2, false)).getEntries(index, descendingDirection, evalContext), 5);
 
         map.put(6, new Value(null, 2));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, false, 2, false)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, true, 2, false)).getEntries(index, descendingDirection, evalContext), 5, 6);
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, false, 2, false)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, true, 2, false)).getEntries(index, descendingDirection, evalContext), 5, 6);
 
         // Check null values (last).
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(1, false, null, false)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(1, false, null, true)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(1, false, null, false)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(1, false, null, true)).getEntries(index, descendingDirection, evalContext));
 
         map.put(7, new Value(1, null));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(1, false, null, false)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(1, false, null, true)).getEntries(index, descendingDirection, evalContext), 7);
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(1, false, null, false)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(1, false, null, true)).getEntries(index, descendingDirection, evalContext), 7);
 
         map.put(8, new Value(1, null));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(1, false, null, false)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(1, false, null, true)).getEntries(index, descendingDirection, evalContext), 7, 8);
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(1, false, null, false)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(1, false, null, true)).getEntries(index, descendingDirection, evalContext), 7, 8);
 
         // Check null values (both).
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, false, null, false)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, false, null, true)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, true, null, false)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, true, null, true)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, false, null, false)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, false, null, true)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, true, null, false)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, true, null, true)).getEntries(index, descendingDirection, evalContext));
 
         map.put(9, new Value(null, null));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, false, null, false)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, false, null, true)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, true, null, false)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, true, null, true)).getEntries(index, descendingDirection, evalContext), 9);
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, false, null, false)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, false, null, true)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, true, null, false)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, true, null, true)).getEntries(index, descendingDirection, evalContext), 9);
 
         map.put(10, new Value(null, null));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, false, null, false)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, false, null, true)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, true, null, false)).getEntries(index, descendingDirection, evalContext));
-        checkIterator(descendingDirection, new IndexEqualsFilter(intValues(null, true, null, true)).getEntries(index, descendingDirection, evalContext), 9, 10);
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, false, null, false)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, false, null, true)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, true, null, false)).getEntries(index, descendingDirection, evalContext));
+        checkIterator(indexType, descendingDirection, new IndexEqualsFilter(intValues(null, true, null, true)).getEntries(index, descendingDirection, evalContext), 9, 10);
     }
 }

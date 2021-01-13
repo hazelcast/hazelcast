@@ -74,18 +74,16 @@ public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
     @Override
     public Iterator<QueryableEntry> getEntries(InternalIndex index, boolean descending, ExpressionEvalContext evalContext) {
 
-        // Sort the filter Comparables
-        // NULLs are coming last if the sort is ASC
-        // NULLs are coming first if the sort is DESC
+        // Sort the filter Comparables, NULLs are less than any other value
         NavigableMap<Comparable, IndexFilter> canonicalFilters = new TreeMap<>((o1, o2) -> {
             if (o1 == NULL) {
-                return o2 == NULL ? 0 : (descending ? -1 : 1);
+                return o2 == NULL ? 0 : (descending ? 1 : -1);
             }
 
             if (o2 == NULL) {
-                return descending ? 1 : -1;
+                return descending ? -1 : 1;
             }
-            return o1.compareTo(o2);
+            return descending ? o2.compareTo(o1) : o1.compareTo(o2);
         });
 
         for (IndexFilter filter : filters) {
@@ -108,8 +106,7 @@ public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
             return Collections.emptyIterator();
         }
 
-        Collection<IndexFilter> filters = descending ? canonicalFilters.descendingMap().values()
-            : canonicalFilters.values();
+        Collection<IndexFilter> filters = canonicalFilters.values();
         return new LazyIterator(index, descending, evalContext, filters);
     }
 
