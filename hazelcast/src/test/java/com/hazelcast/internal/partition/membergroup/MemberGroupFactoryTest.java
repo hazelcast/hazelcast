@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -62,11 +63,11 @@ public class MemberGroupFactoryTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testZoneAwareMemberGroupFactoryThrowsIllegalArgumentExceptionWhenNoMetadataIsProvided() {
         MemberGroupFactory groupFactory = new ZoneAwareMemberGroupFactory();
         Collection<Member> members = createMembersWithNoMetadata();
-        groupFactory.createMemberGroups(members);
+        assertThrows(IllegalArgumentException.class, () -> groupFactory.createMemberGroups(members));
     }
 
     private Collection<Member> createMembersWithNoMetadata() {
@@ -193,11 +194,11 @@ public class MemberGroupFactoryTest {
         return members;
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNodeAwareMemberGroupFactoryThrowsIllegalArgumentExceptionWhenNoMetadataIsProvided() {
         MemberGroupFactory groupFactory = new NodeAwareMemberGroupFactory();
         Collection<Member> members = createMembersWithNoMetadata();
-        groupFactory.createMemberGroups(members);
+        assertThrows(IllegalArgumentException.class, () -> groupFactory.createMemberGroups(members));
     }
 
     @Test
@@ -215,13 +216,13 @@ public class MemberGroupFactoryTest {
     private Collection<Member> createMembersWithPlacementAwareMetadata() {
         Collection<Member> members = new HashSet<>();
         MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
-        member1.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_PLACEMENT, "us-east-1a-placement@1");
+        member1.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_PLACEMENT, "us-east-1a-placement-1");
 
         MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), VERSION, true);
-        member2.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_PLACEMENT, "us-east-1a-placement@2");
+        member2.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_PLACEMENT, "us-east-1a-placement-2");
 
         MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), VERSION, true);
-        member3.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_PLACEMENT, "us-east-1a-placement@3");
+        member3.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_PLACEMENT, "us-east-1a-placement-3");
 
         members.add(member1);
         members.add(member2);
@@ -229,11 +230,11 @@ public class MemberGroupFactoryTest {
         return members;
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testPlacementAwareMemberGroupFactoryThrowsIllegalArgumentExceptionWhenNoMetadataIsProvided() {
         MemberGroupFactory groupFactory = new PlacementAwareMemberGroupFactory();
         Collection<Member> members = createMembersWithNoMetadata();
-        groupFactory.createMemberGroups(members);
+        assertThrows(IllegalArgumentException.class, () -> groupFactory.createMemberGroups(members));
     }
 
     /**
