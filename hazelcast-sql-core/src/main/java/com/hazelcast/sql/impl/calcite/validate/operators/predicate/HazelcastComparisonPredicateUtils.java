@@ -121,16 +121,14 @@ public final class HazelcastComparisonPredicateUtils {
         }
 
         if (highHZType.getTypeFamily() != lowHZType.getTypeFamily()
-            && !(highHZType.getTypeFamily().isNumeric() && lowHZType.getTypeFamily().isNumeric())) {
-
-            if (bothNotTemporal(highHZType, lowHZType) || nonConvertibleTemporalTypes(highHZType, lowHZType)) {
+            && !(highHZType.getTypeFamily().isNumeric() && lowHZType.getTypeFamily().isNumeric())
+            && (bothNotTemporal(highHZType, lowHZType) || !(lowHZType.getConverter().canConvertTo(highHZType.getTypeFamily())))) {
                 // Types cannot be converted to each other, throw.
                 if (throwOnFailure) {
                     throw callBinding.newValidationSignatureError();
                 } else {
                     return false;
                 }
-            }
         }
 
         // Types are in the same group, cast lower to higher.
@@ -139,10 +137,6 @@ public final class HazelcastComparisonPredicateUtils {
         validator.getTypeCoercion().coerceOperandType(callBinding.getScope(), callBinding.getCall(), lowIndex, newLowType);
 
         return true;
-    }
-
-    private static boolean nonConvertibleTemporalTypes(QueryDataType highHZType, QueryDataType lowHZType) {
-        return highHZType.getTypeFamily() == QueryDataTypeFamily.DATE && lowHZType.getTypeFamily() == QueryDataTypeFamily.TIME;
     }
 
     private static boolean bothNotTemporal(QueryDataType highHZType, QueryDataType lowHZType) {
