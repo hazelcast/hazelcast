@@ -1,33 +1,5 @@
-This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 4.1.1 release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
-
-## New Features
-
-* **Node Aware Partition Grouping:** Added the support of
-partition grouping mechanism in the Hazelcast discovery plugin for Kubernetes.
-You can create partition groups according to the name of the
-node which is provided by this plugin and on which the containers/pods run.
-See the NODE_AWARE section of the IMDG Reference Manual for more information.
+This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 4.1.1-migration release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
 ## Enhancements
 
-* Introduced a configuration property to ignore errors during
-enabling the XXE protection. This protection works with JAXP 1.5 (Java 7 Update 40)
-and newer. When an older JAXP implementation is added to
-the classpath, e.g., Xerces and Xalan, an exception is thrown.
-The newly introduced property, namely `hazelcast.ignoreXxeProtectionFailures`,
-allows you to ignore those exceptions.
-See the System Properties appendix of the IMDG Reference Manual for more information.
-* Updated the Hazelcast Kubernetes plugin dependency to 2.2.1. [#17928]
-* Separated the `hazelcast-sql` Maven module into `hazelcast-sql-core` and `hazelcast-sql`. [#17922]
-* Implemented the `IMap.entrySet()` method for the partition ID set. [#17886]
-
-## Fixes
-
-* Fixed an issue where the clients were opening two connections to
-the same member when the member is behind a private network. [#17888]
-* Fixed an issue where the Javadoc of `release` methods for session-aware semaphore
-structure was incorrectly addressing "threads" instead of "Hazelcast
-instances". [#17827]
-* Fixed an issue where the Hazelcast Java client was not
-able to resolve the new address of a restarted member, e.g.,
-for a setup in Docker environment. [#17062]
+* Added the support for processing WAN replication messages from Hazelcast IMDG 3.x cluster members. [#18037]
