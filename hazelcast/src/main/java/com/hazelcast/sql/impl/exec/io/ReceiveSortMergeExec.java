@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.List;
 
@@ -34,6 +35,7 @@ import java.util.List;
  * Executor which receives entries from multiple sources and merges them into a single sorted stream.
  */
 @SuppressWarnings("rawtypes")
+@SuppressFBWarnings("EI_EXPOSE_REP2")
 public class ReceiveSortMergeExec extends AbstractExec {
     /**
      * AbstractInbox to consume results from.

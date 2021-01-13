@@ -23,7 +23,7 @@ import java.util.Comparator;
 /**
  * Comparator fot the sort key.
  */
-@SuppressFBWarnings(value = "SE_COMPARATOR_SHOULD_BE_SERIALIZABLE", justification = "Never serialized")
+@SuppressFBWarnings({"SE_COMPARATOR_SHOULD_BE_SERIALIZABLE", "EI_EXPOSE_REP2"})
 public class SortKeyComparator implements Comparator<SortKey> {
     /**
      * An array of ascending collations.

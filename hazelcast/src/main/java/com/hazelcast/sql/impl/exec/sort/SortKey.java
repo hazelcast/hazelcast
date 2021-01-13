@@ -16,11 +16,14 @@
 
 package com.hazelcast.sql.impl.exec.sort;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Arrays;
 
 /**
  * Single sort key.
  */
+@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public class SortKey {
     /** The key */
     private final Object[] key;

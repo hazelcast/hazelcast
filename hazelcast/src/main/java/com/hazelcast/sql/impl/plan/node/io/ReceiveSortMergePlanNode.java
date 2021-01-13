@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
 import com.hazelcast.sql.impl.plan.node.ZeroInputPlanNode;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -34,7 +35,7 @@ import java.util.Objects;
 /**
  * Physical node which receives from remote stripes and performs sort-merge.
  */
-@SuppressWarnings("rawtypes")
+@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeAwarePlanNode, IdentifiedDataSerializable {
     /**
      * Edge iD.
@@ -167,7 +168,7 @@ public class ReceiveSortMergePlanNode extends ZeroInputPlanNode implements EdgeA
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{id=" + id + ", edgeId=" + edgeId + ", columnIndexes=" + columnIndexes
-            + ", ascs=" + ascs + '}';
+        return getClass().getSimpleName() + "{id=" + id + ", edgeId=" + edgeId + ", columnIndexes="
+            + Arrays.toString(columnIndexes) + ", ascs=" + Arrays.toString(ascs) + '}';
     }
 }

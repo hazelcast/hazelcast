@@ -29,6 +29,7 @@ import java.util.Set;
 /**
  * An utility class to perform merge sort with min-heap.
  */
+@SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "This is an internal class")
 public class MergeSort {
 
     /**

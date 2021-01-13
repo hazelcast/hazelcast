@@ -335,7 +335,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     @Override
     public void onSortMergeExchange(SortMergeExchangePhysicalRel rel) {
         PlanNode upstreamNode = pollSingleUpstream();
-        PlanNodeSchema upstreamNodeSchema = upstreamNode.getSchema();
 
         // Create sender and push it as a fragment.
         int edge = nextEdge();
