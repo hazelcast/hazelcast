@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.exec.scan.index;
 
 import com.hazelcast.config.IndexConfig;
-import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.impl.InternalIndex;

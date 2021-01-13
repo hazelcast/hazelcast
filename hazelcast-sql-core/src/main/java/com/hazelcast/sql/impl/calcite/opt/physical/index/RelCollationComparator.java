@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.index;
 
-import com.hazelcast.sql.impl.partitioner.ZeroPartitioner;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelFieldCollation;
 
