@@ -95,7 +95,7 @@ public abstract class BaseInvocation {
             this.pendingResponse = response;
 
             if (backupsAcksReceived != expectedBackups) {
-                // we are done since not all backups have completed. Therefor we should not notify the future
+                // we are done since not all backups have completed. Therefore we should not notify the future
                 return;
             }
         }
