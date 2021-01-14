@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.expression.CastExpression;
@@ -245,9 +246,10 @@ public final class RexToExpression {
                 return IsNotNullPredicate.create(operands[0]);
 
             case LIKE:
+                boolean negated = ((HazelcastLikeOperator) operator).isNegated();
                 Expression<?> escape = operands.length == 2 ? null : operands[2];
 
-                return LikeFunction.create(operands[0], operands[1], escape);
+                return LikeFunction.create(operands[0], operands[1], escape, negated);
 
             case TRIM:
                 assert operands.length == 3;

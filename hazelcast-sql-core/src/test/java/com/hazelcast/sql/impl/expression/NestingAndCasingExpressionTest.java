@@ -305,6 +305,11 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void test_NOT_LIKE() {
+        check(sql("(? NOT LIKE ?) || (? NOT LIKE ?)"), "a", "a", "b", "b");
+    }
+
+    @Test
     public void test_SUBSTRING() {
         check(sql("SUBSTRING(? FROM ?) || SUBSTRING(? FROM ?) "), "a", 1, "b", 1);
     }

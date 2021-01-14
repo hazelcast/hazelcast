@@ -146,7 +146,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     public static final SqlBinaryOperator CONCAT = HazelcastConcatOperator.INSTANCE;
 
-    public static final SqlSpecialOperator LIKE = HazelcastLikeOperator.INSTANCE;
+    public static final SqlSpecialOperator LIKE = HazelcastLikeOperator.LIKE;
+    public static final SqlSpecialOperator NOT_LIKE = HazelcastLikeOperator.NOT_LIKE;
 
     public static final SqlFunction SUBSTRING = HazelcastSubstringFunction.INSTANCE;
 
