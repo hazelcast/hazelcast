@@ -16,11 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.connector.file;
 
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.sql.impl.extract.AvroQueryTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
-import com.hazelcast.sql.impl.extract.QueryTarget;
 import org.apache.avro.generic.GenericRecord;
 
 import java.util.List;
@@ -33,7 +31,7 @@ final class AvroMetadataResolver extends MetadataResolver<GenericRecord> {
     private static final FileFormat<Map<String, String>> FORMAT = FileFormat.avro();
 
     @Override
-    protected FileFormat<?> format() {
+    protected FileFormat<?> sampleFormat() {
         return FORMAT;
     }
 
@@ -43,7 +41,10 @@ final class AvroMetadataResolver extends MetadataResolver<GenericRecord> {
     }
 
     @Override
-    protected SupplierEx<QueryTarget> queryTargetSupplier() {
-        return AvroQueryTarget::new;
+    protected Metadata resolveMetadata(List<MappingField> resolvedFields, Map<String, ?> options) {
+        return new Metadata(
+                toFields(resolvedFields),
+                toProcessorMetaSupplier(options, FORMAT),
+                AvroQueryTarget::new);
     }
 }

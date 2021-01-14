@@ -80,6 +80,7 @@ import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Math.abs;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -597,5 +598,51 @@ public final class Util {
             });
         }
         return partitionsByMember;
+    }
+
+    /**
+     * Given a list of input field names and a list of output field names
+     * creates a projection to map between these.
+     * <p>
+     * For example, if input names are {@code [surname, name, address]} and
+     * output names are {@code [name, surname, age]}, then the function,
+     * applied to {@code [Smith, John, New York]} will return {@code [John,
+     * Smith, (null)]}. That is, it will map the fields from the input order to
+     * output order. The output field named {@code age} is missing in input, so
+     * the value for it is {@code null} for any input.
+     *
+     * @param inputFields the input headers
+     * @param outputFields the output headers
+     * @return the indices to map input to output
+     */
+    @Nonnull
+    public static Function<String[], String[]> createFieldProjection(
+            @Nonnull String[] inputFields,
+            @Nonnull List<String> outputFields
+    ) {
+        if (outputFields.equals(asList(inputFields))) {
+            // shortcut - the mapping is an identity
+            return i -> i;
+        }
+        int[] simpleFieldMap = new int[outputFields.size()];
+        Arrays.fill(simpleFieldMap, -1);
+        for (int i = 0; i < inputFields.length; i++) {
+            int index = outputFields.indexOf(inputFields[i]);
+            // if the inputFields is present in the file and we didn't encounter it yet, store its index
+            if (index >= 0 && simpleFieldMap[index] == -1) {
+                simpleFieldMap[index] = i;
+            }
+        }
+
+        return row0 -> {
+            String[] inputRow = row0;
+            String[] projectedRow = new String[simpleFieldMap.length];
+            for (int i = 0; i < simpleFieldMap.length; i++) {
+                if (simpleFieldMap[i] >= 0) {
+                    projectedRow[i] = inputRow[simpleFieldMap[i]];
+                }
+            }
+            return projectedRow;
+        };
     }
 }

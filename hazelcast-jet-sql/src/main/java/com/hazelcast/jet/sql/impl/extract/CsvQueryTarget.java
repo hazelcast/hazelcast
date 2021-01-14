@@ -21,17 +21,24 @@ import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.List;
 
 @NotThreadSafe
 public class CsvQueryTarget implements QueryTarget {
 
-    private Map<String, String> entry;
+    private final List<String> fieldList;
+    private String[] entry;
+
+    public CsvQueryTarget(List<String> fieldList) {
+        this.fieldList = fieldList;
+        assert new HashSet<>(fieldList).size() == fieldList.size() : "duplicates in the fieldList";
+    }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void setTarget(Object target) {
-        entry = (Map<String, String>) target;
+        entry = (String[]) target;
+        assert entry.length == fieldList.size();
     }
 
     @Override
@@ -44,6 +51,7 @@ public class CsvQueryTarget implements QueryTarget {
     }
 
     private QueryExtractor createFieldExtractor(String path, QueryDataType type) {
-        return () -> type.convert(entry.get(path));
+        int fieldIndex = fieldList.indexOf(path);
+        return () -> type.convert(entry[fieldIndex]);
     }
 }

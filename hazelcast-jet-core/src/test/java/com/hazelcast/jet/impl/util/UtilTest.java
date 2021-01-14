@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,6 +39,7 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.impl.util.Util.addClamped;
 import static com.hazelcast.jet.impl.util.Util.addOrIncrementIndexInName;
+import static com.hazelcast.jet.impl.util.Util.createFieldProjection;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.gcd;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
@@ -249,5 +251,12 @@ public class UtilTest {
         assertEquals(2, partitionsByMember.size());
         assertEquals(asList(1, 3, 5), partitionsByMember.get(new Address("localhost", 5701)));
         assertEquals(asList(2, 4), partitionsByMember.get(new Address("localhost", 5702)));
+    }
+
+    @Test
+    public void test_createFieldProjection() {
+        Function<String[], String[]> fieldProjection =
+                createFieldProjection(new String[]{"c", "a", "d", "a"}, asList("a", "b", "c"));
+        assertArrayEquals(new String[]{"a", null, "c"}, fieldProjection.apply(new String[]{"c", "a", "d"}));
     }
 }

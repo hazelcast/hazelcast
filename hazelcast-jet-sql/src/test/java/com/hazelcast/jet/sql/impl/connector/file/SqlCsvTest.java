@@ -308,4 +308,22 @@ public class SqlCsvTest extends SqlTestSupport {
                         + ")")
         ).hasMessageContaining("matches no files");
     }
+
+    @Test
+    public void test_duplicateExternalName() {
+        String name = randomName();
+        sqlService.execute("CREATE MAPPING " + name + " ("
+                + "long BIGINT EXTERNAL NAME long,"
+                + "long_again BIGINT EXTERNAL NAME long) "
+                + "TYPE " + FileSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_FORMAT + "'='" + CSV_FORMAT + '\''
+                + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
+                + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "file.csv" + '\''
+                + ")");
+
+        assertRowsAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row(9223372036854775807L, 9223372036854775807L)));
+    }
 }

@@ -16,11 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.connector.file;
 
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.sql.impl.extract.JsonQueryTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
-import com.hazelcast.sql.impl.extract.QueryTarget;
 
 import java.util.List;
 import java.util.Map;
@@ -32,7 +30,7 @@ final class JsonMetadataResolver extends MetadataResolver<Map<String, Object>> {
     private static final FileFormat<Map<String, String>> FORMAT = FileFormat.json();
 
     @Override
-    protected FileFormat<?> format() {
+    protected FileFormat<?> sampleFormat() {
         return FORMAT;
     }
 
@@ -42,7 +40,10 @@ final class JsonMetadataResolver extends MetadataResolver<Map<String, Object>> {
     }
 
     @Override
-    protected SupplierEx<QueryTarget> queryTargetSupplier() {
-        return JsonQueryTarget::new;
+    protected Metadata resolveMetadata(List<MappingField> resolvedFields, Map<String, ?> options) {
+        return new Metadata(
+                toFields(resolvedFields),
+                toProcessorMetaSupplier(options, FORMAT),
+                JsonQueryTarget::new);
     }
 }

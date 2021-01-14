@@ -20,6 +20,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.nio.charset.Charset;
+import java.util.List;
 
 /**
  * Describes the data format of a file to be used as a Jet data source.
@@ -64,24 +65,38 @@ public interface FileFormat<T> extends Serializable {
     }
 
     /**
-     * Returns a file format for CSV files.
+     * Returns a file format for CSV files which specifies to deserialize each
+     * line into {@code String[]}. It assumes the CSV has a header line and
+     * specifies to use it as the column names that map to the object's fields.
+     * <p>
+     * {@code fieldNames} specify which column should be at which index in the
+     * resulting string array. It is useful if the files have different field
+     * order or don't have the same set of columns.
+     * <p>
+     * For example, if the argument is {@code [surname, name]}, then the format
+     * will always return items of type String[2] where at index 0 is the
+     * {@code surname} column and at index 1 is the {@code name} column,
+     * regardless of the actual columns found in a particular file. If some
+     * file doesn't have some field, the value at its index will always be 0.
+     * <p>
+     * If the given list is {@code null}, the length and order of the string
+     * array will match the order found in each file. It can be different for
+     * each file. If it's an empty array, a zero-length array will be returned.
      */
     @Nonnull
-    static <T> CsvFileFormat<T> csv() {
-        return csv(null);
+    static CsvFileFormat<String[]> csv(@Nullable List<String> fieldNames) {
+        return new CsvFileFormat<>(fieldNames);
     }
 
     /**
      * Returns a file format for CSV files which specifies to deserialize each
      * line into an instance of the given class. It assumes the CSV has a
      * header line and specifies to use it as the column names that map to the
-     * object's fields. If parameter is {@code null}, data is deserialized into
-     * {@code Map<String, String>} but for that case you may prefer the
-     * no-argument {@link #csv()} call.
+     * object's fields.
      */
     @Nonnull
-    static <T> CsvFileFormat<T> csv(@Nullable Class<T> clazz) {
-        return new CsvFileFormat<T>().withClass(clazz);
+    static <T> CsvFileFormat<T> csv(@Nonnull Class<T> clazz) {
+        return new CsvFileFormat<>(clazz);
     }
 
     /**

@@ -18,6 +18,7 @@ package com.hazelcast.jet.pipeline.file;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * {@link FileFormat} for CSV files. See {@link FileFormat#csv} for more
@@ -33,40 +34,48 @@ public class CsvFileFormat<T> implements FileFormat<T> {
      */
     public static final String FORMAT_CSV = "csv";
 
-    private Class<T> clazz;
+    private final Class<T> clazz;
+    private final List<String> fieldNames;
 
     /**
      * Creates {@link CsvFileFormat}. See {@link FileFormat#csv} for more
      * details.
      */
-    CsvFileFormat() {
-    }
-
-    /**
-     * Specifies class that data will be deserialized into.
-     * If parameter is {@code null} data is deserialized into
-     * {@code Map<String, String>}.
-     *
-     * @param clazz type of the object to deserialize CSV into
-     */
-    @Nonnull
-    public CsvFileFormat<T> withClass(@Nullable Class<T> clazz) {
+    CsvFileFormat(@Nonnull Class<T> clazz) {
         this.clazz = clazz;
-        return this;
+        this.fieldNames = null;
     }
 
     /**
-     * Returns the class Jet will deserialize data into.
-     * Null if not set.
+     * Creates {@link CsvFileFormat}. See {@link FileFormat#csv} for more
+     * details.
      */
-    @Nullable
-    public Class<T> clazz() {
-        return clazz;
+    @SuppressWarnings("unchecked")
+    CsvFileFormat(@Nullable List<String> fieldNames) {
+        this.clazz = (Class<T>) String[].class;
+        this.fieldNames = fieldNames;
     }
 
     @Nonnull
     @Override
     public String format() {
         return FORMAT_CSV;
+    }
+
+    /**
+     * Returns the class Jet will deserialize data into.
+     */
+    @Nonnull
+    public Class<T> clazz() {
+        return clazz;
+    }
+
+    /**
+     * Return the desired list of fields that is used with {@code String[]}
+     * class.
+     */
+    @Nullable
+    public List<String> fieldNames() {
+        return fieldNames;
     }
 }

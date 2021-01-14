@@ -20,7 +20,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvParser.Feature;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -35,11 +37,17 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+
+import static com.hazelcast.jet.impl.util.Util.createFieldProjection;
+import static java.util.function.Function.identity;
 
 public class CsvInputFormat extends FileInputFormat<NullWritable, Object> {
 
     public static final String CSV_INPUT_FORMAT_BEAN_CLASS = "csv.bean.class";
+    public static final String CSV_INPUT_FORMAT_FIELD_LIST_PREFIX = "csv.field.list.";
 
     @Override
     public RecordReader<NullWritable, Object> createRecordReader(InputSplit split, TaskAttemptContext context) {
@@ -48,7 +56,9 @@ public class CsvInputFormat extends FileInputFormat<NullWritable, Object> {
 
             private Object current;
             private MappingIterator<Object> iterator;
+            private Function<Object, Object> projection = identity();
 
+            @SuppressWarnings({"unchecked", "rawtypes"})
             @Override
             public void initialize(InputSplit split, TaskAttemptContext context) throws IOException {
                 FileSplit fileSplit = (FileSplit) split;
@@ -56,15 +66,33 @@ public class CsvInputFormat extends FileInputFormat<NullWritable, Object> {
 
                 Configuration configuration = context.getConfiguration();
                 String className = configuration.get(CSV_INPUT_FORMAT_BEAN_CLASS);
-                Class<?> clazz = className == null ? null : ReflectionUtils.loadClass(className);
-                ObjectReader reader = new CsvMapper().readerFor(clazz != null ? clazz : Map.class)
-                                                     .withoutFeatures(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                                                     .with(CsvSchema.emptySchema().withHeader());
-
+                Class<?> formatClazz = className == null ? null : ReflectionUtils.loadClass(className);
                 Path file = fileSplit.getPath();
                 FileSystem fs = file.getFileSystem(conf);
                 FSDataInputStream in = fs.open(file);
-                iterator = reader.readValues((InputStream) in);
+
+                if (formatClazz == String[].class) {
+                    ObjectReader reader = new CsvMapper().enable(Feature.WRAP_AS_ARRAY)
+                                                         .readerFor(String[].class)
+                                                         .with(CsvSchema.emptySchema().withSkipFirstDataRow(false));
+
+                    iterator = reader.readValues((InputStream) in);
+                    if (!iterator.hasNext()) {
+                        throw new JetException("Header row missing in " + split);
+                    }
+                    String[] header = (String[]) iterator.next();
+                    List<String> fieldNames = new ArrayList<>();
+                    String field;
+                    for (int i = 0; (field = configuration.get(CSV_INPUT_FORMAT_FIELD_LIST_PREFIX + i)) != null; i++) {
+                        fieldNames.add(field);
+                    }
+                    projection = (Function) createFieldProjection(header, fieldNames);
+                } else {
+                    iterator = new CsvMapper().readerFor(formatClazz)
+                                              .withoutFeatures(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                                              .with(CsvSchema.emptySchema().withHeader())
+                                              .readValues((InputStream) in);
+                }
             }
 
             @Override
@@ -72,7 +100,7 @@ public class CsvInputFormat extends FileInputFormat<NullWritable, Object> {
                 if (!iterator.hasNext()) {
                     return false;
                 }
-                current = iterator.next();
+                current = projection.apply(iterator.next());
                 return true;
             }
 
