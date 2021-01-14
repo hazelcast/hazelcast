@@ -31,6 +31,7 @@ import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.jet.impl.util.JetConsoleLogHandler;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -48,7 +49,11 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.jar.JarFile;
@@ -56,8 +61,13 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
+import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
+import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetJetConfig;
+import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
+import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
 
 /**
@@ -75,35 +85,37 @@ import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
 public final class JetBootstrap {
 
     // supplier should be set only once
-    private static ConcurrentMemoizingSupplier<JetInstance> supplier;
+    private static ConcurrentMemoizingSupplier<BootstrappedJetProxy> supplier;
 
     private static final ILogger LOGGER = Logger.getLogger(Jet.class.getName());
     private static final AtomicBoolean LOGGING_CONFIGURED = new AtomicBoolean(false);
+    private static final int JOB_START_CHECK_INTERVAL_MILLIS = 1_000;
+    private static final EnumSet<JobStatus> STARTUP_STATUSES = EnumSet.of(NOT_RUNNING, STARTING);
 
     private JetBootstrap() {
     }
 
-    public static synchronized void executeJar(@Nonnull Supplier<JetInstance> supplier,
+    public static synchronized void executeJar(@Nonnull Supplier<JetInstance> supplierOfJet,
                            @Nonnull String jar, @Nullable String snapshotName,
                            @Nullable String jobName, @Nullable String mainClass, @Nonnull List<String> args
     ) throws Exception {
-        if (JetBootstrap.supplier != null) {
-            throw new IllegalStateException("Supplier was already set. This method should not be called outside " +
-                    "the Jet command line.");
+        if (supplier != null) {
+            throw new IllegalStateException(
+                    "Supplier of JetInstance was already set. This method should not" +
+                    " be called outside the Jet command line.");
         }
 
-        JetBootstrap.supplier = new ConcurrentMemoizingSupplier<>(() ->
-                new InstanceProxy(supplier.get(), jar, snapshotName, jobName)
+        supplier = new ConcurrentMemoizingSupplier<>(() ->
+                new BootstrappedJetProxy(supplierOfJet.get(), jar, snapshotName, jobName)
         );
-
         try (JarFile jarFile = new JarFile(jar)) {
             if (StringUtil.isNullOrEmpty(mainClass)) {
                 if (jarFile.getManifest() == null) {
-                    error("No manifest file in " + jar + ". The -c option can be used to provide a main class.");
+                    error("No manifest file in " + jar + ". You can use the -c option to provide the main class.");
                 }
                 mainClass = jarFile.getManifest().getMainAttributes().getValue("Main-Class");
                 if (mainClass == null) {
-                    error("No Main-Class found in manifest. The -c option can be used to provide a main class.");
+                    error("No Main-Class found in manifest. You can use the -c option to provide the main class.");
                 }
             }
 
@@ -124,6 +136,7 @@ public final class JetBootstrap {
             String[] jobArgs = args.toArray(new String[0]);
             // upcast args to Object so it's passed as a single array-typed argument
             main.invoke(null, (Object) jobArgs);
+            awaitJobsStarted();
         } finally {
             JetInstance remembered = JetBootstrap.supplier.remembered();
             if (remembered != null) {
@@ -135,6 +148,55 @@ public final class JetBootstrap {
                 }
             }
             JetBootstrap.supplier = null;
+        }
+    }
+
+    private static void awaitJobsStarted() {
+        List<Job> submittedJobs = JetBootstrap.supplier.get().submittedJobs();
+        int submittedCount = submittedJobs.size();
+        if (submittedCount == 0) {
+            System.out.println("The JAR didn't submit any jobs.");
+            return;
+        }
+        int previousCount = -1;
+        while (true) {
+            uncheckRun(() -> Thread.sleep(JOB_START_CHECK_INTERVAL_MILLIS));
+            List<Job> startedJobs = submittedJobs.stream()
+                .filter(job -> !STARTUP_STATUSES.contains(job.getStatus()))
+                .collect(Collectors.toList());
+
+            submittedJobs = submittedJobs.stream()
+                    .filter(job -> !startedJobs.contains(job))
+                    .collect(Collectors.toList());
+
+            int remainingCount = submittedJobs.size();
+
+            if (submittedJobs.isEmpty() && remainingCount == previousCount) {
+                break;
+            }
+            if (remainingCount == previousCount) {
+                continue;
+            }
+            for (Job job : startedJobs) {
+                // The change of job statuses after the check above
+                // won't be a problem here. Because they cannot revert
+                // back to startup statuses.
+                if (job.getName() != null) {
+                    System.out.println("Job '" + job.getName() + "' submitted at "
+                            + toLocalDateTime(job.getSubmissionTime()) + " changed status to "
+                            + job.getStatus() + " at " + toLocalDateTime(System.currentTimeMillis()) + ".");
+                } else {
+                    System.out.println("Job '" + job.getIdString() + "' submitted at "
+                            + toLocalDateTime(job.getSubmissionTime())  + " changed status to "
+                            + job.getStatus() + " at " + toLocalDateTime(System.currentTimeMillis()) + ".");
+                }
+            }
+            if (remainingCount == 1) {
+                System.out.println("A job is still starting...");
+            } else if (remainingCount > 1) {
+                System.out.format("%,d jobs are still starting...%n", remainingCount);
+            }
+            previousCount = remainingCount;
         }
     }
 
@@ -159,7 +221,7 @@ public final class JetBootstrap {
     @Nonnull
     public static synchronized JetInstance getInstance() {
         if (supplier == null) {
-            supplier = new ConcurrentMemoizingSupplier<>(() -> new InstanceProxy(createStandaloneInstance()));
+            supplier = new ConcurrentMemoizingSupplier<>(() -> new BootstrappedJetProxy(createStandaloneInstance()));
         }
         return supplier.get();
     }
@@ -209,25 +271,24 @@ public final class JetBootstrap {
         }
     }
 
-    private static class InstanceProxy extends AbstractJetInstance {
-
+    private static class BootstrappedJetProxy extends AbstractJetInstance {
         private final AbstractJetInstance instance;
         private final String jar;
         private final String snapshotName;
         private final String jobName;
+        private final Collection<Job> submittedJobs = new CopyOnWriteArrayList<>();
 
-        InstanceProxy(JetInstance hazelcastInstance) {
+        BootstrappedJetProxy(@Nonnull JetInstance hazelcastInstance) {
             this(hazelcastInstance, null, null, null);
         }
 
-        InstanceProxy(
-                JetInstance instance,
+        BootstrappedJetProxy(
+                @Nonnull JetInstance instance,
                 @Nullable String jar,
                 @Nullable String snapshotName,
                 @Nullable String jobName
         ) {
             super(instance.getHazelcastInstance());
-
             this.instance = (AbstractJetInstance) instance;
             this.jar = jar;
             this.snapshotName = snapshotName;
@@ -256,22 +317,31 @@ public final class JetBootstrap {
 
         @Nonnull @Override
         public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-            return instance.newJob(pipeline, updateJobConfig(config));
+            return remember(instance.newJob(pipeline, updateJobConfig(config)));
         }
 
         @Nonnull @Override
         public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
-            return instance.newJob(dag, updateJobConfig(config));
+            return remember(instance.newJob(dag, updateJobConfig(config)));
         }
 
         @Nonnull @Override
         public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-            return instance.newJobIfAbsent(pipeline, updateJobConfig(config));
+            return remember(instance.newJobIfAbsent(pipeline, updateJobConfig(config)));
         }
 
         @Nonnull @Override
         public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config) {
-            return instance.newJobIfAbsent(dag, updateJobConfig(config));
+            return remember(instance.newJobIfAbsent(dag, updateJobConfig(config)));
+        }
+
+        List<Job> submittedJobs() {
+            return new ArrayList<>(submittedJobs);
+        }
+
+        private Job remember(@Nonnull Job job) {
+            submittedJobs.add(job);
+            return job;
         }
 
         private JobConfig updateJobConfig(@Nonnull JobConfig config) {
