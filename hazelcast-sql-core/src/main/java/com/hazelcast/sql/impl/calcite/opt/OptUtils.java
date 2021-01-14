@@ -27,6 +27,7 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleOperand;
 import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.plan.volcano.HazelcastRelSubsetUtil;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.prepare.RelOptTableImpl;
 import org.apache.calcite.rel.RelNode;
@@ -172,31 +173,35 @@ public final class OptUtils {
     /**
      * Get possible physical rels from the given subset. Every returned input is guaranteed to have a unique trait set.
      *
-     * @param subset Subset.
+     * @param input Subset.
      * @return Physical rels.
      */
-    public static Collection<RelNode> getPhysicalRelsFromSubset(RelNode subset) {
-        if (subset instanceof RelSubset) {
-            RelSubset subset0 = (RelSubset) subset;
+    public static Collection<RelNode> getPhysicalRelsFromSubset(RelNode input) {
 
-            Set<RelTraitSet> traitSets = new HashSet<>();
+        RelNode convertedInput = convert(input, input.getTraitSet());
 
-            Set<RelNode> res = Collections.newSetFromMap(new IdentityHashMap<>());
-
-            for (RelNode rel : subset0.getRelList()) {
-                if (!isPhysical(rel)) {
-                    continue;
-                }
-
-                if (traitSets.add(rel.getTraitSet())) {
-                    res.add(convert(subset, rel.getTraitSet()));
-                }
-            }
-
-            return res;
-        } else {
+        if (!(convertedInput instanceof RelSubset)) {
             return Collections.emptyList();
         }
+
+        RelSubset logicalSubset = (RelSubset) convertedInput;
+        RelSubset physicalSubset = HazelcastRelSubsetUtil.getPhysicalSubSet(logicalSubset);
+
+        Set<RelTraitSet> traitSets = new HashSet<>();
+
+        Set<RelNode> res = Collections.newSetFromMap(new IdentityHashMap<>());
+
+        for (RelNode rel : physicalSubset.getRelList()) {
+            if (!isPhysical(rel)) {
+                continue;
+            }
+
+            if (traitSets.add(rel.getTraitSet())) {
+                res.add(convert(physicalSubset, rel.getTraitSet()));
+            }
+        }
+
+        return res;
     }
 
     public static boolean isHazelcastTable(TableScan scan) {

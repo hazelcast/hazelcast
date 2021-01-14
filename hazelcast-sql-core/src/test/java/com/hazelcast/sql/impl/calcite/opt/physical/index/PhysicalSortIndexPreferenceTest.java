@@ -73,7 +73,7 @@ public class PhysicalSortIndexPreferenceTest extends IndexOptimizerTestSupport {
                 optimizePhysical("SELECT f1, f2, f3 FROM p ORDER BY f1", 2),
                 plan(
                         planRow(0, RootPhysicalRel.class, "", 100d),
-                        planRow(1, SortMergeExchangePhysicalRel.class, "collation=[[0]], fetch=[null], offset=[null]", 100d),
+                        planRow(1, SortMergeExchangePhysicalRel.class, "collation=[[0]]", 100d),
                         planRow(2, MapIndexScanPhysicalRel.class, "table=[[hazelcast, p[projects=[1, 2, 3]]]], index=[sorted_f1_f2_f3], indexExp=[null], remainderExp=[null]", 100d)
                 )
         );
@@ -85,7 +85,7 @@ public class PhysicalSortIndexPreferenceTest extends IndexOptimizerTestSupport {
                 optimizePhysical("SELECT f1, f2, f3 FROM p ORDER BY f2, f3", 2),
                 plan(
                         planRow(0, RootPhysicalRel.class, "", 100d),
-                        planRow(1, SortMergeExchangePhysicalRel.class, "collation=[[1, 2]], fetch=[null], offset=[null]", 100d),
+                        planRow(1, SortMergeExchangePhysicalRel.class, "collation=[[1, 2]]", 100d),
                         planRow(2, MapIndexScanPhysicalRel.class, "table=[[hazelcast, p[projects=[1, 2, 3]]]], index=[sorted_f2_f3], indexExp=[null], remainderExp=[null]", 100d)
                 )
         );

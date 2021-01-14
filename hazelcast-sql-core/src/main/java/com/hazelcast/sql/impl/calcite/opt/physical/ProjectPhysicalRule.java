@@ -59,9 +59,7 @@ public final class ProjectPhysicalRule extends RelOptRule {
         ProjectLogicalRel logicalProject = call.rel(0);
         RelNode input = logicalProject.getInput();
 
-        RelNode convertedInput = OptUtils.toPhysicalInput(input);
-
-        Collection<InputAndTraitSet> transforms = getTransforms(logicalProject.getProjects(), convertedInput);
+        Collection<InputAndTraitSet> transforms = getTransforms(logicalProject.getProjects(), input);
 
         for (InputAndTraitSet transform : transforms) {
             ProjectPhysicalRel newProject = new ProjectPhysicalRel(
@@ -79,13 +77,13 @@ public final class ProjectPhysicalRule extends RelOptRule {
     /**
      * Get conversions which will be applied to the given logical project.
      *
-     * @param convertedInput Input.
+     * @param input Input.
      * @return Conversions (converted input + trait set).
      */
-    private static Collection<InputAndTraitSet> getTransforms(List<RexNode> projects, RelNode convertedInput) {
+    private static Collection<InputAndTraitSet> getTransforms(List<RexNode> projects, RelNode input) {
         List<InputAndTraitSet> res = new ArrayList<>(1);
 
-        Collection<RelNode> physicalInputs = OptUtils.getPhysicalRelsFromSubset(convertedInput);
+        Collection<RelNode> physicalInputs = OptUtils.getPhysicalRelsFromSubset(input);
 
         // Initialize a field index to the project index map
         Map<Integer, Integer> inputFieldIndex2ProjectIndexMap = new HashMap<>();

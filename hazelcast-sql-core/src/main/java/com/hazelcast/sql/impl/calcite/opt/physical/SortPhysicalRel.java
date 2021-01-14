@@ -26,33 +26,41 @@ import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rex.RexNode;
 
 /**
- * Physical sort performed locally. Throws unsupported exception at runtime.
+ * Physical sort performed locally. Throws unsupported exception at runtime if actual sorting
+ * is required.
  */
 public class SortPhysicalRel extends Sort implements PhysicalRel {
+
+    // Whether the input is already pre-sorted
+    private boolean preSortedInput;
 
     public SortPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
             RelNode child,
-            RelCollation collation
+            RelCollation collation,
+            boolean preSortedInput
     ) {
         super(cluster, traits, child, collation, null, null);
+        this.preSortedInput = preSortedInput;
     }
 
     @Override
     public final Sort copy(RelTraitSet traitSet, RelNode input, RelCollation collation, RexNode offset, RexNode fetch) {
-        return new SortPhysicalRel(getCluster(), traitSet, input, collation);
+        return new SortPhysicalRel(getCluster(), traitSet, input, collation, preSortedInput);
     }
 
     @Override
     public final RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw);
+        return super.explainTerms(pw).item("preSortedInput", preSortedInput);
     }
 
     @Override
     public void visit(PhysicalRelVisitor visitor) {
         ((PhysicalRel) input).visit(visitor);
 
-        visitor.onSort(this);
+        if (!preSortedInput) {
+            visitor.onSort(this);
+        }
     }
 }

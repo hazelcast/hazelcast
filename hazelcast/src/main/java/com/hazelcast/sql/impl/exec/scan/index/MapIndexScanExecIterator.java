@@ -115,8 +115,8 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
         List<QueryDataType> expectedConverterTypes
     ) {
         // Now, the index subsystem supports only either all ascending or all descending directions
-        assert ascs != null && ascs.size() > 0;
-        boolean descending = !ascs.get(0);
+        assert ascs != null;
+        boolean descending = ascs.size() > 0 && !ascs.get(0);
         if (indexFilter == null) {
             // No filter => this is a full scan (e.g. for HD)
             return index.getSqlRecordIterator(descending);

@@ -55,9 +55,7 @@ public final class SortPhysicalRule extends RelOptRule {
         SortLogicalRel sort = call.rel(0);
         RelNode input = sort.getInput();
 
-        RelNode convertedInput = OptUtils.toPhysicalInput(input);
-
-        Collection<RelNode> transforms = getTransforms(sort, convertedInput);
+        Collection<RelNode> transforms = getTransforms(sort, input);
 
         for (RelNode transform : transforms) {
             call.transformTo(transform);
@@ -84,16 +82,18 @@ public final class SortPhysicalRule extends RelOptRule {
 
             RelNode rel;
 
-            if (requiresLocalSort) {
-                rel = createLocalSort(logicalSort, physicalInput);
+            DistributionTrait physicalInputDist = OptUtils.getDistribution(physicalInput);
+            boolean isFullResultOnAll =  physicalInputDist.isFullResultSetOnAllParticipants();
+
+            if (requiresLocalSort || isFullResultOnAll) {
+                // If the input is pre-sorted, the SortPhysicalRel is doing no-op
+                rel = createLocalSort(logicalSort, physicalInput, requiresLocalSort);
             } else {
                 rel = physicalInput;
             }
 
             // Add merge phase if needed.
-            DistributionTrait physicalInputDist = OptUtils.getDistribution(physicalInput);
-
-            if (!physicalInputDist.isFullResultSetOnAllParticipants()) {
+            if (!isFullResultOnAll) {
                 rel = createMerge(rel, logicalSort);
             }
 
@@ -148,7 +148,7 @@ public final class SortPhysicalRule extends RelOptRule {
         }
     }
 
-    private static SortPhysicalRel createLocalSort(SortLogicalRel logicalSort, RelNode physicalInput) {
+    private static SortPhysicalRel createLocalSort(SortLogicalRel logicalSort, RelNode physicalInput, boolean requiresLocalSort) {
         // Input traits are propagated, but new collation is used.
         RelTraitSet traitSet = OptUtils.traitPlus(physicalInput.getTraitSet(),
             logicalSort.getCollation()
@@ -158,7 +158,8 @@ public final class SortPhysicalRule extends RelOptRule {
             logicalSort.getCluster(),
             traitSet,
             physicalInput,
-            logicalSort.getCollation()
+            logicalSort.getCollation(),
+            !requiresLocalSort
         );
     }
 

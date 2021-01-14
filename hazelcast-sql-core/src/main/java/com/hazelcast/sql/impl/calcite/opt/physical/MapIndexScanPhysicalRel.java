@@ -92,7 +92,7 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
 
     public List<Boolean> getAscs() {
         RelCollation collation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
-        assert collation != null && collation.getFieldCollations().size() > 0;
+        assert collation != null;
         int size = collation.getFieldCollations().size();
 
         List<Boolean> ascs = new ArrayList<>(size);
