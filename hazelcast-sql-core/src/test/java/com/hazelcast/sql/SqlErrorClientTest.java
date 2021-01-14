@@ -317,7 +317,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
             fail("Must fail");
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("Cannot process SQL client operation due to version mismatch "
-                + "(please ensure that a client and a member have the same version)"));
+                + "(please ensure that the client and the member have the same version)"));
         }
     }
 

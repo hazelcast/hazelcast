@@ -21,6 +21,7 @@ import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Set;
 
 /**
  * A generic object interface that is returned to user when the domain class can not be created from any of the distributed
@@ -104,6 +105,12 @@ public interface GenericRecord {
      */
     @Nonnull
     Builder cloneWithBuilder();
+
+    /**
+     * @return set of field names of this GenericRecord
+     */
+    @Nonnull
+    Set<String> getFieldNames();
 
     /**
      * @param fieldName the name of the field

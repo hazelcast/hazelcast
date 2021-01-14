@@ -822,7 +822,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
     public String toString() {
         return "MapConfig{"
                 + "name='" + name + '\''
-                + ", inMemoryFormat=" + inMemoryFormat + '\''
+                + ", inMemoryFormat='" + inMemoryFormat + '\''
                 + ", metadataPolicy=" + metadataPolicy
                 + ", backupCount=" + backupCount
                 + ", asyncBackupCount=" + asyncBackupCount

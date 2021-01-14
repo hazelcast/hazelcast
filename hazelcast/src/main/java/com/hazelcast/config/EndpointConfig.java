@@ -107,7 +107,7 @@ public class EndpointConfig implements NamedConfig {
     }
 
     public EndpointQualifier getQualifier() {
-        return EndpointQualifier.resolve(protocolType, name);
+        return EndpointQualifier.resolveForConfig(protocolType, name);
     }
 
     public Collection<String> getOutboundPortDefinitions() {

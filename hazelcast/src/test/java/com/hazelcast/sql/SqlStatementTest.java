@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -43,8 +44,10 @@ public class SqlStatementTest extends SqlTestSupport {
         assertEquals(0, query.getParameters().size());
         assertEquals(SqlStatement.DEFAULT_TIMEOUT, query.getTimeoutMillis());
         assertEquals(SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE, query.getCursorBufferSize());
+        assertNull(query.getSchema());
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Test(expected = NullPointerException.class)
     public void testSql_null() {
         new SqlStatement(null);
@@ -119,6 +122,7 @@ public class SqlStatementTest extends SqlTestSupport {
     @Test
     public void testCopy() {
         SqlStatement original = create();
+        original.setSchema("schema");
         checkEquals(original, original.copy(), true);
 
         original.setParameters(Arrays.asList(1, 2)).setTimeoutMillis(3L).setCursorBufferSize(4);
@@ -128,32 +132,32 @@ public class SqlStatementTest extends SqlTestSupport {
     @Test
     public void testEquals() {
         SqlStatement query = create();
-        SqlStatement another = create();
+        SqlStatement another = query.copy();
         checkEquals(query, another, true);
 
-        query.setParameters(Arrays.asList(1, 2)).setTimeoutMillis(10L).setCursorBufferSize(20);
-        another.setParameters(Arrays.asList(1, 2)).setTimeoutMillis(10L).setCursorBufferSize(20);
-        checkEquals(query, another, true);
-
-        another.setSql(SQL + "1").setParameters(Arrays.asList(1, 2)).setTimeoutMillis(10L).setCursorBufferSize(20);
+        another = query.copy().setSql(SQL + "1");
         checkEquals(query, another, false);
 
-        another.setSql(SQL).setParameters(Arrays.asList(1, 2, 3)).setTimeoutMillis(10L).setCursorBufferSize(20);
+        another = query.copy().setParameters(Arrays.asList(1, 2, 3));
         checkEquals(query, another, false);
 
-        another.setSql(SQL).setParameters(Arrays.asList(1, 2)).setTimeoutMillis(11L).setCursorBufferSize(20);
+        another = query.copy().setTimeoutMillis(11L);
         checkEquals(query, another, false);
 
-        another.setSql(SQL).setParameters(Arrays.asList(1, 2)).setTimeoutMillis(10L).setCursorBufferSize(21);
+        another = query.copy().setCursorBufferSize(21);
+        checkEquals(query, another, false);
+
+        another = query.copy().setSchema("schema");
         checkEquals(query, another, false);
     }
 
     @Test
     public void testToString() {
-        SqlStatement query = create().setParameters(Arrays.asList(1, 2)).setTimeoutMillis(3L).setCursorBufferSize(4);
+        SqlStatement query = create().setSchema("schema").setParameters(Arrays.asList(1, 2)).setTimeoutMillis(3L).setCursorBufferSize(4);
 
         String string = query.toString();
 
+        assertTrue(string.contains("schema="));
         assertTrue(string.contains("sql="));
         assertTrue(string.contains("parameters="));
         assertTrue(string.contains("timeout="));

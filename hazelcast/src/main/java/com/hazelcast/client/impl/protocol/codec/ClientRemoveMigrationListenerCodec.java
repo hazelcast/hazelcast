@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Removes a Migration listener to the cluster.
+ * Removes the specified migration listener.
  */
-@Generated("4fdf5557dc61841bc7b060851b6c8d5d")
+@Generated("18dcea7b7ff0158387ad6af967fabd88")
 public final class ClientRemoveMigrationListenerCodec {
     //hex: 0x001200
     public static final int REQUEST_MESSAGE_TYPE = 4608;
@@ -82,7 +82,7 @@ public final class ClientRemoveMigrationListenerCodec {
     }
 
     /**
-     * true if the listener existed and removed, false otherwise.
+     * true if the listener existed and was removed, false otherwise.
      */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
