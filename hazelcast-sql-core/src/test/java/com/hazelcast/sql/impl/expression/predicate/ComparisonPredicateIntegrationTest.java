@@ -264,6 +264,14 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void testCompare_LocalDate_with_String() {
+        put(ExpressionValue.create(ExpressionValue.createClass(ExpressionTypes.LOCAL_DATE), LocalDate.of(2020, 12, 30)));
+
+        check("field1", "'2020-12-30'", LocalDate.of(2020, 12, 30).compareTo(LocalDate.of(2020, 12, 30)));
+        check("'2020-12-30'", "field1", LocalDate.of(2020, 12, 30).compareTo(LocalDate.of(2020, 12, 30)));
+    }
+
+    @Test
     public void testCompare_LocalTime_with_LocalTime() {
         putBiValue(
             LocalTime.of(14, 2, 0),
@@ -275,6 +283,14 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void testCompare_LocalTime_with_String() {
+        put(ExpressionValue.create(ExpressionValue.createClass(ExpressionTypes.LOCAL_TIME), LocalTime.of(14, 2, 0)));
+
+        check("field1", "'14:02:00'", LocalTime.of(14, 2, 0).compareTo(LocalTime.of(14, 2, 0)));
+        check("'14:02:00'", "field1", LocalTime.of(14, 2, 0).compareTo(LocalTime.of(14, 2, 0)));
+    }
+
+    @Test
     public void testCompare_LocalDateTime_with_LocalDateTime() {
         putBiValue(
             LocalDateTime.of(2020, 12, 30, 14, 2, 0),
@@ -283,6 +299,14 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         );
 
         check("field1", "field2", LocalDateTime.of(2020, 12, 30, 14, 2, 0).compareTo(LocalDateTime.of(2020, 12, 30, 14, 2, 0)));
+    }
+
+    @Test
+    public void testCompare_LocalDateTime_with_String() {
+        put(ExpressionValue.create(ExpressionValue.createClass(ExpressionTypes.LOCAL_DATE_TIME), LocalDateTime.of(2020, 12, 30, 14, 2, 0)));
+
+        check("field1", "'2020-12-30T14:02'", LocalDateTime.of(2020, 12, 30, 14, 2, 0).compareTo(LocalDateTime.of(2020, 12, 30, 14, 2, 0)));
+        check("'2020-12-30T14:02'", "field1", LocalDateTime.of(2020, 12, 30, 14, 2, 0).compareTo(LocalDateTime.of(2020, 12, 30, 14, 2, 0)));
     }
 
 
@@ -335,6 +359,19 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         );
 
         check("field1", "field2",
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)
+                        .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
+    }
+
+    @Test
+    public void testCompare_LocalDateTimeWithTZ_with_String() {
+        put(ExpressionValue.create(ExpressionValue.createClass(
+                ExpressionTypes.OFFSET_DATE_TIME), OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
+
+        check("field1", "'2020-12-30T14:02Z'",
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)
+                        .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
+        check("'2020-12-30T14:02Z'", "field1",
                 OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)
                         .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
     }
