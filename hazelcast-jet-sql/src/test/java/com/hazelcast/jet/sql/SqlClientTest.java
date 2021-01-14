@@ -20,7 +20,6 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.sql.impl.connector.test.FailingTestSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
-import com.hazelcast.jet.sql.impl.connector.test.TestEmptyStreamSqlConnector;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
@@ -29,14 +28,14 @@ import org.junit.Test;
 
 import java.util.BitSet;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 
 public class SqlClientTest extends SqlTestSupport {
 
@@ -70,10 +69,7 @@ public class SqlClientTest extends SqlTestSupport {
         SqlService sqlService = client.getSql();
 
         sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(100))");
-
-        Job job = instance().getJobs().stream().filter(j -> !j.getStatus().isTerminal()).findFirst().orElse(null);
-        assertNotNull("no active job found", job);
-        assertJobStatusEventually(job, RUNNING);
+        Job job = awaitSingleRunningJob(instance());
 
         client.shutdown();
         assertJobStatusEventually(job, FAILED);
@@ -99,19 +95,25 @@ public class SqlClientTest extends SqlTestSupport {
          */
         JetInstance client = factory().newClient();
         SqlService sqlService = client.getSql();
-        sqlService.execute("CREATE MAPPING t TYPE " + TestEmptyStreamSqlConnector.TYPE_NAME);
+
         logger.info("before select");
-        SqlResult res = sqlService.execute("SELECT * FROM t");
+        SqlResult result = sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(0))");
         logger.info("after execute returned");
-        List<Job> allRunningJobs = client.getJobs().stream()
-                                         .filter(job -> job.getStatus() == RUNNING)
-                                         .collect(Collectors.toList());
-        assertEquals(1, allRunningJobs.size());
-        Job job = allRunningJobs.get(0);
-        assertEquals(RUNNING, job.getStatus());
+        Job job = awaitSingleRunningJob(client);
         logger.info("Job is running.");
-        res.close();
+
+        result.close();
         logger.info("after res.close() returned");
         assertJobStatusEventually(job, FAILED);
+    }
+
+    private static Job awaitSingleRunningJob(JetInstance jet) {
+        AtomicReference<Job> job = new AtomicReference<>();
+        assertTrueEventually(() -> {
+            List<Job> jobs = jet.getJobs().stream().filter(j -> j.getStatus() == RUNNING).collect(toList());
+            assertEquals(1, jobs.size());
+            job.set(jobs.get(0));
+        });
+        return job.get();
     }
 }
