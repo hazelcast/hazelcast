@@ -31,6 +31,10 @@ package com.hazelcast.spi.partitiongroup;
  * Node aware backup strategy is based on name of the node which is provided by container orchestration tool.
  * like Kubernetes, Docker Swarm and ECS. A node is the term used to refer machine that containers/pods run on.
  * A node may be a virtual or physical machine.
+ *
+ * Placement aware backup strategy is based on the placement strategies of the virtual machines on
+ * which Hazelcast members run. Unlike zone aware, this strategy can group members within a single
+ * availability zone based on their racks, power sources, network, etc.
  */
 public enum PartitionGroupMetaData {
     ;
@@ -59,4 +63,10 @@ public enum PartitionGroupMetaData {
      * in case of container orchestration tools being used.
      */
     public static final String PARTITION_GROUP_NODE = "hazelcast.partition.group.node";
+
+    /**
+     * Metadata key definition for the placement group to which VMs belong if a placement strategy is
+     * applied by cloud providers.
+     */
+    public static final String PARTITION_GROUP_PLACEMENT = "hazelcast.partition.group.placement";
 }
