@@ -18,8 +18,6 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Serializer;
-import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
@@ -27,25 +25,25 @@ import java.io.IOException;
 /**
  * Test example of a serializer hook
  */
-public class TestSerializerHook implements SerializerHook {
+public class TestSerializerHook  {
 
     public TestSerializerHook() {
     }
 
-    @Override
-    public Class getSerializationType() {
-        return SampleIdentifiedDataSerializable.class;
-    }
-
-    @Override
-    public Serializer createSerializer() {
-        return new TestSerializer();
-    }
-
-    @Override
-    public boolean isOverwritable() {
-        return true;
-    }
+//    @Override
+//    public Class getSerializationType() {
+//        return SampleIdentifiedDataSerializable.class;
+//    }
+//
+//    @Override
+//    public Serializer createSerializer() {
+//        return new TestSerializer();
+//    }
+//
+//    @Override
+//    public boolean isOverwritable() {
+//        return true;
+//    }
 
     public static class TestSerializer implements StreamSerializer<SampleIdentifiedDataSerializable> {
         @Override

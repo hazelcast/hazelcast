@@ -19,12 +19,21 @@ package com.hazelcast.serviceprovider;
 import com.hazelcast.spi.impl.servicemanager.ServiceDescriptor;
 import com.hazelcast.spi.impl.servicemanager.ServiceDescriptorProvider;
 
+import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
+
 public class TestServiceDescriptorProvider implements ServiceDescriptorProvider {
-    private final ServiceDescriptor[] descriptors = new ServiceDescriptor[1];
+    private ServiceDescriptor[] descriptors;
 
     @Override
     public ServiceDescriptor[] createServiceDescriptors() {
-        this.descriptors[0] = new TestServiceDescriptor();
+        if (!isRunningCompatibilityTest()) {
+            // because of incompatible API changes, the service
+            // descriptor breaks compatibility tests
+            this.descriptors = new ServiceDescriptor[1];
+            this.descriptors[0] = new TestServiceDescriptor();
+        } else {
+            this.descriptors = new ServiceDescriptor[0];
+        }
         return this.descriptors;
     }
 }

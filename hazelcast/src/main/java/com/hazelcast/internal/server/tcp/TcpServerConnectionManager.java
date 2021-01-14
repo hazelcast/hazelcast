@@ -114,6 +114,7 @@ public class TcpServerConnectionManager
     private final TcpServer server;
     private final TcpServerConnector connector;
     private final TcpServerControl serverControl;
+    private final CompatibilityTcpServerControl compatibilityServerControl;
     private final NetworkStatsImpl networkStats;
     private final ConstructorFunction<Address, TcpServerConnectionErrorHandler> errorHandlerConstructor =
             endpoint -> new TcpServerConnectionErrorHandler(TcpServerConnectionManager.this, endpoint);
@@ -141,6 +142,7 @@ public class TcpServerConnectionManager
         this.logger = serverContext.getLoggingService().getLogger(TcpServerConnectionManager.class);
         this.connector = new TcpServerConnector(this);
         this.serverControl = new TcpServerControl(this, serverContext, logger, supportedProtocolTypes);
+        this.compatibilityServerControl = new CompatibilityTcpServerControl(this, serverContext, logger, supportedProtocolTypes);
         this.networkStats = endpointQualifier == null ? null : new NetworkStatsImpl();
         this.planes = new Plane[planeCount];
         for (int planeIndex = 0; planeIndex < planes.length; planeIndex++) {
@@ -169,7 +171,16 @@ public class TcpServerConnectionManager
 
     @Override
     public synchronized void accept(Packet packet) {
-        serverControl.process(packet);
+        // the packet was sent from 3.12 if the 4_0 flag is missing
+        // 4.0.1 and 4.2 members do not set this flag
+        // so this member should not be a part of a cluster
+        // with those members
+        boolean isCompatibility = !packet.isFlagRaised(Packet.FLAG_4_0);
+        if (isCompatibility) {
+            compatibilityServerControl.process(packet);
+        } else {
+            serverControl.process(packet);
+        }
     }
 
     public ServerConnection get(Address address, int streamId) {

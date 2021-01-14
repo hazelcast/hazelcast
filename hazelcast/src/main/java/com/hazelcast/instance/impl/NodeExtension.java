@@ -101,6 +101,14 @@ public interface NodeExtension {
      */
     InternalSerializationService createSerializationService();
 
+    /**
+     * Creates and returns a serialization service for (de)serializing objects
+     * compatible with a compatibility (3.x) format.
+     *
+     * @return the compatibility serialization service
+     */
+    InternalSerializationService createCompatibilitySerializationService();
+
     SecurityService getSecurityService();
 
     /**

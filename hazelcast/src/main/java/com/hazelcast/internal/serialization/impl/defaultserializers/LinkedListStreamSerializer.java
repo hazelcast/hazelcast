@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.defaultserializers;
 
+import com.hazelcast.internal.compatibility.serialization.impl.CompatibilitySerializationConstants;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.nio.ObjectDataInput;
 
@@ -26,10 +27,18 @@ import java.util.LinkedList;
  * The {@link LinkedList} serializer
  */
 public class LinkedListStreamSerializer<E> extends AbstractCollectionStreamSerializer<LinkedList<E>> {
+    /** Determines if ser-de should conform the 3.x format */
+    private final boolean isCompatibility;
+
+    public LinkedListStreamSerializer(boolean isCompatibility) {
+        this.isCompatibility = isCompatibility;
+    }
 
     @Override
     public int getTypeId() {
-        return SerializationConstants.JAVA_DEFAULT_TYPE_LINKED_LIST;
+        return isCompatibility
+                ? CompatibilitySerializationConstants.JAVA_DEFAULT_TYPE_LINKED_LIST
+                : SerializationConstants.JAVA_DEFAULT_TYPE_LINKED_LIST;
     }
 
     @Override
