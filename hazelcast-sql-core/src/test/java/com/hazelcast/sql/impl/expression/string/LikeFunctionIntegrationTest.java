@@ -33,7 +33,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.sql.SqlColumnType.TINYINT;
@@ -57,8 +56,8 @@ public class LikeFunctionIntegrationTest extends ExpressionTestSupport {
     public boolean negated;
 
     @Parameterized.Parameters(name = "mode:{0}")
-    public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{ { false }, { true } });
+    public static List<Boolean> parameters() {
+        return Arrays.asList(false, true);
     }
 
     @Test
