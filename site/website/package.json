@@ -9,7 +9,7 @@
     "write-translations": "docusaurus-write-translations",
     "version": "docusaurus-version",
     "rename-version": "docusaurus-rename-version",
-    "lint:markdown": "markdownlint --rules --config ./.markdownlint.json *.md ../docs/**/**.md ./blog/**.md --ignore ./README.md"
+    "lint:markdown": "markdownlint --rules --config ./.markdownlint.json ../../*.md ../docs/**/*.md ./blog/*.md --ignore ./README.md"
   },
   "husky": {
     "hooks": {
