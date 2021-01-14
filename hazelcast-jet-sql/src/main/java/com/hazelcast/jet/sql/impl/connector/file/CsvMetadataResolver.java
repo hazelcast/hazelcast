@@ -37,8 +37,8 @@ final class CsvMetadataResolver extends MetadataResolver<Map<String, String>> {
     }
 
     @Override
-    protected List<MappingField> resolveFieldsFromSample(Map<String, String> entry) {
-        return CsvResolver.resolveFields(entry.keySet());
+    protected List<MappingField> resolveFieldsFromSample(Map<String, String> sample) {
+        return CsvResolver.resolveFields(sample.keySet());
     }
 
     @Override

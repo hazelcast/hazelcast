@@ -53,7 +53,6 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.parquet.avro.AvroParquetInputFormat;
 
 import javax.annotation.Nonnull;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
@@ -158,7 +157,7 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
             // subdirectories
             return new Path(fsc.getPath());
         } else {
-            return new Path(fsc.getPath() + File.separatorChar + fsc.getGlob());
+            return new Path(fsc.getPath(), fsc.getGlob());
         }
     }
 

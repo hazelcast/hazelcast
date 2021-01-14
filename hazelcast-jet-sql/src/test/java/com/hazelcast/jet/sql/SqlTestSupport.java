@@ -174,6 +174,12 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         return true;
     }
 
+    public static String hadoopNonExistingPath() {
+        return System.getProperty("os.name").toLowerCase().contains("windows")
+                ? "c:\\non\\existing\\path"
+                : "/non/existing/path";
+    }
+
     /**
      * A class passed to utility methods in this class. We don't use SqlRow
      * directly because:

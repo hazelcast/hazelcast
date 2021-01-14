@@ -67,6 +67,9 @@ abstract class MetadataResolver<T> {
 
         try (FileTraverser<T> traverser = fileProcessorMetaSupplier.traverser()) {
             T sample = traverser.next();
+            if (sample == null) {
+                throw QueryException.error("No sample found to resolve the columns");
+            }
             return resolveFieldsFromSample(sample);
         } catch (Exception e) {
             throw sneakyThrow(e);

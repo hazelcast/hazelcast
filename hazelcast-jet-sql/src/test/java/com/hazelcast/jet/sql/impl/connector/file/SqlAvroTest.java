@@ -291,13 +291,14 @@ public class SqlAvroTest extends SqlTestSupport {
 
     @Test
     public void when_directoryDoesNotExist_then_tableFunctionThrowsException() {
+        String path = hadoopNonExistingPath();
         assertThatThrownBy(() -> sqlService.execute(
                 "SELECT *"
                 + " FROM TABLE ("
-                + "avro_file (path => '/non/existing/path/')"
+                + "avro_file (path => '" + path + "')"
                 + ")"
         )).isInstanceOf(HazelcastSqlException.class)
-          .hasMessageContaining("The directory '/non/existing/path' does not exist");
+          .hasMessageContaining("The directory '" + path + "' does not exist");
     }
 
     @Test
