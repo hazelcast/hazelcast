@@ -390,19 +390,19 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
             assertEquals(entry(0, "0"), sinkList.get(0));
         });
         job.suspend();
-        sinkList.clear();
 
         // When
         kafkaTestSupport.setPartitionCount(topic1Name, INITIAL_PARTITION_COUNT + 2);
         kafkaTestSupport.resetProducer(); // this allows production to the added partition
 
+        // We synchronously produce to a partition that didn't exist during the previous job execution.
+        // The job must start to read the new partition from the beginning, otherwise it would miss this item.
         kafkaTestSupport.produce(topic1Name, INITIAL_PARTITION_COUNT, null, 1, "1")
                         .get();
 
         job.resume();
         assertTrueEventually(() -> {
-            assertEquals(1, sinkList.size());
-            assertEquals(entry(1, "1"), sinkList.get(0));
+            assertEquals(entry(1, "1"), sinkList.get(sinkList.size() - 1));
         });
     }
 
