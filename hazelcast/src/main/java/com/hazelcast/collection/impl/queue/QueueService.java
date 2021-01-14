@@ -208,6 +208,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
             QueueContainer container = entry.getValue();
 
             if (partitionId == event.getPartitionId() && container.getConfig().getTotalBackupCount() >= event.getReplicaIndex()) {
+                container.prepareForReplication();
                 migrationData.put(name, container);
             }
         }
