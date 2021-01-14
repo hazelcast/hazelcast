@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -152,12 +153,15 @@ public class TernaryLogicTest {
     }
 
     private static class MockExpressionEvalContext implements ExpressionEvalContext {
-
         @Override
         public Object getArgument(int index) {
             throw new UnsupportedOperationException();
         }
 
+        @Override
+        public InternalSerializationService getSerializationService() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private static class MockBooleanExpression implements Expression<Boolean> {

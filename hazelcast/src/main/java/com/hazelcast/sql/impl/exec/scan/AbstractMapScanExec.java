@@ -173,7 +173,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         row.setKeyValue(rawKey, rawValue);
 
         // Filter.
-        if (filter != null && TernaryLogic.isNotTrue(filter.eval(row, ctx))) {
+        if (filter != null && TernaryLogic.isNotTrue(filter.evalTop(row, ctx))) {
             return null;
         }
 

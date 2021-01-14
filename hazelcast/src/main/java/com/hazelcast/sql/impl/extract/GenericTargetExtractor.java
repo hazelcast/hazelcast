@@ -31,9 +31,7 @@ public class GenericTargetExtractor extends AbstractGenericExtractor {
     @Override
     public Object get() {
         try {
-            Object target = targetAccessor.getTargetDeserialized();
-
-            return type.normalize(target);
+            return targetAccessor.getTargetForDirectAccess(type);
         } catch (QueryDataTypeMismatchException e) {
             throw QueryException.dataException("Failed to extract map entry " + (key ? "key" : "value")
                 + " because of type mismatch [expectedClass=" + e.getExpectedClass().getName()

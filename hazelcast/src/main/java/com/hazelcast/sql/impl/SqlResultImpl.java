@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -32,28 +33,31 @@ import java.util.concurrent.TimeUnit;
 /**
  * Cursor implementation.
  */
-public final class SqlResultImpl extends AbstractSqlResult {
+public final class SqlResultImpl extends AbstractSqlResult implements LazyTargetDeserializer {
 
     private final QueryState state;
     private final SqlRowMetadata rowMetadata;
     private ResultIterator<SqlRow> iterator;
     private final long updateCount;
+    private final InternalSerializationService serializationService;
 
-    private SqlResultImpl(QueryState state, long updateCount) {
+    private SqlResultImpl(QueryState state, long updateCount, InternalSerializationService serializationService) {
+        assert updateCount >= 0 ^ state != null : "updateCount=" + updateCount + ", state=" + state;
+
         this.state = state;
         this.updateCount = updateCount;
-        assert updateCount >= 0 ^ state != null : "updateCount=" + updateCount + ", state=" + state;
+        this.serializationService = serializationService;
 
         rowMetadata = state != null ? state.getInitiatorState().getRowMetadata() : null;
     }
 
-    public static SqlResultImpl createRowsResult(QueryState state) {
-        return new SqlResultImpl(state, -1);
+    public static SqlResultImpl createRowsResult(QueryState state, InternalSerializationService serializationService) {
+        return new SqlResultImpl(state, -1, serializationService);
     }
 
     public static SqlResultImpl createUpdateCountResult(long updateCount) {
         Preconditions.checkNotNegative(updateCount, "the updateCount must be >= 0");
-        return new SqlResultImpl(null, updateCount);
+        return new SqlResultImpl(null, updateCount, null);
     }
 
     @Nonnull
@@ -108,6 +112,15 @@ public final class SqlResultImpl extends AbstractSqlResult {
         return getQueryInitiatorState().getQueryId();
     }
 
+    @Override
+    public Object deserialize(LazyTarget value) {
+        try {
+            return value.deserialize(serializationService);
+        } catch (Exception e) {
+            throw QueryUtils.toPublicException(e, state.getLocalMemberId());
+        }
+    }
+
     public Plan getPlan() {
         QueryInitiatorState initiatorState = getQueryInitiatorState();
 
@@ -147,7 +160,7 @@ public final class SqlResultImpl extends AbstractSqlResult {
         @Override
         public SqlRow next() {
             try {
-                return new SqlRowImpl(rowMetadata, delegate.next());
+                return new SqlRowImpl(rowMetadata, delegate.next(), SqlResultImpl.this);
             } catch (NoSuchElementException e) {
                 throw e;
             } catch (Exception e) {

@@ -36,7 +36,11 @@ public final class MapScanRow implements Row {
     private final QueryTarget valueTarget;
     private final QueryExtractor[] fieldExtractors;
 
-    private MapScanRow(QueryTarget keyTarget, QueryTarget valueTarget, QueryExtractor[] fieldExtractors) {
+    private MapScanRow(
+        QueryTarget keyTarget,
+        QueryTarget valueTarget,
+        QueryExtractor[] fieldExtractors
+    ) {
         this.keyTarget = keyTarget;
         this.valueTarget = valueTarget;
         this.fieldExtractors = fieldExtractors;
@@ -69,7 +73,7 @@ public final class MapScanRow implements Row {
      * Set current key and value.
      *
      * @param rawKey Key (object or data).
-     * @param rawValue Value (objecct or data).
+     * @param rawValue Value (object or data).
      */
     public void setKeyValue(Object rawKey, Object rawValue) {
         keyTarget.setTarget(rawKey);

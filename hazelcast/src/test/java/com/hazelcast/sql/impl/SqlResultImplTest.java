@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.json.TestUtil.RunnableEx;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -36,7 +37,7 @@ public class SqlResultImplTest {
         SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("n", SqlColumnType.INTEGER)));
         QueryState queryState = QueryState.createInitiatorState(queryId, null, null, 0, null, null, metadata,
                 null, System::currentTimeMillis);
-        SqlResultImpl r = SqlResultImpl.createRowsResult(queryState);
+        SqlResultImpl r = SqlResultImpl.createRowsResult(queryState, new DefaultSerializationServiceBuilder().build());
 
         assertEquals(-1, r.updateCount());
         assertEquals(metadata, r.getRowMetadata());

@@ -155,14 +155,7 @@ public class SqlClientService implements SqlService {
      */
     @SuppressWarnings("checkstyle:MagicNumber")
     public void missing() {
-        Connection connection = client.getConnectionManager().getRandomConnection(false);
-
-        if (connection == null) {
-            throw rethrow(QueryException.error(
-                SqlErrorCode.CONNECTION_PROBLEM,
-                "Client is not connected to topology"
-            ));
-        }
+        Connection connection = getRandomConnection();
 
         try {
             ClientMessage requestMessage = SqlExecuteCodec.encodeRequest(
@@ -172,7 +165,34 @@ public class SqlClientService implements SqlService {
                 100
             );
 
-            invoke(requestMessage, connection);
+            invokeOnConnection(connection, requestMessage);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
+    /**
+     * For testing only.
+     */
+    public Connection getRandomConnection() {
+        Connection connection = client.getConnectionManager().getRandomConnection(false);
+
+        if (connection == null) {
+            throw rethrow(QueryException.error(
+                SqlErrorCode.CONNECTION_PROBLEM,
+                "Client is not connected to topology"
+            ));
+        }
+
+        return connection;
+    }
+
+    /**
+     * For testing only.
+     */
+    public ClientMessage invokeOnConnection(Connection connection, ClientMessage request) {
+        try {
+            return invoke(request, connection);
         } catch (Exception e) {
             throw rethrow(e);
         }

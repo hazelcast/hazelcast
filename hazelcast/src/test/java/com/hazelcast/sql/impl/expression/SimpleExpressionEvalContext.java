@@ -16,6 +16,9 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -38,5 +41,10 @@ public final class SimpleExpressionEvalContext implements ExpressionEvalContext 
     @Override
     public Object getArgument(int index) {
         return args.get(index);
+    }
+
+    @Override
+    public InternalSerializationService getSerializationService() {
+        return new DefaultSerializationServiceBuilder().build();
     }
 }

@@ -16,8 +16,9 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
@@ -96,7 +97,12 @@ public class AbstractExecTest extends SqlTestSupport {
         };
 
         TestExec exec = new TestExec(1);
-        exec.setup(new QueryFragmentContext(Collections.emptyList(), null, stateCallback));
+        exec.setup(new QueryFragmentContext(
+            Collections.emptyList(),
+            null,
+            stateCallback,
+            new DefaultSerializationServiceBuilder().build()
+        ));
 
         QueryException error = assertThrows(QueryException.class, exec::advance);
         assertEquals(SqlErrorCode.CANCELLED_BY_USER, error.getCode());

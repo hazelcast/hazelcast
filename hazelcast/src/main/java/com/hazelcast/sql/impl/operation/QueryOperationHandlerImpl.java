@@ -215,7 +215,8 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
                 exec,
                 inboxes,
                 outboxes,
-                fragmentPool
+                fragmentPool,
+                serializationService
             );
 
             fragmentExecutables.add(fragmentExecutable);

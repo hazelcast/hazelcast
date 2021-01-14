@@ -170,7 +170,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_SUBSTRING = 60;
     public static final int EXPRESSION_TRIM = 61;
 
-    public static final int LEN = EXPRESSION_TRIM + 1;
+    public static final int LAZY_TARGET = 62;
+
+    public static final int LEN = LAZY_TARGET + 1;
 
     @Override
     public int getFactoryId() {
@@ -257,6 +259,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_LIKE] = arg -> new LikeFunction();
         constructors[EXPRESSION_SUBSTRING] = arg -> new SubstringFunction();
         constructors[EXPRESSION_TRIM] = arg -> new TrimFunction();
+
+        constructors[LAZY_TARGET] = arg -> new LazyTarget();
 
         return new ArrayDataSerializableFactory(constructors);
     }

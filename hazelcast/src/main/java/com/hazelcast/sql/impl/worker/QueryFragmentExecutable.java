@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.worker;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.exec.io.InboundBatch;
@@ -47,6 +48,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
     private final Map<Integer, InboundHandler> inboxes;
     private final Map<Integer, Map<UUID, OutboundHandler>> outboxes;
     private final QueryFragmentWorkerPool fragmentPool;
+    private final InternalSerializationService serializationService;
 
     /** Operations to be processed. */
     private final ConcurrentLinkedDeque<Object> operations = new ConcurrentLinkedDeque<>();
@@ -69,7 +71,8 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
         Exec exec,
         Map<Integer, InboundHandler> inboxes,
         Map<Integer, Map<UUID, OutboundHandler>> outboxes,
-        QueryFragmentWorkerPool fragmentPool
+        QueryFragmentWorkerPool fragmentPool,
+        InternalSerializationService serializationService
     ) {
         this.stateCallback = stateCallback;
         this.arguments = arguments;
@@ -77,6 +80,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
         this.inboxes = inboxes;
         this.outboxes = outboxes;
         this.fragmentPool = fragmentPool;
+        this.serializationService = serializationService;
     }
 
     public Collection<Integer> getInboxEdgeIds() {
@@ -225,7 +229,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
         }
 
         try {
-            exec.setup(new QueryFragmentContext(arguments, this, stateCallback));
+            exec.setup(new QueryFragmentContext(arguments, this, stateCallback, serializationService));
         } finally {
             initialized = true;
         }

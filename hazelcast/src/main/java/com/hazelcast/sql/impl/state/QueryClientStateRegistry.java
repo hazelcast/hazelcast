@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.ResultIterator.HasNextResult;
+import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.client.SqlPage;
 
 import java.util.ArrayList;
@@ -150,7 +151,9 @@ public class QueryClientStateRegistry {
         HasNextResult hasNextResult;
         do {
             SqlRow row = iterator.next();
-            List<Data> convertedRow = convertRow(row, serializationService);
+            assert row instanceof SqlRowImpl;
+
+            List<Data> convertedRow = convertRow((SqlRowImpl) row, serializationService);
 
             page.add(convertedRow);
             hasNextResult = iterator.hasNext(0, SECONDS);
@@ -159,16 +162,19 @@ public class QueryClientStateRegistry {
         return hasNextResult == DONE;
     }
 
-    private static List<Data> convertRow(SqlRow row, InternalSerializationService serializationService) {
+    private static List<Data> convertRow(SqlRowImpl row, InternalSerializationService serializationService) {
         int columnCount = row.getMetadata().getColumnCount();
 
-        List<Data> values = new ArrayList<>(columnCount);
+        List<Data> res = new ArrayList<>(columnCount);
 
         for (int i = 0; i < columnCount; i++) {
-            values.add(serializationService.toData(row.getObject(i)));
+            Object value = row.getObjectRaw(i);
+            Data valueData = value instanceof Data ? (Data) value : serializationService.toData(value);
+
+            res.add(valueData);
         }
 
-        return values;
+        return res;
     }
 
     public void close(UUID clientId, QueryId queryId) {

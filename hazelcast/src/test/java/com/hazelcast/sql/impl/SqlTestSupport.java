@@ -151,7 +151,12 @@ public class SqlTestSupport extends HazelcastTestSupport {
             }
         };
 
-        return new QueryFragmentContext(args, new LoggingQueryFragmentScheduleCallback(), stateCallback);
+        return new QueryFragmentContext(
+            args,
+            new LoggingQueryFragmentScheduleCallback(),
+            stateCallback,
+            new DefaultSerializationServiceBuilder().build()
+        );
     }
 
     /**
@@ -233,16 +238,6 @@ public class SqlTestSupport extends HazelcastTestSupport {
 
     public static void clearPlanCache(HazelcastInstance member) {
         ((SqlServiceImpl) member.getSql()).getPlanCache().clear();
-    }
-
-    public static int getLocalPartition(HazelcastInstance member) {
-        PartitionIdSet partitions = getLocalPartitions(member);
-
-        if (partitions.isEmpty()) {
-            throw new RuntimeException("Member does nave local partitions");
-        }
-
-        return partitions.iterator().next();
     }
 
     public static PartitionIdSet getLocalPartitions(HazelcastInstance member) {
