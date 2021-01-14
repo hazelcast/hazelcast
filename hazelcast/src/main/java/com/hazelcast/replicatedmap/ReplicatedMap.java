@@ -31,15 +31,19 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
- * <p>A ReplicatedMap is a map-like data structure with weak consistency
- * and values locally stored on every node of the cluster. </p>
- * <p>Whenever a value is written asynchronously, the new value will be internally
- * distributed to all existing cluster members, and eventually every node will have
- * the new value.</p>
- * <p>When a new node joins the cluster, the new node initially will request existing
- * values from older nodes and replicate them locally.</p>
- * <p>
- * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in cluster versions 3.10 and higher.
+ * <p>A ReplicatedMap is a map data structure with weak consistency
+ * and has entries stored locally on every node of the cluster.
+ *
+ * <p>Whenever a value is written, the new value will be internally
+ * distributed to all existing cluster members, and eventually every node
+ * will have the new value. Reading is always local on members (except
+ * for lite members).
+ *
+ * <p>When a new node joins the cluster, it initially requests existing
+ * values from older nodes and replicates them locally.
+ *
+ * <p>Supports split-brain protection {@link SplitBrainProtectionConfig} since 3.10
+ * in cluster versions 3.10 and higher.
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
@@ -50,10 +54,10 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
     /**
      * <p>Associates a given value to the specified key and replicates it to the
      * cluster. If there is an old value, it will be replaced by the specified
-     * one and returned from the call.</p>
+     * one and returned from the call.
      * <p>In addition, you have to specify a ttl and its {@link TimeUnit}
      * to define when the value is outdated and thus should be removed from the
-     * replicated map.</p>
+     * replicated map.
      *
      * @param key      key with which the specified value is to be associated.
      * @param value    value to be associated with the specified key.
@@ -91,7 +95,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * Adds the specified entry listener for the specified key.
      * The listener will be notified for all
      * add/remove/update/evict events of the specified key only.
-     * <p><b>Warning:</b></p>
+     * <p><b>Warning:</b>
      * This method uses <code>hashCode</code> and <code>equals</code> of the binary form of
      * the <code>key</code>, not the actual implementations of <code>hashCode</code> and <code>equals</code>
      * defined in the <code>key</code>'s class.
@@ -123,8 +127,8 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      */
     @Nonnull
     UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
-                            @Nonnull Predicate<K, V> predicate,
-                            @Nullable K key);
+                          @Nonnull Predicate<K, V> predicate,
+                          @Nullable K key);
 
     /**
      * Returns a lazy {@link Collection} view of the values contained in this map.<br>
