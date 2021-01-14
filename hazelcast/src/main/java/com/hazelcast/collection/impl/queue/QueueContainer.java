@@ -25,6 +25,7 @@ import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -1215,5 +1216,14 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     void setId(long itemId) {
         idGenerator = Math.max(itemId + 1, idGenerator);
+    }
+
+    public void prepareForReplication() {
+        // Nullify backup, this is to rescue from the
+        // scenario, in which this partition successively
+        // changes ownership between primary and backup.
+        if (!getItemQueue().isEmpty() && MapUtil.isNullOrEmpty(backupMap)) {
+            backupMap = null;
+        }
     }
 }
