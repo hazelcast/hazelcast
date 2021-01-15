@@ -774,6 +774,17 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+                                <xs:attribute name="immutable-values" use="optional" type="parameterized-boolean"
+                                              default="false">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Signals that the values added to the map are immutable. Having immutable
+                                            values means some optimisations may come into effect and IMDG may avoid
+                                            defensively copying the values before providing them to user code.
+                                            The default value is false.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="cache" minOccurs="0" maxOccurs="unbounded">

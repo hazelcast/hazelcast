@@ -683,7 +683,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Set<K> keySet(@Nonnull Predicate<K, V> predicate) {
         return executePredicate(predicate, IterationType.KEY, true, Target.ALL_NODES);
     }
@@ -694,7 +693,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * <p>
      * <b>Warning:</b> {@code partitions} is mutated during the call.
      */
-    @SuppressWarnings("unchecked")
     public Set<K> keySet(@Nonnull Predicate<K, V> predicate, PartitionIdSet partitions) {
         return executePredicate(predicate, IterationType.KEY, true, Target.createPartitionTarget(partitions));
     }
@@ -706,8 +704,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public Set<Map.Entry<K, V>> entrySet(@Nonnull Predicate predicate) {
+    public Set<Map.Entry<K, V>> entrySet(@Nonnull Predicate<K, V> predicate) {
         return executePredicate(predicate, IterationType.ENTRY, true, Target.ALL_NODES);
     }
 
@@ -717,8 +714,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * <p>
      * <b>Warning:</b> {@code partitions} is mutated during the call.
      */
-    @SuppressWarnings("unchecked")
-    public Set<Map.Entry<K, V>> entrySet(@Nonnull Predicate predicate, PartitionIdSet partitions) {
+    public Set<Map.Entry<K, V>> entrySet(@Nonnull Predicate<K, V> predicate, PartitionIdSet partitions) {
         return executePredicate(predicate, IterationType.ENTRY, true, Target.createPartitionTarget(partitions));
     }
 
@@ -729,8 +725,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public Collection<V> values(@Nonnull Predicate predicate) {
+    public Collection<V> values(@Nonnull Predicate<K, V> predicate) {
         return executePredicate(predicate, IterationType.VALUE, false, Target.ALL_NODES);
     }
 
@@ -740,12 +735,14 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * <p>
      * <b>Warning:</b> {@code partitions} is mutated during the call.
      */
-    @SuppressWarnings("unchecked")
-    public Collection<V> values(@Nonnull Predicate predicate, PartitionIdSet partitions) {
+    public Collection<V> values(@Nonnull Predicate<K, V> predicate, PartitionIdSet partitions) {
         return executePredicate(predicate, IterationType.VALUE, false, Target.createPartitionTarget(partitions));
     }
 
-    private Set executePredicate(Predicate predicate, IterationType iterationType, boolean uniqueResult, Target target) {
+    private <T> Set<T> executePredicate(Predicate<K, V> predicate,
+                                        IterationType iterationType,
+                                        boolean uniqueResult,
+                                        Target target) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         QueryResult result = executeQueryInternal(predicate, iterationType, target);
         incrementOtherOperationsStat();
@@ -759,7 +756,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     @SuppressWarnings("unchecked")
-    public Set<K> localKeySet(@Nonnull Predicate predicate) {
+    public Set<K> localKeySet(@Nonnull Predicate<K, V> predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         QueryResult result = executeQueryInternal(predicate, IterationType.KEY, Target.LOCAL_NODE);
         incrementOtherOperationsStat();
@@ -878,7 +875,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     private <R> Collection<R> project(@Nonnull Projection<? super Map.Entry<K, V>, R> projection,
-                                     @Nonnull Predicate<K, V> predicate, Target target) {
+                                      @Nonnull Predicate<K, V> predicate, Target target) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         checkNotPagingPredicate(predicate, "project");
@@ -891,7 +888,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {
-        Future future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+        Future<?> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
         Object response = future.get();
         Object result = toObject(response);
         if (result instanceof Throwable) {
@@ -1091,7 +1088,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                 subscriberContext.newEndToEndConstructor(request));
     }
 
-    private static void checkNotPagingPredicate(Predicate predicate, String method) {
+    private static void checkNotPagingPredicate(Predicate<?, ?> predicate, String method) {
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("PagingPredicate not supported in " + method + " method");
         }
@@ -1253,7 +1250,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                     return null;
                 }
             } else {
-                Data result =  putIfAbsentInternal(keyAsData, toData(value), UNSET, TimeUnit.MILLISECONDS, UNSET,
+                Data result = putIfAbsentInternal(keyAsData, toData(value), UNSET, TimeUnit.MILLISECONDS, UNSET,
                         TimeUnit.MILLISECONDS);
                 if (result == null) {
                     return value;
@@ -1263,7 +1260,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+    public void replaceAll(@Nonnull BiFunction<? super K, ? super V, ? extends V> function) {
         checkNotNull(function, NULL_BIFUNCTION_IS_NOT_ALLOWED);
 
         if (SerializationUtil.isClassStaticAndSerializable(function)

@@ -28,8 +28,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.annotation.Nullable;
-
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
 import static java.lang.Character.toLowerCase;
@@ -139,7 +137,7 @@ public final class StringUtil {
 
     /**
      * Converts the first character to lower case.
-     *
+     * <p>
      * Empty strings are ignored.
      *
      * @param s the given string
@@ -262,8 +260,8 @@ public final class StringUtil {
      * (5) 1st -qualifier, if exists
      * (6) -SNAPSHOT qualifier, if exists
      *
-     * @param version
-     * @return
+     * @param version the string containing the version
+     * @return an array containing the version segments
      */
     public static String[] tokenizeVersionString(String version) {
         Matcher matcher = VERSION_PATTERN.matcher(version);
@@ -281,19 +279,19 @@ public final class StringUtil {
     /**
      * Convert getter into a property name
      * Example: 'getFoo' is converted into 'foo'
-     *
+     * <p>
      * It's written defensively, when output is not a getter then it
      * returns the original name.
-     *
+     * <p>
      * It only converts names starting with a get- prefix. When a getter
      * starts with an is- prefix (=boolean) then it does not convert it.
      *
-     * @param getterName
+     * @param getterName the string containing the getter method name
      * @return property matching the given getter
      */
     public static String getterIntoProperty(String getterName) {
         if (getterName == null) {
-            return getterName;
+            return null;
         }
         int length = getterName.length();
         if (!getterName.startsWith(GETTER_PREFIX) || length <= GETTER_PREFIX.length()) {
@@ -353,7 +351,7 @@ public final class StringUtil {
         if (arr1.length == 0 || arr2.length == 0) {
             return new String[0];
         }
-        List<String> list = new ArrayList<String>(Arrays.asList(arr1));
+        List<String> list = new ArrayList<>(Arrays.asList(arr1));
         list.retainAll(Arrays.asList(arr2));
         return list.toArray(new String[0]);
     }
@@ -369,7 +367,7 @@ public final class StringUtil {
         if (arr1 == null || arr1.length == 0 || arr2 == null || arr2.length == 0) {
             return arr1;
         }
-        List<String> list = new ArrayList<String>(Arrays.asList(arr1));
+        List<String> list = new ArrayList<>(Arrays.asList(arr1));
         list.removeAll(Arrays.asList(arr2));
         return list.toArray(new String[0]);
     }
@@ -390,7 +388,7 @@ public final class StringUtil {
     /**
      * Strips the trailing slash from the input string, if it is present
      *
-     * @param str
+     * @param str the string
      * @return the string with trailing slash removed
      */
     public static String stripTrailingSlash(String str) {
@@ -446,21 +444,5 @@ public final class StringUtil {
             startIndex = sb.indexOf(placeholderPrefix, endIndex);
         }
         return sb.toString();
-    }
-
-    /**
-     * Formats given XML String with the given indentation used. If the {@code input} XML string is {@code null}, or
-     * {@code indent} parameter is negative, or XML transformation fails, then the original value is returned unchanged. The
-     * {@link IllegalArgumentException} is thrown when {@code indent==0}.
-     *
-     * @param input the XML String
-     * @param indent indentation (number of spaces used for one indentation level)
-     * @return formatted XML String or the original String if the formatting fails.
-     * @throws IllegalArgumentException when indentation is equal to zero
-     * @deprecated Use directly {@link XmlUtil#format(String, int)}
-     */
-    @Deprecated
-    public static String formatXml(@Nullable String input, int indent) throws IllegalArgumentException {
-        return XmlUtil.format(input, indent);
     }
 }

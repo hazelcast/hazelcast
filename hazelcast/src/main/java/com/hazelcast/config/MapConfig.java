@@ -16,12 +16,14 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -40,7 +42,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for an {@link IMap}.
  */
-public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
+public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versioned {
 
     /**
      * The minimum number of backups
@@ -99,6 +101,12 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
 
+    /**
+     * Default value of whether the map values are immutable and if defensive copying
+     * should be avoided
+     */
+    public static final boolean DEFAULT_IMMUTABLE_VALUES = false;
+
     private boolean readBackupData;
     private boolean statisticsEnabled = DEFAULT_STATISTICS_ENABLED;
     private int backupCount = DEFAULT_BACKUP_COUNT;
@@ -127,6 +135,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
             .setEvictionPolicy(DEFAULT_EVICTION_POLICY)
             .setMaxSizePolicy(DEFAULT_MAX_SIZE_POLICY)
             .setSize(DEFAULT_MAX_SIZE);
+    private boolean immutableValues = DEFAULT_IMMUTABLE_VALUES;
 
     public MapConfig() {
     }
@@ -162,6 +171,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
         this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
         this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
+        this.immutableValues = config.immutableValues;
     }
 
     /**
@@ -702,6 +712,28 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         return this;
     }
 
+    /**
+     * Returns {@code true} if the values added to the map are immutable. Having
+     * immutable values means some optimisations may come into effect and IMDG
+     * may avoid defensively copying the values before providing them to user code.
+     */
+    public boolean isImmutableValues() {
+        return immutableValues;
+    }
+
+    /**
+     * Signals that the values added to the map are immutable. Having immutable
+     * values means some optimisations may come into effect and IMDG may avoid
+     * defensively copying the values before providing them to user code.
+     *
+     * @param immutableValues {@code true} if the values added to the map are immutable
+     * @return this configuration
+     */
+    public MapConfig setImmutableValues(boolean immutableValues) {
+        this.immutableValues = immutableValues;
+        return this;
+    }
+
     @Override
     @SuppressWarnings("checkstyle:methodlength")
     public final boolean equals(Object o) {
@@ -785,6 +817,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         if (!eventJournalConfig.equals(that.eventJournalConfig)) {
             return false;
         }
+        if (immutableValues != that.immutableValues) {
+            return false;
+        }
         return hotRestartConfig.equals(that.hotRestartConfig);
     }
 
@@ -815,6 +850,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         result = 31 * result + merkleTreeConfig.hashCode();
         result = 31 * result + eventJournalConfig.hashCode();
         result = 31 * result + hotRestartConfig.hashCode();
+        result = 31 * result + (immutableValues ? 1 : 0);
         return result;
     }
 
@@ -883,6 +919,10 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         out.writeObject(merkleTreeConfig);
         out.writeObject(eventJournalConfig);
         out.writeShort(metadataPolicy.getId());
+        // RU_COMPAT_4_1
+        if (out.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+            out.writeBoolean(immutableValues);
+        }
     }
 
     @Override
@@ -912,5 +952,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         merkleTreeConfig = in.readObject();
         eventJournalConfig = in.readObject();
         metadataPolicy = MetadataPolicy.getById(in.readShort());
+        // RU_COMPAT_4_1
+        if (in.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+            immutableValues = in.readBoolean();
+        }
     }
 }

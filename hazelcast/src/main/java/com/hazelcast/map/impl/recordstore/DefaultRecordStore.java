@@ -619,7 +619,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext()) {
             Data key = iterator.next();
-            Record record = getRecordOrNull(key, now, false);
+            Record<?> record = getRecordOrNull(key, now, false);
             if (record != null) {
                 addToMapEntrySet(key, record.getValue(), mapEntries);
                 accessRecord(record, now);
@@ -629,7 +629,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         // then try to load missing keys from map-store
         if (mapDataStore != EMPTY_MAP_DATA_STORE && !keys.isEmpty()) {
-            Map loadedEntries = loadEntries(keys, callerAddress);
+            Map<Data, Object> loadedEntries = loadEntries(keys, callerAddress);
             addToMapEntrySet(loadedEntries, mapEntries);
         }
 
@@ -691,8 +691,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         mapEntries.add(dataKey, dataValue);
     }
 
-    protected void addToMapEntrySet(Map<Object, Object> entries, MapEntries mapEntries) {
-        for (Map.Entry<Object, Object> entry : entries.entrySet()) {
+    protected void addToMapEntrySet(Map<Data, Object> entries, MapEntries mapEntries) {
+        for (Map.Entry<Data, Object> entry : entries.entrySet()) {
             addToMapEntrySet(entry.getKey(), entry.getValue(), mapEntries);
         }
     }

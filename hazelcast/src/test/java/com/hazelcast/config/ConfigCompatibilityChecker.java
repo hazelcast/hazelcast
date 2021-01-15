@@ -212,7 +212,7 @@ public class ConfigCompatibilityChecker {
         return new PredicateConfigChecker().check(c1, c2);
     }
 
-    private static boolean isCompatible(CollectionConfig c1, CollectionConfig c2) {
+    private static boolean isCompatible(CollectionConfig<?> c1, CollectionConfig<?> c2) {
         return c1 == c2 || !(c1 == null || c2 == null)
                 && nullSafeEqual(c1.getName(), c2.getName())
                 && nullSafeEqual(c1.getItemListenerConfigs(), c2.getItemListenerConfigs())
@@ -619,7 +619,6 @@ public class ConfigCompatibilityChecker {
             return nullSafeEqual(c1.getName(), c2.getName())
                     && c1.getBackupCount() == c2.getBackupCount()
                     && c1.getAsyncBackupCount() == c2.getAsyncBackupCount()
-                    && c1.getAsyncBackupCount() == c2.getAsyncBackupCount()
                     && isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
                     && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName());
         }
@@ -969,7 +968,8 @@ public class ConfigCompatibilityChecker {
                     new EntryListenerConfigChecker())
                     && nullSafeEqual(c1.getPartitionLostListenerConfigs(), c2.getPartitionLostListenerConfigs())
                     && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
-                    && nullSafeEqual(c1.getPartitioningStrategyConfig(), c2.getPartitioningStrategyConfig());
+                    && nullSafeEqual(c1.getPartitioningStrategyConfig(), c2.getPartitioningStrategyConfig())
+                    && nullSafeEqual(c1.isImmutableValues(), c2.isImmutableValues());
         }
 
         private static boolean isCompatible(WanReplicationRef c1, WanReplicationRef c2) {
@@ -1296,7 +1296,6 @@ public class ConfigCompatibilityChecker {
                     c2.getSymmetricEncryptionConfig())
                     && (c1.isSocketBufferDirect() == c2.isSocketBufferDirect())
                     && (c1.isSocketKeepAlive() == c2.isSocketKeepAlive())
-                    && (c1.isSocketBufferDirect() == c2.isSocketBufferDirect())
                     && (c1.getSocketConnectTimeoutSeconds() == c2.getSocketConnectTimeoutSeconds())
                     && (c1.getSocketLingerSeconds() == c2.getSocketLingerSeconds())
                     && (c1.getSocketRcvBufferSizeKb() == c2.getSocketRcvBufferSizeKb())
@@ -1665,7 +1664,7 @@ public class ConfigCompatibilityChecker {
         }
 
         private static boolean isCompatible(TokenIdentityConfig c1, TokenIdentityConfig c2) {
-            return c1 == c2 || (c1 != null && c2 != null && c1.equals(c2));
+            return Objects.equals(c1, c2);
         }
 
         private static boolean isCompatible(TlsAuthenticationConfig c1, TlsAuthenticationConfig c2) {
@@ -1673,15 +1672,15 @@ public class ConfigCompatibilityChecker {
         }
 
         private static boolean isCompatible(LdapAuthenticationConfig c1, LdapAuthenticationConfig c2) {
-            return c1 == c2 || (c1 != null && c2 != null && c1.equals(c2));
+            return Objects.equals(c1, c2);
         }
 
         private static boolean isCompatible(KerberosAuthenticationConfig c1, KerberosAuthenticationConfig c2) {
-            return c1 == c2 || (c1 != null && c2 != null && c1.equals(c2));
+            return Objects.equals(c1, c2);
         }
 
         private static boolean isCompatible(KerberosIdentityConfig c1, KerberosIdentityConfig c2) {
-            return c1 == c2 || (c1 != null && c2 != null && c1.equals(c2));
+            return Objects.equals(c1, c2);
         }
 
         private static boolean isCompatible(JaasAuthenticationConfig c1, JaasAuthenticationConfig c2) {

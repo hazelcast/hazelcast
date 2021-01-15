@@ -155,7 +155,7 @@ abstract class MapProxySupport<K, V>
     protected static final String NULL_CONSUMER_IS_NOT_ALLOWED = "Null Consumer is not allowed!";
 
     private static final int INITIAL_WAIT_LOAD_SLEEP_MILLIS = 10;
-    private static final int MAXIMAL_WAIT_LOAD_SLEEP_MILLIS = 1000;
+    private static final int MAX_WAIT_LOAD_SLEEP_MILLIS = 1000;
     /**
      * Retry count when an interceptor registration/de-registration operation fails.
      */
@@ -202,7 +202,7 @@ abstract class MapProxySupport<K, V>
     protected final String name;
     protected final LocalMapStatsImpl localMapStats;
     protected final LockProxySupport lockSupport;
-    protected final PartitioningStrategy partitionStrategy;
+    protected final PartitioningStrategy<K> partitionStrategy;
     protected final MapServiceContext mapServiceContext;
     protected final IPartitionService partitionService;
     protected final Address thisAddress;
@@ -329,7 +329,7 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    public PartitioningStrategy getPartitionStrategy() {
+    public PartitioningStrategy<K> getPartitionStrategy() {
         return partitionStrategy;
     }
 
@@ -375,7 +375,7 @@ abstract class MapProxySupport<K, V>
             return null;
         }
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
-        RecordStore recordStore = partitionContainer.getExistingRecordStore(name);
+        RecordStore<?> recordStore = partitionContainer.getExistingRecordStore(name);
         if (recordStore == null) {
             return null;
         }
@@ -468,14 +468,14 @@ abstract class MapProxySupport<K, V>
             Object result;
             if (statisticsEnabled) {
                 long startTimeNanos = Timer.nanos();
-                Future future = operationService
+                Future<Object> future = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                         .setResultDeserialized(false)
                         .invoke();
                 result = future.get();
                 mapServiceContext.incrementOperationStats(startTimeNanos, localMapStats, name, operation);
             } else {
-                Future future = operationService
+                Future<Object> future = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                         .setResultDeserialized(false)
                         .invoke();
@@ -595,8 +595,7 @@ abstract class MapProxySupport<K, V>
         int mapNamePartition = partitionService.getPartitionId(name);
 
         Operation operation = operationProvider.createLoadMapOperation(name, replaceExistingValues);
-        Future loadMapFuture = operationService.invokeOnPartition(SERVICE_NAME, operation, mapNamePartition);
-
+        Future<?> loadMapFuture = operationService.invokeOnPartition(SERVICE_NAME, operation, mapNamePartition);
         try {
             loadMapFuture.get();
             waitUntilLoaded();
@@ -656,10 +655,10 @@ abstract class MapProxySupport<K, V>
         return (Boolean) invokeOperation(keyData, operation);
     }
 
-    protected void removeAllInternal(Predicate predicate) {
+    protected void removeAllInternal(Predicate<K, V> predicate) {
         try {
             if (predicate instanceof PartitionPredicate) {
-                PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+                PartitionPredicate<K, V> partitionPredicate = (PartitionPredicate<K, V>) predicate;
                 OperationFactory operation = operationProvider
                         .createPartitionWideEntryWithPredicateOperationFactory(name, ENTRY_REMOVING_PROCESSOR,
                                 partitionPredicate.getTarget());
@@ -710,14 +709,14 @@ abstract class MapProxySupport<K, V>
     protected boolean containsKeyInternal(Object key) {
         Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(keyData);
-        MapOperation containsKeyOperation = operationProvider.createContainsKeyOperation(name, keyData);
-        containsKeyOperation.setThreadId(getThreadId());
-        containsKeyOperation.setServiceName(SERVICE_NAME);
+        MapOperation op = operationProvider.createContainsKeyOperation(name, keyData);
+        op.setThreadId(getThreadId());
+        op.setServiceName(SERVICE_NAME);
         try {
-            Future future = operationService.invokeOnPartition(SERVICE_NAME, containsKeyOperation, partitionId);
-            Object object = future.get();
+            Future<Boolean> future = operationService.invokeOnPartition(SERVICE_NAME, op, partitionId);
+            Boolean object = future.get();
             incrementOtherOperationsStat();
-            return (Boolean) toObject(object);
+            return toObject(object);
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -740,8 +739,7 @@ abstract class MapProxySupport<K, V>
                 }
                 // sleep with some back-off
                 TimeUnit.MILLISECONDS.sleep(sleepDurationMillis);
-                sleepDurationMillis = (sleepDurationMillis * 2 < MAXIMAL_WAIT_LOAD_SLEEP_MILLIS)
-                        ? sleepDurationMillis * 2 : MAXIMAL_WAIT_LOAD_SLEEP_MILLIS;
+                sleepDurationMillis = Math.min(sleepDurationMillis * 2, MAX_WAIT_LOAD_SLEEP_MILLIS);
             }
 
             OperationFactory opFactory = new IsPartitionLoadedOperationFactory(name);
@@ -968,7 +966,8 @@ abstract class MapProxySupport<K, V>
 
             // fill entriesPerPartition
             MapEntries[] entriesPerPartition = new MapEntries[partitionCount];
-            for (Entry entry : map.entrySet()) {
+
+            for (Entry<? extends K, ? extends V> entry : map.entrySet()) {
                 checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
                 checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
 
@@ -1090,7 +1089,7 @@ abstract class MapProxySupport<K, V>
             BinaryOperationFactory operationFactory = new BinaryOperationFactory(mapFlushOperation, getNodeEngine());
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, operationFactory);
 
-            List<Future> futures = new ArrayList<>();
+            List<Future<Boolean>> futures = new ArrayList<>();
             for (Entry<Integer, Object> entry : results.entrySet()) {
                 Integer partitionId = entry.getKey();
                 Long count = ((Long) entry.getValue());
@@ -1100,7 +1099,7 @@ abstract class MapProxySupport<K, V>
                 }
             }
 
-            for (Future future : futures) {
+            for (Future<Boolean> future : futures) {
                 future.get();
             }
         } catch (Throwable t) {
@@ -1140,6 +1139,7 @@ abstract class MapProxySupport<K, V>
         return syncInvokeOnAllMembers(new RemoveInterceptorOperationSupplier(name, id));
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T syncInvokeOnAllMembers(Supplier<Operation> operationSupplier) {
         CompletableFuture<Object> future = invokeOnStableClusterSerial(getNodeEngine(),
                 operationSupplier, MAX_RETRIES);
@@ -1154,7 +1154,10 @@ abstract class MapProxySupport<K, V>
         return mapServiceContext.addLocalEventListener(listener, name);
     }
 
-    public UUID addLocalEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
+    public UUID addLocalEntryListenerInternal(Object listener,
+                                              Predicate<K, V> predicate,
+                                              Data key,
+                                              boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         return mapServiceContext.addLocalEventListener(listener, eventFilter, name);
     }
@@ -1165,7 +1168,7 @@ abstract class MapProxySupport<K, V>
     }
 
     protected UUID addEntryListenerInternal(Object listener,
-                                            Predicate predicate,
+                                            Predicate<K, V> predicate,
                                             @Nullable Data key,
                                             boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
@@ -1184,20 +1187,20 @@ abstract class MapProxySupport<K, V>
         return mapServiceContext.removePartitionLostListener(name, id);
     }
 
-    protected EntryView getEntryViewInternal(Data key) {
+    protected EntryView<Data, Data> getEntryViewInternal(Data key) {
         int partitionId = partitionService.getPartitionId(key);
         MapOperation operation = operationProvider.createGetEntryViewOperation(name, key);
         operation.setThreadId(getThreadId());
         operation.setServiceName(SERVICE_NAME);
         try {
-            Future future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
-            return (EntryView) toObject(future.get());
+            Future<EntryView<Data, Data>> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            return toObject(future.get());
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    public InternalCompletableFuture<Data> executeOnKeyInternal(Object key, EntryProcessor entryProcessor) {
+    public <R> InternalCompletableFuture<Data> executeOnKeyInternal(Object key, EntryProcessor<K, V, R> entryProcessor) {
         Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(keyData);
         MapOperation operation = operationProvider.createEntryOperation(name, keyData, entryProcessor);
@@ -1209,9 +1212,9 @@ abstract class MapProxySupport<K, V>
                 .invoke();
     }
 
-    private static void validateEntryProcessorForSingleKeyProcessing(EntryProcessor entryProcessor) {
+    private static <K, V, R> void validateEntryProcessorForSingleKeyProcessing(EntryProcessor<K, V, R> entryProcessor) {
         if (entryProcessor instanceof ReadOnly) {
-            EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
+            EntryProcessor<K, V, R> backupProcessor = entryProcessor.getBackupProcessor();
             if (backupProcessor != null) {
                 throw new IllegalArgumentException(
                         "EntryProcessor.getBackupProcessor() should be null for a ReadOnly EntryProcessor");
@@ -1228,36 +1231,38 @@ abstract class MapProxySupport<K, V>
         OperationFactory operationFactory = operationProvider.createMultipleEntryOperationFactory(name, dataKeys,
                 entryProcessor);
 
-        final InternalCompletableFuture resultFuture = new InternalCompletableFuture();
+        InternalCompletableFuture<Map<K, R>> resultFuture = new InternalCompletableFuture<>();
         operationService.invokeOnPartitionsAsync(SERVICE_NAME, operationFactory, partitionsForKeys)
-                .whenCompleteAsync((response, throwable) -> {
-                    if (throwable == null) {
-                        Map<K, Object> result = null;
-                        try {
-                            result = createHashMap(response.size());
-                            for (Object object : response.values()) {
-                                MapEntries mapEntries = (MapEntries) object;
-                                mapEntries.putAllToMap(serializationService, result);
+                        .whenCompleteAsync((response, throwable) -> {
+                            if (throwable == null) {
+                                Map<K, R> result = null;
+                                try {
+                                    result = createHashMap(response.size());
+                                    for (Object object : response.values()) {
+                                        MapEntries mapEntries = (MapEntries) object;
+                                        mapEntries.putAllToMap(serializationService, result);
+                                    }
+                                } catch (Throwable e) {
+                                    resultFuture.completeExceptionally(e);
+                                }
+                                resultFuture.complete(result);
+                            } else {
+                                resultFuture.completeExceptionally(throwable);
                             }
-                        } catch (Throwable e) {
-                            resultFuture.completeExceptionally(e);
-                        }
-                        resultFuture.complete(result);
-                    } else {
-                        resultFuture.completeExceptionally(throwable);
-                    }
-                });
+                        });
         return resultFuture;
     }
 
     /**
      * {@link IMap#executeOnEntries(EntryProcessor, Predicate)}
      */
-    public void executeOnEntriesInternal(EntryProcessor entryProcessor, Predicate predicate, List<Data> result) {
+    public <R> void executeOnEntriesInternal(EntryProcessor<K, V, R> entryProcessor,
+                                             Predicate<K, V> predicate,
+                                             List<Data> result) {
         try {
             Map<Integer, Object> results;
             if (predicate instanceof PartitionPredicate) {
-                PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+                PartitionPredicate<K, V> partitionPredicate = (PartitionPredicate<K, V>) predicate;
                 Data key = toData(partitionPredicate.getPartitionKey());
                 int partitionId = partitionService.getPartitionId(key);
                 handleHazelcastInstanceAwareParams(partitionPredicate.getTarget());
@@ -1292,7 +1297,7 @@ abstract class MapProxySupport<K, V>
         return serializationService.toData(object, partitionStrategy);
     }
 
-    protected Data toData(Object object, PartitioningStrategy partitioningStrategy) {
+    protected Data toData(Object object, PartitioningStrategy<K> partitioningStrategy) {
         return serializationService.toData(object, partitioningStrategy);
     }
 
@@ -1325,7 +1330,7 @@ abstract class MapProxySupport<K, V>
         try {
             QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
             SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
-            QueryCacheEndToEndProvider provider = subscriberContext.getEndToEndQueryCacheProvider();
+            QueryCacheEndToEndProvider<?, ?> provider = subscriberContext.getEndToEndQueryCacheProvider();
             provider.destroyAllQueryCaches(name);
         } finally {
             super.preDestroy();
@@ -1346,17 +1351,21 @@ abstract class MapProxySupport<K, V>
         mapEventPublisher.publishMapEvent(thisAddress, name, eventType, numberOfAffectedEntries);
     }
 
-    protected <T extends Result> T executeQueryInternal(Predicate predicate, IterationType iterationType, Target target) {
+    protected <T extends Result<T>> T executeQueryInternal(Predicate<K, V> predicate,
+                                                           IterationType iterationType,
+                                                           Target target) {
         return executeQueryInternal(predicate, null, null, iterationType, target);
     }
 
-    protected <T extends Result> T executeQueryInternal(Predicate predicate, Aggregator aggregator, Projection projection,
-                                                        IterationType iterationType, Target target) {
+    protected <R, T extends Result<T>> T executeQueryInternal(Predicate<K, V> predicate,
+                                                              Aggregator<? super Map.Entry<K, V>, R> aggregator,
+                                                              Projection<? super Map.Entry<K, V>, R> projection,
+                                                              IterationType iterationType, Target target) {
         QueryEngine queryEngine = getMapQueryEngine();
-        final Predicate userPredicate;
+        Predicate<K, V> userPredicate;
 
         if (predicate instanceof PartitionPredicate) {
-            PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+            PartitionPredicate<K, V> partitionPredicate = (PartitionPredicate<K, V>) predicate;
             Data key = toData(partitionPredicate.getPartitionKey());
             int partitionId = partitionService.getPartitionId(key);
             if (target.mode() == TargetMode.LOCAL_NODE && !partitionService.isPartitionOwner(partitionId)
@@ -1373,12 +1382,12 @@ abstract class MapProxySupport<K, V>
         handleHazelcastInstanceAwareParams(userPredicate);
 
         Query query = Query.of()
-                .mapName(getName())
-                .predicate(userPredicate)
-                .iterationType(iterationType)
-                .aggregator(aggregator)
-                .projection(projection)
-                .build();
+                           .mapName(getName())
+                           .predicate(userPredicate)
+                           .iterationType(iterationType)
+                           .aggregator(aggregator)
+                           .projection(projection)
+                           .build();
         return queryEngine.execute(query, target);
     }
 

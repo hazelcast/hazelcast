@@ -187,6 +187,7 @@ import static java.lang.Boolean.TRUE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -209,22 +210,22 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private IMap<Object, Object> map2;
 
     @Resource(name = "multiMap")
-    private MultiMap multiMap;
+    private MultiMap<?, ?> multiMap;
 
     @Resource(name = "replicatedMap")
-    private ReplicatedMap replicatedMap;
+    private ReplicatedMap<?, ?> replicatedMap;
 
     @Resource(name = "queue")
-    private IQueue queue;
+    private IQueue<?> queue;
 
     @Resource(name = "topic")
-    private ITopic topic;
+    private ITopic<?> topic;
 
     @Resource(name = "set")
-    private ISet set;
+    private ISet<?> set;
 
     @Resource(name = "list")
-    private IList list;
+    private IList<?> list;
 
     @Resource(name = "executorService")
     private ExecutorService executorService;
@@ -236,7 +237,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private IAtomicLong atomicLong;
 
     @Resource(name = "atomicReference")
-    private IAtomicReference atomicReference;
+    private IAtomicReference<?> atomicReference;
 
     @Resource(name = "countDownLatch")
     private ICountDownLatch countDownLatch;
@@ -248,29 +249,29 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private FencedLock lock;
 
     @Resource(name = "dummyMapStore")
-    private MapStore dummyMapStore;
+    private MapStore<?, ?> dummyMapStore;
 
     @Autowired
-    private MapStoreFactory dummyMapStoreFactory;
+    private MapStoreFactory<?,?> dummyMapStoreFactory;
 
     @Resource(name = "dummyQueueStore")
-    private QueueStore dummyQueueStore;
+    private QueueStore<?> dummyQueueStore;
     @Autowired
-    private QueueStoreFactory dummyQueueStoreFactory;
+    private QueueStoreFactory<?> dummyQueueStoreFactory;
 
     @Resource(name = "dummyRingbufferStore")
-    private RingbufferStore dummyRingbufferStore;
+    private RingbufferStore<?> dummyRingbufferStore;
     @Autowired
-    private RingbufferStoreFactory dummyRingbufferStoreFactory;
+    private RingbufferStoreFactory<?> dummyRingbufferStoreFactory;
 
     @Autowired
-    private WanPublisher wanReplication;
+    private WanPublisher<?> wanReplication;
 
     @Autowired
     private MembershipListener membershipListener;
 
     @Autowired
-    private EntryListener entryListener;
+    private EntryListener<?,?> entryListener;
 
     @Resource
     private SSLContextFactory sslContextFactory;
@@ -279,7 +280,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private SocketInterceptor socketInterceptor;
 
     @Resource
-    private StreamSerializer dummySerializer;
+    private StreamSerializer<?> dummySerializer;
 
     @Resource(name = "pnCounter")
     private PNCounter pnCounter;
@@ -347,6 +348,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(MetadataPolicy.OFF, testMapConfig.getMetadataPolicy());
         assertTrue(testMapConfig.isReadBackupData());
         assertEquals(2, testMapConfig.getIndexConfigs().size());
+        assertFalse(testMapConfig.isStatisticsEnabled());
+        assertTrue(testMapConfig.isImmutableValues());
         for (IndexConfig index : testMapConfig.getIndexConfigs()) {
             if ("name".equals(index.getAttributes().get(0))) {
                 assertEquals(IndexType.HASH, index.getType());
@@ -766,7 +769,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         Collection<String> allowedPorts = networkConfig.getOutboundPortDefinitions();
         assertEquals(2, allowedPorts.size());
-        Iterator portIter = allowedPorts.iterator();
+        Iterator<String> portIter = allowedPorts.iterator();
         assertEquals("35000-35100", portIter.next());
         assertEquals("36000,36100", portIter.next());
         assertFalse(networkConfig.getJoin().getAutoDetectionConfig().isEnabled());
@@ -1265,7 +1268,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
         for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
             assertEquals("name", indexConfig.getAttributes().get(0));
-            assertFalse(indexConfig.getType() == IndexType.SORTED);
+            assertNotSame(indexConfig.getType(), IndexType.SORTED);
         }
     }
 

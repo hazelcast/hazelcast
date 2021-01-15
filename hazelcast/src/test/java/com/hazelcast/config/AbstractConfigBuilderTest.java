@@ -19,9 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.test.HazelcastTestSupport;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -53,9 +51,6 @@ import static org.junit.Assert.assertTrue;
  * @see YamlConfigBuilderTest
  */
 public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     @Test
     public abstract void testConfigurationURL() throws Exception;

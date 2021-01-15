@@ -1290,6 +1290,11 @@
         Adds the split brain protection for this map which you configure using the <split-brain-protection> element.
         You should set the <split-brain-protection-ref>'s value
         as the <split-brain-protection>'s name.
+        * <immutable-values>:
+            Signals that the values added to the map are immutable. Having immutable
+            values means some optimisations may come into effect and IMDG may avoid
+            defensively copying the values before providing them to user code.
+            The default value is false.
      -->
     <map name="default">
         <in-memory-format>BINARY</in-memory-format>
@@ -1392,6 +1397,8 @@
             <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>
         </partition-lost-listeners>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
+        <immutable-values>false</immutable-values>
+
         <!--
         ===== HAZELCAST CONTINUOUS QUERY CACHE CONFIGURATION =====
 

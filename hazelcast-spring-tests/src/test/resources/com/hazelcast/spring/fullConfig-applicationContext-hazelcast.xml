@@ -326,7 +326,9 @@
                     backup-count="2"
                     read-backup-data="true"
                     in-memory-format="BINARY"
-                    metadata-policy="OFF">
+                    metadata-policy="OFF"
+                    statistics-enabled="false"
+                    immutable-values="true">
                 <hz:eviction size="0" eviction-policy="NONE"/>
                 <hz:map-store enabled="true"
                               class-name="com.hazelcast.spring.DummyStore"

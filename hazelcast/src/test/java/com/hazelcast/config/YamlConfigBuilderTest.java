@@ -69,6 +69,7 @@ import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -1083,7 +1084,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  map:\n"
                 + "    mymap:\n"
                 + "      map-store:"
-                + (useDefault ? "{}" : "\n        write-coalescing: " + String.valueOf(value) + "\n");
+                + (useDefault ? "{}" : "\n        write-coalescing: " + value + "\n");
     }
 
     @Override
@@ -2324,7 +2325,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      entry-listeners:\n"
                 + "         - class-name: com.your-package.MyEntryListener\n"
                 + "           include-value: false\n"
-                + "           local: false\n";
+                + "           local: false\n"
+                + "      immutable-values: true\n";
 
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig("foobar");
@@ -2345,7 +2347,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(mapConfig.isReadBackupData());
         assertEquals(1, mapConfig.getIndexConfigs().size());
         assertEquals("age", mapConfig.getIndexConfigs().get(0).getAttributes().get(0));
-        assertTrue(mapConfig.getIndexConfigs().get(0).getType() == IndexType.SORTED);
+        assertSame(mapConfig.getIndexConfigs().get(0).getType(), IndexType.SORTED);
         assertEquals(1, mapConfig.getAttributeConfigs().size());
         assertEquals("com.bank.CurrencyExtractor", mapConfig.getAttributeConfigs().get(0).getExtractorClassName());
         assertEquals("currency", mapConfig.getAttributeConfigs().get(0).getName());
@@ -2360,6 +2362,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(20, mapConfig.getMerkleTreeConfig().getDepth());
         assertFalse(mapConfig.getHotRestartConfig().isEnabled());
         assertFalse(mapConfig.getHotRestartConfig().isFsync());
+        assertTrue(mapConfig.isImmutableValues());
 
         EventJournalConfig journalConfig = mapConfig.getEventJournalConfig();
         assertTrue(journalConfig.isEnabled());
@@ -2567,7 +2570,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
         for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
             assertEquals("name", indexConfig.getAttributes().get(0));
-            assertFalse(indexConfig.getType() == IndexType.SORTED);
+            assertNotSame(indexConfig.getType(), IndexType.SORTED);
         }
     }
 
@@ -3218,8 +3221,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  network:\n"
                 + "    port: 9999";
 
-        expected.expect(InvalidConfigurationException.class);
-        buildConfig(yaml);
+        assertThrows(InvalidConfigurationException.class, () -> buildConfig(yaml));
     }
 
     @Override
@@ -3246,9 +3248,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  member-server-socket-endpoint-config: {}\n"
                 + "  member-server-socket-endpoint-config: {}";
 
-        expected.expect(InvalidConfigurationException.class);
-        buildConfig(yaml);
-
+        assertThrows(InvalidConfigurationException.class, () -> buildConfig(yaml));
     }
 
     @Override

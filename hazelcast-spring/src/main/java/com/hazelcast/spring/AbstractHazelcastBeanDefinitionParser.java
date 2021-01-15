@@ -101,7 +101,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             if (attributes != null) {
                 Node lazyInitAttr = attributes.getNamedItem("lazy-init");
                 if (lazyInitAttr != null) {
-                    builder.setLazyInit(Boolean.valueOf(getTextContent(lazyInitAttr)));
+                    builder.setLazyInit(Boolean.parseBoolean(getTextContent(lazyInitAttr)));
                 } else {
                     builder.setLazyInit(parserContext.isDefaultLazyInit());
                 }
@@ -136,7 +136,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             return DomConfigHelper.getAttribute(node, attName, domLevel3);
         }
 
-        protected BeanDefinitionBuilder createBeanBuilder(Class clazz) {
+        protected BeanDefinitionBuilder createBeanBuilder(Class<?> clazz) {
             BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(clazz);
             builder.setScope(configBuilder.getBeanDefinition().getScope());
             builder.setLazyInit(configBuilder.getBeanDefinition().isLazyInit());
@@ -150,7 +150,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             return builder;
         }
 
-        protected BeanDefinitionBuilder createAndFillBeanBuilder(Node node, Class clazz, String propertyName,
+        protected BeanDefinitionBuilder createAndFillBeanBuilder(Node node, Class<?> clazz, String propertyName,
                                                                  BeanDefinitionBuilder parent, String... exceptPropertyNames) {
             BeanDefinitionBuilder builder = createBeanBuilder(clazz);
             AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
@@ -160,7 +160,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         @SuppressWarnings("SameParameterValue")
-        protected BeanDefinitionBuilder createAndFillListedBean(Node node, Class clazz, String propertyName,
+        protected BeanDefinitionBuilder createAndFillListedBean(Node node, Class<?> clazz, String propertyName,
                                                                 ManagedMap<String, AbstractBeanDefinition> managedMap,
                                                                 String... excludeNames) {
 
@@ -209,7 +209,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
         }
 
-        protected void fillAttributesForAliasedDiscoveryStrategy(AliasedDiscoveryConfig config, Node node,
+        protected void fillAttributesForAliasedDiscoveryStrategy(AliasedDiscoveryConfig<?> config, Node node,
                                                                  BeanDefinitionBuilder builder, String name) {
             NamedNodeMap attributes = node.getAttributes();
             if (attributes != null) {
@@ -222,7 +222,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             builder.addPropertyValue(propertyName, config);
         }
 
-        protected ManagedList parseListeners(Node node, Class listenerConfigClass) {
+        protected ManagedList<BeanDefinition> parseListeners(Node node, Class<?> listenerConfigClass) {
             ManagedList<BeanDefinition> listeners = new ManagedList<>();
             String implementationAttr = "implementation";
             for (Node listenerNode : childElements(node)) {
@@ -237,7 +237,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             return listeners;
         }
 
-        protected ManagedList parseProxyFactories(Node node, Class proxyFactoryConfigClass) {
+        protected ManagedList<BeanDefinition> parseProxyFactories(Node node, Class<?> proxyFactoryConfigClass) {
             ManagedList<BeanDefinition> list = new ManagedList<>();
             for (Node instanceNode : childElements(node)) {
                 BeanDefinitionBuilder confBuilder = createBeanBuilder(proxyFactoryConfigClass);
@@ -408,11 +408,11 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         protected void handleProperties(Node node, BeanDefinitionBuilder beanDefinitionBuilder) {
-            ManagedMap properties = parseProperties(node);
+            ManagedMap<String, String> properties = parseProperties(node);
             beanDefinitionBuilder.addPropertyValue("properties", properties);
         }
 
-        protected ManagedMap parseProperties(Node node) {
+        protected ManagedMap<String, String> parseProperties(Node node) {
             ManagedMap<String, String> properties = new ManagedMap<>();
             for (Node n : childElements(node)) {
                 String name = cleanNodeName(n);
@@ -446,7 +446,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
             BeanDefinitionBuilder evictionConfigBuilder = createBeanBuilder(EvictionConfig.class);
 
-            Integer maxSize = isIMap ? MapConfig.DEFAULT_MAX_SIZE : EvictionConfig.DEFAULT_MAX_ENTRY_COUNT;
+            int maxSize = isIMap ? MapConfig.DEFAULT_MAX_SIZE : EvictionConfig.DEFAULT_MAX_ENTRY_COUNT;
             MaxSizePolicy maxSizePolicyValue = isIMap
                     ? MapConfig.DEFAULT_MAX_SIZE_POLICY : EvictionConfig.DEFAULT_MAX_SIZE_POLICY;
             EvictionPolicy evictionPolicyValue = isIMap
@@ -505,8 +505,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
             Boolean enabledValue = Boolean.FALSE;
             String directoryValue = "";
-            Integer storeInitialDelaySecondsValue = NearCachePreloaderConfig.DEFAULT_STORE_INITIAL_DELAY_SECONDS;
-            Integer storeIntervalSecondsValue = NearCachePreloaderConfig.DEFAULT_STORE_INTERVAL_SECONDS;
+            int storeInitialDelaySecondsValue = NearCachePreloaderConfig.DEFAULT_STORE_INITIAL_DELAY_SECONDS;
+            int storeIntervalSecondsValue = NearCachePreloaderConfig.DEFAULT_STORE_INTERVAL_SECONDS;
 
             if (enabled != null) {
                 enabledValue = Boolean.parseBoolean(getTextContent(enabled));
@@ -705,7 +705,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("properties".equals(name)) {
-                    ManagedMap properties = parseProperties(child);
+                    ManagedMap<String, String> properties = parseProperties(child);
                     if (!properties.isEmpty()) {
                         discoveryStrategyConfigBuilder.addConstructorArgValue(properties);
                     }

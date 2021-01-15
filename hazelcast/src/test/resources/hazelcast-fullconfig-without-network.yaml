@@ -384,6 +384,12 @@ hazelcast:
             - attributes:
               - "age"
 
+      # Signals that the values added to the map are immutable. Having immutable
+      # values means some optimisations may come into effect and IMDG may avoid
+      # defensively copying the values before providing them to user code.
+      # The default value is false.
+      immutable-values: true
+
   multimap:
     default:
       backup-count: 1

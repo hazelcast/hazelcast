@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -51,14 +52,10 @@ public class PermissionConfig implements IdentifiedDataSerializable {
 
     public PermissionConfig(PermissionConfig permissionConfig) {
         this.type = permissionConfig.type;
-        this.name = permissionConfig.getName();
-        this.principal = permissionConfig.getPrincipal();
-        for (String endpoint : permissionConfig.getEndpoints()) {
-            this.endpoints.add(endpoint);
-        }
-        for (String action : permissionConfig.getActions()) {
-            this.actions.add(action);
-        }
+        this.name = permissionConfig.name;
+        this.principal = permissionConfig.principal;
+        this.endpoints.addAll(permissionConfig.getEndpoints());
+        this.actions.addAll(permissionConfig.getActions());
     }
 
     /**
@@ -312,16 +309,16 @@ public class PermissionConfig implements IdentifiedDataSerializable {
         if (type != that.type) {
             return false;
         }
-        if (name != null ? !name.equals(that.name) : that.name != null) {
+        if (!Objects.equals(name, that.name)) {
             return false;
         }
-        if (principal != null ? !principal.equals(that.principal) : that.principal != null) {
+        if (!Objects.equals(principal, that.principal)) {
             return false;
         }
-        if (endpoints != null ? !endpoints.equals(that.endpoints) : that.endpoints != null) {
+        if (!Objects.equals(endpoints, that.endpoints)) {
             return false;
         }
-        return actions != null ? actions.equals(that.actions) : that.actions == null;
+        return Objects.equals(actions, that.actions);
     }
 
     @Override

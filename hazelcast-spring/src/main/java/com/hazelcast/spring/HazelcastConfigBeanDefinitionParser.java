@@ -159,6 +159,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import javax.annotation.Nonnull;
+
 /**
  * BeanDefinitionParser for Hazelcast Config Configuration.
  * <p>
@@ -186,35 +188,35 @@ import org.w3c.dom.Node;
         "WeakerAccess"})
 public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
-    public AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
+    public AbstractBeanDefinition parseInternal(@Nonnull Element element, @Nonnull ParserContext parserContext) {
         SpringXmlConfigBuilder springXmlConfigBuilder = new SpringXmlConfigBuilder(parserContext);
         springXmlConfigBuilder.handleConfig(element);
         return springXmlConfigBuilder.getBeanDefinition();
     }
 
-    private class SpringXmlConfigBuilder extends SpringXmlBuilderHelper {
+    private static class SpringXmlConfigBuilder extends SpringXmlBuilderHelper {
 
         private final ParserContext parserContext;
 
-        private ManagedMap<String, AbstractBeanDefinition> mapConfigManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> cacheConfigManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> queueManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> ringbufferManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> reliableTopicManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> listManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> setManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> topicManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> multiMapManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> executorManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> durableExecutorManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> scheduledExecutorManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> cardinalityEstimatorManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> wanReplicationManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> replicatedMapManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> splitBrainProtectionManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> flakeIdGeneratorConfigMap;
-        private ManagedMap<String, AbstractBeanDefinition> pnCounterManagedMap;
-        private ManagedMap<EndpointQualifier, AbstractBeanDefinition> endpointConfigsMap;
+        private final ManagedMap<String, AbstractBeanDefinition> mapConfigManagedMap;
+        private final ManagedMap<String, AbstractBeanDefinition> cacheConfigManagedMap;
+        private final ManagedMap<String, AbstractBeanDefinition> queueManagedMap;
+        private final ManagedMap<String, AbstractBeanDefinition> ringbufferManagedMap;
+        private final ManagedMap<String, AbstractBeanDefinition> reliableTopicManagedMap;
+        private final ManagedMap<String, AbstractBeanDefinition> listManagedMap;
+        private final ManagedMap<String, AbstractBeanDefinition> setManagedMap;
+        private final ManagedMap<String, AbstractBeanDefinition> topicManagedMap;
+        private final ManagedMap<String, AbstractBeanDefinition> multiMapManagedMap;
+        private final ManagedMap<String, AbstractBeanDefinition> executorManagedMap;
+        private final ManagedMap<String, AbstractBeanDefinition> durableExecutorManagedMap;
+        private final ManagedMap<String, AbstractBeanDefinition> scheduledExecutorManagedMap;
+        private final ManagedMap<String, AbstractBeanDefinition> cardinalityEstimatorManagedMap;
+        private final ManagedMap<String, AbstractBeanDefinition> wanReplicationManagedMap;
+        private final ManagedMap<String, AbstractBeanDefinition> replicatedMapManagedMap;
+        private final ManagedMap<String, AbstractBeanDefinition> splitBrainProtectionManagedMap;
+        private final ManagedMap<String, AbstractBeanDefinition> flakeIdGeneratorConfigMap;
+        private final ManagedMap<String, AbstractBeanDefinition> pnCounterManagedMap;
+        private final ManagedMap<EndpointQualifier, AbstractBeanDefinition> endpointConfigsMap;
 
         private boolean hasNetwork;
         private boolean hasAdvancedNetworkEnabled;
@@ -310,7 +312,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                             || "license-key".equals(nodeName)) {
                         configBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(node));
                     } else if ("listeners".equals(nodeName)) {
-                        List listeners = parseListeners(node, ListenerConfig.class);
+                        ManagedList<BeanDefinition> listeners = parseListeners(node, ListenerConfig.class);
                         configBuilder.addPropertyValue("listenerConfigs", listeners);
                     } else if ("lite-member".equals(nodeName)) {
                         handleLiteMember(node);
@@ -513,7 +515,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     splitBrainProtectionBuilder.addPropertyValue("minimumClusterSize",
                             getIntegerValue("minimum-cluster-size", value));
                 } else if ("listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(n, SplitBrainProtectionListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(n, SplitBrainProtectionListenerConfig.class);
                     splitBrainProtectionBuilder.addPropertyValue("listenerConfigs", listeners);
                 } else if ("protect-on".equals(nodeName)) {
                     splitBrainProtectionBuilder.addPropertyValue("protectOn", SplitBrainProtectionOn.valueOf(value));
@@ -603,7 +605,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
                 if ("entry-listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, EntryListenerConfig.class);
                     replicatedMapConfigBuilder.addPropertyValue("listenerConfigs", listeners);
                 } else if ("split-brain-protection-ref".equals(nodeName)) {
                     replicatedMapConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
@@ -1031,7 +1033,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private void handleAliasedDiscoveryStrategy(Node node, BeanDefinitionBuilder builder, String name) {
-            AliasedDiscoveryConfig config = AliasedDiscoveryConfigUtils.newConfigFor(name);
+            AliasedDiscoveryConfig<?> config = AliasedDiscoveryConfigUtils.newConfigFor(name);
             fillAttributesForAliasedDiscoveryStrategy(config, node, builder, name);
         }
 
@@ -1040,7 +1042,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, builder);
             for (Node childNode : childElements(node)) {
                 if ("message-listeners".equals(cleanNodeName(childNode))) {
-                    ManagedList listeners = parseListeners(childNode, ListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, ListenerConfig.class);
                     builder.addPropertyValue("messageListenerConfigs", listeners);
                 }
             }
@@ -1083,7 +1085,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
                 if ("item-listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, ItemListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, ItemListenerConfig.class);
                     queueConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
                 } else if ("queue-store".equals(nodeName)) {
                     handleQueueStoreConfig(childNode, queueConfigBuilder);
@@ -1142,7 +1144,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
                 if ("item-listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, ItemListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, ItemListenerConfig.class);
                     listConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
                 } else if ("split-brain-protection-ref".equals(nodeName)) {
                     listConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
@@ -1161,7 +1163,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
                 if ("item-listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, ItemListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, ItemListenerConfig.class);
                     setConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
                 } else if ("split-brain-protection-ref".equals(nodeName)) {
                     setConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
@@ -1209,17 +1211,17 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                     mapConfigBuilder.addPropertyValue("attributeConfigs", attributes);
                 } else if ("entry-listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, EntryListenerConfig.class);
                     mapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
                 } else if ("split-brain-protection-ref".equals(nodeName)) {
                     mapConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, mapConfigBuilder);
                 } else if ("query-caches".equals(nodeName)) {
-                    ManagedList queryCaches = getQueryCaches(childNode);
+                    ManagedList<BeanDefinition> queryCaches = getQueryCaches(childNode);
                     mapConfigBuilder.addPropertyValue("queryCacheConfigs", queryCaches);
                 } else if ("partition-lost-listeners".endsWith(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, MapPartitionLostListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, MapPartitionLostListenerConfig.class);
                     mapConfigBuilder.addPropertyValue("partitionLostListenerConfigs", listeners);
                 } else if ("merkle-tree".equals(nodeName)) {
                     handleMerkleTreeConfig(mapConfigBuilder, childNode);
@@ -1255,7 +1257,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("eventJournalConfig", eventJournalBuilder.getBeanDefinition());
         }
 
-        private ManagedList getQueryCaches(Node childNode) {
+        private ManagedList<BeanDefinition> getQueryCaches(Node childNode) {
             ManagedList<BeanDefinition> queryCaches = new ManagedList<>();
             for (Node queryCacheNode : childElements(childNode)) {
                 BeanDefinitionBuilder beanDefinitionBuilder = parseQueryCaches(queryCacheNode);
@@ -1357,7 +1359,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("wan-replication-ref".equals(nodeName)) {
                     handleWanReplicationRef(cacheConfigBuilder, childNode);
                 } else if ("partition-lost-listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, CachePartitionLostListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, CachePartitionLostListenerConfig.class);
                     cacheConfigBuilder.addPropertyValue("partitionLostListenerConfigs", listeners);
                 } else if ("split-brain-protection-ref".equals(nodeName)) {
                     cacheConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
@@ -1593,7 +1595,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
                 if ("entry-listeners".equals(nodeName)) {
-                    ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, EntryListenerConfig.class);
                     multiMapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
                 } else if ("split-brain-protection-ref".equals(nodeName)) {
                     multiMapConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
@@ -1611,7 +1613,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, topicConfigBuilder);
             for (Node childNode : childElements(node)) {
                 if ("message-listeners".equals(cleanNodeName(childNode))) {
-                    ManagedList listeners = parseListeners(childNode, ListenerConfig.class);
+                    ManagedList<BeanDefinition> listeners = parseListeners(childNode, ListenerConfig.class);
                     topicConfigBuilder.addPropertyValue("messageListenerConfigs", listeners);
                 } else if ("statistics-enabled".equals(cleanNodeName(childNode))) {
                     String statisticsEnabled = getTextContent(childNode);

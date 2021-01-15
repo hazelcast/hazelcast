@@ -372,11 +372,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String name = cleanNodeName(n);
             if (matches("class-cache-mode", name)) {
                 UserCodeDeploymentConfig.ClassCacheMode classCacheMode
-                  = UserCodeDeploymentConfig.ClassCacheMode.valueOf(getTextContent(n));
+                        = UserCodeDeploymentConfig.ClassCacheMode.valueOf(getTextContent(n));
                 dcConfig.setClassCacheMode(classCacheMode);
             } else if (matches("provider-mode", name)) {
                 UserCodeDeploymentConfig.ProviderMode providerMode
-                  = UserCodeDeploymentConfig.ProviderMode.valueOf(getTextContent(n));
+                        = UserCodeDeploymentConfig.ProviderMode.valueOf(getTextContent(n));
                 dcConfig.setProviderMode(providerMode);
             } else if (matches("blacklist-prefixes", name)) {
                 dcConfig.setBlacklistedPrefixes(getTextContent(n));
@@ -392,7 +392,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     private void handleHotRestartPersistence(Node hrRoot)
             throws Exception {
         HotRestartPersistenceConfig hrConfig = config.getHotRestartPersistenceConfig()
-                .setEnabled(getBooleanValue(getAttribute(hrRoot, "enabled")));
+                                                     .setEnabled(getBooleanValue(getAttribute(hrRoot, "enabled")));
 
         String parallelismName = "parallelism";
         String validationTimeoutName = "validation-timeout-seconds";
@@ -415,7 +415,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     hrConfig.setDataLoadTimeoutSeconds(getIntegerValue(dataLoadTimeoutName, getTextContent(n)));
                 } else if (matches("cluster-data-recovery-policy", name)) {
                     hrConfig.setClusterDataRecoveryPolicy(
-                      HotRestartClusterDataRecoveryPolicy.valueOf(upperCaseInternal(getTextContent(n))));
+                            HotRestartClusterDataRecoveryPolicy.valueOf(upperCaseInternal(getTextContent(n))));
                 } else if (matches("auto-remove-stale-data", name)) {
                     hrConfig.setAutoRemoveStaleData(getBooleanValue(getTextContent(n)));
                 }
@@ -619,13 +619,13 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         long heartbeatIntervalMillis = getLongValue("heartbeat-interval-millis",
                 getAttribute(node, "heartbeat-interval-millis"),
                 ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
-        splitBrainProtectionConfigBuilder = SplitBrainProtectionConfig.
-                newProbabilisticSplitBrainProtectionConfigBuilder(name, splitBrainProtectionSize)
-                .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
-                .withSuspicionThreshold(threshold)
-                .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
-                .withMinStdDeviationMillis(minStdDeviation)
-                .withMaxSampleSize(maxSampleSize);
+        splitBrainProtectionConfigBuilder =
+                SplitBrainProtectionConfig.newProbabilisticSplitBrainProtectionConfigBuilder(name, splitBrainProtectionSize)
+                                          .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
+                                          .withSuspicionThreshold(threshold)
+                                          .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
+                                          .withMinStdDeviationMillis(minStdDeviation)
+                                          .withMaxSampleSize(maxSampleSize);
         return splitBrainProtectionConfigBuilder;
     }
 
@@ -844,15 +844,19 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleMemberServerSocketEndpointConfig(Node node) throws Exception {
-        ServerSocketEndpointConfig config = (ServerSocketEndpointConfig) this.config.getAdvancedNetworkConfig()
-          .getEndpointConfigs().getOrDefault(EndpointQualifier.MEMBER, new ServerSocketEndpointConfig());
+        ServerSocketEndpointConfig config =
+                (ServerSocketEndpointConfig) this.config.getAdvancedNetworkConfig()
+                                                        .getEndpointConfigs()
+                                                        .getOrDefault(EndpointQualifier.MEMBER, new ServerSocketEndpointConfig());
         config.setProtocolType(ProtocolType.MEMBER);
         handleServerSocketEndpointConfig(config, node);
     }
 
     private void handleClientServerSocketEndpointConfig(Node node) throws Exception {
-        ServerSocketEndpointConfig config = (ServerSocketEndpointConfig) this.config.getAdvancedNetworkConfig()
-          .getEndpointConfigs().getOrDefault(EndpointQualifier.CLIENT, new ServerSocketEndpointConfig());
+        ServerSocketEndpointConfig config =
+                (ServerSocketEndpointConfig) this.config.getAdvancedNetworkConfig()
+                                                        .getEndpointConfigs()
+                                                        .getOrDefault(EndpointQualifier.CLIENT, new ServerSocketEndpointConfig());
         config.setProtocolType(ProtocolType.CLIENT);
         handleServerSocketEndpointConfig(config, node);
     }
@@ -864,8 +868,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleRestServerSocketEndpointConfig(Node node) throws Exception {
-        RestServerEndpointConfig config = (RestServerEndpointConfig) this.config.getAdvancedNetworkConfig()
-          .getEndpointConfigs().getOrDefault(EndpointQualifier.REST, new RestServerEndpointConfig());
+        RestServerEndpointConfig config =
+                (RestServerEndpointConfig) this.config.getAdvancedNetworkConfig()
+                                                      .getEndpointConfigs()
+                                                      .getOrDefault(EndpointQualifier.REST, new RestServerEndpointConfig());
         handleServerSocketEndpointConfig(config, node);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
@@ -878,8 +884,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleMemcacheServerSocketEndpointConfig(Node node) throws Exception {
-        ServerSocketEndpointConfig config = (ServerSocketEndpointConfig) this.config.getAdvancedNetworkConfig()
-          .getEndpointConfigs().getOrDefault(EndpointQualifier.MEMCACHE, new ServerSocketEndpointConfig());
+        ServerSocketEndpointConfig config = (ServerSocketEndpointConfig)
+                this.config.getAdvancedNetworkConfig()
+                           .getEndpointConfigs()
+                           .getOrDefault(EndpointQualifier.MEMCACHE, new ServerSocketEndpointConfig());
         config.setProtocolType(ProtocolType.MEMCACHE);
         handleServerSocketEndpointConfig(config, node);
     }
@@ -1013,7 +1021,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String nodeName = cleanNodeName(child);
             if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mpConfig = createMergePolicyConfig(
-                  child, scheduledExecutorConfig.getMergePolicyConfig());
+                        child, scheduledExecutorConfig.getMergePolicyConfig());
                 scheduledExecutorConfig.setMergePolicyConfig(mpConfig);
             } else if (matches("capacity", nodeName)) {
                 scheduledExecutorConfig.setCapacity(parseInt(getTextContent(child)));
@@ -1035,7 +1043,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleCardinalityEstimator(Node node) {
         CardinalityEstimatorConfig cardinalityEstimatorConfig = config.getCardinalityEstimatorConfig(
-          getTextContent(getNamedItemNode(node, "name")));
+                getTextContent(getNamedItemNode(node, "name")));
 
         handleCardinalityEstimatorNode(node, cardinalityEstimatorConfig);
     }
@@ -1045,7 +1053,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String nodeName = cleanNodeName(child);
             if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mpConfig = createMergePolicyConfig(
-                  child, cardinalityEstimatorConfig.getMergePolicyConfig());
+                        child, cardinalityEstimatorConfig.getMergePolicyConfig());
                 cardinalityEstimatorConfig.setMergePolicyConfig(mpConfig);
             } else if (matches("backup-count", nodeName)) {
                 cardinalityEstimatorConfig.setBackupCount(parseInt(getTextContent(child)));
@@ -1321,18 +1329,18 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleAliasedDiscoveryStrategy(JoinConfig joinConfig, Node node, String tag) {
-        AliasedDiscoveryConfig aliasedDiscoveryConfig = getConfigByTag(joinConfig, tag);
+        AliasedDiscoveryConfig<?> aliasedDiscoveryConfig = getConfigByTag(joinConfig, tag);
         updateConfig(aliasedDiscoveryConfig, node);
     }
 
     private void handleAliasedDiscoveryStrategy(WanBatchPublisherConfig publisherConfig,
                                                 Node node,
                                                 String tag) {
-        AliasedDiscoveryConfig aliasedDiscoveryConfig = getConfigByTag(publisherConfig, tag);
+        AliasedDiscoveryConfig<?> aliasedDiscoveryConfig = getConfigByTag(publisherConfig, tag);
         updateConfig(aliasedDiscoveryConfig, node);
     }
 
-    private void updateConfig(AliasedDiscoveryConfig config, Node node) {
+    private void updateConfig(AliasedDiscoveryConfig<?> config, Node node) {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
@@ -1411,7 +1419,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 tcpIpConfig.setEnabled(getBooleanValue(getTextContent(att)));
             } else if (matches(att.getNodeName(), "connection-timeout-seconds")) {
                 tcpIpConfig.setConnectionTimeoutSeconds(
-                  getIntegerValue("connection-timeout-seconds", getTextContent(att)));
+                        getIntegerValue("connection-timeout-seconds", getTextContent(att)));
             }
         }
         Set<String> memberTags = new HashSet<>(Arrays.asList("interface", "member", "members"));
@@ -1541,7 +1549,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node listenerNode : childElements(n)) {
             if (matches("item-listener", cleanNodeName(listenerNode))) {
                 boolean incValue = getBooleanValue(getTextContent(
-                  getNamedItemNode(listenerNode, "include-value")));
+                        getNamedItemNode(listenerNode, "include-value")));
                 String listenerClass = getTextContent(listenerNode);
                 configAddFunction.accept(new ItemListenerConfig(listenerClass, incValue));
             }
@@ -1644,9 +1652,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node listenerNode : childElements(n)) {
             if (matches("entry-listener", cleanNodeName(listenerNode))) {
                 boolean incValue = getBooleanValue(getTextContent(
-                  getNamedItemNode(listenerNode, "include-value")));
+                        getNamedItemNode(listenerNode, "include-value")));
                 boolean local = getBooleanValue(getTextContent(
-                  getNamedItemNode(listenerNode, "local")));
+                        getNamedItemNode(listenerNode, "local")));
                 String listenerClass = getTextContent(listenerNode);
                 configAddFunction.accept(new EntryListenerConfig(listenerClass, local, incValue));
             }
@@ -1722,7 +1730,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setStatisticsEnabled(getBooleanValue(getTextContent(node)));
             } else if (matches("cache-deserialized-values", nodeName)) {
                 CacheDeserializedValues cacheDeserializedValues = CacheDeserializedValues
-                  .parseString(getTextContent(node));
+                        .parseString(getTextContent(node));
                 mapConfig.setCacheDeserializedValues(cacheDeserializedValues);
             } else if (matches("wan-replication-ref", nodeName)) {
                 mapWanReplicationRefHandle(node, mapConfig);
@@ -1740,6 +1748,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setSplitBrainProtectionName(getTextContent(node));
             } else if (matches("query-caches", nodeName)) {
                 mapQueryCacheHandler(node, mapConfig);
+            } else if (matches("immutable-values", nodeName)) {
+                mapConfig.setImmutableValues(getBooleanValue(getTextContent(node)));
             }
         }
         config.addMapConfig(mapConfig);
@@ -2036,9 +2046,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         listenerConfig.setOldValueRequired(getBooleanValue(getTextContent(
-          getNamedItemNode(listenerNode, "old-value-required"))));
+                getNamedItemNode(listenerNode, "old-value-required"))));
         listenerConfig.setSynchronous(getBooleanValue(getTextContent(
-          getNamedItemNode(listenerNode, "synchronous"))));
+                getNamedItemNode(listenerNode, "synchronous"))));
         cacheSimpleConfig.addEntryListenerConfig(listenerConfig);
     }
 
@@ -2088,7 +2098,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node extractorNode : childElements(n)) {
             if (matches("attribute", cleanNodeName(extractorNode))) {
                 String extractor = getTextContent(
-                  getNamedItemNode(extractorNode, "extractor-class-name"));
+                        getNamedItemNode(extractorNode, "extractor-class-name"));
                 String name = getTextContent(extractorNode);
                 mapConfig.addAttributeConfig(new AttributeConfig(name, extractor));
             }
@@ -2108,7 +2118,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node queryCacheNode : childElements(n)) {
             if (matches("query-cache", cleanNodeName(queryCacheNode))) {
                 String cacheName = getTextContent(
-                  getNamedItemNode(queryCacheNode, "name"));
+                        getNamedItemNode(queryCacheNode, "name"));
                 QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
                 handleMapQueryCacheNode(mapConfig, queryCacheNode, queryCacheConfig);
             }
@@ -2638,7 +2648,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleMemcacheProtocol(Node node) {
         config.getNetworkConfig().getMemcacheProtocolConfig()
-            .setEnabled(getBooleanValue(getAttribute(node, "enabled")));
+              .setEnabled(getBooleanValue(getAttribute(node, "enabled")));
     }
 
     private void handleRestApi(Node node) {
@@ -3039,11 +3049,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void validateNetworkConfig() {
         if (occurrenceSet.contains("network")
-          && occurrenceSet.stream().anyMatch(c -> matches("advanced-network", c))
-          && config.getAdvancedNetworkConfig().isEnabled()) {
+                && occurrenceSet.stream().anyMatch(c -> matches("advanced-network", c))
+                && config.getAdvancedNetworkConfig().isEnabled()) {
             throw new InvalidConfigurationException("Ambiguous configuration: cannot include both <network> and "
-              + "an enabled <advanced-network> element. Configure network using one of <network> or "
-              + "<advanced-network enabled=\"true\">.");
+                    + "an enabled <advanced-network> element. Configure network using one of <network> or "
+                    + "<advanced-network enabled=\"true\">.");
         }
     }
 }

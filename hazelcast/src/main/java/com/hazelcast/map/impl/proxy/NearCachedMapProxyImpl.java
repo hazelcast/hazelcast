@@ -320,7 +320,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected void removeAllInternal(Predicate predicate) {
+    protected void removeAllInternal(Predicate<K, V> predicate) {
         try {
             super.removeAllInternal(predicate);
         } finally {
@@ -497,7 +497,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    public InternalCompletableFuture<Data> executeOnKeyInternal(Object key, EntryProcessor entryProcessor) {
+    public <R> InternalCompletableFuture<Data> executeOnKeyInternal(Object key, EntryProcessor<K, V, R> entryProcessor) {
         final Object nearCacheKey = toNearCacheKeyWithStrategy(key);
         try {
             return super.executeOnKeyInternal(nearCacheKey, entryProcessor);
@@ -524,7 +524,9 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    public void executeOnEntriesInternal(EntryProcessor entryProcessor, Predicate predicate, List<Data> resultingKeyValuePairs) {
+    public <R> void executeOnEntriesInternal(EntryProcessor<K, V, R> entryProcessor,
+                                             Predicate<K, V> predicate,
+                                             List<Data> resultingKeyValuePairs) {
         try {
             super.executeOnEntriesInternal(entryProcessor, predicate, resultingKeyValuePairs);
         } finally {

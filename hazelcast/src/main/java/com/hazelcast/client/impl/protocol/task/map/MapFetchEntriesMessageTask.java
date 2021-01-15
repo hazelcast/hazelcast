@@ -21,13 +21,19 @@ import com.hazelcast.client.impl.protocol.codec.MapFetchEntriesCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map.Entry;
 
 import static com.hazelcast.internal.iteration.IterationPointer.decodePointers;
 import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
@@ -57,7 +63,26 @@ public class MapFetchEntriesMessageTask extends AbstractMapPartitionMessageTask<
         MapEntriesWithCursor mapEntriesWithCursor = (MapEntriesWithCursor) response;
         IterationPointer[] pointers = mapEntriesWithCursor.getIterationPointers();
         return MapFetchEntriesCodec.encodeResponse(
-                encodePointers(pointers), mapEntriesWithCursor.getBatch());
+                encodePointers(pointers), serializeBatch(mapEntriesWithCursor));
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Collection<Entry<Data, Data>> serializeBatch(MapEntriesWithCursor mapEntriesWithCursor) {
+        if (mapEntriesWithCursor.getBatch().size() == 0) {
+            return Collections.emptyList();
+        }
+
+        if (mapEntriesWithCursor.getBatch().get(0).getValue() instanceof Data) {
+            return (Collection) mapEntriesWithCursor.getBatch();
+        }
+
+        List<Entry<Data, Data>> serializedBatch = new ArrayList<>(mapEntriesWithCursor.getBatch().size());
+        for (Entry<Data, Object> entry : mapEntriesWithCursor.getBatch()) {
+            SimpleImmutableEntry<Data, Data> e = new SimpleImmutableEntry<>(
+                    entry.getKey(), serializationService.toData(entry.getValue()));
+            serializedBatch.add(e);
+        }
+        return serializedBatch;
     }
 
     @Override

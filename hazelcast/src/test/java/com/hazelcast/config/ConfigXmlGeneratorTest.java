@@ -755,7 +755,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     private static class TypeClass {
     }
 
-    private static class SerializerClass implements StreamSerializer {
+    private static class SerializerClass implements StreamSerializer<Object> {
         @Override
         public void write(ObjectDataOutput out, Object object) throws IOException {
         }
@@ -974,7 +974,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         testRingbuffer(ringbufferStoreConfig);
     }
 
-    private static class TestRingbufferStore implements RingbufferStore {
+    private static class TestRingbufferStore implements RingbufferStore<Object> {
         @Override
         public void store(long sequence, Object data) {
         }
@@ -1018,9 +1018,9 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         testRingbuffer(ringbufferStoreConfig);
     }
 
-    private static class TestRingbufferStoreFactory implements RingbufferStoreFactory {
+    private static class TestRingbufferStoreFactory implements RingbufferStoreFactory<Object> {
         @Override
-        public RingbufferStore newRingbufferStore(String name, Properties properties) {
+        public RingbufferStore<Object> newRingbufferStore(String name, Properties properties) {
             return null;
         }
     }
@@ -1222,13 +1222,13 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         testQueue(queueStoreConfig);
     }
 
-    private static class TestQueueStore implements QueueStore {
+    private static class TestQueueStore implements QueueStore<Object> {
         @Override
         public void store(Long key, Object value) {
         }
 
         @Override
-        public void storeAll(Map map) {
+        public void storeAll(Map<Long, Object> map) {
         }
 
         @Override
@@ -1236,7 +1236,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void deleteAll(Collection keys) {
+        public void deleteAll(Collection<Long> keys) {
         }
 
         @Override
@@ -1245,7 +1245,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Map loadAll(Collection keys) {
+        public Map<Long, Object> loadAll(Collection<Long> keys) {
             return null;
         }
 
@@ -1275,9 +1275,9 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         testQueue(queueStoreConfig);
     }
 
-    private static class TestQueueStoreFactory implements QueueStoreFactory {
+    private static class TestQueueStoreFactory implements QueueStoreFactory<Object> {
         @Override
-        public QueueStore newQueueStore(String name, Properties properties) {
+        public QueueStore<Object> newQueueStore(String name, Properties properties) {
             return null;
         }
     }
@@ -1434,13 +1434,13 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         testMap(mapStoreConfig);
     }
 
-    private static class TestMapStore implements MapStore {
+    private static class TestMapStore implements MapStore<Object, Object> {
         @Override
         public void store(Object key, Object value) {
         }
 
         @Override
-        public void storeAll(Map map) {
+        public void storeAll(Map<Object, Object> map) {
         }
 
         @Override
@@ -1448,7 +1448,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void deleteAll(Collection keys) {
+        public void deleteAll(Collection<Object> keys) {
         }
 
         @Override
@@ -1457,12 +1457,12 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Map loadAll(Collection keys) {
+        public Map<Object, Object> loadAll(Collection<Object> keys) {
             return null;
         }
 
         @Override
-        public Iterable loadAllKeys() {
+        public Iterable<Object> loadAllKeys() {
             return null;
         }
     }
@@ -1503,7 +1503,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setWriteDelaySeconds(10)
                 .setWriteCoalescing(true)
                 .setWriteBatchSize(500)
-                .setFactoryImplementation((MapStoreFactory) (mapName, properties) -> null)
+                .setFactoryImplementation((MapStoreFactory<Object, Object>) (mapName, properties) -> null)
                 .setProperty("key", "value");
 
         testMap(mapStoreConfig);
@@ -1585,7 +1585,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .addAttributeConfig(attrConfig)
                 .setPartitionLostListenerConfigs(singletonList(
                         new MapPartitionLostListenerConfig("partitionLostListener"))
-                );
+                )
+                .setImmutableValues(true);
 
         expectedConfig.setQueryCacheConfigs(asList(queryCacheConfig1, queryCacheConfig2));
 
@@ -2172,7 +2173,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger, Map<String, Comparable> properties) {
+        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
+                                                      Map<String, Comparable> properties) {
             return null;
         }
 

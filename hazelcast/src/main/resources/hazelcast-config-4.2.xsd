@@ -284,6 +284,16 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="query-caches" type="query-caches" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="immutable-values" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Signals that the values added to the map are immutable. Having immutable
+                        values means some optimisations may come into effect and IMDG may avoid
+                        defensively copying the values before providing them to user code.
+                        The default value is false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>

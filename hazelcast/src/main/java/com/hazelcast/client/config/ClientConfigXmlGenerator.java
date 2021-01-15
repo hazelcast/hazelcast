@@ -50,6 +50,7 @@ import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.XmlUtil;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.impl.IndexUtils;
@@ -60,7 +61,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
-import static com.hazelcast.internal.util.StringUtil.formatXml;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
@@ -140,7 +140,7 @@ public final class ClientConfigXmlGenerator {
         //close HazelcastClient
         gen.close();
 
-        return formatXml(xml.toString(), indent);
+        return XmlUtil.format(xml.toString(), indent);
     }
 
     private static void network(XmlGenerator gen, ClientNetworkConfig network) {

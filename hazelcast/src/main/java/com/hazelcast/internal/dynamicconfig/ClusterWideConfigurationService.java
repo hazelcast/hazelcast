@@ -90,7 +90,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
 
     private final DynamicConfigListener listener;
 
-    private NodeEngine nodeEngine;
+    private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, MapConfig> mapConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs =
@@ -246,7 +246,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     @SuppressWarnings("checkstyle:methodlength")
     public void registerConfigLocally(IdentifiedDataSerializable newConfig,
                                       ConfigCheckMode configCheckMode) {
-        IdentifiedDataSerializable currentConfig = null;
+        IdentifiedDataSerializable currentConfig;
         if (newConfig instanceof MultiMapConfig) {
             MultiMapConfig multiMapConfig = (MultiMapConfig) newConfig;
             currentConfig = multiMapConfigs.putIfAbsent(multiMapConfig.getName(), multiMapConfig);

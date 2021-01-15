@@ -70,6 +70,7 @@ import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -1078,7 +1079,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         return HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
                 + "<map-store >"
-                + (useDefault ? "" : "<write-coalescing>" + String.valueOf(value) + "</write-coalescing>")
+                + (useDefault ? "" : "<write-coalescing>" + value + "</write-coalescing>")
                 + "</map-store>"
                 + "</map>"
                 + HAZELCAST_END_TAG;
@@ -1472,8 +1473,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testParseExceptionIsNotSwallowed() {
         String invalidXml = HAZELCAST_START_TAG + "</hazelcast";
-        expected.expect(InvalidConfigurationException.class);
-        buildConfig(invalidXml);
+        assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalidXml));
     }
 
     @Override
@@ -1795,8 +1795,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    </split-brain-protection>\n"
                 + HAZELCAST_END_TAG;
 
-        expected.expect(InvalidConfigurationException.class);
-        buildConfig(xml);
+        assertThrows(InvalidConfigurationException.class, () -> buildConfig(xml));
     }
 
     @Override
@@ -1810,8 +1809,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    </split-brain-protection>\n"
                 + HAZELCAST_END_TAG;
 
-        expected.expect(InvalidConfigurationException.class);
-        buildConfig(xml);
+        assertThrows(InvalidConfigurationException.class, () -> buildConfig(xml));
     }
 
     @Override
@@ -1825,8 +1823,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    </split-brain-protection>\n"
                 + HAZELCAST_END_TAG;
 
-        expected.expect(InvalidConfigurationException.class);
-        buildConfig(xml);
+        assertThrows(InvalidConfigurationException.class, () -> buildConfig(xml));
     }
 
     @Override
@@ -2101,8 +2098,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    </cardinality-estimator>\n"
                 + HAZELCAST_END_TAG;
 
-        expected.expect(InvalidConfigurationException.class);
-        buildConfig(xml);
+        assertThrows(InvalidConfigurationException.class, () -> buildConfig(xml));
     }
 
     @Override
@@ -2319,6 +2315,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <entry-listeners>\n"
                 + "            <entry-listener include-value=\"false\" local=\"false\">com.your-package.MyEntryListener</entry-listener>\n"
                 + "          </entry-listeners>"
+                + "        <immutable-values>true</immutable-values>"
                 + "    </map>\n"
                 + HAZELCAST_END_TAG;
 
@@ -2341,7 +2338,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(mapConfig.isReadBackupData());
         assertEquals(1, mapConfig.getIndexConfigs().size());
         assertEquals("age", mapConfig.getIndexConfigs().get(0).getAttributes().get(0));
-        assertTrue(mapConfig.getIndexConfigs().get(0).getType() == IndexType.SORTED);
+        assertSame(mapConfig.getIndexConfigs().get(0).getType(), IndexType.SORTED);
         assertEquals(1, mapConfig.getAttributeConfigs().size());
         assertEquals("com.bank.CurrencyExtractor", mapConfig.getAttributeConfigs().get(0).getExtractorClassName());
         assertEquals("currency", mapConfig.getAttributeConfigs().get(0).getName());
@@ -2355,6 +2352,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(20, mapConfig.getMerkleTreeConfig().getDepth());
         assertFalse(mapConfig.getHotRestartConfig().isEnabled());
         assertFalse(mapConfig.getHotRestartConfig().isFsync());
+        assertTrue(mapConfig.isImmutableValues());
 
         EventJournalConfig journalConfig = mapConfig.getEventJournalConfig();
         assertTrue(journalConfig.isEnabled());
@@ -2471,8 +2469,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
-        expected.expect(IllegalArgumentException.class);
-        buildConfig(xml);
+        assertThrows(IllegalArgumentException.class, () -> buildConfig(xml));
     }
 
     private static void assertAttributeEqual(String expectedName, String expectedExtractor, AttributeConfig attributeConfig) {
@@ -2490,8 +2487,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
-        expected.expect(IllegalArgumentException.class);
-        buildConfig(xml);
+        assertThrows(IllegalArgumentException.class, () -> buildConfig(xml));
     }
 
     @Override
@@ -2504,8 +2500,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
-        expected.expect(IllegalArgumentException.class);
-        buildConfig(xml);
+        assertThrows(IllegalArgumentException.class, () -> buildConfig(xml));
     }
 
     @Override
@@ -2518,8 +2513,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
-        expected.expect(IllegalArgumentException.class);
-        buildConfig(xml);
+        assertThrows(IllegalArgumentException.class, () -> buildConfig(xml));
     }
 
     @Override
@@ -2628,8 +2622,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <lite-member/>\n"
                 + HAZELCAST_END_TAG;
 
-        expected.expect(InvalidConfigurationException.class);
-        buildConfig(xml);
+        assertThrows(InvalidConfigurationException.class, () -> buildConfig(xml));
     }
 
     @Override
@@ -2639,8 +2632,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <lite-member enabled=\"dummytext\"/>\n"
                 + HAZELCAST_END_TAG;
 
-        expected.expect(InvalidConfigurationException.class);
-        buildConfig(xml);
+        assertThrows(InvalidConfigurationException.class, () -> buildConfig(xml));
     }
 
     @Override
@@ -2651,14 +2643,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <lite-member enabled=\"true\"/>\n"
                 + HAZELCAST_END_TAG;
 
-        expected.expect(InvalidConfigurationException.class);
-        buildConfig(xml);
+        assertThrows(InvalidConfigurationException.class, () -> buildConfig(xml));
     }
 
     private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
         for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
             assertEquals("name", indexConfig.getAttributes().get(0));
-            assertFalse(indexConfig.getType() == IndexType.SORTED);
+            assertNotSame(indexConfig.getType(), IndexType.SORTED);
         }
     }
 
@@ -2987,7 +2978,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testAllPermissionsCovered() {
         InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream("hazelcast-fullconfig.xml");
-        Config config = null;
+        Config config;
         try {
             config = new XmlConfigBuilder(xmlResource).build();
         } finally {
@@ -3288,8 +3279,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  </network>"
                 + HAZELCAST_END_TAG;
 
-        expected.expect(InvalidConfigurationException.class);
-        buildConfig(xml);
+        assertThrows(InvalidConfigurationException.class, () -> buildConfig(xml));
     }
 
     @Override
@@ -3321,8 +3311,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "</advanced-network>"
                 + HAZELCAST_END_TAG;
 
-        expected.expect(InvalidConfigurationException.class);
-        buildConfig(xml);
+        assertThrows(InvalidConfigurationException.class, () -> buildConfig(xml));
     }
 
     @Override

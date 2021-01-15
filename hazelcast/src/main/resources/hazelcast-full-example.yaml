@@ -1271,7 +1271,11 @@ hazelcast:
   # * "split-brain-protection-ref":
   # Adds the split brain protection for this map which you configure using the "split-brain-protection" element.
   # You should set the "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
-  #
+  # * "immutable-values":
+  #     Signals that the values added to the map are immutable. Having immutable
+  #     values means some optimisations may come into effect and IMDG may avoid
+  #     defensively copying the values before providing them to user code.
+  #     The default value is false.
   map:
     default:
       in-memory-format: BINARY
@@ -1365,6 +1369,8 @@ hazelcast:
       partition-lost-listeners:
         - com.your-package.YourPartitionLostListener
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
+      immutable-values: false
+
       #
       # ===== HAZELCAST CONTINUOUS QUERY CACHE CONFIGURATION =====
       #
