@@ -28,7 +28,6 @@ import org.apache.calcite.plan.RelOptRuleOperand;
 import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.HazelcastRelSubsetUtil;
-import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.prepare.RelOptTableImpl;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableScan;
@@ -177,27 +176,17 @@ public final class OptUtils {
      * @return Physical rels.
      */
     public static Collection<RelNode> getPhysicalRelsFromSubset(RelNode input) {
-
-        RelNode convertedInput = convert(input, input.getTraitSet());
-
-        if (!(convertedInput instanceof RelSubset)) {
-            return Collections.emptyList();
-        }
-
-        RelSubset logicalSubset = (RelSubset) convertedInput;
-        RelSubset physicalSubset = HazelcastRelSubsetUtil.getPhysicalSubSet(logicalSubset);
-
         Set<RelTraitSet> traitSets = new HashSet<>();
 
         Set<RelNode> res = Collections.newSetFromMap(new IdentityHashMap<>());
 
-        for (RelNode rel : physicalSubset.getRelList()) {
+        for (RelNode rel : HazelcastRelSubsetUtil.getSubsets(input)) {
             if (!isPhysical(rel)) {
                 continue;
             }
 
             if (traitSets.add(rel.getTraitSet())) {
-                res.add(convert(physicalSubset, rel.getTraitSet()));
+                res.add(rel);
             }
         }
 

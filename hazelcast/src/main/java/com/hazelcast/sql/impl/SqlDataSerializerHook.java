@@ -70,7 +70,6 @@ import com.hazelcast.sql.impl.operation.QueryCheckResponseOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
-import com.hazelcast.sql.impl.partitioner.ZeroPartitioner;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
@@ -79,8 +78,7 @@ import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
-import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
-import com.hazelcast.sql.impl.plan.node.io.UnicastSendPlanNode;
+import com.hazelcast.sql.impl.plan.node.io.SendPlanNode;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
@@ -117,7 +115,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int OPERATION_CHECK_RESPONSE = 13;
 
     public static final int NODE_ROOT = 14;
-    public static final int NODE_ROOT_SEND = 15;
+    public static final int NODE_SEND = 15;
     public static final int NODE_RECEIVE = 16;
     public static final int NODE_PROJECT = 17;
     public static final int NODE_FILTER = 18;
@@ -174,10 +172,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_SUBSTRING = 60;
     public static final int EXPRESSION_TRIM = 61;
 
-    public static final int NODE_UNICAST_SEND = 62;
-    public static final int NODE_RECEIVE_MERGE_SORT = 63;
+    public static final int NODE_RECEIVE_MERGE_SORT = 62;
 
-    public static final int EXPRESSION_REMAINDER = 64;
+    public static final int EXPRESSION_REMAINDER = 63;
 
     public static final int LEN = EXPRESSION_REMAINDER + 1;
 
@@ -210,7 +207,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[OPERATION_CHECK_RESPONSE] = arg -> new QueryCheckResponseOperation();
 
         constructors[NODE_ROOT] = arg -> new RootPlanNode();
-        constructors[NODE_ROOT_SEND] = arg -> new RootSendPlanNode();
+        constructors[NODE_SEND] = arg -> new SendPlanNode();
         constructors[NODE_RECEIVE] = arg -> new ReceivePlanNode();
         constructors[NODE_PROJECT] = arg -> new ProjectPlanNode();
         constructors[NODE_FILTER] = arg -> new FilterPlanNode();
@@ -267,7 +264,6 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_SUBSTRING] = arg -> new SubstringFunction();
         constructors[EXPRESSION_TRIM] = arg -> new TrimFunction();
 
-        constructors[NODE_UNICAST_SEND] = arg -> new UnicastSendPlanNode();
         constructors[NODE_RECEIVE_MERGE_SORT] = arg -> new ReceiveSortMergePlanNode();
 
         constructors[EXPRESSION_REMAINDER] = arg -> new RemainderFunction<>();

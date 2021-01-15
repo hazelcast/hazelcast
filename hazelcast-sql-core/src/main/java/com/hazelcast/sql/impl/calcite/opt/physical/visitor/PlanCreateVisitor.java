@@ -39,7 +39,6 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.partitioner.ZeroPartitioner;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
@@ -55,8 +54,7 @@ import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
-import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
-import com.hazelcast.sql.impl.plan.node.io.UnicastSendPlanNode;
+import com.hazelcast.sql.impl.plan.node.io.SendPlanNode;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -277,7 +275,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         int id = pollId(rel);
 
-        RootSendPlanNode sendNode = new RootSendPlanNode(
+        SendPlanNode sendNode = new SendPlanNode(
             id,
             upstreamNode,
             edge
@@ -341,11 +339,10 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         int id = pollId(rel);
 
-        UnicastSendPlanNode sendNode = new UnicastSendPlanNode(
+        SendPlanNode sendNode = new SendPlanNode(
             id,
             upstreamNode,
-            edge,
-            ZeroPartitioner.INSTANCE
+            edge
         );
 
         addFragment(sendNode, dataMemberMapping());

@@ -18,8 +18,7 @@ package com.hazelcast.sql.impl.plan.node;
 
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
-import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
-import com.hazelcast.sql.impl.plan.node.io.UnicastSendPlanNode;
+import com.hazelcast.sql.impl.plan.node.io.SendPlanNode;
 
 /**
  * Plan node visitor. Typically used to convert the tree of plan nodes to another tree
@@ -35,8 +34,7 @@ import com.hazelcast.sql.impl.plan.node.io.UnicastSendPlanNode;
 public interface PlanNodeVisitor {
     void onRootNode(RootPlanNode node);
     void onReceiveNode(ReceivePlanNode node);
-    void onRootSendNode(RootSendPlanNode node);
-    void onUnicastSendNode(UnicastSendPlanNode node);
+    void onSendNode(SendPlanNode node);
     void onProjectNode(ProjectPlanNode node);
     void onFilterNode(FilterPlanNode node);
     void onEmptyNode(EmptyPlanNode node);

@@ -16,7 +16,9 @@
 
 package org.apache.calcite.plan.volcano;
 
-import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
+import org.apache.calcite.rel.RelNode;
+
+import java.util.List;
 
 /**
  * Utility class to access package-private Calcite internals.
@@ -27,14 +29,13 @@ public final class HazelcastRelSubsetUtil {
     }
 
     /**
-     * Convert the given input into input with PHYSICAL convention.
-     *
-     * @param subSet Original input.
-     * @return the converted subset.
+     * Gets all subsets from the input's set
+     * @param input the input
+     * @return the subset
      */
-    public static RelSubset getPhysicalSubSet(RelSubset subSet) {
-        return new RelSubset(subSet.getCluster(),
-            subSet.set,
-            subSet.getCluster().traitSetOf(HazelcastConventions.PHYSICAL));
+    public static List<RelSubset> getSubsets(RelNode input) {
+        VolcanoPlanner planner = (VolcanoPlanner) input.getCluster().getPlanner();
+        RelSet set = planner.getSet(input);
+        return set.subsets;
     }
 }

@@ -20,28 +20,27 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.sql.impl.NodeServiceProvider;
-import com.hazelcast.sql.impl.exec.io.ReceiveSortMergeExec;
-import com.hazelcast.sql.impl.exec.io.StripedInbox;
-import com.hazelcast.sql.impl.exec.scan.index.MapIndexScanExec;
 import com.hazelcast.sql.impl.exec.io.InboundHandler;
 import com.hazelcast.sql.impl.exec.io.Inbox;
 import com.hazelcast.sql.impl.exec.io.OutboundHandler;
 import com.hazelcast.sql.impl.exec.io.Outbox;
 import com.hazelcast.sql.impl.exec.io.ReceiveExec;
+import com.hazelcast.sql.impl.exec.io.ReceiveSortMergeExec;
 import com.hazelcast.sql.impl.exec.io.SendExec;
+import com.hazelcast.sql.impl.exec.io.StripedInbox;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControl;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
 import com.hazelcast.sql.impl.exec.root.RootExec;
 import com.hazelcast.sql.impl.exec.scan.MapScanExec;
+import com.hazelcast.sql.impl.exec.scan.index.MapIndexScanExec;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
-import com.hazelcast.sql.impl.partitioner.ZeroPartitioner;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
+import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
-import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
 import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
@@ -49,8 +48,7 @@ import com.hazelcast.sql.impl.plan.node.RootPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.EdgeAwarePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
-import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
-import com.hazelcast.sql.impl.plan.node.io.UnicastSendPlanNode;
+import com.hazelcast.sql.impl.plan.node.io.SendPlanNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -191,7 +189,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     }
 
     @Override
-    public void onRootSendNode(RootSendPlanNode node) {
+    public void onSendNode(SendPlanNode node) {
         Outbox[] outboxes = prepareOutboxes(node);
 
         assert outboxes.length == 1;
@@ -370,15 +368,6 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         }
 
         push(res);
-    }
-
-    @Override
-    public void onUnicastSendNode(UnicastSendPlanNode node) {
-        Outbox[] outboxes = prepareOutboxes(node);
-
-        assert outboxes.length == 1 && node.getPartitioner().equals(ZeroPartitioner.INSTANCE);
-
-        exec = new SendExec(node.getId(), pop(), outboxes[0]);
     }
 
     @Override
