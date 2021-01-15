@@ -26,10 +26,6 @@ require static and dynamic security scans.
 Hazelcast already has regular static scans (e.g. Sonar, Black Buck),
 but we are missing dynamic scans focused on evaluating a running cluster.
 
-## Background
-
-Hazelcast already runs static code checks regularly, but regular security checks of the running systems were missing.
-
 This design document describes a dynamic security scanning approach that can be used.
 
 ## Functional design
