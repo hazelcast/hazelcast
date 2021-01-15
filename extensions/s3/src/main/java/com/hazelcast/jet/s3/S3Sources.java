@@ -170,7 +170,7 @@ public final class S3Sources {
             @Nonnull BiFunctionEx<String, ? super I, ? extends T> mapFn
     ) {
         return SourceBuilder
-                .batch("s3-source", context ->
+                .batch("s3Source", context ->
                         new S3SourceContext<I, T>(bucketNames, prefix, context, clientSupplier, readFileFn,
                                 mapFn))
                 .<T>fillBufferFn(S3SourceContext::fillBuffer)

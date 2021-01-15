@@ -105,7 +105,7 @@ public final class S3Sinks {
     ) {
         String charsetName = charset.name();
         return SinkBuilder
-                .sinkBuilder("s3-sink", context ->
+                .sinkBuilder("s3Sink", context ->
                         new S3SinkContext<>(bucketName, prefix, charsetName, context.globalProcessorIndex(),
                                 toStringFn, clientSupplier))
                 .<T>receiveFn(S3SinkContext::receive)

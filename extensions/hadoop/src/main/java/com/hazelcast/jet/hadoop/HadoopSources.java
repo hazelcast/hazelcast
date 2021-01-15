@@ -132,7 +132,7 @@ public final class HadoopSources {
             @Nonnull Configuration configuration,
             @Nonnull BiFunctionEx<K, V, E> projectionFn
     ) {
-        return Sources.batchFromProcessor("readHadoop",
+        return Sources.batchFromProcessor("hdfsSource",
                 readHadoopP(SerializableConfiguration.asSerializable(configuration), projectionFn));
     }
 

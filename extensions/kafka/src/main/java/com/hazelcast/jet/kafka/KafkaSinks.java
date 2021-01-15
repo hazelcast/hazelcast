@@ -102,7 +102,7 @@ public final class KafkaSinks {
             @Nonnull Properties properties,
             @Nonnull FunctionEx<? super E, ProducerRecord<K, V>> toRecordFn
     ) {
-        return Sinks.fromProcessor("writeKafka", writeKafkaP(properties, toRecordFn, true));
+        return Sinks.fromProcessor("kafkaSink", writeKafkaP(properties, toRecordFn, true));
     }
 
     /**
@@ -126,7 +126,7 @@ public final class KafkaSinks {
             @Nonnull FunctionEx<? super E, K> extractKeyFn,
             @Nonnull FunctionEx<? super E, V> extractValueFn
     ) {
-        return Sinks.fromProcessor("writeKafka(" + topic + ")",
+        return Sinks.fromProcessor("kafkaSink(" + topic + ")",
                 writeKafkaP(properties, topic, extractKeyFn, extractValueFn, true));
     }
 
@@ -334,11 +334,11 @@ public final class KafkaSinks {
             if (topic != null) {
                 FunctionEx<? super E, ?> extractKeyFn1 = extractKeyFn != null ? extractKeyFn : t -> null;
                 FunctionEx<? super E, ?> extractValueFn1 = extractValueFn != null ? extractValueFn : t -> t;
-                return Sinks.fromProcessor("writeKafka(" + topic + ")",
+                return Sinks.fromProcessor("kafkaSink(" + topic + ")",
                         writeKafkaP(properties, topic, extractKeyFn1, extractValueFn1, exactlyOnce));
             } else {
                 ProcessorMetaSupplier metaSupplier = writeKafkaP(properties, toRecordFn, exactlyOnce);
-                return Sinks.fromProcessor("writeKafka", metaSupplier);
+                return Sinks.fromProcessor("kafkaSink", metaSupplier);
             }
         }
     }

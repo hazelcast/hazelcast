@@ -39,6 +39,8 @@ Thank you for your valuable contributions!
 
 2. Enhancements
 
+[extensions] Ensure naming conventions for sources/sinks (#2685)
+
 3. Fixes
 
 [core] Jet now doesn't close System.out during JVM shutdown (#2649)

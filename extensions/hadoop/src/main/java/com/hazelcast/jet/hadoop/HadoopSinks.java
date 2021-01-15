@@ -79,7 +79,8 @@ public final class HadoopSinks {
             @Nonnull FunctionEx<? super E, K> extractKeyF,
             @Nonnull FunctionEx<? super E, V> extractValueF
     ) {
-        return Sinks.fromProcessor("writeHdfs", HadoopProcessors.writeHadoopP(configuration, extractKeyF, extractValueF));
+        return Sinks.fromProcessor("hdfsSink",
+                HadoopProcessors.writeHadoopP(configuration, extractKeyF, extractValueF));
     }
 
     /**

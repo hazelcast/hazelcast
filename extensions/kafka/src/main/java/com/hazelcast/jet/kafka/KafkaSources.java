@@ -132,7 +132,7 @@ public final class KafkaSources {
             @Nonnull String ... topics
     ) {
         checkPositive(topics.length, "At least one topic required");
-        return streamFromProcessorWithWatermarks("streamKafka(" + String.join(",", topics) + ")",
+        return streamFromProcessorWithWatermarks("kafkaSource(" + String.join(",", topics) + ")",
                 true, w -> streamKafkaP(properties, projectionFn, w, topics));
     }
 }
