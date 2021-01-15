@@ -9,7 +9,7 @@
     * [Configuration for WAN Replication Target Cluster Discovery](#configuration-for-wan-replication-target-cluster-discovery)
     * [Property Definitions](#property-definitions)
     * [Azure App Services Support](#azure-app-services-support)
-    * [ZONE_AWARE Partition Group](#zone_aware-partition-group)
+    * [High Availability](#high-availability)
 * [Automated Deployment](#automated-deployment)
 
 
@@ -248,13 +248,51 @@ You will need to setup [Azure Active Directory Service Principal credentials](ht
 
 Azure App Services are unaware of the underlying VMs' network interfaces so it is not available to communicate among App Services using TCP/IP. Because of this reason, it is not possible to deploy a Hazelcast cluster into Azure App Services.  
 
-## ZONE_AWARE Partition Group
+## High Availability
 
-When you use Azure plugin as discovery provider, you can configure Hazelcast Partition Grouping with Azure. You need to add fault domain or DNS domain to your machines. So machines will be grouped with respect to their fault or DNS domains.
-For more information please read: http://docs.hazelcast.org/docs/3.7/manual/html-single/index.html#partition-group-configuration.
+By default, Hazelcast distributes partition replicas (backups) randomly and equally among cluster members. However, this
+is not safe in terms of high availability when a partition and its replicas are stored on the same rack, using the same
+network, or power source. To deal with that, Hazelcast offers logical partition grouping, so that a partition itself and
+its backup(s) would not be stored within the same group. This way Hazelcast guarantees that a possible failure affecting
+more than one member at a time will not cause data loss. The details of partition groups can be found in the documentation:
+[Partition Group Configuration](https://docs.hazelcast.org/docs/latest/manual/html-single/#partition-group-configuration)
+
+In addition to built-in grouping option `ZONE_AWARE`, you can customize the formation of
+these groups based on the network interfaces of members. See more details on custom groups in the documentation:
+[Custom Partition Groups](https://docs.hazelcast.org/docs/latest/manual/html-single/#custom).
+
+### Multi-Zone Deployments
+
+If `ZONE_AWARE` partition group is enabled, the backup(s) of a partition is always stored in a different availability
+zone. Note that if a cluster is deployed to an Azure region that does not support availability zones, then the fault
+domains of instances are used when forming partition groups. That is, the members on fault domain (FD) 0 form a single
+group, and those on FD 1 form another group, and so on.
+
+***NOTE:*** *When using the `ZONE_AWARE` partition grouping, a cluster spanning multiple availability zones (or fault
+domains if the region does not support zones) should have an equal number of members in each zone (or fault domain).
+Otherwise, it will result in uneven partition distribution among the members.*
+
+#### XML Configuration
 
 ```xml
 <partition-group enabled="true" group-type="ZONE_AWARE" />
+```
+
+#### YAML Configuration
+
+```yaml
+hazelcast:
+  partition-group:
+    enabled: true
+    group-type: ZONE_AWARE
+```
+
+#### Java-based Configuration
+
+```java
+config.getPartitionGroupConfig()
+    .setEnabled(true)
+    .setGroupType(MemberGroupType.ZONE_AWARE);
 ```
 
 # Automated Deployment
