@@ -252,7 +252,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private MapStore<?, ?> dummyMapStore;
 
     @Autowired
-    private MapStoreFactory<?,?> dummyMapStoreFactory;
+    private MapStoreFactory<?, ?> dummyMapStoreFactory;
 
     @Resource(name = "dummyQueueStore")
     private QueueStore<?> dummyQueueStore;
@@ -271,7 +271,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     private MembershipListener membershipListener;
 
     @Autowired
-    private EntryListener<?,?> entryListener;
+    private EntryListener<?, ?> entryListener;
 
     @Resource
     private SSLContextFactory sslContextFactory;
