@@ -255,26 +255,26 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void testComparable_to_Comparable() {
-        putBiValue(new ComparableImpl(1), new ComparableImpl(1));
+        putBiValue(new ComparableImpl(1), new ComparableImpl(1), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
         check("field1", "field2", new ComparableImpl(1).compareTo(new ComparableImpl(1)));
 
-        putBiValue(new ComparableImpl(1), new ComparableImpl(2));
+        putBiValue(new ComparableImpl(1), new ComparableImpl(2), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
         check("field1", "field2", new ComparableImpl(1).compareTo(new ComparableImpl(2)));
 
-        putBiValue(new ComparableImpl(2), new ComparableImpl(1));
+        putBiValue(new ComparableImpl(2), new ComparableImpl(1), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
         check("field1", "field2", new ComparableImpl(2).compareTo(new ComparableImpl(1)));
     }
 
     @Test
     public void testComparable_and_NonComparable() {
-        putBiValue(new ComparableImpl(1), new NonComparable());
+        putBiValue(new ComparableImpl(1), new NonComparable(), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
         checkFailure(
                 "field1", "field2", SqlErrorCode.GENERIC,
                 "Cannot compare two OBJECT values, because "
                         + "left operand has " + ComparableImpl.class + " type and "
                         + "right operand has " + NonComparable.class + " type");
 
-        putBiValue(new NonComparable(), new ComparableImpl(1));
+        putBiValue(new NonComparable(), new ComparableImpl(1), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
         checkFailure(
                 "field1", "field2", SqlErrorCode.GENERIC,
                 "Cannot compare two OBJECT values, because "
@@ -284,7 +284,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void testDifferentClassThatImplementsComparableInterface() {
-        putBiValue(new ComparableImpl(1), new ComparableImpl2(1));
+        putBiValue(new ComparableImpl(1), new ComparableImpl2(1), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
 
         checkFailure(
                 "field1", "field2", SqlErrorCode.GENERIC,
@@ -295,21 +295,11 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void testNonComparableObjects() {
-        putBiValue(new NonComparable(), new NonComparable());
+        putBiValue(new NonComparable(), new NonComparable(), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
 
         checkFailure(
                 "field1", "field2", SqlErrorCode.GENERIC,
                 "Cannot compare OBJECT value because " + NonComparable.class + " doesn't implement Comparable interface");
-    }
-
-    private void putBiValue(Object field1, Object field2) {
-        ExpressionBiValue value = ExpressionBiValue.createBiValue(
-                ExpressionBiValue.createBiClass(ExpressionTypes.OBJECT, ExpressionTypes.OBJECT),
-                field1,
-                field2
-        );
-
-        put(value);
     }
 
     @Test
