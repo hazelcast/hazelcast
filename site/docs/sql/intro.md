@@ -49,7 +49,7 @@ sql〉
 You are now ready to type some SQL. Try this:
 
 ```sql
-sql〉SELECT * from TABLE(generate_series(1,5));
+sql〉 SELECT * FROM TABLE(generate_series(1,5));
 +------------+
 |           v|
 +------------+
@@ -60,7 +60,7 @@ sql〉SELECT * from TABLE(generate_series(1,5));
 |           5|
 +------------+
 5 row(s) selected
-sql〉SELECT sum(v) FROM TABLE(generate_series(1,5));
+sql〉 SELECT sum(v) FROM TABLE(generate_series(1,5));
 +--------------------+
 |              EXPR$0|
 +--------------------+
@@ -70,11 +70,11 @@ sql〉SELECT sum(v) FROM TABLE(generate_series(1,5));
 sql〉
 ```
 
-Here are two more examples with streaming SQL. Streaming queries never
+Here are two more examples with streaming data. Streaming data never
 complete, so use `Ctrl+C` to cancel them after a while:
 
 ```sql
-sql〉SELECT * FROM TABLE(generate_stream(10));
+sql〉 SELECT * FROM TABLE(generate_stream(10));
 +--------------------+
 |                   v|
 +--------------------+
@@ -86,7 +86,7 @@ sql〉SELECT * FROM TABLE(generate_stream(10));
 |                   5|
 ^C
 Query cancelled.
-sql〉SELECT * FROM TABLE(generate_stream(100)) WHERE v / 10 * 10 = v;
+sql〉 SELECT * FROM TABLE(generate_stream(100)) WHERE v / 10 * 10 = v;
 +--------------------+
 |                   v|
 +--------------------+
@@ -101,9 +101,17 @@ Query cancelled.
 sql〉
 ```
 
-`generate_stream()` creates a streaming data source that never
-completes. It emits `bigint`'s starting from zero at the rate you
-indicate with the argument (in events per second).
+`generate_stream()` generates an infinite stream of values. It emits
+`bigint`'s starting from zero at the rate you indicate with the argument
+(in events per second). A stream behaves just like a traditional table,
+however it can be read only in one direction and never in full. For
+example, you can't use an aggregate function over a stream:
+
+```sql
+sql〉 SELECT sum(v) FROM TABLE(generate_stream(10));
+From line 1, column 1 to line 1, column 45: Grouping/aggregations not
+supported for a streaming query
+```
 
 ## Features in this Beta
 
@@ -135,7 +143,7 @@ This is how you can create a mapping to a Kafka topic `trades` with
 JSON messages:
 
 ```sql
-sql〉CREATE EXTERNAL MAPPING trades (
+sql〉 CREATE EXTERNAL MAPPING trades (
     ticker VARCHAR,
     price DECIMAL,
     amount BIGINT)
@@ -145,11 +153,11 @@ OPTIONS (
     'bootstrap.servers' = '127.0.0.1:9092'
 );
 OK
-sql〉SHOW MAPPINGS;
+sql〉 SHOW MAPPINGS;
 +--------------------+
 |name                |
 +--------------------+
-|tradeMap            |
+|trades              |
 +--------------------+
 1 row(s) selected
 sql〉
@@ -182,12 +190,12 @@ id,name
 Now you can write the SQL:
 
 ```sql
-sql〉CREATE MAPPING csv_trades (id TINYINT, name VARCHAR)
+sql〉 CREATE MAPPING csv_trades (id TINYINT, name VARCHAR)
 TYPE File
 OPTIONS ('format'='csv',
     'path'='/path/to/hazelcast-jet-4.4', 'glob'='trades.csv');
 OK
-sql〉select * from csv_trades;
+sql〉 SELECT * FROM csv_trades;
 +----+--------------------+
 |  id|name                |
 +----+--------------------+
@@ -249,7 +257,7 @@ Let's create a streaming query that filters and transforms the trade
 events it gets from Kafka:
 
 ```sql
-sql〉CREATE MAPPING trades (
+sql〉 CREATE MAPPING trades (
     id BIGINT,
     ticker VARCHAR,
     price DECIMAL,
@@ -260,7 +268,7 @@ OPTIONS (
     'bootstrap.servers' = '127.0.0.1:9092'
 );
 OK
-sql〉SELECT ticker, ROUND(price * 100) AS price_cents, amount
+sql〉 SELECT ticker, ROUND(price * 100) AS price_cents, amount
   FROM trades
   WHERE price * amount > 100;
 +------------+----------------------+-------------------+
@@ -274,7 +282,7 @@ interrupt it with `Ctrl+C`, but leave it running for now.
 Now start another terminal window and push some messages to Kafka:
 
 ```sql
-sql〉INSERT INTO trades VALUES
+sql〉 INSERT INTO trades VALUES
   (1, 'ABCD', 5.5, 10),
   (2, 'EFGH', 14, 20);
 OK
@@ -302,7 +310,7 @@ This creates a map named `tradeMap` with a Java `Long` as the key
 and the JSON trade event as the value, and then stores an entry in it:
 
 ```sql
-sql〉CREATE MAPPING tradeMap (
+sql〉 CREATE MAPPING tradeMap (
     id BIGINT EXTERNAL NAME "__key",
     ticker VARCHAR,
     price DECIMAL,
@@ -312,9 +320,9 @@ OPTIONS (
     'keyFormat'='bigint',
     'valueFormat'='json');
 OK
-sql〉SINK INTO tradeMap VALUES (1, 'hazl', 10, 1);
+sql〉 SINK INTO tradeMap VALUES (1, 'hazl', 10, 1);
 OK
-sql〉SELECT * FROM tradeMap;
+sql〉 SELECT * FROM tradeMap;
 +----+----------+--------+--------+
 |  id|ticker    |   price|  amount|
 +----+----------+--------+--------+
@@ -330,12 +338,12 @@ Now we can connect the solutions above and tell Jet to syphon the data
 from the Kafka topic into the IMap:
 
 ```sql
-sql〉CREATE JOB ingest_trades AS
+sql〉 CREATE JOB ingest_trades AS
   SINK INTO tradeMap(id, ticker, price, amount)
   SELECT id, ticker, price, amount
   FROM trades;
 OK
-sql〉SHOW JOBS;
+sql〉 SHOW JOBS;
 +--------------------+
 |name                |
 +--------------------+
@@ -353,11 +361,11 @@ Let's try it out by publishing some events to the Kafka topic and
 checking if they landed in the IMap:
 
 ```sql
-sql〉INSERT INTO trades VALUES
+sql〉 INSERT INTO trades VALUES
   (1, 'ABCD', 5.5, 10),
   (2, 'EFGH', 14, 20);
 OK
-sql〉SELECT * FROM tradeMap;
+sql〉 SELECT * FROM tradeMap;
 +---------------+--------------------+----------+--------------------+
 |             id|ticker              |     price|              amount|
 +---------------+--------------------+----------+--------------------+
@@ -371,7 +379,7 @@ sql〉
 To cancel the job, use:
 
 ```sql
-sql〉DROP JOB ingest_trades;
+sql〉 DROP JOB ingest_trades;
 ```
 
 ## Use Jet SQL Embedded Inside Your App
@@ -403,7 +411,7 @@ Submit a query:
 
 ```java
 JetInstance jet = Jet.newJetInstance();
-String query = "select * from TABLE(generate_series(1,5))";
+String query = "SELECT * FROM TABLE(generate_series(1,5))";
 try (SqlResult result = jet.getSql().execute(query)) {
     for (SqlRow row : result) {
         System.out.println("" + row.getObject(0));
@@ -411,7 +419,7 @@ try (SqlResult result = jet.getSql().execute(query)) {
 }
 ```
 
-This code should print
+This code will print:
 
 ```txt
 1
