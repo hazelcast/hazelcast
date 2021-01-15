@@ -20,7 +20,6 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.file.FileSources;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -56,40 +55,6 @@ public class PathAndGlobFileSourceTest extends BaseFileFormatTest {
     public void shouldReadFilesMatchingGlobInPath() {
         assertThatThrownBy(() -> FileSources.files(currentDir + "/src/test/*/glob"))
                 .hasMessageContaining("Provided path must not contain any wildcard characters");
-    }
-
-    @Test
-    @Ignore("change - this is not allowed - to delete after confirming with ondrej")
-    public void shouldReadFilesMatchingGlobInPath_moreDirs() {
-        assumeThat(useHadoop).isTrue();
-        // src/test/resources/globpath1/globpath and src/test/resources/globpath2/globpath
-        FileSourceBuilder<String> source = FileSources.files(currentDir + "/src/test/resources/*/globpath")
-                                                      .glob("file")
-                                                      .format(FileFormat.text());
-
-        assertItemsInSource(source, "fileA", "fileB");
-    }
-
-    @Test
-    @Ignore("change - this is not allowed - to delete after confirming with ondrej")
-    public void shouldNotReadFilesMatchingGlobInPathForDirChain() {
-        assumeThat(useHadoop).isTrue();
-        FileSourceBuilder<String> source = FileSources.files(currentDir + "/src/*/glob") // src/test/resources/glob
-                                                      .glob("file")
-                                                      .format(FileFormat.text());
-
-        assertItemsInSource(source, items -> assertThat(items).isEmpty());
-    }
-
-    @Test
-    @Ignore("change - this is not allowed - to delete after confirming with ondrej")
-    public void shouldReadFilesMatchingGlobInPathAndGlob() {
-        assumeThat(useHadoop).isTrue();
-        FileSourceBuilder<String> source = FileSources.files(currentDir + "/src/test/*/glob") // src/test/resources/glob
-                                                      .glob("file*")
-                                                      .format(FileFormat.text());
-
-        assertItemsInSource(source, "file", "file1");
     }
 
     @Test
