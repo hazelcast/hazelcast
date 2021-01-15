@@ -20,28 +20,34 @@ _stage_. The stage resulting from a `writeTo` operation is called a
 _sink stage_ and you can't attach more stages to it. All others are
 called _compute stages_ and expect you to attach further stages to them.
 
-## BatchStage and StreamStage
+## StreamStage and BatchStage
 
-The API differentiates between batch (bounded) and stream (unbounded)
-sources and this is reflected in the naming: there is a
-[BatchStage](/javadoc/{jet-version}/com/hazelcast/jet/pipeline/BatchStage.html)
-and a
+A pipeline stage is one of two basic kinds: a stream stage or a batch
+stage. The data passing through a stream stage never reaches the end,
+while only a finite amount of data passes through a batch stage. This
+split is visible in the Java types: there is a
 [StreamStage](/javadoc/{jet-version}/com/hazelcast/jet/pipeline/StreamStage.html)
-, each offering the operations appropriate to its kind.
-Depending on the data source, your pipeline will end up starting with a
-batch or streaming stage. A batch source still can be used to simulate
-a streaming source using the `addTimestamps` method, which will
-convert it into a `StreamStage`.
+and a
+[BatchStage](/javadoc/{jet-version}/com/hazelcast/jet/pipeline/BatchStage.html),
+each offering the operations appropriate to its kind.
 
-In this section we'll mostly use batch stages, for simplicity, but the
-API of operations common to both kinds is identical. Jet internally
-treats batches as a bounded stream. We'll explain later on how to apply
-windowing, which is necessary to aggregate over unbounded streams.
+The kind of a stage is usually determined from its upstream stage,
+ultimately reaching the source where you explicitly choose to use a
+`StreamSource` or a `BatchSource`.
 
-### Adding Timestamps to a Stream
+You can also use a batch source to simulate an unbounded stream by using
+the `addTimestamps` transform.
+
+In this section we'll often use batch stages in the code snippets for
+simplicity, but the API of operations common to both kinds is identical.
+Jet internally treats a batch as a bounded stream. We'll explain later
+on how to apply windowing, which is necessary to aggregate over
+unbounded streams.
+
+### Add Timestamps to a Stream
 
 The Pipeline API guides you to set up the timestamp policy right after
-you obtain a source stage. `pipeline.readFrom(someStreamSource)` returns
+you obtain a source stage. `pipeline.readFrom(aStreamSource)` returns
 a `SourceStreamStage` which offers just these methods:
 
 - `withNativeTimestamps()`
@@ -62,48 +68,27 @@ a `SourceStreamStage` which offers just these methods:
   don't need them (i.e., your pipeline won't perform windowed
   aggregation or stateful mapping).
 
-Exceptionally, you may need to call `withoutTimestamps()` on the source
-stage, then perform some transformations that determine the event
-timestamps, and then call `addTimestamps(timestampFn)` to instruct Jet
-where to find them in the events. Some examples include an enrichment
-stage that retrieves the timestamps from a side input or flat-mapping
-the stream to unpack a series of events from each original item. If you
-do this, however, it will no longer be the source that determines the
-watermark.
+You may also have to start without timestamps, then perform a
+transformation, and only then use `addTimestamps(timestampFn)` to
+instruct Jet where to find them in the transformed events. Some examples
+include an enrichment stage that retrieves the timestamps from a side
+input or flat-mapping the stream to unpack a series of events from each
+original item. If you do this, however, you will remove the watermarking
+responsibility from the source.
 
 #### Issue with Sparse Events
 
 If the time is extracted from the events, time progresses only when
 newer events arrive. If the events are sparse, the time will effectively
-stop until a newer event arrives. This causes high latency for
-time-sensitive operations (such as window aggregation). The time is also
-tracked for every source partition separately and if just one partition
-has sparse events, time progress in the whole job is hindered.
+stop between two events. This causes high latency for time-sensitive
+operations (such as window aggregation). The time is also tracked for
+every source partition separately and if just one partition has sparse
+events, time progress in the whole job is hindered.
 
 To overcome this you can either ensure there's a consistent influx of
 events in every partition, or you can use `withIngestionTimestamps()`
 which doesn't have this issue because it's based on system clock on the
 member machines.
-
-#### Preserving Event Order
-
-In some use cases, the order of events with the same key should be
-preserved, in order to be able to apply stateful processing logic on
-them.
-
-`Pipeline` has a property named `preserveOrder` and enabling this
-property instructs Jet to keep the order of events with the same
-partitioning key by avoiding the usage of round-robin edges.
-
-You can enable this property as follows:
-
-```java
-Pipeline p = Pipeline.create();
-p.setPreserveOrder(true);
-```
-
-> Note that: Changing the partition keys in the different stages of the
-pipeline may cause out-of-order.
 
 #### Prefer Assigning Timestamps at the Source
 
@@ -128,6 +113,40 @@ temporary differences that occur between them.
 
 This feature works only if you set the timestamping policy in the source
 using `withTimestamps()` or `withNativeTimestamps()`.
+
+## Event Reordering and How To Prevent It
+
+By default Jet prefers parallel throughput over strict event ordering.
+Many transforms aren't sensitive to the exact order of events. This
+includes the stateless transforms, as well as aggregate operations.
+There are also transforms, especially `mapStateful`, where it's much
+easier to write the logic if you can rely on the strict order of events.
+
+A common example of this is recognizing patterns in the event sequence
+and other tasks commonly done in the discipline of Complex Event
+Processing. Also, external services that a pipeline interacts with can
+be stateful, and their state can also be order dependent.
+
+For those cases, `Pipeline` has a property named `preserveOrder`. If you
+enable it, Jet will keep the order of events with the same partitioning
+key at the expense of less flexible balancing of parallel processing
+tasks. You can enable it this way:
+
+```java
+Pipeline p = Pipeline.create();
+p.setPreserveOrder(true);
+```
+
+Note that a given pipeline may still reorder events. This happens
+whenever you change the partitioning key along a data path. For example,
+if you receive data from a partitioned source like Kafka, but then use
+a `groupingKey` which doesn't match the Kafka partitioning key, it
+means you have changed the partitioning key and the original order is
+lost.
+
+There's a discussion of the underlying mechanisms of this feature in the
+[Pipeline Execution Model
+section](/docs/architecture/distributed-computing#introduction)
 
 ## Multiple Inputs
 

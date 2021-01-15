@@ -13,15 +13,15 @@ Avoid non-intuitive event reordering in Jet pipelines.
 
 Jet processes events in parallel, therefore a total order of events
 doesn't exist. However, in some use cases, users expect the order of
-events with the same key to be preserved, in order to be able to apply
-stateful processing logic on them.
+events with the same key to be preserved, to be able to apply stateful
+processing logic on them.
 
 So far, Jet's default has been to use a round-robin strategy to balance
 the traffic across parallel processors. Typically, the pipeline starts
 out with a source that has low parallelism, and the round-robin edge
 spreads out the data to downstream transforms with full parallelism.
 
-It is also possible to spread out the data using a partitioning scheme,
+It is also possible to spread out the data using a partitioning scheme
 so that all events with the same key go to the same downstream
 processor. This is less flexible and may suffer from data bias, where a
 handful of keys dominate the traffic volume. On the other hand, its
@@ -39,7 +39,7 @@ often order-sensitive, so it breaks down under event reordering.
 
 ![Events Getting Reordered](assets/events_getting_reordered.svg)
 
-In this document we describe ways to avoid the usage of round-robin
+In this document, we describe ways to avoid the usage of round-robin
 edges and still preserve the performance potential of the previous
 implementation.
 
@@ -56,8 +56,8 @@ introduces a sorting overhead.
 
 The second approach is not feasible most of the time because we don't
 have a good enough sorting key. The obvious choice, event timestamp, is
-not good enough because there's nothing stopping two events from
-occurring within the same millisecond.
+not good enough because nothing is stopping two events from occurring
+within the same millisecond.
 
 Therefore we're focusing on the first approach: keep maintaining the
 original event order at every stage. Let us analyze the situation at
@@ -111,17 +111,17 @@ windowed aggregation, which currently don't need the wrapping
 ## Decision: Keep the Order Without the Key
 
 This discussion was more relevant before we decided on this
-preserveOrder as property to globally activate/deactivate on the
-pipeline. For now, since user activates this property in pipeline, the
-decision to protect or not protect the order in pipelines that do not
-contain these keys is set there.
+`preserveOrder` as property to globally activate/deactivate on the
+pipeline. For now, since the user activates this property in the
+pipeline, the decision to protect or not protect the order in pipelines
+that do not contain these keys is set there.
 
 ## Implementation of the Preserve Order Approach
 
-We added a setter/getter methods to Pipeline to activate/deactivate this
-approach on the pipeline. The default value for this property is `false`
-that means that do not preserve the order of events. User can set this
-property as follows:
+We added a setter/getter methods to `Pipeline` to activate/deactivate
+this approach on the pipeline. The default value for this property is
+`false` that means that do not preserve the order of events. User can
+set this property as follows:
 
 ```java
 pipeline.setPreserveOrder(true);
@@ -140,7 +140,7 @@ attach to the transform is a round-robin one (`unicast`), then Jet:
 * Ensure that the local parallelism (LP) of the input vertex of the
   transform is equal to the PlannerVertex of the upstream transform.
 
-* Connect these transform vertices with isolated edge.
+* Connect these transform vertices with isolated edges.
 
 Otherwise, if it's a partitioned edge, do nothing.
 
@@ -171,7 +171,7 @@ preserve order property is activated:
 
 Since it requires marking pipeline stages as order sensitive or not, we
 have abandoned using it in this first implementation. In other words,
-this approach requires the user to know which stages of the pipeline is
+this approach requires the user to know which stages of the pipeline are
 order-sensitive or not. I leave this section in the TDD as this approach
 can be used for fine-grained optimizations. You can also find the
 implementation we deleted
@@ -179,13 +179,13 @@ implementation we deleted
 
 We classified the transforms as order-sensitive and order-insensitive.
 This allows us to analyze the graph of the pipeline and identify which
-parts of it need the ordering restrictions. Basically, we must protect
-the order only on a path going from an order-creating stage to a
-stateful mapping stage. We also classified the transforms into
-order-propagating and order-creating. Sources create the order, as well
-as sorting and aggregating stages. For example, if a pipeline contains
-stateful mapping downstream of an aggregating stage, only that part must
-preserve the order.
+parts of it need the ordering restrictions. We must protect the order
+only on a path going from an order-creating stage to a stateful mapping
+stage. We also classified the transforms into order-propagating and
+order-creating. Sources create the order, as well as sorting and
+aggregating stages. For example, if a pipeline contains stateful mapping
+downstream of an aggregating stage, only that part must preserve the
+order.
 
 The algorithm to find these order-sensitive subgraphs requires us to
 traverse the `Transform` DAG in reverse topological order. This way, at
@@ -206,19 +206,18 @@ order-sensitive stage. Here's the algorithm we use:
 Jet already offers support for watermarking. If we have a sorting key
 for events, we can sort the events between the two consecutive watermark
 according to the sorting key so we can put the events in their initial
-order. Users will not define the window in an explicit way. The user
-will only add stateful mapping (or any order-sensitive stage) to his
-pipeline, and we will add such an intermediate sorting stage during
-planning.
+order. Users will not explicitly define the window. The user will only
+add stateful mapping (or any order-sensitive stage) to his pipeline and
+we will add such an intermediate sorting stage during planning.
 
-As the cost of this work, sorting events requires an extra computation
+As the cost of this work, sorting events requires an extra computation,
 and we have to wait for the closing watermark to arrive. This increases
 the latency with watermarkPeriod/2 on average. The issue of sparse
 events can also occur in this approach.
 
 To use this solution, we need a sorting key such as more precise
 timestamp or mark like a SequenceId for events- Our timestamp precision
-is low, resulting in overlapping events with the same timestamp and it
+is low, resulting in overlapping events with the same timestamp, and it
 is not easy to add this SequenceId (sorting key) to events in a reliable
 way especially when the total parallelism of the source is greater than
 one. I just put this approach to be seen.
