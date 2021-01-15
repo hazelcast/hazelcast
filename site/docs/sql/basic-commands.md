@@ -1,6 +1,6 @@
 ---
-title: Basic commands
-description: Description of SELECT, INSERT and SINK commands
+title: SQL Statements
+description: Description of SELECT, INSERT and SINK statements
 ---
 
 
@@ -24,7 +24,7 @@ Jet supports all operators and functions supported by IMDG. Go to the
 [chapter on SQL](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#sql)
 in the Hazelcast IMDG reference manual for the full reference.
 
-### Aggregation functions
+### Aggregate Functions
 
 Jet supports these aggregate functions:
 

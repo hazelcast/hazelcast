@@ -1,31 +1,123 @@
 ---
 title: Hazelcast Jet SQL
-description: Introduction to Hazelcast Jet SQL features.
+description: Introduction to Hazelcast Jet SQL
 ---
 
-Hazelcast Jet allows you to create a Jet processing job using the
-familiar SQL language. It can execute distributed SQL statements over
-Hazelcast IMaps and external data sets.
+With Hazelcast Jet you can write SQL to process real-time event streams
+as well as data at rest. The data can be stored inside a Hazelcast
+cluster (including the Jet cluster itself) or in an external storage
+system.
 
-**Note:** _The service is in beta state. Behavior and API might change
-in future releases. Binary compatibility is not guaranteed between minor
-or patch releases._
+**Note:** _The service is in beta state and supports only a very limited
+subset of the planned functionality. The behavior, API, and binary
+formats will probably change in future releases._
 
-## Overview
+## Quick Start
 
-In the first release, Jet SQL supports the following features:
+Prerequisite is Java.
 
-- SQL queries over [Apache Kafka topics](kafka-connector.md) and
-[files (local and remote)](file-connector.md)
-- Joining Kafka or file data with local IMaps (enrichment)
-- Filtering and projection using [SQL
+Download and start Jet by pasting this into your terminal:
+
+```text
+wget https://github.com/hazelcast/hazelcast-jet/releases/download/v4.4/hazelcast-jet-4.4.tar.gz
+tar xvf hazelcast-jet-4.4.tar.gz
+cd hazelcast-jet-4.4
+bin/jet-start
+```
+
+Wait for this message in the output:
+
+```text
+2021-01-15 13:39:33,156 [ INFO] [main] [c.h.c.LifecycleService]:
+    [10.212.134.152]:5701 is STARTED
+```
+
+The prompt doesn't return, which allows you to easily stop Jet. We'll
+instruct you to restart Jet in a few places, so simply come to this
+window, type `Ctrl+C` to stop Jet and type `jet-start` to start it
+again.
+
+Now start another terminal window and enter the SQL shell:
+
+```text
+$ bin/jet sql
+Connected to Hazelcast Jet 4.4 at [192.168.5.13]:5701 (+0 more)
+Type 'help' for instructions
+sql〉
+```
+
+You are now ready to type some SQL. Try this:
+
+```sql
+sql〉SELECT * from TABLE(generate_series(1,5));
++------------+
+|           v|
++------------+
+|           1|
+|           2|
+|           3|
+|           4|
+|           5|
++------------+
+5 row(s) selected
+sql〉SELECT sum(v) FROM TABLE(generate_series(1,5));
++--------------------+
+|              EXPR$0|
++--------------------+
+|                  15|
++--------------------+
+1 row(s) selected
+sql〉
+```
+
+Here are two more examples with streaming SQL. Streaming queries never
+complete, so use `Ctrl+C` to cancel them after a while:
+
+```sql
+sql〉SELECT * FROM TABLE(generate_stream(10));
++--------------------+
+|                   v|
++--------------------+
+|                   0|
+|                   1|
+|                   2|
+|                   3|
+|                   4|
+|                   5|
+^C
+Query cancelled.
+sql〉SELECT * FROM TABLE(generate_stream(100)) WHERE v / 10 * 10 = v;
++--------------------+
+|                   v|
++--------------------+
+|                   0|
+|                  10|
+|                  20|
+|                  30|
+|                  40|
+|                  50|
+^C
+Query cancelled.
+sql〉
+```
+
+`generate_stream()` creates a streaming data source that never
+completes. It emits `bigint`'s starting from zero at the rate you
+indicate with the argument (in events per second).
+
+## Features in this Beta
+
+In this beta release, you can use these:
+
+- [SELECT and WHERE
 expressions](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#expressions)
-- Aggregating data from files using predefined [aggregate
-functions](basic-commands#aggregation-functions)
-- Receiving query results via Jet client (Java) or writing the results
-to an [IMap](imap-connector.md) in the Jet cluster
-- Running continuous (streaming) and batch queries, see
-[Job Management](job-management.md)
+- FROM [Apache Kafka topics](kafka-connector.md) and
+[files (local and remote)](file-connector.md)
+- JOIN with an IMap inside the Jet cluster (enrichment)
+- [INSERT/SINK INTO](basic-commands#insertsink-statement) a Kafka topic
+  or an IMap inside the cluster
+- [aggregate functions](basic-commands#aggregate-functions) (doesn't
+  yet support streaming sources like Kafka)
 
 These are some of the features on our roadmap:
 
@@ -33,15 +125,259 @@ These are some of the features on our roadmap:
 - Windowed aggregation of streaming data
 - JDBC
 
-## Installation
+## CREATE EXTERNAL MAPPING
 
-When you use the distribution package, the `hazelcast-jet-sql` is on
-the class path by default. Nevertheless, make sure to have the
-`hazelcast-jet-sql-{jet-version}.jar` file in the `lib/`
-directory.
+There is no native storage system in Jet SQL, instead it works with
+_external mappings_ to access various resources as if they were tables.
+This includes its own internal IMaps.
 
-If you use Jet in embedded mode, besides the `hazelcast-jet` dependency
-add also the `hazelcast-jet-sql` dep:
+This is how you can create a mapping to a Kafka topic `trades` with
+JSON messages:
+
+```sql
+sql〉CREATE EXTERNAL MAPPING trades (
+    ticker VARCHAR,
+    price DECIMAL,
+    amount BIGINT)
+TYPE Kafka
+OPTIONS (
+    'valueFormat' = 'json',
+    'bootstrap.servers' = '127.0.0.1:9092'
+);
+OK
+sql〉SHOW MAPPINGS;
++--------------------+
+|name                |
++--------------------+
+|tradeMap            |
++--------------------+
+1 row(s) selected
+sql〉
+```
+
+The [DDL](ddl) section has more details.
+
+## Query a CSV File
+
+To try out the CSV file format, first activate the CSV connector:
+
+```bash
+$ mv opt/hazelcast-jet-csv-4.4.jar lib/
+$
+```
+
+Restart the Jet server for this to take effect.
+
+Create a sample CSV file named `trades.csv`:
+
+```bash
+$ vi trades.csv
+
+id,name
+1,Jerry
+2,Greg
+3,Mary
+```
+
+Now you can write the SQL:
+
+```sql
+sql〉CREATE MAPPING csv_trades (id TINYINT, name VARCHAR)
+TYPE File
+OPTIONS ('format'='csv',
+    'path'='/path/to/hazelcast-jet-4.4', 'glob'='trades.csv');
+OK
+sql〉select * from csv_trades;
++----+--------------------+
+|  id|name                |
++----+--------------------+
+|   1|Jerry               |
+|   2|Greg                |
+|   3|Mary                |
++----+--------------------+
+2 row(s) selected
+sql〉
+```
+
+See the [File Connector](file-connector) page for more details.
+
+## Query a Kafka Topic
+
+Let's start by installing Kafka. Paste these into your terminal:
+
+```text
+wget http://mirror.cc.columbia.edu/pub/software/apache/kafka/2.7.0/kafka_2.13-2.7.0.tgz
+tar xvf kafka_2.13-2.7.0.tgz
+cd kafka_2.13-2.7.0
+```
+
+Now start ZooKeeper, then Kafka:
+
+```bash
+$ bin/zookeeper-server-start.sh config/zookeeper.properties
+...
+[2021-01-20 12:44:04,863] INFO Created server with tickTime 3000 minSessionTimeout 6000 maxSessionTimeout 60000 datadir /tmp/zookeeper/version-2 snapdir /tmp/zookeeper/version-2 (org.apache.zookeeper.server.ZooKeeperServer)
+...
+<Type Ctrl-Z to get the prompt back>
+[1]+  Stopped                 bin/zookeeper-server-start.sh config/zookeeper.properties
+$ bg
+[1]+ bin/zookeeper-server-start.sh config/zookeeper.properties &
+$ bin/kafka-server-start.sh config/server.properties
+```
+
+From the Jet home directory, activate the Kafka connector:
+
+```bash
+$ mv opt/hazelcast-jet-kafka-4.4.jar lib/
+$
+```
+
+Restart the Jet server for this to take effect.
+
+You are now ready to query Kafka. We'll use JSON messages like this one:
+
+```json
+{
+    "id": 1,
+    "ticker": "ABCD",
+    "price": 5.5,
+    "amount": 10
+}
+```
+
+Let's create a streaming query that filters and transforms the trade
+events it gets from Kafka:
+
+```sql
+sql〉CREATE MAPPING trades (
+    id BIGINT,
+    ticker VARCHAR,
+    price DECIMAL,
+    amount BIGINT)
+TYPE Kafka
+OPTIONS (
+    'valueFormat' = 'json',
+    'bootstrap.servers' = '127.0.0.1:9092'
+);
+OK
+sql〉SELECT ticker, ROUND(price * 100) AS price_cents, amount
+  FROM trades
+  WHERE price * amount > 100;
++------------+----------------------+-------------------+
+|ticker      |           price_cents|             amount|
++------------+----------------------+-------------------+
+```
+
+The query is now running, ready to receive messages from Kafka. You can
+interrupt it with `Ctrl+C`, but leave it running for now.
+
+Now start another terminal window and push some messages to Kafka:
+
+```sql
+sql〉INSERT INTO trades VALUES
+  (1, 'ABCD', 5.5, 10),
+  (2, 'EFGH', 14, 20);
+OK
+```
+
+When you go back to the window where the query is running, you'll see
+a result row has appeared:
+
+```text
++-----------------+----------------------+-------------------+
+|ticker           |           price_cents|             amount|
++-----------------+----------------------+-------------------+
+|EFGH             |                  1400|                 20|
+```
+
+See the [Kafka Connector](kafka-connector) page for more details.
+
+## Store Query Results in an IMap
+
+You can send the query results to an IMap using the `SINK INTO` clause.
+`SINK INTO` is similar to the standard `INSERT INTO`, [see
+here](basic-commands#insertsink-statement) for the full details.
+
+This creates a map named `tradeMap` with a Java `Long` as the key
+and the JSON trade event as the value, and then stores an entry in it:
+
+```sql
+sql〉CREATE MAPPING tradeMap (
+    id BIGINT EXTERNAL NAME "__key",
+    ticker VARCHAR,
+    price DECIMAL,
+    amount BIGINT)
+TYPE IMap
+OPTIONS (
+    'keyFormat'='bigint',
+    'valueFormat'='json');
+OK
+sql〉SINK INTO tradeMap VALUES (1, 'hazl', 10, 1);
+OK
+sql〉SELECT * FROM tradeMap;
++----+----------+--------+--------+
+|  id|ticker    |   price|  amount|
++----+----------+--------+--------+
+|   1|hazl      |10.0000…|       1|
++----+----------+--------+--------+
+1 row(s) selected
+sql〉
+```
+
+## Create a Standalone Streaming Query
+
+Now we can connect the solutions above and tell Jet to syphon the data
+from the Kafka topic into the IMap:
+
+```sql
+sql〉CREATE JOB ingest_trades AS
+  SINK INTO tradeMap(id, ticker, price, amount)
+  SELECT id, ticker, price, amount
+  FROM trades;
+OK
+sql〉SHOW JOBS;
++--------------------+
+|name                |
++--------------------+
+|ingest_trades       |
++--------------------+
+1 row(s) selected
+```
+
+As we already saw, a streaming query never completes on its own and its
+lifecycle is coupled to the shell, but normally you want to create a
+long-running query that lives on independently. We achieved this with
+`CREATE JOB`.
+
+Let's try it out by publishing some events to the Kafka topic and
+checking if they landed in the IMap:
+
+```sql
+sql〉INSERT INTO trades VALUES
+  (1, 'ABCD', 5.5, 10),
+  (2, 'EFGH', 14, 20);
+OK
+sql〉SELECT * FROM tradeMap;
++---------------+--------------------+----------+--------------------+
+|             id|ticker              |     price|              amount|
++---------------+--------------------+----------+--------------------+
+|              2|EFGH                |14.000000…|                  20|
+|              1|ABCD                |5.5000000…|                  10|
++---------------+--------------------+----------+--------------------+
+2 row(s) selected
+sql〉
+```
+
+To cancel the job, use:
+
+```sql
+sql〉DROP JOB ingest_trades;
+```
+
+## Use Jet SQL Embedded Inside Your App
+
+If you use Jet as an embedded library, besides the `hazelcast-jet`
+dependency add also the `hazelcast-jet-sql` dep:
 
 <!--DOCUSAURUS_CODE_TABS-->
 
@@ -63,289 +399,26 @@ compile 'com.hazelcast.jet:hazelcast-jet-sql:{jet-version}'
 
 <!--END_DOCUSAURUS_CODE_TABS-->
 
-If you use other features from SQL such as the Kafka or File connectors,
-also add the `hazelcast-jet-kafka` or `hazelcast-jet-hadoop` modules in
-the same way.
-
-## Example
-
-In this example we'll show how to query Apache Kafka using SQL and
-stream the messages to an IMap.
-
-First, make sure you have Apache Kafka up and running. You can follow
-the [instructions here](https://kafka.apache.org/quickstart). Start the
-broker and create a topic named `trades`.
-
-In our topic the trades will be encoded as JSON messages:
-
-```plain
-key: ABCD
-value: {
-    "ticker": "ABCD",
-    "price": 5.5,
-    "amount": 10
-}
-```
-
-The `ticker` is repeated in both the key and the value. We'll ignore the
-key in the subsequent examples, it's only used by Kafka for
-partitioning.
-
-### Creating the Mapping for Kafka Topic
-
-To use a remote topic as a table in Jet, first create an `EXTERNAL
-MAPPING` for the topic. It maps the messages to a fixed list of columns
-with data types:
-
-```sql
-CREATE EXTERNAL MAPPING trades (
-    ticker VARCHAR,
-    price DECIMAL,
-    amount BIGINT)
-TYPE Kafka
-OPTIONS (
-    'valueFormat' = 'json',
-    'bootstrap.servers' = '127.0.0.1:9092'
-    /* ... more configuration options for the Kafka consumer */
-)
-```
-
-The `valueFormat` option specifies the serialization format for the
-value. For other possible values see the [Kafka
-Connector](kafka-connector) page. The options not handled by Jet, such
-as the `bootstrap.servers` above, are all passed directly to the Kafka
-consumer or producer.
-
-To submit the above query, you can use the SQL CLI or the Java API (we
-also plan to support JDBC and non-Java clients in the future):
-
-#### Submitting the query on the CLI
-
-Before starting the CLI, make sure Hazelcast Jet server is running. If
-you don't have a running jet member, you can start a member using the
-following command:
-
-```bash
-$JET_HOME/bin/jet-start
-...
-```
-
-After that, you can start the Jet SQL CLI by running this command:
-
-```bash
-$ $JET_HOME/bin/jet sql
-Connected to Hazelcast Jet 4.4-SNAPSHOT at [192.168.1.5]:5701 (+0 more)
-Type 'help' for instructions
-sql>
-```
-
-This CLI uses Jet client to connect and send the SQL commands to the Jet
-cluster. This CLI overrides the client's cluster connect configurations
-so that if the client-server connection is lost, it tries to reconnect
-forever. CLI has multiline command support and it requires a semicolon
-to finalize the commands. So, make sure you use `;` at the end of your
-commands.  You can submit queries as follows:
-
-```bash
-sql> CREATE EXTERNAL MAPPING trades (
-    ticker VARCHAR,
-    price DECIMAL,
-    amount BIGINT)
-TYPE Kafka
-OPTIONS (
-    'valueFormat' = 'json',
-    'bootstrap.servers' = '127.0.0.1:9092'
-    /* ... more configuration options for the Kafka consumer */
-);
-sql> /* query text ending with semicolon*/
-...
-```
-
-When you send a streaming query, you can use `CTRL+C(SIGINT)` to cancel
-this query. Also, you can type `help` to see the available commands.
-
-> SQL CLI is in beta version and only use it in development environments.
-
-#### Submitting the query using Java API
-
-You can also use native Java API to execute SQL queries on Jet:
+Submit a query:
 
 ```java
-JetInstance inst = ...;
-inst.getSql().execute( /* query text */ );
-```
-
-### Querying the Kafka Topic
-
-After creating mapping, SQL query can now be used to read from the
-`trades` topic, as if it was a table:
-
-```java
-JetInstance inst = ...;
-try (SqlResult result = inst.getSql().execute("SELECT * FROM trades")) {
+JetInstance jet = Jet.newJetInstance();
+String query = "select * from TABLE(generate_series(1,5))";
+try (SqlResult result = jet.getSql().execute(query)) {
     for (SqlRow row : result) {
-        // Process the row
-        System.out.println(row);
+        System.out.println("" + row.getObject(0));
     }
 }
 ```
 
-The query now runs in the Jet cluster and streams the results to the Jet
-client that started it. The iteration will never complete, a Kafka topic
-is a _streaming source_, that is it has no end of data. The backing Jet
-job will terminate when the client crashes, or you can add a
-`result.close()` call to close it earlier. By default, the reading
-starts at the tip of the topic, but you can modify it by adding
-`auto.offset.reset` Kafka property to the mapping options.
+This code should print
 
-You can use the power of the SQL language and use expressions and the
-`WHERE` clause, e.g.:
-
-```sql
-SELECT ticker, ROUND(price * 100) AS price_cents, amount
-FROM trades
-WHERE price * amount > 100
-```
-
-### Creating the Mapping for the IMap
-
-Jet can update an IMap using the `SINK INTO` command, which means you
-can use Jet SQL as a simple API to ingest data and store it in IMDG. For
-the sake of this tutorial it's enough to think about the `SINK INTO`
-command as of a standard `INSERT INTO` command. If you're interested to
-know why don't we use the standard command, [see
-here](basic-commands#insertsink-statement).
-
-To be able to write to an IMap, Jet has to know what type of objects to
-create for the map key and value. It can derive that automatically by
-sampling an existing entry in the map, but if the map is empty<sup><a
-name='footnote-1-backref'></a>[*](#footnote-1)</sup>, you have to create
-a mapping for it first. We want to replicate the topic structure, so we
-need to create a Java class for the value:
-
-```java
-public class Trade implements Serializable {
-    public String ticker;
-    public BigDecimal price;
-    public long amount;
-}
-```
-
-We used public fields, but of course you can use private fields and use
-setters/getters. This class must be available to the cluster. You can
-either add it to the members class paths by creating a JAR file and
-adding to the `lib` folder, or you can use User Code Deployment. The
-user code deployment has to be enabled on the members; add the following
-section to the `config/hazelcast.yaml` file:
-
-```yaml
-hazelcast:
-  user-code-deployment:
-    enabled: true
-```
-
-Then use a client to upload the class:
-
-```java
-ClientConfig clientConfig = new JetClientConfig();
-clientConfig.getUserCodeDeploymentConfig()
-            .setEnabled(true)
-            .addClass(Trade.class);
-JetInstance jet = Jet.newJetClient(clientConfig);
-```
-
-After this, you can create the mapping for the IMap. The name of the
-IMap is `latest_trades`:
-
-```sql
-CREATE MAPPING latest_trades
-TYPE IMap
-OPTIONS (
-    'keyFormat' = 'java',
-    'keyJavaClass' = 'java.lang.String',
-    'valueFormat' = 'java',
-    'valueJavaClass' = 'com.example.Trade'
-)
-```
-
-Note that we omitted the column list in this query. It will be
-determined automatically according to the OPTIONS. Since we use `String`
-as the key class, the default column name for the key will be used:
-`__key`. The properties of the `Trade` class will be used. So the
-mapping will behave as if the following columns were specified in the
-previous statement:
-
-```sql
-(
-    __key VARCHAR,
-    ticker VARCHAR,
-    price DECIMAL,
-    amount BIGINT
-)
-```
-
-### Streaming Messages from the Kafka Topic to the IMap
-
-After creating the mapping for the `latest_trades` IMap, we can submit
-the following statement:
-
-```sql
-SINK INTO latest_trades(__key, ticker, price, amount)
-SELECT ticker, ticker, price, amount
-FROM trades
-```
-
-It will put the fields from the Kafka topic into the IMap, replicating
-the `ticker` twice: once into the value and once into the key. Since we
-use the `ticker` as the key, every new trade for the same ticker will
-overwrite the previous trade for that ticker, hence the name
-`latest_trades`.
-
-### Creating a Long-Running Job
-
-However, you cannot directly execute the above command because it would
-never complete. Remember, it's reading from a Kafka topic, which is a
-stream of messages. Since it doesn't return any rows to the client, you
-must create a job for it:
-
-```sql
-CREATE JOB trades_ingestion AS
-SINK INTO latest_trades(__key, ticker, price, amount)
-SELECT ticker, ticker, price, amount
-FROM trades
-```
-
-The part after the `AS` keyword is the same as the previous statement.
-The command will create a job named `trades_ingestion`. Now, even if the
-client disconnects, the cluster will continue running the job.
-
-### Checking the Target IMap Contents
-
-To add some messages to the Kafka topic you can use this command:
-
-```sql
-INSERT INTO trades
-VALUES ('ABCD', 5.5, 10), ('EFGH', 14, 20) /* ,  ... */
-```
-
-While this works, we intend to use this way only for prototyping or
-ad-hoc work. Jet is optimized for larger or long-running queries. Under
-the hood, it will spin up a distributed job for each INSERT statement.
-If you benchmarked the number of records per second, the performance
-would be embarrassing.
-
-To check out the contents of the `latest_trades` IMap, use:
-
-```sql
-SELECT * FROM latest_trades
-```
-
-### Cancelling the Job
-
-To cancel the job, use:
-
-```sql
-DROP JOB trades_ingestion
+```txt
+1
+2
+3
+4
+5
 ```
 
 ## IMDG SQL and Jet SQL
@@ -368,12 +441,3 @@ Jet. For a summary of the default SQL engine features, supported data
 types and the built-in functions and operators, please see the [chapter
 on SQL](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#sql)
 in the Hazelcast IMDG reference manual.
-
-----
-
-<span style='font-size:90%'><a
-name='footnote-1'>[*)](#footnote-1-backref) This statement is not
-entirely correct, it might not be enough if the map has one entry. The
-map has to have an entry on every cluster member. Practically, if the
-IMap doesn't have plenty of entries, you should always create the
-mapping and not rely on the auto-sampling.</span>

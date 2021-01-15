@@ -6,20 +6,80 @@ description: Description of the SQL IMap connector
 The IMap connector supports reading and writing to local IMaps. Remote
 IMaps are not supported yet.
 
-There is an auto-generated mapping for all the local IMaps in the
-`partitioned` schema. To query a local IMap, you can directly execute a
-statement against it. If you don't name a schema, Jet first looks up the
-object in the `public` schema (explicitly created mappings) and then in
-the `partitioned` schema.
+Jet SQL works with IMaps through the concept of the external mapping,
+just like all other resources. It provides an additional convenience: if
+your IMap already stores some data, Jet can automatically detect the key
+and value types by sampling an existing entry. This works only when
+there's at least one entry stored in every cluster node.
 
-IMap itself is schema-less, however SQL assumes a schema. We assume all
-entries in the map are of the same type (with some exceptions). IMap
-also supports several serialization options, see below.
+From the SQL semantics perspective, there is an auto-generated mapping
+for all the local IMaps in the `partitioned` schema. To query a local
+IMap, you can directly execute a statement against it. If you don't name
+a schema, Jet first looks up the object in the `public` schema
+(explicitly created mappings) and then in the `partitioned` schema.
 
-If you don't create a mapping for an IMap explicitly, we'll sample an
-arbitrary record to derive the schema and serialization type. You need
-to have at least one record on each cluster member for this to work. If
-you can't ensure this, create the mapping explicitly.
+### External Mapping for a Java Class
+
+Here's our Java class for a trade event:
+
+```java
+public class Trade implements Serializable {
+    public String ticker;
+    public BigDecimal price;
+    public long amount;
+}
+```
+
+We used public fields, but of course you can use private fields and use
+setters/getters. This class must be available to the cluster. You can
+either add it to the members class paths by creating a JAR file and
+adding to the `lib` folder, or you can use User Code Deployment. The
+user code deployment has to be enabled on the members; add the following
+section to the `config/hazelcast.yaml` file:
+
+```yaml
+hazelcast:
+  user-code-deployment:
+    enabled: true
+```
+
+Then use a client to upload the class:
+
+```java
+ClientConfig clientConfig = new JetClientConfig();
+clientConfig.getUserCodeDeploymentConfig()
+            .setEnabled(true)
+            .addClass(Trade.class);
+JetInstance jet = Jet.newJetClient(clientConfig);
+```
+
+After this, you can create the mapping for the IMap. The name of the
+IMap is `latest_trades`:
+
+```sql
+CREATE MAPPING latest_trades
+TYPE IMap
+OPTIONS (
+    'keyFormat' = 'varchar',
+    'valueFormat' = 'java',
+    'valueJavaClass' = 'com.example.Trade'
+)
+```
+
+We didn't provide an explicit column list, so Jet determines it
+automatically from the provided OPTIONS. Our key is a simple `varchar`
+with no internal structure, so we get the default name for the key
+column: `__key`. Value is an object whose fields become columns of the
+mapping. So we get this structure:
+
+```sql
+(
+    __key VARCHAR,
+    ticker VARCHAR,
+    price DECIMAL,
+    amount BIGINT
+)
+```
 
 ## Serialization Options
 
