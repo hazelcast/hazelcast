@@ -68,10 +68,7 @@ OPTIONS (
 
 In this example, the key is a plain `Long` number, the value is
 avro-serialized. `keyFormat`, `keyJavaClass` and `valueFormat` are
-handled by Jet, the rest is passed to Kafka producer or consumer. The
-option names containing the `.` must be enclosed in double quotes
-because the `.` is a reserved character in SQL, double quotes are used
-to quote identifiers: this way the `.` is interpreted literally.
+handled by Jet, the rest is passed to Kafka producer or consumer.
 
 ### JSON Serialization
 
