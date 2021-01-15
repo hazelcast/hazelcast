@@ -101,7 +101,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-csv</artifactId>
-            <version>${jackson.jr.version}</version>
+            <version>${jackson.version}</version>
             <scope>provided</scope> <!-- part of hazelcast-jet-csv, which user needs to have on CP -->
         </dependency>
 

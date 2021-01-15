@@ -51,6 +51,7 @@
                 <include>com.hazelcast.jet:hazelcast-jet-python</include>
                 <include>com.hazelcast.jet:hazelcast-jet-hadoop</include>
                 <include>com.hazelcast.jet:hazelcast-jet-kafka</include>
+                <include>com.hazelcast.jet:hazelcast-jet-kinesis</include>
                 <include>com.hazelcast.jet:hazelcast-jet-s3</include>
             </includes>
             <outputDirectory>opt</outputDirectory>

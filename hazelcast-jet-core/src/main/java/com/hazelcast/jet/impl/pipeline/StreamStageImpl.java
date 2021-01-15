@@ -69,7 +69,10 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
     @Nonnull @Override
     public <K> StreamStage<T> rebalance(@Nonnull FunctionEx<? super T, ? extends K> keyFn) {
         checkSerializable(keyFn, "keyFn");
-        return new StreamStageImpl<>(this, keyFn);
+        @SuppressWarnings("unchecked")
+        FunctionEx<? super T, ? extends K> adaptedKeyFn =
+                (FunctionEx<? super T, ? extends K>) fnAdapter.adaptKeyFn(keyFn);
+        return new StreamStageImpl<>(this, adaptedKeyFn);
     }
 
     @Nonnull @Override

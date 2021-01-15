@@ -45,6 +45,7 @@
         <module>hadoop</module>
         <module>hadoop-dist</module>
         <module>kafka</module>
+        <module>kinesis</module>
         <module>protobuf</module>
         <module>python</module>
         <module>s3</module>

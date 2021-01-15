@@ -94,7 +94,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.jr.version}</version>
+            <version>${jackson.version}</version>
         </dependency>
 
         <!-- KAFKA -->

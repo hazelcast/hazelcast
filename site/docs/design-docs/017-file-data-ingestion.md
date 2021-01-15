@@ -3,7 +3,7 @@ title: 017 - File Data Ingestion
 description: Unified API for reading files and improved packaging for cloud sources
 ---
 
-*Since 4.4.*
+*Since*: 4.4
 
 ## 1. Support for common formats and data sources
 

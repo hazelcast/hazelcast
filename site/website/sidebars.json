@@ -9,6 +9,7 @@
     ],
     "Tutorials": [
       "tutorials/kafka",
+      "tutorials/kinesis",
       {
         "type": "subcategory",
         "label": "Change Data Capture",
@@ -97,6 +98,7 @@
     ],
     "Design Documents": [
       "design-docs/index",
+      "design-docs/018-kinesis-connectors",
       "design-docs/017-file-data-ingestion",
       "design-docs/016-event-reordering",
       "design-docs/015-mqtt-connector",

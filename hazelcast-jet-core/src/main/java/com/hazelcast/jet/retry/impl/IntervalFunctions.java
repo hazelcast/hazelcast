@@ -37,6 +37,15 @@ public final class IntervalFunctions {
                 "exponential backoff from " + intervalMillis + "ms by a factor of " + multiplier);
     }
 
+    public static IntervalFunction exponentialBackoffWithCap(long intervalMillis, double multiplier, long capMillis) {
+        checkInterval(intervalMillis);
+        checkMultiplier(multiplier);
+        checkInterval(capMillis);
+        return new IntervalFunctionImpl(
+                attempt -> Math.min(capMillis, (long) (intervalMillis * Math.pow(multiplier, attempt - 1))),
+                "exponential backoff from " + intervalMillis + "ms by a factor of " + multiplier);
+    }
+
     private static void checkInterval(long interval) {
         if (interval < 1) {
             throw new IllegalArgumentException(

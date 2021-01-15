@@ -3,6 +3,8 @@ title: 008 - Rebalance Data on a Pipeline Stage
 description: Adds a stage.rebalance() method that results in a distributed DAG edge from this stage to the next one.
 ---
 
+*Since*: 4.2
+
 ## Goal
 
 Allow the user to request a distributed round-robin DAG edge between

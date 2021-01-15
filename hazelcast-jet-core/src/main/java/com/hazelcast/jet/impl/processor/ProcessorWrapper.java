@@ -16,6 +16,9 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
@@ -33,7 +36,7 @@ import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
  * Base class for processor wrappers. Delegates all calls to the wrapped
  * processor.
  */
-public abstract class ProcessorWrapper implements Processor {
+public abstract class ProcessorWrapper implements Processor, DynamicMetricsProvider {
 
     private Processor wrapped;
 
@@ -141,5 +144,16 @@ public abstract class ProcessorWrapper implements Processor {
     @Override
     public void close() throws Exception {
         wrapped.close();
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        //collect static metrics from wrapped
+        context.collect(descriptor, wrapped);
+
+        //collect dynamic metrics from wrapped
+        if (wrapped instanceof DynamicMetricsProvider) {
+            ((DynamicMetricsProvider) wrapped).provideDynamicMetrics(descriptor.copy(), context);
+        }
     }
 }

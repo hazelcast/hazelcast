@@ -3,7 +3,7 @@ title: 013 - Resolving Sparse Events Issue with System-Time Watermarks
 description: Make the time progress independently from the event rate
 ---
 
-*Target Release*: 4.3
+*Since*: 4.3
 
 ## The _Sparse Events Issue_
 

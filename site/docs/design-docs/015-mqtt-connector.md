@@ -3,6 +3,8 @@ title: 015 - Mqtt Connector
 description: Mqtt Connector (source and sink)
 ---
 
+*Since*: 4.4
+
 ## Background
 
 MQTT is a machine-to-machine (M2M)/”Internet of Things” connectivity

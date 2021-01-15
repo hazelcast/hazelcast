@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.Probe;
@@ -646,7 +647,13 @@ public class ProcessorTasklet implements Tasklet {
         context.collect(descriptor, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency());
 
         context.collect(descriptor, this);
+
+        //collect static metrics from processor
         context.collect(descriptor, this.processor);
+        //collect dynamic metrics from processor
+        if (processor instanceof DynamicMetricsProvider) {
+            ((DynamicMetricsProvider) processor).provideDynamicMetrics(descriptor.copy(), context);
+        }
 
         metricsContext.provideDynamicMetrics(descriptor, context);
     }

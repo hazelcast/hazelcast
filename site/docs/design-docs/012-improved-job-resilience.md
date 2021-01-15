@@ -3,7 +3,7 @@ title: 012 - Improved Resilience of Fault-Tolerant Streaming Jobs
 description: Make fault-tolerant streaming jobs capable of surviving fixable errors.
 ---
 
-*Target Release*: 4.3
+*Since*: 4.3
 
 ## Goal
 

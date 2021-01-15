@@ -1,9 +1,9 @@
 ---
-title: 014 -- BatchStage.sort()
+title: 014 - BatchStage.sort()
 description: Distributed sorting for batch workloads
 ---
 
-*Target Release:* 4.3
+*Since*: 4.3
 
 Currently, Jet can sort the data only indirectly, through a special
 aggregate operation, resulting in a single output item that is the whole
