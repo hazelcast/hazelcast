@@ -90,6 +90,21 @@
                             <tarLongFileMode>posix</tarLongFileMode>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>distro-assembly-slim</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>hazelcast-jet-${project.version}</finalName>
+                            <appendAssemblyId>true</appendAssemblyId>
+                            <descriptors>
+                                <descriptor>src/assembly-descriptor-slim.xml</descriptor>
+                            </descriptors>
+                            <tarLongFileMode>posix</tarLongFileMode>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -213,25 +228,46 @@
                     </additionalDependencies>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.0.0-M3</version>
+                <executions>
+                    <execution>
+                        <id>enforce-versions</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <rules>
+                        <dependencyConvergence/>
+                    </rules>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
     <dependencies>
+        <!-- Jet modules-->
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>${log4j2.version}</version>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-spring</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <version>${log4j2.version}</version>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-sql</artifactId>
+            <version>${project.version}</version>
+            <classifier>jar-with-dependencies</classifier>
         </dependency>
+        <!-- Jet extensions -->
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-avro</artifactId>
@@ -270,14 +306,20 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-protobuf</artifactId>
+            <artifactId>hazelcast-jet-elasticsearch-6</artifactId>
             <version>${project.version}</version>
             <classifier>jar-with-dependencies</classifier>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-spring</artifactId>
-            <version>${project.version}</version>
+            <exclusions>
+                <!--
+                Exclude the elastic client for version 6 reported by enforcer plugin
+                It actually doesn't exclude the client, because we use fat jar.
+                The elastic clients can't be used together. Version 6 is in opt.
+                -->
+                <exclusion>
+                    <groupId>org.elasticsearch.client</groupId>
+                    <artifactId>elasticsearch-rest-high-level-client</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
@@ -287,8 +329,27 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-hadoop</artifactId>
+            <artifactId>hazelcast-jet-files-azure</artifactId>
             <version>${project.version}</version>
+            <classifier>jar-with-dependencies</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-files-gcs</artifactId>
+            <version>${project.version}</version>
+            <classifier>jar-with-dependencies</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-files-s3</artifactId>
+            <version>${project.version}</version>
+            <classifier>jar-with-dependencies</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-hadoop-all</artifactId>
+            <version>${project.version}</version>
+            <classifier>jar-with-dependencies</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
@@ -304,6 +365,12 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-protobuf</artifactId>
+            <version>${project.version}</version>
+            <classifier>jar-with-dependencies</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-python</artifactId>
             <version>${project.version}</version>
             <classifier>jar-with-dependencies</classifier>
@@ -314,16 +381,22 @@
             <version>${project.version}</version>
             <classifier>jar-with-dependencies</classifier>
         </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-sql</artifactId>
-            <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
-        </dependency>
+        <!-- Examples -->
         <dependency>
             <groupId>com.hazelcast.jet.examples</groupId>
             <artifactId>hazelcast-jet-examples-hello-world</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j2.version}</version>
         </dependency>
         <!-- Prometheus to expose JMX metrics as HTTP endpoint -->
         <dependency>

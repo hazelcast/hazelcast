@@ -20,7 +20,7 @@ Copyright (c) 2008-2020 Hazelcast, Inc. All rights reserved.
 This product includes the following libraries with the following licenses:
 
 Apache License, Version 2.0
-  AWS SDK for Java - Bundle:1.11.563
+  AWS SDK for Java - Bundle:1.11.934
   Jackson-annotations:2.11.2
   Jackson-core:2.11.2
   jackson-databind:2.11.2
@@ -30,7 +30,7 @@ Apache License, Version 2.0
   Woodstox:5.0.3
   JCIP Annotations under Apache License:1.0-1
   FindBugs-jsr305:3.0.2
-  Gson:2.2.4
+  Gson:2.8.6
   error-prone annotations:2.3.4
   Guava InternalFutureFailureAccess and InternalFutures:1.0.1
   Guava: Google Core Libraries for Java:29.0-jre
@@ -41,22 +41,20 @@ Apache License, Version 2.0
   Okio:1.6.0
   Apache Commons BeanUtils:1.9.4
   Commons CLI:1.2
-  Apache Commons Codec:1.9
+  Apache Commons Codec:1.12
   Apache Commons Collections:3.2.2
   Apache Commons IO:2.5
-  Commons Lang:2.4
-  Commons Logging:1.1.3
+  Apache Commons Logging:1.2
   Apache Commons Net:3.6
   Commons Pool:1.6
-  The Netty Project:3.5.13.Final
-  fastutil:7.0.13
   Apache Log4j:1.2.17
   ASM based accessors helper used by json-smart:1.2
   JSON Small and Fast Parser:2.3
-  Apache Avro:1.8.2
-  Apache Avro IPC:1.8.2
-  Apache Avro Mapred API:1.8.2
-  Apache Commons Compress:1.8.1
+  Apache Avro:1.9.2
+  Apache Avro IPC:1.9.2
+  Apache Avro IPC Jetty:1.9.2
+  Apache Avro Mapred API:1.9.2
+  Apache Commons Compress:1.19
   Apache Commons Configuration:2.1.1
   Apache Commons Lang:3.7
   Commons Math:3.1.1
@@ -78,8 +76,8 @@ Apache License, Version 2.0
   Apache Hadoop YARN Common:3.3.0
   Apache Hadoop shaded Protobuf 3.7:1.0.0
   htrace-core4:4.1.0-incubating
-  Apache HttpClient:4.5.6
-  Apache HttpCore:4.4.10
+  Apache HttpClient:4.5.12
+  Apache HttpCore:4.4.13
   Kerby-kerb Admin:1.0.1
   Kerby-kerb Client:1.0.1
   Kerby-kerb Common:1.0.1
@@ -95,39 +93,39 @@ Apache License, Version 2.0
   Kerby Util:1.0.1
   Kerby XDR Project:1.0.1
   Token provider:1.0.1
-  Apache Parquet Avro:1.10.1
-  Apache Parquet Column:1.10.1
-  Apache Parquet Common:1.10.1
-  Apache Parquet Encodings:1.10.1
-  Apache Parquet Format:2.4.0
-  Apache Parquet Hadoop:1.10.1
-  Apache Parquet Jackson:1.10.1
-  Apache Velocity:1.7
-  Jackson:1.9.13
-  Data Mapper for Jackson:1.9.13
+  Apache Parquet Avro:1.11.1
+  Apache Parquet Column:1.11.1
+  Apache Parquet Common:1.11.1
+  Apache Parquet Encodings:1.11.1
+  Apache Parquet Format Structures:1.11.1
+  Apache Parquet Hadoop:1.11.1
+  Apache Parquet Jackson:1.11.1
+  Apache Velocity - Engine:2.2
+  Apache Yetus - Audience Annotations:0.12.0
   Jetty :: Asynchronous HTTP Client:9.4.20.v20190813
   Jetty :: Http Utility:9.4.20.v20190813
   Jetty :: IO Utility:9.4.20.v20190813
+  Jetty :: Security:9.4.20.v20190813
+  Jetty :: Server Core:9.4.20.v20190813
+  Jetty :: Servlet Handling:9.4.20.v20190813
   Jetty :: Utilities:9.4.20.v20190813
   Jetty :: XML utilities:9.4.20.v20190813
   Jetty :: Websocket :: API:9.4.20.v20190813
   Jetty :: Websocket :: Client:9.4.20.v20190813
   Jetty :: Websocket :: Common:9.4.20.v20190813
-  Jetty Server:6.1.26
-  Jetty Utilities:6.1.26
-  Servlet Specification API:2.5-20081211
   wildfly-openssl:1.0.7.Final
-  snappy-java:1.1.1.3
+  snappy-java:1.1.7.2
 BSD 2-Clause License
+  zstd-jni:1.4.5-12
   dnsjava:2.1.7
 BSD 3-Clause License
-  Protocol Buffer Java API:2.5.0
-  ParaNamer Core:2.7
+  Protocol Buffers [Core]:3.13.0
   Stax2 API:3.1.4
   JLine Bundle:3.9.0
   ASM Core:5.0.4
 CDDL
   JavaBeans Activation Framework API jar:1.2.0
+  javax.annotation API:1.3.2
   Java Servlet API:3.1.0
   jsr311-api:1.1.1
 CDDL 1.1
@@ -141,22 +139,21 @@ Eclipse Public License - Version 1.0
   Jetty :: Asynchronous HTTP Client:9.4.20.v20190813
   Jetty :: Http Utility:9.4.20.v20190813
   Jetty :: IO Utility:9.4.20.v20190813
+  Jetty :: Security:9.4.20.v20190813
+  Jetty :: Server Core:9.4.20.v20190813
+  Jetty :: Servlet Handling:9.4.20.v20190813
   Jetty :: Utilities:9.4.20.v20190813
   Jetty :: XML utilities:9.4.20.v20190813
   Jetty :: Websocket :: API:9.4.20.v20190813
   Jetty :: Websocket :: Client:9.4.20.v20190813
   Jetty :: Websocket :: Common:9.4.20.v20190813
-  Jetty Server:6.1.26
-  Jetty Utilities:6.1.26
 GPL2 w/ CPE
   jersey-client:1.19
   jersey-core:1.19
   Java Architecture for XML Binding:2.2.11
 MIT License
   Checker Qual:2.11.1
-  SLF4J API Module:1.7.7
-Public Domain
-  XZ for Java:1.5
+  SLF4J API Module:1.7.28
 The Go license
   re2j:1.1
 

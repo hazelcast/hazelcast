@@ -20,6 +20,7 @@ Copyright (c) 2008-2020 Hazelcast, Inc. All rights reserved.
 This product includes the following libraries with the following licenses:
 
 Apache License, Version 2.0
+  AWS SDK for Java - Bundle:1.11.934
   AWS SDK for Java - Core:1.11.934
   AWS Java SDK for Amazon Kinesis:1.11.934
   JMES Path Query library:1.11.934
@@ -29,41 +30,78 @@ Apache License, Version 2.0
   jackson-databind:2.11.2
   Jackson dataformat: CBOR:2.11.2
   Jackson-dataformat-CSV:2.11.2
-  Jackson dataformat: Smile:2.8.11
-  Jackson-dataformat-YAML:2.8.11
-  Jackson datatype: JSR310:2.10.0
+  Jackson dataformat: Smile:2.11.2
+  Jackson-dataformat-YAML:2.11.2
+  Jackson datatype: JSR310:2.11.2
+  Jackson-JAXRS-base:2.11.2
+  Jackson-JAXRS-JSON:2.11.2
   jackson-jr-annotation-support:2.11.2
   jackson-jr-objects:2.11.2
+  Jackson module: JAXB Annotations:2.11.2
+  Woodstox:5.0.3
   mysql-binlog-connector-java:0.20.1
   compiler:0.9.3
+  JCIP Annotations under Apache License:1.0-1
   Google Android Annotations Library:4.1.1.4
-  proto-google-common-protos:1.17.0
+  Google APIs Client Library for Java:1.30.10
+  Jackson 2 extensions to the Google APIs Client Library for Java:1.30.10
+  Java 6 (and higher) Extensions to the Google API Client Library for Java.:1.30.10
+  proto-google-common-protos:1.18.1
+  proto-google-iam-v1:0.13.0
+  IAM Service Account Credentials API v1-rev20200821-1.30.10:v1-rev20200821-1.30.10
+  Cloud Storage JSON API v1-rev20200814-1.30.10:v1-rev20200814-1.30.10
+  AutoValue Annotations:1.7.4
+  gcs-connector-hadoop3:hadoop3-2.1.5
+  gcsio:2.1.5
+  util:2.1.5
+  util-hadoop-hadoop3:hadoop3-2.1.5
   FindBugs-jsr305:3.0.2
   Gson:2.8.6
   error-prone annotations:2.3.4
+  Flogger:0.5.1
+  Flogger SLF4J Backend:0.5.1
+  Flogger System Backend:0.5.1
+  Google Logger:0.5.1
   Guava InternalFutureFailureAccess and InternalFutures:1.0.1
   Guava: Google Core Libraries for Java:29.0-jre
   Guava ListenableFuture only:9999.0-empty-to-avoid-conflict-with-guava
+  Google HTTP Client Library for Java:1.36.0
+  Jackson 2 extensions to the Google HTTP Client Library for Java.:1.36.0
   J2ObjC Annotations:1.3
+  Google OAuth Client Library for Java:1.31.0
+  Java 6 (and higher) extensions to the Google OAuth Client Library for Java.:1.31.0
   project ':json-path':2.4.0
+  Microsoft Azure Storage Client SDK:7.0.0
+  Nimbus JOSE+JWT:7.9
+  OkHttp:2.7.5
+  Okio:1.6.0
   T-Digest:3.2
   Netty Reactive Streams Implementation:2.0.3
   Netty Reactive Streams HTTP support:2.0.3
-  Apache Commons Codec:1.11
-  Commons Logging:1.1.3
+  Apache Commons BeanUtils:1.9.4
+  Commons CLI:1.2
+  Apache Commons Codec:1.12
+  Apache Commons Collections:3.2.2
+  Apache Commons IO:2.5
+  Apache Commons Logging:1.2
+  Apache Commons Net:3.6
+  Commons Pool:1.6
   picocli - a mighty tiny Command Line Interface:3.9.0
   Debezium API:1.2.1.Final
   Debezium Connector for MySQL:1.2.1.Final
   Debezium Connector for PostgreSQL:1.2.1.Final
   Debezium Core:1.2.1.Final
   Debezium ANTLR DDL parsers:1.2.1.Final
-  io.grpc:grpc-api:1.31.0
-  io.grpc:grpc-context:1.31.0
-  io.grpc:grpc-core:1.31.0
-  io.grpc:grpc-netty-shaded:1.31.0
-  io.grpc:grpc-protobuf:1.31.0
-  io.grpc:grpc-protobuf-lite:1.31.0
-  io.grpc:grpc-stub:1.31.0
+  io.grpc:grpc-alts:1.34.0
+  io.grpc:grpc-api:1.34.0
+  io.grpc:grpc-auth:1.34.0
+  io.grpc:grpc-context:1.34.0
+  io.grpc:grpc-core:1.34.0
+  io.grpc:grpc-grpclb:1.34.0
+  io.grpc:grpc-netty-shaded:1.34.0
+  io.grpc:grpc-protobuf:1.34.0
+  io.grpc:grpc-protobuf-lite:1.34.0
+  io.grpc:grpc-stub:1.34.0
   Netty/Buffer:4.1.39.Final
   Netty/Codec:4.1.39.Final
   Netty/Codec/HTTP:4.1.39.Final
@@ -74,21 +112,67 @@ Apache License, Version 2.0
   Netty/Transport:4.1.39.Final
   Netty/Transport/Native/Epoll:4.1.39.Final
   Netty/Transport/Native/Unix/Common:4.1.39.Final
+  OpenCensus:0.24.0
+  OpenCensus:0.24.0
   perfmark:perfmark-api:0.19.0
   jmx_prometheus_javaagent:0.13.0
   Joda-Time:2.10.1
-  Apache Avro:1.8.2
+  Apache Log4j:1.2.17
+  ASM based accessors helper used by json-smart:1.2
+  JSON Small and Fast Parser:2.3
+  Apache Avro:1.9.2
+  Apache Avro IPC:1.9.2
+  Apache Avro IPC Jetty:1.9.2
+  Apache Avro Mapred API:1.9.2
   Calcite Core:1.23.0
   Calcite Linq4j:1.23.0
   Apache Calcite Avatica:1.16.0
-  Apache Commons Compress:1.8.1
+  Apache Commons Compress:1.19
+  Apache Commons Configuration:2.1.1
+  Apache Commons Lang:3.7
+  Commons Math:3.1.1
+  Apache Commons Text:1.4
+  Curator Client:4.2.0
+  Curator Framework:4.2.0
+  Curator Recipes:4.2.0
+  Apache Hadoop Annotations:3.3.0
+  Apache Hadoop Auth:3.3.0
+  Apache Hadoop Amazon Web Services support:3.3.0
+  Apache Hadoop Azure support:3.3.0
+  Apache Hadoop Azure Data Lake support:3.3.0
+  Apache Hadoop Client Aggregator:3.3.0
+  Apache Hadoop Common:3.3.0
+  Apache Hadoop HDFS Client:3.3.0
+  Apache Hadoop MapReduce Common:3.3.0
+  Apache Hadoop MapReduce Core:3.3.0
+  Apache Hadoop MapReduce JobClient:3.3.0
+  Apache Hadoop YARN API:3.3.0
+  Apache Hadoop YARN Client:3.3.0
+  Apache Hadoop YARN Common:3.3.0
+  Apache Hadoop shaded Protobuf 3.7:1.0.0
+  htrace-core4:4.1.0-incubating
   Apache HttpAsyncClient:4.1.4
-  Apache HttpClient:4.5.7
-  Apache HttpCore:4.4.11
+  Apache HttpClient:4.5.12
+  Apache HttpCore:4.4.13
   Apache HttpCore NIO:4.4.11
   Apache Kafka:2.2.0
   Apache Kafka:2.2.0
   Apache Kafka:2.2.0
+  Kerby-kerb Admin:1.0.1
+  Kerby-kerb Client:1.0.1
+  Kerby-kerb Common:1.0.1
+  Kerby-kerb core:1.0.1
+  Kerby-kerb Crypto:1.0.1
+  Kerby-kerb Identity:1.0.1
+  Kerby-kerb Server:1.0.1
+  Kerb Simple Kdc:1.0.1
+  Kerby-kerb Util:1.0.1
+  Kerby ASN1 Project:1.0.1
+  Kerby Config:1.0.1
+  Kerby PKIX Project:1.0.1
+  Kerby Util:1.0.1
+  Kerby XDR Project:1.0.1
+  Token provider:1.0.1
   Apache Log4j API:2.13.3
   Apache Log4j Core:2.13.3
   Apache Log4j SLF4J Binding:2.13.3
@@ -107,8 +191,30 @@ Apache License, Version 2.0
   Lucene Spatial Extras:8.0.0
   Lucene Spatial 3D:8.0.0
   Lucene Suggest:8.0.0
+  Apache Parquet Avro:1.11.1
+  Apache Parquet Column:1.11.1
+  Apache Parquet Common:1.11.1
+  Apache Parquet Encodings:1.11.1
+  Apache Parquet Format Structures:1.11.1
+  Apache Parquet Hadoop:1.11.1
+  Apache Parquet Jackson:1.11.1
+  Apache Velocity - Engine:2.2
+  Apache Yetus - Audience Annotations:0.12.0
   Jackson:1.9.13
   Data Mapper for Jackson:1.9.13
+  org.conscrypt:conscrypt-openjdk-uber:2.5.1
+  Jetty :: Asynchronous HTTP Client:9.4.20.v20190813
+  Jetty :: Http Utility:9.4.20.v20190813
+  Jetty :: IO Utility:9.4.20.v20190813
+  Jetty :: Security:9.4.20.v20190813
+  Jetty :: Server Core:9.4.20.v20190813
+  Jetty :: Servlet Handling:9.4.20.v20190813
+  Jetty :: Utilities:9.4.20.v20190813
+  Jetty :: Utilities :: Ajax(JSON):9.4.20.v20190813
+  Jetty :: XML utilities:9.4.20.v20190813
+  Jetty :: Websocket :: API:9.4.20.v20190813
+  Jetty :: Websocket :: Client:9.4.20.v20190813
+  Jetty :: Websocket :: Common:9.4.20.v20190813
   server:7.0.0
   elasticsearch-cli:7.0.0
   core:7.0.0
@@ -125,7 +231,8 @@ Apache License, Version 2.0
   jansi:1.18
   LZ4 and xxHash:1.5.0
   SnakeYAML Engine:1.0
-  snappy-java:1.1.1.3
+  wildfly-openssl:1.0.7.Final
+  snappy-java:1.1.7.2
   SnakeYAML:1.17
   AWS Java SDK :: Annotations:2.8.3
   AWS Java SDK :: HTTP Clients :: Apache:2.8.3
@@ -144,35 +251,75 @@ Apache License, Version 2.0
   AWS Event Stream:1.0.1
   software.amazon.ion:ion-java:1.0.2
 BSD 2-Clause License
-  zstd-jni:1.3.8-1
+  zstd-jni:1.4.5-12
+  dnsjava:2.1.7
   PostgreSQL JDBC Driver:42.2.14
 BSD 3-Clause License
+  API Common:1.8.1
+  Google Auth Library for Java - Credentials:0.21.1
+  Google Auth Library for Java - OAuth2 HTTP:0.21.1
   Protocol Buffers [Core]:3.13.0
-  ParaNamer Core:2.7
+  Protocol Buffers [Util]:3.13.0
   ANTLR 4 Runtime:4.7.2
   commons-compiler:3.0.11
   janino:3.0.11
+  Stax2 API:3.1.4
+  JLine Bundle:3.9.0
   JLine Reader:3.16.0
   JLine Terminal:3.16.0
   JLine JANSI Terminal:3.16.0
+  ASM Core:5.0.4
 CC0
   reactive-streams:1.0.2
+CDDL
+  JavaBeans Activation Framework API jar:1.2.0
+  javax.annotation API:1.3.2
+  Java Servlet API:3.1.0
+  jsr311-api:1.1.1
+CDDL 1.1
+  jersey-client:1.19
+  jersey-core:1.19
+  Java Architecture for XML Binding:2.2.11
 EPL 2.0
   javax.ws.rs-api:2.1.1
+Eclipse Distribution License - v 1.0
+  JavaBeans Activation Framework API jar:1.2.1
+  jakarta.xml.bind-api:2.3.2
+Eclipse Public License - Version 1.0
+  Jetty :: Asynchronous HTTP Client:9.4.20.v20190813
+  Jetty :: Http Utility:9.4.20.v20190813
+  Jetty :: IO Utility:9.4.20.v20190813
+  Jetty :: Security:9.4.20.v20190813
+  Jetty :: Server Core:9.4.20.v20190813
+  Jetty :: Servlet Handling:9.4.20.v20190813
+  Jetty :: Utilities:9.4.20.v20190813
+  Jetty :: Utilities :: Ajax(JSON):9.4.20.v20190813
+  Jetty :: XML utilities:9.4.20.v20190813
+  Jetty :: Websocket :: API:9.4.20.v20190813
+  Jetty :: Websocket :: Client:9.4.20.v20190813
+  Jetty :: Websocket :: Common:9.4.20.v20190813
+GNU General Public License, version 2 (GPL2), with the classpath exception
+  Checker Qual:2.5.3
 GPL2 w/ CPE
+  jersey-client:1.19
+  jersey-core:1.19
   javax.ws.rs-api:2.1.1
+  Java Architecture for XML Binding:2.2.11
 MIT License
+  Azure Data Lake Store - Java client SDK:2.3.6
+  Microsoft Azure SDK for Key Vault Core:1.0.0
   ClassGraph:4.8.66
   JOpt Simple:5.0.2
+  Checker Qual:2.5.3
   Checker Qual:2.11.1
   Animal Sniffer Annotations:1.18
-  SLF4J API Module:1.7.25
-Public Domain
-  XZ for Java:1.5
+  SLF4J API Module:1.7.28
 Public Domain, per Creative Commons CC0
   HdrHistogram:2.1.9
 The GNU General Public License, v2 with FOSS exception
   MySQL Connector/J:8.0.16
+The Go license
+  re2j:1.1
 
 -----
 

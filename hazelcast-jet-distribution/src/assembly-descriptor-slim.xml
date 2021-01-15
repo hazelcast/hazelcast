@@ -17,38 +17,22 @@
 <assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
-    <id>hazelcast-jet</id>
+    <id>slim</id>
     <formats>
         <format>zip</format>
         <format>tar.gz</format>
     </formats>
+    <baseDirectory>hazelcast-jet-${project.version}-slim</baseDirectory>
 
     <dependencySets>
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
             <includes>
                 <include>com.hazelcast.jet:hazelcast-jet</include>
-                <include>com.hazelcast.jet:hazelcast-jet-spring</include>
                 <include>com.hazelcast.jet:hazelcast-jet-sql</include>
                 <include>org.apache.logging.log4j:*</include>
                 <include>org.slf4j:*</include>
                 <include>io.prometheus.jmx:jmx_prometheus_javaagent</include>
-                <include>com.hazelcast.jet:hazelcast-jet-avro</include>
-                <include>com.hazelcast.jet:hazelcast-jet-cdc-debezium</include>
-                <include>com.hazelcast.jet:hazelcast-jet-cdc-mysql</include>
-                <include>com.hazelcast.jet:hazelcast-jet-cdc-postgres</include>
-                <include>com.hazelcast.jet:hazelcast-jet-csv</include>
-                <include>com.hazelcast.jet:hazelcast-jet-elasticsearch-7</include>
-                <include>com.hazelcast.jet:hazelcast-jet-grpc</include>
-                <include>com.hazelcast.jet:hazelcast-jet-files-azure</include>
-                <include>com.hazelcast.jet:hazelcast-jet-files-gcs</include>
-                <include>com.hazelcast.jet:hazelcast-jet-files-s3</include>
-                <include>com.hazelcast.jet:hazelcast-jet-hadoop-all</include>
-                <include>com.hazelcast.jet:hazelcast-jet-kafka</include>
-                <include>com.hazelcast.jet:hazelcast-jet-kinesis</include>
-                <include>com.hazelcast.jet:hazelcast-jet-protobuf</include>
-                <include>com.hazelcast.jet:hazelcast-jet-python</include>
-                <include>com.hazelcast.jet:hazelcast-jet-s3</include>
             </includes>
             <outputDirectory>lib</outputDirectory>
             <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>

@@ -79,7 +79,7 @@ public class AvroFileFormatTest extends BaseFileFormatTest {
                                                     .glob("invalid-data.png")
                                                     .format(FileFormat.avro(User.class));
 
-        assertJobFailed(source, IOException.class, "Not a data file");
+        assertJobFailed(source, IOException.class, "Not an Avro data file");
     }
 
     @Test

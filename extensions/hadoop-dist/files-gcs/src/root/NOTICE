@@ -42,7 +42,7 @@ Apache License, Version 2.0
   util:2.1.5
   util-hadoop-hadoop3:hadoop3-2.1.5
   FindBugs-jsr305:3.0.2
-  Gson:2.2.4
+  Gson:2.8.6
   error-prone annotations:2.3.4
   Flogger:0.5.1
   Flogger SLF4J Backend:0.5.1
@@ -51,7 +51,7 @@ Apache License, Version 2.0
   Guava InternalFutureFailureAccess and InternalFutures:1.0.1
   Guava: Google Core Libraries for Java:29.0-jre
   Guava ListenableFuture only:9999.0-empty-to-avoid-conflict-with-guava
-  Google HTTP Client Library for Java:1.35.0
+  Google HTTP Client Library for Java:1.36.0
   Jackson 2 extensions to the Google HTTP Client Library for Java.:1.36.0
   J2ObjC Annotations:1.3
   Google OAuth Client Library for Java:1.31.0
@@ -61,35 +61,33 @@ Apache License, Version 2.0
   Okio:1.6.0
   Apache Commons BeanUtils:1.9.4
   Commons CLI:1.2
-  Apache Commons Codec:1.9
+  Apache Commons Codec:1.12
   Apache Commons Collections:3.2.2
   Apache Commons IO:2.5
-  Commons Lang:2.4
-  Commons Logging:1.1.3
+  Apache Commons Logging:1.2
   Apache Commons Net:3.6
   Commons Pool:1.6
-  io.grpc:grpc-alts:1.32.1
-  io.grpc:grpc-api:1.32.1
-  io.grpc:grpc-auth:1.32.1
-  io.grpc:grpc-context:1.22.1
-  io.grpc:grpc-core:1.32.1
-  io.grpc:grpc-grpclb:1.32.1
-  io.grpc:grpc-netty-shaded:1.32.1
-  io.grpc:grpc-protobuf:1.32.1
-  io.grpc:grpc-protobuf-lite:1.32.1
-  io.grpc:grpc-stub:1.32.1
-  The Netty Project:3.5.13.Final
+  io.grpc:grpc-alts:1.34.0
+  io.grpc:grpc-api:1.34.0
+  io.grpc:grpc-auth:1.34.0
+  io.grpc:grpc-context:1.34.0
+  io.grpc:grpc-core:1.34.0
+  io.grpc:grpc-grpclb:1.34.0
+  io.grpc:grpc-netty-shaded:1.34.0
+  io.grpc:grpc-protobuf:1.34.0
+  io.grpc:grpc-protobuf-lite:1.34.0
+  io.grpc:grpc-stub:1.34.0
   OpenCensus:0.24.0
   OpenCensus:0.24.0
   perfmark:perfmark-api:0.19.0
-  fastutil:7.0.13
   Apache Log4j:1.2.17
   ASM based accessors helper used by json-smart:1.2
   JSON Small and Fast Parser:2.3
-  Apache Avro:1.8.2
-  Apache Avro IPC:1.8.2
-  Apache Avro Mapred API:1.8.2
-  Apache Commons Compress:1.8.1
+  Apache Avro:1.9.2
+  Apache Avro IPC:1.9.2
+  Apache Avro IPC Jetty:1.9.2
+  Apache Avro Mapred API:1.9.2
+  Apache Commons Compress:1.19
   Apache Commons Configuration:2.1.1
   Apache Commons Lang:3.7
   Commons Math:3.1.1
@@ -110,7 +108,7 @@ Apache License, Version 2.0
   Apache Hadoop YARN Common:3.3.0
   Apache Hadoop shaded Protobuf 3.7:1.0.0
   htrace-core4:4.1.0-incubating
-  Apache HttpClient:4.5.6
+  Apache HttpClient:4.5.12
   Apache HttpCore:4.4.13
   Kerby-kerb Admin:1.0.1
   Kerby-kerb Client:1.0.1
@@ -127,30 +125,30 @@ Apache License, Version 2.0
   Kerby Util:1.0.1
   Kerby XDR Project:1.0.1
   Token provider:1.0.1
-  Apache Parquet Avro:1.10.1
-  Apache Parquet Column:1.10.1
-  Apache Parquet Common:1.10.1
-  Apache Parquet Encodings:1.10.1
-  Apache Parquet Format:2.4.0
-  Apache Parquet Hadoop:1.10.1
-  Apache Parquet Jackson:1.10.1
-  Apache Velocity:1.7
-  Jackson:1.9.13
-  Data Mapper for Jackson:1.9.13
-  org.conscrypt:conscrypt-openjdk-uber:2.2.1
+  Apache Parquet Avro:1.11.1
+  Apache Parquet Column:1.11.1
+  Apache Parquet Common:1.11.1
+  Apache Parquet Encodings:1.11.1
+  Apache Parquet Format Structures:1.11.1
+  Apache Parquet Hadoop:1.11.1
+  Apache Parquet Jackson:1.11.1
+  Apache Velocity - Engine:2.2
+  Apache Yetus - Audience Annotations:0.12.0
+  org.conscrypt:conscrypt-openjdk-uber:2.5.1
   Jetty :: Asynchronous HTTP Client:9.4.20.v20190813
   Jetty :: Http Utility:9.4.20.v20190813
   Jetty :: IO Utility:9.4.20.v20190813
+  Jetty :: Security:9.4.20.v20190813
+  Jetty :: Server Core:9.4.20.v20190813
+  Jetty :: Servlet Handling:9.4.20.v20190813
   Jetty :: Utilities:9.4.20.v20190813
   Jetty :: XML utilities:9.4.20.v20190813
   Jetty :: Websocket :: API:9.4.20.v20190813
   Jetty :: Websocket :: Client:9.4.20.v20190813
   Jetty :: Websocket :: Common:9.4.20.v20190813
-  Jetty Server:6.1.26
-  Jetty Utilities:6.1.26
-  Servlet Specification API:2.5-20081211
-  snappy-java:1.1.1.3
+  snappy-java:1.1.7.2
 BSD 2-Clause License
+  zstd-jni:1.4.5-12
   dnsjava:2.1.7
 BSD 3-Clause License
   API Common:1.8.1
@@ -158,7 +156,6 @@ BSD 3-Clause License
   Google Auth Library for Java - OAuth2 HTTP:0.21.1
   Protocol Buffers [Core]:3.13.0
   Protocol Buffers [Util]:3.13.0
-  ParaNamer Core:2.7
   Stax2 API:3.1.4
   JLine Bundle:3.9.0
   ASM Core:5.0.4
@@ -178,13 +175,14 @@ Eclipse Public License - Version 1.0
   Jetty :: Asynchronous HTTP Client:9.4.20.v20190813
   Jetty :: Http Utility:9.4.20.v20190813
   Jetty :: IO Utility:9.4.20.v20190813
+  Jetty :: Security:9.4.20.v20190813
+  Jetty :: Server Core:9.4.20.v20190813
+  Jetty :: Servlet Handling:9.4.20.v20190813
   Jetty :: Utilities:9.4.20.v20190813
   Jetty :: XML utilities:9.4.20.v20190813
   Jetty :: Websocket :: API:9.4.20.v20190813
   Jetty :: Websocket :: Client:9.4.20.v20190813
   Jetty :: Websocket :: Common:9.4.20.v20190813
-  Jetty Server:6.1.26
-  Jetty Utilities:6.1.26
 GNU General Public License, version 2 (GPL2), with the classpath exception
   Checker Qual:2.5.3
 GPL2 w/ CPE
@@ -195,9 +193,7 @@ MIT License
   Checker Qual:2.5.3
   Checker Qual:2.11.1
   Animal Sniffer Annotations:1.18
-  SLF4J API Module:1.7.7
-Public Domain
-  XZ for Java:1.5
+  SLF4J API Module:1.7.28
 The Go license
   re2j:1.1
 

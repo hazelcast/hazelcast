@@ -21,18 +21,20 @@ This product includes the following libraries with the following licenses:
 
 Apache License, Version 2.0
   HPPC Collections:0.7.1
+  Jackson-annotations:2.11.2
   Jackson-core:2.11.2
-  Jackson dataformat: CBOR:2.8.10
-  Jackson dataformat: Smile:2.8.10
-  Jackson-dataformat-YAML:2.8.10
+  jackson-databind:2.11.2
+  Jackson dataformat: CBOR:2.11.2
+  Jackson dataformat: Smile:2.11.2
+  Jackson-dataformat-YAML:2.11.2
   compiler:0.9.3
   T-Digest:3.2
-  Apache Commons Codec:1.10
-  Commons Logging:1.1.3
-  Joda-Time:2.10
+  Apache Commons Codec:1.12
+  Apache Commons Logging:1.2
+  Joda-Time:2.10.1
   Apache HttpAsyncClient:4.1.2
-  Apache HttpClient:4.5.2
-  Apache HttpCore:4.4.5
+  Apache HttpClient:4.5.12
+  Apache HttpCore:4.4.13
   Apache HttpCore NIO:4.4.5
   Apache Log4j API:2.13.3
   Lucene Common Analyzers:7.4.0

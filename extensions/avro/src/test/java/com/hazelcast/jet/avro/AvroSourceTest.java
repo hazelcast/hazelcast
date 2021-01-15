@@ -135,6 +135,6 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
     }
 
     private static User toUser(GenericRecord record) {
-        return new User(record.get(0).toString(), Integer.parseInt(record.get(1).toString()));
+        return new User(record.get("name").toString(), Integer.parseInt(record.get("favoriteNumber").toString()));
     }
 }

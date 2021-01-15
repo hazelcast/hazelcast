@@ -93,7 +93,7 @@
         <maven.antrun.plugin.version>1.8</maven.antrun.plugin.version>
         <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
 
-        <maven.enforcer.plugin.version>3.0.0-M1</maven.enforcer.plugin.version>
+        <maven.enforcer.plugin.version>3.0.0-M3</maven.enforcer.plugin.version>
         <maven.surefire.plugin.version>3.0.0-M3</maven.surefire.plugin.version>
         <maven.spotbugs.plugin.version>4.1.3</maven.spotbugs.plugin.version>
         <maven.checkstyle.plugin.version>3.1.0</maven.checkstyle.plugin.version>
@@ -116,12 +116,12 @@
         <prometheus.version>0.13.0</prometheus.version>
         <hadoop.version>3.3.0</hadoop.version>
         <spring.version>4.3.0.RELEASE</spring.version>
-        <avro.version>1.8.2</avro.version>
-        <parquet.version>1.10.1</parquet.version>
+        <avro.version>1.9.2</avro.version>
+        <parquet.version>1.11.1</parquet.version>
         <scala.version>2.12</scala.version>
         <zookeeper.version>3.5.8</zookeeper.version>
         <kafka.version>2.2.0</kafka.version>
-        <grpc.version>1.31.0</grpc.version>
+        <grpc.version>1.34.0</grpc.version>
         <protobuf.version>3.13.0</protobuf.version>
         <picocli.version>3.9.0</picocli.version>
         <jline.version>3.16.0</jline.version>
@@ -129,6 +129,7 @@
         <jackson.version>2.11.2</jackson.version>
         <snakeyaml.engine.version>1.0</snakeyaml.engine.version>
         <affinity.version>3.2.3</affinity.version>
+        <aws.sdk.version>1.11.934</aws.sdk.version>
 
         <!-- test dependencies -->
         <activemq.version>5.15.11</activemq.version>
@@ -200,11 +201,213 @@
                 <version>${hazelcast.version}</version>
             </dependency>
 
-            <!-- Overrides guava version in transitive dependencies -->
+            <!--
+            Pin dependencies to particular version.
+
+            This doesn't add dependencies for modules, but if any of the modules uses any listed dependency, either
+            directly or transitively, it will use the version specified here.
+            This ensures that all jars with dependencies use the same version of a particular dependency, both for tests
+            and for inclusion to the jar with dependencies.
+
+            The enforcer plugin checks that no two modules have a dependency conflict, if they do simply add an entry
+            with conflicting dependency here, using the higher version.
+            -->
+
+            <!-- Import versions from bom - avoids to importing many modules for certain dependencies, e.g. Jackson -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-bom</artifactId>
+                <version>9.4.20.v20190813</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-bom</artifactId>
+                <version>${protobuf.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-bom</artifactId>
+                <version>${grpc.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.google.auth</groupId>
+                <artifactId>google-auth-library-bom</artifactId>
+                <version>0.21.1</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>29.0-jre</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>1.12</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.7</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>3.2.2</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>1.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>1.19</version>
+            </dependency>
+            <dependency>
+                <groupId>joda-time</groupId>
+                <artifactId>joda-time</artifactId>
+                <version>2.10.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.xerial.snappy</groupId>
+                <artifactId>snappy-java</artifactId>
+                <version>1.1.7.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.api.grpc</groupId>
+                <artifactId>proto-google-common-protos</artifactId>
+                <version>1.18.1</version>
+            </dependency>
+            <!-- NOTE: httpcore and httpclient versions are not in sync -->
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+                <version>4.4.13</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>4.5.12</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>4.1.39.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http</artifactId>
+                <version>4.1.39.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.auto.value</groupId>
+                <artifactId>auto-value-annotations</artifactId>
+                <version>1.7.4</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.http-client</groupId>
+                <artifactId>google-http-client</artifactId>
+                <version>1.36.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>7.9</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>2.8.6</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-bundle</artifactId>
+                <version>${aws.sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>${avro.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.objenesis</groupId>
+                <artifactId>objenesis</artifactId>
+                <version>3.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.luben</groupId>
+                <artifactId>zstd-jni</artifactId>
+                <version>1.4.5-12</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <!--
+            The following are test dependencies, they are not in the final distribution.
+            We put them there for the dependency convergence task to succeed.
+            -->
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.10.15</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>1.10.15</version>
+            </dependency>
+            <dependency>
+                <groupId>org.javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>3.26.0-GA</version>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <dependency>
+                <!--
+                parquet-avro depends on this transitively, but it has an invalid pom, generating warnings during build.
+                This is newer fixed version.
+                -->
+                <groupId>org.apache.yetus</groupId>
+                <artifactId>audience-annotations</artifactId>
+                <version>0.12.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.reflections</groupId>
+                <artifactId>reflections</artifactId>
+                <version>${reflections.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>annotations</artifactId>
+                <version>3.0.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
