@@ -265,8 +265,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                 assert resolvedOperators.size() == 1;
 
                 basicCall.setOperator(resolvedOperators.get(0));
-            } else if (call instanceof SqlCase) {
-                throw functionDoesNotExist(call);
+//            } else if (call instanceof SqlCase) {
+//                throw functionDoesNotExist(call);
             }
         }
 
