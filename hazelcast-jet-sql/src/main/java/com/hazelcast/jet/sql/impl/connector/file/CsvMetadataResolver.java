@@ -47,7 +47,7 @@ final class CsvMetadataResolver extends MetadataResolver<Map<String, String>> {
         FileFormat<String[]> format = FileFormat.csv(createFieldList(resolvedFields));
         return new Metadata(
                 toFields(resolvedFields),
-                toProcessorMetaSupplier(options, format),
+                toProcessorMetaSupplierProvider(options, format),
                 () -> new CsvQueryTarget(fieldNames));
     }
 

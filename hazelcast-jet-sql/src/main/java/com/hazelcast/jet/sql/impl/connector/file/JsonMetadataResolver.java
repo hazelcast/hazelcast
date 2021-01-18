@@ -43,7 +43,7 @@ final class JsonMetadataResolver extends MetadataResolver<Map<String, Object>> {
     protected Metadata resolveMetadata(List<MappingField> resolvedFields, Map<String, ?> options) {
         return new Metadata(
                 toFields(resolvedFields),
-                toProcessorMetaSupplier(options, FORMAT),
+                toProcessorMetaSupplierProvider(options, FORMAT),
                 JsonQueryTarget::new);
     }
 }

@@ -26,10 +26,11 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 class FileTable extends JetTable {
 
-    private final ProcessorMetaSupplier processorMetaSupplier;
+    private final Supplier<ProcessorMetaSupplier> processorMetaSupplierProvider;
     private final SupplierEx<QueryTarget> queryTargetSupplier;
 
     FileTable(
@@ -37,17 +38,17 @@ class FileTable extends JetTable {
             String schemaName,
             String name,
             List<TableField> fields,
-            ProcessorMetaSupplier processorMetaSupplier,
+            Supplier<ProcessorMetaSupplier> processorMetaSupplierProvider,
             SupplierEx<QueryTarget> queryTargetSupplier
     ) {
         super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(0));
 
-        this.processorMetaSupplier = processorMetaSupplier;
+        this.processorMetaSupplierProvider = processorMetaSupplierProvider;
         this.queryTargetSupplier = queryTargetSupplier;
     }
 
     ProcessorMetaSupplier processorMetaSupplier() {
-        return processorMetaSupplier;
+        return processorMetaSupplierProvider.get();
     }
 
     SupplierEx<QueryTarget> queryTargetSupplier() {
