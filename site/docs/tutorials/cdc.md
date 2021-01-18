@@ -167,10 +167,17 @@ follow from here on.
 
 2. Activate the MySQL CDC plugin:
 
+2. Make sure the MySQL CDC plugin is in `lib/` directory.
+
 ```bash
-mv opt/hazelcast-jet-cdc-debezium-{jet-version}.jar lib; \
-mv opt/hazelcast-jet-cdc-mysql-{jet-version}.jar lib
+ls lib/
 ```
+
+You should see the following jars:
+
+* hazelcast-jet-cdc-debezium-{jet-version}.jar
+* hazelcast-jet-cdc-mysql-{jet-version}.jar
+* hazelcast-jet-cdc-postgres-{jet-version}.jar
 
 3. Start Jet:
 

@@ -525,25 +525,17 @@ wget https://github.com/hazelcast/hazelcast-jet/releases/download/v{jet-version}
 tar zxvf hazelcast-jet-{jet-version}.tar.gz && cd hazelcast-jet-{jet-version}
 ```
 
-2. Activate the CDC plugin for the database you're using:
-
-<!--DOCUSAURUS_CODE_TABS-->
-
-<!--MySQL-->
+2. Make sure the CDC plugin for the database is in the `lib/` directory.
 
 ```bash
-mv opt/hazelcast-jet-cdc-debezium-{jet-version}.jar lib; \
-mv opt/hazelcast-jet-cdc-mysql-{jet-version}.jar lib
+ls lib/
 ```
 
-<!--Postgres-->
+You should see the following jars:
 
-```bash
-mv opt/hazelcast-jet-cdc-debezium-{jet-version}.jar lib; \
-mv opt/hazelcast-jet-cdc-postgres-{jet-version}.jar lib
-```
-
-<!--END_DOCUSAURUS_CODE_TABS-->
+* hazelcast-jet-cdc-debezium-{jet-version}.jar
+* hazelcast-jet-cdc-mysql-{jet-version}.jar (for MySQL)
+* hazelcast-jet-cdc-postgres-{jet-version}.jar (for Postgres)
 
 3. Enable user code deployment:
 

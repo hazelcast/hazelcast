@@ -20,6 +20,21 @@ recommend the following minimum as a good starting point:
 Jet is tested to run on Linux machines, but it's compatible with any
 operating system where the JDK is available.
 
+## Jet Distributions
+
+There are multiple distribution packages available to
+[download](/download) - regular and slim.
+
+The regular distribution contains Jet core engine, extension modules,
+management scripts, example configuration files. If you are looking
+for easy to use, includes-all kind of distribution, this should be your
+choice.
+
+The slim distribution doesn't contain any extension modules and is
+suitable for deployments, where size is a concern, e.g., a Docker
+image. The extension modules can be downloaded separately from the
+[download](/download) page.
+
 ## Jet Home Folder
 
 Once you have [downloaded](/download) Jet, the installation has the
@@ -29,11 +44,9 @@ following structure:
 * `config`: configuration files used by Jet
 * `examples`: Folder containing sample jobs which can be submitted to
   the cluster
-* `logs`: Folder for Jet process' log files  
-* `lib`: Required JAR files for Jet. Everything in this folder is
-  automatically added to classpath during node startup.
-* `opt`: Optional extensions for Jet. You can include them in the
-  classpath by moving them to the lib folder.
+* `logs`: Folder for Jet process' log files
+* `lib`: JAR files for Jet and the extension modules. Everything in this
+  folder is automatically added to classpath during node startup.
 
 The `bin` folder has the following scripts:
 

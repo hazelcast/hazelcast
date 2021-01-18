@@ -44,8 +44,8 @@ compile 'com.hazelcast.jet:hazelcast-jet-grpc:{jet-version}'
 <!--END_DOCUSAURUS_CODE_TABS-->
 
 The Hazelcast Jet cluster must also have this module on the classpath.
-It is in the `opt` directory of the distribution package so you can just
-move it to the `lib` directory and restart the cluster.
+Make sure it is present in the `lib` directory, if not add it there and
+restart the cluster.
 
 ## Unary RPC
 

@@ -433,3 +433,14 @@ docker run -it hazelcast-jet-hello-world
 
 > You don't need the `-i` and `-t` parameters if your job class exits
 > after the job is submitted.
+
+## Docker Image Tags
+
+Similarly to available distributions, there are multiple images
+available for each Jet version.
+
+The image with regular version number, e.g. {jet-version}, is equivalent
+to the regular distribution.
+
+The image with `-slim` suffix, e.g. {jet-version}-slim, is equivalent
+to the slim distribution.

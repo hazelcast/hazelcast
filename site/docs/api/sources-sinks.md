@@ -559,8 +559,8 @@ which is schema based. The connectors are similar to the local file
 connectors, but work with binary files stored in _Avro Object Container
 File_ format.
 
-To use the Avro connector, you need to copy the `hazelcast-jet-avro`
-module from the `opt` folder to the `lib` folder and add the following
+To use the Avro connector, make sure the `hazelcast-jet-avro`
+module is present in the `lib` folder and add the following
 dependency to your application:
 
 <!--DOCUSAURUS_CODE_TABS-->
@@ -666,8 +666,8 @@ registering the hook.
 
 #### Hadoop Classpath
 
-To use the Hadoop connector, you need to copy the `hazelcast-jet-hadoop`
-module from the `opt` folder to the `lib` folder and add the following
+To use the Hadoop connector, make sure the `hazelcast-jet-hadoop`
+module is present in the `lib` folder and add the following
 dependency to your application:
 
 <!--DOCUSAURUS_CODE_TABS-->
@@ -816,8 +816,8 @@ p.readFrom(Sources.files("home/logs"))
  .writeTo(KafkaSinks.kafka(props, "topic"));
 ```
 
-To use the Kafka connector, you need to copy the `hazelcast-jet-kafka`
-module from the `opt` folder to the `lib` folder and add the following
+To use the Kafka connector, make sure the `hazelcast-jet-kafka`
+module is present in the `lib` folder and add the following
 dependency to your application:
 
 <!--DOCUSAURUS_CODE_TABS-->
@@ -935,8 +935,8 @@ p.readFrom(Sources.files("home/logs")) //read lines of text from log files
  .writeTo(sink);                       //write Log objects out to Kinesis
 ```
 
-To use the Kinesis connectors, you need to copy the
-`hazelcast-jet-kinesis` module from the `opt` folder to the `lib` folder
+To use the Kinesis connectors, make sure the
+`hazelcast-jet-kinesis` module is present in the `lib` folder
 and add the following dependency to your application:
 
 <!--DOCUSAURUS_CODE_TABS-->
@@ -1679,8 +1679,8 @@ use it both as a source and a sink.
 
 #### Dependency
 
-To use the Elasticsearch connector, you need to copy the
-`hazelcast-jet-elasticsearch-7` module from the `opt` folder to the
+To use the Elasticsearch connector, make sure the
+`hazelcast-jet-elasticsearch-7` module is present in the
 `lib` folder and add the following dependency to your application:
 
 <!--DOCUSAURUS_CODE_TABS-->

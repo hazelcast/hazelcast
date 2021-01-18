@@ -142,12 +142,16 @@ tar zxvf hazelcast-jet-{jet-version}.tar.gz && cd hazelcast-jet-{jet-version}
 If you already have Jet and you skipped the above steps, make sure to
 follow from here on.
 
-2. Activate the PostgreSQL CDC plugin:
+2. Make sure the PostgreSQL CDC plugin is in the `lib/` directory.
 
 ```bash
-mv opt/hazelcast-jet-cdc-debezium-{jet-version}.jar lib; \
-mv opt/hazelcast-jet-cdc-postgres-{jet-version}.jar lib
+ls lib/
 ```
+
+You should see the following jars:
+
+* hazelcast-jet-cdc-debezium-{jet-version}.jar
+* hazelcast-jet-cdc-postgres-{jet-version}.jar
 
 3. Start Jet:
 

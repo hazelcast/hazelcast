@@ -279,9 +279,9 @@ CDC sources in Jet are set up as extension modules:
 * more supported databases coming in future versions
 
 `cdc-debezium` is the core module. It generates a self-contained JAR
-with all dependencies included and is stored in the `opt` folder of the
+with all dependencies included and is stored in the `lib` folder of the
 distribution. The `cdc-mysql` and `cdc-postgres` jars are also in the
-`opt` folder of the distribution, but they don't contain dependencies,
+`lib` folder of the distribution, but they don't contain dependencies,
 so have to be put on the classpath together with the `cdc-debezium` jar.
 
 For example to make members of a cluster able to work with MySQL CDC

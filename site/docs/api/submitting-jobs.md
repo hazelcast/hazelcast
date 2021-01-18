@@ -119,8 +119,8 @@ on classpath during application startup.
 The convention is to add these dependencies to `<JET_HOME>/lib` folder.
 Jet automatically picks up any dependencies placed on this folder during
 startup. Several of Jet's out of the box modules (such as connectors for
-Kafka, Hadoop) are already available in the `opt` folder and can simply
-be moved to `lib` folder to be used. Any changes to `lib` folder
+Kafka, Hadoop) are already available in the `lib` folder and can simply
+be used. Any changes to `lib` folder
 requires the node to be restarted to take effect.
 
 Alternatively, you can use the `CLASSPATH` environment variable
