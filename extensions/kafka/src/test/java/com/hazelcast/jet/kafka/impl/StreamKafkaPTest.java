@@ -26,6 +26,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestInbox;
@@ -390,6 +391,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
             assertEquals(entry(0, "0"), sinkList.get(0));
         });
         job.suspend();
+        assertJobStatusEventually(job, JobStatus.SUSPENDED);
 
         // When
         kafkaTestSupport.setPartitionCount(topic1Name, INITIAL_PARTITION_COUNT + 2);
