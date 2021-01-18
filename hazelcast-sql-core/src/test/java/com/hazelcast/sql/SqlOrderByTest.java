@@ -351,7 +351,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         map.addIndex(indexConfig);
     }
 
-    private void checkSelectWithOrderBy(List<String> indexAttrs, List<String> orderFields, List<Boolean> orderDirections) {
+    protected void checkSelectWithOrderBy(List<String> indexAttrs, List<String> orderFields, List<Boolean> orderDirections) {
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
 
         IndexConfig indexConfig = new IndexConfig().setName("Index_" + randomName())
