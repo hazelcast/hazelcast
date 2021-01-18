@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.kinesis.impl;
+
+package com.hazelcast.jet.kinesis.impl.source;
 
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.kinesis.impl.AwsConfig;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.logging.ILogger;
 

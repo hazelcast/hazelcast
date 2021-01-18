@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-com.hazelcast.jet.kinesis.impl.KinesisDataSerializerHook
+com.hazelcast.jet.kinesis.impl.source.KinesisDataSerializerHook

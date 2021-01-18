@@ -14,20 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.kinesis.impl;
+package com.hazelcast.jet.kinesis.impl.sink;
 
-import com.amazonaws.services.kinesis.AmazonKinesisAsync;
-import com.hazelcast.logging.ILogger;
-
-public abstract class AbstractShardWorker {
-
-    protected final AmazonKinesisAsync kinesis;
-    protected final String streamName;
-    protected final ILogger logger;
-
-    protected AbstractShardWorker(AmazonKinesisAsync kinesis, String streamName, ILogger logger) {
-        this.kinesis = kinesis;
-        this.streamName = streamName;
-        this.logger = logger;
-    }
+interface ShardCountMonitor {
+    void run();
+    int shardCount();
 }

@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.kinesis;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.jet.kinesis.impl.AwsConfig;
-import com.hazelcast.jet.kinesis.impl.KinesisSinkPSupplier;
+import com.hazelcast.jet.kinesis.impl.sink.KinesisSinkPSupplier;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.retry.IntervalFunction;
 import com.hazelcast.jet.retry.RetryStrategies;

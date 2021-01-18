@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.kinesis.impl;
+
+package com.hazelcast.jet.kinesis.impl.source;
 
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.amazonaws.services.kinesis.model.Shard;
@@ -52,7 +53,7 @@ import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
-import static com.hazelcast.jet.kinesis.impl.KinesisHelper.shardBelongsToRange;
+import static com.hazelcast.jet.kinesis.impl.KinesisUtil.shardBelongsToRange;
 
 public class KinesisSourceP extends AbstractProcessor implements DynamicMetricsProvider {
 

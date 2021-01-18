@@ -23,8 +23,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.kinesis.impl.AwsConfig;
-import com.hazelcast.jet.kinesis.impl.HashRange;
-import com.hazelcast.jet.kinesis.impl.KinesisHelper;
+import com.hazelcast.jet.kinesis.impl.source.HashRange;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
@@ -186,7 +185,7 @@ class AbstractKinesisTest extends JetTestSupport {
     }
 
     protected List<Shard> listOpenShards() {
-        return helper.listOpenShards(KinesisHelper::shardActive);
+        return helper.listOpenShards(AbstractKinesisTest::shardActive);
     }
 
     protected void mergeShards(Shard shard1, Shard shard2) {
@@ -263,5 +262,11 @@ class AbstractKinesisTest extends JetTestSupport {
                             return retList;
                         }
                 ));
+    }
+
+    public static boolean shardActive(@Nonnull Shard shard) {
+        String endingSequenceNumber = shard.getSequenceNumberRange().getEndingSequenceNumber();
+        return endingSequenceNumber == null;
+        //need to rely on this hack, because shard filters don't seem to work, on the mock at least ...
     }
 }

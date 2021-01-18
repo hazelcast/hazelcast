@@ -13,12 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.kinesis.impl;
+
+package com.hazelcast.jet.kinesis.impl.sink;
 
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
+import com.amazonaws.services.kinesis.model.DescribeStreamSummaryRequest;
 import com.amazonaws.services.kinesis.model.DescribeStreamSummaryResult;
 import com.amazonaws.services.kinesis.model.StreamDescriptionSummary;
+import com.hazelcast.jet.kinesis.impl.AbstractShardWorker;
+import com.hazelcast.jet.kinesis.impl.KinesisUtil;
+import com.hazelcast.jet.kinesis.impl.RandomizedRateTracker;
+import com.hazelcast.jet.kinesis.impl.RetryTracker;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.logging.ILogger;
 
@@ -30,7 +36,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class ShardCountMonitor extends AbstractShardWorker {
+final class ShardCountMonitorImpl extends AbstractShardWorker implements ShardCountMonitor {
 
     /**
      * DescribeStreamSummary operations are limited to 20 per second, per account.
@@ -42,35 +48,27 @@ public class ShardCountMonitor extends AbstractShardWorker {
      */
     private static final double RATIO_OF_DESCRIBE_STREAM_RATE_UTILIZED = 0.1;
 
-    private final AtomicInteger shardCount;
+    private final AtomicInteger shardCount = new AtomicInteger();
     private final RandomizedRateTracker describeStreamRateTracker;
     private final RetryTracker describeStreamRetryTracker;
 
     private Future<DescribeStreamSummaryResult> describeStreamResult;
     private long nextDescribeStreamTime;
 
-    public ShardCountMonitor(
-            int totalInstances,
+    ShardCountMonitorImpl(
+            int knownShardCounterInstances,
             AmazonKinesisAsync kinesis,
-            String stream,
+            String streamName,
             RetryStrategy retryStrategy,
             ILogger logger
     ) {
-        super(kinesis, stream, logger);
-        this.shardCount = new AtomicInteger();
+        super(kinesis, streamName, logger);
         this.describeStreamRetryTracker = new RetryTracker(retryStrategy);
-        this.describeStreamRateTracker = initRandomizedTracker(totalInstances);
+        this.describeStreamRateTracker = initRandomizedTracker(knownShardCounterInstances);
         this.nextDescribeStreamTime = System.nanoTime();
     }
 
-    private ShardCountMonitor(AtomicInteger shardCount) {
-        super(null, null, null);
-        this.shardCount = shardCount;
-        describeStreamRateTracker = null;
-        describeStreamRetryTracker = null;
-    }
-
-
+    @Override
     public void run() {
         if (describeStreamResult == null) {
             initDescribeStream();
@@ -79,10 +77,11 @@ public class ShardCountMonitor extends AbstractShardWorker {
         }
     }
 
-    public ShardCountMonitor noop() {
-        return new NoopShardCountMonitor(shardCount);
+    public AtomicInteger getSharedShardCounter() {
+        return shardCount;
     }
 
+    @Override
     public int shardCount() {
         return shardCount.get();
     }
@@ -92,40 +91,47 @@ public class ShardCountMonitor extends AbstractShardWorker {
         if (currentTime < nextDescribeStreamTime) {
             return;
         }
-        describeStreamResult = helper.describeStreamSummaryAsync();
+        describeStreamResult = describeStreamSummaryAsync();
         nextDescribeStreamTime = currentTime + describeStreamRateTracker.next();
     }
 
+    private Future<DescribeStreamSummaryResult> describeStreamSummaryAsync() {
+        DescribeStreamSummaryRequest request = new DescribeStreamSummaryRequest();
+        request.setStreamName(streamName);
+        return kinesis.describeStreamSummaryAsync(request);
+    }
+
     private void checkForStreamDescription() {
-        if (describeStreamResult.isDone()) {
-            DescribeStreamSummaryResult result;
-            try {
-                result = helper.readResult(describeStreamResult);
-            } catch (SdkClientException e) {
-                dealWithDescribeStreamFailure(e);
-                return;
-            } catch (Throwable t) {
-                throw rethrow(t);
-            } finally {
-                describeStreamResult = null;
-            }
+        if (!describeStreamResult.isDone()) {
+            return;
+        }
 
-            describeStreamRetryTracker.reset();
+        DescribeStreamSummaryResult result;
+        try {
+            result = KinesisUtil.readResult(describeStreamResult);
+        } catch (SdkClientException e) {
+            dealWithDescribeStreamFailure(e);
+            return;
+        } catch (Throwable t) {
+            throw rethrow(t);
+        } finally {
+            describeStreamResult = null;
+        }
+        describeStreamRetryTracker.reset();
 
-            StreamDescriptionSummary streamDescription = result.getStreamDescriptionSummary();
-            if (streamDescription == null) {
-                return;
-            }
+        StreamDescriptionSummary streamDescription = result.getStreamDescriptionSummary();
+        if (streamDescription == null) {
+            return;
+        }
 
-            Integer newShardCount = streamDescription.getOpenShardCount();
-            if (newShardCount == null) {
-                return;
-            }
+        Integer newShardCount = streamDescription.getOpenShardCount();
+        if (newShardCount == null) {
+            return;
+        }
 
-            int oldShardCount = shardCount.getAndSet(newShardCount);
-            if (oldShardCount != newShardCount) {
-                logger.info(String.format("Updated shard count for stream %s: %d", stream, newShardCount));
-            }
+        int oldShardCount = shardCount.getAndSet(newShardCount);
+        if (oldShardCount != newShardCount) {
+            logger.info(String.format("Updated shard count for stream '%s': %d", streamName, newShardCount));
         }
     }
 
@@ -139,27 +145,36 @@ public class ShardCountMonitor extends AbstractShardWorker {
         } else {
             throw rethrow(failure);
         }
-
     }
 
     @Nonnull
-    private static RandomizedRateTracker initRandomizedTracker(int totalInstances) {
+    private static RandomizedRateTracker initRandomizedTracker(int knownShardCountInstances) {
         // The maximum rate at which DescribeStreamSummary operations can be
         // performed on a data stream is 20/second and we need to enforce this,
         // even while we are issuing them from multiple processors in parallel
-        return new RandomizedRateTracker(SECONDS.toNanos(1) * totalInstances,
+        return new RandomizedRateTracker(SECONDS.toNanos(1) * knownShardCountInstances,
                 (int) (DESCRIBE_STREAM_OPERATIONS_ALLOWED_PER_SECOND * RATIO_OF_DESCRIBE_STREAM_RATE_UTILIZED));
     }
+}
 
-    private static final class NoopShardCountMonitor extends ShardCountMonitor {
+/**
+ * An implementation that doesn't query the shard count, but simply returns
+ * the count from the given counter.
+ */
+final class NoopShardCountMonitor implements ShardCountMonitor {
 
-        private NoopShardCountMonitor(AtomicInteger shardCount) {
-            super(shardCount);
-        }
+    private final AtomicInteger shardCount;
 
-        @Override
-        public void run() {
-        }
+    NoopShardCountMonitor(AtomicInteger shardCount) {
+        this.shardCount = shardCount;
     }
 
+    @Override
+    public void run() {
+    }
+
+    @Override
+    public int shardCount() {
+        return shardCount.get();
+    }
 }

@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.kinesis.impl;
+
+package com.hazelcast.jet.kinesis.impl.sink;
 
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.amazonaws.services.kinesis.model.ProvisionedThroughputExceededException;
+import com.amazonaws.services.kinesis.model.PutRecordsRequest;
 import com.amazonaws.services.kinesis.model.PutRecordsRequestEntry;
 import com.amazonaws.services.kinesis.model.PutRecordsResult;
 import com.amazonaws.services.kinesis.model.PutRecordsResultEntry;
@@ -32,6 +34,8 @@ import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.kinesis.KinesisSinks;
+import com.hazelcast.jet.kinesis.impl.KinesisUtil;
+import com.hazelcast.jet.kinesis.impl.RetryTracker;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.logging.ILogger;
 
@@ -39,6 +43,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -89,7 +94,6 @@ public class KinesisSinkP<T> implements Processor {
     private final Counter sleepMetric = SwCounter.newSwCounter();
 
     private ILogger logger;
-    private KinesisHelper helper;
     private int shardCount;
     private int sinkCount;
 
@@ -124,7 +128,6 @@ public class KinesisSinkP<T> implements Processor {
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
         logger = context.logger();
         sinkCount = context.totalParallelism();
-        helper = new KinesisHelper(kinesis, stream);
     }
 
     @Override
@@ -202,15 +205,22 @@ public class KinesisSinkP<T> implements Processor {
         }
 
         List<PutRecordsRequestEntry> entries = buffer.content();
-        sendResult = helper.putRecordsAsync(entries);
+        sendResult = putRecordsAsync(entries);
         nextSendTime = currentTime;
+    }
+
+    private Future<PutRecordsResult> putRecordsAsync(Collection<PutRecordsRequestEntry> entries) {
+        PutRecordsRequest request = new PutRecordsRequest();
+        request.setRecords(entries);
+        request.setStreamName(stream);
+        return kinesis.putRecordsAsync(request);
     }
 
     private void checkIfSendingFinished() {
         if (sendResult.isDone()) {
             PutRecordsResult result;
             try {
-                result = helper.readResult(this.sendResult);
+                result = KinesisUtil.readResult(this.sendResult);
             } catch (ProvisionedThroughputExceededException pte) {
                 dealWithThroughputExceeded("Data throughput rate exceeded. Backing off and retrying in %d ms");
                 return;

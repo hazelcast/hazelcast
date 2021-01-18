@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.kinesis.impl;
+
+package com.hazelcast.jet.kinesis.impl.sink;
 
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.kinesis.impl.AwsConfig;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.logging.ILogger;
 
@@ -72,13 +74,11 @@ public class KinesisSinkPSupplier<T> implements ProcessorSupplier {
     @Nonnull
     @Override
     public Collection<? extends Processor> get(int count) {
-        ShardCountMonitor shardCountMonitor = new ShardCountMonitor(
-                memberCount,
-                client,
-                stream,
-                retryStrategy,
-                logger
-        );
+        // only the 0th processor will monitor the shard count for real, others will just read its counter
+        ShardCountMonitorImpl shardCounter =
+                new ShardCountMonitorImpl(memberCount, client, stream, retryStrategy, logger);
+        NoopShardCountMonitor noopShardCounter =
+                new NoopShardCountMonitor(shardCounter.getSharedShardCounter());
 
         return IntStream.range(0, count)
                 .mapToObj(i -> new KinesisSinkP<>(
@@ -86,7 +86,7 @@ public class KinesisSinkPSupplier<T> implements ProcessorSupplier {
                         stream,
                         keyFn,
                         valueFn,
-                        i == 0 ? shardCountMonitor : shardCountMonitor.noop(),
+                        i == 0 ? shardCounter : noopShardCounter,
                         retryStrategy
                 ))
                 .collect(toList());

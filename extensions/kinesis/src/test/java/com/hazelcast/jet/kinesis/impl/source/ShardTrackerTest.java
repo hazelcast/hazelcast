@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.kinesis.impl;
+package com.hazelcast.jet.kinesis.impl.source;
 
 import com.amazonaws.services.kinesis.model.HashKeyRange;
 import com.amazonaws.services.kinesis.model.Shard;
@@ -27,8 +27,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.jet.kinesis.impl.HashRange.range;
-import static com.hazelcast.jet.kinesis.impl.ShardTracker.EXPIRATION_MS;
+import static com.hazelcast.jet.kinesis.impl.source.HashRange.range;
+import static com.hazelcast.jet.kinesis.impl.source.ShardTracker.EXPIRATION_MS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 

@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.kinesis.impl;
+
+package com.hazelcast.jet.kinesis.impl.source;
 
 import com.amazonaws.services.kinesis.model.Shard;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.kinesis.impl.KinesisUtil;
 
 import java.math.BigInteger;
 import java.util.Collections;
@@ -27,7 +29,7 @@ import java.util.Set;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-public class ShardTracker {
+class ShardTracker {
 
     /**
      * We consider shards to be expired if they haven't been detected at all
@@ -38,7 +40,7 @@ public class ShardTracker {
     private final Map<String, TrackingInfo> info = new HashMap<>();
     private final HashRange[] rangePartitions;
 
-    public ShardTracker(HashRange[] rangePartitions) {
+    ShardTracker(HashRange[] rangePartitions) {
         this.rangePartitions = rangePartitions;
     }
 
@@ -71,7 +73,7 @@ public class ShardTracker {
     private int findOwner(BigInteger startingHashKey) {
         for (int i = 0; i < rangePartitions.length; i++) {
             HashRange range = rangePartitions[i];
-            if (KinesisHelper.shardBelongsToRange(startingHashKey, range)) {
+            if (KinesisUtil.shardBelongsToRange(startingHashKey, range)) {
                 return i;
             }
         }

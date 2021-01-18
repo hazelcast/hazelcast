@@ -13,16 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.kinesis.impl;
+
+package com.hazelcast.jet.kinesis.impl.source;
 
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
+import com.amazonaws.services.kinesis.model.ListShardsRequest;
 import com.amazonaws.services.kinesis.model.ListShardsResult;
 import com.amazonaws.services.kinesis.model.Shard;
+import com.amazonaws.services.kinesis.model.ShardFilter;
+import com.amazonaws.services.kinesis.model.ShardFilterType;
+import com.hazelcast.jet.kinesis.impl.AbstractShardWorker;
+import com.hazelcast.jet.kinesis.impl.KinesisUtil;
+import com.hazelcast.jet.kinesis.impl.RandomizedRateTracker;
+import com.hazelcast.jet.kinesis.impl.RetryTracker;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.Set;
@@ -30,14 +39,13 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.kinesis.impl.KinesisHelper.shardBelongsToRange;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
 
 public class RangeMonitor extends AbstractShardWorker {
 
     /**
-     * ListStreams operations are limited to 100 per second, per data stream
+     * ListStreams operations are limited to 100 per second, per data stream.
      */
     private static final int SHARD_LISTINGS_ALLOWED_PER_SECOND = 100;
 
@@ -83,7 +91,7 @@ public class RangeMonitor extends AbstractShardWorker {
             if (listShardsResult.isDone()) {
                 ListShardsResult result;
                 try {
-                    result = helper.readResult(listShardsResult);
+                    result = KinesisUtil.readResult(listShardsResult);
                 } catch (SdkClientException e) {
                     dealWithListShardsFailure(e);
                     return;
@@ -109,13 +117,39 @@ public class RangeMonitor extends AbstractShardWorker {
         if (currentTimeMs < nextListShardsTimeMs) {
             return;
         }
-        listShardsResult = helper.listAllShardsAsync(nextToken);
+        listShardsResult = listAllShardsAsync(nextToken);
         nextListShardsTimeMs = currentTimeMs + listShardsRateTracker.next();
+    }
+
+    private Future<ListShardsResult> listAllShardsAsync(String nextToken) {
+        ShardFilterType filterType = ShardFilterType.FROM_TRIM_HORIZON;
+        //all shards within the retention period (including closed, excluding expired)
+
+        ListShardsRequest request = listAllShardsRequest(streamName, nextToken, filterType);
+        return kinesis.listShardsAsync(request);
+    }
+
+    public static ListShardsRequest listAllShardsRequest(
+            String stream,
+            @Nullable String nextToken,
+            ShardFilterType filterType
+    ) {
+        ListShardsRequest request = new ListShardsRequest();
+        if (nextToken == null) {
+            request.setStreamName(stream);
+        } else {
+            request.setNextToken(nextToken);
+        }
+
+        //include all the shards within the retention period of the data stream
+        request.setShardFilter(new ShardFilter().withType(filterType));
+
+        return request;
     }
 
     private void checkForNewShards(long currentTimeMs, ListShardsResult result) {
         Set<Shard> shards = result.getShards().stream()
-                .filter(shard -> shardBelongsToRange(shard, memberHashRange))
+                .filter(shard -> KinesisUtil.shardBelongsToRange(shard, memberHashRange))
                 .collect(Collectors.toSet());
         Map<Shard, Integer> newShards = shardTracker.markDetections(shards, currentTimeMs);
 

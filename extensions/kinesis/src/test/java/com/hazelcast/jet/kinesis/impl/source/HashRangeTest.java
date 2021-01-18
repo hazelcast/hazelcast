@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.kinesis.impl;
+package com.hazelcast.jet.kinesis.impl.source;
 
 import org.junit.Test;
 
 import java.math.BigInteger;
 
-import static com.hazelcast.jet.kinesis.impl.HashRange.range;
+import static com.hazelcast.jet.kinesis.impl.source.HashRange.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

@@ -34,7 +34,7 @@ import com.amazonaws.services.kinesis.model.ShardFilterType;
 import com.amazonaws.services.kinesis.model.StreamDescriptionSummary;
 import com.amazonaws.services.kinesis.model.StreamStatus;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.kinesis.impl.KinesisHelper;
+import com.hazelcast.jet.kinesis.impl.source.RangeMonitor;
 import com.hazelcast.jet.retry.IntervalFunction;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
@@ -173,7 +173,7 @@ class KinesisTestHelper {
         String nextToken = null;
         do {
             ShardFilterType filterType = ShardFilterType.AT_LATEST; //only the currently open shards
-            ListShardsRequest request = KinesisHelper.listAllShardsRequest(stream, nextToken, filterType);
+            ListShardsRequest request = RangeMonitor.listAllShardsRequest(stream, nextToken, filterType);
             ListShardsResult response = kinesis.listShards(request);
             shards.addAll(response.getShards());
             nextToken = response.getNextToken();

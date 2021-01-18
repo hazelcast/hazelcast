@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.kinesis;
 
 import com.hazelcast.jet.kinesis.impl.AwsConfig;
-import com.hazelcast.jet.kinesis.impl.InitialShardIterators;
-import com.hazelcast.jet.kinesis.impl.KinesisSourcePMetaSupplier;
+import com.hazelcast.jet.kinesis.impl.source.InitialShardIterators;
+import com.hazelcast.jet.kinesis.impl.source.KinesisSourcePMetaSupplier;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.retry.IntervalFunction;
