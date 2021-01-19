@@ -40,7 +40,7 @@ public class MappingStorage {
 
     private static final String CATALOG_MAP_NAME = "__sql.catalog";
 
-    private static final int MAX_CHECK_ATTEMPTS = 3;
+    private static final int MAX_CHECK_ATTEMPTS = 5;
     private static final long SLEEP_MILLIS = 100;
 
     private final NodeEngine nodeEngine;
