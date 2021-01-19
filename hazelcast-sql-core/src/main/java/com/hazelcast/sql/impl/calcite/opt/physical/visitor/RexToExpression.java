@@ -33,6 +33,7 @@ import com.hazelcast.sql.impl.expression.math.MinusFunction;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.math.PlusFunction;
 import com.hazelcast.sql.impl.expression.math.RandFunction;
+import com.hazelcast.sql.impl.expression.math.RemainderFunction;
 import com.hazelcast.sql.impl.expression.math.RoundTruncateFunction;
 import com.hazelcast.sql.impl.expression.math.SignFunction;
 import com.hazelcast.sql.impl.expression.math.UnaryMinusFunction;
@@ -196,6 +197,9 @@ public final class RexToExpression {
 
             case DIVIDE:
                 return DivideFunction.create(operands[0], operands[1], resultType);
+
+            case MOD:
+                return RemainderFunction.create(operands[0], operands[1], resultType);
 
             case MINUS_PREFIX:
                 return UnaryMinusFunction.create(operands[0], resultType);
