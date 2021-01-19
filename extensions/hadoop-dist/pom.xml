@@ -29,7 +29,7 @@
     <parent>
         <artifactId>hazelcast-jet-extensions</artifactId>
         <groupId>com.hazelcast.jet</groupId>
-        <version>4.4-SNAPSHOT</version>
+        <version>4.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -150,7 +150,7 @@
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-hadoop-core</artifactId>
-            <version>4.4-SNAPSHOT</version>
+            <version>4.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>

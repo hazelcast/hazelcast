@@ -25,19 +25,19 @@
     <parent>
         <groupId>com.hazelcast.jet.examples</groupId>
         <artifactId>hazelcast-jet-examples</artifactId>
-        <version>4.4-SNAPSHOT</version>
+        <version>4.5-SNAPSHOT</version>
     </parent>
 
     <dependencies>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-cdc-debezium</artifactId>
-            <version>4.4-SNAPSHOT</version>
+            <version>4.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-cdc-mysql</artifactId>
-            <version>4.4-SNAPSHOT</version>
+            <version>4.5-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>

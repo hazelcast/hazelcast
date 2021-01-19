@@ -8,3 +8,5 @@ http\://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-4.3.xsd=hazelca
 https\://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-4.3.xsd=hazelcast-jet-spring-4.3.xsd
 http\://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-4.4.xsd=hazelcast-jet-spring-4.4.xsd
 https\://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-4.4.xsd=hazelcast-jet-spring-4.4.xsd
+http\://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-4.5.xsd=hazelcast-jet-spring-4.5.xsd
+https\://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-4.5.xsd=hazelcast-jet-spring-4.5.xsd
