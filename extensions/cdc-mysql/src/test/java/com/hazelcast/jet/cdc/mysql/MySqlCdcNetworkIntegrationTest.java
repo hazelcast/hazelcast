@@ -232,7 +232,6 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             JetInstance jet = createJetMembers(2)[0];
             Job job = jet.newJob(pipeline);
             assertEqualsEventually(() -> jet.getMap("results").size(), 4);
-            SECONDS.sleep(3);
             insertRecords(mysql, 1005);
             assertEqualsEventually(() -> jet.getMap("results").size(), 5);
 
@@ -335,7 +334,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
     private MySQLContainer<?> initMySql(Network network, Integer fixedExposedPort) {
         MySQLContainer<?> mysql = namedTestContainer(
-                new MySQLContainer<>("debezium/example-mysql:1.2")
+                new MySQLContainer<>("debezium/example-mysql:1.3")
                         .withUsername("mysqluser")
                         .withPassword("mysqlpw")
         );

@@ -33,7 +33,7 @@ import com.hazelcast.jet.pipeline.StreamSource;
  * <pre>
  *  docker run -it --rm --name mysql -p 3306:3306 \
  *     -e MYSQL_ROOT_PASSWORD=debezium -e MYSQL_USER=mysqluser \
- *     -e MYSQL_PASSWORD=mysqlpw debezium/example-mysql:1.2
+ *     -e MYSQL_PASSWORD=mysqlpw debezium/example-mysql:1.3
  * </pre>
  * <p>
  * To have a command line client to generate some database events manually use:

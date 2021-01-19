@@ -338,7 +338,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
 
     private PostgreSQLContainer<?> initPostgres(Network network, Integer fixedExposedPort) {
         PostgreSQLContainer<?> postgres = namedTestContainer(
-                new PostgreSQLContainer<>("debezium/example-postgres:1.2")
+                new PostgreSQLContainer<>("debezium/example-postgres:1.3")
                         .withDatabaseName("postgres")
                         .withUsername("postgres")
                         .withPassword("postgres")

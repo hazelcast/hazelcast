@@ -39,7 +39,7 @@ public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcInte
 
     @Rule
     public PostgreSQLContainer<?> postgres = namedTestContainer(
-            new PostgreSQLContainer<>("debezium/example-postgres:1.2")
+            new PostgreSQLContainer<>("debezium/example-postgres:1.3")
                     .withDatabaseName("postgres")
                     .withUsername("postgres")
                     .withPassword("postgres")

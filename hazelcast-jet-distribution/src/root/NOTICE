@@ -87,11 +87,11 @@ Apache License, Version 2.0
   Apache Commons Net:3.6
   Commons Pool:1.6
   picocli - a mighty tiny Command Line Interface:3.9.0
-  Debezium API:1.2.1.Final
-  Debezium Connector for MySQL:1.2.1.Final
-  Debezium Connector for PostgreSQL:1.2.1.Final
-  Debezium Core:1.2.1.Final
-  Debezium ANTLR DDL parsers:1.2.1.Final
+  Debezium API:1.2.5.Final
+  Debezium Connector for MySQL:1.2.5.Final
+  Debezium Connector for PostgreSQL:1.2.5.Final
+  Debezium Core:1.2.5.Final
+  Debezium ANTLR DDL parsers:1.2.5.Final
   io.grpc:grpc-alts:1.34.0
   io.grpc:grpc-api:1.34.0
   io.grpc:grpc-auth:1.34.0

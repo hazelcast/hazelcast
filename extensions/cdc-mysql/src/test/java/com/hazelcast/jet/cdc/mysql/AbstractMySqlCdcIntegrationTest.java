@@ -37,7 +37,7 @@ public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegra
 
     @Rule
     public MySQLContainer<?> mysql = namedTestContainer(
-            new MySQLContainer<>("debezium/example-mysql:1.2")
+            new MySQLContainer<>("debezium/example-mysql:1.3")
                     .withUsername("mysqluser")
                     .withPassword("mysqlpw")
     );
