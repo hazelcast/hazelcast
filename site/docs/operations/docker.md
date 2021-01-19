@@ -4,7 +4,7 @@ description: How to use Jet in a Docker environment
 ---
 
 This section shows you how to use Hazelcast Jet with Docker. We explain
-the options and parameters used in the examples, but otherwise assume
+some options and parameters used in the examples, but otherwise assume
 you are familiar with Docker in general. Visit the [official
 documentation](https://docs.docker.com/get-started/) for a basic
 introduction.
@@ -40,6 +40,19 @@ Hazelcast Jet <version>
 Revision e6c60a1
 Build 20200429
 ```
+
+## Start the Management Center
+
+The Management Center provides an easy way to monitor Hazelcast Jet
+cluster and running jobs. Start it like this:
+
+```bash
+docker run -p 8081:8081 -e JET_MEMBER_ADDRESS=172.17.0.2 hazelcast/hazelcast-jet-management-center
+```
+
+After a few seconds you can access the management center on
+[http://localhost:8081](http://localhost:8081), the default
+username/password are admin/admin.
 
 ## Submit a Job
 
@@ -89,18 +102,17 @@ To cancel the running job:
 docker run --rm hazelcast/hazelcast-jet jet -t 172.17.0.2 cancel hello-world
 ```
 
-## Submit a Job as a Docker Image
+## Submit the Job as a Docker Image
 
 Let's create a Docker image with the code of the Hello World job and
-submit it to Jet. Create a `Dockerfile`:
+submit it to Jet.
+
+### Create a Dockerfile
 
 ```Dockerfile
 FROM hazelcast/hazelcast-jet
-
 ADD examples/hello-world.jar /examples/
-
 ENV JET_ADDRESS 172.17.0.2
-
 CMD ["sh", "-c", "jet -t $JET_ADDRESS submit /examples/hello-world.jar"]
 ```
 
@@ -108,7 +120,7 @@ We exposed the Jet address through the `JTE_ADDRESS` environment
 variable, with the default value of `172.17.0.2`. This makes it easy to
 pass a different address with `docker run -e JET_ADDRESS=<another.one>`.
 
-Create the image:
+### Create the Image
 
 ```bash
 $ docker build . -t hazelcast-jet-hello-world
@@ -118,24 +130,11 @@ Successfully built 6bc0f527b69c
 Successfully tagged hazelcast-jet-hello-world:latest
 ```
 
-Submit the job:
+### Submit the Job
 
 ```bash
 docker run -it hazelcast-jet-hello-world
 ```
-
-## Start the Management Center
-
-The Management Center provides an easy way to monitor Hazelcast Jet
-cluster and running jobs. Start it like this:
-
-```bash
-docker run -p 8081:8081 -e JET_MEMBER_ADDRESS=172.17.0.2 hazelcast/hazelcast-jet-management-center
-```
-
-After a few seconds you can access the management center on
-[http://localhost:8081](http://localhost:8081), the default
-username/password are admin/admin.
 
 ## Configure Hazelcast Jet
 
