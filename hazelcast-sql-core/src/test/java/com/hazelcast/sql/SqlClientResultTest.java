@@ -18,6 +18,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,11 +34,10 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlClientResultTest {
+public class SqlClientResultTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";
     private static final String SQL_GOOD = "SELECT * FROM " + MAP_NAME;
@@ -107,26 +107,16 @@ public class SqlClientResultTest {
     }
 
     private void checkSqlException(Runnable task, int expectedCode, String expectedMessage) {
-        try {
-            task.run();
+        HazelcastSqlException err = assertThrows(HazelcastSqlException.class, task);
 
-            fail("Must fail");
-        } catch (Exception e) {
-            assertEquals(HazelcastSqlException.class, e.getClass());
-            assertEquals(expectedCode, ((HazelcastSqlException) e).getCode());
-            assertTrue(e.getMessage(), e.getMessage().contains(expectedMessage));
-        }
+        assertEquals(expectedCode, err.getCode());
+        assertTrue(err.getMessage(), err.getMessage().contains(expectedMessage));
     }
 
     private void checkIllegalStateException(Runnable task, String expectedMessage) {
-        try {
-            task.run();
+        IllegalStateException err = assertThrows(IllegalStateException.class, task);
 
-            fail("Must fail");
-        } catch (Exception e) {
-            assertEquals(IllegalStateException.class, e.getClass());
-            assertEquals(expectedMessage, e.getMessage());
-        }
+        assertEquals(expectedMessage, err.getMessage());
     }
 
     private SqlResult execute(String sql) {
