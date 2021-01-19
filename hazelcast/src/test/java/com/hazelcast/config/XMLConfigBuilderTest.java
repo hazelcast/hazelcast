@@ -1189,6 +1189,19 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testPartitionGroupPlacementAware() {
+        String xml = HAZELCAST_START_TAG
+                + "<partition-group enabled=\"true\" group-type=\"PLACEMENT_AWARE\" />"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
+        assertTrue(partitionGroupConfig.isEnabled());
+        assertEquals(PartitionGroupConfig.MemberGroupType.PLACEMENT_AWARE, partitionGroupConfig.getGroupType());
+    }
+
+    @Override
+    @Test
     public void testPartitionGroupSPI() {
         String xml = HAZELCAST_START_TAG
                 + "<partition-group enabled=\"true\" group-type=\"SPI\" />"

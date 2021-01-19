@@ -19,8 +19,10 @@ package com.hazelcast.sql.impl.calcite.schema;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.FilterIntoScanLogicalRule;
 import com.hazelcast.sql.impl.calcite.opt.logical.ProjectIntoScanLogicalRule;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelDistribution;
 import org.apache.calcite.rel.RelReferentialConstraint;
@@ -34,6 +36,7 @@ import org.apache.calcite.rel.type.StructKind;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.impl.AbstractTable;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.ImmutableBitSet;
 
 import javax.annotation.Nonnull;
@@ -151,7 +154,7 @@ public class HazelcastTable extends AbstractTable {
 
             String fieldName = field.getName();
 
-            RelDataType relType = HazelcastSchemaUtils.convert(field, typeFactory);
+            RelDataType relType = convert(field, typeFactory);
 
             RelDataTypeField convertedField = new RelDataTypeFieldImpl(fieldName, convertedFields.size(), relType);
             convertedFields.add(convertedField);
@@ -212,6 +215,22 @@ public class HazelcastTable extends AbstractTable {
         }
 
         return res.toString();
+    }
+
+    /**
+     * Converts a {@link TableField} to {@link RelDataType}.
+     */
+    private static RelDataType convert(TableField field, RelDataTypeFactory typeFactory) {
+        QueryDataType fieldType = field.getType();
+
+        SqlTypeName sqlTypeName = HazelcastTypeUtils.toCalciteType(fieldType);
+
+        if (sqlTypeName == null) {
+            throw new IllegalStateException("Unexpected type family: " + fieldType.getTypeFamily());
+        }
+
+        RelDataType relType = typeFactory.createSqlType(sqlTypeName);
+        return typeFactory.createTypeWithNullability(relType, true);
     }
 
     /**

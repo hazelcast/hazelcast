@@ -102,7 +102,8 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
     @Override
     public Expression<?> visitDynamicParam(RexDynamicParam dynamicParam) {
         int index = dynamicParam.getIndex();
-        return ParameterExpression.create(index, parameterMetadata.getParameterType(index));
+
+        return ParameterExpression.create(index, parameterMetadata.getParameterConverter(index).getTargetType());
     }
 
     @Override

@@ -21,6 +21,7 @@ import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.util.MutableInteger;
 
+import javax.management.AttributeNotFoundException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
@@ -106,13 +107,30 @@ public class JmxPublisher implements MetricsPublisher {
             metricData = metricNameToMetricData.get(originalDescriptor);
         }
 
-        assert !metricData.wasPresent : "metric '" + originalDescriptor.toString() + "' was rendered twice";
+        assertDoubleRendering(originalDescriptor, metricData, value);
+
         metricData.wasPresent = true;
         MetricsMBean mBean = mBeans.computeIfAbsent(metricData.objectName, createMBeanFunction);
         if (isShutdown) {
             unregisterMBeanIgnoreError(metricData.objectName);
         }
         mBean.setMetricValue(metricData.metric, metricData.unit, value, type);
+    }
+
+    private void assertDoubleRendering(MetricDescriptor originalDescriptor, MetricData metricData, Number newValue) {
+            assert !metricData.wasPresent
+                    : "metric '" + originalDescriptor.toString()
+                            + "' was rendered twice. Present value: " + metricValue(metricData)
+                            + ", new value: " + newValue;
+    }
+
+    private Number metricValue(MetricData metricData) {
+        try {
+            return (Number) mBeans.get(metricData.objectName).getAttribute(metricData.metric);
+        } catch (AttributeNotFoundException ex) {
+            throw new IllegalStateException("Metric is marked as present but no mBean is registered with object name "
+                    + "'" + metricData.objectName + "' and attribute '" + metricData.metric + "'");
+        }
     }
 
     private MetricDescriptor copy(MetricDescriptor descriptor) {

@@ -1012,7 +1012,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if (matches("merge-policy", nodeName)) {
-                scheduledExecutorConfig.setMergePolicyConfig(createMergePolicyConfig(child));
+                MergePolicyConfig mpConfig = createMergePolicyConfig(
+                  child, scheduledExecutorConfig.getMergePolicyConfig());
+                scheduledExecutorConfig.setMergePolicyConfig(mpConfig);
             } else if (matches("capacity", nodeName)) {
                 scheduledExecutorConfig.setCapacity(parseInt(getTextContent(child)));
             } else if (matches("capacity-policy", nodeName)) {
@@ -1042,8 +1044,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if (matches("merge-policy", nodeName)) {
-                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(child);
-                cardinalityEstimatorConfig.setMergePolicyConfig(mergePolicyConfig);
+                MergePolicyConfig mpConfig = createMergePolicyConfig(
+                  child, cardinalityEstimatorConfig.getMergePolicyConfig());
+                cardinalityEstimatorConfig.setMergePolicyConfig(mpConfig);
             } else if (matches("backup-count", nodeName)) {
                 cardinalityEstimatorConfig.setBackupCount(parseInt(getTextContent(child)));
             } else if (matches("async-backup-count", nodeName)) {
@@ -1525,8 +1528,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("empty-queue-ttl", nodeName)) {
                 qConfig.setEmptyQueueTtl(getIntegerValue("empty-queue-ttl", getTextContent(n)));
             } else if (matches("merge-policy", nodeName)) {
-                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
-                qConfig.setMergePolicyConfig(mergePolicyConfig);
+                MergePolicyConfig mpConfig = createMergePolicyConfig(n, qConfig.getMergePolicyConfig());
+                qConfig.setMergePolicyConfig(mpConfig);
             } else if (matches("priority-comparator-class-name", nodeName)) {
                 qConfig.setPriorityComparatorClassName(getTextContent(n));
             }
@@ -1567,8 +1570,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("split-brain-protection-ref", nodeName)) {
                 lConfig.setSplitBrainProtectionName(getTextContent(n));
             } else if (matches("merge-policy", nodeName)) {
-                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
-                lConfig.setMergePolicyConfig(mergePolicyConfig);
+                MergePolicyConfig mpConfig = createMergePolicyConfig(n, lConfig.getMergePolicyConfig());
+                lConfig.setMergePolicyConfig(mpConfig);
             }
 
         }
@@ -1597,8 +1600,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("split-brain-protection-ref", nodeName)) {
                 sConfig.setSplitBrainProtectionName(getTextContent(n));
             } else if (matches("merge-policy", nodeName)) {
-                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
-                sConfig.setMergePolicyConfig(mergePolicyConfig);
+                MergePolicyConfig mpConfig = createMergePolicyConfig(n, sConfig.getMergePolicyConfig());
+                sConfig.setMergePolicyConfig(mpConfig);
             }
         }
         config.addSetConfig(sConfig);
@@ -1630,8 +1633,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("split-brain-protection-ref", nodeName)) {
                 multiMapConfig.setSplitBrainProtectionName(getTextContent(n));
             } else if (matches("merge-policy", nodeName)) {
-                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
-                multiMapConfig.setMergePolicyConfig(mergePolicyConfig);
+                MergePolicyConfig mpConfig = createMergePolicyConfig(n, multiMapConfig.getMergePolicyConfig());
+                multiMapConfig.setMergePolicyConfig(mpConfig);
             }
         }
         config.addMultiMapConfig(multiMapConfig);
@@ -1668,8 +1671,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("entry-listeners", nodeName)) {
                 handleEntryListeners(n, replicatedMapConfig::addEntryListenerConfig);
             } else if (matches("merge-policy", nodeName)) {
-                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
-                replicatedMapConfig.setMergePolicyConfig(mergePolicyConfig);
+                MergePolicyConfig mpConfig = createMergePolicyConfig(n, replicatedMapConfig.getMergePolicyConfig());
+                replicatedMapConfig.setMergePolicyConfig(mpConfig);
             } else if (matches("split-brain-protection-ref", nodeName)) {
                 replicatedMapConfig.setSplitBrainProtectionName(getTextContent(n));
             }
@@ -1701,13 +1704,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("max-idle-seconds", nodeName)) {
                 mapConfig.setMaxIdleSeconds(getIntegerValue("max-idle-seconds", getTextContent(node)));
             } else if (matches("map-store", nodeName)) {
-                MapStoreConfig mapStoreConfig = createMapStoreConfig(node);
-                mapConfig.setMapStoreConfig(mapStoreConfig);
+                handleMapStoreConfig(node, mapConfig.getMapStoreConfig());
             } else if (matches("near-cache", nodeName)) {
-                mapConfig.setNearCacheConfig(handleNearCacheConfig(node));
+                mapConfig.setNearCacheConfig(handleNearCacheConfig(node, mapConfig.getNearCacheConfig()));
             } else if (matches("merge-policy", nodeName)) {
-                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(node);
-                mapConfig.setMergePolicyConfig(mergePolicyConfig);
+                MergePolicyConfig mpConfig = createMergePolicyConfig(node, mapConfig.getMergePolicyConfig());
+                mapConfig.setMergePolicyConfig(mpConfig);
             } else if (matches("merkle-tree", nodeName)) {
                 handleViaReflection(node, mapConfig, mapConfig.getMerkleTreeConfig());
             } else if (matches("event-journal", nodeName)) {
@@ -1743,9 +1745,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addMapConfig(mapConfig);
     }
 
-    private NearCacheConfig handleNearCacheConfig(Node node) {
+    private NearCacheConfig handleNearCacheConfig(Node node, NearCacheConfig existingNearCacheConfig) {
         String name = getAttribute(node, "name");
-        NearCacheConfig nearCacheConfig = new NearCacheConfig(name);
+        NearCacheConfig nearCacheConfig = existingNearCacheConfig != null
+          ? existingNearCacheConfig
+          : new NearCacheConfig(name);
+
         Boolean serializeKeys = null;
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
@@ -1793,10 +1798,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleCache(Node node) throws Exception {
-        String name = getAttribute(node, "name");
-        CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
-        cacheConfig.setName(name);
-        handleCacheNode(node, cacheConfig);
+        handleCacheNode(node, config.getCacheConfig(getAttribute(node, "name")));
     }
 
     void handleCacheNode(Node node, CacheSimpleConfig cacheConfig) throws Exception {
@@ -1841,7 +1843,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("partition-lost-listeners", nodeName)) {
                 cachePartitionLostListenerHandle(n, cacheConfig);
             } else if (matches("merge-policy", nodeName)) {
-                cacheConfig.setMergePolicyConfig(createMergePolicyConfig(n));
+                MergePolicyConfig mpConfig = createMergePolicyConfig(n, cacheConfig.getMergePolicyConfig());
+                cacheConfig.setMergePolicyConfig(mpConfig);
             } else if (matches("event-journal", nodeName)) {
                 EventJournalConfig eventJournalConfig = new EventJournalConfig();
                 handleViaReflection(n, cacheConfig, eventJournalConfig);
@@ -2162,8 +2165,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         queryCacheConfig.setPredicateConfig(predicateConfig);
     }
 
-    private MapStoreConfig createMapStoreConfig(Node node) {
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+    private MapStoreConfig handleMapStoreConfig(Node node, MapStoreConfig mapStoreConfig) {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
@@ -2224,15 +2226,14 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         return config;
     }
 
-    protected MergePolicyConfig createMergePolicyConfig(Node node) {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
+    protected MergePolicyConfig createMergePolicyConfig(Node node, MergePolicyConfig baseMergePolicyConfig) {
         String policyString = getTextContent(node);
-        mergePolicyConfig.setPolicy(policyString);
+        baseMergePolicyConfig.setPolicy(policyString);
         final String att = getAttribute(node, "batch-size");
         if (att != null) {
-            mergePolicyConfig.setBatchSize(getIntegerValue("batch-size", att));
+            baseMergePolicyConfig.setBatchSize(getIntegerValue("batch-size", att));
         }
-        return mergePolicyConfig;
+        return baseMergePolicyConfig;
     }
 
     private QueueStoreConfig createQueueStoreConfig(Node node) {
@@ -2413,10 +2414,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleRingbuffer(Node node) {
-        Node attName = getNamedItemNode(node, "name");
-        String name = getTextContent(attName);
-        RingbufferConfig rbConfig = new RingbufferConfig(name);
-        handleRingBufferNode(node, rbConfig);
+        String name = getTextContent(getNamedItemNode(node, "name"));
+        handleRingBufferNode(node, config.getRingbufferConfig(name));
     }
 
     void handleRingBufferNode(Node node, RingbufferConfig rbConfig) {
@@ -2443,8 +2442,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("split-brain-protection-ref", nodeName)) {
                 rbConfig.setSplitBrainProtectionName(getTextContent(n));
             } else if (matches("merge-policy", nodeName)) {
-                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
-                rbConfig.setMergePolicyConfig(mergePolicyConfig);
+                MergePolicyConfig mpConfig = createMergePolicyConfig(n, rbConfig.getMergePolicyConfig());
+                rbConfig.setMergePolicyConfig(mpConfig);
             }
         }
         config.addRingBufferConfig(rbConfig);

@@ -119,7 +119,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d),
                 planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+($0, $1)], f2=[$2]", 100d),
+                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 100d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2]]]]", 100d)
             )
         );
@@ -152,7 +152,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+($0, $1)], f2=[$2]", 50d),
+                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 50d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($3, 1)]]]", 50d)
             )
         );
@@ -185,7 +185,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d),
                 planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, ProjectPhysicalRel.class, "d1=[+($0, $1)], f2=[$2]", 100d),
+                planRow(2, ProjectPhysicalRel.class, "d1=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 100d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2]]]]", 100d)
             )
         );
@@ -202,7 +202,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d),
                 planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+($0, $1)], f2=[$2]", 100d),
+                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 100d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2]]]]", 100d)
             )
         );
@@ -219,7 +219,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d),
                 planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(+($0, $1), $2)]", 100d),
+                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(+(CAST($0):BIGINT(32), CAST($1):BIGINT(32)), CAST($2):BIGINT(33))]", 100d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2]]]]", 100d)
             )
         );
@@ -252,7 +252,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "d1=[+($0, $1)], f2=[$2]", 50d),
+                planRow(2, ProjectPhysicalRel.class, "d1=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 50d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($4, 1)]]]", 50d)
             )
         );
@@ -269,7 +269,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+($0, $1)]", 50d),
+                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))]", 50d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1], filter=>($2, 1)]]]", 50d)
             )
         );
@@ -286,7 +286,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(+($0, $1), $2)]", 50d),
+                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(+(CAST($0):BIGINT(32), CAST($1):BIGINT(32)), CAST($2):BIGINT(33))]", 50d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($4, 1)]]]", 50d)
             )
         );
@@ -320,7 +320,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "d1=[+($0, $1)], f2=[$2]", 50d),
+                planRow(2, ProjectPhysicalRel.class, "d1=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 50d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($3, 1)]]]", 50d)
             )
         );
@@ -338,7 +338,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+($0, $1)]", 50d),
+                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))]", 50d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1], filter=>($2, 1)]]]", 50d)
             )
         );
@@ -356,7 +356,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(+($0, $1), $2)]", 50d),
+                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(+(CAST($0):BIGINT(32), CAST($1):BIGINT(32)), CAST($2):BIGINT(33))]", 50d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($3, 1)]]]", 50d)
             )
         );
@@ -389,7 +389,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 25d),
                 planRow(1, RootExchangePhysicalRel.class, "", 25d),
-                planRow(2, ProjectPhysicalRel.class, "d1=[+($0, $1)], f2=[$2]", 25d),
+                planRow(2, ProjectPhysicalRel.class, "d1=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 25d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=AND(>($3, 1), >($2, 2))]]]", 25d)
             )
         );
@@ -406,7 +406,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 25d),
                 planRow(1, RootExchangePhysicalRel.class, "", 25d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+($0, $1)]", 25d),
+                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))]", 25d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1], filter=AND(>($3, 1), >($2, 1))]]]", 25d)
             )
         );
@@ -423,7 +423,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 25d),
                 planRow(1, RootExchangePhysicalRel.class, "", 25d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(+($0, $1), $2)]", 25d),
+                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(+(CAST($0):BIGINT(32), CAST($1):BIGINT(32)), CAST($2):BIGINT(33))]", 25d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=AND(>($3, 1), >($2, 2))]]]", 25d)
             )
         );
@@ -436,7 +436,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[2], filter=>(+(+($0, $1), $2), 2)]]]", 50d)
+                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[2], filter=>(+(+(CAST($0):BIGINT(32), CAST($1):BIGINT(32)), CAST($2):BIGINT(33)), 2)]]]", 50d)
             )
         );
     }

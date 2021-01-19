@@ -133,7 +133,7 @@ public class ParserOperationsTest {
     public void testUnsupportedAggregate() {
         checkFailure(
             "SELECT SUM(a) FROM t",
-            "SUM is not supported"
+            "Function 'SUM' does not exist"
         );
     }
 
@@ -152,7 +152,7 @@ public class ParserOperationsTest {
 
     @Test
     public void testUnsupportedFunction() {
-        checkFailure("select atan2(0, 0) from t", "ATAN2 is not supported");
+        checkFailure("select atan2(0, 0) from t", "Function 'ATAN2' does not exist");
     }
 
     private static void checkSuccess(String sql) {

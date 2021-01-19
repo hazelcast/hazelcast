@@ -73,7 +73,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
                 : new ArrayList<>(replicatedMapConfig.getListenerConfigs());
         this.asyncFillup = replicatedMapConfig.asyncFillup;
         this.statisticsEnabled = replicatedMapConfig.statisticsEnabled;
-        this.mergePolicyConfig = replicatedMapConfig.mergePolicyConfig;
+        this.mergePolicyConfig = new MergePolicyConfig(replicatedMapConfig.mergePolicyConfig);
         this.splitBrainProtectionName = replicatedMapConfig.splitBrainProtectionName;
     }
 

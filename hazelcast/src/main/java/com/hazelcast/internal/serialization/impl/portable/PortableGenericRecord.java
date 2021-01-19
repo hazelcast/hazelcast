@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
+import com.hazelcast.internal.serialization.impl.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
@@ -25,8 +26,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
+import java.util.Set;
 
-public class PortableGenericRecord implements GenericRecord {
+public class PortableGenericRecord extends AbstractGenericRecord {
 
     private final ClassDefinition classDefinition;
     private final Object[] objects;
@@ -51,6 +53,12 @@ public class PortableGenericRecord implements GenericRecord {
     @Override
     public Builder cloneWithBuilder() {
         return new PortableGenericRecordBuilder(classDefinition, Arrays.copyOf(objects, objects.length));
+    }
+
+    @Nonnull
+    @Override
+    public Set<String> getFieldNames() {
+        return classDefinition.getFieldNames();
     }
 
     @Override
@@ -186,9 +194,12 @@ public class PortableGenericRecord implements GenericRecord {
     }
 
     @Override
+    protected Object getClassIdentifier() {
+        return classDefinition;
+    }
+
+    @Override
     public String toString() {
-        return "PortableGenericRecord{classDefinition=" + classDefinition
-                + ", objects=" + Arrays.toString(objects)
-                + '}';
+        return "PortableGenericRecord:" + super.toString();
     }
 }

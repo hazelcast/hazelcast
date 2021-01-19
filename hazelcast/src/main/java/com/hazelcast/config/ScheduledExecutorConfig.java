@@ -107,7 +107,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
     public ScheduledExecutorConfig(ScheduledExecutorConfig config) {
         this(config.getName(), config.getDurability(), config.getCapacity(),
                 config.getPoolSize(), config.getSplitBrainProtectionName(),
-                config.getMergePolicyConfig(), config.getCapacityPolicy(),
+                new MergePolicyConfig(config.getMergePolicyConfig()), config.getCapacityPolicy(),
                 config.isStatisticsEnabled());
     }
 

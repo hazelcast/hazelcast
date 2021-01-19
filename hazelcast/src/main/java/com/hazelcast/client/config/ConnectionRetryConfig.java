@@ -27,7 +27,7 @@ public class ConnectionRetryConfig {
 
     private static final int INITIAL_BACKOFF_MILLIS = 1000;
     private static final int MAX_BACKOFF_MILLIS = 30000;
-    private static final long CLUSTER_CONNECT_TIMEOUT_MILLIS = 20000;
+    private static final long CLUSTER_CONNECT_TIMEOUT_MILLIS = 120000;
     private static final double JITTER = 0;
     private int initialBackoffMillis = INITIAL_BACKOFF_MILLIS;
     private int maxBackoffMillis = MAX_BACKOFF_MILLIS;
@@ -107,7 +107,7 @@ public class ConnectionRetryConfig {
     }
 
     /**
-     * Timeout value in seconds for the client to give up to connect to the current cluster
+     * Timeout value in milliseconds for the client to give up to connect to the current cluster
      * Depending on FailoverConfig, a client can shutdown or start trying on alternative cluster after reaching the timeout.
      *
      * @return clusterConnectTimeoutMillis

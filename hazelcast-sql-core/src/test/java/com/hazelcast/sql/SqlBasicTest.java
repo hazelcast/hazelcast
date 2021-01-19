@@ -717,6 +717,7 @@ public class SqlBasicTest extends SqlTestSupport {
             return objectVal;
         }
 
+        @SuppressWarnings("unused")
         public Object getNullVal() {
             return nullVal;
         }

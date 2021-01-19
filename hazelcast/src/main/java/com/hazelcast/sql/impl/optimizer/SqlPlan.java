@@ -28,4 +28,9 @@ public interface SqlPlan {
      * @param context security context
      */
     void checkPermissions(SqlSecurityContext context);
+
+    /**
+     * @return {@code true} if the query produces rows, {@code false} otherwise
+     */
+    boolean producesRows();
 }

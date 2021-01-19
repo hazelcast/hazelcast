@@ -2034,7 +2034,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         // construct the endpoint qualifier corresponding to an
         // endpoint-config or server-socket-endpoint-config node
         private EndpointQualifier createEndpointQualifier(ProtocolType type, Node node) {
-            return EndpointQualifier.resolve(type, getAttribute(node, "name"));
+            return EndpointQualifier.resolveForConfig(type, getAttribute(node, "name"));
         }
 
         private void handleInstanceTracking(Node node) {

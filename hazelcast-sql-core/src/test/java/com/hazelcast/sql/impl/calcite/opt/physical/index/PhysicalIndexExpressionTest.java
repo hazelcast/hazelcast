@@ -89,10 +89,7 @@ public class PhysicalIndexExpressionTest extends IndexOptimizerTestSupport {
     @Test
     public void test_column_literal() {
         checkIndexForCondition("f=1", "=($1, 1)");
-        checkIndexForCondition("f='1'", "=($1, 1)");
-
         checkIndexForCondition("1=f", "=(1, $1)");
-        checkIndexForCondition("'1'=f", "=(1, $1)");
     }
 
     @Test
@@ -138,13 +135,13 @@ public class PhysicalIndexExpressionTest extends IndexOptimizerTestSupport {
 
     @Test
     public void test_column_expressionWithoutColumns() {
-        checkIndexForCondition("f=(1+?)", "=(CAST($1):BIGINT(64), +(1:TINYINT(1), ?0))");
-        checkIndexForCondition("(1+?)=f", "=(+(1:TINYINT(1), ?0), CAST($1):BIGINT(64))");
+        checkIndexForCondition("f=(1+?)", "=(CAST($1):BIGINT(64), +(1:BIGINT(64), ?0))");
+        checkIndexForCondition("(1+?)=f", "=(+(1:BIGINT(64), ?0), CAST($1):BIGINT(64))");
     }
 
     @Test
     public void test_column_expressionWithColumns() {
-        checkNoIndexForCondition("f=(1+ret)", "=(CAST($1):BIGINT(32), +(1:TINYINT(1), $0))");
+        checkNoIndexForCondition("f=(1+ret)", "=(CAST($1):BIGINT(32), +(1, CAST($0):BIGINT(32)))");
     }
 
     @Test
