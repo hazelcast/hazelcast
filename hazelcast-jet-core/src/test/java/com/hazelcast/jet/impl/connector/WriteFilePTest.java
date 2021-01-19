@@ -386,8 +386,8 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
                                     return ctx.f0()[0];
                                 })
                                 .restoreSnapshotFn((ctx, state) -> {
-                                    ctx.f1().fine("src vertex restored from snapshot: " + ctx.f0()[0]);
                                     ctx.f0()[0] = state.get(0);
+                                    ctx.f1().fine("src vertex restored from snapshot: " + ctx.f0()[0]);
                                 })
                                 .build())
          .withoutTimestamps()

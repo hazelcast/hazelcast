@@ -146,6 +146,7 @@ class MasterSnapshotContext {
                 }
                 snapshotInProgress = true;
                 snapshotMapName = requestedSnapshot.f0();
+                assert requestedSnapshot.f1() != null;
                 isTerminal = requestedSnapshot.f1();
                 future = requestedSnapshot.f2();
                 mc.jobExecutionRecord().startNewSnapshot(snapshotMapName);
@@ -192,15 +193,6 @@ class MasterSnapshotContext {
             @Nullable CompletableFuture<Void> future
     ) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
-            if (executionId != this.mc.executionId()) {
-                LoggingUtil.logFine(logger, "%s: ignoring responses for snapshot %s phase 1: " +
-                                "the responses are from a different execution: %s. Responses: %s",
-                        mc.jobIdString(), snapshotId, idToString(executionId), responses);
-                return;
-            }
-            // Note: this method can be called after finalizeJob() is called or even after new execution started.
-            // We only wait for snapshot completion if the job completed with a terminal snapshot and the job
-            // was successful.
             SnapshotPhase1Result mergedResult = new SnapshotPhase1Result();
             for (Map.Entry<MemberInfo, Object> entry : responses) {
                 // the response is either SnapshotOperationResult or an exception, see #invokeOnParticipants() method
@@ -210,57 +202,73 @@ class MasterSnapshotContext {
                 }
                 mergedResult.merge((SnapshotPhase1Result) response);
             }
+            boolean isSuccess;
+            SnapshotStats stats;
 
-            IMap<Object, Object> snapshotMap = mc.nodeEngine().getHazelcastInstance().getMap(snapshotMapName);
+            mc.lock();
             try {
-                SnapshotValidationRecord validationRecord = new SnapshotValidationRecord(snapshotId,
-                        mergedResult.getNumChunks(), mergedResult.getNumBytes(),
-                        mc.jobExecutionRecord().ongoingSnapshotStartTime(), mc.jobId(), mc.jobName(),
-                        mc.jobRecord().getDagJson());
-
-                // The decision moment for exported snapshots: after this the snapshot is valid to be restored
-                // from, however it will be not listed by JetInstance.getJobStateSnapshots unless the validation
-                // record is inserted into the cache below
-                Object oldValue = snapshotMap.put(SnapshotValidationRecord.KEY, validationRecord);
-
-                if (snapshotMapName.startsWith(EXPORTED_SNAPSHOTS_PREFIX)) {
-                    String snapshotName = snapshotMapName.substring(EXPORTED_SNAPSHOTS_PREFIX.length());
-                    mc.jobRepository().cacheValidationRecord(snapshotName, validationRecord);
+                // Note: this method can be called after finalizeJob() is called or even after new execution started.
+                // Check the execution ID to check if a new execution didn't start yet.
+                if (executionId != mc.executionId()) {
+                    LoggingUtil.logFine(logger, "%s: ignoring responses for snapshot %s phase 1: " +
+                                    "the responses are from a different execution: %s. Responses: %s",
+                            mc.jobIdString(), snapshotId, idToString(executionId), responses);
+                    return;
                 }
-                if (oldValue != null) {
-                    logger.severe("SnapshotValidationRecord overwritten after writing to '" + snapshotMapName + "' for "
-                            + mc.jobIdString() + ": snapshot data might be corrupted");
-                }
-            } catch (Exception e) {
-                mergedResult.merge(new SnapshotPhase1Result(0, 0, 0, e));
-            }
 
-            boolean isSuccess = mergedResult.getError() == null;
-            SnapshotStats stats = mc.jobExecutionRecord().ongoingSnapshotDone(
-                    mergedResult.getNumBytes(), mergedResult.getNumKeys(), mergedResult.getNumChunks(),
-                    mergedResult.getError());
-
-            // the decision moment for regular snapshots: after this the snapshot is ready to be restored from
-            mc.writeJobExecutionRecord(false);
-
-            if (logger.isFineEnabled()) {
-                logger.fine(String.format("Snapshot %d phase 1 for %s completed with status %s in %dms, " +
-                                "%,d bytes, %,d keys in %,d chunks, stored in '%s', proceeding to phase 2",
-                        snapshotId, mc.jobIdString(), isSuccess ? "SUCCESS" : "FAILURE",
-                        stats.duration(), stats.numBytes(), stats.numKeys(), stats.numChunks(), snapshotMapName));
-            }
-            if (!isSuccess) {
-                logger.warning(mc.jobIdString() + " snapshot " + snapshotId + " phase 1 failed on some member(s), " +
-                        "one of the failures: " + mergedResult.getError());
+                IMap<Object, Object> snapshotMap = mc.nodeEngine().getHazelcastInstance().getMap(snapshotMapName);
                 try {
-                    snapshotMap.clear();
+                    SnapshotValidationRecord validationRecord = new SnapshotValidationRecord(snapshotId,
+                            mergedResult.getNumChunks(), mergedResult.getNumBytes(),
+                            mc.jobExecutionRecord().ongoingSnapshotStartTime(), mc.jobId(), mc.jobName(),
+                            mc.jobRecord().getDagJson());
+
+                    // The decision moment for exported snapshots: after this the snapshot is valid to be restored
+                    // from, however it will be not listed by JetInstance.getJobStateSnapshots unless the validation
+                    // record is inserted into the cache below
+                    Object oldValue = snapshotMap.put(SnapshotValidationRecord.KEY, validationRecord);
+
+                    if (snapshotMapName.startsWith(EXPORTED_SNAPSHOTS_PREFIX)) {
+                        String snapshotName = snapshotMapName.substring(EXPORTED_SNAPSHOTS_PREFIX.length());
+                        mc.jobRepository().cacheValidationRecord(snapshotName, validationRecord);
+                    }
+                    if (oldValue != null) {
+                        logger.severe("SnapshotValidationRecord overwritten after writing to '" + snapshotMapName
+                                + "' for " + mc.jobIdString() + ": snapshot data might be corrupted");
+                    }
                 } catch (Exception e) {
-                    logger.warning(mc.jobIdString() + ": failed to clear snapshot map '" + snapshotMapName
-                            + "' after a failure", e);
+                    mergedResult.merge(new SnapshotPhase1Result(0, 0, 0, e));
                 }
-            }
-            if (!SnapshotFlags.isExport(snapshotFlags)) {
-                mc.jobRepository().clearSnapshotData(mc.jobId(), mc.jobExecutionRecord().ongoingDataMapIndex());
+
+                isSuccess = mergedResult.getError() == null;
+                stats = mc.jobExecutionRecord().ongoingSnapshotDone(
+                        mergedResult.getNumBytes(), mergedResult.getNumKeys(), mergedResult.getNumChunks(),
+                        mergedResult.getError());
+
+                // the decision moment for regular snapshots: after this the snapshot is ready to be restored from
+                mc.writeJobExecutionRecord(false);
+
+                if (logger.isFineEnabled()) {
+                    logger.fine(String.format("Snapshot %d phase 1 for %s completed with status %s in %dms, " +
+                                    "%,d bytes, %,d keys in %,d chunks, stored in '%s', proceeding to phase 2",
+                            snapshotId, mc.jobIdString(), isSuccess ? "SUCCESS" : "FAILURE",
+                            stats.duration(), stats.numBytes(), stats.numKeys(), stats.numChunks(), snapshotMapName));
+                }
+                if (!isSuccess) {
+                    logger.warning(mc.jobIdString() + " snapshot " + snapshotId + " phase 1 failed on some member(s), " +
+                            "one of the failures: " + mergedResult.getError());
+                    try {
+                        snapshotMap.clear();
+                    } catch (Exception e) {
+                        logger.warning(mc.jobIdString() + ": failed to clear snapshot map '" + snapshotMapName
+                                + "' after a failure", e);
+                    }
+                }
+                if (!SnapshotFlags.isExport(snapshotFlags)) {
+                    mc.jobRepository().clearSnapshotData(mc.jobId(), mc.jobExecutionRecord().ongoingDataMapIndex());
+                }
+            } finally {
+                mc.unlock();
             }
 
             // start the phase 2
@@ -290,7 +298,7 @@ class MasterSnapshotContext {
             long startTime
     ) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
-            if (executionId != this.mc.executionId()) {
+            if (executionId != mc.executionId()) {
                 LoggingUtil.logFine(logger, "%s: ignoring responses for snapshot %s phase 2: " +
                                 "the responses are from a different execution: %s. Responses: %s",
                         mc.jobIdString(), snapshotId, idToString(executionId), responses);
@@ -314,7 +322,8 @@ class MasterSnapshotContext {
 
             mc.lock();
             try {
-                if (mc.executionId() != executionId) {
+                // double-check the execution ID after locking
+                if (executionId != mc.executionId()) {
                     logger.fine("Not completing terminalSnapshotFuture on " + mc.jobIdString() + ", new execution " +
                             "already started, snapshot was for executionId=" + idToString(executionId));
                     return;
