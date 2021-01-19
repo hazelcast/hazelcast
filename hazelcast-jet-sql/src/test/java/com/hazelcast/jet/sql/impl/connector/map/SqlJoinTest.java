@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
@@ -49,11 +48,9 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2",
-                3, "value-3"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
@@ -78,11 +75,9 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2",
-                3, "value-3"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.__key, m.this " +
@@ -101,11 +96,9 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2",
-                3, "value-3"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
@@ -124,11 +117,9 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2",
-                3, "value-3"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
 
         // TODO assert that it uses the join-primitive plan
         assertRowsAnyOrder(
@@ -149,10 +140,8 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 2);
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
@@ -172,10 +161,8 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 2);
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
@@ -202,11 +189,9 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2",
-                3, "value-3"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
@@ -222,11 +207,9 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2",
-                3, "value-3"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
@@ -243,11 +226,9 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2",
-                3, "value-3"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this || '-s' " +
@@ -266,11 +247,9 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2",
-                3, "value-3"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
@@ -286,11 +265,9 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                "value-1", 1,
-                "value-2", 2,
-                "value-3", 3
-        ));
+        instance().getMap(mapName).put("value-1", 1);
+        instance().getMap(mapName).put("value-2", 2);
+        instance().getMap(mapName).put("value-3", 3);
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key " +
@@ -309,11 +286,9 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 4);
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2",
-                3, "value-3"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
@@ -333,11 +308,9 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 4);
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2",
-                3, "value-3"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
 
         // this currently uses the full-scan join
         assertRowsAnyOrder(
@@ -364,11 +337,9 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2",
-                3, "value-3"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.v1, l.v2, m.__key, m.this " +
@@ -384,18 +355,14 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName1 = randomName();
-        instance().getMap(mapName1).putAll(ImmutableMap.of(
-                1, "value-1.1",
-                2, "value-1.2",
-                3, "value-1.3"
-        ));
+        instance().getMap(mapName1).put(1, "value-1.1");
+        instance().getMap(mapName1).put(2, "value-1.2");
+        instance().getMap(mapName1).put(3, "value-1.3");
 
         String mapName2 = randomName();
-        instance().getMap(mapName2).putAll(ImmutableMap.of(
-                1, "value-2.1",
-                2, "value-2.2",
-                3, "value-2.3"
-        ));
+        instance().getMap(mapName2).put(1, "value-2.1");
+        instance().getMap(mapName2).put(2, "value-2.2");
+        instance().getMap(mapName2).put(3, "value-2.3");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m1.this, m2.this " +
@@ -423,11 +390,9 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                new Person(null, "value-1"), new PersonId(),
-                new Person(2, "value-2"), new PersonId(),
-                new Person(3, "value-3"), new PersonId()
-        ));
+        instance().getMap(mapName).put(new Person(null, "value-1"), new PersonId());
+        instance().getMap(mapName).put(new Person(2, "value-2"), new PersonId());
+        instance().getMap(mapName).put(new Person(3, "value-3"), new PersonId());
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT l.v, m.name, m.id " +
@@ -449,11 +414,9 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                new Person(1, null), new PersonId(),
-                new Person(2, "value-2"), new PersonId(),
-                new Person(3, "value-3"), new PersonId()
-        ));
+        instance().getMap(mapName).put(new Person(1, null), new PersonId());
+        instance().getMap(mapName).put(new Person(2, "value-2"), new PersonId());
+        instance().getMap(mapName).put(new Person(3, "value-3"), new PersonId());
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT l.v1, l.v2, m.id, m.name " +
@@ -475,11 +438,9 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                new Person(1, "value-1"), new PersonId(),
-                new Person(2, "value-2"), new PersonId(),
-                new Person(3, "value-3"), new PersonId()
-        ));
+        instance().getMap(mapName).put(new Person(1, "value-1"), new PersonId());
+        instance().getMap(mapName).put(new Person(2, "value-2"), new PersonId());
+        instance().getMap(mapName).put(new Person(3, "value-3"), new PersonId());
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT l.v1, l.v2, m.id, m.name " +
@@ -504,11 +465,9 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                new PersonId(1), new Person(0, "value-1"),
-                new PersonId(2), new Person(0, "value-2"),
-                new PersonId(3), new Person(0, "value-3")
-        ));
+        instance().getMap(mapName).put(new PersonId(1), new Person(0, "value-1"));
+        instance().getMap(mapName).put(new PersonId(2), new Person(0, "value-2"));
+        instance().getMap(mapName).put(new PersonId(3), new Person(0, "value-3"));
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT l.v, m.id " +
@@ -527,11 +486,9 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, new Person(0, "value-1"),
-                2, new Person(2, "value-2"),
-                3, new Person(0, "value-3")
-        ));
+        instance().getMap(mapName).put(1, new Person(0, "value-1"));
+        instance().getMap(mapName).put(2, new Person(2, "value-2"));
+        instance().getMap(mapName).put(3, new Person(0, "value-3"));
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT l.v, m.id, m.name " +
@@ -547,11 +504,9 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 4);
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2",
-                3, "value-3"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
@@ -567,11 +522,9 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                (short) 1, "value-1",
-                (short) 2, "value-2",
-                (short) 3, "value-3"
-        ));
+        instance().getMap(mapName).put((short) 1, "value-1");
+        instance().getMap(mapName).put((short) 2, "value-2");
+        instance().getMap(mapName).put((short) 3, "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
@@ -590,11 +543,9 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1L, "value-1",
-                2L, "value-2",
-                3L, "value-3"
-        ));
+        instance().getMap(mapName).put(1L, "value-1");
+        instance().getMap(mapName).put(2L, "value-2");
+        instance().getMap(mapName).put(3L, "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
@@ -650,11 +601,9 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                "1", "value-1",
-                "2", "value-2",
-                "3", "value-3"
-        ));
+        instance().getMap(mapName).put("1", "value-1");
+        instance().getMap(mapName).put("2", "value-2");
+        instance().getMap(mapName).put("3", "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this || '-s' " +
@@ -680,11 +629,9 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2",
-                3, "value-3"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
@@ -710,11 +657,9 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                "value-1", 1,
-                "value-2", 2,
-                "value-3", 3
-        ));
+        instance().getMap(mapName).put("value-1", 1);
+        instance().getMap(mapName).put("value-2", 2);
+        instance().getMap(mapName).put("value-3", 3);
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
@@ -740,16 +685,14 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                "value-1", 1,
-                "value-2", 2,
-                "value-3", 3
-        ));
+        instance().getMap(mapName).put("value-1", 1);
+        instance().getMap(mapName).put("value-2", 2);
+        instance().getMap(mapName).put("value-3", 3);
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                        "FROM " + leftName + " l " +
-                        "LEFT JOIN " + mapName + " m ON l.v = m.this and m.__key is null",
+                "FROM " + leftName + " l " +
+                "LEFT JOIN " + mapName + " m ON l.v = m.this and m.__key is null",
                 asList(
                         new Row(0, null, null),
                         new Row(null, null, null),
@@ -770,16 +713,14 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                "value-1", 1,
-                "value-2", 2,
-                "value-3", 2
-        ));
+        instance().getMap(mapName).put("value-1", 1);
+        instance().getMap(mapName).put("value-2", 2);
+        instance().getMap(mapName).put("value-3", 2);
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                        "FROM " + leftName + " l " +
-                        "LEFT JOIN " + mapName + " m ON l.v = m.this",
+                "FROM " + leftName + " l " +
+                "LEFT JOIN " + mapName + " m ON l.v = m.this",
                 asList(
                         new Row(0, null, null),
                         new Row(null, null, null),
@@ -801,16 +742,14 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                "value-1", 1,
-                "value-2", 2,
-                "value-3", 2
-        ));
+        instance().getMap(mapName).put("value-1", 1);
+        instance().getMap(mapName).put("value-2", 2);
+        instance().getMap(mapName).put("value-3", 2);
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                        "FROM " + leftName + " l " +
-                        "LEFT JOIN " + mapName + " m ON l.v = m.this and m.__key='value-3'",
+                "FROM " + leftName + " l " +
+                "LEFT JOIN " + mapName + " m ON l.v = m.this and m.__key='value-3'",
                 asList(
                         new Row(0, null, null),
                         new Row(null, null, null),
@@ -831,11 +770,9 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                "value-1", 1,
-                "value-2", 2,
-                "value-3", 3
-        ));
+        instance().getMap(mapName).put("value-1", 1);
+        instance().getMap(mapName).put("value-2", 2);
+        instance().getMap(mapName).put("value-3", 3);
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
@@ -864,16 +801,14 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2",
-                3, "value-3"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                        "FROM " + leftName + " l " +
-                        "LEFT JOIN " + mapName + " m ON m.__key>l.v",
+                "FROM " + leftName + " l " +
+                "LEFT JOIN " + mapName + " m ON m.__key>l.v",
                 asList(
                         new Row(0, 1, "value-1"),
                         new Row(0, 2, "value-2"),
@@ -881,7 +816,6 @@ public class SqlJoinTest extends SqlTestSupport {
                         new Row(null, null, null),
                         new Row(2, 3, "value-3"),
                         new Row(3, null, null)
-
                 )
         );
     }
@@ -898,16 +832,14 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).putAll(ImmutableMap.of(
-                1, "value-1",
-                2, "value-2",
-                3, "value-3"
-        ));
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                        "FROM " + leftName + " l " +
-                        "LEFT JOIN " + mapName + " m ON m.__key>l.v AND m.this IS NOT NULL",
+                "FROM " + leftName + " l " +
+                "LEFT JOIN " + mapName + " m ON m.__key>l.v AND m.this IS NOT NULL",
                 asList(
                         new Row(0, 1, "value-1"),
                         new Row(0, 2, "value-2"),
