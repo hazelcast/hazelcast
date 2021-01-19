@@ -22,6 +22,8 @@ import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
@@ -66,8 +68,13 @@ final class MetricsCompatibilityFileGenerator {
                                           .withMetric("deltaMetric2");
         compressor.addDouble(metric2, -4.2);
 
+        // use a 254 byte string to test long words in the dictionary
+        String longPrefix = Stream.generate(() -> "a")
+                                  .limit(MetricsDictionary.MAX_WORD_LENGTH - 1)
+                                  .collect(Collectors.joining());
         MetricDescriptor metric3 = supplier.get()
-                                           .withMetric("differentMetric1")
+                                           .withPrefix(longPrefix)
+                                           .withMetric("differentMetric")
                                            .withUnit(BYTES);
         compressor.addLong(metric3, Integer.MAX_VALUE);
 
