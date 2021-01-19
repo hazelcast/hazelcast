@@ -95,6 +95,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlOperator MINUS = HazelcastArithmeticOperator.MINUS;
     public static final SqlOperator MULTIPLY = HazelcastArithmeticOperator.MULTIPLY;
     public static final SqlOperator DIVIDE = HazelcastArithmeticOperator.DIVIDE;
+    public static final SqlOperator REMAINDER = HazelcastArithmeticOperator.REMAINDER;
 
     public static final SqlPrefixOperator UNARY_PLUS = HazelcastUnaryOperator.PLUS;
     public static final SqlPrefixOperator UNARY_MINUS = HazelcastUnaryOperator.MINUS;
@@ -144,7 +145,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     public static final SqlBinaryOperator CONCAT = HazelcastConcatOperator.INSTANCE;
 
-    public static final SqlSpecialOperator LIKE = HazelcastLikeOperator.INSTANCE;
+    public static final SqlSpecialOperator LIKE = HazelcastLikeOperator.LIKE;
+    public static final SqlSpecialOperator NOT_LIKE = HazelcastLikeOperator.NOT_LIKE;
 
     public static final SqlFunction SUBSTRING = HazelcastSubstringFunction.INSTANCE;
 
