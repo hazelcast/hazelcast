@@ -80,17 +80,7 @@ public class SqlClientExecuteCloseRaceTest {
         QueryId queryId = QueryId.create(UUID.randomUUID());
 
         // Send "execute"
-        ClientMessage executeRequest = SqlExecute2Codec.encodeRequest(
-            SQL,
-            Collections.emptyList(),
-            0L,
-            1,
-            null,
-            SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ANY),
-            queryId
-        );
-
-        ClientMessage executeResponse = clientService.invokeOnRandomConnection(executeRequest);
+        ClientMessage executeResponse = sendExecuteRequest(queryId);
 
         checkExecuteResponse(executeResponse, true);
 
@@ -116,17 +106,7 @@ public class SqlClientExecuteCloseRaceTest {
         assertEquals(1, memberService.getInternalService().getClientStateRegistry().getCursorCount());
 
         // Send "execute"
-        ClientMessage executeRequest = SqlExecute2Codec.encodeRequest(
-            SQL,
-            Collections.emptyList(),
-            0L,
-            1,
-            null,
-            SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ANY),
-            queryId
-        );
-
-        ClientMessage executeResponse = clientService.invokeOnRandomConnection(executeRequest);
+        ClientMessage executeResponse = sendExecuteRequest(queryId);
 
         assertEquals(0, memberService.getInternalService().getClientStateRegistry().getCursorCount());
 
@@ -143,5 +123,19 @@ public class SqlClientExecuteCloseRaceTest {
 
             assertEquals(SqlErrorCode.CANCELLED_BY_USER, executeResponse0.error.getCode());
         }
+    }
+
+    private ClientMessage sendExecuteRequest(QueryId queryId) {
+        ClientMessage executeRequest = SqlExecute2Codec.encodeRequest(
+            SQL,
+            Collections.emptyList(),
+            0L,
+            1,
+            null,
+            SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ANY),
+            queryId
+        );
+
+        return clientService.invokeOnRandomConnection(executeRequest);
     }
 }
