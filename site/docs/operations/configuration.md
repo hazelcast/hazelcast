@@ -80,12 +80,63 @@ jetConfig.configureHazelcast(c -> {
 JetInstance jet = Jet.newJetInstance(jetConfig);
 ```
 
+### Configuration Loaders
+
 Alternatively, you can configure Jet to load its configuration from the
-classpath or working directory. By default it will search for
+classpath or working directory. By default, it will search for
 `hazelcast-jet.yaml` and `hazelcast.yaml` files in the classpath and
 working directory, but you can control the name of the files using the
 relevant system properties, `hazelcast.jet.config` and
 `hazelcast.config`, respectively.
+
+All configuration loaders take an optional `properties` parameter.
+In case of its absence `System.getProperties()` is used to resolve Jet
+configuration file (XML or YAML).
+
+Jet configuration loaders are listed below:
+|Function|Description|
+|------|:----|
+|loadDefault|Loads JetConfig using the default lookup mechanism to locate the configuration file. Loads the nested Hazelcast config also by using its default lookup mechanism.|
+|loadFromClasspath|Creates a JetConfig which is loaded from a classpath resource. |
+|loadFromFile|Creates a JetConfig based on a Hazelcast Jet configuration file (XML or YAML). |
+|loadXmlFromStream|Loads JetConfig from the supplied input stream. |
+|loadXmlFromString|Creates a JetConfig from the provided XML string. |
+|loadYamlFromStream|Loads JetConfig from the supplied input stream.|
+|loadYamlFromString|Creates a JetConfig from the provided XML string. |
+
+Here is the sample code for creating a new Jet configuration using
+configuration loader:
+
+```java
+String yaml = ""
+   + "hazelcast-jet:\n"
+   + "  instance:\n"
+   + "    cooperative-thread-count: 64\n"
+   + "    flow-control-period: 50\n"
+   + "    backup-count: 2\n"
+   + "    scale-up-delay-millis: 5000\n"
+   + "    lossless-restart-enabled: true\n";
+
+JetConfig jetConfig = JetConfig.loadYamlFromString(yaml);
+JetInstance jet = Jet.newJetInstance(jetConfig);
+```
+
+Or using properties:
+
+```java
+String yaml = ""
+   + "hazelcast-jet:\n"
+   + "  instance:\n"
+   + "    backup-count: ${backup-count}\n"
+   + "    scale-up-delay-millis: ${scale-up-delay-millis}\n";
+
+Properties properties = new Properties();
+properties.setProperty("backup-count", "2");
+properties.setProperty("scale-up-delay-millis", "5000");
+
+JetConfig jetConfig = JetConfig.loadYamlFromString(yaml, properties);
+JetInstance jet = Jet.newJetInstance(jetConfig);
+```
 
 ## Job-specific Configuration
 
