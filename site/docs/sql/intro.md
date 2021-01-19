@@ -24,7 +24,7 @@ Update and start the Jet container by pasting this into your terminal:
 ```text
 docker pull hazelcast/hazelcast-jet
 docker network create jet-network
-docker run --name jet --network jet-network -v $(pwd):/csv-dir --rm hazelcast/hazelcast-jet
+docker run --name jet --network jet-network -v "$(pwd)":/csv-dir --rm hazelcast/hazelcast-jet
 ```
 
 We created a named Docker network so we can easily make several
@@ -64,13 +64,13 @@ Now start another terminal window and enter the SQL shell:
 <!--DOCUSAURUS_CODE_TABS-->
 <!--Docker-->
 ```text
-$ docker run --network jet-network -it --rm hazelcast/hazelcast-jet jet --target jet sql
+$ docker run --network jet-network -it --rm hazelcast/hazelcast-jet jet --targets jet sql
 Connected to Hazelcast Jet 4.4 at [172.17.0.2]:5701 (+0 more)
 Type 'help' for instructions
 sql〉
 ```
 
-Here, `--target jet` is the SQL shell's command-line parameter that
+Here, `--targets jet` is the SQL shell's command-line parameter that
 tells it to connect to the host named `jet`.
 
 <!--Tarball-->
