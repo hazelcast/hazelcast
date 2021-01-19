@@ -7,7 +7,7 @@ Hazelcast Jet Enterprise Edition is a commercial offering from Hazelcast
 built on top of the open source product, and offers some additional
 features such as:
 
-* Jet Management Center which allows for job monitoring and lifecycle
+* Management Center which allows for job monitoring and lifecycle
   management through a web-based UI.
 * Additional security options such as TLS support
 * Lossless cluster restart, which enables to shutdown and restart the

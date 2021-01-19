@@ -54,18 +54,28 @@ Jet requires that all members in a cluster use the same PATCH version.
 When updating Jet to a newer PATCH version, the whole cluster must be
 shutdown and restarted with the newer version at once.
 
-### Management Center
-
-Management Center, like members, is only compatible with the same PATCH
-version. This means that Management Center and the cluster must have the
-exact same PATCH version to be compatible.
-
 ### Clients
 
 Jet clients are compatible with the members running on the same MINOR
 version. This means that a client using an older or newer PATCH version
 should be able to connect and work with a cluster that's running a
 different PATCH version.
+
+### Management Center
+
+Prior to 4.3, Jet provides its own management center which can be used
+to monitor the Jet cluster and manage the lifecycle of the jobs. The
+Management Center, like members, is only compatible with the same PATCH
+version. This means that Management Center and the cluster must have the
+exact same PATCH version to be compatible.
+
+Starting 4.3, Jet Management Center merged to Hazelcast Management
+Center. Compatible versions are listed below:
+
+| Jet | Management Center |
+|-----|-------------------|
+| 4.2 | 4.2020.08 |
+| 4.3 | 4.2020.10 |
 
 ## Job State Compatibility
 

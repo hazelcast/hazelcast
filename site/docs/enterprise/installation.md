@@ -159,8 +159,9 @@ Top 10 random numbers in the latest window:
 
 ## Install Using Helm
 
-Hazelcast Jet provides Helm charts for enterprise edition which
-also includes [Hazelcast Jet Management Center](management-center).
+Hazelcast Jet provides Helm charts for enterprise edition. You can also
+use [Management Center](https://docs.hazelcast.org/docs/management-center/latest/manual/html/index.html)
+to monitor and manage your cluster.
 
 Helm charts for Enterprise Edition are hosted on the Hazelcast Charts
  repository which needs to ne added to the list of repositories of your
@@ -198,11 +199,11 @@ helm install --generate-name --set jet.licenseKey=<license-key> hazelcast/hazelc
 <!--END_DOCUSAURUS_CODE_TABS-->
 
 The command above will going to create a two node Hazelcast Jet
-Enterprise cluster and a Hazelcast Jet Management Center deployment.
+Enterprise cluster and a Hazelcast Management Center deployment.
 
 After executing the command, you can follow the notes printed on screen
 to obtain a connection to the Hazelcast Jet Enterprise cluster and the
-Hazelcast Jet Management Center.
+Hazelcast Management Center.
 
 For the list of available configuration options on the Hazelcast Jet
 Enterprise Helm chart please refer to [this table](https://github.com/hazelcast/charts/tree/master/stable/hazelcast-jet-enterprise#configuration)

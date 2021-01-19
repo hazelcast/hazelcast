@@ -3,8 +3,12 @@ title: Management Center
 description: Install Hazelcast Jet Management Center
 ---
 
-Hazelcast Jet Enterprise comes with a management center which can be
-used to monitor a Jet cluster and manage the lifecycle of the jobs
+Prior to `4.3`, Hazelcast Jet Enterprise comes with a management center
+which can be used to monitor a Jet cluster and manage the lifecycle of
+the jobs. Starting from `4.3`, Jet Management Center merged to
+Hazelcast Management Center. Please refer to the
+[reference manual](https://docs.hazelcast.org/docs/management-center/latest/manual/html/index.html)
+for more information.
 
 ## Download Management Center
 

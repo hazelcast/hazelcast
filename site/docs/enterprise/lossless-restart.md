@@ -79,8 +79,8 @@ hazelcast:
           enabled: true
 ```
 
-Alternatively, you can shutdown the cluster using the Jet Management
-Center:
+Alternatively, you can shutdown the cluster using the Hazelcast
+Management Center:
 
 ![Cluster Shutdown using Management Center](assets/management-center-shutdown.png)
 

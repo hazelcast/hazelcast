@@ -89,7 +89,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * with that name completed or failed. See {@link JetInstance#newJobIfAbsent}.
      * An active job is a job that is running, suspended or waiting to be run.
      * <p>
-     * The job name is printed in logs and is visible in Jet Management Center.
+     * The job name is printed in logs and is visible in Management Center.
      * <p>
      * The default value is {@code null}.
      *
