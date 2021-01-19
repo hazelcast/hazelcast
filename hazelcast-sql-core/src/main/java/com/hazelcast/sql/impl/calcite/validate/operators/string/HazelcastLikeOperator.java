@@ -16,11 +16,11 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.string;
 
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operand.OperandCheckerProgram;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastSpecialOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastSpecialOperator;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
@@ -38,19 +38,28 @@ import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 @SuppressWarnings("checkstyle:MagicNumber")
 public final class HazelcastLikeOperator extends HazelcastSpecialOperator {
 
-    public static final HazelcastLikeOperator INSTANCE = new HazelcastLikeOperator();
+    public static final HazelcastLikeOperator LIKE = new HazelcastLikeOperator("LIKE", false);
+    public static final HazelcastLikeOperator NOT_LIKE = new HazelcastLikeOperator("NOT LIKE", true);
 
     private static final int PRECEDENCE = 32;
 
-    private HazelcastLikeOperator() {
+    private final boolean negated;
+
+    private HazelcastLikeOperator(String name, boolean negated) {
         super(
-            "LIKE",
+            name,
             SqlKind.LIKE,
             PRECEDENCE,
             false,
             ReturnTypes.BOOLEAN_NULLABLE,
             new ReplaceUnknownOperandTypeInference(VARCHAR)
         );
+
+        this.negated = negated;
+    }
+
+    public boolean isNegated() {
+        return negated;
     }
 
     @Override

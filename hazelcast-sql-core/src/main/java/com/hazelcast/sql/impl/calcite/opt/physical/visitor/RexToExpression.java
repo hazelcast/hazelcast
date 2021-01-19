@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.expression.CastExpression;
@@ -32,6 +33,7 @@ import com.hazelcast.sql.impl.expression.math.MinusFunction;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.math.PlusFunction;
 import com.hazelcast.sql.impl.expression.math.RandFunction;
+import com.hazelcast.sql.impl.expression.math.RemainderFunction;
 import com.hazelcast.sql.impl.expression.math.RoundTruncateFunction;
 import com.hazelcast.sql.impl.expression.math.SignFunction;
 import com.hazelcast.sql.impl.expression.math.UnaryMinusFunction;
@@ -196,6 +198,9 @@ public final class RexToExpression {
             case DIVIDE:
                 return DivideFunction.create(operands[0], operands[1], resultType);
 
+            case MOD:
+                return RemainderFunction.create(operands[0], operands[1], resultType);
+
             case MINUS_PREFIX:
                 return UnaryMinusFunction.create(operands[0], resultType);
 
@@ -245,9 +250,10 @@ public final class RexToExpression {
                 return IsNotNullPredicate.create(operands[0]);
 
             case LIKE:
+                boolean negated = ((HazelcastLikeOperator) operator).isNegated();
                 Expression<?> escape = operands.length == 2 ? null : operands[2];
 
-                return LikeFunction.create(operands[0], operands[1], escape);
+                return LikeFunction.create(operands[0], operands[1], escape, negated);
 
             case TRIM:
                 assert operands.length == 3;

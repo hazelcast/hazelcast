@@ -34,11 +34,7 @@ public final class HazelcastArithmeticOperatorUtils {
         RelDataType secondType = binding.getOperandType(1);
 
         if (!HazelcastTypeUtils.isNumericType(firstType) || !HazelcastTypeUtils.isNumericType(secondType)) {
-            if (throwOnFailure) {
-                throw binding.newValidationSignatureError();
-            } else {
-                return false;
-            }
+            return fail(binding, throwOnFailure);
         }
 
         RelDataType type = HazelcastTypeUtils.withHigherPrecedence(firstType, secondType);
@@ -55,17 +51,27 @@ public final class HazelcastArithmeticOperatorUtils {
 
                 break;
 
-            default:
-                assert kind == SqlKind.TIMES;
+            case TIMES:
+                if (HazelcastTypeUtils.isNumericIntegerType(type)) {
+                    assert firstType instanceof HazelcastIntegerType;
+                    assert secondType instanceof HazelcastIntegerType;
 
-                if (HazelcastTypeUtils.isNumericIntegerType(firstType) && HazelcastTypeUtils.isNumericIntegerType(secondType)) {
-                    int bitWidth = ((HazelcastIntegerType) firstType).getBitWidth()
-                        + ((HazelcastIntegerType) secondType).getBitWidth();
+                    int firstBitWidth = ((HazelcastIntegerType) firstType).getBitWidth();
+                    int secondBitWidth = ((HazelcastIntegerType) secondType).getBitWidth();
 
-                    type = HazelcastIntegerType.create(bitWidth, type.isNullable());
+                    type = HazelcastIntegerType.create(firstBitWidth + secondBitWidth, type.isNullable());
                 }
 
                 break;
+
+            default:
+                // For the MOD operation, we just pick the operand with a higher precedence, but do not extend the width.
+                assert kind == SqlKind.MOD;
+
+                // Like many major databases, we do not support inexact numeric operands.
+                if (HazelcastTypeUtils.isNumericInexactType(type)) {
+                    return fail(binding, throwOnFailure);
+                }
         }
 
         TypedOperandChecker checker = TypedOperandChecker.forType(type);
@@ -74,5 +80,13 @@ public final class HazelcastArithmeticOperatorUtils {
             checker,
             checker
         ).check(binding, throwOnFailure);
+    }
+
+    private static boolean fail(HazelcastCallBinding binding, boolean throwOnFailure) {
+        if (throwOnFailure) {
+            throw binding.newValidationSignatureError();
+        } else {
+            return false;
+        }
     }
 }

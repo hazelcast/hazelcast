@@ -296,7 +296,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public void testExponentialConnectionRetryConfig_defaults() {
         ClientConnectionStrategyConfig connectionStrategyConfig = defaultClientConfig.getConnectionStrategyConfig();
         ConnectionRetryConfig exponentialRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
-        assertEquals(20000, exponentialRetryConfig.getClusterConnectTimeoutMillis());
+        assertEquals(120000, exponentialRetryConfig.getClusterConnectTimeoutMillis());
         assertEquals(0, exponentialRetryConfig.getJitter(), 0);
         assertEquals(1000, exponentialRetryConfig.getInitialBackoffMillis());
         assertEquals(30000, exponentialRetryConfig.getMaxBackoffMillis());
