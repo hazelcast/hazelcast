@@ -57,7 +57,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP;
  * of the default Calcite expression builder.
  */
 public final class HazelcastRexBuilder extends RexBuilder {
-    // a format just like ISO_LOCAL_TIME, but seconds are not optional as calcite requires
+    // a format just like ISO_LOCAL_TIME, but seconds are not optional as calcite's TimeString requires
     private static final DateTimeFormatter TIME_FORMATTER = new DateTimeFormatterBuilder()
             .appendValue(HOUR_OF_DAY, 2)
             .appendLiteral(':')
@@ -69,7 +69,8 @@ public final class HazelcastRexBuilder extends RexBuilder {
             .toFormatter(Locale.US)
             .withResolverStyle(ResolverStyle.STRICT);
 
-    // a format just like ISO_LOCAL_DATE_TIME, but instead of `T` a space is used. Time format is the above.
+    // a format just like ISO_LOCAL_DATE_TIME, but instead of `T` a space is used, as calcite's 
+    // TimestampString requires. Time format is the above one.
     private static final DateTimeFormatter TIMESTAMP_FORMATTER = new DateTimeFormatterBuilder()
             .parseCaseInsensitive()
             .append(DateTimeFormatter.ISO_LOCAL_DATE)
@@ -119,7 +120,6 @@ public final class HazelcastRexBuilder extends RexBuilder {
         }
 
         if (type.getSqlTypeName() == TIMESTAMP && value instanceof LocalDateTime) {
-
             value = new TimestampString(((LocalDateTime) value).format(TIMESTAMP_FORMATTER));
         }
 
