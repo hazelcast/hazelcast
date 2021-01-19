@@ -81,6 +81,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.MINUS);
         SUPPORTED_KINDS.add(SqlKind.TIMES);
         SUPPORTED_KINDS.add(SqlKind.DIVIDE);
+        SUPPORTED_KINDS.add(SqlKind.MOD);
         SUPPORTED_KINDS.add(SqlKind.MINUS_PREFIX);
         SUPPORTED_KINDS.add(SqlKind.PLUS_PREFIX);
 
@@ -218,6 +219,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case DATE:
             case TIME:
             case TIMESTAMP:
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
             case NULL:
                 return null;
 

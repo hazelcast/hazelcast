@@ -38,6 +38,7 @@ import com.hazelcast.sql.impl.expression.math.MinusFunction;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.math.PlusFunction;
 import com.hazelcast.sql.impl.expression.math.RandFunction;
+import com.hazelcast.sql.impl.expression.math.RemainderFunction;
 import com.hazelcast.sql.impl.expression.math.RoundTruncateFunction;
 import com.hazelcast.sql.impl.expression.math.SignFunction;
 import com.hazelcast.sql.impl.expression.math.UnaryMinusFunction;
@@ -169,8 +170,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_LIKE = 59;
     public static final int EXPRESSION_SUBSTRING = 60;
     public static final int EXPRESSION_TRIM = 61;
+    public static final int EXPRESSION_REMAINDER = 62;
 
-    public static final int LAZY_TARGET = 62;
+    public static final int LAZY_TARGET = 63;
 
     public static final int LEN = LAZY_TARGET + 1;
 
@@ -259,6 +261,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_LIKE] = arg -> new LikeFunction();
         constructors[EXPRESSION_SUBSTRING] = arg -> new SubstringFunction();
         constructors[EXPRESSION_TRIM] = arg -> new TrimFunction();
+        constructors[EXPRESSION_REMAINDER] = arg -> new RemainderFunction<>();
 
         constructors[LAZY_TARGET] = arg -> new LazyTarget();
 
