@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query (as of 4.2).
  */
-@Generated("c3a17a6919e2455563f5bd32ad5a69c4")
+@Generated("6223ac66463eb0ff7eb8cec2a53666b9")
 public final class SqlExecute2Codec {
     //hex: 0x210400
     public static final int REQUEST_MESSAGE_TYPE = 2163712;
@@ -92,10 +92,10 @@ public final class SqlExecute2Codec {
         /**
          * Query ID.
          */
-        public @Nullable com.hazelcast.sql.impl.QueryId queryId;
+        public com.hazelcast.sql.impl.QueryId queryId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String sql, java.util.Collection<com.hazelcast.internal.serialization.Data> parameters, long timeoutMillis, int cursorBufferSize, @Nullable java.lang.String schema, byte expectedResultType, @Nullable com.hazelcast.sql.impl.QueryId queryId) {
+    public static ClientMessage encodeRequest(java.lang.String sql, java.util.Collection<com.hazelcast.internal.serialization.Data> parameters, long timeoutMillis, int cursorBufferSize, @Nullable java.lang.String schema, byte expectedResultType, com.hazelcast.sql.impl.QueryId queryId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Sql.Execute2");
@@ -109,7 +109,7 @@ public final class SqlExecute2Codec {
         StringCodec.encode(clientMessage, sql);
         ListMultiFrameCodec.encode(clientMessage, parameters, DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, schema, StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, queryId, SqlQueryIdCodec::encode);
+        SqlQueryIdCodec.encode(clientMessage, queryId);
         return clientMessage;
     }
 
@@ -123,7 +123,7 @@ public final class SqlExecute2Codec {
         request.sql = StringCodec.decode(iterator);
         request.parameters = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
         request.schema = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        request.queryId = CodecUtil.decodeNullable(iterator, SqlQueryIdCodec::decode);
+        request.queryId = SqlQueryIdCodec.decode(iterator);
         return request;
     }
 

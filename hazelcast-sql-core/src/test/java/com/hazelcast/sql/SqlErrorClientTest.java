@@ -18,7 +18,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlExecute_reservedCodec;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -320,7 +320,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         client = newClient();
 
         try {
-            ClientMessage message = SqlExecuteCodec.encodeRequest(
+            ClientMessage message = SqlExecute_reservedCodec.encodeRequest(
                 "SELECT * FROM table",
                 Collections.emptyList(),
                 100L,
