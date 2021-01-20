@@ -21,7 +21,6 @@ import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
@@ -65,11 +64,19 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    @Ignore
+    public void doesntMatchWhen_andNoElseBranch() {
+        put(1);
+
+        String sql = "select case when this > 1 then 10 end from map";
+
+        checkValue0(sql, SqlColumnType.TINYINT, null);
+    }
+
+    @Test
     public void differentReturnTypes() {
         put(1);
 
-        String sql = "select case when 1 = 1 then 1 else 'some string' end from map";
+        String sql = "select case when 1 = 1 then 1 when 2 = 2 then 1000000000 else 'some string' end from map";
 
         checkValue0(sql, SqlColumnType.BIGINT, (byte) 0);
     }
@@ -95,13 +102,13 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void testSerialization() {
-        CaseExpression original = when1eq1_then1_else10();
-        CaseExpression restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_CASE);
+        CaseExpression<?> original = when1eq1_then1_else10();
+        CaseExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_CASE);
 
         checkEquals(original, restored, true);
     }
 
-    private CaseExpression when1eq1_then_someText_else_anotherText() {
+    private CaseExpression<?> when1eq1_then_someText_else_anotherText() {
         return CaseExpression.create(
                 new Expression[]{
                         ComparisonPredicate.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT), ComparisonMode.EQUALS),
@@ -110,7 +117,7 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
                 }, VARCHAR);
     }
 
-    private CaseExpression when1eq1_then1_else10() {
+    private CaseExpression<?> when1eq1_then1_else10() {
         return CaseExpression.create(
                 new Expression[]{
                         ComparisonPredicate.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT), ComparisonMode.EQUALS),
@@ -119,7 +126,7 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
                 }, INT);
     }
 
-    private CaseExpression when1eq10_then1_else10() {
+    private CaseExpression<?> when1eq10_then1_else10() {
         return CaseExpression.create(
                 new Expression[]{
                         ComparisonPredicate.create(ConstantExpression.create(1, INT), ConstantExpression.create(10, INT), ComparisonMode.EQUALS),

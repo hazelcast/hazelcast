@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCaseOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCase;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleBiFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
@@ -77,6 +79,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //@formatter:off
 
+    public static final SqlOperator CASE = HazelcastCaseOperator.INSTANCE;
     public static final SqlFunction CAST = HazelcastCastFunction.INSTANCE;
 
     //#region Boolean predicates.
@@ -221,6 +224,32 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         }
 
         @Override
+        public Void visit(SqlNodeList nodeList) {
+            rewriteNodeList(nodeList);
+            return super.visit(nodeList);
+        }
+
+        private static void rewriteNodeList(SqlNodeList nodeList) {
+            for (int i = 0; i < nodeList.size(); ++i) {
+                SqlNode node = nodeList.get(i);
+
+                SqlNode rewrittenCase = tryRewriteCase(node);
+                if (rewrittenCase != null) {
+                    nodeList.set(i, rewrittenCase);
+                }
+            }
+        }
+
+        private static SqlNode tryRewriteCase(SqlNode node) {
+            if (node instanceof SqlCase && !(node instanceof HazelcastSqlCase)) {
+                SqlCase sqlCase = (SqlCase) node;
+                return new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(), sqlCase.getWhenOperands(),
+                        sqlCase.getThenOperands(), sqlCase.getElseOperand());
+            }
+            return null;
+        }
+
+        @Override
         public Void visit(SqlCall call) {
             rewriteCall(call);
 
@@ -228,6 +257,18 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         }
 
         private void rewriteCall(SqlCall call) {
+            List<SqlNode> operands = call.getOperandList();
+            for (int i = 0; i < operands.size(); ++i) {
+                SqlNode operand = operands.get(i);
+
+                if (operand instanceof SqlCase && !(operand instanceof HazelcastSqlCase)) {
+                    SqlCase sqlCase = (SqlCase) operand;
+                    SqlNode rewrittenCase = new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(), sqlCase.getWhenOperands(),
+                            sqlCase.getThenOperands(), sqlCase.getElseOperand());
+                    call.setOperand(i, rewrittenCase);
+                }
+            }
+
             if (call instanceof SqlBasicCall) {
                 // An alias is declared as a SqlBasicCall with "SqlKind.AS". We do not need to rewrite aliases, so skip it.
                 if (call.getKind() == SqlKind.AS) {

@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -31,8 +32,11 @@ import org.apache.calcite.sql.SqlIntervalLiteral;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlNumericLiteral;
 import org.apache.calcite.sql.SqlOperatorTable;
+import org.apache.calcite.sql.fun.SqlCase;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
@@ -126,6 +130,19 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             if (literalType != null) {
                 return literalType;
             }
+        }
+        if (operand.getKind() == SqlKind.CASE) {
+            SqlBasicCall call = (SqlBasicCall) operand;
+
+            SqlNodeList thenOperands = (SqlNodeList) call.getOperands()[1];
+            int size = thenOperands.size();
+            RelDataType[] thenTypes = new RelDataType[size];
+            for (int i = 0; i < size; i++) {
+                // we should check if then branch is a literal first
+                // and then delegate to calcite
+                thenTypes[i] = deriveTypeImpl(scope, thenOperands.get(i));
+            }
+            return thenTypes[0];
         }
 
         return super.deriveTypeImpl(scope, operand);

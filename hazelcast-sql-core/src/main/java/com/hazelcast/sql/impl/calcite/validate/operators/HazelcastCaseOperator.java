@@ -16,26 +16,47 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
-import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlOperator;
-import org.apache.calcite.sql.SqlSyntax;
-import org.apache.calcite.sql.type.SqlOperandTypeChecker;
-import org.apache.calcite.sql.type.SqlOperandTypeInference;
-import org.apache.calcite.sql.type.SqlReturnTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.common.AbstractHazelcastCaseOperator;
 
-public class HazelcastCaseOperator extends SqlOperator {
-    protected HazelcastCaseOperator(String name,
-                                    SqlKind kind,
-                                    int leftPrecedence,
-                                    int rightPrecedence,
-                                    SqlReturnTypeInference returnTypeInference,
-                                    SqlOperandTypeInference operandTypeInference,
-                                    SqlOperandTypeChecker operandTypeChecker) {
-        super(name, kind, leftPrecedence, rightPrecedence, returnTypeInference, operandTypeInference, operandTypeChecker);
+public class HazelcastCaseOperator extends AbstractHazelcastCaseOperator {
+
+    public static final HazelcastCaseOperator INSTANCE = new HazelcastCaseOperator();
+
+    private HazelcastCaseOperator() {
+        super();
     }
 
     @Override
-    public SqlSyntax getSyntax() {
-        return null;
+    protected final boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
+//        return SqlCaseOperator.INSTANCE.checkOperandTypes(binding, throwOnFailure);
+//        if (binding instanceof SqlCallBinding) {
+//            SqlCallBinding sqlBinding = (SqlCallBinding) binding;
+//            SqlCase call = (SqlCase) sqlBinding.getCall();
+//            HazelcastSqlValidator validator = (HazelcastSqlValidator) sqlBinding.getValidator();
+//
+//            validator.getTypeCoercion().caseWhenCoercion(sqlBinding);
+//            RelDataType caseType = validator.getKnownNodeType(call);
+//            if (caseType == null) {
+//                throw sqlBinding.newValidationError(RESOURCE.dynamicParamIllegal());
+//            }
+//
+//            for (SqlNode thenOperand : call.getThenOperands()) {
+//                RelDataType thenOperandType = validator.deriveType(sqlBinding.getScope(), thenOperand);
+//                if (!HazelcastTypeSystem.canCast(thenOperandType, caseType)) {
+//                    throw sqlBinding.newValidationError(RESOURCE.illegalMixingOfTypes());
+//                }
+//            }
+//            SqlNode elseOperand = call.getElseOperand();
+//            RelDataType elseOperandType = validator.deriveType(sqlBinding.getScope(), elseOperand);
+//            if (!HazelcastTypeSystem.canCast(elseOperandType, caseType)) {
+//                throw sqlBinding.newValidationError(RESOURCE.illegalMixingOfTypes());
+//            }
+//
+//            return caseType;
+//        } else {
+//            return SqlCaseOperator.INSTANCE.inferReturnType(binding);
+//        }
+        return false;
     }
 }
