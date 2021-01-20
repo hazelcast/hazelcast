@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 
 /**
@@ -75,6 +76,6 @@ public interface StreamSerializer<T> extends Serializer {
      * @return read object
      * @throws IOException in case of failure to read
      */
-    @Nonnull
+    @Nullable
     T read(@Nonnull ObjectDataInput in) throws IOException;
 }
