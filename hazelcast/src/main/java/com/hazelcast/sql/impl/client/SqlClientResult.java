@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -30,7 +29,6 @@ import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -72,8 +70,7 @@ public class SqlClientResult implements SqlResult {
      */
     public void onExecuteResponse(
         SqlRowMetadata rowMetadata,
-        List<List<Data>> rowPage,
-        boolean rowPageLast,
+        SqlPage rowPage,
         long updateCount
     ) {
         synchronized (mux) {
@@ -84,7 +81,7 @@ public class SqlClientResult implements SqlResult {
 
             if (rowMetadata != null) {
                 ClientIterator iterator = new ClientIterator(rowMetadata);
-                iterator.onNextPage(rowPage, rowPageLast);
+                iterator.onNextPage(rowPage);
 
                 state = new State(iterator, -1, null);
             } else {
@@ -283,22 +280,6 @@ public class SqlClientResult implements SqlResult {
         }
     }
 
-    private List<Row> convertPageRows(List<List<Data>> serializedRows) {
-        List<Row> rows = new ArrayList<>(serializedRows.size());
-
-        for (List<Data> serializedRow : serializedRows) {
-            Object[] values = new Object[serializedRow.size()];
-
-            for (int i = 0; i < serializedRow.size(); i++) {
-                values[i] = service.deserializeRowValue(serializedRow.get(i));
-            }
-
-            rows.add(new HeapRow(values));
-        }
-
-        return rows;
-    }
-
     private HazelcastSqlException wrap(Throwable error) {
         throw QueryUtils.toPublicException(error, service.getClientId());
     }
@@ -319,7 +300,8 @@ public class SqlClientResult implements SqlResult {
     private final class ClientIterator implements Iterator<SqlRow> {
 
         private final SqlRowMetadata rowMetadata;
-        private List<Row> currentRows;
+        private List<List<Object>> currentColumns;
+        private int currentRowCount;
         private int currentPosition;
         private boolean last;
 
@@ -329,12 +311,12 @@ public class SqlClientResult implements SqlResult {
 
         @Override
         public boolean hasNext() {
-            while (currentPosition == currentRows.size()) {
+            while (currentPosition == currentRowCount) {
                 // Reached end of the page. Try fetching the next one if possible.
                 if (!last) {
                     SqlPage page = fetch();
 
-                    onNextPage(page.getRows(), page.isLast());
+                    onNextPage(page);
                 } else {
                     // No more pages expected, so return false.
                     return false;
@@ -350,20 +332,35 @@ public class SqlClientResult implements SqlResult {
                 throw new NoSuchElementException();
             }
 
-            Row row = currentRows.get(currentPosition++);
-
+            Row row = getCurrentRow();
+            currentPosition++;
             return new SqlRowImpl(rowMetadata, row);
         }
 
-        private void onNextPage(List<List<Data>> rowPage, boolean rowPageLast) {
-            currentRows = convertPageRows(rowPage);
+        private void onNextPage(SqlPage page) {
+            currentColumns = page.getColumns();
+            currentRowCount = page.getColumns().get(0).size();
             currentPosition = 0;
 
-            this.last = rowPageLast;
+            if (page.isLast()) {
+                this.last = true;
 
-            if (rowPageLast) {
                 markClosed();
             }
+        }
+
+        private Row getCurrentRow() {
+            Object[] values = new Object[rowMetadata.getColumnCount()];
+
+            int index = 0;
+
+            for (List<Object> column : currentColumns) {
+                values[index] = service.deserializeRowValue(column.get(currentPosition));
+
+                index++;
+            }
+
+            return new HeapRow(values);
         }
     }
 }

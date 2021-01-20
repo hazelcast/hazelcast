@@ -23,6 +23,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.impl.SqlInternalService;
 
+import java.security.AccessControlException;
 import java.security.Permission;
 import java.util.Collection;
 import java.util.List;
@@ -32,28 +33,20 @@ import java.util.UUID;
  * SQL query fetch task.
  */
 public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.RequestParameters> {
+
     public SqlFetchMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Object call() throws Exception {
-        UUID localMemberId = nodeEngine.getLocalMember().getUuid();
         SqlInternalService service = nodeEngine.getSqlService().getInternalService();
 
-        try {
-            SqlPage page = service.getClientStateRegistry().fetch(
-                parameters.queryId,
-                parameters.cursorBufferSize,
-                serializationService
-            );
-
-            return new SqlFetchResponse(page.getRows(), page.isLast(), null);
-        } catch (Exception e) {
-            SqlError error = SqlClientUtils.exceptionToClientError(e, localMemberId);
-
-            return new SqlFetchResponse(null, false, error);
-        }
+        return service.getClientStateRegistry().fetch(
+            parameters.queryId,
+            parameters.cursorBufferSize,
+            serializationService
+        );
     }
 
     @Override
@@ -61,15 +54,29 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
         return SqlFetchCodec.decodeRequest(clientMessage);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        SqlFetchResponse response0 = ((SqlFetchResponse) response);
+        SqlPage page = ((SqlPage) response);
 
-        List<List<Data>> rowPage = response0.getRowPage();
-        Collection<Collection<Data>> rowPage0 = (Collection<Collection<Data>>) (Object) rowPage;
+        return SqlFetchCodec.encodeResponse(page, null);
+    }
 
-        return SqlFetchCodec.encodeResponse(rowPage0, response0.isRowPageLast(), response0.getError());
+    @Override
+    protected ClientMessage encodeException(Throwable throwable) {
+        if (throwable instanceof AccessControlException) {
+            return super.encodeException(throwable);
+        }
+
+        if (!(throwable instanceof Exception)) {
+            return super.encodeException(throwable);
+        }
+
+        SqlError error = SqlClientUtils.exceptionToClientError((Exception) throwable, nodeEngine.getLocalMember().getUuid());
+
+        return SqlFetchCodec.encodeResponse(
+            null,
+            error
+        );
     }
 
     @Override

@@ -16,9 +16,11 @@
 
 package com.hazelcast.sql.impl.state;
 
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlColumnMetadata;
+import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.QueryException;
@@ -33,6 +35,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.DONE;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
@@ -118,17 +121,28 @@ public class QueryClientStateRegistry {
         InternalSerializationService serializationService,
         boolean respondImmediately
     ) {
+        // TODO: No streams
+        List<SqlColumnMetadata> columns = clientCursor.getSqlResult().getRowMetadata().getColumns();
+        List<SqlColumnType> sqlColumnTypes = columns.stream().map(SqlColumnMetadata::getType).collect(Collectors.toList());
+
         if (respondImmediately) {
-            return new SqlPage(Collections.emptyList(), false);
+            return new SqlPage(sqlColumnTypes, Collections.emptyList(), false);
         }
 
         ResultIterator<SqlRow> iterator = clientCursor.getIterator();
 
         try {
-            List<List<Data>> page = new ArrayList<>(cursorBufferSize);
-            boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService);
+            List<List<Object>> page = new ArrayList<>(columns.size());
 
-            return new SqlPage(page, last);
+            int columnCount = columns.size();
+
+            for (int i = 0; i < columnCount; i++) {
+                page.add(new ArrayList<>());
+            }
+
+            boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService, columnCount);
+
+            return new SqlPage(sqlColumnTypes, page, last);
         } catch (HazelcastSqlException e) {
             // We use public API to extract results from the cursor. The cursor may throw HazelcastSqlException only. When
             // it happens, the cursor is already closed with the error, so we just re-throw.
@@ -148,9 +162,10 @@ public class QueryClientStateRegistry {
 
     private static boolean fetchPage(
         ResultIterator<SqlRow> iterator,
-        List<List<Data>> page,
+        List<List<Object>> page,
         int cursorBufferSize,
-        InternalSerializationService serializationService
+        InternalSerializationService serializationService,
+        int columnCount
     ) {
         assert cursorBufferSize > 0;
 
@@ -159,27 +174,28 @@ public class QueryClientStateRegistry {
         }
 
         HasNextResult hasNextResult;
+        int count = 0;
         do {
-            SqlRow row = iterator.next();
-            List<Data> convertedRow = convertRow(row, serializationService);
+            count++;
 
-            page.add(convertedRow);
+            SqlRow row = iterator.next();
+
+            for (int i = 0; i < columnCount; i++) {
+                List<Object> convertedColumn = page.get(i);
+
+                Object object = row.getObject(i);
+
+                // TODO: ??? Generalize to all objects
+                if (object instanceof Portable) {
+                    convertedColumn.add(serializationService.toData(object));
+                } else {
+                    convertedColumn.add(object);
+                }
+            }
             hasNextResult = iterator.hasNext(0, SECONDS);
-        } while (hasNextResult == YES && page.size() < cursorBufferSize);
+        } while (hasNextResult == YES && count < cursorBufferSize);
 
         return hasNextResult == DONE;
-    }
-
-    private static List<Data> convertRow(SqlRow row, InternalSerializationService serializationService) {
-        int columnCount = row.getMetadata().getColumnCount();
-
-        List<Data> values = new ArrayList<>(columnCount);
-
-        for (int i = 0; i < columnCount; i++) {
-            values.add(serializationService.toData(row.getObject(i)));
-        }
-
-        return values;
     }
 
     public void close(UUID clientId, QueryId queryId) {

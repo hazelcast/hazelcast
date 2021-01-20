@@ -97,11 +97,11 @@ public final class FixedSizeTypesCodec {
         encodeInt(buffer, pos, columnType.getId());
     }
 
-    public static void encodeInteger(byte[] buffer, int pos, Integer value) {
+    public static void encodeInteger(byte[] buffer, int pos, int value) {
         Bits.writeIntL(buffer, pos, value);
     }
 
-    public static Integer decodeInteger(byte[] buffer, int pos) {
+    public static int decodeInteger(byte[] buffer, int pos) {
         return Bits.readIntL(buffer, pos);
     }
 

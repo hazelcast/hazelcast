@@ -6500,18 +6500,18 @@ public class ClientCompatibilityTest_2_1 {
     }
 
     @Test
-    public void test_SqlFetchCodec_encodeRequest() {
+    public void test_SqlFetch_reservedCodec_encodeRequest() {
         int fileClientMessageIndex = 829;
-        ClientMessage encoded = SqlFetchCodec.encodeRequest(anSqlQueryId, anInt);
+        ClientMessage encoded = SqlFetch_reservedCodec.encodeRequest(anSqlQueryId, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_SqlFetchCodec_decodeResponse() {
+    public void test_SqlFetch_reservedCodec_decodeResponse() {
         int fileClientMessageIndex = 830;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        SqlFetchCodec.ResponseParameters parameters = SqlFetchCodec.decodeResponse(fromFile);
+        SqlFetch_reservedCodec.ResponseParameters parameters = SqlFetch_reservedCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aListOfListOfData, parameters.rowPage));
         assertTrue(isEqual(aBoolean, parameters.rowPageLast));
         assertTrue(isEqual(anSqlError, parameters.error));
