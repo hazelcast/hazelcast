@@ -206,12 +206,6 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     }
 
     @Override
-    public SerializationServiceBuilder setAllowOverrideDefaultSerializers(final boolean allowOverrideDefaultSerializers) {
-        this.allowOverrideDefaultSerializers = allowOverrideDefaultSerializers;
-        return this;
-    }
-
-    @Override
     public SerializationServiceBuilder setPartitioningStrategy(PartitioningStrategy partitionStrategy) {
         this.partitioningStrategy = partitionStrategy;
         return this;
