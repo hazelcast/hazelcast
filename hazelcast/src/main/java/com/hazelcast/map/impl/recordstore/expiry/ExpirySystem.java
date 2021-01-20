@@ -22,7 +22,6 @@ import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.MapUtil;
-import com.hazelcast.internal.util.collection.Object2ObjectHashMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.ExpirationTimeSetter;
 import com.hazelcast.map.impl.MapContainer;
@@ -40,6 +39,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
@@ -99,7 +99,10 @@ public class ExpirySystem {
 
     // this method is overridden
     protected Map<Data, ExpiryMetadata> createExpiryTimeByKeyMap() {
-        return new Object2ObjectHashMap<>(false);
+        // Only one thread can access this class but we
+        // used CHM here, because its iterator doesn't
+        // throw ConcurrentModificationException.
+        return new ConcurrentHashMap<>();
     }
 
     // this method is overridden
@@ -210,20 +213,26 @@ public class ExpirySystem {
         return hasExpired(expiryMetadata, now, backup);
     }
 
-    // TODO add expiry delay for backup replica
     private ExpiryReason hasExpired(ExpiryMetadata expiryMetadata, long now, boolean backup) {
-        boolean expired = expiryMetadata != null
-                && expiryMetadata.getExpirationTime() <= now;
-        if (expired) {
-            ExpiryReason expiryReason = expiryMetadata.getTtl() > expiryMetadata.getMaxIdle()
-                    ? ExpiryReason.IDLENESS : ExpiryReason.TTL;
-            if (backup && canPrimaryDriveExpiration
-                    && expiryReason == ExpiryReason.IDLENESS) {
-                return ExpiryReason.NOT_EXPIRED;
-            }
-            return expiryReason;
+        if (expiryMetadata == null) {
+            return ExpiryReason.NOT_EXPIRED;
         }
-        return ExpiryReason.NOT_EXPIRED;
+
+        long nextExpirationTime = backup
+                ? expiryMetadata.getExpirationTime() + expiryDelayMillis
+                : expiryMetadata.getExpirationTime();
+
+        if (nextExpirationTime > now) {
+            return ExpiryReason.NOT_EXPIRED;
+        }
+
+        ExpiryReason expiryReason = expiryMetadata.getTtl() > expiryMetadata.getMaxIdle()
+                ? ExpiryReason.IDLENESS : ExpiryReason.TTL;
+        if (backup && canPrimaryDriveExpiration
+                && expiryReason == ExpiryReason.IDLENESS) {
+            return ExpiryReason.NOT_EXPIRED;
+        }
+        return expiryReason;
     }
 
     public InvalidationQueue<ExpiredKey> getExpiredKeys() {
@@ -248,35 +257,30 @@ public class ExpirySystem {
         int keyCountInPercentage = (int) (1D * expirableKeysMapSize * percentage / ONE_HUNDRED_PERCENT);
         int maxScannableKeyCount = Math.max(MIN_SCANNABLE_ENTRY_COUNT, keyCountInPercentage);
 
-        // Get cachedExpirationIterator or init it if it has no next entry.
-        if (cachedExpirationIterator == null || !cachedExpirationIterator.hasNext()) {
-            cachedExpirationIterator = initIteratorOf(expireTimeByKey);
-        }
-
-        scanAndEvictExpiredKeys(cachedExpirationIterator, maxScannableKeyCount, now, backup);
+        scanAndEvictExpiredKeys(maxScannableKeyCount, now, backup);
 
         accumulateOrSendExpiredKey(null);
     }
 
-    private void scanAndEvictExpiredKeys(Iterator<Map.Entry<Data, ExpiryMetadata>> cachedExpirationIterator,
-                                         int maxScannableKeyCount, long now, boolean backup) {
+    /**
+     * Get cachedExpirationIterator or init it if it has no next entry.
+     */
+    private Iterator<Map.Entry<Data, ExpiryMetadata>> getOrInitCachedIterator() {
+        if (cachedExpirationIterator == null || !cachedExpirationIterator.hasNext()) {
+            cachedExpirationIterator = initIteratorOf(expireTimeByKey);
+        }
+
+        return cachedExpirationIterator;
+    }
+
+    private void scanAndEvictExpiredKeys(int maxScannableKeyCount, long now, boolean backup) {
         // Scan to find expired keys.
         long scanLoopStartNanos = System.nanoTime();
         List expiredKeyExpiryReasonList = new ArrayList<>();
         int scannedKeyCount = 0;
         int expiredKeyCount = 0;
         do {
-            Map.Entry<Data, ExpiryMetadata> entry;
-            try {
-                entry = cachedExpirationIterator.next();
-            } catch (IllegalStateException e) {
-                cachedExpirationIterator = initIteratorOf(expireTimeByKey);
-                if (cachedExpirationIterator.hasNext()) {
-                    entry = cachedExpirationIterator.next();
-                } else {
-                    break;
-                }
-            }
+            Map.Entry<Data, ExpiryMetadata> entry = getOrInitCachedIterator().next();
             scannedKeyCount++;
             Data key = entry.getKey();
             ExpiryMetadata expiryMetadata = entry.getValue();
@@ -300,8 +304,7 @@ public class ExpirySystem {
                 break;
             }
 
-        } while (scannedKeyCount < maxScannableKeyCount
-                && cachedExpirationIterator.hasNext());
+        } while (scannedKeyCount < maxScannableKeyCount && getOrInitCachedIterator().hasNext());
 
         // Evict expired keys
         for (int i = 0; i < expiredKeyExpiryReasonList.size(); i += 2) {
