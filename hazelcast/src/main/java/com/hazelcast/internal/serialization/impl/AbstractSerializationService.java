@@ -90,7 +90,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private volatile boolean active = true;
     private final byte version;
     private final ILogger logger = Logger.getLogger(InternalSerializationService.class);
-    private boolean allowOverrideDefaultSerializers;
+    private final boolean allowOverrideDefaultSerializers;
 
     AbstractSerializationService(Builder<?> builder) {
         this.inputOutputFactory = builder.inputOutputFactory;
@@ -118,6 +118,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, new BufferPoolFactoryImpl(),
                 prototype.notActiveExceptionSupplier);
         this.nullSerializerAdapter = prototype.nullSerializerAdapter;
+        this.allowOverrideDefaultSerializers = prototype.allowOverrideDefaultSerializers;
     }
 
     //region Serialization Service
