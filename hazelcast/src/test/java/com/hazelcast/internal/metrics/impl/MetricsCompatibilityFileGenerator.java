@@ -74,7 +74,7 @@ final class MetricsCompatibilityFileGenerator {
                                   .collect(Collectors.joining());
         MetricDescriptor metric3 = supplier.get()
                                            .withPrefix(longPrefix)
-                                           .withMetric("differentMetric")
+                                           .withMetric("longPrefixMetric")
                                            .withUnit(BYTES);
         compressor.addLong(metric3, Integer.MAX_VALUE);
 
