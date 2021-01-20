@@ -456,7 +456,7 @@ public class SerializationConfig {
     }
 
     /**
-     * @return true if embedded serializers may be overridden by custom serializers
+     * @return {@code true} if default serializers may be overridden by custom serializers
      *
      * @since 4.2
      */
