@@ -70,12 +70,10 @@ interface HazelcastOperandTypeCheckerAware {
             RelDataType[] operandTypes = new RelDataType[binding.getOperandCount()];
             Arrays.fill(operandTypes, unknownType);
 
-            if (operandTypeInference != null) {
-                operandTypeInference.inferOperandTypes(binding, binding.getValidator().getUnknownType(), operandTypes);
+            operandTypeInference.inferOperandTypes(binding, binding.getValidator().getUnknownType(), operandTypes);
 
-                for (int i = 0; i < binding.getOperandCount(); i++) {
-                    validator.setValidatedNodeType(binding.operand(i), operandTypes[i]);
-                }
+            for (int i = 0; i < binding.getOperandCount(); i++) {
+                validator.setValidatedNodeType(binding.operand(i), operandTypes[i]);
             }
         }
 

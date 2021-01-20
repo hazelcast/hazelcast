@@ -26,7 +26,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.createNullableType;
 
 /**
- * Type inference that replaces unknown operands with the given types.
+ * Type inference that replaces UNKNOWN and NULL operands with the given types.
  */
 public class ReplaceUnknownOperandTypeInference implements SqlOperandTypeInference {
 
@@ -55,6 +55,8 @@ public class ReplaceUnknownOperandTypeInference implements SqlOperandTypeInferen
             RelDataType operandType = callBinding.getOperandType(i);
 
             if (operandType.getSqlTypeName() == SqlTypeName.NULL) {
+                // note that this path is taken if operandType is both UNKNOWN or NULL.
+                // That is in case of FUNCTION(?) and FUNCTION(null).
                 RelDataType resolvedOperandType = resolveOperandType(i, callBinding.getTypeFactory());
 
                 // Preserve nullability
