@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlExecute2Codec;
+import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
@@ -83,7 +83,7 @@ public class SqlClientService implements SqlService {
                 params0.add(serializeParameter(param));
             }
 
-            ClientMessage requestMessage = SqlExecute2Codec.encodeRequest(
+            ClientMessage requestMessage = SqlExecuteCodec.encodeRequest(
                 statement.getSql(),
                 params0,
                 statement.getTimeoutMillis(),
@@ -123,7 +123,7 @@ public class SqlClientService implements SqlService {
         }
 
         try {
-            SqlExecute2Codec.ResponseParameters response = SqlExecute2Codec.decodeResponse(message);
+            SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
 
             handleResponseError(response.error);
 

@@ -18,7 +18,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlExecute2Codec;
+import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlErrorCode;
@@ -114,7 +114,7 @@ public class SqlClientExecuteCloseRaceTest {
     }
 
     private void checkExecuteResponse(ClientMessage executeResponse, boolean success) {
-        SqlExecute2Codec.ResponseParameters executeResponse0 = SqlExecute2Codec.decodeResponse(executeResponse);
+        SqlExecuteCodec.ResponseParameters executeResponse0 = SqlExecuteCodec.decodeResponse(executeResponse);
 
         if (success) {
             assertNull(executeResponse0.error);
@@ -126,7 +126,7 @@ public class SqlClientExecuteCloseRaceTest {
     }
 
     private ClientMessage sendExecuteRequest(QueryId queryId) {
-        ClientMessage executeRequest = SqlExecute2Codec.encodeRequest(
+        ClientMessage executeRequest = SqlExecuteCodec.encodeRequest(
             SQL,
             Collections.emptyList(),
             0L,

@@ -6595,18 +6595,18 @@ public class ClientCompatibilityTest_2_2 {
     }
 
     @Test
-    public void test_SqlExecute2Codec_encodeRequest() {
+    public void test_SqlExecuteCodec_encodeRequest() {
         int fileClientMessageIndex = 839;
-        ClientMessage encoded = SqlExecute2Codec.encodeRequest(aString, aListOfData, aLong, anInt, aString, aByte, anSqlQueryId);
+        ClientMessage encoded = SqlExecuteCodec.encodeRequest(aString, aListOfData, aLong, anInt, aString, aByte, anSqlQueryId);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_SqlExecute2Codec_decodeResponse() {
+    public void test_SqlExecuteCodec_decodeResponse() {
         int fileClientMessageIndex = 840;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        SqlExecute2Codec.ResponseParameters parameters = SqlExecute2Codec.decodeResponse(fromFile);
+        SqlExecuteCodec.ResponseParameters parameters = SqlExecuteCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aListOfSqlColumnMetadata, parameters.rowMetadata));
         assertTrue(isEqual(aListOfListOfData, parameters.rowPage));
         assertTrue(isEqual(aBoolean, parameters.rowPageLast));
