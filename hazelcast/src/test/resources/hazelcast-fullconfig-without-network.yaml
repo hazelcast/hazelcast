@@ -553,6 +553,7 @@ hazelcast:
     enable-compression: true
     enable-shared-object: true
     allow-unsafe: true
+    allow-override-default-serializers: false
     data-serializable-factories:
       - factory-id: 1
         class-name: com.hazelcast.examples.DataSerializableFactory
