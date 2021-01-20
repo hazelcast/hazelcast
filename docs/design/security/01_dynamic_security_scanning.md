@@ -23,7 +23,7 @@ Hazelcast users/customers may be bound by security requirements defined
 for libraries and tools used in their products. The requirements may
 require static and dynamic security scans.
 
-Hazelcast already has regular static scans (e.g. Sonar, Black Buck),
+Hazelcast already has regular static scans (e.g. Sonar, Black Duck),
 but we are missing dynamic scans focused on evaluating a running cluster.
 
 This design document describes a dynamic security scanning approach that can be used.
