@@ -122,53 +122,30 @@ public class SqlClientService implements SqlService {
             return;
         }
 
-        try {
-            SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
+        SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
 
-            handleResponseError(response.error);
+        HazelcastSqlException responseError = handleResponseError(response.error);
 
-            res.onExecuteResponse(
-                response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
-                response.rowPage,
-                response.rowPageLast,
-                response.updateCount
-            );
-        } catch (Exception e) {
-            res.onExecuteError(rethrow(e, connection));
+        if (responseError != null) {
+            res.onExecuteError(responseError);
+
+            return;
         }
-    }
 
-    /**
-     * Fetch the next page of the given query.
-     *
-     * @param connection Connection.
-     * @param queryId Query ID.
-     * @return Pair: fetched rows + last page flag.
-     */
-    public SqlPage fetch(Connection connection, QueryId queryId, int cursorBufferSize) {
-        try {
-            ClientMessage requestMessage = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
-            ClientMessage responseMessage = invoke(requestMessage, connection);
-            SqlFetchCodec.ResponseParameters responseParameters = SqlFetchCodec.decodeResponse(responseMessage);
-
-            handleResponseError(responseParameters.error);
-
-            return new SqlPage(responseParameters.rowPage, responseParameters.rowPageLast);
-        } catch (Exception e) {
-            throw rethrow(e, connection);
-        }
+        res.onExecuteResponse(
+            response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
+            response.rowPage,
+            response.rowPageLast,
+            response.updateCount
+        );
     }
 
     public void fetchAsync(Connection connection, QueryId queryId, int cursorBufferSize, SqlClientResult res) {
-        try {
-            ClientMessage requestMessage = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
+        ClientMessage requestMessage = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
 
-            ClientInvocationFuture future = invokeAsync(requestMessage, connection);
+        ClientInvocationFuture future = invokeAsync(requestMessage, connection);
 
-            future.whenComplete((message, error) -> handleFetchResponse(connection, res, message, error));
-        } catch (Exception e) {
-            throw rethrow(e, connection);
-        }
+        future.whenComplete((message, error) -> handleFetchResponse(connection, res, message, error));
     }
 
     private void handleFetchResponse(Connection connection, SqlClientResult res, ClientMessage message, Throwable error) {
@@ -178,17 +155,19 @@ public class SqlClientService implements SqlService {
             return;
         }
 
-        try {
-            SqlFetchCodec.ResponseParameters responseParameters = SqlFetchCodec.decodeResponse(message);
+        SqlFetchCodec.ResponseParameters responseParameters = SqlFetchCodec.decodeResponse(message);
 
-            handleResponseError(responseParameters.error);
+        HazelcastSqlException responseError = handleResponseError(responseParameters.error);
 
-            SqlPage page = new SqlPage(responseParameters.rowPage, responseParameters.rowPageLast);
+        if (responseError != null) {
+            res.onFetchFinished(null, responseError);
 
-            res.onFetchFinished(page, null);
-        } catch (Exception e) {
-            res.onFetchFinished(null, rethrow(e, connection));
+            return;
         }
+
+        SqlPage page = new SqlPage(responseParameters.rowPage, responseParameters.rowPageLast);
+
+        res.onFetchFinished(page, null);
     }
 
     /**
@@ -267,9 +246,11 @@ public class SqlClientService implements SqlService {
         return fut.get();
     }
 
-    private static void handleResponseError(SqlError error) {
+    private static HazelcastSqlException handleResponseError(SqlError error) {
         if (error != null) {
-            throw new HazelcastSqlException(error.getOriginatingMemberId(), error.getCode(), error.getMessage(), null);
+            return new HazelcastSqlException(error.getOriginatingMemberId(), error.getCode(), error.getMessage(), null);
+        } else {
+            return null;
         }
     }
 
