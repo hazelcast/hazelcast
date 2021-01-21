@@ -17,6 +17,9 @@
 package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.ParameterConverter;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCase;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
 import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
@@ -35,7 +38,6 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlNumericLiteral;
 import org.apache.calcite.sql.SqlOperatorTable;
-import org.apache.calcite.sql.fun.SqlCase;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -49,6 +51,7 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.util.Util;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -132,9 +135,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             }
         }
         if (operand.getKind() == SqlKind.CASE) {
-            SqlBasicCall call = (SqlBasicCall) operand;
-
-            SqlNodeList thenOperands = (SqlNodeList) call.getOperands()[1];
+            SqlNodeList thenOperands = thenOperands(operand);
             int size = thenOperands.size();
             RelDataType[] thenTypes = new RelDataType[size];
             for (int i = 0; i < size; i++) {
@@ -146,6 +147,22 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         }
 
         return super.deriveTypeImpl(scope, operand);
+    }
+
+    @Nonnull
+    private static SqlNodeList thenOperands(SqlNode operand) {
+        if (operand instanceof SqlBasicCall) {
+            SqlBasicCall call = (SqlBasicCall) operand;
+
+            return (SqlNodeList) call.getOperands()[1];
+        } else if (operand instanceof HazelcastSqlCase) {
+            HazelcastSqlCase sqlCase = (HazelcastSqlCase) operand;
+
+            return sqlCase.getThenOperands();
+        } else {
+            assert true : "DEBUG operand is instance of " + operand.getClass();
+            throw new RuntimeException();
+        }
     }
 
     @Override

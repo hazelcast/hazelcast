@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.AbstractHazelcastCaseOperator;
 
-public class HazelcastCaseOperator extends AbstractHazelcastCaseOperator {
+public final class HazelcastCaseOperator extends AbstractHazelcastCaseOperator {
 
     public static final HazelcastCaseOperator INSTANCE = new HazelcastCaseOperator();
 
@@ -28,7 +28,7 @@ public class HazelcastCaseOperator extends AbstractHazelcastCaseOperator {
     }
 
     @Override
-    protected final boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
+    protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
 //        return SqlCaseOperator.INSTANCE.checkOperandTypes(binding, throwOnFailure);
 //        if (binding instanceof SqlCallBinding) {
 //            SqlCallBinding sqlBinding = (SqlCallBinding) binding;
