@@ -28,7 +28,7 @@ public class SqlPageCodec {
         clientMessage.add(new ClientMessage.Frame(content));
 
         List<SqlColumnType> columnTypes = sqlPage.getColumnTypes();
-        ListIntegerCodec.encode(clientMessage, columnTypes.stream().map(SqlColumnType::getId).collect(Collectors.toList()));
+        ListCNIntegerCodec.encode(clientMessage, columnTypes.stream().map(SqlColumnType::getId).collect(Collectors.toList()));
 
         Iterator<List<Object>> iterator = sqlPage.getColumns().iterator();
 
@@ -55,7 +55,7 @@ public class SqlPageCodec {
                     throw new UnsupportedOperationException("Fix");
 
                 case INTEGER:
-                    ListIntegerCodec.encode(clientMessage, (Collection<Integer>) column);
+                    ListCNIntegerCodec.encode(clientMessage, (Collection<Integer>) column);
 
                     break;
 
@@ -93,7 +93,7 @@ public class SqlPageCodec {
                     throw new UnsupportedOperationException("Fix");
 
                 case OBJECT:
-                    ListMultiFrameCodec.encode(clientMessage, (Collection<Data>) (Object) column, DataCodec::encodeNullable);
+                    ListMultiFrameCodec.encode(clientMessage, (Collection<Data>) column, DataCodec::encodeNullable);
 
                     break;
 
@@ -116,7 +116,7 @@ public class SqlPageCodec {
 
         boolean isLast = iterator.next().content[0] == 1;
 
-        ArrayList<SqlColumnType> types = ListIntegerCodec.decode(iterator).stream()
+        ArrayList<SqlColumnType> types = ListCNIntegerCodec.decode(iterator).stream()
             .map(SqlColumnType::getById).collect(Collectors.toCollection(ArrayList::new));
 
         // TODO: (Sancar) handle empty iterator
@@ -143,7 +143,7 @@ public class SqlPageCodec {
                     throw new UnsupportedOperationException("Fix");
 
                 case INTEGER:
-                    result.add(ListIntegerCodec.decode(iterator));
+                    result.add(ListCNIntegerCodec.decode(iterator));
 
                     break;
 
