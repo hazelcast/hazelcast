@@ -40,8 +40,10 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -59,6 +61,9 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class QueryAdvancedTest extends HazelcastTestSupport {
+
+    @Rule
+    public ExpectedException expected = ExpectedException.none();
 
     @Test
     public void testQueryOperationAreNotSentToLiteMembers() {
@@ -141,8 +146,8 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         // check the query result before eviction
         Collection values = map.values(new SqlPredicate("active"));
         assertEquals(String.format("Expected %s results but got %s. Number of evicted entries: %s.",
-                activeEmployees, values.size(), allEmployees - latch.getCount()),
-                activeEmployees, values.size());
+                                   activeEmployees, values.size(), allEmployees - latch.getCount()),
+                     activeEmployees, values.size());
 
         // wait until eviction is completed
         assertOpenEventually(latch);
@@ -522,8 +527,8 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
             }
         });
         config.getMapConfig(mapName)
-                .addMapIndexConfig(new MapIndexConfig("notExist", false))
-                .addMapIndexConfig(new MapIndexConfig("n", false));
+              .addMapIndexConfig(new MapIndexConfig("notExist", false))
+              .addMapIndexConfig(new MapIndexConfig("n", false));
 
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
 
@@ -534,5 +539,20 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
 
         Collection values = map.values(new SqlPredicate("n = name_2 OR notExist = name_0"));
         assertEquals(1, values.size());
+    }
+
+    @Test
+    public void testClassNotFoundErrorDelegatedToCallerOnQuery() {
+        Config config = getConfig();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = hazelcastInstance.getMap("map");
+
+        map.put(1, 1);
+        //A remote predicate can throw Error in case of Usercodeployment and missing sub classes
+        //See the issue for actual problem https://github.com/hazelcast/hazelcast/issues/18052
+        //We are throwing error to see if the error is delegated to the caller
+        expected.expect(NoClassDefFoundError.class);
+        map.values(new ErrorThrowingPredicate());
     }
 }
