@@ -249,7 +249,7 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
                 Result result
                         = queryRunner.runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(query, partitionId);
                 future.addResult(partitionId, result);
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 future.completeExceptionally(ex);
             }
         }
@@ -271,7 +271,7 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
                     Result combinedResult = queryRunner.populateEmptyResult(query, Collections.emptyList());
                     populateResult(response, combinedResult);
                     QueryOperation.this.sendResponse(combinedResult);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     QueryOperation.this.sendResponse(e);
                     throw rethrow(e);
                 }
