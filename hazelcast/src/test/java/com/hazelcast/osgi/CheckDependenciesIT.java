@@ -16,24 +16,30 @@
 
 package com.hazelcast.osgi;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
+
 import org.apache.felix.utils.manifest.Clause;
 import org.apache.felix.utils.manifest.Parser;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.jar.Manifest;
-
-import static org.junit.Assert.fail;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.StringUtil;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -55,10 +61,14 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
             "javax.security.auth",
             "javax.transaction.xa",
             "javax.xml",
+            "javax.naming",
 
             // these 2 XML-related packages are part of the platform since Java SE 6
             "org.xml.sax",
             "org.w3c.dom",
+
+            // GSS-API (& Kerberos) related classes - part of JDK since 1.4
+            "org.ietf.jgss"
     };
 
     @Test
@@ -73,6 +83,21 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
             String resolution = clause.getDirective("resolution");
             checkImport(name, resolution);
         }
+    }
+
+    /**
+     * Verify the {@code HazelcastManifestTransformer} was properly used.
+     */
+    @Test
+    public void verifyManifestEntries() throws IOException {
+        Manifest mf = getHazelcastManifest();
+        Attributes mainAttributes = mf.getMainAttributes();
+        assertEquals("Unexpected Bundle-Name attribute value", getBundleName(), mainAttributes.getValue("Bundle-Name"));
+        assertNotNull("The Main-Class attribute is expected", mainAttributes.getValue("Main-Class"));
+    }
+
+    protected String getBundleName() {
+        return "hazelcast";
     }
 
     protected Manifest getHazelcastManifest() throws IOException {
@@ -133,6 +158,10 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
     }
 
     protected boolean isMatching(String urlString) {
-        return urlString.contains("hazelcast-3.") && urlString.contains("target");
+        return urlString.contains("hazelcast-" + getMajorVersion() + ".") && urlString.contains("target");
+    }
+
+    protected String getMajorVersion() {
+        return StringUtil.tokenizeVersionString(BuildInfoProvider.getBuildInfo().getVersion())[0];
     }
 }
