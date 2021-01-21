@@ -203,6 +203,7 @@ public class SqlBasicTest extends SqlTestSupport {
                 AbstractPojo val = map.get(key);
 
                 checkRowValue(SqlColumnType.BIGINT, key.getKey(), row, "key");
+                checkRowValue(SqlColumnType.BOOLEAN, val.isBooleanVal(), row, "booleanVal");
                 checkRowValue(SqlColumnType.INTEGER, val.getIntVal(), row, "intVal");
                 checkRowValue(SqlColumnType.BIGINT, val.getBigIntVal(), row, "bigIntVal");
                 checkRowValue(SqlColumnType.VARCHAR, val.getVarcharVal(), row, "varcharVal");
@@ -289,7 +290,7 @@ public class SqlBasicTest extends SqlTestSupport {
 
     private SqlResult query() {
         String sql = sql();
-        System.out.println(sql);
+
         if (cursorBufferSize == SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE) {
             return getTarget().getSql().execute(sql);
         } else {
@@ -301,6 +302,7 @@ public class SqlBasicTest extends SqlTestSupport {
         if (serializationMode == SerializationMode.PORTABLE) {
             return Arrays.asList(
                 "key",
+                "booleanVal",
                 "intVal",
                 "bigIntVal",
                 "varcharVal",
@@ -338,6 +340,7 @@ public class SqlBasicTest extends SqlTestSupport {
         if (serializationMode == SerializationMode.PORTABLE) {
             return Arrays.asList(
                 SqlColumnType.BIGINT,
+                SqlColumnType.BOOLEAN,
                 SqlColumnType.INTEGER,
                 SqlColumnType.BIGINT,
                 SqlColumnType.VARCHAR,

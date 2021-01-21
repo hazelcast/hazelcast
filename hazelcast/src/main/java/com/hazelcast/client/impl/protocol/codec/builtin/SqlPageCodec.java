@@ -42,8 +42,9 @@ public class SqlPageCodec {
                     break;
 
                 case BOOLEAN:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
+                    ListBooleanCodec.encode(clientMessage, (Collection<Boolean>) column);
+
+                    break;
 
                 case TINYINT:
                     // TODO
@@ -129,8 +130,9 @@ public class SqlPageCodec {
                     break;
 
                 case BOOLEAN:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
+                    result.add(ListBooleanCodec.decode(iterator));
+
+                    break;
 
                 case TINYINT:
                     // TODO
