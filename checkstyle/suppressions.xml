@@ -349,6 +349,10 @@
     <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]client[\\/]protocol[\\/]compatibility[\\/]"/>
     <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compatibility[\\/]"/>
 
+    <!-- Class name checks for client messages -->
+    <suppress checks="TypeName"
+              files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]SqlExecute_reservedCodec"/>
+
     <!-- module-info.java -->
     <suppress checks="" files="[\\/]module-info"/>
 

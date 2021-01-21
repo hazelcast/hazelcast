@@ -27,11 +27,14 @@ public class QueryClientState {
 
     private final UUID clientId;
     private final AbstractSqlResult sqlResult;
+    private final boolean closed;
+
     private ResultIterator<SqlRow> iterator;
 
-    public QueryClientState(UUID clientId, AbstractSqlResult sqlResult) {
+    public QueryClientState(UUID clientId, AbstractSqlResult sqlResult, boolean closed) {
         this.clientId = clientId;
         this.sqlResult = sqlResult;
+        this.closed = closed;
     }
 
     public UUID getClientId() {
@@ -46,7 +49,13 @@ public class QueryClientState {
         return sqlResult;
     }
 
+    public boolean isClosed() {
+        return closed;
+    }
+
     public ResultIterator<SqlRow> getIterator() {
+        assert sqlResult != null;
+
         if (iterator == null) {
             iterator = sqlResult.iterator();
         }
