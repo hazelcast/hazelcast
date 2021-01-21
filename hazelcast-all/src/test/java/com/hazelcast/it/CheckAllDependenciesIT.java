@@ -16,6 +16,13 @@
 
 package com.hazelcast.it;
 
+import static org.junit.Assert.assertEquals;
+
+import java.io.IOException;
+import java.util.jar.Manifest;
+
+import org.junit.Test;
+
 import com.hazelcast.osgi.CheckDependenciesIT;
 
 public class CheckAllDependenciesIT extends CheckDependenciesIT {
@@ -23,5 +30,15 @@ public class CheckAllDependenciesIT extends CheckDependenciesIT {
     @Override
     protected boolean isMatching(String urlString) {
         return urlString.contains("hazelcast-all-") && urlString.contains("target");
+    }
+
+    /**
+     * Verify the {@code HazelcastManifestTransformer} was properly used.
+     */
+    @Test
+    public void verifyManifestEntries() throws IOException {
+        Manifest mf = getHazelcastManifest();
+        Object attr = mf.getMainAttributes().getValue("Bundle-name");
+        assertEquals("Unexpected Bundle-Name attribute value", "Hazelcast(All)", attr);
     }
 }
