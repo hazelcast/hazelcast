@@ -52,8 +52,7 @@ public final class HazelcastLikeOperator extends HazelcastSpecialOperator {
             PRECEDENCE,
             false,
             ReturnTypes.BOOLEAN_NULLABLE,
-            new ReplaceUnknownOperandTypeInference(VARCHAR),
-            null
+            new ReplaceUnknownOperandTypeInference(VARCHAR)
         );
 
         this.negated = negated;
