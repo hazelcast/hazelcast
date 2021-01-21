@@ -61,7 +61,8 @@ public final class HazelcastCaseOperator extends SqlOperator {
         failure |= !firstThenBranchType.equals(elseType);
         allReturnTypes[j] = elseType.getTypeFamily();
         if (failure) {
-            throw QueryException.error(SqlErrorCode.GENERIC, "Cannot infer return type of case operator among " + Arrays.toString(allReturnTypes));
+            throw QueryException.error(
+                    SqlErrorCode.GENERIC, "Cannot infer return type of case operator among " + Arrays.toString(allReturnTypes));
         }
         return caseReturnType;
     }
