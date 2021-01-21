@@ -82,6 +82,15 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void withParameterAsValue() {
+        put(1);
+
+        String sql = "select case ? when this then 100 end from map";
+
+        checkValue0(sql, SqlColumnType.TINYINT, (byte) 100, 1);
+    }
+
+    @Test
     public void testEquality() {
         checkEquals(
                 when1eq1_then1_else10(),
