@@ -431,8 +431,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
         if (constantTypesMap.containsKey(type) && !allowOverrideDefaultSerializers) {
             throw new IllegalArgumentException(
                 "[" + type + "] serializer cannot be overridden."
-                + " See documentation of Hazelcast serialization configuration " +
-                  " or setAllowOverrideDefaultSerializers method in SerializationConfig."
+                + " See documentation of Hazelcast serialization configuration "
+                + " or setAllowOverrideDefaultSerializers method in SerializationConfig."
               );
         }
         SerializerAdapter current = typeMap.putIfAbsent(type, serializer);
