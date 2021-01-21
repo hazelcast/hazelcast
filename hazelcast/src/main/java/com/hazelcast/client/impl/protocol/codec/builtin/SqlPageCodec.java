@@ -17,7 +17,6 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 
 public class SqlPageCodec {
 
-
     private SqlPageCodec() {
     }
 
