@@ -28,7 +28,7 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlOperatorBinding;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -57,11 +57,8 @@ public final class HazelcastReturnTypeInference implements SqlReturnTypeInferenc
         this.delegate = delegate;
     }
 
-    @Nullable
-    public static HazelcastReturnTypeInference wrap(@Nullable SqlReturnTypeInference delegate) {
-        if (delegate == null) {
-            return null;
-        }
+    @Nonnull
+    public static HazelcastReturnTypeInference wrap(@Nonnull SqlReturnTypeInference delegate) {
         return new HazelcastReturnTypeInference(delegate);
     }
 

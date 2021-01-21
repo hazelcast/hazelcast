@@ -31,12 +31,6 @@ import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnT
  * See {@link HazelcastOperandTypeCheckerAware} for motivation.
  */
 public abstract class HazelcastSpecialOperator extends SqlSpecialOperator implements HazelcastOperandTypeCheckerAware {
-    protected HazelcastSpecialOperator(
-            String name,
-            SqlKind kind
-    ) {
-        super(name, kind, 2);
-    }
 
     protected HazelcastSpecialOperator(
         String name,
