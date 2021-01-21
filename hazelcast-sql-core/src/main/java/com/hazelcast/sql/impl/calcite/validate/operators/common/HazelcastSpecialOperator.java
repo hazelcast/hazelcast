@@ -20,7 +20,6 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlSpecialOperator;
-import org.apache.calcite.sql.type.SqlOperandTypeChecker;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
@@ -39,10 +38,9 @@ public abstract class HazelcastSpecialOperator extends SqlSpecialOperator implem
         int prec,
         boolean leftAssoc,
         SqlReturnTypeInference returnTypeInference,
-        SqlOperandTypeInference operandTypeInference,
-        SqlOperandTypeChecker checker
+        SqlOperandTypeInference operandTypeInference
     ) {
-        super(name, kind, prec, leftAssoc, wrap(returnTypeInference), operandTypeInference, checker);
+        super(name, kind, prec, leftAssoc, wrap(returnTypeInference), operandTypeInference, null);
     }
 
     @Override
