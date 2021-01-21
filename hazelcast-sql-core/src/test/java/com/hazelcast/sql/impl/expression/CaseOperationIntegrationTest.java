@@ -78,7 +78,7 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
 
         String sql = "select case when 1 = 1 then 1 when 2 = 2 then 1000000000 else 'some string' end from map";
 
-        checkValue0(sql, SqlColumnType.BIGINT, (byte) 0);
+        checkFailure0(sql, SqlErrorCode.GENERIC, "Cannot infer return type of case operator among [TINYINT, INTEGER, VARCHAR]");
     }
 
     @Test

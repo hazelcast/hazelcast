@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.ParameterConverter;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCase;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
@@ -27,7 +26,6 @@ import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -38,6 +36,7 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlNumericLiteral;
 import org.apache.calcite.sql.SqlOperatorTable;
+import org.apache.calcite.sql.fun.SqlCase;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -51,7 +50,6 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.util.Util;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -135,34 +133,17 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             }
         }
         if (operand.getKind() == SqlKind.CASE) {
-            SqlNodeList thenOperands = thenOperands(operand);
+            SqlCase sqlCase = (SqlCase) operand;
+            SqlNodeList thenOperands = sqlCase.getThenOperands();
             int size = thenOperands.size();
             RelDataType[] thenTypes = new RelDataType[size];
             for (int i = 0; i < size; i++) {
-                // we should check if then branch is a literal first
-                // and then delegate to calcite
                 thenTypes[i] = deriveTypeImpl(scope, thenOperands.get(i));
             }
             return thenTypes[0];
         }
 
         return super.deriveTypeImpl(scope, operand);
-    }
-
-    @Nonnull
-    private static SqlNodeList thenOperands(SqlNode operand) {
-        if (operand instanceof SqlBasicCall) {
-            SqlBasicCall call = (SqlBasicCall) operand;
-
-            return (SqlNodeList) call.getOperands()[1];
-        } else if (operand instanceof HazelcastSqlCase) {
-            HazelcastSqlCase sqlCase = (HazelcastSqlCase) operand;
-
-            return sqlCase.getThenOperands();
-        } else {
-            assert true : "DEBUG operand is instance of " + operand.getClass();
-            throw new RuntimeException();
-        }
     }
 
     @Override
