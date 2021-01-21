@@ -82,28 +82,38 @@ sql〉
 ```
 <!--END_DOCUSAURUS_CODE_TABS-->
 
-You are now ready to write some SQL. Try this:
+You are now ready to write some SQL. Try these:
 
 ```sql
-sql〉 SELECT * FROM TABLE(generate_series(1,5));
+sql〉 SELECT * FROM TABLE(generate_series(1,3));
 +------------+
 |           v|
 +------------+
 |           1|
 |           2|
 |           3|
-|           4|
-|           5|
 +------------+
-5 row(s) selected
-sql〉 SELECT sum(v) FROM TABLE(generate_series(1,5));
+3 row(s) selected
+sql〉 SELECT sum(v) as total FROM TABLE(generate_series(0, 9));
 +--------------------+
-|              EXPR$0|
+|               total|
 +--------------------+
-|                  15|
+|                  45|
 +--------------------+
 1 row(s) selected
-sql〉
+sql〉 SELECT key, sum(key) as total FROM (
+          SELECT v/2 as key FROM TABLE(generate_series(0, 9))
+      ) GROUP BY key;
++--------------------+--------------------+
+|                 key|               total|
++--------------------+--------------------+
+|                   1|                   2|
+|                   2|                   4|
+|                   3|                   6|
+|                   4|                   8|
+|                   0|                   0|
++--------------------+--------------------+
+5 row(s) selected
 ```
 
 Here are two more examples with streaming SQL. Streaming queries never
@@ -164,13 +174,14 @@ expressions](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/i
 - JOIN with an IMap inside the Jet cluster (enrichment)
 - [INSERT/SINK INTO](basic-commands#insertsink-statement) a Kafka topic
   or an IMap inside the cluster
-- [aggregate functions](basic-commands#aggregate-functions) (doesn't
-  yet support streaming sources like Kafka)
+- [GROUP BY and aggregate functions](basic-commands#aggregate-functions)
+  on bounded data (non-streaming)
 
 These are some of the features on our roadmap:
 
-- Joins with arbitrary external data sources
+- GROUP BY for IMap
 - Windowed aggregation of streaming data
+- JOIN with any data source
 - JDBC
 
 ## CREATE EXTERNAL MAPPING
@@ -179,26 +190,24 @@ There is no native storage system in Jet SQL, instead it works with
 _external mappings_ to access various resources as if they were tables.
 This includes its own internal IMaps.
 
-This is how you can create a mapping to a Kafka topic `trades` with
-JSON messages:
+This is how you can create a mapping for a Hazelcast IMap `myMap` with
+JSON values:
 
 ```sql
-sql〉 CREATE MAPPING trades (
-    id BIGINT,
-    ticker VARCHAR,
-    price DECIMAL,
-    amount BIGINT)
-TYPE Kafka
+sql〉 CREATE EXTERNAL MAPPING myMap (
+    id BIGINT EXTERNAL NAME "__key",
+    name VARCHAR,
+    age INT)
+TYPE IMap
 OPTIONS (
-    'valueFormat' = 'json',
-    'bootstrap.servers' = 'kafka:9092'
-);
+    'keyFormat'='bigint',
+    'valueFormat'='json');
 OK
 sql〉 SHOW MAPPINGS;
 +--------------------+
 |name                |
 +--------------------+
-|trades              |
+|myMap               |
 +--------------------+
 1 row(s) selected
 sql〉
@@ -210,15 +219,16 @@ The [DDL](ddl) section has more details.
 
 Make sure you are in the same directory from which you started Jet.
 
-Create a sample CSV file named `trades.csv`:
+Create a sample CSV file named `likes.csv`:
 
 ```bash
-$ vi trades.csv
+$ vi likes.csv
 
-id,name
-1,Jerry
-2,Greg
-3,Mary
+id,name,likes
+1,Jerry,13
+2,Greg,108
+3,Mary,73
+4,Jerry,88
 ```
 
 Now you can write the SQL:
@@ -226,43 +236,45 @@ Now you can write the SQL:
 <!--DOCUSAURUS_CODE_TABS-->
 <!--Docker-->
 ```sql
-sql〉 CREATE MAPPING csv_trades (id TINYINT, name VARCHAR)
+sql〉 CREATE MAPPING csv_likes (id INT, name VARCHAR, likes INT)
 TYPE File
 OPTIONS ('format'='csv',
-    'path'='/csv-dir', 'glob'='trades.csv');
+    'path'='/csv-dir', 'glob'='likes.csv');
 OK
-sql〉 SELECT * FROM csv_trades;
-+----+--------------------+
-|  id|name                |
-+----+--------------------+
-|   1|Jerry               |
-|   2|Greg                |
-|   3|Mary                |
-+----+--------------------+
-2 row(s) selected
-sql〉
 ```
 
 <!--Tarball-->
 ```sql
-sql〉 CREATE MAPPING csv_trades (id TINYINT, name VARCHAR)
+sql〉 CREATE MAPPING csv_likes (id INT, name VARCHAR, likes INT)
 TYPE File
 OPTIONS ('format'='csv',
-    'path'='/path/to/curr-dir', 'glob'='trades.csv');
+    'path'='/path/to/curr-dir', 'glob'='likes.csv');
 OK
-sql〉 SELECT * FROM csv_trades;
-+----+--------------------+
-|  id|name                |
-+----+--------------------+
-|   1|Jerry               |
-|   2|Greg                |
-|   3|Mary                |
-+----+--------------------+
-2 row(s) selected
-sql〉
 ```
 
 <!--END_DOCUSAURUS_CODE_TABS-->
+
+```sql
+sql〉 SELECT * FROM csv_likes;
++------------+--------------------+------------+
+|          id|name                |       likes|
++------------+--------------------+------------+
+|           1|Jerry               |          13|
+|           2|Greg                |         108|
+|           3|Mary                |          73|
+|           4|Jerry               |          88|
++------------+--------------------+------------+
+4 row(s) selected
+sql〉 SELECT name, sum(likes) as total_likes FROM csv_likes GROUP BY name;
++--------------------+--------------------+
+|name                |         total_likes|
++--------------------+--------------------+
+|Greg                |                 108|
+|Jerry               |                 101|
+|Mary                |                  73|
++--------------------+--------------------+
+3 row(s) selected
+```
 
 See the [File Connector](file-connector) page for more details.
 
@@ -319,6 +331,8 @@ You are now ready to query Kafka. We'll use JSON messages like this one:
 First write a streaming query that filters and transforms the trade
 events it gets from Kafka:
 
+<!--DOCUSAURUS_CODE_TABS-->
+<!--Docker-->
 ```sql
 sql〉 CREATE MAPPING trades (
     id BIGINT,
@@ -331,6 +345,26 @@ OPTIONS (
     'bootstrap.servers' = 'kafka:9092'
 );
 OK
+```
+
+<!--Tarball-->
+```sql
+sql〉 CREATE MAPPING trades (
+    id BIGINT,
+    ticker VARCHAR,
+    price DECIMAL,
+    amount BIGINT)
+TYPE Kafka
+OPTIONS (
+    'valueFormat' = 'json',
+    'bootstrap.servers' = '127.0.0.1:9092'
+);
+OK
+```
+
+<!--END_DOCUSAURUS_CODE_TABS-->
+
+```sql
 sql〉 SELECT ticker, ROUND(price * 100) AS price_cents, amount
   FROM trades
   WHERE price * amount > 100;
