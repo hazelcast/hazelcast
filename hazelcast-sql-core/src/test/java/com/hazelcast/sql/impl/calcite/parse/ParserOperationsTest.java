@@ -152,7 +152,7 @@ public class ParserOperationsTest {
 
     @Test
     public void testUnsupportedFunction() {
-        checkFailure("select atan2(0, 0) from t", "Function 'ATAN2' does not exist");
+        checkFailure("select atan2(0, 0) from t", "Function 'atan2' does not exist");
     }
 
     private static void checkSuccess(String sql) {

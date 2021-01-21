@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.common;
 
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlOperator;
@@ -27,9 +27,9 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import java.util.Arrays;
 
 /**
- * The special interface that provides an utility method to perform a recursive operand type inference before
+ * The special interface that provides a utility method to perform a recursive operand type inference before
  * checking the operand types. Without this logic, many expressions will fail to resolve their operand types.
- * See the {@code NestedExpressionIntegrationTest} test: if the recursive inference is skipped, many of tests
+ * See the {@code NestingAndCasingExpressionTest} test: if the recursive inference is skipped, many tests
  * from this class will fail.
  * <p>
  * In addition, this class provides the custom {@link SqlCallBinding} implementation that should be used by
