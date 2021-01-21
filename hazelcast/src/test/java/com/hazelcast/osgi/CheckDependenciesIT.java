@@ -76,7 +76,7 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
         }
     }
 
-    private Manifest getHazelcastManifest() throws IOException {
+    protected Manifest getHazelcastManifest() throws IOException {
         URL hazelcastAllManifestUrl = findHazelcastManifestURL();
         InputStream inputStream = null;
         try {
