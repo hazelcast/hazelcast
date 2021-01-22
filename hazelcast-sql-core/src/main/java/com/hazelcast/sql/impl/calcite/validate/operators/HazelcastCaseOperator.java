@@ -34,7 +34,7 @@ public final class HazelcastCaseOperator extends AbstractCaseOperator {
     public static final HazelcastCaseOperator INSTANCE = new HazelcastCaseOperator();
 
     private HazelcastCaseOperator() {
-        super();
+        super(new CaseReturnTypeInference());
     }
 
     @Override
@@ -43,7 +43,7 @@ public final class HazelcastCaseOperator extends AbstractCaseOperator {
         return true;
     }
 
-    public static class CaseReturnTypeInference implements SqlReturnTypeInference {
+    private static class CaseReturnTypeInference implements SqlReturnTypeInference {
 
         @Override
         public RelDataType inferReturnType(SqlOperatorBinding binding) {
@@ -65,7 +65,8 @@ public final class HazelcastCaseOperator extends AbstractCaseOperator {
             allReturnTypes[j] = elseType.getTypeFamily();
             if (failure) {
                 throw QueryException.error(
-                        SqlErrorCode.GENERIC, "Cannot infer return type of case operator among " + Arrays.toString(allReturnTypes));
+                        SqlErrorCode.GENERIC,
+                        "Cannot infer return type of case operator among " + Arrays.toString(allReturnTypes));
             }
             return caseReturnType;
         }

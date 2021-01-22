@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.common;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCaseOperator.CaseReturnTypeInference;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
@@ -26,14 +25,15 @@ import org.apache.calcite.sql.SqlSyntax;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.fun.SqlCaseOperator;
 import org.apache.calcite.sql.type.InferTypes;
+import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 
 public abstract class AbstractCaseOperator extends SqlOperator implements HazelcastOperandTypeCheckerAware {
 
-    protected AbstractCaseOperator() {
-        super(SqlCaseOperator.INSTANCE.getName(), SqlKind.CASE, SqlCaseOperator.INSTANCE.getLeftPrec(), true, wrap(new CaseReturnTypeInference()),
-                InferTypes.RETURN_TYPE, null);
+    protected AbstractCaseOperator(SqlReturnTypeInference returnTypeInference) {
+        super(SqlCaseOperator.INSTANCE.getName(), SqlKind.CASE, SqlCaseOperator.INSTANCE.getLeftPrec(), true,
+                wrap(returnTypeInference), InferTypes.RETURN_TYPE, null);
     }
 
     @Override
