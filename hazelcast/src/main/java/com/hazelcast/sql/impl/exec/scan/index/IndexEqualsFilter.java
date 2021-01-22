@@ -49,7 +49,7 @@ public class IndexEqualsFilter implements IndexFilter, IdentifiedDataSerializabl
     }
 
     @Override
-    public Iterator<QueryableEntry> getEntries(InternalIndex index, ExpressionEvalContext evalContext) {
+    public Iterator<QueryableEntry> getEntries(InternalIndex index, boolean descending, ExpressionEvalContext evalContext) {
         Comparable value = getComparable(evalContext);
 
         if (value == null) {

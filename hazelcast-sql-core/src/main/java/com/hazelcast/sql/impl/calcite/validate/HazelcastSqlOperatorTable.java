@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastRoundTrun
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastSignFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastArithmeticOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastDescOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastUnaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicate;
@@ -165,6 +166,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     public static final SqlFunction LOWER = HazelcastStringFunction.LOWER;
     public static final SqlFunction UPPER = HazelcastStringFunction.UPPER;
+
+    public static final SqlPostfixOperator DESC = HazelcastDescOperator.DESC;
 
     //#endregion
 

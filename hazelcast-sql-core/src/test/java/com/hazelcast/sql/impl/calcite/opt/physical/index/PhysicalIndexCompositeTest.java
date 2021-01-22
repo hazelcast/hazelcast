@@ -90,6 +90,7 @@ public class PhysicalIndexCompositeTest extends IndexOptimizerTestSupport {
 
     @Test
     public void testEquals() {
+
         // First component can be used only for SORTED index
         if (indexType == IndexType.SORTED) {
             checkIndexForCondition("f1=1", "=($1, 1)");

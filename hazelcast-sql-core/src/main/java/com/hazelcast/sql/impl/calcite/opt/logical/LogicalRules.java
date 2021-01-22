@@ -56,7 +56,9 @@ public final class LogicalRules {
             MapScanLogicalRule.INSTANCE,
             FilterLogicalRule.INSTANCE,
             ProjectLogicalRule.INSTANCE,
-            ValuesLogicalRule.INSTANCE
+            ValuesLogicalRule.INSTANCE,
+
+            SortLogicalRule.INSTANCE
         );
     }
 }
