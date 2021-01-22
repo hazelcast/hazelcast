@@ -96,7 +96,7 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
     }
 
     protected String getBundleName() {
-        return "hazelcast";
+        return "Hazelcast(Core)";
     }
 
     protected Manifest getHazelcastManifest() throws IOException {
