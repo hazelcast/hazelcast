@@ -249,9 +249,28 @@
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]PortableInternalGenericRecord"/>
     <suppress checks="MagicNumber"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]PortableValueReader"/>
+    <suppress checks="MagicNumber|MethodCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]DefaultPortableWriter"/>
-    <suppress checks=""
-              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]GenericRecordQueryReader"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]Portable"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]PortableGenericRecordBuilder"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]MorphingPortableReader"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]PortableGenericRecord"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]ClassDefinitionWriter"/>
+    <suppress checks="ParameterNumber"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]MainPortable"/>
+    <suppress checks="ParameterNumber"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]InnerPortable"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]GenericRecord"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]ClassDefinitionBuilder"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]GenericRecordBuilder"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]PortableReader"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]PortableWriter"/>
+    <suppress checks="" files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]GenericRecordQueryReader"/>
     <suppress checks="NPathComplexity" files="com[\\/]hazelcast[\\/]nio[\\/]tcp[\\/]nonblocking[\\/]NonBlockingSocketReader"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]AbstractSerializationService"/>

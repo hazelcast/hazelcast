@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl.portable;
 
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
@@ -26,8 +27,22 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Set;
+import java.util.function.Function;
+
+import static com.hazelcast.nio.serialization.FieldType.DATE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.DECIMAL_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
 
 /**
  * Can't be accessed concurrently.
@@ -71,26 +86,28 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Override
-    public boolean hasField(String fieldName) {
+    public boolean hasField(@Nonnull String fieldName) {
         return cd.hasField(fieldName);
     }
 
     @Override
+    @Nonnull
     public Set<String> getFieldNames() {
         return cd.getFieldNames();
     }
 
     @Override
-    public FieldType getFieldType(String fieldName) {
+    public FieldType getFieldType(@Nonnull String fieldName) {
         return cd.getFieldType(fieldName);
     }
 
     @Override
-    public int getFieldClassId(String fieldName) {
+    public int getFieldClassId(@Nonnull String fieldName) {
         return cd.getFieldClassId(fieldName);
     }
 
     @Override
+    @Nonnull
     public ObjectDataInput getRawDataInput() throws IOException {
         if (!raw) {
             int pos = in.readInt(offset + cd.getFieldCount() * Bits.INT_SIZE_IN_BYTES);
@@ -105,47 +122,99 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Override
-    public byte readByte(String fieldName) throws IOException {
+    public byte readByte(@Nonnull String fieldName) throws IOException {
         return in.readByte(readPosition(fieldName, FieldType.BYTE));
     }
 
     @Override
-    public short readShort(String fieldName) throws IOException {
+    public short readShort(@Nonnull String fieldName) throws IOException {
         return in.readShort(readPosition(fieldName, FieldType.SHORT));
     }
 
+    protected interface Reader<T, R> {
+        R read(T t) throws IOException;
+    }
+
+    @Nullable
+    private <T> T readNullableField(@Nonnull String fieldName, FieldType fieldType,
+                                    Reader<ObjectDataInput, T> reader) throws IOException {
+        int currentPos = in.position();
+        try {
+            int pos = readPosition(fieldName, fieldType);
+            in.position(pos);
+            boolean isNull = in.readBoolean();
+            if (isNull) {
+                return null;
+            }
+            return reader.read(in);
+        } finally {
+            in.position(currentPos);
+        }
+    }
+
     @Override
-    public int readInt(String fieldName) throws IOException {
+    @Nullable
+    public BigDecimal readDecimal(@Nonnull String fieldName) throws IOException {
+        return readNullableField(fieldName, FieldType.DECIMAL, IOUtil::readBigDecimal);
+    }
+
+    @Override
+    @Nullable
+    public LocalTime readTime(@Nonnull String fieldName) throws IOException {
+        return readNullableField(fieldName, FieldType.TIME, IOUtil::readLocalTime);
+    }
+
+    @Override
+    @Nullable
+    public LocalDate readDate(@Nonnull String fieldName) throws IOException {
+        return readNullableField(fieldName, FieldType.DATE, IOUtil::readLocalDate);
+    }
+
+    @Override
+    @Nullable
+    public LocalDateTime readTimestamp(@Nonnull String fieldName) throws IOException {
+        return readNullableField(fieldName, FieldType.TIMESTAMP, IOUtil::readLocalDateTime);
+    }
+
+    @Override
+    @Nullable
+    public OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName) throws IOException {
+        return readNullableField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE, IOUtil::readOffsetDateTime);
+    }
+
+    @Override
+    public int readInt(@Nonnull String fieldName) throws IOException {
         return in.readInt(readPosition(fieldName, FieldType.INT));
     }
 
     @Override
-    public long readLong(String fieldName) throws IOException {
+    public long readLong(@Nonnull String fieldName) throws IOException {
         return in.readLong(readPosition(fieldName, FieldType.LONG));
     }
 
     @Override
-    public float readFloat(String fieldName) throws IOException {
+    public float readFloat(@Nonnull String fieldName) throws IOException {
         return in.readFloat(readPosition(fieldName, FieldType.FLOAT));
     }
 
     @Override
-    public double readDouble(String fieldName) throws IOException {
+    public double readDouble(@Nonnull String fieldName) throws IOException {
         return in.readDouble(readPosition(fieldName, FieldType.DOUBLE));
     }
 
     @Override
-    public boolean readBoolean(String fieldName) throws IOException {
+    public boolean readBoolean(@Nonnull String fieldName) throws IOException {
         return in.readBoolean(readPosition(fieldName, FieldType.BOOLEAN));
     }
 
     @Override
-    public char readChar(String fieldName) throws IOException {
+    public char readChar(@Nonnull String fieldName) throws IOException {
         return in.readChar(readPosition(fieldName, FieldType.CHAR));
     }
 
     @Override
-    public String readUTF(String fieldName) throws IOException {
+    @Nullable
+    public String readUTF(@Nonnull String fieldName) throws IOException {
         int currentPos = in.position();
         try {
             int pos = readPosition(fieldName, FieldType.UTF);
@@ -158,7 +227,7 @@ public class DefaultPortableReader implements PortableReader {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Portable readPortable(String fieldName) throws IOException {
+    public Portable readPortable(@Nonnull String fieldName) throws IOException {
         int currentPos = in.position();
         try {
             FieldDefinition fd = cd.getField(fieldName);
@@ -191,144 +260,79 @@ public class DefaultPortableReader implements PortableReader {
         return pos == -1;
     }
 
-    @Override
-    public byte[] readByteArray(String fieldName) throws IOException {
+    @Nullable
+    private <T> T readPrimitiveArrayField(@Nonnull String fieldName, FieldType fieldType, Reader<ObjectDataInput, T> reader)
+            throws IOException {
         int currentPos = in.position();
         try {
-            int position = readPosition(fieldName, FieldType.BYTE_ARRAY);
+            int position = readPosition(fieldName, fieldType);
             if (isNullOrEmpty(position)) {
                 return null;
             }
             in.position(position);
-            return in.readByteArray();
-        } finally {
-            in.position(currentPos);
-        }
-
-    }
-
-    @Override
-    public boolean[] readBooleanArray(String fieldName) throws IOException {
-        int currentPos = in.position();
-        try {
-            int position = readPosition(fieldName, FieldType.BOOLEAN_ARRAY);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
-            in.position(position);
-            return in.readBooleanArray();
+            return reader.read(in);
         } finally {
             in.position(currentPos);
         }
     }
 
     @Override
-    public char[] readCharArray(String fieldName) throws IOException {
-        int currentPos = in.position();
-        try {
-            int position = readPosition(fieldName, FieldType.CHAR_ARRAY);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
-            in.position(position);
-            return in.readCharArray();
-        } finally {
-            in.position(currentPos);
-        }
+    @Nullable
+    public byte[] readByteArray(@Nonnull String fieldName) throws IOException {
+        return readPrimitiveArrayField(fieldName, FieldType.BYTE_ARRAY, ObjectDataInput::readByteArray);
     }
 
     @Override
-    public int[] readIntArray(String fieldName) throws IOException {
-        int currentPos = in.position();
-        try {
-            int position = readPosition(fieldName, FieldType.INT_ARRAY);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
-            in.position(position);
-            return in.readIntArray();
-        } finally {
-            in.position(currentPos);
-        }
+    @Nullable
+    public boolean[] readBooleanArray(@Nonnull String fieldName) throws IOException {
+        return readPrimitiveArrayField(fieldName, FieldType.BOOLEAN_ARRAY, ObjectDataInput::readBooleanArray);
     }
 
     @Override
-    public long[] readLongArray(String fieldName) throws IOException {
-        int currentPos = in.position();
-        try {
-            int position = readPosition(fieldName, FieldType.LONG_ARRAY);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
-            in.position(position);
-            return in.readLongArray();
-        } finally {
-            in.position(currentPos);
-        }
+    @Nullable
+    public char[] readCharArray(@Nonnull String fieldName) throws IOException {
+        return readPrimitiveArrayField(fieldName, FieldType.CHAR_ARRAY, ObjectDataInput::readCharArray);
     }
 
     @Override
-    public double[] readDoubleArray(String fieldName) throws IOException {
-        int currentPos = in.position();
-        try {
-            int position = readPosition(fieldName, FieldType.DOUBLE_ARRAY);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
-            in.position(position);
-            return in.readDoubleArray();
-        } finally {
-            in.position(currentPos);
-        }
+    @Nullable
+    public int[] readIntArray(@Nonnull String fieldName) throws IOException {
+        return readPrimitiveArrayField(fieldName, FieldType.INT_ARRAY, ObjectDataInput::readIntArray);
     }
 
     @Override
-    public float[] readFloatArray(String fieldName) throws IOException {
-        int currentPos = in.position();
-        try {
-            int position = readPosition(fieldName, FieldType.FLOAT_ARRAY);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
-            in.position(position);
-            return in.readFloatArray();
-        } finally {
-            in.position(currentPos);
-        }
+    @Nullable
+    public long[] readLongArray(@Nonnull String fieldName) throws IOException {
+        return readPrimitiveArrayField(fieldName, FieldType.LONG_ARRAY, ObjectDataInput::readLongArray);
     }
 
     @Override
-    public short[] readShortArray(String fieldName) throws IOException {
-        int currentPos = in.position();
-        try {
-            int position = readPosition(fieldName, FieldType.SHORT_ARRAY);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
-            in.position(position);
-            return in.readShortArray();
-        } finally {
-            in.position(currentPos);
-        }
+    @Nullable
+    public double[] readDoubleArray(@Nonnull String fieldName) throws IOException {
+        return readPrimitiveArrayField(fieldName, FieldType.DOUBLE_ARRAY, ObjectDataInput::readDoubleArray);
     }
 
     @Override
-    public String[] readUTFArray(String fieldName) throws IOException {
-        int currentPos = in.position();
-        try {
-            int position = readPosition(fieldName, FieldType.UTF_ARRAY);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
-            in.position(position);
-            return in.readUTFArray();
-        } finally {
-            in.position(currentPos);
-        }
+    @Nullable
+    public float[] readFloatArray(@Nonnull String fieldName) throws IOException {
+        return readPrimitiveArrayField(fieldName, FieldType.FLOAT_ARRAY, ObjectDataInput::readFloatArray);
     }
 
     @Override
-    public Portable[] readPortableArray(String fieldName) throws IOException {
+    @Nullable
+    public short[] readShortArray(@Nonnull String fieldName) throws IOException {
+        return readPrimitiveArrayField(fieldName, FieldType.SHORT_ARRAY, ObjectDataInput::readShortArray);
+    }
+
+    @Override
+    @Nullable
+    public String[] readUTFArray(@Nonnull String fieldName) throws IOException {
+        return readPrimitiveArrayField(fieldName, FieldType.UTF_ARRAY, ObjectDataInput::readUTFArray);
+    }
+
+    @Override
+    @Nullable
+    public Portable[] readPortableArray(@Nonnull String fieldName) throws IOException {
         int currentPos = in.position();
         try {
             FieldDefinition fd = cd.getField(fieldName);
@@ -380,8 +384,68 @@ public class DefaultPortableReader implements PortableReader {
         }
     }
 
+    @Nullable
+    private <T> T[] readObjectArrayField(@Nonnull String fieldName, FieldType fieldType, Function<Integer, T[]> constructor,
+                                         Reader<ObjectDataInput, T> reader) throws IOException {
+        int currentPos = in.position();
+        try {
+            int position = readPosition(fieldName, fieldType);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            int len = in.readInt();
 
-    private int readPosition(String fieldName, FieldType fieldType) throws IOException {
+            if (len == Bits.NULL_ARRAY_LENGTH) {
+                return null;
+            }
+
+            T[] values = constructor.apply(len);
+            if (len > 0) {
+                int offset = in.position();
+                for (int i = 0; i < len; i++) {
+                    int pos = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
+                    in.position(pos);
+                    values[i] = reader.read(in);
+                }
+            }
+            return values;
+        } finally {
+            in.position(currentPos);
+        }
+    }
+
+    @Override
+    @Nullable
+    public BigDecimal[] readDecimalArray(@Nonnull String fieldName) throws IOException {
+        return readObjectArrayField(fieldName, DECIMAL_ARRAY, BigDecimal[]::new, IOUtil::readBigDecimal);
+    }
+
+    @Override
+    @Nullable
+    public LocalTime[] readTimeArray(@Nonnull String fieldName) throws IOException {
+        return readObjectArrayField(fieldName, TIME_ARRAY, LocalTime[]::new, IOUtil::readLocalTime);
+    }
+
+    @Override
+    @Nullable
+    public LocalDate[] readDateArray(@Nonnull String fieldName) throws IOException {
+        return readObjectArrayField(fieldName, DATE_ARRAY, LocalDate[]::new, IOUtil::readLocalDate);
+    }
+
+    @Override
+    @Nullable
+    public LocalDateTime[] readTimestampArray(@Nonnull String fieldName) throws IOException {
+        return readObjectArrayField(fieldName, TIMESTAMP_ARRAY, LocalDateTime[]::new, IOUtil::readLocalDateTime);
+    }
+
+    @Override
+    @Nullable
+    public OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName) throws IOException {
+        return readObjectArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
+    }
+
+    private int readPosition(@Nonnull String fieldName, FieldType fieldType) throws IOException {
         if (raw) {
             throw new HazelcastSerializationException("Cannot read Portable fields after getRawDataInput() is called!");
         }
@@ -395,7 +459,7 @@ public class DefaultPortableReader implements PortableReader {
         return readPosition(fd);
     }
 
-    private HazelcastSerializationException throwUnknownFieldException(String fieldName) {
+    private HazelcastSerializationException throwUnknownFieldException(@Nonnull String fieldName) {
         return new HazelcastSerializationException("Unknown field name: '" + fieldName
                 + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
     }

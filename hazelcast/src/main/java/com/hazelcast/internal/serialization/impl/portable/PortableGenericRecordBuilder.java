@@ -24,6 +24,11 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 public class PortableGenericRecordBuilder implements GenericRecord.Builder {
 
@@ -117,7 +122,32 @@ public class PortableGenericRecordBuilder implements GenericRecord.Builder {
     }
 
     @Override
-    public GenericRecord.Builder writeGenericRecordArray(@Nonnull String fieldName, GenericRecord[] value) {
+    public GenericRecord.Builder writeDecimal(@Nonnull String fieldName, @Nullable BigDecimal value) {
+        return write(fieldName, value, FieldType.DECIMAL);
+    }
+
+    @Override
+    public GenericRecord.Builder writeTime(@Nonnull String fieldName, @Nullable LocalTime value) {
+        return write(fieldName, value, FieldType.TIME);
+    }
+
+    @Override
+    public GenericRecord.Builder writeDate(@Nonnull String fieldName, @Nullable LocalDate value) {
+        return write(fieldName, value, FieldType.DATE);
+    }
+
+    @Override
+    public GenericRecord.Builder writeTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value) {
+        return write(fieldName, value, FieldType.TIMESTAMP);
+    }
+
+    @Override
+    public GenericRecord.Builder writeTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value) {
+        return write(fieldName, value, FieldType.TIMESTAMP_WITH_TIMEZONE);
+    }
+
+    @Override
+    public GenericRecord.Builder writeGenericRecordArray(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
         return write(fieldName, value, FieldType.PORTABLE_ARRAY);
     }
 
@@ -165,6 +195,32 @@ public class PortableGenericRecordBuilder implements GenericRecord.Builder {
     public GenericRecord.Builder writeUTFArray(@Nonnull String fieldName, String[] value) {
         return write(fieldName, value, FieldType.UTF_ARRAY);
     }
+
+    @Override
+    public GenericRecord.Builder writeDecimalArray(@Nonnull String fieldName, BigDecimal[] value) {
+        return write(fieldName, value, FieldType.DECIMAL_ARRAY);
+    }
+
+    @Override
+    public GenericRecord.Builder writeTimeArray(@Nonnull String fieldName, LocalTime[] value) {
+        return write(fieldName, value, FieldType.TIME_ARRAY);
+    }
+
+    @Override
+    public GenericRecord.Builder writeDateArray(@Nonnull String fieldName, LocalDate[] value) {
+        return write(fieldName, value, FieldType.DATE_ARRAY);
+    }
+
+    @Override
+    public GenericRecord.Builder writeTimestampArray(@Nonnull String fieldName, LocalDateTime[] value) {
+        return write(fieldName, value, FieldType.TIMESTAMP_ARRAY);
+    }
+
+    @Override
+    public GenericRecord.Builder writeTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] value) {
+        return write(fieldName, value, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY);
+    }
+
 
     private GenericRecord.Builder write(@Nonnull String fieldName, Object value, FieldType fieldType) {
         FieldDefinition fd = check(fieldName, fieldType);

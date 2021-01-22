@@ -22,8 +22,17 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
+
 import static java.util.Arrays.asList;
 
 public class DefaultPortableReaderTestStructure {
@@ -38,6 +47,11 @@ public class DefaultPortableReaderTestStructure {
         Float("float_"),
         Double("double_"),
         UTF("string_"),
+        BigDecimal("bigDecimal_"),
+        LocalTime("localTime_"),
+        LocalDate("localDate_"),
+        LocalDateTime("localDateTime_"),
+        OffsetDateTime("offsetDateTime_"),
 
         ByteArray("bytes"),
         BooleanArray("booleans"),
@@ -47,7 +61,12 @@ public class DefaultPortableReaderTestStructure {
         LongArray("longs"),
         FloatArray("floats"),
         DoubleArray("doubles"),
-        UTFArray("strings");
+        UTFArray("strings"),
+        BigDecimalArray("bigDecimals"),
+        LocalTimeArray("localTimes"),
+        LocalDateArray("localDates"),
+        LocalDateTimeArray("localDateTimes"),
+        OffsetDateTimeArray("offsetDateTimes");
 
         PrimitiveFields(String field) {
             this.field = field;
@@ -56,11 +75,13 @@ public class DefaultPortableReaderTestStructure {
         final String field;
 
         static List<PrimitiveFields> getPrimitives() {
-            return asList(Byte, Boolean, Char, Short, Int, Long, Float, Double, UTF);
+            return asList(Byte, Boolean, Char, Short, Int, Long, Float, Double, UTF, BigDecimal, LocalTime,
+                    LocalDate, LocalDateTime, OffsetDateTime);
         }
 
         static List<PrimitiveFields> getPrimitiveArrays() {
-            return asList(ByteArray, BooleanArray, CharArray, ShortArray, IntArray, LongArray, FloatArray, DoubleArray, UTFArray);
+            return asList(ByteArray, BooleanArray, CharArray, ShortArray, IntArray, LongArray, FloatArray, DoubleArray, UTFArray,
+                    BigDecimalArray, LocalTimeArray, LocalDateArray, LocalDateTimeArray, OffsetDateTimeArray);
         }
 
     }
@@ -79,6 +100,11 @@ public class DefaultPortableReaderTestStructure {
         boolean boolean_;
         char char_;
         String string_;
+        BigDecimal bigDecimal_;
+        LocalTime localTime_;
+        LocalDate localDate_;
+        LocalDateTime localDateTime_;
+        OffsetDateTime offsetDateTime_;
 
         byte[] bytes;
         short[] shorts;
@@ -89,6 +115,11 @@ public class DefaultPortableReaderTestStructure {
         boolean[] booleans;
         char[] chars;
         String[] strings;
+        BigDecimal[] bigDecimals;
+        LocalTime[] localTimes;
+        LocalDate[] localDates;
+        LocalDateTime[] localDateTimes;
+        OffsetDateTime[] offsetDateTimes;
 
         enum Init {
             FULL, NONE, NULL
@@ -108,6 +139,7 @@ public class DefaultPortableReaderTestStructure {
             boolean_ = seed % 2 == 0;
             char_ = (char) (seed + 'a');
 
+            Random rnd = new Random(seed);
             if (init == Init.FULL) {
                 bytes = new byte[]{(byte) (seed + 11), (byte) (seed + 12), (byte) (seed + 13)};
                 shorts = new short[]{(short) (seed + 21), (short) (seed + 22), (short) (seed + 23)};
@@ -120,6 +152,26 @@ public class DefaultPortableReaderTestStructure {
                 strings = new String[]{seed + 81 + "text", seed + 82 + "text", seed + 83 + "text"};
 
                 string_ = seed + 80 + "text";
+                bigDecimal_ = new BigDecimal(new BigInteger(32, rnd), 2);
+                localTime_ = LocalTime.of(1, seed % 60, 0);
+                localDate_ = LocalDate.of(1990, (seed + 1) % 12, 1);
+                localDateTime_ = LocalDateTime.of(localDate_, localTime_);
+                offsetDateTime_ = OffsetDateTime.of(localDate_, localTime_, ZoneOffset.ofHours(seed % 18));
+
+                bigDecimals = new BigDecimal[]{new BigDecimal(new BigInteger(32, rnd), 2),
+                        new BigDecimal(new BigInteger(32, rnd), 2),
+                        new BigDecimal(new BigInteger(32, rnd), 2)};
+                localTimes = new LocalTime[]{LocalTime.of(1, seed % 60, 0),
+                        LocalTime.of(2, seed % 60, 0), LocalTime.of(3, seed % 60, 0)};
+                localDates = new LocalDate[]{LocalDate.of(1990, (seed + 1) % 12, 1),
+                        LocalDate.of(1990, (seed + 1) % 12, 1),
+                        LocalDate.of(1990, (seed + 1) % 12, 1)};
+                localDateTimes = new LocalDateTime[]{LocalDateTime.of(localDates[0], localTimes[0]),
+                        LocalDateTime.of(localDates[1], localTimes[1]), LocalDateTime.of(localDates[2], localTimes[2])};
+                offsetDateTimes = new OffsetDateTime[]{
+                        OffsetDateTime.of(localDates[0], localTimes[0], ZoneOffset.ofHours(seed % 18)),
+                        OffsetDateTime.of(localDates[1], localTimes[1], ZoneOffset.ofHours(seed % 18)),
+                        OffsetDateTime.of(localDates[2], localTimes[2], ZoneOffset.ofHours(seed % 18))};
             } else if (init == Init.NONE) {
                 bytes = new byte[]{};
                 shorts = new short[]{};
@@ -130,10 +182,18 @@ public class DefaultPortableReaderTestStructure {
                 booleans = new boolean[]{};
                 chars = new char[]{};
                 strings = new String[]{};
+                bigDecimals = new BigDecimal[]{};
+                localTimes = new LocalTime[]{};
+                localDates = new LocalDate[]{};
+                localDateTimes = new LocalDateTime[]{};
+                offsetDateTimes = new OffsetDateTime[]{};
 
+                bigDecimal_ = new BigDecimal(new BigInteger(32, rnd), 2);
+                localTime_ = LocalTime.of(1, seed % 60, 0);
+                localDate_ = LocalDate.of(1990, (seed + 1) % 12, 1);
+                localDateTime_ = LocalDateTime.of(localDate_, localTime_);
+                offsetDateTime_ = OffsetDateTime.of(localDate_, localTime_, ZoneOffset.ofHours(seed % 18));
                 string_ = "";
-            } else {
-                string_ = null;
             }
         }
 
@@ -161,6 +221,11 @@ public class DefaultPortableReaderTestStructure {
             writer.writeBoolean("boolean_", boolean_);
             writer.writeChar("char_", char_);
             writer.writeUTF("string_", string_);
+            writer.writeDecimal("bigDecimal_", bigDecimal_);
+            writer.writeTime("localTime_", localTime_);
+            writer.writeDate("localDate_", localDate_);
+            writer.writeTimestamp("localDateTime_", localDateTime_);
+            writer.writeTimestampWithTimezone("offsetDateTime_", offsetDateTime_);
 
             writer.writeByteArray("bytes", bytes);
             writer.writeShortArray("shorts", shorts);
@@ -171,6 +236,11 @@ public class DefaultPortableReaderTestStructure {
             writer.writeBooleanArray("booleans", booleans);
             writer.writeCharArray("chars", chars);
             writer.writeUTFArray("strings", strings);
+            writer.writeDecimalArray("bigDecimals", bigDecimals);
+            writer.writeTimeArray("localTimes", localTimes);
+            writer.writeDateArray("localDates", localDates);
+            writer.writeTimestampArray("localDateTimes", localDateTimes);
+            writer.writeTimestampWithTimezoneArray("offsetDateTimes", offsetDateTimes);
         }
 
         @Override
@@ -184,6 +254,11 @@ public class DefaultPortableReaderTestStructure {
             boolean_ = reader.readBoolean("boolean_");
             char_ = reader.readChar("char_");
             string_ = reader.readUTF("string_");
+            bigDecimal_ = reader.readDecimal("bigDecimal_");
+            localTime_ = reader.readTime("localTime_");
+            localDate_ = reader.readDate("localDate_");
+            localDateTime_ = reader.readTimestamp("localDateTime_");
+            offsetDateTime_ = reader.readTimestampWithTimezone("offsetDateTime_");
 
             bytes = reader.readByteArray("bytes");
             shorts = reader.readShortArray("shorts");
@@ -194,6 +269,11 @@ public class DefaultPortableReaderTestStructure {
             booleans = reader.readBooleanArray("booleans");
             chars = reader.readCharArray("chars");
             strings = reader.readUTFArray("strings");
+            bigDecimals = reader.readDecimalArray("bigDecimals");
+            localTimes = reader.readTimeArray("localTimes");
+            localDates = reader.readDateArray("localDates");
+            localDateTimes = reader.readTimestampArray("localDateTimes");
+            offsetDateTimes = reader.readTimestampWithTimezoneArray("offsetDateTimes");
         }
 
         @Override
@@ -246,6 +326,16 @@ public class DefaultPortableReaderTestStructure {
                     return double_;
                 case UTF:
                     return string_;
+                case BigDecimal:
+                    return bigDecimal_;
+                case LocalTime:
+                    return localTime_;
+                case LocalDate:
+                    return localDate_;
+                case LocalDateTime:
+                    return localDateTime_;
+                case OffsetDateTime:
+                    return offsetDateTime_;
                 default:
                     throw new RuntimeException("Unsupported method " + primitiveFields);
             }
@@ -271,6 +361,16 @@ public class DefaultPortableReaderTestStructure {
                     return doubles;
                 case UTF:
                     return strings;
+                case BigDecimal:
+                    return bigDecimals;
+                case LocalTime:
+                    return localTimes;
+                case LocalDate:
+                    return localDates;
+                case LocalDateTime:
+                    return localDateTimes;
+                case OffsetDateTime:
+                    return offsetDateTimes;
                 //
                 case ByteArray:
                     return bytes;
@@ -290,6 +390,16 @@ public class DefaultPortableReaderTestStructure {
                     return doubles;
                 case UTFArray:
                     return strings;
+                case BigDecimalArray:
+                    return bigDecimals;
+                case LocalTimeArray:
+                    return localTimes;
+                case LocalDateArray:
+                    return localDates;
+                case LocalDateTimeArray:
+                    return localDateTimes;
+                case OffsetDateTimeArray:
+                    return offsetDateTimes;
                 default:
                     throw new RuntimeException("Unsupported array method " + primitiveFields);
             }

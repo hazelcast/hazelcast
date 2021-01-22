@@ -64,7 +64,6 @@ import static com.hazelcast.internal.nio.IOUtil.getFileFromResources;
 import static com.hazelcast.internal.nio.IOUtil.getPath;
 import static com.hazelcast.internal.nio.IOUtil.newInputStream;
 import static com.hazelcast.internal.nio.IOUtil.newOutputStream;
-import static com.hazelcast.internal.nio.IOUtil.readAttributeValue;
 import static com.hazelcast.internal.nio.IOUtil.readByteArray;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
 import static com.hazelcast.internal.nio.IOUtil.readFullyOrNothing;
@@ -728,100 +727,6 @@ public class IOUtilTest extends HazelcastTestSupport {
         ByteBuffer dst = ByteBuffer.wrap(new byte[SIZE]);
 
         assertEquals(0, copyToHeapBuffer(null, dst));
-    }
-
-    @Test
-    public void testReadAttributeValue_whenTypeBoolean() throws Exception {
-        final boolean expected = true;
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_BOOLEAN);
-        when(input.readBoolean()).thenReturn(expected);
-
-        Object actual = readAttributeValue(input);
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testReadAttributeValue_whenTypeByte() throws Exception {
-        final byte expected = (byte) 0xFF;
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_BYTE).thenReturn(expected);
-
-        Object actual = readAttributeValue(input);
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testReadAttributeValue_whenTypeShort() throws Exception {
-        final short expected = 42;
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_SHORT);
-        when(input.readShort()).thenReturn(expected);
-
-        Object actual = readAttributeValue(input);
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testReadAttributeValue_whenTypeInteger() throws Exception {
-        final int expected = 42;
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_INTEGER);
-        when(input.readInt()).thenReturn(expected);
-
-        Object actual = readAttributeValue(input);
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testReadAttributeValue_whenTypeLong() throws Exception {
-        final long expected = 42L;
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_LONG);
-        when(input.readLong()).thenReturn(expected);
-
-        Object actual = readAttributeValue(input);
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testReadAttributeValue_whenTypeFloat() throws Exception {
-        final float expected = 0.42f;
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_FLOAT);
-        when(input.readFloat()).thenReturn(expected);
-
-        Object actual = readAttributeValue(input);
-        assertEquals(Float.floatToIntBits(expected), Float.floatToIntBits((Float) actual));
-    }
-
-    @Test
-    public void testReadAttributeValue_whenTypeDouble() throws Exception {
-        final double expected = 42.42f;
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_DOUBLE);
-        when(input.readDouble()).thenReturn(expected);
-
-        Object actual = readAttributeValue(input);
-        assertEquals(Double.doubleToLongBits(expected), Double.doubleToLongBits((Double) actual));
-    }
-
-    @Test
-    public void testReadAttributeValue_whenTypeUTF() throws Exception {
-        final String expected = "UTF";
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_UTF);
-        when(input.readUTF()).thenReturn(expected);
-
-        Object actual = readAttributeValue(input);
-        assertEquals(expected, actual);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void testReadAttributeValue_whenInvalidType() throws Exception {
-        ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readByte()).thenReturn((byte) 0xFF);
-        readAttributeValue(input);
     }
 
     @Test
