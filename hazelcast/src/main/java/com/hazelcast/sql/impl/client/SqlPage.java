@@ -263,7 +263,7 @@ public final class SqlPage {
         }
     }
 
-    private static boolean convertToData(SqlColumnType type) {
+    public static boolean convertToData(SqlColumnType type) {
         switch (type) {
             case SMALLINT:
             case DECIMAL:

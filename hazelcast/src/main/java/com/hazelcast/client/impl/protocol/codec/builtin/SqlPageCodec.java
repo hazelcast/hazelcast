@@ -141,6 +141,8 @@ public class SqlPageCodec {
                 case TIMESTAMP_WITH_TIME_ZONE:
                 case NULL:
                 case OBJECT:
+                    assert SqlPage.convertToData(columnType);
+
                     columns.add(ListMultiFrameCodec.decode(iterator, DataCodec::decodeNullable));
 
                     break;
