@@ -93,7 +93,13 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
         Manifest mf = getHazelcastManifest();
         Attributes mainAttributes = mf.getMainAttributes();
         assertEquals("Unexpected Bundle-Name attribute value", getBundleName(), mainAttributes.getValue("Bundle-Name"));
-        assertNotNull("The Main-Class attribute is expected", mainAttributes.getValue("Main-Class"));
+        if (hasMainClass()) {
+            assertNotNull("The Main-Class attribute is expected", mainAttributes.getValue("Main-Class"));
+        }
+    }
+
+    protected boolean hasMainClass() {
+        return true;
     }
 
     protected String getBundleName() {

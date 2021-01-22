@@ -24,4 +24,14 @@ public class ClientCheckDependenciesIT extends CheckDependenciesIT {
     protected boolean isMatching(String urlString) {
         return urlString.contains("hazelcast-client-") && urlString.contains("target");
     }
+
+    @Override
+    protected String getBundleName() {
+        return "hazelcast-client";
+    }
+
+    @Override
+    protected boolean hasMainClass() {
+        return false;
+    }
 }
