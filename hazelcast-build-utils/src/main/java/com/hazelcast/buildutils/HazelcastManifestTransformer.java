@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes;
-import java.util.jar.Attributes.Name;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
@@ -62,11 +61,10 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
     private static final String IMPORT_PACKAGE = "Import-Package";
     private static final String EXPORT_PACKAGE = "Export-Package";
 
-    private static final Name AUTOMATIC_MODULE_NAME = new Name("Automatic-Module-Name");
-
     // configuration
     private String mainClass;
     private Map<String, Object> manifestEntries;
+    private Map<String, Object> removeEntries;
     private Map<String, String> overrideInstructions;
 
     private final Map<String, PackageDefinition> importedPackages = new HashMap<String, PackageDefinition>();
@@ -90,6 +88,10 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
 
     public void setOverrideInstructions(Map<String, String> overrideInstructions) {
         this.overrideInstructions = overrideInstructions;
+    }
+
+    public void setRemoveEntries(Map<String, Object> removeEntries) {
+        this.removeEntries = removeEntries;
     }
 
     @Override
@@ -209,8 +211,11 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             }
         }
 
-        // the Manifest in hazelcast-all uberjar won't have the Automatic-Module-Name
-        attributes.remove(AUTOMATIC_MODULE_NAME);
+        if (removeEntries != null) {
+            for (Map.Entry<String, Object> entry : removeEntries.entrySet()) {
+                attributes.remove(new Attributes.Name(entry.getKey()));
+            }
+        }
 
         jarOutputStream.putNextEntry(new JarEntry(JarFile.MANIFEST_NAME));
         shadedManifest.write(jarOutputStream);
