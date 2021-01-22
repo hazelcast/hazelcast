@@ -30,6 +30,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 public class RestClientTest {
     private static final String API_ENDPOINT = "/some/endpoint";
@@ -53,7 +54,7 @@ public class RestClientTest {
             .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
 
         // when
-        String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT)).get();
+        String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT)).get().getBody();
 
         // then
         assertEquals(BODY_RESPONSE, result);
@@ -71,7 +72,8 @@ public class RestClientTest {
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
             .withHeaders(singletonMap(headerKey, headerValue))
-            .get();
+            .get()
+            .getBody();
 
         // then
         assertEquals(BODY_RESPONSE, result);
@@ -95,7 +97,8 @@ public class RestClientTest {
             .withReadTimeoutSeconds(1200)
             .withConnectTimeoutSeconds(1200)
             .withRetries(1)
-            .get();
+            .get()
+            .getBody();
 
         // then
         assertEquals(BODY_RESPONSE, result);
@@ -124,9 +127,86 @@ public class RestClientTest {
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
             .withBody(BODY_REQUEST)
-            .post();
+            .post()
+            .getBody();
 
         // then
         assertEquals(BODY_RESPONSE, result);
+    }
+
+    @Test
+    public void expectedResponseCode() {
+        // given
+        int expectedCode1 = 201, expectedCode2 = 202;
+        stubFor(post(urlEqualTo(API_ENDPOINT))
+                .withRequestBody(equalTo(BODY_REQUEST))
+                .willReturn(aResponse().withStatus(expectedCode1).withBody(BODY_RESPONSE)));
+
+        // when
+        String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
+                .withBody(BODY_REQUEST)
+                .expectResponseCodes(expectedCode1, expectedCode2)
+                .post()
+                .getBody();
+
+        // then
+        assertEquals(BODY_RESPONSE, result);
+    }
+
+    @Test
+    public void expectHttpOkByDefault() {
+        // given
+        int responseCode = 201;
+        stubFor(post(urlEqualTo(API_ENDPOINT))
+                .withRequestBody(equalTo(BODY_REQUEST))
+                .willReturn(aResponse().withStatus(responseCode).withBody(BODY_RESPONSE)));
+
+        // when
+        RestClientException exception = assertThrows(RestClientException.class, () ->
+                RestClient.create(String.format("%s%s", address, API_ENDPOINT))
+                        .withBody(BODY_REQUEST)
+                        .get());
+
+        // then
+        assertEquals(exception.getHttpErrorCode(), responseCode);
+    }
+
+    @Test
+    public void unexpectedResponseCode() {
+        // given
+        int expectedCode = 201, unexpectedCode = 202;
+        stubFor(post(urlEqualTo(API_ENDPOINT))
+                .withRequestBody(equalTo(BODY_REQUEST))
+                .willReturn(aResponse().withStatus(unexpectedCode).withBody(BODY_RESPONSE)));
+
+        // when
+        RestClientException exception = assertThrows(RestClientException.class, () ->
+                RestClient.create(String.format("%s%s", address, API_ENDPOINT))
+                        .withBody(BODY_REQUEST)
+                        .expectResponseCodes(expectedCode)
+                        .post());
+
+        // then
+        assertEquals(exception.getHttpErrorCode(), unexpectedCode);
+    }
+
+    @Test
+    public void readErrorResponse() {
+        // given
+        int responseCode = 418;
+        String responseMessage = "I'm a teapot";
+        stubFor(post(urlEqualTo(API_ENDPOINT))
+                .withRequestBody(equalTo(BODY_REQUEST))
+                .willReturn(aResponse().withStatus(responseCode).withBody(responseMessage)));
+
+        // when
+        RestClient.Response response = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
+                .withBody(BODY_REQUEST)
+                .expectResponseCodes(responseCode)
+                .get();
+
+        // then
+        assertEquals(responseCode, response.getCode());
+        assertEquals(responseMessage, response.getBody());
     }
 }

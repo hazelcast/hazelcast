@@ -17,8 +17,14 @@ package com.hazelcast.aws;
 
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
+import java.util.Optional;
 
 import static com.hazelcast.aws.AwsRequestUtils.createRestClient;
+import static com.hazelcast.aws.RestClient.HTTP_NOT_FOUND;
+import static com.hazelcast.aws.RestClient.HTTP_OK;
 
 /**
  * Responsible for connecting to AWS EC2 and ECS Metadata API.
@@ -28,6 +34,7 @@ import static com.hazelcast.aws.AwsRequestUtils.createRestClient;
  * @see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-metadata-endpoint.html">ECS Task Metadata</a>
  */
 class AwsMetadataApi {
+    private static final ILogger LOGGER = Logger.getLogger(AwsMetadataApi.class);
     private static final String EC2_METADATA_ENDPOINT = "http://169.254.169.254/latest/meta-data";
     private static final String ECS_IAM_ROLE_METADATA_ENDPOINT = "http://169.254.170.2" + System.getenv(
         "AWS_CONTAINER_CREDENTIALS_RELATIVE_URI");
@@ -60,22 +67,62 @@ class AwsMetadataApi {
 
     String availabilityZoneEc2() {
         String uri = ec2MetadataEndpoint.concat("/placement/availability-zone/");
-        return createRestClient(uri, awsConfig).get();
+        return createRestClient(uri, awsConfig).get().getBody();
+    }
+
+    Optional<String> placementGroupEc2() {
+        return getOptionalMetadata(ec2MetadataEndpoint.concat("/placement/group-name/"), "placement group");
+    }
+
+    Optional<String> placementPartitionNumberEc2() {
+        return getOptionalMetadata(ec2MetadataEndpoint.concat("/placement/partition-number/"), "partition number");
+    }
+
+    /**
+     * Resolves an optional metadata that exists for some instances only.
+     * HTTP_OK and HTTP_NOT_FOUND responses are assumed valid. Any other
+     * response code or an exception thrown during retries will yield
+     * a warning log and an empty result will be returned.
+     *
+     * @param uri  Metadata URI
+     * @param loggedName  Metadata name to be used when logging.
+     * @return  The metadata if the endpoint exists, empty otherwise.
+     */
+    private Optional<String> getOptionalMetadata(String uri, String loggedName) {
+        RestClient.Response response;
+        try {
+            response = createRestClient(uri, awsConfig)
+                    .expectResponseCodes(HTTP_OK, HTTP_NOT_FOUND)
+                    .get();
+        } catch (Exception e) {
+            // Failed to get a response with code OK or NOT_FOUND after retries
+            LOGGER.warning(String.format("Could not resolve the %s metadata", loggedName));
+            return Optional.empty();
+        }
+        int responseCode = response.getCode();
+        if (responseCode == HTTP_OK) {
+            return Optional.of(response.getBody());
+        } else if (responseCode == HTTP_NOT_FOUND) {
+            LOGGER.fine(String.format("No %s information is found.", loggedName));
+            return Optional.empty();
+        } else {
+            throw new RuntimeException(String.format("Unexpected response code: %d", responseCode));
+        }
     }
 
     String defaultIamRoleEc2() {
         String uri = ec2MetadataEndpoint.concat(SECURITY_CREDENTIALS_URI);
-        return createRestClient(uri, awsConfig).get();
+        return createRestClient(uri, awsConfig).get().getBody();
     }
 
     AwsCredentials credentialsEc2(String iamRole) {
         String uri = ec2MetadataEndpoint.concat(SECURITY_CREDENTIALS_URI).concat(iamRole);
-        String response = createRestClient(uri, awsConfig).get();
+        String response = createRestClient(uri, awsConfig).get().getBody();
         return parseCredentials(response);
     }
 
     AwsCredentials credentialsEcs() {
-        String response = createRestClient(ecsIamRoleEndpoint, awsConfig).get();
+        String response = createRestClient(ecsIamRoleEndpoint, awsConfig).get().getBody();
         return parseCredentials(response);
     }
 
@@ -89,7 +136,7 @@ class AwsMetadataApi {
     }
 
     EcsMetadata metadataEcs() {
-        String response = createRestClient(ecsTaskMetadataEndpoint, awsConfig).get();
+        String response = createRestClient(ecsTaskMetadataEndpoint, awsConfig).get().getBody();
         return parseEcsMetadata(response);
     }
 

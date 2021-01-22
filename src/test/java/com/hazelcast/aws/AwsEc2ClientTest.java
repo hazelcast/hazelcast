@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Map;
+import java.util.Optional;
 
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
@@ -72,5 +73,22 @@ public class AwsEc2ClientTest {
 
         // then
         assertEquals(expectedResult, result);
+    }
+
+    @Test
+    public void getPlacementGroup() {
+        // given
+        String placementGroup = "placement-group";
+        String partitionNumber = "42";
+        given(awsMetadataApi.placementGroupEc2()).willReturn(Optional.of(placementGroup));
+        given(awsMetadataApi.placementPartitionNumberEc2()).willReturn(Optional.of(partitionNumber));
+
+        // when
+        Optional<String> placementGroupResult = awsEc2Client.getPlacementGroup();
+        Optional<String> partitionNumberResult = awsEc2Client.getPlacementPartitionNumber();
+
+        // then
+        assertEquals(placementGroup, placementGroupResult.orElse("N/A"));
+        assertEquals(partitionNumber, partitionNumberResult.orElse("N/A"));
     }
 }

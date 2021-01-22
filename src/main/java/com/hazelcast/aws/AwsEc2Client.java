@@ -16,6 +16,7 @@
 package com.hazelcast.aws;
 
 import java.util.Map;
+import java.util.Optional;
 
 class AwsEc2Client implements AwsClient {
     private final AwsEc2Api awsEc2Api;
@@ -36,5 +37,15 @@ class AwsEc2Client implements AwsClient {
     @Override
     public String getAvailabilityZone() {
         return awsMetadataApi.availabilityZoneEc2();
+    }
+
+    @Override
+    public Optional<String> getPlacementGroup() {
+        return awsMetadataApi.placementGroupEc2();
+    }
+
+    @Override
+    public Optional<String> getPlacementPartitionNumber() {
+        return awsMetadataApi.placementPartitionNumberEc2();
     }
 }

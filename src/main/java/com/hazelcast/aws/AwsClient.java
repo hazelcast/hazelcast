@@ -16,6 +16,7 @@
 package com.hazelcast.aws;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Responsible for fetching discovery information from AWS APIs.
@@ -24,4 +25,22 @@ interface AwsClient {
     Map<String, String> getAddresses();
 
     String getAvailabilityZone();
+
+    /**
+     * Returns the placement group name of the service if specified.
+     *
+     * @see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html">Placement Groups</a>
+     */
+    default Optional<String> getPlacementGroup() {
+        return Optional.empty();
+    }
+
+    /**
+     * Returns the partition number of the service if it belongs to a partition placement group.
+     *
+     * @see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html#placement-groups-partition">Partition Placement Groups</a>
+     */
+    default Optional<String> getPlacementPartitionNumber() {
+        return Optional.empty();
+    }
 }

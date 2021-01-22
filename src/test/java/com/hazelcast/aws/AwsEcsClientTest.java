@@ -25,6 +25,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -159,5 +160,17 @@ public class AwsEcsClientTest {
 
         // then
         assertEquals("unknown", result);
+    }
+
+    @Test
+    public void getPlacementGroup() {
+        // when
+        Optional<String> placementGroup = awsEcsClient.getPlacementGroup();
+        Optional<String> placementPartitionNumber = awsEcsClient.getPlacementPartitionNumber();
+
+        // then
+        // Placement aware is not supported for ECS
+        assertEquals(Optional.empty(), placementGroup);
+        assertEquals(Optional.empty(), placementPartitionNumber);
     }
 }

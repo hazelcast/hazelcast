@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.hazelcast.spi.partitiongroup.PartitionGroupMetaData.PARTITION_GROUP_ZONE;
 import static java.util.Collections.emptyList;
@@ -42,6 +43,13 @@ public class AwsDiscoveryStrategyTest {
     private static final int PORT1 = 5701;
     private static final int PORT2 = 5702;
     private static final String ZONE = "us-east-1a";
+    private static final String PLACEMENT_GROUP = "placement-group";
+    private static final String PLACEMENT_PARTITION_ID = "42";
+
+    // Group name pattern for placement groups
+    private static final String PG_NAME_PATTERN = "%s-%s";
+    // Group name pattern for partition placement group
+    private static final String PPG_NAME_PATTERN = PG_NAME_PATTERN.concat("-%s");
 
     @Mock
     private AwsClient awsClient;
@@ -125,15 +133,52 @@ public class AwsDiscoveryStrategyTest {
     }
 
     @Test
-    public void discoverLocalMetadata() {
+    public void discoverLocalMetadataWithoutPlacement() {
         // given
         given(awsClient.getAvailabilityZone()).willReturn(ZONE);
+        given(awsClient.getPlacementGroup()).willReturn(Optional.empty());
+        given(awsClient.getPlacementPartitionNumber()).willReturn(Optional.empty());
 
         // when
         Map<String, String> localMetaData = awsDiscoveryStrategy.discoverLocalMetadata();
 
         // then
+        assertEquals(1, localMetaData.size());
         assertEquals(ZONE, localMetaData.get(PARTITION_GROUP_ZONE));
+    }
+
+    @Test
+    public void discoverLocalMetadataWithPlacement() {
+        // given
+        given(awsClient.getAvailabilityZone()).willReturn(ZONE);
+        given(awsClient.getPlacementGroup()).willReturn(Optional.of(PLACEMENT_GROUP));
+        given(awsClient.getPlacementPartitionNumber()).willReturn(Optional.empty());
+        String expectedPartitionGroup = String.format(PG_NAME_PATTERN, ZONE, PLACEMENT_GROUP);
+
+        // when
+        Map<String, String> localMetaData = awsDiscoveryStrategy.discoverLocalMetadata();
+
+        // then
+        assertEquals(2, localMetaData.size());
+        assertEquals(ZONE, localMetaData.get(PARTITION_GROUP_ZONE));
+        assertEquals(expectedPartitionGroup, localMetaData.get(AwsDiscoveryStrategy.PARTITION_GROUP_PLACEMENT));
+    }
+
+    @Test
+    public void discoverLocalMetadataWithPartitionPlacement() {
+        // given
+        given(awsClient.getAvailabilityZone()).willReturn(ZONE);
+        given(awsClient.getPlacementGroup()).willReturn(Optional.of(PLACEMENT_GROUP));
+        given(awsClient.getPlacementPartitionNumber()).willReturn(Optional.of(PLACEMENT_PARTITION_ID));
+        String expectedPartitionGroup = String.format(PPG_NAME_PATTERN, ZONE, PLACEMENT_GROUP, PLACEMENT_PARTITION_ID);
+
+        // when
+        Map<String, String> localMetaData = awsDiscoveryStrategy.discoverLocalMetadata();
+
+        // then
+        assertEquals(2, localMetaData.size());
+        assertEquals(ZONE, localMetaData.get(PARTITION_GROUP_ZONE));
+        assertEquals(expectedPartitionGroup, localMetaData.get(AwsDiscoveryStrategy.PARTITION_GROUP_PLACEMENT));
     }
 
     @Test

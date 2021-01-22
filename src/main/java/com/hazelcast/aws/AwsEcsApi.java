@@ -138,7 +138,8 @@ class AwsEcsApi {
         return createRestClient(urlFor(endpoint), awsConfig)
             .withHeaders(headers)
             .withBody(body)
-            .post();
+            .post()
+            .getBody();
     }
 
     private static JsonObject toJson(String jsonString) {

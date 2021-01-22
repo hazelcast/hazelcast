@@ -22,16 +22,22 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 final class RestClient {
-    private static final int HTTP_OK = 200;
+
+    static final int HTTP_OK = 200;
+    static final int HTTP_NOT_FOUND = 404;
 
     private final String url;
     private final List<Parameter> headers = new ArrayList<>();
+    private Set<Integer> expectedResponseCodes;
     private String body;
     private int readTimeoutSeconds;
     private int connectTimeoutSeconds;
@@ -72,19 +78,27 @@ final class RestClient {
         return this;
     }
 
-    String get() {
+    RestClient expectResponseCodes(Integer... codes) {
+        if (expectedResponseCodes == null) {
+            expectedResponseCodes = new HashSet<>();
+        }
+        expectedResponseCodes.addAll(Arrays.asList(codes));
+        return this;
+    }
+
+    Response get() {
         return callWithRetries("GET");
     }
 
-    String post() {
+    Response post() {
         return callWithRetries("POST");
     }
 
-    private String callWithRetries(String method) {
+    private Response callWithRetries(String method) {
         return RetryUtils.retry(() -> call(method), retries);
     }
 
-    private String call(String method) {
+    private Response call(String method) {
         HttpURLConnection connection = null;
         try {
             URL urlToConnect = new URL(url);
@@ -108,8 +122,8 @@ final class RestClient {
                 }
             }
 
-            checkHttpOk(method, connection);
-            return read(connection.getInputStream());
+            checkResponseCode(method, connection);
+            return new Response(connection.getResponseCode(), read(connection));
         } catch (IOException e) {
             throw new RestClientException("Failure in executing REST call", e);
         } finally {
@@ -119,29 +133,61 @@ final class RestClient {
         }
     }
 
-    private void checkHttpOk(String method, HttpURLConnection connection)
+    private void checkResponseCode(String method, HttpURLConnection connection)
             throws IOException {
-        if (connection.getResponseCode() != HTTP_OK) {
+        int responseCode = connection.getResponseCode();
+        if (!isExpectedResponseCode(responseCode)) {
             String errorMessage;
             try {
-                errorMessage = read(connection.getErrorStream());
+                errorMessage = read(connection);
             } catch (Exception e) {
                 throw new RestClientException(
-                        String.format("Failure executing: %s at: %s", method, url), connection.getResponseCode());
+                        String.format("Failure executing: %s at: %s", method, url), responseCode);
             }
             throw new RestClientException(String.format("Failure executing: %s at: %s. Message: %s", method, url, errorMessage),
-                    connection.getResponseCode());
-
+                    responseCode);
         }
     }
 
-    private static String read(InputStream stream) {
+    private boolean isExpectedResponseCode(int responseCode) {
+        // expect HTTP_OK by default
+        return expectedResponseCodes == null
+                ? responseCode == HTTP_OK
+                : expectedResponseCodes.contains(responseCode);
+    }
+
+    private static String read(HttpURLConnection connection) {
+        InputStream stream;
+        try {
+            stream = connection.getInputStream();
+        } catch (IOException e) {
+            stream = connection.getErrorStream();
+        }
         if (stream == null) {
             return null;
         }
         Scanner scanner = new Scanner(stream, "UTF-8");
         scanner.useDelimiter("\\Z");
         return scanner.next();
+    }
+
+    static class Response {
+
+        private final int code;
+        private final String body;
+
+        Response(int code, String body) {
+            this.code = code;
+            this.body = body;
+        }
+
+        int getCode() {
+            return code;
+        }
+
+        String getBody() {
+            return body;
+        }
     }
 
     private static final class Parameter {

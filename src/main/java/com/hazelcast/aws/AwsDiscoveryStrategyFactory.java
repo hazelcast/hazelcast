@@ -127,6 +127,7 @@ public class AwsDiscoveryStrategyFactory
                 .withReadTimeoutSeconds(1)
                 .withRetries(1)
                 .get()
+                .getBody()
                 .isEmpty();
     }
 

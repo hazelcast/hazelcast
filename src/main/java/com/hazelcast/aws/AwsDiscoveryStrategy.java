@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.hazelcast.aws.AwsProperties.ACCESS_KEY;
 import static com.hazelcast.aws.AwsProperties.CLUSTER;
@@ -62,6 +63,9 @@ public class AwsDiscoveryStrategy
     private static final Integer DEFAULT_CONNECTION_RETRIES = 3;
     private static final int DEFAULT_CONNECTION_TIMEOUT_SECONDS = 10;
     private static final int DEFAULT_READ_TIMEOUT_SECONDS = 10;
+
+    // Corresponds to PartitionGroupMetaData.PARTITION_GROUP_PLACEMENT
+    static final String PARTITION_GROUP_PLACEMENT = "hazelcast.partition.group.placement";
 
     private final AwsClient awsClient;
     private final PortRange portRange;
@@ -132,8 +136,38 @@ public class AwsDiscoveryStrategy
             String availabilityZone = awsClient.getAvailabilityZone();
             LOGGER.info(String.format("Availability zone found: '%s'", availabilityZone));
             memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, availabilityZone);
+
+            getPlacementGroup().ifPresent(pg ->
+                    memberMetadata.put(PARTITION_GROUP_PLACEMENT, availabilityZone + '-' + pg));
         }
         return memberMetadata;
+    }
+
+    /**
+     * Resolves the placement group of the resource if it belongs to any.
+     * <p>
+     * If the placement group is Cluster Placement Group or Spread Placement Group, then returns
+     * the group name. If it is Partition Placement Group, then returns the group name with the
+     * partition number prefixed by '-' appended.
+     * <p>
+     * When forming partition groups, this name should be combined with zone name. Otherwise
+     * two resources in different zones but in the same placement group will be assumed as
+     * a single group.
+     *
+     * @see AwsClient#getPlacementGroup()
+     * @see AwsClient#getPlacementPartitionNumber()
+     * @return  Placement group name if exists, empty otherwise.
+     */
+    private Optional<String> getPlacementGroup() {
+        Optional<String> placementGroup = awsClient.getPlacementGroup();
+        if (!placementGroup.isPresent()) {
+            LOGGER.fine("No placement group is found.");
+            return Optional.empty();
+        }
+        StringBuilder result = new StringBuilder(placementGroup.get());
+        awsClient.getPlacementPartitionNumber().ifPresent(ppn -> result.append('-').append(ppn));
+        LOGGER.info(String.format("Placement group found: '%s'", result.toString()));
+        return Optional.of(result.toString());
     }
 
     @Override

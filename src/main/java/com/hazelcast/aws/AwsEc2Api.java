@@ -203,7 +203,8 @@ class AwsEc2Api {
         String query = canonicalQueryString(attributes);
         return createRestClient(urlFor(endpoint, query), awsConfig)
             .withHeaders(headers)
-            .get();
+            .get()
+            .getBody();
     }
 
     private static String urlFor(String endpoint, String query) {
