@@ -27,9 +27,9 @@ import java.util.Map;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInteger;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeLong;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInteger;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeLong;
 
 public final class EntryListIntegerLongCodec {
@@ -45,7 +45,7 @@ public final class EntryListIntegerLongCodec {
         Iterator<Map.Entry<Integer, Long>> iterator = collection.iterator();
         for (int i = 0; i < itemCount; i++) {
             Map.Entry<Integer, Long> entry = iterator.next();
-            encodeInteger(frame.content, i * ENTRY_SIZE_IN_BYTES, entry.getKey());
+            encodeInt(frame.content, i * ENTRY_SIZE_IN_BYTES, entry.getKey());
             encodeLong(frame.content, i * ENTRY_SIZE_IN_BYTES + INT_SIZE_IN_BYTES, entry.getValue());
         }
         clientMessage.add(frame);
@@ -56,7 +56,7 @@ public final class EntryListIntegerLongCodec {
         int itemCount = frame.content.length / ENTRY_SIZE_IN_BYTES;
         List<Map.Entry<Integer, Long>> result = new ArrayList<>(itemCount);
         for (int i = 0; i < itemCount; i++) {
-            int key = decodeInteger(frame.content, i * ENTRY_SIZE_IN_BYTES);
+            int key = decodeInt(frame.content, i * ENTRY_SIZE_IN_BYTES);
             long value = decodeLong(frame.content, i * ENTRY_SIZE_IN_BYTES + INT_SIZE_IN_BYTES);
             result.add(new AbstractMap.SimpleEntry<>(key, value));
         }

@@ -28,7 +28,8 @@ public class SqlPageCodec {
         clientMessage.add(new ClientMessage.Frame(content));
 
         List<SqlColumnType> columnTypes = sqlPage.getColumnTypes();
-        ListCNIntegerCodec.encode(clientMessage, columnTypes.stream().map(SqlColumnType::getId).collect(Collectors.toList()));
+        // TODO: Avoid streams
+        ListIntegerCodec.encode(clientMessage, columnTypes.stream().map(SqlColumnType::getId).collect(Collectors.toList()));
 
         Iterator<List<Object>> iterator = sqlPage.getColumns().iterator();
 
@@ -116,7 +117,8 @@ public class SqlPageCodec {
 
         boolean isLast = iterator.next().content[0] == 1;
 
-        ArrayList<SqlColumnType> types = ListCNIntegerCodec.decode(iterator).stream()
+        // TODO: Avoid streams
+        ArrayList<SqlColumnType> types = ListIntegerCodec.decode(iterator).stream()
             .map(SqlColumnType::getById).collect(Collectors.toCollection(ArrayList::new));
 
         // TODO: (Sancar) handle empty iterator

@@ -97,14 +97,6 @@ public final class FixedSizeTypesCodec {
         encodeInt(buffer, pos, columnType.getId());
     }
 
-    public static void encodeInteger(byte[] buffer, int pos, int value) {
-        Bits.writeIntL(buffer, pos, value);
-    }
-
-    public static int decodeInteger(byte[] buffer, int pos) {
-        return Bits.readIntL(buffer, pos);
-    }
-
     public static void encodeLong(byte[] buffer, int pos, long value) {
         Bits.writeLongL(buffer, pos, value);
     }
