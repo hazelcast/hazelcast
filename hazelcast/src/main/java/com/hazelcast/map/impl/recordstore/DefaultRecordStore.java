@@ -600,7 +600,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record record = getRecordOrNull(key, now, backup);
         if (record != null && touch) {
             accessRecord(key, record, now);
-        } else if (record == null) {
+        } else if (record == null && mapDataStore != EMPTY_MAP_DATA_STORE) {
             record = loadRecordOrNull(key, backup, callerAddress);
             record = evictIfExpired(key, now, backup) ? null : record;
         }
@@ -822,7 +822,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record record = getRecordOrNull(key, now, backup);
 
         // Variants of loading oldValue
-        if (putIfAbsent) {
+        if (!putIfAbsent && !putIfExists) {
+            oldValue = record == null
+                    ? (load ? loadValueOf(key) : null) : record.getValue();
+        } else if (putIfAbsent) {
             record = getOrLoadRecord(record, key, now, callerAddress, backup);
             // if this is an existing record, return existing value.
             if (record != null) {
@@ -837,9 +840,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
             oldValue = record.getValue();
             newValue = setTtl ? oldValue : newValue;
-        } else {
-            oldValue = record == null
-                    ? (load ? loadValueOf(key) : null) : record.getValue();
         }
 
         // For method replace, if current value is not expected one, return.

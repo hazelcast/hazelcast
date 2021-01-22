@@ -28,12 +28,19 @@ public abstract class BasePutOperation
 
     protected transient Object oldValue;
     protected transient EntryEventType eventType;
+    protected transient Record recordToBackup;
 
     public BasePutOperation(String name, Data dataKey, Data value) {
         super(name, dataKey, value);
     }
 
     public BasePutOperation() {
+    }
+
+    @Override
+    protected void runInternal() {
+        super.runInternal();
+        recordToBackup = recordStore.getRecord(dataKey);
     }
 
     @Override
@@ -58,15 +65,13 @@ public abstract class BasePutOperation
 
     @Override
     public boolean shouldBackup() {
-        Record record = recordStore.getRecord(dataKey);
-        return record != null;
+        return recordToBackup != null;
     }
 
     @Override
     public Operation getBackupOperation() {
-        Record record = recordStore.getRecord(dataKey);
-        dataValue = getValueOrPostProcessedValue(record, dataValue);
-        return newBackupOperation(dataKey, record, dataValue);
+        dataValue = getValueOrPostProcessedValue(recordToBackup, dataValue);
+        return newBackupOperation(dataKey, recordToBackup, dataValue);
     }
 
     protected PutBackupOperation newBackupOperation(Data dataKey, Record record, Data dataValue) {
