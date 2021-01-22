@@ -22,7 +22,7 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 
 /**
- * A class to allow for override of the {@link #deriveTypeImpl(SqlValidatorScope, SqlNode)} class, which is a package-private
+ * A class that allows to override the {@link #deriveTypeImpl(SqlValidatorScope, SqlNode)} method, which is package-private
  * in the parent class.
  */
 public class SqlValidatorImplBridge extends SqlValidatorImpl {
