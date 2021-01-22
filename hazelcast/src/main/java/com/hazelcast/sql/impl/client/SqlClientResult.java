@@ -30,7 +30,6 @@ import com.hazelcast.sql.impl.row.Row;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
@@ -300,7 +299,7 @@ public class SqlClientResult implements SqlResult {
     private final class ClientIterator implements Iterator<SqlRow> {
 
         private final SqlRowMetadata rowMetadata;
-        private List<List<Object>> currentColumns;
+        private SqlPage currentPage;
         private int currentRowCount;
         private int currentPosition;
         private boolean last;
@@ -338,8 +337,8 @@ public class SqlClientResult implements SqlResult {
         }
 
         private void onNextPage(SqlPage page) {
-            currentColumns = page.getColumns();
-            currentRowCount = page.getColumns().get(0).size();
+            currentPage = page;
+            currentRowCount = page.getRowCount();
             currentPosition = 0;
 
             if (page.isLast()) {
@@ -352,12 +351,10 @@ public class SqlClientResult implements SqlResult {
         private Row getCurrentRow() {
             Object[] values = new Object[rowMetadata.getColumnCount()];
 
-            int index = 0;
+            for (int i = 0; i < currentPage.getColumnCount(); i++) {
+                Object value = currentPage.getColumnValueForClient(i, currentPosition);
 
-            for (List<Object> column : currentColumns) {
-                values[index] = service.deserializeRowValue(column.get(currentPosition));
-
-                index++;
+                values[i] = service.deserializeRowValue(value);
             }
 
             return new HeapRow(values);

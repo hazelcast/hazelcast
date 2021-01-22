@@ -16,55 +16,269 @@
 
 package com.hazelcast.sql.impl.client;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.SqlRow;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
+import java.util.NoSuchElementException;
 
 /**
  * A finite set of rows returned to the client.
  */
-public class SqlPage {
+public final class SqlPage {
 
-    private final List<List<Object>> columns;
     private final List<SqlColumnType> columnTypes;
+    private final DataHolder data;
     private final boolean last;
 
-    public SqlPage(List<SqlColumnType> columnTypes, List<List<Object>> columns, boolean last) {
+    private SqlPage(
+        List<SqlColumnType> columnTypes,
+        DataHolder data,
+        boolean last
+    ) {
         this.columnTypes = columnTypes;
-        this.columns = columns;
+        this.data = data;
         this.last = last;
+    }
+
+    public static SqlPage fromRows(
+        List<SqlColumnType> columnTypes,
+        List<SqlRow> rows,
+        boolean last,
+        InternalSerializationService serializationService
+    ) {
+        return new SqlPage(columnTypes, new RowsetDataHolder(rows, serializationService), last);
+    }
+
+    public static SqlPage fromColumns(List<SqlColumnType> columnTypes, List<List<?>> columns, boolean last) {
+        return new SqlPage(columnTypes, new ColumnarDataHolder(columns), last);
+    }
+
+    public int getRowCount() {
+        return data.getRowCount();
+    }
+
+    public int getColumnCount() {
+        return columnTypes.size();
     }
 
     public List<SqlColumnType> getColumnTypes() {
         return columnTypes;
     }
 
-    public List<List<Object>> getColumns() {
-        return columns;
+    public Object getColumnValueForClient(int columnIndex, int rowIndex) {
+        assert columnIndex < getColumnCount();
+        assert rowIndex < getRowCount();
+
+        return data.getColumnValueForClient(columnIndex, rowIndex);
+    }
+
+    public Iterable<?> getColumnValuesForServer(int columnIndex) {
+        assert columnIndex < getColumnCount();
+
+        SqlColumnType columnType = columnTypes.get(columnIndex);
+
+        return data.getColumnValuesForServer(columnIndex, columnType);
     }
 
     public boolean isLast() {
         return last;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        SqlPage page = (SqlPage) o;
-
-        return Objects.equals(columns, page.columns);
+    private interface DataHolder {
+        int getRowCount();
+        Object getColumnValueForClient(int columnIndex, int rowIndex);
+        Iterable<?> getColumnValuesForServer(int columnIndex, SqlColumnType columnType);
     }
 
-    @Override
-    public int hashCode() {
-        return columns != null ? columns.hashCode() : 0;
+    private static final class RowsetDataHolder implements DataHolder {
+
+        private final List<SqlRow> rows;
+        private final InternalSerializationService serializationService;
+
+        private RowsetDataHolder(List<SqlRow> rows, InternalSerializationService serializationService) {
+            this.rows = rows;
+            this.serializationService = serializationService;
+        }
+
+        @Override
+        public int getRowCount() {
+            return rows.size();
+        }
+
+        @Override
+        public Object getColumnValueForClient(int columnIndex, int rowIndex) {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Iterable<Object> getColumnValuesForServer(int columnIndex, SqlColumnType columnType) {
+            if (columnType == SqlColumnType.NULL) {
+                return new NullTypeIterable(getRowCount());
+            } else {
+                boolean convertToData = convertToData(columnType);
+
+                return new RowsetColumnIterable(rows, serializationService, columnIndex, convertToData);
+            }
+        }
+    }
+
+    private static final class ColumnarDataHolder implements DataHolder {
+
+        private final List<List<?>> columns;
+
+        private ColumnarDataHolder(List<List<?>> columns) {
+            this.columns = columns;
+        }
+
+        @Override
+        public int getRowCount() {
+            return columns.get(0).size();
+        }
+
+        @Override
+        public Object getColumnValueForClient(int columnIndex, int rowIndex) {
+            return columns.get(columnIndex).get(rowIndex);
+        }
+
+        @Override
+        public Iterable<?> getColumnValuesForServer(int columnIndex, SqlColumnType columnType) {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+    }
+
+    private static final class NullTypeIterable implements Iterable<Object> {
+
+        private final int count;
+
+        private NullTypeIterable(int count) {
+            this.count = count;
+        }
+
+        @NotNull
+        @Override
+        public Iterator<Object> iterator() {
+            return new NullTypeIterator(count);
+        }
+    }
+
+    private static final class NullTypeIterator implements Iterator<Object> {
+
+        private final int count;
+        private int position;
+
+        public NullTypeIterator(int count) {
+            this.count = count;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return position < count;
+        }
+
+        @Override
+        public Object next() {
+            if (position == count) {
+                throw new NoSuchElementException();
+            } else {
+                position++;
+
+                return null;
+            }
+        }
+    }
+
+    private static final class RowsetColumnIterable implements Iterable<Object> {
+
+        private final List<SqlRow> rows;
+        private final InternalSerializationService serializationService;
+        private final int columnIndex;
+        private final boolean convertToData;
+
+        private RowsetColumnIterable(
+            List<SqlRow> rows,
+            InternalSerializationService serializationService,
+            int columnIndex,
+            boolean convertToData
+        ) {
+            this.rows = rows;
+            this.serializationService = serializationService;
+            this.columnIndex = columnIndex;
+            this.convertToData = convertToData;
+        }
+
+        @NotNull
+        @Override
+        public Iterator<Object> iterator() {
+            return new RowsetColumnIterator(rows, serializationService, columnIndex, convertToData);
+        }
+    }
+
+    private static class RowsetColumnIterator implements Iterator<Object> {
+
+        private final List<SqlRow> rows;
+        private final InternalSerializationService serializationService;
+        private final int columnIndex;
+        private final boolean convertToData;
+        private final int count;
+        private int position;
+
+        private RowsetColumnIterator(
+            List<SqlRow> rows,
+            InternalSerializationService serializationService,
+            int columnIndex,
+            boolean convertToData
+        ) {
+            this.rows = rows;
+            this.serializationService = serializationService;
+            this.columnIndex = columnIndex;
+            this.convertToData = convertToData;
+
+            count = rows.size();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return position < count;
+        }
+
+        @Override
+        public Object next() {
+            if (position == count) {
+                throw new NoSuchElementException();
+            } else {
+                Object res = rows.get(position).getObject(columnIndex);
+
+                if (convertToData) {
+                    res = serializationService.toData(res);
+                }
+
+                position++;
+
+                return res;
+            }
+        }
+    }
+
+    private static boolean convertToData(SqlColumnType type) {
+        switch (type) {
+            case SMALLINT:
+            case DECIMAL:
+            case REAL:
+            case DOUBLE:
+            case DATE:
+            case TIME:
+            case TIMESTAMP:
+            case TIMESTAMP_WITH_TIME_ZONE:
+            case NULL:
+            case OBJECT:
+                return true;
+
+            default:
+                return false;
+        }
     }
 }

@@ -6,10 +6,7 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.client.SqlPage;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
@@ -24,180 +21,137 @@ public class SqlPageCodec {
     public static void encode(ClientMessage clientMessage, SqlPage sqlPage) {
         clientMessage.add(BEGIN_FRAME.copy());
 
+        // Write the "last" flag.
         byte[] content = new byte[]{(byte) (sqlPage.isLast() ? 1 : 0)};
         clientMessage.add(new ClientMessage.Frame(content));
 
+        // Write column types.
         List<SqlColumnType> columnTypes = sqlPage.getColumnTypes();
-        // TODO: Avoid streams
-        ListIntegerCodec.encode(clientMessage, columnTypes.stream().map(SqlColumnType::getId).collect(Collectors.toList()));
+        List<Integer> columnTypeIds = new ArrayList<>(columnTypes.size());
 
-        Iterator<List<Object>> iterator = sqlPage.getColumns().iterator();
+        for (SqlColumnType columnType : columnTypes) {
+            columnTypeIds.add(columnType.getId());
+        }
 
-        for (SqlColumnType type : sqlPage.getColumnTypes()) {
-            Object column = iterator.next();
+        ListIntegerCodec.encode(clientMessage, columnTypeIds);
 
-            switch (type) {
+        // Write columns.
+        for (int i = 0; i < sqlPage.getColumnCount(); i++) {
+            SqlColumnType columnType = columnTypes.get(i);
+            Iterable<?> column = sqlPage.getColumnValuesForServer(i);
+
+            switch (columnType) {
                 case VARCHAR:
-                    ListMultiFrameCodec.encodeContainsNullable(clientMessage, (Collection<String>) column, StringCodec::encode);
+                    ListMultiFrameCodec.encodeContainsNullable(clientMessage, (Iterable<String>) column, StringCodec::encode);
 
                     break;
 
                 case BOOLEAN:
-                    ListBooleanCodec.encode(clientMessage, (Collection<Boolean>) column);
+                    ListCNBooleanCodec.encode(clientMessage, (Iterable<Boolean>) column);
 
                     break;
 
                 case TINYINT:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
+                    ListCNByteCodec.encode(clientMessage, (Iterable<Byte>) column);
 
-                case SMALLINT:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
+                    break;
 
                 case INTEGER:
-                    ListCNIntegerCodec.encode(clientMessage, (Collection<Integer>) column);
+                    ListCNIntegerCodec.encode(clientMessage, (Iterable<Integer>) column);
 
                     break;
 
                 case BIGINT:
-                    ListLongCodec.encode(clientMessage, (Collection<Long>) column);
+                    ListCNLongCodec.encode(clientMessage, (Iterable<Long>) column);
 
                     break;
 
+                case SMALLINT:
                 case DECIMAL:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
-
                 case REAL:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
-
                 case DOUBLE:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
-
                 case DATE:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
-
                 case TIME:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
-
                 case TIMESTAMP:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
-
                 case TIMESTAMP_WITH_TIME_ZONE:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
-
+                case NULL:
                 case OBJECT:
-                    ListMultiFrameCodec.encode(clientMessage, (Collection<Data>) column, DataCodec::encodeNullable);
+                    ListMultiFrameCodec.encode(clientMessage, (Iterable<Data>) column, DataCodec::encodeNullable);
 
                     break;
-
-                case NULL:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
-
-                default:
-                    throw new IllegalStateException("Unknown type " + type);
             }
         }
 
         clientMessage.add(END_FRAME.copy());
     }
 
-    @SuppressWarnings("unchecked")
     public static SqlPage decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 
+        // Read the "last" flag.
         boolean isLast = iterator.next().content[0] == 1;
 
-        // TODO: Avoid streams
-        ArrayList<SqlColumnType> types = ListIntegerCodec.decode(iterator).stream()
-            .map(SqlColumnType::getById).collect(Collectors.toCollection(ArrayList::new));
+        // Read column types.
+        List<Integer> columnTypeIds = ListIntegerCodec.decode(iterator);
+        List<SqlColumnType> columnTypes = new ArrayList<>(columnTypeIds.size());
 
-        // TODO: (Sancar) handle empty iterator
-        List<List<?>> result = new ArrayList<>(types.size());
+        // Read columns.
+        List<List<?>> columns = new ArrayList<>(columnTypeIds.size());
 
-        for (SqlColumnType type : types) {
-            switch (type) {
+        for (int columnTypeId : columnTypeIds) {
+            SqlColumnType columnType = SqlColumnType.getById(columnTypeId);
+            assert columnType != null;
+
+            columnTypes.add(columnType);
+
+            switch (columnType) {
                 case VARCHAR:
-                    result.add(ListMultiFrameCodec.decodeContainsNullable(iterator, StringCodec::decode));
+                    columns.add(ListMultiFrameCodec.decodeContainsNullable(iterator, StringCodec::decode));
 
                     break;
 
                 case BOOLEAN:
-                    result.add(ListBooleanCodec.decode(iterator));
+                    columns.add(ListCNBooleanCodec.decode(iterator));
 
                     break;
 
                 case TINYINT:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
+                    columns.add(ListCNByteCodec.decode(iterator));
 
-                case SMALLINT:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
+                    break;
 
                 case INTEGER:
-                    result.add(ListCNIntegerCodec.decode(iterator));
+                    columns.add(ListCNIntegerCodec.decode(iterator));
 
                     break;
 
                 case BIGINT:
-                    result.add(ListLongCodec.decode(iterator));
+                    columns.add(ListCNLongCodec.decode(iterator));
 
                     break;
 
+                case SMALLINT:
                 case DECIMAL:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
-
                 case REAL:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
-
                 case DOUBLE:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
-
                 case DATE:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
-
                 case TIME:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
-
                 case TIMESTAMP:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
-
                 case TIMESTAMP_WITH_TIME_ZONE:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
-
+                case NULL:
                 case OBJECT:
-                    result.add(ListMultiFrameCodec.decode(iterator, DataCodec::decodeNullable));
+                    columns.add(ListMultiFrameCodec.decode(iterator, DataCodec::decodeNullable));
 
                     break;
-
-                case NULL:
-                    // TODO
-                    throw new UnsupportedOperationException("Fix");
 
                 default:
-                    throw new IllegalStateException("Unknown type " + type);
+                    throw new IllegalStateException("Unknown type " + columnType);
             }
         }
 
         fastForwardToEndFrame(iterator);
 
-        return new SqlPage(types, (List<List<Object>>) (Object) result, isLast);
+        return SqlPage.fromColumns(columnTypes, columns, isLast);
     }
 }
