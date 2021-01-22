@@ -4,9 +4,12 @@ description: Introduction to Hazelcast Jet SQL
 ---
 
 With Hazelcast Jet you can write SQL to process real-time event streams
-as well as data at rest. The data can be stored inside a Hazelcast
-cluster (including the Jet cluster itself) or in an external storage
-system.
+as well as data at rest. You can pull the data from a Hazelcast cluster
+(currently only the Jet cluster itself) or from external systems like
+Kafka or S3. You can see the results directly as well as send them to
+one of those systems. Jet SQL also has an extension that allows you to
+create a long-running background job that continuously takes the
+real-time data, processes it, and pushes it to the target system.
 
 **Note:** _The service is in beta state and supports only a very limited
 subset of the planned functionality. The behavior, API, and binary
