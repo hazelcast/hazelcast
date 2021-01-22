@@ -76,6 +76,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         factory = createHazelcastInstanceFactory(3);
         factory.newInstances(getConfig(), 3);
         instance = factory.getAllHazelcastInstances().iterator().next();
+        warmUpPartitions(factory.getAllHazelcastInstances());
     }
 
     @Override
