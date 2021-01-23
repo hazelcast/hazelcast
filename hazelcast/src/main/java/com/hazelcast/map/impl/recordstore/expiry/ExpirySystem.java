@@ -129,7 +129,7 @@ public class ExpirySystem {
     }
 
     public void addKeyIfExpirable(Data key, long ttl, long maxIdle, long expiryTime, long now) {
-        if (expiryTime == UNSET) {
+        if (expiryTime <= 0) {
             MapConfig mapConfig = mapContainer.getMapConfig();
             long ttlMillis = pickTTLMillis(ttl, mapConfig);
             long maxIdleMillis = pickMaxIdleMillis(maxIdle, mapConfig);
