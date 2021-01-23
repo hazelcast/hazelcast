@@ -197,18 +197,12 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     void disposeDeferredBlocks() {
         if (!disposeDeferredBlocks
-                || mapContainer.getMapConfig().getInMemoryFormat() != NATIVE) {
+                || recordStore == null
+                || recordStore.getInMemoryFormat() != NATIVE) {
             return;
         }
 
-        int partitionId = getPartitionId();
-        if (partitionId == -1) {
-            return;
-        }
-
-        if (recordStore != null) {
-            recordStore.disposeDeferredBlocks();
-        }
+        recordStore.disposeDeferredBlocks();
     }
 
     private boolean canPublishWanEvent(MapContainer mapContainer) {

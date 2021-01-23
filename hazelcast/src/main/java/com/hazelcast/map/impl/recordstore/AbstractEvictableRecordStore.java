@@ -142,7 +142,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                 != ExpiryReason.NOT_EXPIRED;
     }
 
-    // TODO optimize for HD access to read expiry metadata
     @Override
     public boolean expireOrAccess(Data key) {
         long now = Clock.currentTimeMillis();
@@ -197,7 +196,8 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         expirySystem.extendExpiryTime(dataKey, now);
     }
 
-    protected void mergeRecordExpiration(Data key, Record record, MapMergeTypes mergingEntry) {
+    protected void mergeRecordExpiration(Data key, Record record,
+                                         MapMergeTypes mergingEntry, long now) {
         mergeRecordExpiration(record, mergingEntry.getCreationTime(),
                 mergingEntry.getLastAccessTime(), mergingEntry.getLastUpdateTime());
         // WAN events received from source cluster also carry null maxIdle
@@ -205,11 +205,11 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         Long maxIdle = mergingEntry.getMaxIdle();
         if (maxIdle != null) {
             getExpirySystem().addKeyIfExpirable(key, mergingEntry.getTtl(),
-                    maxIdle, mergingEntry.getExpirationTime(), false);
+                    maxIdle, mergingEntry.getExpirationTime(), now);
         } else {
             ExpiryMetadata expiredMetadata = getExpirySystem().getExpiredMetadata(key);
             getExpirySystem().addKeyIfExpirable(key, mergingEntry.getTtl(),
-                    expiredMetadata.getMaxIdle(), mergingEntry.getExpirationTime(), false);
+                    expiredMetadata.getMaxIdle(), mergingEntry.getExpirationTime(), now);
         }
     }
 

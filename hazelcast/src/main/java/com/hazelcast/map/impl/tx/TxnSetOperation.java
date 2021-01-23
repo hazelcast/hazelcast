@@ -127,7 +127,7 @@ public class TxnSetOperation extends BasePutOperation
 
     @Override
     public boolean shouldBackup() {
-        return shouldBackup && recordStore.getRecord(dataKey) != null;
+        return shouldBackup && super.shouldBackup();
     }
 
     @Override

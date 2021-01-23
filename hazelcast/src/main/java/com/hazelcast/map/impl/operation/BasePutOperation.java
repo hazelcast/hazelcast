@@ -38,12 +38,6 @@ public abstract class BasePutOperation
     }
 
     @Override
-    protected void runInternal() {
-        super.runInternal();
-        recordToBackup = recordStore.getRecord(dataKey);
-    }
-
-    @Override
     protected void afterRunInternal() {
         Object value = isPostProcessing(recordStore)
                 ? recordStore.getRecord(dataKey).getValue() : dataValue;
@@ -65,6 +59,7 @@ public abstract class BasePutOperation
 
     @Override
     public boolean shouldBackup() {
+        recordToBackup = recordStore.getRecord(dataKey);
         return recordToBackup != null;
     }
 

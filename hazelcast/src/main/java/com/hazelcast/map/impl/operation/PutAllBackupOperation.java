@@ -84,6 +84,7 @@ public class PutAllBackupOperation extends MapOperation
     private void putBackup(Data key, Record record, ExpiryMetadata expiryMetadata) {
         Record currentRecord = recordStore.putBackup(key, record,
                 expiryMetadata.getTtl(), expiryMetadata.getMaxIdle(),
+                expiryMetadata.getExpirationTime(),
                 getCallerProvenance());
         Records.copyMetadataFrom(record, currentRecord);
         publishWanUpdate(key, record.getValue());

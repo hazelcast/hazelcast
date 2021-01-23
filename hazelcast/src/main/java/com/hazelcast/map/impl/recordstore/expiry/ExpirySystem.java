@@ -54,17 +54,16 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * each {@link RecordStore} and it is always accessed by same single thread.
  */
 public class ExpirySystem {
-    private static final long DEFAULT_MAX_EXPIRED_KEY_SCAN_TIMEOUT_NANOS
+    private static final long DEFAULT_EXPIRED_KEY_SCAN_TIMEOUT_NANOS
             = TimeUnit.MILLISECONDS.toNanos(1);
-    private static final String PROP_MAX_EXPIRED_KEY_SCAN_TIMEOUT_NANOS
+    private static final String PROP_EXPIRED_KEY_SCAN_TIMEOUT_NANOS
             = "hazelcast.internal.map.expired.key.scan.timeout.nanos";
-    private static final HazelcastProperty MAX_EXPIRED_KEY_SCAN_TIMEOUT_NANOS
-            = new HazelcastProperty(PROP_MAX_EXPIRED_KEY_SCAN_TIMEOUT_NANOS,
-            DEFAULT_MAX_EXPIRED_KEY_SCAN_TIMEOUT_NANOS, NANOSECONDS);
+    private static final HazelcastProperty EXPIRED_KEY_SCAN_TIMEOUT_NANOS
+            = new HazelcastProperty(PROP_EXPIRED_KEY_SCAN_TIMEOUT_NANOS,
+            DEFAULT_EXPIRED_KEY_SCAN_TIMEOUT_NANOS, NANOSECONDS);
     private static final int ONE_HUNDRED_PERCENT = 100;
     private static final int MIN_SCANNABLE_ENTRY_COUNT = 100;
 
-    // TODO expiryDelayMillis
     private final long expiryDelayMillis;
     private final long expiredKeyScanTimeoutNanos;
     private final boolean canPrimaryDriveExpiration;
@@ -90,7 +89,7 @@ public class ExpirySystem {
         this.mapContainer = mapContainer;
         this.mapServiceContext = mapServiceContext;
         this.canPrimaryDriveExpiration = mapServiceContext.getClearExpiredRecordsTask().canPrimaryDriveExpiration();
-        this.expiredKeyScanTimeoutNanos = nodeEngine.getProperties().getNanos(MAX_EXPIRED_KEY_SCAN_TIMEOUT_NANOS);
+        this.expiredKeyScanTimeoutNanos = nodeEngine.getProperties().getNanos(EXPIRED_KEY_SCAN_TIMEOUT_NANOS);
     }
 
     public boolean isEmpty() {
@@ -129,20 +128,19 @@ public class ExpirySystem {
         return new ExpiryMetadataImpl(ttlMillis, maxIdleMillis, expirationTime);
     }
 
-    public void addKeyIfExpirable(Data key, long ttl, long maxIdle,
-                                  long nowOrExpirationTime, boolean hasPreCalculatedExpiryTime) {
-        if (!hasPreCalculatedExpiryTime) {
+    public void addKeyIfExpirable(Data key, long ttl, long maxIdle, long expiryTime, long now) {
+        if (expiryTime == UNSET) {
             MapConfig mapConfig = mapContainer.getMapConfig();
             long ttlMillis = pickTTLMillis(ttl, mapConfig);
             long maxIdleMillis = pickMaxIdleMillis(maxIdle, mapConfig);
-            long expirationTime = ExpirationTimeSetter.calculateExpirationTime(ttlMillis, maxIdleMillis, nowOrExpirationTime);
-            addKeyIfExpirableInternal(key, ttlMillis, maxIdleMillis, expirationTime);
+            long expirationTime = ExpirationTimeSetter.calculateExpirationTime(ttlMillis, maxIdleMillis, now);
+            addExpirableKey(key, ttlMillis, maxIdleMillis, expirationTime);
         } else {
-            addKeyIfExpirableInternal(key, ttl, maxIdle, nowOrExpirationTime);
+            addExpirableKey(key, ttl, maxIdle, expiryTime);
         }
     }
 
-    private void addKeyIfExpirableInternal(Data key, long ttlMillis, long maxIdleMillis, long expirationTime) {
+    private void addExpirableKey(Data key, long ttlMillis, long maxIdleMillis, long expirationTime) {
         if (expirationTime == Long.MAX_VALUE) {
             Map<Data, ExpiryMetadata> map = getOrCreateExpireTimeByKeyMap(false);
             if (!map.isEmpty()) {
@@ -295,10 +293,10 @@ public class ExpirySystem {
                 expiredKeyCount++;
             }
 
-            // if timed out while looping, break this loop to free
-            // partition thread and to align running-in-constant-time
-            // behavior with eviction just check timeout after
-            // scanning Evictor.SAMPLE_COUNT number of keys.
+            // - If timed out while looping, break this loop to free
+            // partition thread.
+            // - Scan at least Evictor.SAMPLE_COUNT keys. During
+            // eviction we also check this number of keys.
             if (scannedKeyCount % Evictor.SAMPLE_COUNT == 0
                     && (System.nanoTime() - scanLoopStartNanos) >= expiredKeyScanTimeoutNanos) {
                 break;
@@ -361,16 +359,3 @@ public class ExpirySystem {
         clearExpiredRecordsTask.tryToSendBackupExpiryOp(recordStore, true);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -85,7 +85,8 @@ public interface RecordStore<R extends Record> {
      * @param provenance origin of call to this method.
      * @return current record after put.
      */
-    R putBackup(Data key, Object value, long ttl, long maxIdle, CallerProvenance provenance);
+    R putBackup(Data key, Object value, long ttl, long maxIdle,
+                long nowOrExpiryTime, CallerProvenance provenance);
 
     /**
      * @return current record after put.
@@ -93,13 +94,14 @@ public interface RecordStore<R extends Record> {
     R putBackup(Data dataKey, Record record, ExpiryMetadata expiryMetadata,
                 boolean putTransient, CallerProvenance provenance);
 
-    R putBackup(Data dataKey, Record record, long ttl, long maxIdle, CallerProvenance provenance);
+    R putBackup(Data dataKey, Record record, long ttl, long maxIdle,
+                long nowOrExpiryTime, CallerProvenance provenance);
 
     /**
      * @return current record after put.
      */
-    R putBackupTxn(Data dataKey, Record newRecord, ExpiryMetadata expiryMetadata, boolean putTransient,
-                   CallerProvenance provenance, UUID transactionId);
+    R putBackupTxn(Data dataKey, Record newRecord, ExpiryMetadata expiryMetadata,
+                   boolean putTransient, CallerProvenance provenance, UUID transactionId);
 
     /**
      * Does exactly the same thing as {@link #set(Data, Object, long, long)} except the invocation is not counted as
@@ -390,8 +392,9 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Do expiration operations.
-     *  @param percentage of max expirables according to the record store size.
-     * @param now now in millis
+     *
+     * @param percentage of max expirables according to the record store size.
+     * @param now        now in millis
      * @param backup     <code>true</code> if a backup partition, otherwise <code>false</code>.
      */
     void evictExpiredEntries(int percentage, long now, boolean backup);

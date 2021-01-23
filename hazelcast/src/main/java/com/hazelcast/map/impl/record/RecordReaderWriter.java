@@ -117,7 +117,6 @@ public enum RecordReaderWriter {
             Record record = new SimpleRecord();
             record.setValue(readData(in));
             record.setVersion(in.readInt());
-
             expiryMetadata.setRawTtl(in.readInt());
             expiryMetadata.setRawMaxIdle(in.readInt());
             expiryMetadata.setRawExpirationTime(in.readInt());
@@ -133,7 +132,6 @@ public enum RecordReaderWriter {
             writeData(out, dataValue);
             out.writeInt(record.getVersion());
             out.writeInt(record.getRawLastAccessTime());
-
             out.writeInt(expiryMetadata.getRawTtl());
             out.writeInt(expiryMetadata.getRawMaxIdle());
             out.writeInt(expiryMetadata.getRawExpirationTime());
@@ -146,7 +144,6 @@ public enum RecordReaderWriter {
             record.setValue(readData(in));
             record.setVersion(in.readInt());
             record.setRawLastAccessTime(in.readInt());
-
             expiryMetadata.setRawTtl(in.readInt());
             expiryMetadata.setRawMaxIdle(in.readInt());
             expiryMetadata.setRawExpirationTime(in.readInt());
@@ -162,7 +159,6 @@ public enum RecordReaderWriter {
             writeData(out, dataValue);
             out.writeInt(record.getVersion());
             out.writeInt(record.getHits());
-
             out.writeInt(expiryMetadata.getRawTtl());
             out.writeInt(expiryMetadata.getRawMaxIdle());
             out.writeInt(expiryMetadata.getRawExpirationTime());
@@ -175,7 +171,6 @@ public enum RecordReaderWriter {
             record.setValue(readData(in));
             record.setVersion(in.readInt());
             record.setHits(in.readInt());
-
             expiryMetadata.setRawTtl(in.readInt());
             expiryMetadata.setRawMaxIdle(in.readInt());
             expiryMetadata.setRawExpirationTime(in.readInt());

@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import static com.hazelcast.map.impl.record.Record.UNSET;
@@ -35,11 +35,6 @@ public class TryPutOperation extends BasePutOperation implements MutatingOperati
     @Override
     protected void runInternal() {
         recordStore.put(dataKey, dataValue, UNSET, UNSET);
-    }
-
-    @Override
-    public boolean shouldBackup() {
-        return recordStore.getRecord(dataKey) != null;
     }
 
     @Override

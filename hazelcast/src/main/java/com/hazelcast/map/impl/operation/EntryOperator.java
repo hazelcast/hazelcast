@@ -263,7 +263,7 @@ public final class EntryOperator {
         Object newValue = inMemoryFormat == OBJECT
                 ? entry.getValue() : entry.getByPrioritizingDataValue();
         if (backup) {
-            recordStore.putBackup(dataKey, newValue, entry.getNewTtl(), UNSET, NOT_WAN);
+            recordStore.putBackup(dataKey, newValue, entry.getNewTtl(), UNSET, UNSET, NOT_WAN);
         } else {
             recordStore.setWithUncountedAccess(dataKey, newValue, entry.getNewTtl(), UNSET);
             if (mapOperation.isPostProcessing(recordStore)) {
