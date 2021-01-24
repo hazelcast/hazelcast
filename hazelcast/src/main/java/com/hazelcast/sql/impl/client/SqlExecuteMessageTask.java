@@ -91,6 +91,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
     }
 
     protected ClientMessage encodeException(Throwable throwable) {
+        nodeEngine.getSqlService().getInternalService().getClientStateRegistry().closeOnError(parameters.queryId);
+
         if (throwable instanceof AccessControlException) {
             return super.encodeException(throwable);
         }

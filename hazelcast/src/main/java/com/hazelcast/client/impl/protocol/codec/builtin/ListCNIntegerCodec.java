@@ -22,7 +22,11 @@ import java.util.List;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
 
-public class ListCNIntegerCodec {
+public final class ListCNIntegerCodec {
+
+    private ListCNIntegerCodec() {
+    }
+
     public static void encode(ClientMessage clientMessage, Iterable<Integer> items) {
         ListCNFixedSizeCodec.encode(clientMessage, items, INT_SIZE_IN_BYTES, FixedSizeTypesCodec::encodeInt);
     }

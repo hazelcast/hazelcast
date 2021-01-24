@@ -185,6 +185,18 @@ public class QueryClientStateRegistry {
         }
 
         // Received the "close" request after the "execute" request, close.
+        close0(clientCursor);
+    }
+
+    public void closeOnError(QueryId queryId) {
+        QueryClientState clientCursor = clientCursors.get(queryId);
+
+        if (clientCursor != null) {
+            close0(clientCursor);
+        }
+    }
+
+    private void close0(QueryClientState clientCursor) {
         clientCursor.getSqlResult().close();
 
         deleteClientCursor(clientCursor);

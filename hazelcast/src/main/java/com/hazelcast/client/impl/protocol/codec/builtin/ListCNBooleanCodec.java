@@ -22,7 +22,11 @@ import java.util.List;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.BOOLEAN_SIZE_IN_BYTES;
 
-public class ListCNBooleanCodec {
+public final class ListCNBooleanCodec {
+
+    private ListCNBooleanCodec() {
+    }
+
     public static void encode(ClientMessage clientMessage, Iterable<Boolean> items) {
         ListCNFixedSizeCodec.encode(clientMessage, items, BOOLEAN_SIZE_IN_BYTES, FixedSizeTypesCodec::encodeBoolean);
     }

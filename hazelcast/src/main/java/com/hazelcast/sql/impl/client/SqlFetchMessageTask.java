@@ -20,14 +20,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.impl.SqlInternalService;
 
 import java.security.AccessControlException;
 import java.security.Permission;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
 
 /**
  * SQL query fetch task.
@@ -63,6 +59,8 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
 
     @Override
     protected ClientMessage encodeException(Throwable throwable) {
+        nodeEngine.getSqlService().getInternalService().getClientStateRegistry().closeOnError(parameters.queryId);
+
         if (throwable instanceof AccessControlException) {
             return super.encodeException(throwable);
         }

@@ -39,6 +39,8 @@ final class ListCNFixedSizeCodec {
     private static final byte TYPE_NOT_NULL_ONLY = 2;
     private static final byte TYPE_MIXED = 3;
 
+    private static final int ITEMS_PER_BITMASK = 8;
+
     private static final int HEADER_SIZE = BYTE_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
 
     private ListCNFixedSizeCodec() {
@@ -72,33 +74,33 @@ final class ListCNFixedSizeCodec {
         } else {
             encodeHeader(frame, TYPE_MIXED, totalItemCount);
 
-            int bitmapPosition = HEADER_SIZE;
-            int nextItemPosition = bitmapPosition + BYTE_SIZE_IN_BYTES;
+            int bitmaskPosition = HEADER_SIZE;
+            int nextItemPosition = bitmaskPosition + BYTE_SIZE_IN_BYTES;
 
-            int bitmap = 0;
+            int bitmask = 0;
             int trackedItems = 0;
 
             for (T item : items) {
                 if (item != null) {
-                    bitmap = bitmap | 1 << trackedItems;
+                    bitmask = bitmask | 1 << trackedItems;
 
                     encodeFunction.encode(frame.content, nextItemPosition, item);
 
                     nextItemPosition += itemSizeInBytes;
                 }
 
-                if (++trackedItems == 8) {
-                    encodeByte(frame.content, bitmapPosition, (byte) bitmap);
+                if (++trackedItems == ITEMS_PER_BITMASK) {
+                    encodeByte(frame.content, bitmaskPosition, (byte) bitmask);
 
-                    bitmapPosition = nextItemPosition;
-                    nextItemPosition = bitmapPosition + BYTE_SIZE_IN_BYTES;
-                    bitmap = 0;
+                    bitmaskPosition = nextItemPosition;
+                    nextItemPosition = bitmaskPosition + BYTE_SIZE_IN_BYTES;
+                    bitmask = 0;
                     trackedItems = 0;
                 }
             }
 
             if (trackedItems != 0) {
-                encodeByte(frame.content, bitmapPosition, (byte) bitmap);
+                encodeByte(frame.content, bitmaskPosition, (byte) bitmask);
             }
         }
 
@@ -143,12 +145,12 @@ final class ListCNFixedSizeCodec {
                 int readCount = 0;
 
                 while (readCount < count) {
-                    int bitmap = decodeByte(frame.content, position++);
+                    int bitmask = decodeByte(frame.content, position++);
 
-                    for (int i = 0; i < 8 && readCount < count; i++) {
+                    for (int i = 0; i < ITEMS_PER_BITMASK && readCount < count; i++) {
                         int mask = 1 << i;
 
-                        if ((bitmap & mask) == mask) {
+                        if ((bitmask & mask) == mask) {
                             res.add(decodeFunction.decode(frame.content, position));
 
                             position += itemSizeInBytes;
@@ -188,14 +190,14 @@ final class ListCNFixedSizeCodec {
             // Only nulls. Write only size.
             payload = 0;
         } else if (nonNullItemCount == totalItemCount) {
-            // Only non-nulls. Write without a bitmap.
+            // Only non-nulls. Write without a bitmask.
             payload = totalItemCount * itemSizeInBytes;
         } else {
-            // Mixed null and non-nulls. Write with a bitmap.
+            // Mixed null and non-nulls. Write with a bitmask.
             int nonNullItemCumulativeSize = nonNullItemCount * itemSizeInBytes;
-            int bitmapCumulativeSize = totalItemCount / 8 + (totalItemCount % 8 > 0 ? 1 : 0);
+            int bitmaskCumulativeSize = totalItemCount / ITEMS_PER_BITMASK + (totalItemCount % ITEMS_PER_BITMASK > 0 ? 1 : 0);
 
-            payload = nonNullItemCumulativeSize + bitmapCumulativeSize;
+            payload = nonNullItemCumulativeSize + bitmaskCumulativeSize;
         }
 
         return HEADER_SIZE + payload;

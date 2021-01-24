@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -12,12 +28,12 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
 
-public class SqlPageCodec {
+public final class SqlPageCodec {
 
     private SqlPageCodec() {
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "checkstyle:CyclomaticComplexity"})
     public static void encode(ClientMessage clientMessage, SqlPage sqlPage) {
         clientMessage.add(BEGIN_FRAME.copy());
 
@@ -76,15 +92,21 @@ public class SqlPageCodec {
                 case TIMESTAMP_WITH_TIME_ZONE:
                 case NULL:
                 case OBJECT:
+                    assert SqlPage.convertToData(columnType);
+
                     ListMultiFrameCodec.encode(clientMessage, (Iterable<Data>) column, DataCodec::encodeNullable);
 
                     break;
+
+                default:
+                    throw new IllegalStateException("Unknown type " + columnType);
             }
         }
 
         clientMessage.add(END_FRAME.copy());
     }
 
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public static SqlPage decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();

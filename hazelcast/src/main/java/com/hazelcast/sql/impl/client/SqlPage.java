@@ -218,7 +218,7 @@ public final class SqlPage {
         private final int count;
         private int position;
 
-        public NullTypeIterator(int count) {
+        private NullTypeIterator(int count) {
             this.count = count;
         }
 
@@ -265,7 +265,7 @@ public final class SqlPage {
         }
     }
 
-    private static class RowsetColumnIterator implements Iterator<Object> {
+    private static final class RowsetColumnIterator implements Iterator<Object> {
 
         private final List<SqlRow> rows;
         private final InternalSerializationService serializationService;
