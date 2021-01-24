@@ -117,9 +117,9 @@ public class SqlClientResult implements SqlResult {
 
         if (iterator == null) {
             throw new IllegalStateException("This result contains only update count");
+        } else {
+            return iterator.rowMetadata;
         }
-
-        return iterator.rowMetadata;
     }
 
     @NotNull
@@ -305,6 +305,8 @@ public class SqlClientResult implements SqlResult {
         private boolean last;
 
         private ClientIterator(SqlRowMetadata rowMetadata) {
+            assert rowMetadata != null;
+
             this.rowMetadata = rowMetadata;
         }
 
