@@ -24,17 +24,19 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.ProjectPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.ValuesPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.AbstractExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.plan.Plan;
@@ -51,10 +53,12 @@ import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
-import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
+import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
+import com.hazelcast.sql.impl.plan.node.io.SendPlanNode;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexNode;
@@ -82,7 +86,7 @@ import java.util.UUID;
  * created, and then exchange is converted into a pair of appropriate send/receive operators. Send operator is added to the
  * previous fragment, receive operator is a starting point for the new fragment.
  */
-@SuppressWarnings({"rawtypes", "checkstyle:ClassDataAbstractionCoupling"})
+@SuppressWarnings({"rawtypes", "checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     private final UUID localMemberId;
@@ -244,13 +248,21 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             rel.getIndex().getComponentsCount(),
             rel.getIndexFilter(),
             rel.getConverterTypes(),
-            convertFilter(schemaBefore, rel.getRemainderExp())
+            convertFilter(schemaBefore, rel.getRemainderExp()),
+            rel.getAscs()
         );
 
         pushUpstream(scanNode);
 
         objectIds.add(table.getObjectKey());
         mapNames.add(table.getMapName());
+    }
+
+    @Override
+    public void onSort(SortPhysicalRel rel) {
+        StringBuilder msgBuilder = new StringBuilder("Cannot execute ORDER BY clause, because its input is not sorted. ");
+        msgBuilder.append("Consider adding a SORTED index to the data source.");
+        throw QueryException.error(msgBuilder.toString());
     }
 
     @Override
@@ -263,7 +275,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         int id = pollId(rel);
 
-        RootSendPlanNode sendNode = new RootSendPlanNode(
+        SendPlanNode sendNode = new SendPlanNode(
             id,
             upstreamNode,
             edge
@@ -319,6 +331,48 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     }
 
     @Override
+    public void onSortMergeExchange(SortMergeExchangePhysicalRel rel) {
+        PlanNode upstreamNode = pollSingleUpstream();
+
+        // Create sender and push it as a fragment.
+        int edge = nextEdge();
+
+        int id = pollId(rel);
+
+        SendPlanNode sendNode = new SendPlanNode(
+            id,
+            upstreamNode,
+            edge
+        );
+
+        addFragment(sendNode, dataMemberMapping());
+
+        List<RelFieldCollation> collations = rel.getCollation().getFieldCollations();
+        int[] columnIndexes = new int[collations.size()];
+        boolean[] ascs = new boolean[collations.size()];
+
+        for (int i = 0; i < collations.size(); ++i) {
+            RelFieldCollation collation = collations.get(i);
+            RelFieldCollation.Direction direction = collation.getDirection();
+            int idx = collation.getFieldIndex();
+
+            columnIndexes[i] = idx;
+            ascs[i] = !direction.isDescending();
+        }
+
+        // Create a receiver and push it to stack.
+        ReceiveSortMergePlanNode receiveNode = new ReceiveSortMergePlanNode(
+            id,
+            edge,
+            sendNode.getSchema().getTypes(),
+            columnIndexes,
+            ascs
+        );
+
+        pushUpstream(receiveNode);
+    }
+
+    @Override
     public void onValues(ValuesPhysicalRel rel) {
         if (!rel.getTuples().isEmpty()) {
             throw QueryException.error("Non-empty VALUES are not supported");
@@ -355,7 +409,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /**
      * Create new fragment and clear intermediate state.
      *
-     * @param node Node.
+     * @param node    Node.
      * @param mapping Fragment mapping mode.
      */
     private void addFragment(PlanNode node, PlanFragmentMapping mapping) {

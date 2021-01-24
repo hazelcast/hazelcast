@@ -31,14 +31,14 @@ import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RootSendPlanNodeTest extends SqlTestSupport {
+public class SendPlanNodeTest extends SqlTestSupport {
     @Test
     public void testState() {
         int id = 1;
         MockPlanNode upstream = MockPlanNode.create(2);
         int edgeId = 3;
 
-        RootSendPlanNode node = new RootSendPlanNode(id, upstream, edgeId);
+        SendPlanNode node = new SendPlanNode(id, upstream, edgeId);
 
         assertEquals(id, node.getId());
         assertSame(upstream, node.getUpstream());
@@ -57,16 +57,16 @@ public class RootSendPlanNodeTest extends SqlTestSupport {
         int edgeId1 = 5;
         int edgeId2 = 6;
 
-        checkEquals(new RootSendPlanNode(id1, upstream1, edgeId1), new RootSendPlanNode(id1, upstream1, edgeId1), true);
-        checkEquals(new RootSendPlanNode(id1, upstream1, edgeId1), new RootSendPlanNode(id2, upstream1, edgeId1), false);
-        checkEquals(new RootSendPlanNode(id1, upstream1, edgeId1), new RootSendPlanNode(id1, upstream2, edgeId1), false);
-        checkEquals(new RootSendPlanNode(id1, upstream1, edgeId1), new RootSendPlanNode(id1, upstream1, edgeId2), false);
+        checkEquals(new SendPlanNode(id1, upstream1, edgeId1), new SendPlanNode(id1, upstream1, edgeId1), true);
+        checkEquals(new SendPlanNode(id1, upstream1, edgeId1), new SendPlanNode(id2, upstream1, edgeId1), false);
+        checkEquals(new SendPlanNode(id1, upstream1, edgeId1), new SendPlanNode(id1, upstream2, edgeId1), false);
+        checkEquals(new SendPlanNode(id1, upstream1, edgeId1), new SendPlanNode(id1, upstream1, edgeId2), false);
     }
 
     @Test
     public void testSerialization() {
-        RootSendPlanNode original = new RootSendPlanNode(1, MockPlanNode.create(2), 3);
-        RootSendPlanNode restored = serializeAndCheck(original, SqlDataSerializerHook.NODE_ROOT_SEND);
+        SendPlanNode original = new SendPlanNode(1, MockPlanNode.create(2), 3);
+        SendPlanNode restored = serializeAndCheck(original, SqlDataSerializerHook.NODE_SEND);
 
         checkEquals(original, restored, true);
     }

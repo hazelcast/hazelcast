@@ -64,7 +64,8 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                 continue;
             }
 
-            if (!SqlOperator.class.isAssignableFrom(field.getType())) {
+            if (!SqlOperator.class.isAssignableFrom(field.getType())
+                || field.getName().equals("DESC")) {
                 continue;
             }
 
@@ -289,6 +290,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     public void test_CEIL() {
         check(sql("CEIL(?) || CEIL(?)"), 1, 1);
     }
+
     @Test
     public void test_ROUND() {
         check(sql("ROUND(?) || ROUND(?)"), 1, 1);

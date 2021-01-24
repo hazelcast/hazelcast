@@ -199,7 +199,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
         InternalIndex index = indexes[0];
 
-        Iterator<QueryableEntry> entryIterator = index.getSqlRecordIterator();
+        Iterator<QueryableEntry> entryIterator = index.getSqlRecordIterator(false);
 
         if (!entryIterator.hasNext()) {
             return FieldsMetadata.EMPTY_ERROR;

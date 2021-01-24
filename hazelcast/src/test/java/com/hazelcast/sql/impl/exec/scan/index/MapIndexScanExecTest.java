@@ -40,7 +40,7 @@ import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -49,21 +49,25 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapIndexScanExecTest extends SqlTestSupport {
 
@@ -72,6 +76,14 @@ public class MapIndexScanExecTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";
     private static final String INDEX_NAME = "index";
+
+    @Parameterized.Parameters(name = "descendingDirection:{0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{{true}, {false}});
+    }
+
+    @Parameterized.Parameter
+    public boolean descendingDirection;
 
     private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
 
@@ -95,27 +107,27 @@ public class MapIndexScanExecTest extends SqlTestSupport {
     @Test
     public void testScan() {
         checkScan(
-            instance1,
-            0,
-            getLocalPartitions(instance1),
-            null,
-            null,
-            Collections.emptyList(),
-            1,
-            new int[0]
+                instance1,
+                0,
+                getLocalPartitions(instance1),
+                null,
+                null,
+                Collections.emptyList(),
+                1,
+                new int[0]
         );
 
         int entryCount = BATCH_SIZE * 5 / 2;
 
         checkScan(
-            instance1,
-            entryCount,
-            getLocalPartitions(instance1),
-            null,
-            null,
-            Collections.emptyList(),
-            1,
-            IntStream.range(0, entryCount).toArray()
+                instance1,
+                entryCount,
+                getLocalPartitions(instance1),
+                null,
+                null,
+                Collections.emptyList(),
+                1,
+                IntStream.range(0, entryCount).toArray()
         );
     }
 
@@ -125,21 +137,21 @@ public class MapIndexScanExecTest extends SqlTestSupport {
         int from = 50;
 
         IndexFilterValue fromValue = new IndexFilterValue(
-            Collections.singletonList(ConstantExpression.create(from, QueryDataType.INT)),
-            Collections.singletonList(true)
+                Collections.singletonList(ConstantExpression.create(from, QueryDataType.INT)),
+                Collections.singletonList(true)
         );
 
         IndexFilter indexFilter = new IndexRangeFilter(fromValue, true, null, false);
 
         checkScan(
-            instance1,
-            entryCount,
-            getLocalPartitions(instance1),
-            indexFilter,
-            null,
-            Collections.emptyList(),
-            1,
-            IntStream.range(from, entryCount).toArray()
+                instance1,
+                entryCount,
+                getLocalPartitions(instance1),
+                indexFilter,
+                null,
+                Collections.emptyList(),
+                1,
+                IntStream.range(from, entryCount).toArray()
         );
     }
 
@@ -150,49 +162,49 @@ public class MapIndexScanExecTest extends SqlTestSupport {
         int to = 75;
 
         IndexFilterValue fromValue = new IndexFilterValue(
-            Collections.singletonList(ConstantExpression.create(from, QueryDataType.INT)),
-            Collections.singletonList(true)
+                Collections.singletonList(ConstantExpression.create(from, QueryDataType.INT)),
+                Collections.singletonList(true)
         );
 
         IndexFilter indexFilter = new IndexRangeFilter(fromValue, true, null, false);
 
         Expression<Boolean> remainderFilter = ComparisonPredicate.create(
-            ColumnExpression.create(0, QueryDataType.INT),
-            ConstantExpression.create(75, QueryDataType.INT),
-            ComparisonMode.LESS_THAN
+                ColumnExpression.create(0, QueryDataType.INT),
+                ConstantExpression.create(75, QueryDataType.INT),
+                ComparisonMode.LESS_THAN
         );
 
         checkScan(
-            instance1,
-            entryCount,
-            getLocalPartitions(instance1),
-            indexFilter,
-            remainderFilter,
-            Collections.emptyList(),
-            1,
-            IntStream.range(from, to).toArray()
+                instance1,
+                entryCount,
+                getLocalPartitions(instance1),
+                indexFilter,
+                remainderFilter,
+                Collections.emptyList(),
+                1,
+                IntStream.range(from, to).toArray()
         );
     }
 
     @Test
     public void testInvalidComponentCount() {
         IndexEqualsFilter indexFilter = new IndexEqualsFilter(
-            new IndexFilterValue(
-                Collections.singletonList(ConstantExpression.create(1, QueryDataType.INT)),
-                Collections.singletonList(true)
-            )
+                new IndexFilterValue(
+                        Collections.singletonList(ConstantExpression.create(1, QueryDataType.INT)),
+                        Collections.singletonList(true)
+                )
         );
 
         try {
             checkScan(
-                instance1,
-                0,
-                getLocalPartitions(instance1),
-                indexFilter,
-                null,
-                Arrays.asList(QueryDataType.INT, QueryDataType.INT),
-                2,
-                new int[0]
+                    instance1,
+                    0,
+                    getLocalPartitions(instance1),
+                    indexFilter,
+                    null,
+                    Arrays.asList(QueryDataType.INT, QueryDataType.INT),
+                    2,
+                    new int[0]
             );
 
             fail("Must fail");
@@ -207,35 +219,35 @@ public class MapIndexScanExecTest extends SqlTestSupport {
     public void testConverterProblems() {
         // Converters are not checked for scans.
         checkScan(
-            instance1,
-            0,
-            getLocalPartitions(instance1),
-            null,
-            null,
-            Collections.singletonList(QueryDataType.VARCHAR),
-            1,
-            new int[0]
+                instance1,
+                0,
+                getLocalPartitions(instance1),
+                null,
+                null,
+                Collections.singletonList(QueryDataType.VARCHAR),
+                1,
+                new int[0]
         );
 
         // Converted must be checked for lookups
         IndexEqualsFilter indexFilter = new IndexEqualsFilter(
-            new IndexFilterValue(
-                Collections.singletonList(ConstantExpression.create(1, QueryDataType.INT)),
-                Collections.singletonList(true)
-            )
+                new IndexFilterValue(
+                        Collections.singletonList(ConstantExpression.create(1, QueryDataType.INT)),
+                        Collections.singletonList(true)
+                )
         );
 
         // Check missing converter (i.e. no data).
         try {
             checkScan(
-                instance1,
-                0,
-                getLocalPartitions(instance1),
-                indexFilter,
-                null,
-                Collections.singletonList(QueryDataType.INT),
-                1,
-                new int[0]
+                    instance1,
+                    0,
+                    getLocalPartitions(instance1),
+                    indexFilter,
+                    null,
+                    Collections.singletonList(QueryDataType.INT),
+                    1,
+                    new int[0]
             );
 
             fail("Must fail");
@@ -248,14 +260,14 @@ public class MapIndexScanExecTest extends SqlTestSupport {
         // Check converter mismatch (i.e. data differs!).
         try {
             checkScan(
-                instance1,
-                1,
-                getLocalPartitions(instance1),
-                indexFilter,
-                null,
-                Collections.singletonList(QueryDataType.VARCHAR),
-                1,
-                new int[0]
+                    instance1,
+                    1,
+                    getLocalPartitions(instance1),
+                    indexFilter,
+                    null,
+                    Collections.singletonList(QueryDataType.VARCHAR),
+                    1,
+                    new int[0]
             );
 
             fail("Must fail");
@@ -270,14 +282,14 @@ public class MapIndexScanExecTest extends SqlTestSupport {
     public void testPartition_setup() {
         try {
             checkScan(
-                instance1,
-                1,
-                getLocalPartitions(instance2),
-                null,
-                null,
-                Collections.singletonList(QueryDataType.INT),
-                1,
-                new int[0]
+                    instance1,
+                    1,
+                    getLocalPartitions(instance2),
+                    null,
+                    null,
+                    Collections.singletonList(QueryDataType.INT),
+                    1,
+                    new int[0]
             );
 
             fail("Must fail");
@@ -295,7 +307,7 @@ public class MapIndexScanExecTest extends SqlTestSupport {
         IndexFilter indexFilter = new IndexFilter() {
             @SuppressWarnings("rawtypes")
             @Override
-            public Iterator<QueryableEntry> getEntries(InternalIndex index, ExpressionEvalContext evalContext) {
+            public Iterator<QueryableEntry> getEntries(InternalIndex index, boolean descending, ExpressionEvalContext evalContext) {
                 // Preserve the original stamp
                 long stamp = index.getPartitionStamp(expectedPartitions);
                 assertNotEquals(GlobalIndexPartitionTracker.STAMP_INVALID, stamp);
@@ -307,7 +319,7 @@ public class MapIndexScanExecTest extends SqlTestSupport {
                 assertTrueEventually(() -> assertNotEquals(stamp, index.getPartitionStamp(expectedPartitions)));
 
                 // Proceed
-                return index.getSqlRecordIterator();
+                return index.getSqlRecordIterator(descending);
             }
 
             @SuppressWarnings("rawtypes")
@@ -319,14 +331,14 @@ public class MapIndexScanExecTest extends SqlTestSupport {
 
         try {
             checkScan(
-                instance1,
-                1,
-                expectedPartitions,
-                indexFilter,
-                null,
-                Collections.singletonList(QueryDataType.INT),
-                1,
-                new int[0]
+                    instance1,
+                    1,
+                    expectedPartitions,
+                    indexFilter,
+                    null,
+                    Collections.singletonList(QueryDataType.INT),
+                    1,
+                    new int[0]
             );
 
             fail("Must fail");
@@ -341,15 +353,15 @@ public class MapIndexScanExecTest extends SqlTestSupport {
     public void testNoIndex() {
         try {
             checkScan(
-                instance1,
-                "bad_index",
-                0,
-                getLocalPartitions(instance1),
-                null,
-                null,
-                Arrays.asList(QueryDataType.INT, QueryDataType.INT),
-                2,
-                new int[0]
+                    instance1,
+                    "bad_index",
+                    0,
+                    getLocalPartitions(instance1),
+                    null,
+                    null,
+                    Arrays.asList(QueryDataType.INT, QueryDataType.INT),
+                    2,
+                    new int[0]
             );
 
             fail("Must fail");
@@ -361,39 +373,39 @@ public class MapIndexScanExecTest extends SqlTestSupport {
     }
 
     private void checkScan(
-        HazelcastInstance member,
-        int entryCount,
-        PartitionIdSet partitions,
-        IndexFilter indexFilter,
-        Expression<Boolean> remainderFilter,
-        List<QueryDataType> converterTypes,
-        int expectedComponentCount,
-        int[] expectedResults
+            HazelcastInstance member,
+            int entryCount,
+            PartitionIdSet partitions,
+            IndexFilter indexFilter,
+            Expression<Boolean> remainderFilter,
+            List<QueryDataType> converterTypes,
+            int expectedComponentCount,
+            int[] expectedResults
     ) {
         checkScan(
-            member,
-            INDEX_NAME,
-            entryCount,
-            partitions,
-            indexFilter,
-            remainderFilter,
-            converterTypes,
-            expectedComponentCount,
-            expectedResults
+                member,
+                INDEX_NAME,
+                entryCount,
+                partitions,
+                indexFilter,
+                remainderFilter,
+                converterTypes,
+                expectedComponentCount,
+                expectedResults
         );
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     private void checkScan(
-        HazelcastInstance member,
-        String indexName,
-        int entryCount,
-        PartitionIdSet partitions,
-        IndexFilter indexFilter,
-        Expression<Boolean> remainderFilter,
-        List<QueryDataType> converterTypes,
-        int expectedComponentCount,
-        int[] expectedResults
+            HazelcastInstance member,
+            String indexName,
+            int entryCount,
+            PartitionIdSet partitions,
+            IndexFilter indexFilter,
+            Expression<Boolean> remainderFilter,
+            List<QueryDataType> converterTypes,
+            int expectedComponentCount,
+            int[] expectedResults
     ) {
         IMap<Integer, Integer> map = member.getMap(MAP_NAME);
 
@@ -403,22 +415,24 @@ public class MapIndexScanExecTest extends SqlTestSupport {
         List<QueryPath> fieldPaths = Collections.singletonList(valuePath(null));
         List<QueryDataType> fieldTypes = Collections.singletonList(QueryDataType.INT);
         List<Integer> projects = Collections.singletonList(0);
+        List<Boolean> ascs = Collections.singletonList(descendingDirection);
 
         MapIndexScanExec exec = new MapIndexScanExec(
-            1,
-            getMapContainer(map),
-            partitions,
-            GenericQueryTargetDescriptor.DEFAULT,
-            GenericQueryTargetDescriptor.DEFAULT,
-            fieldPaths,
-            fieldTypes,
-            projects,
-            remainderFilter,
-            getSerializationService(member),
-            indexName,
-            expectedComponentCount,
-            indexFilter,
-            converterTypes
+                1,
+                getMapContainer(map),
+                partitions,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                fieldPaths,
+                fieldTypes,
+                projects,
+                remainderFilter,
+                getSerializationService(member),
+                indexName,
+                expectedComponentCount,
+                indexFilter,
+                converterTypes,
+                ascs
         );
 
         exec.setup(emptyFragmentContext());

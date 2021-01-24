@@ -49,6 +49,9 @@ public class MapIndexScanExec extends MapScanExec {
     /** Stamp to ensure that indexed partitions are stable throughout query execution. */
     private Long partitionStamp;
 
+    // The collation of index entries
+    private List<Boolean> ascs;
+
     @SuppressWarnings("checkstyle:ParameterNumber")
     public MapIndexScanExec(
         int id,
@@ -64,7 +67,8 @@ public class MapIndexScanExec extends MapScanExec {
         String indexName,
         int componentCount,
         IndexFilter indexFilter,
-        List<QueryDataType> converterTypes
+        List<QueryDataType> converterTypes,
+        List<Boolean> ascs
     ) {
         super(
             id,
@@ -83,6 +87,7 @@ public class MapIndexScanExec extends MapScanExec {
         this.componentCount = componentCount;
         this.indexFilter = indexFilter;
         this.converterTypes = converterTypes;
+        this.ascs = ascs;
     }
 
     @Override
@@ -114,7 +119,7 @@ public class MapIndexScanExec extends MapScanExec {
             throw invalidIndexStamp();
         }
 
-        return new MapIndexScanExecIterator(mapName, index, componentCount, indexFilter, converterTypes, ctx);
+        return new MapIndexScanExecIterator(mapName, index, componentCount, indexFilter, ascs, converterTypes, ctx);
     }
 
     @Override
@@ -136,6 +141,6 @@ public class MapIndexScanExec extends MapScanExec {
     public String toString() {
         return getClass().getSimpleName() + "{mapName=" + mapName + ", fieldPaths=" + fieldPaths + ", projects=" + projects
             + "indexName=" + indexName + ", indexFilter=" + indexFilter + ", remainderFilter=" + filter
-            + ", partitionCount=" + partitions.size() + '}';
+            + ", partitionCount=" + partitions.size() + ", ascs=" + ascs + '}';
     }
 }
