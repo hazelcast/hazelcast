@@ -39,25 +39,6 @@ public final class ExpirationTimeSetter {
         }
     }
 
-    private static long checkedTime(long time) {
-        return time <= 0 ? Long.MAX_VALUE : time;
-    }
-
-    private static long sumForExpiration(long criteriaTime, long now) {
-        if (criteriaTime < 0 || now < 0) {
-            throw new IllegalArgumentException("Parameters can not have negative values");
-        }
-        if (criteriaTime == 0) {
-            return Long.MAX_VALUE;
-        }
-        long expirationTime = criteriaTime + now;
-        // detect potential overflow
-        if (expirationTime < 0) {
-            return Long.MAX_VALUE;
-        }
-        return expirationTime;
-    }
-
     /**
      * Decides if TTL millis should to be set on record.
      *
@@ -66,6 +47,10 @@ public final class ExpirationTimeSetter {
      * @return TTL value in millis to set to record
      */
     public static long pickTTLMillis(long operationTTLMillis, MapConfig mapConfig) {
+        if (operationTTLMillis < 0 && mapConfig.getTimeToLiveSeconds() == 0) {
+            return Long.MAX_VALUE;
+        }
+
         if (operationTTLMillis > 0) {
             // if user set operationTTLMillis when calling operation, use it
             return operationTTLMillis;
@@ -81,6 +66,10 @@ public final class ExpirationTimeSetter {
     }
 
     public static long pickMaxIdleMillis(long operationMaxIdleMillis, MapConfig mapConfig) {
+        if (operationMaxIdleMillis < 0 && mapConfig.getMaxIdleSeconds() == 0) {
+            return Long.MAX_VALUE;
+        }
+
         if (operationMaxIdleMillis > 0) {
             // if user set operationMaxIdleMillis when calling operation, use it
             return operationMaxIdleMillis;

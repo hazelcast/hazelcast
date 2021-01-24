@@ -1178,7 +1178,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void checkIfLoaded() {
-        if (loadingFutures.isEmpty()) {
+        if (mapDataStore == EMPTY_MAP_DATA_STORE
+                || loadingFutures.isEmpty()) {
             return;
         }
 
