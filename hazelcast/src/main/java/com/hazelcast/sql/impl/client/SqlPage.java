@@ -88,6 +88,29 @@ public final class SqlPage {
         return last;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        SqlPage page = (SqlPage) o;
+
+        return last == page.last && columnTypes.equals(page.columnTypes) && data.equals(page.data);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = columnTypes.hashCode();
+        result = 31 * result + data.hashCode();
+        result = 31 * result + (last ? 1 : 0);
+        return result;
+    }
+
     private interface DataHolder {
         int getRowCount();
         Object getColumnValueForClient(int columnIndex, int rowIndex);
@@ -144,9 +167,34 @@ public final class SqlPage {
             return columns.get(columnIndex).get(rowIndex);
         }
 
+        /**
+         * Used for testing only.
+         */
         @Override
         public Iterable<?> getColumnValuesForServer(int columnIndex, SqlColumnType columnType) {
-            throw new UnsupportedOperationException("Should not be called.");
+            assert !convertToData(columnType);
+
+            return columns.get(columnIndex);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            ColumnarDataHolder that = (ColumnarDataHolder) o;
+
+            return columns.equals(that.columns);
+        }
+
+        @Override
+        public int hashCode() {
+            return columns.hashCode();
         }
     }
 
