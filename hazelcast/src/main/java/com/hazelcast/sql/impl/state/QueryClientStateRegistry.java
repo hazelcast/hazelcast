@@ -133,8 +133,7 @@ public class QueryClientStateRegistry {
         ResultIterator<SqlRow> iterator = clientCursor.getIterator();
 
         try {
-            List<SqlRow> rows = new ArrayList<>();
-
+            List<SqlRow> rows = new ArrayList<>(cursorBufferSize);
             boolean last = fetchPage(iterator, rows, cursorBufferSize);
 
             return SqlPage.fromRows(columnTypes, rows, last, serializationService);
@@ -167,16 +166,11 @@ public class QueryClientStateRegistry {
         }
 
         HasNextResult hasNextResult;
-
-        int count = 0;
-
         do {
-            count++;
-
             rows.add(iterator.next());
 
             hasNextResult = iterator.hasNext(0, SECONDS);
-        } while (hasNextResult == YES && count < cursorBufferSize);
+        } while (hasNextResult == YES && rows.size() < cursorBufferSize);
 
         return hasNextResult == DONE;
     }
