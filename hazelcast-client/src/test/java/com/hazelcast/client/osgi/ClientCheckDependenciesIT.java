@@ -27,7 +27,7 @@ public class ClientCheckDependenciesIT extends CheckDependenciesIT {
 
     @Override
     protected String getBundleName() {
-        return "hazelcast-client";
+        return "Hazelcast(Client)";
     }
 
     @Override

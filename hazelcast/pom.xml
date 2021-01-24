@@ -142,6 +142,7 @@
                                     org.jruby.embed.jsr223;resolution:=optional,
                                     *
                                 </Import-Package>
+                                <Bundle-Name>Hazelcast(Core)</Bundle-Name>
                             </instructions>
                         </configuration>
                     </execution>
