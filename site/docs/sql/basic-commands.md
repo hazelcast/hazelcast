@@ -10,10 +10,34 @@ description: Description of SELECT, INSERT and SINK statements
 
 ```sql
 SELECT [ ALL | DISTINCT ] [ * | expression [ [ AS ] expression_alias ] [, ...] ]
-FROM [schema_name.]table_name [ [ AS ] table_alias ]
+FROM from_item [, ...]
 [ WHERE condition ]
 [ GROUP BY { expression | expression_index } [, ...] ]
 [ HAVING condition [, ...] ]
+```
+
+`from_item` is one of:
+
+```sql
+[schema_name.]table_name [ [ AS ] table_alias]
+
+(SELECT ... ) AS table_alias
+
+TABLE(function_name([ argument [, ...] ] ))
+
+(VALUES (expression, [, ...]) [, ...] )
+
+from_item  join_type  from_item [ ON join_condition | USING ( join_column [, ...] ) ]
+```
+
+`join_type` is one of:
+
+```sql
+[INNER] JOIN
+
+LEFT [OUTER] JOIN
+
+CROSS JOIN
 ```
 
 The clauses above are standard SQL clauses. The `table_name` is a
@@ -21,7 +45,7 @@ mapping name, either as created using [DDL](ddl.md) or one created
 automatically for non-empty IMaps.
 
 Jet supports all operators and functions supported by IMDG. Go to the
-[chapter on SQL](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#sql)
+[chapter on SQL](https://docs.hazelcast.org/docs/{imdg-minor-version}/manual/html-single/index.html#sql)
 in the Hazelcast IMDG reference manual for the full reference.
 
 ### Aggregate Functions
@@ -70,14 +94,14 @@ will leverage this optimization.
 
 ### Isolation level
 
-Every connector underlying a table used in the query declares the
-isolation level it provides. In general it's _read-committed_. One
-aspect of this mode is that it doesn't prevent reading different
-versions of a single row while executing a single query. In streaming
-mode this behavior is even desired: for example, if you join a record
-from an IMap to rows from a Kafka topic, this query can run for months
-and you want to see the current version of the IMap entry, not the
-version from the time when the query was started.
+The isolation level for each mapping is defined by the `TYPE` is uses
+and in some cases can be tuned by the mapping `OPTIONS`. In general it's
+_read-committed_. One aspect of this mode is that it doesn't prevent
+reading different versions of a single row while executing a single
+query. In streaming mode this behavior is even desired: for example, if
+you join a record from an IMap to rows from a Kafka topic, this query
+can run for months and you want to see the current version of the IMap
+entry, not the version from the time when the query was started.
 
 ## INSERT/SINK statement
 
@@ -85,15 +109,16 @@ version from the time when the query was started.
 
 ```sql
 [ INSERT | SINK ] INTO [schema_name.]table_name[(column_name [, ...])]
-{ SELECT ... | VALUES(expression, [, ...]) }
+{ SELECT ... | VALUES(expression, [, ...]) [, ...] }
 ```
 
-Jobs that process unbounded streams typically read from some source(s)
-and write to a sink. However, writing to the sink doesn't directly map
-to SQL commands. A Jet sink isn't limited to only insert or delete rows,
-even the SQL standard `MERGE` statement isn't easily applicable.
+Jobs that process unbounded streams typically read from one or more
+sources and write to a sink. However, writing to the sink doesn't
+directly map to SQL commands. A Jet sink isn't limited to only insert
+rows. Even the standard `MERGE` statement isn't easily applicable
+because it can't modify a single row more than once.
 
-As a solution, Jet uses the non-standard `SINK INTO` command, whose
+As a solution, Jet uses a non-standard `SINK INTO` command, whose
 semantics depend on the underlying sink connector. Jet takes the output
 of the SELECT statement and sends it to the sink to process. For
 example, when writing to an IMap, the value associated with the key is
@@ -101,23 +126,32 @@ overwritten, and one key can be overwritten multiple times.
 
 Some connectors support the `INSERT INTO` statement. If they do, the
 behavior is defined by the SQL standard. For example, the Apache Kafka
-connector supports it. Jet doesn't support `DELETE` or `UPDATE`
-statements.
+connector supports it, because Kafka topics are append-only. Jet doesn't
+support `DELETE`, `UPDATE` or `MERGE` statements.
 
 ### Transactional behavior
 
-In SQL a statement is always atomic. In streaming SQL this is not
-possible: since the SQL statement never completes, we will never see any
-result. Therefore Jet relaxes the behavior: the sink is free to define
-its own transaction semantics. Jet has the option to support fault
-tolerance with at-least-once semantics, violating strict atomicity.
-Also, if a query fails, you might see partial results written.
+In SQL a DML statement is always atomic. That is it executes in full or
+not at all, and a statement can even be a part of a bigger transaction.
+Other clients aren't allowed to see partial changes. In streaming DML
+this is not possible: since the statement never completes, we will never
+see any result. Therefore Jet relaxes the behavior: the sink is free to
+define its own transaction behavior. Typically, stream items are
+committed in the target system in batches.
+
+Additionally, Jet has an option to run streaming DML with a processing
+guarantee - the underlying job will restart in case of failures. It can
+run in at-least-once mode in which it can happen that some stream items
+are processed multiple times. Even in exactly-once mode, some connectors
+don't support it and it can happen that some items are written multiple
+times. Any of this isn't allowed by the SQL standard. For details check
+the documentation of each connector.
 
 ## Case sensitivity
 
 Identifiers such as table and column names are case-sensitive. Function
 names and SQL keywords aren't. If your identifier contains special
-characters, use `"` to quote. For example, if your map is named
+characters, use `"` to quote it. For example, if your map is named
 `my-map`:
 
 ```sql

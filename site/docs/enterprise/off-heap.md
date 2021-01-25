@@ -10,7 +10,7 @@ pauses in the application, leading to unpredictable spikes in latency
 and drops in throughput.
 
 To avoid this, Jet supports storing data in `IMap` in what's called
-_native_ or _off-heap_ memory using the [High-Density Memory](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#using-high-density-memory-store-with-map)
+_native_ or _off-heap_ memory using the [High-Density Memory](https://docs.hazelcast.org/docs/{imdg-minor-version}/manual/html-single/index.html#using-high-density-memory-store-with-map)
 feature of Hazelcast. This allows JVM to operate with smaller heaps and
 do garbage collection more efficiently, while allowing Jet to store
 large amount of data.
@@ -41,7 +41,7 @@ hazelcast:
       in-memory-format: NATIVE
 ```
 
-For additional configuration options, see [configuring high-density memory](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#configuring-high-density-memory-store)
+For additional configuration options, see [configuring high-density memory](https://docs.hazelcast.org/docs/{imdg-minor-version}/manual/html-single/index.html#configuring-high-density-memory-store)
 section of the Hazelcast manual.
 
 ## Persistent Memory
@@ -52,6 +52,6 @@ Depending on the value size, this offers almost similar performance to
 memory at a lower cost, making it attractive for storing large amounts
 of data efficiently.
 
-Please refer to the [configuring persistent memory](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#using-persistent-memory)
+Please refer to the [configuring persistent memory](https://docs.hazelcast.org/docs/{imdg-minor-version}/manual/html-single/index.html#using-persistent-memory)
 section of the Hazelcast manual for details on how to enable persistent
 memory.

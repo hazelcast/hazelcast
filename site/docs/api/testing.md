@@ -21,8 +21,8 @@ project:
 <!--Gradle-->
 
 ```bash
-compile 'com.hazelcast.jet:hazelcast-jet-core:{jet-version}:tests'
-compile 'com.hazelcast:hazelcast:{imdg-version}:tests'
+compile 'com.hazelcast.jet:hazelcast-jet-core:{jet-minor-version}:tests'
+compile 'com.hazelcast:hazelcast:{imdg-minor-version}:tests'
 ```
 
 <!--Maven-->
@@ -31,13 +31,13 @@ compile 'com.hazelcast:hazelcast:{imdg-version}:tests'
 <dependency>
   <groupId>com.hazelcast.jet</groupId>
   <artifactId>hazelcast-jet-core</artifactId>
-  <version>{jet-version}</version>
+  <version>{jet-minor-version}</version>
   <classifier>tests</classifier>
 </dependency>
 <dependency>
   <groupId>com.hazelcast</groupId>
   <artifactId>hazelcast</artifactId>
-  <version>{imdg-version}</version>
+  <version>{imdg-minor-version}</version>
   <classifier>tests</classifier>
 </dependency>
 ```

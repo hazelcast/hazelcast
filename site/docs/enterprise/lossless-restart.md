@@ -42,7 +42,7 @@ hazelcast:
 ```
 
 See the
-[docs](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#hot-restart-persistence)
+[docs](https://docs.hazelcast.org/docs/{imdg-minor-version}/manual/html-single/index.html#hot-restart-persistence)
 for a detailed description including fine tuning.
 
 ## Safely Shutting Down a Jet Cluster

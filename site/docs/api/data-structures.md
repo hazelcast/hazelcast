@@ -244,7 +244,7 @@ coordination tasks.
 ## ICache
 
 `ICache` is a fully compliant
-[JCache](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#jcache-overview)
+[JCache](https://docs.hazelcast.org/docs/{imdg-minor-version}/manual/html-single/index.html#jcache-overview)
 implementation. The features offered are mostly similar to `IMap`, but
 are limited to what's offered by the `JCache` specification, so many of
 `IMap`s features such as `EntryProcessor` and querying aren't available
@@ -252,7 +252,7 @@ on `ICache`.
 
 ## CP Subsystem
 
-[CP subsystem](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#cp-subsystem)
+[CP subsystem](https://docs.hazelcast.org/docs/{imdg-minor-version}/manual/html-single/index.html#cp-subsystem)
 builds a strongly consistent layer inside Hazelcast Jet which can be
 used for distributed coordination use cases, such as distributed locking
 and synchronization. The CP subsystem is based on a full RAFT

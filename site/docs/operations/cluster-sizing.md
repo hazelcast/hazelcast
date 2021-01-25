@@ -348,7 +348,7 @@ machines, each of 8 CPU, 16 GB RAM, 10 Gbps network.
 ### Fault-Tolerance
 
 The [Event
-Journal](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#event-journal)
+Journal](https://docs.hazelcast.org/docs/{imdg-minor-version}/manual/html-single/index.html#event-journal)
 capacity was set to 1.5 million items. With an input data production
 rate of 50k events per second, the data is kept for 30 seconds before
 being overwritten. The job snapshot frequency was set to 1 second.
@@ -360,5 +360,5 @@ snapshot) giving the job enough time to reprocess the 3 seconds (~ 150k
 events) of data it missed.
 
 More aggressive [failure
-detector](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#failure-detector-configuration)
+detector](https://docs.hazelcast.org/docs/{imdg-minor-version}/manual/html-single/index.html#failure-detector-configuration)
 and a larger event journal can be used to stretch the error window.

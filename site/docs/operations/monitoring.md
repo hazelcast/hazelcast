@@ -71,8 +71,8 @@ Let’s look at these 3 broad categories of metrics in detail.
 
 There is a wide range of metrics and statistics provided by Hazelcast:
 
-* statistics of distributed data structures (see [Reference Manual](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#getting-member-statistics))
-* executor statistics (see [Reference Manual](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#executor-statistics))
+* statistics of distributed data structures (see [Reference Manual](https://docs.hazelcast.org/docs/{imdg-minor-version}/manual/html-single/index.html#getting-member-statistics))
+* executor statistics (see [Reference Manual](https://docs.hazelcast.org/docs/{imdg-minor-version}/manual/html-single/index.html#executor-statistics))
 * partition related statistics (state, migration, replication)
 * garbage collection statistics
 * memory statistics for the JVM which current IMDG member belongs to

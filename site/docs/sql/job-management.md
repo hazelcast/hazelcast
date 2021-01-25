@@ -9,12 +9,10 @@ These statements create a potentially long-running Jet job that is not
 tied to the client session.
 
 When you submit a standard INSERT query, its lifecycle is tied to the
-client session: if the client disconnects, the query is cancelled, even
-if it is supposed deliver results somewhere else (not back to the
-client).
+client session: if the client disconnects, the statement is cancelled.
 
 If you want to submit a statement that is independent from the client
-session, use the `CREATE JOB` statement. Such a statement will complete
+session, use the `CREATE JOB` command. This command will complete
 quickly and the job will be running in the cluster. You can also
 configure such a job to be fault-tolerant.
 
@@ -99,13 +97,14 @@ API, if they have a name assigned.
 
 ## CREATE/DROP SNAPSHOT
 
-To export a snapshot for a running job use:
+To export a named snapshot for a running job use:
 
 ```sql
 CREATE OR REPLACE SNAPSHOT snapshot_name FOR JOB job_name
 ```
 
-- `OR REPLACE`: Jet always replaces the snapshot if it already exists
+- `OR REPLACE`: Jet replaces the snapshot if it already exists, this
+  option is mandatory
 
 - `snapshot_name`: the name of the saved snapshot
 

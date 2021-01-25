@@ -56,4 +56,4 @@ failures in the cluster You can also force a client to specifically
 disconnect from one cluster and connect to the other one through
 blacklisting. For a list of detailed features and options for Blue/Green
 configuration options see the
-[Hazelcast IMDG documentation on Blue-Green Deployment](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#blue-green-deployment-and-disaster-recovery).
+[Hazelcast IMDG documentation on Blue-Green Deployment](https://docs.hazelcast.org/docs/{imdg-minor-version}/manual/html-single/index.html#blue-green-deployment-and-disaster-recovery).

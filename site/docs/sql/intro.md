@@ -13,7 +13,7 @@ real-time data, processes it, and pushes it to the target system.
 
 **Note:** _The service is in beta state and supports only a very limited
 subset of the planned functionality. The behavior, API, and binary
-formats will probably change in future releases._
+formats may change in future releases._
 
 ## Quick Start
 
@@ -35,7 +35,8 @@ containers talk to each other, using the container name as the hostname.
 
 The `-v` option maps the current directory to `/csv-dir` inside the
 container, stay in the same directory when you create the file in the
-CSV example below.
+CSV example below. On Windows, due to limitations of Docker, switch to
+some subdirectory of `c:\Users` before executing the above commands.
 
 <!--Tarball-->
 Prerequisite is Java.
@@ -84,6 +85,8 @@ Type 'help' for instructions
 sql〉
 ```
 <!--END_DOCUSAURUS_CODE_TABS-->
+
+----
 
 You are now ready to write some SQL. Try these:
 
@@ -151,11 +154,11 @@ sql〉
 ```
 
 `generate_stream()` generates an infinite stream of values. It emits
-`bigint`'s starting from zero at the rate you indicate with the argument
+`bigint`s starting from zero at the rate you indicate with the argument
 (in events per second). For Jet SQL, a stream is like a table with
 infinitely many rows which you can only access sequentially and thus
-never reach the end. For example, you get a syntax error if you try to
-aggregate across a whole stream:
+never reach the end. For example, you get an error if you try to
+aggregate the whole stream:
 
 ```sql
 sql〉 SELECT sum(v) FROM TABLE(generate_stream(10));
@@ -171,7 +174,7 @@ to apply a windowing function. This is an upcoming feature of Jet SQL.
 In this beta release, you can use these:
 
 - [SELECT and WHERE
-expressions](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#expressions)
+expressions](https://docs.hazelcast.org/docs/{imdg-minor-version}/manual/html-single/index.html#expressions)
 - FROM [Apache Kafka topics](kafka-connector.md) and
 [files (local and remote)](file-connector.md)
 - JOIN with an IMap inside the Jet cluster (enrichment)
@@ -185,7 +188,7 @@ These are some of the features on our roadmap:
 - GROUP BY for IMap
 - Windowed aggregation of streaming data
 - JOIN with any data source
-- JDBC
+- JDBC driver
 
 ## CREATE EXTERNAL MAPPING
 
@@ -221,7 +224,6 @@ The [DDL](ddl) section has more details.
 ## Query a CSV File
 
 Make sure you are in the same directory from which you started Jet.
-
 Create a sample CSV file named `likes.csv`:
 
 ```bash
@@ -302,7 +304,7 @@ cd kafka_2.13-2.7.0
 
 Now start ZooKeeper, then Kafka:
 
-```bash
+```text
 $ bin/zookeeper-server-start.sh config/zookeeper.properties
 ...
 [2021-01-20 12:44:04,863] INFO Created server with tickTime 3000
@@ -376,8 +378,9 @@ sql〉 SELECT ticker, ROUND(price * 100) AS price_cents, amount
 +------------+----------------------+-------------------+
 ```
 
-The query is now running, ready to receive messages from Kafka. You can
-interrupt it with `Ctrl+C`, but leave it running for now.
+The Kafka topic is infinite, so this query is a _streaming query_. It is
+now running, ready to receive messages from Kafka. You can interrupt it
+with `Ctrl+C`, but leave it running for now.
 
 Now start another terminal window and push some messages to Kafka:
 
@@ -398,7 +401,9 @@ a result row has appeared:
 |EFGH             |                  1400|                 20|
 ```
 
-See the [Kafka Connector](kafka-connector) page for more details.
+You see only one of the two rows you inserted, the other one was
+eliminated by the `WHERE` clause. See the [Kafka
+Connector](kafka-connector) page for more details.
 
 ## Store Query Results in an IMap
 
@@ -406,12 +411,12 @@ You can send the query results to an IMap using the `SINK INTO` clause.
 `SINK INTO` is similar to the standard `INSERT INTO`, [see
 here](basic-commands#insertsink-statement) for the full details.
 
-This creates a map named `tradeMap` with an integer key and the JSON
-trade event as the value, and then stores an entry in it:
+This creates a map named `tradeMap` with a `Long` key and the JSON trade
+event as the value, and then stores an entry in it:
 
 ```sql
 sql〉 CREATE MAPPING tradeMap (
-    id BIGINT EXTERNAL NAME "__key",
+    __key BIGINT,
     ticker VARCHAR,
     price DECIMAL,
     amount BIGINT)
@@ -423,11 +428,11 @@ OK
 sql〉 SINK INTO tradeMap VALUES (1, 'hazl', 10, 1);
 OK
 sql〉 SELECT * FROM tradeMap;
-+----+----------+--------+--------+
-|  id|ticker    |   price|  amount|
-+----+----------+--------+--------+
-|   1|hazl      |10.0000…|       1|
-+----+----------+--------+--------+
++-----+----------+--------+--------+
+|__key|ticker    |   price|  amount|
++-----+----------+--------+--------+
+|    1|hazl      |10.0000…|       1|
++-----+----------+--------+--------+
 1 row(s) selected
 sql〉
 ```
@@ -439,7 +444,7 @@ from the Kafka topic into the IMap:
 
 ```sql
 sql〉 CREATE JOB ingest_trades AS
-  SINK INTO tradeMap(id, ticker, price, amount)
+  SINK INTO tradeMap
   SELECT id, ticker, price, amount
   FROM trades;
 OK
@@ -454,7 +459,7 @@ sql〉 SHOW JOBS;
 
 As we already saw, a streaming query never completes on its own and its
 lifecycle is coupled to the shell, but normally you want to create a
-long-running query that lives on independently. We achieved this with
+long-running query that lives independently. We achieved this with
 `CREATE JOB`.
 
 Let's try it out by publishing some events to the Kafka topic and
@@ -547,5 +552,5 @@ can't execute the statement, try the Jet backend.
 This documentation summarizes the additional SQL features of Hazelcast
 Jet. For a summary of the default SQL engine features, supported data
 types and the built-in functions and operators, please see the [chapter
-on SQL](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#sql)
+on SQL](https://docs.hazelcast.org/docs/{imdg-minor-version}/manual/html-single/index.html#sql)
 in the Hazelcast IMDG reference manual.
