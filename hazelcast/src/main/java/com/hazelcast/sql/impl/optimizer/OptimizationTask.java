@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.optimizer;
 
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 
 import java.util.List;
@@ -24,6 +25,8 @@ import java.util.List;
  * Encapsulates the optimization task.
  */
 public final class OptimizationTask {
+    private final QueryId queryId;
+
     /** The query. */
     private final String sql;
 
@@ -33,10 +36,15 @@ public final class OptimizationTask {
     /** The resolved schema. */
     private final SqlCatalog schema;
 
-    public OptimizationTask(String sql, List<List<String>> searchPaths, SqlCatalog schema) {
+    public OptimizationTask(QueryId queryId, String sql, List<List<String>> searchPaths, SqlCatalog schema) {
+        this.queryId = queryId;
         this.sql = sql;
         this.searchPaths = searchPaths;
         this.schema = schema;
+    }
+
+    public QueryId getQueryId() {
+        return queryId;
     }
 
     public String getSql() {

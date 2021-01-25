@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -40,6 +41,7 @@ import org.junit.runner.RunWith;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static org.junit.Assert.assertEquals;
@@ -196,6 +198,7 @@ public class ParserNameResolutionTest {
         );
 
         return OptimizerContext.create(
+            QueryId.create(UUID.randomUUID()),
             new SqlCatalog(tableResolvers),
             searchPaths,
             1,

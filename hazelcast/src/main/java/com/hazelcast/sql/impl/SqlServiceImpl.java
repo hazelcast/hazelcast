@@ -273,7 +273,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         }
 
         // Prepare and execute
-        SqlPlan plan = prepare(schema, sql, expectedResultType);
+        SqlPlan plan = prepare(queryId, schema, sql, expectedResultType);
 
         if (securityContext.isSecurityEnabled()) {
             plan.checkPermissions(securityContext);
@@ -282,7 +282,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         return execute(queryId, plan, params0, timeout, pageSize);
     }
 
-    private SqlPlan prepare(String schema, String sql, SqlExpectedResultType expectedResultType) {
+    private SqlPlan prepare(QueryId queryId, String schema, String sql, SqlExpectedResultType expectedResultType) {
         List<List<String>> searchPaths = prepareSearchPaths(schema);
 
         PlanCacheKey planKey = new PlanCacheKey(searchPaths, sql);
@@ -292,7 +292,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         if (plan == null) {
             SqlCatalog catalog = new SqlCatalog(tableResolvers);
 
-            plan = optimizer.prepare(new OptimizationTask(sql, searchPaths, catalog));
+            plan = optimizer.prepare(new OptimizationTask(queryId, sql, searchPaths, catalog));
 
             if (plan instanceof CacheablePlan) {
                 CacheablePlan plan0 = (CacheablePlan) plan;

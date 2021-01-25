@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.QueryPlanner;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
@@ -66,17 +67,20 @@ public final class OptimizerContext {
 
     private static final CalciteConnectionConfig CONNECTION_CONFIG = CalciteConfiguration.DEFAULT.toConnectionConfig();
 
+    private final QueryId queryId;
     private final HazelcastRelOptCluster cluster;
     private final QueryParser parser;
     private final QueryConverter converter;
     private final QueryPlanner planner;
 
     private OptimizerContext(
+        QueryId queryId,
         HazelcastRelOptCluster cluster,
         QueryParser parser,
         QueryConverter converter,
         QueryPlanner planner
     ) {
+        this.queryId = queryId;
         this.cluster = cluster;
         this.parser = parser;
         this.converter = converter;
@@ -91,6 +95,7 @@ public final class OptimizerContext {
      * @return Context.
      */
     public static OptimizerContext create(
+        QueryId queryId,
         SqlCatalog schema,
         List<List<String>> searchPaths,
         int memberCount,
@@ -100,10 +105,11 @@ public final class OptimizerContext {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
-        return create(rootSchema, searchPaths, memberCount, sqlBackend, jetSqlBackend);
+        return create(queryId, rootSchema, searchPaths, memberCount, sqlBackend, jetSqlBackend);
     }
 
     public static OptimizerContext create(
+        QueryId queryId,
         HazelcastSchema rootSchema,
         List<List<String>> schemaPaths,
         int memberCount,
@@ -122,7 +128,7 @@ public final class OptimizerContext {
         QueryConverter converter = new QueryConverter(catalogReader, cluster);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
-        return new OptimizerContext(cluster, parser, converter, planner);
+        return new OptimizerContext(queryId, cluster, parser, converter, planner);
     }
 
     /**
@@ -133,6 +139,10 @@ public final class OptimizerContext {
      */
     public QueryParseResult parse(String sql) {
         return parser.parse(sql);
+    }
+
+    public QueryId getQueryId() {
+        return queryId;
     }
 
     /**

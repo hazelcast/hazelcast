@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.index;
 
 import com.hazelcast.config.IndexType;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
@@ -69,6 +70,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
@@ -472,6 +474,7 @@ public class PhysicalIndexScanTest extends IndexOptimizerTestSupport {
 
     private MapScanLogicalRel createMapScanLogicalRel(HazelcastSchema schema, RexNode filter) {
         OptimizerContext context = OptimizerContext.create(
+            QueryId.create(UUID.randomUUID()),
             HazelcastSchemaUtils.createCatalog(schema),
             QueryUtils.prepareSearchPaths(null, null),
             2,

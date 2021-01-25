@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.opt;
 
 import com.hazelcast.sql.impl.ParameterConverter;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlTestSupport;
@@ -60,6 +61,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
@@ -120,6 +122,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         QueryParameterMetadata parameterMetadata
     ) {
         OptimizerContext context = OptimizerContext.create(
+            QueryId.create(UUID.randomUUID()),
             HazelcastSchemaUtils.createCatalog(schema),
             QueryUtils.prepareSearchPaths(null, null),
             nodeCount,
