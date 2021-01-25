@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.cache.impl.CacheService;
@@ -33,6 +34,7 @@ import com.hazelcast.topic.impl.TopicService;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -40,7 +42,6 @@ import static java.util.stream.Collectors.groupingBy;
 class DistributedObjectCounterCollector implements MetricsCollector {
 
     private static final Map<String, PhoneHomeMetrics> SERVICE_NAME_TO_METRIC_NAME;
-    private static final int COUNT_OF_DISTRIBUTED_OBJECTS = 11;
 
     static {
         SERVICE_NAME_TO_METRIC_NAME = new HashMap<>();
@@ -60,15 +61,17 @@ class DistributedObjectCounterCollector implements MetricsCollector {
     }
 
     @Override
-    public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
-        Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
-        Map<String, Long> countDistributedObjects = new HashMap<>(distributedObjects.stream()
-                .filter(distributedObject -> SERVICE_NAME_TO_METRIC_NAME.containsKey(distributedObject.getServiceName()))
-                .collect(groupingBy(DistributedObject::getServiceName, Collectors.counting())));
-        Map<PhoneHomeMetrics, String> countInfo = new HashMap<>(COUNT_OF_DISTRIBUTED_OBJECTS);
-        SERVICE_NAME_TO_METRIC_NAME.forEach((serviceName, metricName) -> countInfo
-                .put(metricName, String.valueOf(countDistributedObjects.getOrDefault(serviceName, 0L))));
-        return countInfo;
+    public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
+        Collection<DistributedObject> objects = node.hazelcastInstance.getDistributedObjects();
+        Map<String, Long> objectsPerService =
+                objects.stream()
+                       .filter(obj -> SERVICE_NAME_TO_METRIC_NAME.containsKey(obj.getServiceName()))
+                       .collect(groupingBy(DistributedObject::getServiceName, Collectors.counting()));
+
+        SERVICE_NAME_TO_METRIC_NAME.forEach((serviceName, metricName) ->
+                metricsConsumer.accept(
+                        metricName,
+                        String.valueOf(objectsPerService.getOrDefault(serviceName, 0L))));
     }
 }
 

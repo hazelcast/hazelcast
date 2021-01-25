@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.impl.Node;
@@ -20,7 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
@@ -38,24 +39,27 @@ public class PhoneHome {
     private static final String DEFAULT_BASE_PHONE_HOME_URL = "http://phonehome.hazelcast.com/ping";
     private static final MetricsCollector CLOUD_INFO_COLLECTOR = new CloudInfoCollector();
 
+    protected final Node hazelcastNode;
     volatile ScheduledFuture<?> phoneHomeFuture;
     private final ILogger logger;
     private final String basePhoneHomeUrl;
-
-    private final Node hazelcastNode;
-    private final List<MetricsCollector> metricsCollectorList = new ArrayList<>(Arrays.asList(new BuildInfoCollector(),
-            new ClusterInfoCollector(), new ClientInfoCollector(), new MapInfoCollector(), new OSInfoCollector(),
-            new DistributedObjectCounterCollector(), new CacheInfoCollector()));
+    private final List<MetricsCollector> metricsCollectorList;
 
     public PhoneHome(Node node) {
         this(node, DEFAULT_BASE_PHONE_HOME_URL, CLOUD_INFO_COLLECTOR);
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     PhoneHome(Node node, String baseUrl, MetricsCollector... additionalCollectors) {
         hazelcastNode = node;
-        logger = hazelcastNode.getLogger(com.hazelcast.internal.util.phonehome.PhoneHome.class);
+        logger = hazelcastNode.getLogger(PhoneHome.class);
         basePhoneHomeUrl = baseUrl;
-        metricsCollectorList.addAll(Arrays.asList(additionalCollectors));
+        metricsCollectorList = new ArrayList<>(additionalCollectors.length + 7);
+        Collections.addAll(metricsCollectorList,
+                new BuildInfoCollector(), new ClusterInfoCollector(), new ClientInfoCollector(),
+                new MapInfoCollector(), new OSInfoCollector(), new DistributedObjectCounterCollector(),
+                new CacheInfoCollector());
+        Collections.addAll(metricsCollectorList, additionalCollectors);
     }
 
     public void check() {
@@ -67,8 +71,8 @@ public class PhoneHome {
         }
         try {
             phoneHomeFuture = hazelcastNode.nodeEngine.getExecutionService()
-                    .scheduleWithRepetition("PhoneHome",
-                            () -> phoneHome(false), 0, 1, TimeUnit.DAYS);
+                                                      .scheduleWithRepetition("PhoneHome",
+                                                              () -> phoneHome(false), 0, 1, TimeUnit.DAYS);
         } catch (RejectedExecutionException e) {
             logger.warning("Could not schedule phone home task! Most probably Hazelcast failed to start.");
         }
@@ -101,7 +105,8 @@ public class PhoneHome {
         PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator();
         for (MetricsCollector metricsCollector : metricsCollectorList) {
             try {
-                parameterCreator.addMap(metricsCollector.computeMetrics(hazelcastNode));
+                metricsCollector.forEachMetric(hazelcastNode,
+                        (type, value) -> parameterCreator.addParam(type.getRequestParameterName(), value));
             } catch (Exception e) {
                 logger.warning("Some metrics were not recorded ", e);
             }

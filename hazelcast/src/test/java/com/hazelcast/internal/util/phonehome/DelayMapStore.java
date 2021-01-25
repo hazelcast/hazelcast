@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.map.MapStore;
@@ -23,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 
-public class DelayMapStore implements MapStore {
+public class DelayMapStore implements MapStore<Object, Object> {
     Map<Object, Object> store = new ConcurrentHashMap<>();
 
     @Override
@@ -32,7 +33,7 @@ public class DelayMapStore implements MapStore {
     }
 
     @Override
-    public void storeAll(Map map) {
+    public void storeAll(Map<Object, Object> map) {
         store.putAll(map);
     }
 
@@ -42,7 +43,7 @@ public class DelayMapStore implements MapStore {
     }
 
     @Override
-    public void deleteAll(Collection keys) {
+    public void deleteAll(Collection<Object> keys) {
         store.clear();
     }
 
@@ -53,12 +54,12 @@ public class DelayMapStore implements MapStore {
     }
 
     @Override
-    public Map loadAll(Collection keys) {
+    public Map<Object, Object> loadAll(Collection<Object> keys) {
         return store;
     }
 
     @Override
-    public Iterable loadAllKeys() {
+    public Iterable<Object> loadAllKeys() {
         return store.keySet();
     }
 }

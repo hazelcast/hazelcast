@@ -13,53 +13,53 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.impl.Node;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
+import java.util.function.BiConsumer;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
+/**
+ * Collects metadata about this instance
+ */
 class BuildInfoCollector implements MetricsCollector {
 
     @Override
-    public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
-        BuildInfo build = BuildInfoProvider.getBuildInfo();
-        Map<PhoneHomeMetrics, String> buildInfo = new HashMap<>();
-        JetBuildInfo jetBuildInfo = hazelcastNode.getBuildInfo().getJetBuildInfo();
-        buildInfo.put(PhoneHomeMetrics.HAZELCAST_DOWNLOAD_ID, getDownloadId());
-        buildInfo.put(PhoneHomeMetrics.CLIENT_ENDPOINT_COUNT,
-                MetricsCollector.convertToLetter(hazelcastNode.clientEngine.getClientEndpointCount()));
-        buildInfo.put(PhoneHomeMetrics.JAVA_VERSION_OF_SYSTEM, System.getProperty("java.version"));
-        buildInfo.put(PhoneHomeMetrics.BUILD_VERSION, build.getVersion());
-        buildInfo.put(PhoneHomeMetrics.JET_BUILD_VERSION, jetBuildInfo == null ? "" : jetBuildInfo.getVersion());
-        return buildInfo;
+    public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
+        BuildInfo imdgInfo = node.getBuildInfo();
+        JetBuildInfo jetInfo = imdgInfo.getJetBuildInfo();
+        metricsConsumer.accept(PhoneHomeMetrics.HAZELCAST_DOWNLOAD_ID, getDownloadId());
+        metricsConsumer.accept(PhoneHomeMetrics.CLIENT_ENDPOINT_COUNT,
+                MetricsCollector.convertToLetter(node.clientEngine.getClientEndpointCount()));
+        metricsConsumer.accept(PhoneHomeMetrics.JAVA_VERSION_OF_SYSTEM, System.getProperty("java.version"));
+        metricsConsumer.accept(PhoneHomeMetrics.BUILD_VERSION, imdgInfo.getVersion());
+        metricsConsumer.accept(PhoneHomeMetrics.JET_BUILD_VERSION,
+                jetInfo == null ? "" : jetInfo.getVersion());
     }
 
+    /**
+     * Attempts to return the download ID for this instance or returns
+     * {@code source} if unable to find the download ID.
+     */
     private String getDownloadId() {
-        String downloadId = "source";
-        InputStream is = null;
-        try {
-            is = getClass().getClassLoader().getResourceAsStream("hazelcast-download.properties");
+        try (InputStream is = getClass().getClassLoader()
+                                        .getResourceAsStream("hazelcast-download.properties")) {
             if (is != null) {
-                final Properties properties = new Properties();
+                Properties properties = new Properties();
                 properties.load(is);
-                downloadId = properties.getProperty("hazelcastDownloadId");
+                return properties.getProperty("hazelcastDownloadId");
             }
         } catch (IOException ignored) {
             ignore(ignored);
-        } finally {
-            closeResource(is);
         }
-        return downloadId;
+        return "source";
     }
 }

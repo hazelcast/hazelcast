@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.impl.Node;
@@ -20,24 +21,25 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.function.BiConsumer;
 
+/**
+ * Collects information about the running cluster
+ */
 class ClusterInfoCollector implements MetricsCollector {
 
     @Override
-    public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
-        Map<PhoneHomeMetrics, String> parameters = new HashMap<>();
-        ClusterServiceImpl clusterService = hazelcastNode.getClusterService();
+    public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
+        ClusterServiceImpl clusterService = node.getClusterService();
         int clusterSize = clusterService.getMembers().size();
         long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
-        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        parameters.put(PhoneHomeMetrics.UUID_OF_CLUSTER, hazelcastNode.getThisUuid().toString());
-        parameters.put(PhoneHomeMetrics.CLUSTER_ID, clusterService.getClusterId().toString());
-        parameters.put(PhoneHomeMetrics.CLUSTER_SIZE, MetricsCollector.convertToLetter(clusterSize));
-        parameters.put(PhoneHomeMetrics.TIME_TAKEN_TO_CLUSTER_UP, Long.toString(clusterUpTime));
-        parameters.put(PhoneHomeMetrics.UPTIME_OF_RUNTIME_MXBEAN, Long.toString(runtimeMxBean.getUptime()));
-        parameters.put(PhoneHomeMetrics.RUNTIME_MXBEAN_VM_NAME, runtimeMxBean.getVmName());
-        return parameters;
+        RuntimeMXBean rt = ManagementFactory.getRuntimeMXBean();
+
+        metricsConsumer.accept(PhoneHomeMetrics.UUID_OF_CLUSTER, node.getThisUuid().toString());
+        metricsConsumer.accept(PhoneHomeMetrics.CLUSTER_ID, clusterService.getClusterId().toString());
+        metricsConsumer.accept(PhoneHomeMetrics.CLUSTER_SIZE, MetricsCollector.convertToLetter(clusterSize));
+        metricsConsumer.accept(PhoneHomeMetrics.TIME_TAKEN_TO_CLUSTER_UP, Long.toString(clusterUpTime));
+        metricsConsumer.accept(PhoneHomeMetrics.UPTIME_OF_RUNTIME_MXBEAN, Long.toString(rt.getUptime()));
+        metricsConsumer.accept(PhoneHomeMetrics.RUNTIME_MXBEAN_VM_NAME, rt.getVmName());
     }
 }

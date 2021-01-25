@@ -18,7 +18,7 @@ package com.hazelcast.internal.util.phonehome;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 
-public class AttributeExtractor implements ValueExtractor {
+public class AttributeExtractor implements ValueExtractor<Object, Object> {
 
     @Override
     public void extract(Object target, Object argument, ValueCollector collector) {

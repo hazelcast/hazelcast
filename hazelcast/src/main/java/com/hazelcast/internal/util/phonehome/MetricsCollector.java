@@ -13,16 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.impl.Node;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Map;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
+/**
+ * Class responsible for collecting phone home data (phone home metrics).
+ *
+ * @see PhoneHomeMetrics
+ */
 interface MetricsCollector {
 
     int TIMEOUT = 2000;
@@ -37,7 +43,13 @@ interface MetricsCollector {
     int H_INTERVAL = 300;
     int J_INTERVAL = 600;
 
-    Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode);
+    /**
+     * Calls the {@code metricsConsumer} for each metric collected by this collector.
+     *
+     * @param node            this node
+     * @param metricsConsumer the consumer to call with the metric type and value
+     */
+    void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer);
 
     static String convertToLetter(int size) {
         String letter;

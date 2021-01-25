@@ -13,30 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.impl.Node;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.function.BiConsumer;
 
 class OSInfoCollector implements MetricsCollector {
 
     @Override
-    public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
-        Map<PhoneHomeMetrics, String> osinfo = new HashMap<>();
+    public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
         try {
-            osinfo.put(PhoneHomeMetrics.OPERATING_SYSTEM_NAME, osMxBean.getName());
-            osinfo.put(PhoneHomeMetrics.OPERATING_SYSTEM_ARCH, osMxBean.getArch());
-            osinfo.put(PhoneHomeMetrics.OPERATING_SYSTEM_VERSION, osMxBean.getVersion());
+            metricsConsumer.accept(PhoneHomeMetrics.OPERATING_SYSTEM_NAME, osMxBean.getName());
+            metricsConsumer.accept(PhoneHomeMetrics.OPERATING_SYSTEM_ARCH, osMxBean.getArch());
+            metricsConsumer.accept(PhoneHomeMetrics.OPERATING_SYSTEM_VERSION, osMxBean.getVersion());
         } catch (SecurityException e) {
-            osinfo.put(PhoneHomeMetrics.OPERATING_SYSTEM_NAME, "N/A");
-            osinfo.put(PhoneHomeMetrics.OPERATING_SYSTEM_ARCH, "N/A");
-            osinfo.put(PhoneHomeMetrics.OPERATING_SYSTEM_VERSION, "N/A");
+            metricsConsumer.accept(PhoneHomeMetrics.OPERATING_SYSTEM_NAME, "N/A");
+            metricsConsumer.accept(PhoneHomeMetrics.OPERATING_SYSTEM_ARCH, "N/A");
+            metricsConsumer.accept(PhoneHomeMetrics.OPERATING_SYSTEM_VERSION, "N/A");
         }
-        return osinfo;
     }
 }

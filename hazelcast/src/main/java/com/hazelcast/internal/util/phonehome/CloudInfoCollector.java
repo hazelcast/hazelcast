@@ -13,24 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.util.MapUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
-@SuppressFBWarnings
+/**
+ * Collects information about cloud deployment
+ */
+@SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
 class CloudInfoCollector implements MetricsCollector {
 
     private static final String AWS_ENDPOINT = "http://169.254.169.254/latest/meta-data";
     private static final String AZURE_ENDPOINT = " http://169.254.169.254/metadata/instance/compute?api-version=2018-02-01";
     private static final String GCP_ENDPOINT = " http://metadata.google.internal";
+
     private static final Path KUBERNETES_TOKEN_PATH = Paths.get("/var/run/secrets/kubernetes.io/serviceaccount/token");
+
     private static final Path DOCKER_FILE_PATH = Paths.get("/.dockerenv");
 
     private final String awsEndpoint;
@@ -45,7 +52,10 @@ class CloudInfoCollector implements MetricsCollector {
         this(AWS_ENDPOINT, AZURE_ENDPOINT, GCP_ENDPOINT, KUBERNETES_TOKEN_PATH, DOCKER_FILE_PATH);
     }
 
-    CloudInfoCollector(String awsEndPoint, String azureEndPoint, String gcpEndPoint, Path kubernetesTokenpath,
+    CloudInfoCollector(String awsEndPoint,
+                       String azureEndPoint,
+                       String gcpEndPoint,
+                       Path kubernetesTokenpath,
                        Path dockerFilepath) {
         awsEndpoint = awsEndPoint;
         azureEndpoint = azureEndPoint;
@@ -54,32 +64,33 @@ class CloudInfoCollector implements MetricsCollector {
         dockerFilePath = dockerFilepath;
     }
 
-    public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
+    @Override
+    public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
         if (environmentInfo != null) {
-            return environmentInfo;
+            environmentInfo.forEach(metricsConsumer);
         }
-        Map<PhoneHomeMetrics, String> environmentInfoCollectorMap = new HashMap<>();
+        Map<PhoneHomeMetrics, String> info = MapUtil.createHashMap(2);
         if (MetricsCollector.fetchWebService(awsEndpoint)) {
-            environmentInfoCollectorMap.put(PhoneHomeMetrics.CLOUD, "A");
+            info.put(PhoneHomeMetrics.CLOUD, "A");
         } else if (MetricsCollector.fetchWebService(azureEndpoint)) {
-            environmentInfoCollectorMap.put(PhoneHomeMetrics.CLOUD, "Z");
+            info.put(PhoneHomeMetrics.CLOUD, "Z");
         } else if (MetricsCollector.fetchWebService(gcpEndpoint)) {
-            environmentInfoCollectorMap.put(PhoneHomeMetrics.CLOUD, "G");
+            info.put(PhoneHomeMetrics.CLOUD, "G");
         } else {
-            environmentInfoCollectorMap.put(PhoneHomeMetrics.CLOUD, "N");
+            info.put(PhoneHomeMetrics.CLOUD, "N");
         }
         try {
             dockerFilePath.toRealPath();
             try {
                 kubernetesTokenPath.toRealPath();
-                environmentInfoCollectorMap.put(PhoneHomeMetrics.DOCKER, "K");
+                info.put(PhoneHomeMetrics.DOCKER, "K");
             } catch (IOException e) {
-                environmentInfoCollectorMap.put(PhoneHomeMetrics.DOCKER, "D");
+                info.put(PhoneHomeMetrics.DOCKER, "D");
             }
         } catch (IOException e) {
-            environmentInfoCollectorMap.put(PhoneHomeMetrics.DOCKER, "N");
+            info.put(PhoneHomeMetrics.DOCKER, "N");
         }
-        environmentInfo = new HashMap<>(environmentInfoCollectorMap);
-        return environmentInfo;
+        environmentInfo = info;
+        environmentInfo.forEach(metricsConsumer);
     }
 }

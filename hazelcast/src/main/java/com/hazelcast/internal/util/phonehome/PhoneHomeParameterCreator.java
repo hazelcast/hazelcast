@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.internal.util.phonehome;
 
 import java.io.UnsupportedEncodingException;
-
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,8 +41,14 @@ public class PhoneHomeParameterCreator {
         return parameters;
     }
 
+    /**
+     * Adds a parameter with the provided {@code key} and the associated
+     * {@code value}.
+     *
+     * @param key the parameter key
+     * @param value the parameter value
+     */
     public void addParam(String key, String value) {
-
         if (parameters.containsKey(key)) {
             throw new IllegalArgumentException("Parameter " + key + " is already added");
         }
@@ -62,10 +68,6 @@ public class PhoneHomeParameterCreator {
 
     String build() {
         return builder.toString();
-    }
-
-    public void addMap(Map<PhoneHomeMetrics, String> map) {
-        map.forEach((phoneHomeMetrics, metricValue) -> addParam(phoneHomeMetrics.getRequestParameterName(), metricValue));
     }
 }
 
