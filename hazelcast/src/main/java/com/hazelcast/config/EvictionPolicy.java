@@ -35,7 +35,11 @@ public enum EvictionPolicy {
     /**
      * Randomly
      */
-    RANDOM(3);
+    RANDOM(3),
+    /**;
+     * First-In-First-Out
+     */
+    FIFO(4);
 
     private static final EvictionPolicy[] VALUES = values();
 

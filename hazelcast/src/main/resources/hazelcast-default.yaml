@@ -176,7 +176,8 @@ hazelcast:
         # Valid values are:
         # NONE (no eviction),
         # LRU (Least Recently Used),
-        # LFU (Least Frequently Used).
+        # LFU (Least Frequently Used),
+        # FIFO (First-In First-Out).
         # NONE is the default.
         eviction-policy: NONE
         max-size-policy: PER_NODE
