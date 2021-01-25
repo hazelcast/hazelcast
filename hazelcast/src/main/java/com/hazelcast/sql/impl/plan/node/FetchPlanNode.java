@@ -25,6 +25,9 @@ import com.hazelcast.sql.impl.expression.Expression;
 import java.io.IOException;
 import java.util.Objects;
 
+/**
+ * Physical fetch plan node.
+ */
 public class FetchPlanNode extends UniInputPlanNode implements IdentifiedDataSerializable {
 
     /** Limit expression. */
