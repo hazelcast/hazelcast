@@ -221,4 +221,59 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
             assertEquals(expectedEvictedRecordValue, evictedRecord.getValue());
         }
     }
+
+    @Test
+    public void test_firstCreatedEntry_isSelected_when_evictionPolicy_is_FIFO() {
+        test_evictionPolicyFIFO();
+    }
+
+    private void test_evictionPolicyFIFO() {
+        final int recordCount = 100;
+        // The first value should be the first
+        // eviction candidate
+        final int expectedEvictedRecordValue = 0;
+
+        EvictionConfiguration evictionConfig = new EvictionConfiguration() {
+            @Override
+            public EvictionStrategyType getEvictionStrategyType() {
+                return null;
+            }
+
+            @Override
+            public EvictionPolicy getEvictionPolicy() {
+                return EvictionPolicy.FIFO;
+            }
+
+            @Override
+            public String getComparatorClassName() {
+                return null;
+            }
+
+            @Override
+            public EvictionPolicyComparator getComparator() {
+                return null;
+            }
+        };
+        EvictionPolicyEvaluator evictionPolicyEvaluator = getEvictionPolicyEvaluator(evictionConfig, null);
+        List<EvictionCandidate<Integer, CacheObjectRecord>> records
+                = new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
+
+        long baseTime = System.currentTimeMillis();
+
+        for (int i = 0; i < recordCount; i++) {
+            long creationTime = baseTime + (i * 100);
+            CacheObjectRecord record = new CacheObjectRecord(i, creationTime, Long.MAX_VALUE);
+            // Just add each record to te list
+            records.add(new SimpleEvictionCandidate<Integer, CacheObjectRecord>(i, record));
+        }
+
+        sleepAtLeastMillis(1);
+
+        EvictionCandidate<Integer, CacheObjectRecord> evictionCandidate = evictionPolicyEvaluator.evaluate(records);
+        assertNotNull(evictionCandidate);
+
+        CacheObjectRecord evictedRecord = evictionCandidate.getEvictable();
+        assertNotNull(evictedRecord);
+        assertEquals(expectedEvictedRecordValue, evictedRecord.getValue());
+    }
 }

@@ -744,6 +744,7 @@
                         can combine it with time-to-live-seconds and max-idle-seconds.
                     - LRU: 	Least Recently Used.
                     - LFU: 	Least Frequently Used.
+                    - FIFO: First-In First-Out.
                 - comparator-class-name: The comparator to be used while comparing entries to be evicted.
 
         * <indexes>:

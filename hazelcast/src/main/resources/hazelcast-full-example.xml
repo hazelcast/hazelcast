@@ -1071,6 +1071,7 @@
              * LRU: Least recently used entries will be removed.
              * LFU: Least frequently used entries will be removed.
              * RANDOM: Randomly selected entries will be removed.
+             * FIFO: First created entries will be removed.
         * <metadata-policy>
         Metadata policy for this map. Hazelcast may process objects of supported types ahead of time to
         create additional metadata about them. This metadata then is used to make querying and indexing faster.
