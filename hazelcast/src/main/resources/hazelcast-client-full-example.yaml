@@ -576,6 +576,7 @@ hazelcast-client:
   #             can combine it with time-to-live-seconds and max-idle-seconds.
   #         - LRU: 	Least Recently Used.
   #         - LFU: 	Least Frequently Used.
+  #         - FIFO: First-In First-Out.
   #         - "invalidate-on-change":
   #             Specifies whether the cached entries are evicted when the entries are updated or removed. Its default
   #             value is true.
@@ -704,6 +705,7 @@ hazelcast-client:
   #                                   can combine it with time-to-live-seconds and max-idle-seconds.
   #                               - LRU: 	Least Recently Used.
   #                               - LFU: 	Least Frequently Used.
+  #                               - FIFO:   First-In First-Out.
   #          - comparator-class-name: The comparator to be used while comparing entries to be evicted.
   #
   # * "indexes":
