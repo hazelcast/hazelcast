@@ -19,6 +19,7 @@ package com.hazelcast.json;
 import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
@@ -31,7 +32,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,8 +41,9 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -53,54 +56,66 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
 
     public static final int OBJECT_COUNT = 1000;
     private static final String STRING_PREFIX = "s";
+    private static final Collection<Object[]> mapConfigOptions = asList(new Object[][]{
+            {InMemoryFormat.BINARY, MetadataPolicy.OFF},
+            {InMemoryFormat.BINARY, MetadataPolicy.CREATE_ON_UPDATE},
+            {InMemoryFormat.OBJECT, MetadataPolicy.OFF},
+            {InMemoryFormat.OBJECT, MetadataPolicy.CREATE_ON_UPDATE},
+    });
 
-    TestHazelcastInstanceFactory factory;
-    HazelcastInstance instance;
+    private static TestHazelcastInstanceFactory factory;
+    private static HazelcastInstance instance;
 
-    @Parameter(0)
-    public InMemoryFormat inMemoryFormat;
+    @Parameter
+    public String mapName;
 
-    @Parameter(1)
-    public MetadataPolicy metadataPolicy;
-
-    @Parameterized.Parameters(name = "inMemoryFormat: {0}, metadataPolicy: {1}")
+    @Parameterized.Parameters(name = "mapName: {0}")
     public static Collection<Object[]> parameters() {
-        return asList(new Object[][]{
-                {InMemoryFormat.BINARY, MetadataPolicy.OFF},
-                {InMemoryFormat.BINARY, MetadataPolicy.CREATE_ON_UPDATE},
-                {InMemoryFormat.OBJECT, MetadataPolicy.OFF},
-                {InMemoryFormat.OBJECT, MetadataPolicy.CREATE_ON_UPDATE},
-        });
+        return mapConfigOptions.stream()
+                .map(option -> new Object[]{Arrays.toString(option)})
+                .collect(Collectors.toList());
     }
 
-    @Before
-    public void setup() {
-        factory = createHazelcastInstanceFactory(3);
-        factory.newInstances(getConfig(), 3);
+    @BeforeClass
+    public static void beforeClass() {
+        Config config = createConfig(mapConfigOptions);
+        startInstances(config);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        factory.terminateAll();
+    }
+
+    protected static Config createConfig(Collection<Object[]> mapConfigOptions) {
+        Config config = smallInstanceConfig();
+        mapConfigOptions.forEach(option -> {
+            MapConfig mapConfig = new MapConfig(Arrays.toString(option) + "*")
+                    .setInMemoryFormat((InMemoryFormat) option[0])
+                    .setMetadataPolicy((MetadataPolicy) option[1]);
+            config.addMapConfig(mapConfig);
+        });
+        return config;
+    }
+
+    protected static void startInstances(Config config) {
+        factory = new TestHazelcastInstanceFactory();
+        factory.newInstances(config, 3);
         instance = factory.getAllHazelcastInstances().iterator().next();
         warmUpPartitions(factory.getAllHazelcastInstances());
-    }
-
-    @Override
-    protected Config getConfig() {
-        Config config = super.getConfig();
-        config.getMapConfig("default")
-                .setInMemoryFormat(inMemoryFormat)
-                .setMetadataPolicy(metadataPolicy);
-        return config;
     }
 
     @Test
     public void testLongField() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("longValue"));
+        long maxLongValue = map.aggregate(Aggregators.longMax("longValue"));
         assertEquals(OBJECT_COUNT - 1, maxLongValue);
     }
 
     @Test
     public void testDoubleField() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        double maxDoubleValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>doubleMax("doubleValue"));
+        double maxDoubleValue = map.aggregate(Aggregators.doubleMax("doubleValue"));
         assertEquals(OBJECT_COUNT - 0.5, maxDoubleValue, 0.00001);
     }
 
@@ -114,7 +129,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     @Test
     public void testNestedField() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("nestedObject.nestedLongValue"));
+        long maxLongValue = map.aggregate(Aggregators.longMax("nestedObject.nestedLongValue"));
         assertEquals((OBJECT_COUNT - 1) * 10, maxLongValue);
     }
 
@@ -122,7 +137,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     public void testValueIsOmitted_whenObjectIsEmpty() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
         map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.object().toString()));
-        long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("longValue"));
+        long maxLongValue = map.aggregate(Aggregators.longMax("longValue"));
         assertEquals(OBJECT_COUNT - 1, maxLongValue);
     }
 
@@ -130,7 +145,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     public void testValueIsOmitted_whenAttributePathDoesNotExist() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
         map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.object().add("someField", "someValue").toString()));
-        long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("longValue"));
+        long maxLongValue = map.aggregate(Aggregators.longMax("longValue"));
         assertEquals(OBJECT_COUNT - 1, maxLongValue);
     }
 
@@ -138,7 +153,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     public void testValueIsOmitted_whenValueIsNotAnObject() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
         map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.value(5).toString()));
-        long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("longValue"));
+        long maxLongValue = map.aggregate(Aggregators.longMax("longValue"));
         assertEquals(OBJECT_COUNT - 1, maxLongValue);
     }
 
@@ -148,7 +163,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
         map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.object()
                 .add("longValue", Json.object())
                 .toString()));
-        long count = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("longValue"));
+        long count = map.aggregate(Aggregators.longMax("longValue"));
         assertEquals(OBJECT_COUNT - 1, count);
     }
 
@@ -158,7 +173,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
         map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.object()
                 .add("longValue", Json.object())
                 .toString()));
-        long count = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>count("longValue"));
+        long count = map.aggregate(Aggregators.count("longValue"));
         assertEquals(OBJECT_COUNT, count);
     }
 
@@ -168,14 +183,14 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
         map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.object()
                 .add("longValue", Json.object())
                 .toString()));
-        Collection<Object> distinctLongValues = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>, Object>distinct("longValue"));
+        Collection<Object> distinctLongValues = map.aggregate(Aggregators.distinct("longValue"));
         assertEquals(OBJECT_COUNT, distinctLongValues.size());
     }
 
     @Test
     public void testAny() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        Collection<Object> distinctStrings = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>, Object>distinct("stringValueArray[any]"));
+        Collection<Object> distinctStrings = map.aggregate(Aggregators.distinct("stringValueArray[any]"));
         assertEquals(OBJECT_COUNT * 2, distinctStrings.size());
         for (int i = 0; i < OBJECT_COUNT; i++) {
             assertContains(distinctStrings, "nested0 " + STRING_PREFIX + i);
@@ -184,9 +199,9 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     }
 
     protected IMap<Integer, HazelcastJsonValue> getPreloadedMap() {
-        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        IMap<Integer, HazelcastJsonValue> map = getMap();
         for (int i = 0; i < OBJECT_COUNT; i++) {
-            map.put(i, createHazelcastJsonValue(STRING_PREFIX + i, (long) i, (double) i + 0.5, (long) i * 10));
+            map.put(i, createHazelcastJsonValue(STRING_PREFIX + i, i, (double) i + 0.5, (long) i * 10));
         }
         return map;
     }
@@ -228,7 +243,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
 
     @Test
     public void test_nested_json() {
-        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        IMap<Integer, HazelcastJsonValue> map = getMap();
         map.put(1, new HazelcastJsonValue(nestedJsonString()));
         Long sum = map.aggregate(Aggregators.longSum("list[any].secondLevelItem.thirdLevelItem"));
 
@@ -275,5 +290,9 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
                         .add("nestedLongValue", nestedLongValue))
                 .add("stringValueArray", Json.array("nested0 " + stringValue, "nested1 " + stringValue));
         return object.toString();
+    }
+
+    private <K, V> IMap<K, V> getMap() {
+        return instance.getMap(mapName + randomMapName());
     }
 }
