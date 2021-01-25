@@ -83,6 +83,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     protected boolean enableSharedObject;
     protected boolean allowUnsafe;
 
+    protected boolean allowOverrideDefaultSerializers;
+
     protected int initialOutputBufferSize = DEFAULT_OUT_BUFFER_SIZE;
 
     protected PartitioningStrategy partitioningStrategy;
@@ -131,6 +133,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         enableCompression = config.isEnableCompression();
         enableSharedObject = config.isEnableSharedObject();
         allowUnsafe = config.isAllowUnsafe();
+        allowOverrideDefaultSerializers = config.isAllowOverrideDefaultSerializers();
         JavaSerializationFilterConfig filterConfig = config.getJavaSerializationFilterConfig();
         classNameFilter = filterConfig == null ? null : new SerializationClassNameFilter(filterConfig);
         return this;
@@ -297,6 +300,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                     .withNotActiveExceptionSupplier(notActiveExceptionSupplier)
                     .withClassNameFilter(classNameFilter)
                     .withCheckClassDefErrors(checkClassDefErrors)
+                    .withAllowOverrideDefaultSerializers(allowOverrideDefaultSerializers)
                     .build();
                 serializationServiceV1.registerClassDefinitions(classDefinitions);
                 return serializationServiceV1;
@@ -409,8 +413,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
 
     private void addConfigPortableFactories(Map<Integer, PortableFactory> portableFactories, SerializationConfig config,
                                             ClassLoader cl) {
-        registerPortableFactories(portableFactories, config);
-        buildPortableFactories(portableFactories, config, cl);
+        PortableFactoriesHelper.registerPortableFactories(portableFactories, config);
+        PortableFactoriesHelper.buildPortableFactories(portableFactories, config, cl);
 
         for (PortableFactory f : portableFactories.values()) {
             if (f instanceof HazelcastInstanceAware) {
@@ -419,39 +423,45 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         }
     }
 
-    private void registerPortableFactories(Map<Integer, PortableFactory> portableFactories, SerializationConfig config) {
-        for (Map.Entry<Integer, PortableFactory> entry : config.getPortableFactories().entrySet()) {
-            int factoryId = entry.getKey();
-            PortableFactory factory = entry.getValue();
-            if (factoryId <= 0) {
-                throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> " + factory);
+    private static class PortableFactoriesHelper {
+        private static void registerPortableFactories(final Map<Integer, PortableFactory> portableFactories,
+                                                      final SerializationConfig config) {
+            for (final Map.Entry<Integer, PortableFactory> entry : config.getPortableFactories().entrySet()) {
+                final int factoryId = entry.getKey();
+                final PortableFactory factory = entry.getValue();
+                if (factoryId <= 0) {
+                    throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> " + factory);
+                }
+                if (portableFactories.containsKey(factoryId)) {
+                    throw new IllegalArgumentException("PortableFactory with factoryId '"
+                      + factoryId + "' is already registered!");
+                }
+                portableFactories.put(factoryId, factory);
             }
-            if (portableFactories.containsKey(factoryId)) {
-                throw new IllegalArgumentException("PortableFactory with factoryId '" + factoryId + "' is already registered!");
-            }
-            portableFactories.put(factoryId, factory);
         }
-    }
 
-    private void buildPortableFactories(Map<Integer, PortableFactory> portableFactories, SerializationConfig config,
-                                        ClassLoader cl) {
-        Map<Integer, String> portableFactoryClasses = config.getPortableFactoryClasses();
-        for (Map.Entry<Integer, String> entry : portableFactoryClasses.entrySet()) {
-            int factoryId = entry.getKey();
-            String factoryClassName = entry.getValue();
-            if (factoryId <= 0) {
-                throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> " + factoryClassName);
+        private static void buildPortableFactories(final Map<Integer, PortableFactory> portableFactories,
+                                                   final SerializationConfig config, final ClassLoader cl) {
+            final Map<Integer, String> portableFactoryClasses = config.getPortableFactoryClasses();
+            for (final Map.Entry<Integer, String> entry : portableFactoryClasses.entrySet()) {
+                int factoryId = entry.getKey();
+                String factoryClassName = entry.getValue();
+                if (factoryId <= 0) {
+                    throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> "
+                      + factoryClassName);
+                }
+                if (portableFactories.containsKey(factoryId)) {
+                    throw new IllegalArgumentException("PortableFactory with factoryId '"
+                      + factoryId + "' is already registered!");
+                }
+                PortableFactory factory;
+                try {
+                    factory = ClassLoaderUtil.newInstance(cl, factoryClassName);
+                } catch (Exception e) {
+                    throw new HazelcastSerializationException(e);
+                }
+                portableFactories.put(factoryId, factory);
             }
-            if (portableFactories.containsKey(factoryId)) {
-                throw new IllegalArgumentException("PortableFactory with factoryId '" + factoryId + "' is already registered!");
-            }
-            PortableFactory factory;
-            try {
-                factory = ClassLoaderUtil.newInstance(cl, factoryClassName);
-            } catch (Exception e) {
-                throw new HazelcastSerializationException(e);
-            }
-            portableFactories.put(factoryId, factory);
         }
     }
 }
