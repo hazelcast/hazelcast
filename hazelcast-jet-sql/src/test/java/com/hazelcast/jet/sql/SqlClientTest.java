@@ -83,7 +83,13 @@ public class SqlClientTest extends SqlTestSupport {
         SqlService sqlService = client.getSql();
 
         sqlService.execute("CREATE MAPPING t TYPE " + FailingTestSqlConnector.TYPE_NAME);
-        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM t"))
+        assertThatThrownBy(
+                () -> {
+                    SqlResult result = sqlService.execute("SELECT * FROM t");
+                    for (SqlRow r : result) {
+                        System.out.println(r);
+                    }
+                })
                 .hasMessageContaining("mock failure");
     }
 
