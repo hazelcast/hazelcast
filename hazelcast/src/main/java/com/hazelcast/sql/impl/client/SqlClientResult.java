@@ -249,7 +249,7 @@ public class SqlClientResult implements SqlResult {
     }
 
     /**
-     * Await the result, throwing an error if something went wrong.
+     * Await the result, throwing an error if the result contains an error.
      */
     private State awaitState() {
         State state = awaitStateNoThrow();
@@ -262,7 +262,8 @@ public class SqlClientResult implements SqlResult {
     }
 
     /**
-     * Await for the result, and return an associated error, if any.
+     * Await the result and return the state, without throwing if the state
+     * contains an error.
      */
     private State awaitStateNoThrow() {
         synchronized (mux) {

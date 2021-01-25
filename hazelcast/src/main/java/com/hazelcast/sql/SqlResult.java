@@ -20,8 +20,8 @@ import javax.annotation.Nonnull;
 import java.util.Iterator;
 
 /**
- * SQL query result. Depending on the statement type it represents a stream of
- * rows or an update count.
+ * A handle to SQL statement result. Depending on the statement type it
+ * represents a stream of rows or an update count.
  * <p>
  * <h4>Usage for a stream of rows</h4>
  *
@@ -47,13 +47,22 @@ import java.util.Iterator;
  *     long updated = hazelcastInstance.getSql().execute("UPDATE ...").updateCount();
  * </pre>
  *
- * You don't need to call {@link #close()} in this case.
+ * Make sure you always call the {@code updateCount()} method, even if you
+ * don't need the update count. The {@code SqlResult} object is created
+ * before the statement is executed, without calling {@code updateCount()}
+ * you might miss the execution error and you won't know when the statement
+ * actually completed.
+ * <p>
+ * You don't need to call {@link #close()} in case of a result with an
+ * update count.
  */
 public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
 
     /**
      * Return whether this result has rows to iterate using the {@link
      * #iterator()} method.
+     *
+     * @throws HazelcastSqlException in case of an execution error
      */
     default boolean isRowSet() {
         return updateCount() == -1;
@@ -62,6 +71,7 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
     /**
      * Gets the row metadata.
      *
+     * @throws HazelcastSqlException in case of an execution error
      * @throws IllegalStateException if the result doesn't have rows, but
      *     only an update count
      */
@@ -76,7 +86,8 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
      * @return iterator
      * @throws IllegalStateException if the method is invoked more than once or
      *    if this result doesn't have rows
-     * @throws HazelcastSqlException in case of an SQL-related error condition
+     * @throws HazelcastSqlException in case of an SQL-related error condition.
+     *    This error can also be thrown when iterating the returned iterator.
      */
     @Nonnull
     @Override
@@ -86,6 +97,15 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
      * Returns the number of rows updated by the statement or -1 if this result
      * is a row set. In case the result doesn't contain rows but the update
      * count isn't applicable or known, 0 is returned.
+     * <p>
+     * If this result is a result with an update count, the call will block
+     * until the statement completes. Make sure to always call this method even
+     * if you don't need the update count or even if there's no actual update
+     * count (as in the case of Jet's DDL statements where it's always 0). The
+     * {@link SqlResult} object is a handle created before the statement is
+     * executed. Most run-time error will be thrown from this method.
+     *
+     * @throws HazelcastSqlException in case of an execution error
      */
     long updateCount();
 

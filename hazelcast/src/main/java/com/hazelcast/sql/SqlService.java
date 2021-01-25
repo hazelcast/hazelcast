@@ -34,7 +34,7 @@ import java.util.List;
  * attempt to execute it using Jet. This class is the API to both backends.
  * <p>
  * The text below summarizes features supported by the default SQL engine. For a summary of Hazelcast Jet SQL features
- * see {@code com.hazelcast.jet.sql} package javadoc in Hazelcast Jet (once released).
+ * see the SQL section of the <a href='https://jet-start.sh/docs/sql/intro'>Hazelcast Jet Docs</a>.
  *
  * <h1>Overview</h1>
  * Hazelcast is able to execute distributed SQL queries over the following entities:
@@ -115,10 +115,13 @@ import java.util.List;
  */
 @Beta
 public interface SqlService {
+
     /**
-     * Convenient method to execute a distributed query with the given parameters.
+     * Convenient method to submit a distributed query for execution with the
+     * given parameters.
      * <p>
-     * Converts passed SQL string and parameters into an {@link SqlStatement} object and invokes {@link #execute(SqlStatement)}.
+     * Converts the given SQL string and parameters into an {@link
+     * SqlStatement} object and invokes {@link #execute(SqlStatement)}.
      *
      * @param sql SQL string
      * @param params query parameters that will be passed to {@link SqlStatement#setParameters(List)}
@@ -145,7 +148,7 @@ public interface SqlService {
     }
 
     /**
-     * Executes an SQL statement.
+     * Submits an SQL statement for execution.
      *
      * @param statement statement to be executed
      * @return result
