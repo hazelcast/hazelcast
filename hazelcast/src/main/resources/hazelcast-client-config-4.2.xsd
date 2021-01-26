@@ -400,8 +400,8 @@
         <xs:all>
             <xs:element name="initial-backoff-millis" type="xs:int" minOccurs="0" maxOccurs="1" default="1000"/>
             <xs:element name="max-backoff-millis" type="xs:int" minOccurs="0" maxOccurs="1" default="30000"/>
-            <xs:element name="multiplier" type="xs:double" minOccurs="0" maxOccurs="1" default="2"/>
-            <xs:element name="cluster-connect-timeout-millis" type="xs:long" minOccurs="0" maxOccurs="1" default="20000"/>
+            <xs:element name="multiplier" type="xs:double" minOccurs="0" maxOccurs="1" default="1.05"/>
+            <xs:element name="cluster-connect-timeout-millis" type="xs:long" minOccurs="0" maxOccurs="1" default="9223372036854775807"/>
             <xs:element name="jitter" type="xs:double" minOccurs="0" maxOccurs="1" default="0.2"/>
         </xs:all>
     </xs:complexType>
