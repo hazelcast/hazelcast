@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.SqlExecute2Codec;
+import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
@@ -37,7 +37,7 @@ import java.util.List;
 /**
  * SQL query execute task.
  */
-public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecute2Codec.RequestParameters> {
+public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCodec.RequestParameters> {
     public SqlExecuteMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -60,7 +60,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecute2Cod
 
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
-            AbstractSqlResult result = (AbstractSqlResult) sqlService.execute(query, sqlSecurityContext);
+            AbstractSqlResult result = (AbstractSqlResult) sqlService.execute(query, sqlSecurityContext, parameters.queryId);
 
             if (result.updateCount() >= 0) {
                 return SqlExecuteResponse.updateCountResponse(result.updateCount());
@@ -89,8 +89,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecute2Cod
     }
 
     @Override
-    protected SqlExecute2Codec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SqlExecute2Codec.decodeRequest(clientMessage);
+    protected SqlExecuteCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SqlExecuteCodec.decodeRequest(clientMessage);
     }
 
     @SuppressWarnings("unchecked")
@@ -101,8 +101,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecute2Cod
         List<List<Data>> rowPage = response0.getRowPage();
         Collection<Collection<Data>> rowPage0 = (Collection<Collection<Data>>) (Object) rowPage;
 
-        return SqlExecute2Codec.encodeResponse(
-            response0.getQueryId(),
+        return SqlExecuteCodec.encodeResponse(
             response0.getRowMetadata(),
             rowPage0,
             response0.isRowPageLast(),
@@ -133,7 +132,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecute2Cod
             parameters.parameters,
             parameters.timeoutMillis,
             parameters.cursorBufferSize,
-            parameters.schema
+            parameters.schema,
+            parameters.queryId
         } ;
     }
 

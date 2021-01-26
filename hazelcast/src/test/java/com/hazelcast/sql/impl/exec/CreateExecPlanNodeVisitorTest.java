@@ -51,7 +51,7 @@ import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
 import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
-import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
+import com.hazelcast.sql.impl.plan.node.io.SendPlanNode;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -159,9 +159,9 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
     }
 
     @Test
-    public void testRootSend() {
+    public void testSendNode() {
         UpstreamNode upstreamNode = new UpstreamNode(nextNodeId());
-        RootSendPlanNode sendNode = new RootSendPlanNode(nextNodeId(), upstreamNode, EDGE_1_ID);
+        SendPlanNode sendNode = new SendPlanNode(nextNodeId(), upstreamNode, EDGE_1_ID);
 
         QueryExecuteOperationFragment sendFragment = new QueryExecuteOperationFragment(
             sendNode,

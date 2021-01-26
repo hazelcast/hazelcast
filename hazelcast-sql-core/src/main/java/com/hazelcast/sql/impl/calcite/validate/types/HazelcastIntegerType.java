@@ -175,9 +175,9 @@ public final class HazelcastIntegerType extends BasicSqlType {
         assert bitWidth >= 0;
 
         if (nullable) {
-            return bitWidth > Long.SIZE ? NULLABLE_TYPES_BY_BIT_WIDTH[Long.SIZE] : NULLABLE_TYPES_BY_BIT_WIDTH[bitWidth];
+            return NULLABLE_TYPES_BY_BIT_WIDTH[Math.min(bitWidth, Long.SIZE)];
         } else {
-            return bitWidth > Long.SIZE ? TYPES_BY_BIT_WIDTH[Long.SIZE] : TYPES_BY_BIT_WIDTH[bitWidth];
+            return TYPES_BY_BIT_WIDTH[Math.min(bitWidth, Long.SIZE)];
         }
     }
 

@@ -94,8 +94,7 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
     ) {
         DistributionTrait currentTrait = OptUtils.getDistribution(rel);
 
-        if (currentTrait.equals(targetTrait)) {
-            // Input is already converted to the given distribution. Do nothing.
+        if (currentTrait.satisfies(targetTrait)) {
             return rel;
         }
 

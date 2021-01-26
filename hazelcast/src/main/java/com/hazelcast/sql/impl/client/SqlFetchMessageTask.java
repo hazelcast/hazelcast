@@ -43,7 +43,6 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
 
         try {
             SqlPage page = service.getClientStateRegistry().fetch(
-                endpoint.getUuid(),
                 parameters.queryId,
                 parameters.cursorBufferSize,
                 serializationService

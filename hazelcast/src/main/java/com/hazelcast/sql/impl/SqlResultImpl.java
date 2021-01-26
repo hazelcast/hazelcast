@@ -108,6 +108,11 @@ public final class SqlResultImpl extends AbstractSqlResult {
         return getQueryInitiatorState().getQueryId();
     }
 
+    @Override
+    public boolean isInfiniteRows() {
+        return false;
+    }
+
     public Plan getPlan() {
         QueryInitiatorState initiatorState = getQueryInitiatorState();
 

@@ -2818,6 +2818,21 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testAllowOverrideDefaultSerializers() {
+        final String yaml = ""
+          + "hazelcast:\n"
+          + "  serialization:\n"
+          + "    allow-override-default-serializers: true\n";
+
+        final Config config = new InMemoryYamlConfig(yaml);
+        final boolean isAllowOverrideDefaultSerializers
+          = config.getSerializationConfig().isAllowOverrideDefaultSerializers();
+        assertTrue(isAllowOverrideDefaultSerializers);
+    }
+
+
+    @Override
+    @Test
     public void testHotRestart() {
         String dir = "/mnt/hot-restart-root/";
         String backupDir = "/mnt/hot-restart-backup/";

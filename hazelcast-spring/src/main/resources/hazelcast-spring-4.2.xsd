@@ -3038,6 +3038,7 @@
         <xs:attribute name="enable-compression" use="optional" type="xs:string" default="false"/>
         <xs:attribute name="enable-shared-object" use="optional" type="xs:string" default="true"/>
         <xs:attribute name="allow-unsafe" use="optional" type="xs:string" default="false"/>
+        <xs:attribute name="allow-override-default-serializers" use="optional" type="xs:string" default="false"/>
     </xs:complexType>
 
     <xs:complexType name="network-client">

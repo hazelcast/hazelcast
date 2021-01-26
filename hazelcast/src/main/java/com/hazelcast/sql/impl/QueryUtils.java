@@ -59,7 +59,7 @@ public final class QueryUtils {
         return instanceName + "-" + workerType + "-" + index;
     }
 
-    public static HazelcastSqlException toPublicException(Exception e, UUID localMemberId) {
+    public static HazelcastSqlException toPublicException(Throwable e, UUID localMemberId) {
         if (e instanceof HazelcastSqlException) {
             return (HazelcastSqlException) e;
         }

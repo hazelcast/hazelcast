@@ -1099,6 +1099,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testSerializationConfig() {
         SerializationConfig serializationConfig = config.getSerializationConfig();
+        assertTrue(serializationConfig.isAllowOverrideDefaultSerializers());
         assertEquals(ByteOrder.BIG_ENDIAN, serializationConfig.getByteOrder());
         assertFalse(serializationConfig.isCheckClassDefErrors());
         assertEquals(13, serializationConfig.getPortableVersion());

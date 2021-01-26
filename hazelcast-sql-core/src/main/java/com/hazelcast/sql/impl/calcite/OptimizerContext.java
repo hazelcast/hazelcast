@@ -149,6 +149,16 @@ public final class OptimizerContext {
         cluster.setParameterMetadata(parameterMetadata);
     }
 
+    // For unit testing only
+    public HazelcastRelOptCluster getCluster() {
+        return cluster;
+    }
+
+    // For unit testing only
+    public Prepare.CatalogReader getCatalogReader() {
+        return converter.getCatalogReader();
+    }
+
     /**
      * Apply the given rules to the node.
      *

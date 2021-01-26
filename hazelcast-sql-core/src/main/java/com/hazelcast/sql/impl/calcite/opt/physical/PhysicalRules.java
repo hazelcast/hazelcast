@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
-import org.apache.calcite.plan.volcano.AbstractConverter;
-import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 
@@ -36,8 +34,8 @@ public final class PhysicalRules {
             ProjectPhysicalRule.INSTANCE,
             MapScanPhysicalRule.INSTANCE,
             ValuesPhysicalRule.INSTANCE,
-
-            new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
+            SortPhysicalRule.INSTANCE,
+            ExpandConversionRule.INSTANCE
         );
     }
 }

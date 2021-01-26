@@ -1552,6 +1552,7 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.isEnableCompression(), c2.isEnableCompression())
                     && nullSafeEqual(c1.isEnableSharedObject(), c2.isEnableSharedObject())
                     && nullSafeEqual(c1.isAllowUnsafe(), c2.isAllowUnsafe())
+                    && nullSafeEqual(c1.isAllowOverrideDefaultSerializers(), c2.isAllowOverrideDefaultSerializers())
                     && nullSafeEqual(c1.getJavaSerializationFilterConfig(), c2.getJavaSerializationFilterConfig());
         }
 

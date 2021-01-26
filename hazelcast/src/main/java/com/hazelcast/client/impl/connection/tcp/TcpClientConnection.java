@@ -137,6 +137,7 @@ public class TcpClientConnection implements ClientConnection {
         return (Address) attributeMap.get(Address.class);
     }
 
+    @Override
     public UUID getRemoteUuid() {
         return remoteUuid;
     }

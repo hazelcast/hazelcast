@@ -482,6 +482,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             );
 
             QueryState state = initiatorService.getStateRegistry().onInitiatorQueryStarted(
+                QueryId.create(initiatorId),
                 initiatorId,
                 Long.MAX_VALUE,
                 plan,

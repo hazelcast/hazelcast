@@ -101,15 +101,6 @@ public final class HazelcastComparisonPredicateUtils {
         QueryDataType highHZType = HazelcastTypeUtils.toHazelcastType(highType.getSqlTypeName());
         QueryDataType lowHZType = HazelcastTypeUtils.toHazelcastType(lowType.getSqlTypeName());
 
-        if (highHZType.getTypeFamily() == QueryDataTypeFamily.OBJECT) {
-            // Disallow comparisons for temporal and OBJECT types.
-            if (throwOnFailure) {
-                throw callBinding.newValidationSignatureError();
-            } else {
-                return false;
-            }
-        }
-
         if (highHZType.getTypeFamily().isNumeric()) {
             // Set flexible parameter converter that allows TINYINT/SMALLINT/INTEGER -> BIGINT conversions
             setNumericParameterConverter(validator, high, highHZType);

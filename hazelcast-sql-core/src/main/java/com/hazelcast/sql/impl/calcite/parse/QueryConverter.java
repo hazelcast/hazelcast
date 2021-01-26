@@ -121,4 +121,9 @@ public class QueryConverter {
 
         return planner.findBestExp();
     }
+
+    // For unit testing only
+    public CatalogReader getCatalogReader() {
+        return catalogReader;
+    }
 }

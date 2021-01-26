@@ -413,6 +413,8 @@ hazelcast-client:
   #     Set as true to enable shared object when default Java serialization is used. Its default value is false.
   # * "allow-unsafe":
   #     Set as true to allow the usage of unsafe. Its default value is false.
+  # * "allow-override-default-serializers":
+  #     Set as true to allow override of default serializers. Its default value is false.
   # * "data-serializable-factories":
   #     Lists your class implementations of Hazelcast's DataSerializableFactory. Each factory has the required
   #     "factory-id" attribute that you should give as the ID of your factory.
@@ -443,6 +445,7 @@ hazelcast-client:
     enable-compression: false
     enable-shared-object: true
     allow-unsafe: false
+    allow-override-default-serializers: false
     data-serializable-factories:
       - factory-id: 1
         class-name: com.hazelcast.examples.DataSerializableFactory

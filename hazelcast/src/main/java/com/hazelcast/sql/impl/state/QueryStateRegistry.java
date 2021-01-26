@@ -47,6 +47,7 @@ public class QueryStateRegistry {
      * Registers a query on the initiator member before the query is started on participants.
      */
     public QueryState onInitiatorQueryStarted(
+        QueryId queryId,
         UUID localMemberId,
         long initiatorTimeout,
         Plan initiatorPlan,
@@ -55,8 +56,6 @@ public class QueryStateRegistry {
         QueryResultProducer initiatorResultProducer,
         QueryStateCompletionCallback completionCallback
     ) {
-        QueryId queryId = QueryId.create(localMemberId);
-
         QueryState state = QueryState.createInitiatorState(
             queryId,
             localMemberId,

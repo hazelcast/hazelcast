@@ -53,6 +53,7 @@ public class QueryStateRegistryTest extends SqlTestSupport {
         QueryStateCompletionCallback completionCallback = new TestQueryStateCompletionCallback();
 
         QueryState state = registry.onInitiatorQueryStarted(
+            QueryId.create(localMemberId),
             localMemberId,
             timeout,
             initiatorPlan,

@@ -127,8 +127,8 @@ public class MetricsCompressor {
 
     // temporary buffer to avoid DeflaterOutputStream's extra byte[] allocations
     // when writing primitive fields
-    private DataOutputStream tmpDos;
-    private MorePublicByteArrayOutputStream tmpBaos = new MorePublicByteArrayOutputStream(INITIAL_BUFFER_SIZE_DESCRIPTION);
+    private final DataOutputStream tmpDos;
+    private final MorePublicByteArrayOutputStream tmpBaos = new MorePublicByteArrayOutputStream(INITIAL_BUFFER_SIZE_DESCRIPTION);
 
     private int count;
     private MetricDescriptor lastDescriptor;
@@ -303,7 +303,6 @@ public class MetricsCompressor {
     public int count() {
         return count;
     }
-
 
     private void reset(int estimatedBytesDictionary, int estimatedBytesMetrics) {
         dictionaryCompressor = new Deflater();

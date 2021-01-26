@@ -103,7 +103,14 @@ public class JetSqlTest extends SqlTestSupport {
 
         given(jetSqlCoreBackend.tableResolvers()).willReturn(singletonList(tableResolver));
         given(jetSqlCoreBackend.sqlBackend()).willReturn(sqlBackend);
-        given(jetSqlCoreBackend.execute(any(SqlPlan.class), anyList(), anyLong(), anyInt())).willReturn(sqlResult);
+
+        given(jetSqlCoreBackend.execute(
+            any(QueryId.class),
+            any(SqlPlan.class),
+            anyList(),
+            anyLong(),
+            anyInt())
+        ).willReturn(sqlResult);
 
         System.setProperty(SqlServiceImpl.OPTIMIZER_CLASS_PROPERTY_NAME, TestSqlOptimizer.class.getName());
         HazelcastInstance member = newHazelcastInstance(new Config(), randomName(), nodeContext(jetSqlCoreBackend));
