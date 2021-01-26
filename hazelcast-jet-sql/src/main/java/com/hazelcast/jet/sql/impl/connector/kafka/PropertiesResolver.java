@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -76,6 +77,8 @@ final class PropertiesResolver {
     }
 
     static Properties resolveConsumerProperties(Map<String, String> options) {
+        options = KvMetadataResolvers.preprocessOptions(options, true);
+        options = KvMetadataResolvers.preprocessOptions(options, false);
         Properties properties = from(options);
 
         withSerdeConsumerProperties(true, options, properties);
@@ -85,6 +88,8 @@ final class PropertiesResolver {
     }
 
     static Properties resolveProducerProperties(Map<String, String> options) {
+        options = KvMetadataResolvers.preprocessOptions(options, true);
+        options = KvMetadataResolvers.preprocessOptions(options, false);
         Properties properties = from(options);
 
         withSerdeProducerProperties(true, options, properties);

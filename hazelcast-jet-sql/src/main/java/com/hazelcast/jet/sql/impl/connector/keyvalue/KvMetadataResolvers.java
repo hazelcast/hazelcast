@@ -146,8 +146,19 @@ public class KvMetadataResolvers {
         return requireNonNull(resolver.resolveMetadata(isKey, resolvedFields, options, serializationService));
     }
 
+    /**
+     * Pre-process the options before they are used.
+     * <p>
+     * Currently replaces the simplified primitive representation with full
+     * representation, for example {@code 'keyFormat'='int'} with {@code
+     * 'keyFormat'='java', 'keyJavaClass'='java.lang.Integer}.
+     *
+     * @param options input options, this map is not modified
+     * @param isKey whether to preprocess key format or value format
+     * @return new, possibly modified options
+     */
     @CheckReturnValue
-    private Map<String, String> preprocessOptions(Map<String, String> options, boolean isKey) {
+    public static Map<String, String> preprocessOptions(Map<String, String> options, boolean isKey) {
         String formatProperty = isKey ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT;
 
         String formatValue = options.get(formatProperty);

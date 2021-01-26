@@ -146,6 +146,30 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_insertSink_simpleKeyFormat() {
+        String name = createRandomTopic();
+        sqlService.execute("CREATE MAPPING " + name + ' '
+                + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_KEY_FORMAT + "'='int'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='varchar'"
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", 'auto.offset.reset'='earliest'"
+                + ")"
+        );
+
+        assertTopicEventually(
+                name,
+                "SINK INTO " + name + " (this, __key) VALUES ('2', 1)",
+                createMap(1, "2")
+        );
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row(1, "2"))
+        );
+    }
+
+    @Test
     public void test_insertNulls() {
         String name = createRandomTopic();
         sqlService.execute("CREATE MAPPING " + name + ' '
