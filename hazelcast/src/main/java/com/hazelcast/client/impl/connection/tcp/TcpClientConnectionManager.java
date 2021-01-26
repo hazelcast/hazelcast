@@ -22,10 +22,10 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
+import com.hazelcast.client.config.ConnectionRetryConfigAccessor;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.ClientLoggingService;
 import com.hazelcast.client.impl.clientside.ClusterDiscoveryService;
@@ -122,6 +122,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     private static final int SMALL_MACHINE_PROCESSOR_COUNT = 8;
     private static final EndpointQualifier CLIENT_PUBLIC_ENDPOINT_QUALIFIER =
             EndpointQualifier.resolve(ProtocolType.CLIENT, "public");
+    private static final int FAILOVER_CLIENT_CLUSTER_CONNECT_TIMEOUT_MILLISECONDS = 120000;
     protected final AtomicInteger connectionIdGen = new AtomicInteger();
 
     private final AtomicBoolean isAlive = new AtomicBoolean();
@@ -281,13 +282,20 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     private WaitStrategy initializeWaitStrategy(ClientConfig clientConfig) {
-        ClientConnectionStrategyConfig connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
-        ConnectionRetryConfig expoRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
-        return new WaitStrategy(expoRetryConfig.getInitialBackoffMillis(),
-                expoRetryConfig.getMaxBackoffMillis(),
-                expoRetryConfig.getMultiplier(),
-                expoRetryConfig.getClusterConnectTimeoutMillis(),
-                expoRetryConfig.getJitter(), logger);
+        ConnectionRetryConfig retryConfig = clientConfig
+                .getConnectionStrategyConfig()
+                .getConnectionRetryConfig();
+
+        long clusterConnectTimeout = retryConfig.getClusterConnectTimeoutMillis();
+        if (failoverConfigProvided && !ConnectionRetryConfigAccessor.isClusterConnectTimeoutConfigured(retryConfig)) {
+            clusterConnectTimeout = FAILOVER_CLIENT_CLUSTER_CONNECT_TIMEOUT_MILLISECONDS;
+        }
+
+        return new WaitStrategy(retryConfig.getInitialBackoffMillis(),
+                retryConfig.getMaxBackoffMillis(),
+                retryConfig.getMultiplier(),
+                clusterConnectTimeout,
+                retryConfig.getJitter(), logger);
     }
 
     public synchronized void start() {

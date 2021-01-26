@@ -27,11 +27,13 @@ public class ConnectionRetryConfig {
 
     private static final int INITIAL_BACKOFF_MILLIS = 1000;
     private static final int MAX_BACKOFF_MILLIS = 30000;
-    private static final long CLUSTER_CONNECT_TIMEOUT_MILLIS = 120000;
+    private static final long CLUSTER_CONNECT_TIMEOUT_MILLIS = Long.MAX_VALUE;
     private static final double JITTER = 0;
+    private static final double MULTIPLIER = 1.05;
+    boolean isConnectTimeoutConfigured;
     private int initialBackoffMillis = INITIAL_BACKOFF_MILLIS;
     private int maxBackoffMillis = MAX_BACKOFF_MILLIS;
-    private double multiplier = 1;
+    private double multiplier = MULTIPLIER;
     private long connectTimeoutMillis = CLUSTER_CONNECT_TIMEOUT_MILLIS;
     private double jitter = JITTER;
 
@@ -44,6 +46,7 @@ public class ConnectionRetryConfig {
         multiplier = connectionRetryConfig.multiplier;
         connectTimeoutMillis = connectionRetryConfig.connectTimeoutMillis;
         jitter = connectionRetryConfig.jitter;
+        isConnectTimeoutConfigured = connectionRetryConfig.isConnectTimeoutConfigured;
     }
 
     /**
@@ -125,6 +128,7 @@ public class ConnectionRetryConfig {
     public ConnectionRetryConfig setClusterConnectTimeoutMillis(long clusterConnectTimeoutMillis) {
         checkNotNegative(clusterConnectTimeoutMillis, "Cluster connect timeout must be non-negative!");
         this.connectTimeoutMillis = clusterConnectTimeoutMillis;
+        isConnectTimeoutConfigured = true;
         return this;
     }
 
