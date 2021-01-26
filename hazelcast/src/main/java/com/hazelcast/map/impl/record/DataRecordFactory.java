@@ -23,6 +23,8 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapContainer;
 
+import javax.annotation.Nonnull;
+
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 
 public class DataRecordFactory implements RecordFactory<Data> {
@@ -46,37 +48,57 @@ public class DataRecordFactory implements RecordFactory<Data> {
 
         switch (cacheDeserializedValues) {
             case NEVER:
-                if (statisticsEnabled) {
-                    return new DataRecordWithStats(valueData);
-                }
-
-                if (hasEviction) {
-                    if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LRU) {
-                        return new SimpleRecordWithLRUEviction<>(valueData);
-                    }
-
-                    if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LFU) {
-                        return new SimpleRecordWithLFUEviction<>(valueData);
-                    }
-                }
-
-                return new SimpleRecord<>(valueData);
+                return newSimpleRecord(valueData, mapConfig, statisticsEnabled, hasEviction);
             default:
-                if (statisticsEnabled) {
-                    return new CachedDataRecordWithStats(valueData);
-                }
-
-                if (hasEviction) {
-                    if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LRU) {
-                        return new CachedSimpleRecordWithLRUEviction(valueData);
-                    }
-
-                    if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LFU) {
-                        return new CachedSimpleRecordWithLFUEviction(valueData);
-                    }
-                }
-
-                return new CachedSimpleRecord(valueData);
+                return newCachedSimpleRecord(valueData, mapConfig, statisticsEnabled, hasEviction);
         }
+    }
+
+    @Nonnull
+    private Record<Data> newCachedSimpleRecord(Data valueData, MapConfig mapConfig,
+                                               boolean statisticsEnabled, boolean hasEviction) {
+        if (!statisticsEnabled && !hasEviction) {
+            return new CachedSimpleRecord(valueData);
+        }
+
+        if (statisticsEnabled) {
+            return new CachedDataRecordWithStats(valueData);
+        }
+
+        if (hasEviction) {
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LRU) {
+                return new CachedSimpleRecordWithLRUEviction(valueData);
+            }
+
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LFU) {
+                return new CachedSimpleRecordWithLFUEviction(valueData);
+            }
+        }
+
+        return new CachedSimpleRecord(valueData);
+    }
+
+    @Nonnull
+    private Record<Data> newSimpleRecord(Data valueData, MapConfig mapConfig,
+                                         boolean statisticsEnabled, boolean hasEviction) {
+        if (!statisticsEnabled && !hasEviction) {
+            return new SimpleRecord<>(valueData);
+        }
+
+        if (statisticsEnabled) {
+            return new DataRecordWithStats(valueData);
+        }
+
+        if (hasEviction) {
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LRU) {
+                return new SimpleRecordWithLRUEviction<>(valueData);
+            }
+
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LFU) {
+                return new SimpleRecordWithLFUEviction<>(valueData);
+            }
+        }
+
+        return new SimpleRecord<>(valueData);
     }
 }

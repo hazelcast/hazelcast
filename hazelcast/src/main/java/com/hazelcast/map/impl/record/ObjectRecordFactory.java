@@ -21,6 +21,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapContainer;
 
+import javax.annotation.Nonnull;
+
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 
 public class ObjectRecordFactory implements RecordFactory<Object> {
@@ -41,6 +43,17 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
         boolean hasEviction = mapContainer.getEvictor() != NULL_EVICTOR;
 
         Object objectValue = serializationService.toObject(value);
+
+        return newRecord(mapConfig, statisticsEnabled, hasEviction, objectValue);
+    }
+
+    @Nonnull
+    private Record<Object> newRecord(MapConfig mapConfig, boolean statisticsEnabled,
+                                     boolean hasEviction, Object objectValue) {
+        if (!statisticsEnabled && !hasEviction) {
+            return new SimpleRecord<>(objectValue);
+        }
+
         if (statisticsEnabled) {
             return new ObjectRecordWithStats(objectValue);
         }
