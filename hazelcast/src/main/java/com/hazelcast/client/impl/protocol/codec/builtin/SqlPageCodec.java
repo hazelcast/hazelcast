@@ -92,6 +92,7 @@ public final class SqlPageCodec {
                 case TIMESTAMP_WITH_TIME_ZONE:
                 case NULL:
                 case OBJECT:
+                    // TODO: All types except for NULL and OBJECT should be serialized with a custom codecs before 4.2
                     assert SqlPage.convertToData(columnType);
 
                     ListMultiFrameCodec.encode(clientMessage, (Iterable<Data>) column, DataCodec::encodeNullable);
@@ -163,6 +164,7 @@ public final class SqlPageCodec {
                 case TIMESTAMP_WITH_TIME_ZONE:
                 case NULL:
                 case OBJECT:
+                    // TODO: All types except for NULL and OBJECT should be serialized with a custom codecs before 4.2
                     assert SqlPage.convertToData(columnType);
 
                     columns.add(ListMultiFrameCodec.decode(iterator, DataCodec::decodeNullable));

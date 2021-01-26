@@ -312,6 +312,7 @@ public final class SqlPage {
     }
 
     public static boolean convertToData(SqlColumnType type) {
+        // TODO: All types except for NULL and OBJECT should be serialized with a custom codecs before 4.2
         switch (type) {
             case SMALLINT:
             case DECIMAL:
