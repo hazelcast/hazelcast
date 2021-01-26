@@ -333,12 +333,14 @@ public class SqlTestSupport extends HazelcastTestSupport {
             PlanNode fragment = result0.getPlan().getFragment(i);
 
             fragment.visit(new TestPlanNodeVisitorAdapter() {
+
                 @Override
                 public void onMapIndexScanNode(MapIndexScanPlanNode node) {
                     nodeRef.compareAndSet(null, node);
 
                     super.onMapIndexScanNode(node);
                 }
+
             });
         }
 

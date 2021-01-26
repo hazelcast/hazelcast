@@ -6543,18 +6543,18 @@ public class ClientCompatibilityNullTest_2_2 {
     }
 
     @Test
-    public void test_SqlExecuteCodec_encodeRequest() {
+    public void test_SqlExecute_reservedCodec_encodeRequest() {
         int fileClientMessageIndex = 833;
-        ClientMessage encoded = SqlExecuteCodec.encodeRequest(aString, aListOfData, aLong, anInt);
+        ClientMessage encoded = SqlExecute_reservedCodec.encodeRequest(aString, aListOfData, aLong, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_SqlExecuteCodec_decodeResponse() {
+    public void test_SqlExecute_reservedCodec_decodeResponse() {
         int fileClientMessageIndex = 834;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        SqlExecuteCodec.ResponseParameters parameters = SqlExecuteCodec.decodeResponse(fromFile);
+        SqlExecute_reservedCodec.ResponseParameters parameters = SqlExecute_reservedCodec.decodeResponse(fromFile);
         assertTrue(isEqual(null, parameters.queryId));
         assertTrue(isEqual(null, parameters.rowMetadata));
         assertTrue(isEqual(null, parameters.rowPage));
@@ -6595,19 +6595,18 @@ public class ClientCompatibilityNullTest_2_2 {
     }
 
     @Test
-    public void test_SqlExecute2Codec_encodeRequest() {
+    public void test_SqlExecuteCodec_encodeRequest() {
         int fileClientMessageIndex = 839;
-        ClientMessage encoded = SqlExecute2Codec.encodeRequest(aString, aListOfData, aLong, anInt, null, aByte);
+        ClientMessage encoded = SqlExecuteCodec.encodeRequest(aString, aListOfData, aLong, anInt, null, aByte, anSqlQueryId);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_SqlExecute2Codec_decodeResponse() {
+    public void test_SqlExecuteCodec_decodeResponse() {
         int fileClientMessageIndex = 840;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        SqlExecute2Codec.ResponseParameters parameters = SqlExecute2Codec.decodeResponse(fromFile);
-        assertTrue(isEqual(null, parameters.queryId));
+        SqlExecuteCodec.ResponseParameters parameters = SqlExecuteCodec.decodeResponse(fromFile);
         assertTrue(isEqual(null, parameters.rowMetadata));
         assertTrue(isEqual(null, parameters.rowPage));
         assertTrue(isEqual(aBoolean, parameters.rowPageLast));

@@ -26,7 +26,8 @@ import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.EdgeAwarePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
-import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
+import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
+import com.hazelcast.sql.impl.plan.node.io.SendPlanNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +61,7 @@ public class EdgeCollectorPlanNodeVisitor implements PlanNodeVisitor {
     }
 
     @Override
-    public void onRootSendNode(RootSendPlanNode node) {
+    public void onSendNode(SendPlanNode node) {
         onNode(node);
     }
 
@@ -71,6 +72,11 @@ public class EdgeCollectorPlanNodeVisitor implements PlanNodeVisitor {
 
     @Override
     public void onMapIndexScanNode(MapIndexScanPlanNode node) {
+        onNode(node);
+    }
+
+    @Override
+    public void onReceiveSortMergeNode(ReceiveSortMergePlanNode node) {
         onNode(node);
     }
 

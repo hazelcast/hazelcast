@@ -31,7 +31,7 @@
 <hazelcast-client xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
-                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-4.1.xsd">
+                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-4.2.xsd">
 
     <config-replacers fail-if-value-missing="false">
         <replacer class-name="com.hazelcast.config.replacer.EncryptionReplacer">
@@ -199,6 +199,7 @@
         <enable-compression>false</enable-compression>
         <enable-shared-object>true</enable-shared-object>
         <allow-unsafe>false</allow-unsafe>
+        <allow-override-default-serializers>false</allow-override-default-serializers>
         <data-serializable-factories>
             <data-serializable-factory factory-id="1">com.hazelcast.examples.DataSerializableFactory
             </data-serializable-factory>

@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.internal.nio.Connection;
 
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * The ClientConnection is connection that lives on the client side on behalf of a Java client.
@@ -46,4 +47,6 @@ public interface ClientConnection extends Connection {
 
     // used in tests
     Map<Long, EventHandler> getEventHandlers();
+
+    UUID getRemoteUuid();
 }

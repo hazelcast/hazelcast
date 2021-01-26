@@ -2023,6 +2023,8 @@ hazelcast:
   #     Set as true to enable shared object when default Java serialization is used. Its default value is false.
   # * "allow-unsafe":
   #     Set as true to allow the usage of unsafe. Its default value is false.
+  # * "allow-override-default-serializers":
+  #     Set as true to allow override of default serializers. Its default value is false.
   # * "data-serializable-factories":
   #     Lists your class implementations of Hazelcast's DataSerializableFactory. Each factory has the required
   #     "factory-id" attribute that you should give as the ID of your factory.

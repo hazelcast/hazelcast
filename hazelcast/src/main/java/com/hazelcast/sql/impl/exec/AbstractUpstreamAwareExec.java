@@ -53,4 +53,5 @@ public abstract class AbstractUpstreamAwareExec extends AbstractExec {
     protected void setup1(QueryFragmentContext ctx) {
         // No-op.
     }
+
 }

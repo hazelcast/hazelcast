@@ -264,6 +264,7 @@ public final class ClientConfigXmlGenerator {
                 .node("enable-compression", serialization.isEnableCompression())
                 .node("enable-shared-object", serialization.isEnableSharedObject())
                 .node("allow-unsafe", serialization.isAllowUnsafe())
+                .node("allow-override-default-serializers", serialization.isAllowOverrideDefaultSerializers())
                 .node("check-class-def-errors", serialization.isCheckClassDefErrors());
 
 

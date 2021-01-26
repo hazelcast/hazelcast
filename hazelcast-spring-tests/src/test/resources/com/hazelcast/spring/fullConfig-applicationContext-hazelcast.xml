@@ -569,6 +569,7 @@
             </hz:listeners>
 
             <hz:serialization allow-unsafe="false"
+                              allow-override-default-serializers="true"
                               byte-order="BIG_ENDIAN"
                               check-class-def-errors="false"
                               enable-compression="false"

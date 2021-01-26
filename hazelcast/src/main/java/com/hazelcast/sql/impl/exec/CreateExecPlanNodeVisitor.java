@@ -20,32 +20,35 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.sql.impl.NodeServiceProvider;
-import com.hazelcast.sql.impl.exec.scan.index.MapIndexScanExec;
 import com.hazelcast.sql.impl.exec.io.InboundHandler;
 import com.hazelcast.sql.impl.exec.io.Inbox;
 import com.hazelcast.sql.impl.exec.io.OutboundHandler;
 import com.hazelcast.sql.impl.exec.io.Outbox;
 import com.hazelcast.sql.impl.exec.io.ReceiveExec;
+import com.hazelcast.sql.impl.exec.io.ReceiveSortMergeExec;
 import com.hazelcast.sql.impl.exec.io.SendExec;
+import com.hazelcast.sql.impl.exec.io.StripedInbox;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControl;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
 import com.hazelcast.sql.impl.exec.root.RootExec;
 import com.hazelcast.sql.impl.exec.scan.MapScanExec;
+import com.hazelcast.sql.impl.exec.scan.index.MapIndexScanExec;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
+import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
-import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
 import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.EdgeAwarePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
-import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
+import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
+import com.hazelcast.sql.impl.plan.node.io.SendPlanNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,43 +60,69 @@ import java.util.UUID;
  * Visitor which builds an executor for every observed physical node.
  */
 public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
-    /** Operation handler. */
+    /**
+     * Operation handler.
+     */
     private final QueryOperationHandler operationHandler;
 
-    /** Node service provider. */
+    /**
+     * Node service provider.
+     */
     private final NodeServiceProvider nodeServiceProvider;
 
-    /** Serialization service. */
+    /**
+     * Serialization service.
+     */
     private final InternalSerializationService serializationService;
 
-    /** Local member ID. */
+    /**
+     * Local member ID.
+     */
     private final UUID localMemberId;
 
-    /** Operation. */
+    /**
+     * Operation.
+     */
     private final QueryExecuteOperation operation;
 
-    /** Factory to create flow control objects. */
+    /**
+     * Factory to create flow control objects.
+     */
     private final FlowControlFactory flowControlFactory;
 
-    /** Partitions owned by this data node. */
+    /**
+     * Partitions owned by this data node.
+     */
     private final PartitionIdSet localParts;
 
-    /** Recommended outbox batch size in bytes. */
+    /**
+     * Recommended outbox batch size in bytes.
+     */
     private final int outboxBatchSize;
 
-    /** Hook to alter produced Exec (for testing purposes). */
+    /**
+     * Hook to alter produced Exec (for testing purposes).
+     */
     private final CreateExecPlanNodeVisitorHook hook;
 
-    /** Stack of elements to be merged. */
+    /**
+     * Stack of elements to be merged.
+     */
     private final ArrayList<Exec> stack = new ArrayList<>(1);
 
-    /** Result. */
+    /**
+     * Result.
+     */
     private Exec exec;
 
-    /** Inboxes. */
+    /**
+     * Inboxes.
+     */
     private final Map<Integer, InboundHandler> inboxes = new HashMap<>();
 
-    /** Outboxes. */
+    /**
+     * Outboxes.
+     */
     private final Map<Integer, Map<UUID, OutboundHandler>> outboxes = new HashMap<>();
 
     public CreateExecPlanNodeVisitor(
@@ -160,12 +189,44 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     }
 
     @Override
-    public void onRootSendNode(RootSendPlanNode node) {
+    public void onSendNode(SendPlanNode node) {
         Outbox[] outboxes = prepareOutboxes(node);
 
         assert outboxes.length == 1;
 
         exec = new SendExec(node.getId(), pop(), outboxes[0]);
+    }
+
+    @Override
+    public void onReceiveSortMergeNode(ReceiveSortMergePlanNode node) {
+        // Navigate to sender exec and calculate total number of sender stripes.
+        int edgeId = node.getEdgeId();
+
+        // Create and register inbox.
+        int sendFragmentPos = operation.getOutboundEdgeMap().get(edgeId);
+        QueryExecuteOperationFragment sendFragment = operation.getFragments().get(sendFragmentPos);
+
+        StripedInbox inbox = new StripedInbox(
+            operationHandler,
+            operation.getQueryId(),
+            edgeId,
+            node.getSchema().getEstimatedRowSize(),
+            localMemberId,
+            getFragmentMembers(sendFragment),
+            createFlowControl(edgeId)
+        );
+
+        inboxes.put(edgeId, inbox);
+
+        // Instantiate executor and put it to stack.
+        ReceiveSortMergeExec res = new ReceiveSortMergeExec(
+            node.getId(),
+            inbox,
+            node.getColumnIndexes(),
+            node.getAscs()
+        );
+
+        push(res);
     }
 
     /**
@@ -300,7 +361,8 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
                     node.getIndexName(),
                     node.getIndexComponentCount(),
                     node.getIndexFilter(),
-                    node.getConverterTypes()
+                    node.getConverterTypes(),
+                    node.getAscs()
                 );
             }
         }

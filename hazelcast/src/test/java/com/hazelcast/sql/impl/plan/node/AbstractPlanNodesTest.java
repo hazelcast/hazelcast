@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -175,6 +176,11 @@ public class AbstractPlanNodesTest {
 
         @Override
         public void onEmptyNode(EmptyPlanNode node) {
+            nodes.add(node);
+        }
+
+        @Override
+        public void onReceiveSortMergeNode(ReceiveSortMergePlanNode node) {
             nodes.add(node);
         }
 

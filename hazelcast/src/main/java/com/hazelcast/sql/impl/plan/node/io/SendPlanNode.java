@@ -28,17 +28,17 @@ import java.io.IOException;
 import java.util.Objects;
 
 /**
- * Node that sends data to the root fragment.
+ * Node that sends data to another member.
  */
-public class RootSendPlanNode extends UniInputPlanNode implements EdgeAwarePlanNode, IdentifiedDataSerializable {
+public class SendPlanNode extends UniInputPlanNode implements EdgeAwarePlanNode, IdentifiedDataSerializable {
     /** Edge ID. */
     private int edgeId;
 
-    public RootSendPlanNode() {
+    public SendPlanNode() {
         // No-op.
     }
 
-    public RootSendPlanNode(int id, PlanNode upstream, int edgeId) {
+    public SendPlanNode(int id, PlanNode upstream, int edgeId) {
         super(id, upstream);
 
         this.edgeId = edgeId;
@@ -56,7 +56,7 @@ public class RootSendPlanNode extends UniInputPlanNode implements EdgeAwarePlanN
 
     @Override
     public void visit0(PlanNodeVisitor visitor) {
-        visitor.onRootSendNode(this);
+        visitor.onSendNode(this);
     }
 
     @Override
@@ -66,7 +66,7 @@ public class RootSendPlanNode extends UniInputPlanNode implements EdgeAwarePlanN
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.NODE_ROOT_SEND;
+        return SqlDataSerializerHook.NODE_SEND;
     }
 
     @Override
@@ -94,7 +94,7 @@ public class RootSendPlanNode extends UniInputPlanNode implements EdgeAwarePlanN
             return false;
         }
 
-        RootSendPlanNode that = (RootSendPlanNode) o;
+        SendPlanNode that = (SendPlanNode) o;
 
         return id == that.id && edgeId == that.edgeId && upstream.equals(that.upstream);
     }

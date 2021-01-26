@@ -82,6 +82,15 @@ public class ParserOperationsTest {
     }
 
     @Test
+    public void testOrderBy() {
+        checkSuccess("SELECT a, b FROM t ORDER BY a");
+        checkSuccess("SELECT a, b FROM t ORDER BY a ASC");
+        checkSuccess("SELECT a, b FROM t ORDER BY a DESC");
+        checkSuccess("SELECT a, b FROM t ORDER BY a DESC, b ASC");
+    }
+
+
+    @Test
     public void testUnsupportedSelectScalar() {
         checkFailure(
             "SELECT (SELECT a FROM t) FROM t",
@@ -98,10 +107,31 @@ public class ParserOperationsTest {
     }
 
     @Test
-    public void testUnsupportedOrderBy() {
+    public void testUnsupporteOrderByLimitOffset() {
         checkFailure(
-            "SELECT a FROM t ORDER BY a",
-            "ORDER BY is not supported"
+            "SELECT a, b FROM t ORDER BY a LIMIT 5 OFFSET 10",
+            "LIMIT is not supported"
+        );
+        checkFailure(
+            "SELECT a, b FROM t ORDER BY a LIMIT 5",
+            "LIMIT is not supported"
+        );
+        checkFailure(
+            "SELECT a, b FROM t ORDER BY a OFFSET 10",
+            "OFFSET is not supported"
+        );
+    }
+
+    @Test
+    public void testUnsupportedNullsFirstLast() {
+        checkFailure(
+            "SELECT a, b FROM t ORDER BY a DESC NULLS FIRST",
+            "Function 'NULLS FIRST' does not exist"
+        );
+
+        checkFailure(
+            "SELECT a, b FROM t ORDER BY a DESC NULLS LAST",
+            "Function 'NULLS LAST' does not exist"
         );
     }
 
@@ -152,7 +182,7 @@ public class ParserOperationsTest {
 
     @Test
     public void testUnsupportedFunction() {
-        checkFailure("select atan2(0, 0) from t", "Function 'ATAN2' does not exist");
+        checkFailure("select atan2(0, 0) from t", "Function 'atan2' does not exist");
     }
 
     private static void checkSuccess(String sql) {

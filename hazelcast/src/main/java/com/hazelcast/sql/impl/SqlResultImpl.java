@@ -121,6 +121,11 @@ public final class SqlResultImpl extends AbstractSqlResult implements LazyTarget
         }
     }
 
+    @Override
+    public boolean isInfiniteRows() {
+        return false;
+    }
+
     public Plan getPlan() {
         QueryInitiatorState initiatorState = getQueryInitiatorState();
 

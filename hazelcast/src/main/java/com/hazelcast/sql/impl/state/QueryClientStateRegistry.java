@@ -29,13 +29,13 @@ import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.client.SqlPage;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.DONE;
-import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.TIMEOUT;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -52,25 +52,46 @@ public class QueryClientStateRegistry {
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
-        QueryClientState clientCursor = new QueryClientState(clientId, result);
+        QueryClientState clientCursor = new QueryClientState(clientId, result, false);
 
-        SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, true);
+        boolean delete = false;
 
-        if (!page.isLast()) {
-            // Register the query only if there is more data to fetch.
-            clientCursors.put(result.getQueryId(), clientCursor);
+        try {
+            // Register the cursor.
+            QueryClientState previousClientCursor = clientCursors.putIfAbsent(result.getQueryId(), clientCursor);
+
+            // Check if the cursor is already closed.
+            if (previousClientCursor != null) {
+                assert previousClientCursor.isClosed();
+
+                delete = true;
+
+                throw QueryException.cancelledByUser();
+            }
+
+            // Fetch the next page.
+            SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, result.isInfiniteRows());
+
+            delete = page.isLast();
+
+            return page;
+        } catch (Exception e) {
+            delete = true;
+
+            throw e;
+        } finally {
+            if (delete) {
+                deleteClientCursor(clientCursor);
+            }
         }
-
-        return page;
     }
 
     public SqlPage fetch(
-        UUID clientId,
         QueryId queryId,
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
-        QueryClientState clientCursor = getClientCursor(clientId, queryId);
+        QueryClientState clientCursor = clientCursors.get(queryId);
 
         if (clientCursor == null) {
             throw QueryException.error("Query cursor is not found (closed?): " + queryId);
@@ -96,13 +117,17 @@ public class QueryClientStateRegistry {
         QueryClientState clientCursor,
         int cursorBufferSize,
         InternalSerializationService serializationService,
-        boolean isFirstPage
+        boolean respondImmediately
     ) {
+        if (respondImmediately) {
+            return new SqlPage(Collections.emptyList(), false);
+        }
+
         ResultIterator<SqlRow> iterator = clientCursor.getIterator();
 
         try {
             List<List<Data>> page = new ArrayList<>(cursorBufferSize);
-            boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService, isFirstPage);
+            boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService);
 
             return new SqlPage(page, last);
         } catch (HazelcastSqlException e) {
@@ -126,26 +151,12 @@ public class QueryClientStateRegistry {
         ResultIterator<SqlRow> iterator,
         List<List<Data>> page,
         int cursorBufferSize,
-        InternalSerializationService serializationService,
-        boolean isFirstPage
+        InternalSerializationService serializationService
     ) {
         assert cursorBufferSize > 0;
 
-        if (isFirstPage) {
-            // Block for up to 1 second to get the row.
-            // Note: the implementation of ResultIterator in IMDG ignores the time limit and blocks
-            // until a next item is available.
-            HasNextResult hasNextResult = iterator.hasNext(1, SECONDS);
-            if (hasNextResult == TIMEOUT) {
-                return false;
-            } else if (hasNextResult == DONE) {
-                return true;
-            }
-        } else {
-            // block without a limit to get a row
-            if (!iterator.hasNext()) {
-                return true;
-            }
+        if (!iterator.hasNext()) {
+            return true;
         }
 
         HasNextResult hasNextResult;
@@ -178,13 +189,18 @@ public class QueryClientStateRegistry {
     }
 
     public void close(UUID clientId, QueryId queryId) {
-        QueryClientState clientCursor = getClientCursor(clientId, queryId);
+        QueryClientState clientCursor =
+            clientCursors.computeIfAbsent(queryId, (ignore) -> new QueryClientState(clientId, null, true));
 
-        if (clientCursor != null) {
-            clientCursor.getSqlResult().close();
-
-            deleteClientCursor(clientCursor);
+        if (clientCursor.isClosed()) {
+            // Received the "close" request before the "execute" request, do nothing.
+            return;
         }
+
+        // Received the "close" request after the "execute" request, close.
+        clientCursor.getSqlResult().close();
+
+        deleteClientCursor(clientCursor);
     }
 
     public void shutdown() {
@@ -207,16 +223,6 @@ public class QueryClientStateRegistry {
 
             deleteClientCursor(victim);
         }
-    }
-
-    private QueryClientState getClientCursor(UUID clientId, QueryId queryId) {
-        QueryClientState cursor = clientCursors.get(queryId);
-
-        if (cursor == null || !cursor.getClientId().equals(clientId)) {
-            return null;
-        }
-
-        return cursor;
     }
 
     private void deleteClientCursor(QueryClientState cursor) {

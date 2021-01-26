@@ -33,6 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -249,7 +250,56 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
                         ExpressionTypes.LOCAL_TIME,
                         ExpressionTypes.LOCAL_DATE_TIME,
                         ExpressionTypes.OFFSET_DATE_TIME));
-        checkUnsupportedColumnColumn(ExpressionTypes.OBJECT, ExpressionTypes.allExcept());
+        checkUnsupportedColumnColumn(ExpressionTypes.OBJECT, ExpressionTypes.allExcept(ExpressionTypes.OBJECT));
+    }
+
+    @Test
+    public void testComparable_to_Comparable() {
+        putBiValue(new ComparableImpl(1), new ComparableImpl(1), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
+        check("field1", "field2", new ComparableImpl(1).compareTo(new ComparableImpl(1)));
+
+        putBiValue(new ComparableImpl(1), new ComparableImpl(2), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
+        check("field1", "field2", new ComparableImpl(1).compareTo(new ComparableImpl(2)));
+
+        putBiValue(new ComparableImpl(2), new ComparableImpl(1), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
+        check("field1", "field2", new ComparableImpl(2).compareTo(new ComparableImpl(1)));
+    }
+
+    @Test
+    public void testComparable_and_NonComparable() {
+        putBiValue(new ComparableImpl(1), new NonComparable(), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
+        checkFailure(
+                "field1", "field2", SqlErrorCode.GENERIC,
+                "Cannot compare two OBJECT values, because "
+                        + "left operand has " + ComparableImpl.class + " type and "
+                        + "right operand has " + NonComparable.class + " type");
+
+        putBiValue(new NonComparable(), new ComparableImpl(1), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
+        checkFailure(
+                "field1", "field2", SqlErrorCode.GENERIC,
+                "Cannot compare two OBJECT values, because "
+                        + "left operand has " + NonComparable.class + " type and "
+                        + "right operand has " + ComparableImpl.class + " type");
+    }
+
+    @Test
+    public void testDifferentClassThatImplementsComparableInterface() {
+        putBiValue(new ComparableImpl(1), new ComparableImpl2(1), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
+
+        checkFailure(
+                "field1", "field2", SqlErrorCode.GENERIC,
+                "Cannot compare two OBJECT values, because "
+                        + "left operand has " + ComparableImpl.class + " type and "
+                        + "right operand has " + ComparableImpl2.class + " type");
+    }
+
+    @Test
+    public void testNonComparableObjects() {
+        putBiValue(new NonComparable(), new NonComparable(), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
+
+        checkFailure(
+                "field1", "field2", SqlErrorCode.GENERIC,
+                "Cannot compare OBJECT value because " + NonComparable.class + " doesn't implement Comparable interface");
     }
 
     @Test
@@ -709,5 +759,34 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
             this.value = value;
             this.type = type;
         }
+    }
+
+    static class ComparableImpl implements Comparable<ComparableImpl>, Serializable {
+        int innerField;
+
+        ComparableImpl(int innerField) {
+            this.innerField = innerField;
+        }
+
+        @Override
+        public int compareTo(ComparableImpl that) {
+            return Integer.compare(this.innerField, that.innerField);
+        }
+    }
+
+    static class ComparableImpl2 implements Comparable<ComparableImpl2>, Serializable {
+        int innerField;
+
+        ComparableImpl2(int innerField) {
+            this.innerField = innerField;
+        }
+
+        @Override
+        public int compareTo(ComparableImpl2 that) {
+            return Integer.compare(this.innerField, that.innerField);
+        }
+    }
+
+    static class NonComparable implements Serializable {
     }
 }

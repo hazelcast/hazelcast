@@ -30,8 +30,8 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
-import static com.jayway.jsonpath.internal.path.PathCompiler.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -110,7 +110,11 @@ public class SqlQueryResultTest extends SqlTestSupport {
     private void checkFailure(HazelcastInstance target, SqlExpectedResultType type) {
         assert type == SqlExpectedResultType.ROWS || type == SqlExpectedResultType.UPDATE_COUNT : type;
 
-        try (SqlResult ignore = target.getSql().execute(new SqlStatement(SQL).setExpectedResultType(type))) {
+        try (SqlResult result = target.getSql().execute(new SqlStatement(SQL).setExpectedResultType(type))) {
+            for (SqlRow ignore : result) {
+                // No-op.
+            }
+
             fail("Must fail");
         } catch (HazelcastSqlException e) {
             String message = e.getMessage();

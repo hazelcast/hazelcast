@@ -86,7 +86,7 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
         RelDataType operandType,
         int operandIndex
     ) {
-        QueryDataType tartgetType0 = getTargetHazelcastType();
+        QueryDataType targetType0 = getTargetHazelcastType();
         QueryDataType operandType0 = HazelcastTypeUtils.toHazelcastType(operandType.getSqlTypeName());
 
         if (!isNumeric() || !operandType0.getTypeFamily().isNumeric()) {
@@ -94,7 +94,7 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
             return false;
         }
 
-        if (tartgetType0.getTypeFamily().getPrecedence() < operandType0.getTypeFamily().getPrecedence()) {
+        if (targetType0.getTypeFamily().getPrecedence() < operandType0.getTypeFamily().getPrecedence()) {
             // Cannot convert type with higher precedence to lower precedence (e.g. DOUBLE to INTEGER)
             return false;
         }

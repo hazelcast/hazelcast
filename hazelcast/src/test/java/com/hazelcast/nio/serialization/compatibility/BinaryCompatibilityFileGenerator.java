@@ -37,7 +37,7 @@ import java.nio.ByteOrder;
  *
  * mv *binary src/test/resources/
  */
-public final class BinaryCompatibilityFileGenerator {
+final class BinaryCompatibilityFileGenerator {
 
     // DON'T FORGET TO CHANGE VERSION ACCORDINGLY
     public static final byte VERSION = 1;
@@ -55,7 +55,6 @@ public final class BinaryCompatibilityFileGenerator {
         for (Object object : objects) {
             for (ByteOrder byteOrder : byteOrders) {
                 generateBinaryFile(outputStream, object, byteOrder);
-
             }
         }
         outputStream.close();
@@ -97,7 +96,8 @@ public final class BinaryCompatibilityFileGenerator {
                 .build();
     }
 
-    public static void generateBinaryFile(DataOutputStream outputStream, Object object, ByteOrder byteOrder) throws IOException {
+    private static void generateBinaryFile(DataOutputStream outputStream,
+                                           Object object, ByteOrder byteOrder) throws IOException {
         SerializationService serializationService = createSerializationService(byteOrder);
         Data data = serializationService.toData(object);
         outputStream.writeUTF(createObjectKey(object, byteOrder));

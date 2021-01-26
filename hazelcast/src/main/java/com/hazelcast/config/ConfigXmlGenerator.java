@@ -462,7 +462,8 @@ public class ConfigXmlGenerator {
                 .node("byte-order", c.getByteOrder())
                 .node("enable-compression", c.isEnableCompression())
                 .node("enable-shared-object", c.isEnableSharedObject())
-                .node("allow-unsafe", c.isAllowUnsafe());
+                .node("allow-unsafe", c.isAllowUnsafe())
+                .node("allow-override-default-serializers", c.isAllowOverrideDefaultSerializers());
 
         Map<Integer, String> dsfClasses = c.getDataSerializableFactoryClasses();
         Map<Integer, DataSerializableFactory> dsfImpls = c.getDataSerializableFactories();
