@@ -42,5 +42,7 @@ class ClientInfoCollector implements MetricsCollector {
                 Integer.toString(clients.getOrDefault(ConnectionType.PYTHON_CLIENT, 0)));
         metricsConsumer.accept(PhoneHomeMetrics.CLIENTS_WITH_GO_CONNECTION,
                 Integer.toString(clients.getOrDefault(ConnectionType.GO_CLIENT, 0)));
+        metricsConsumer.accept(PhoneHomeMetrics.CLIENT_ENDPOINT_COUNT,
+                MetricsCollector.convertToLetter(node.clientEngine.getClientEndpointCount()));
     }
 }

@@ -37,8 +37,6 @@ class BuildInfoCollector implements MetricsCollector {
         BuildInfo imdgInfo = node.getBuildInfo();
         JetBuildInfo jetInfo = imdgInfo.getJetBuildInfo();
         metricsConsumer.accept(PhoneHomeMetrics.HAZELCAST_DOWNLOAD_ID, getDownloadId());
-        metricsConsumer.accept(PhoneHomeMetrics.CLIENT_ENDPOINT_COUNT,
-                MetricsCollector.convertToLetter(node.clientEngine.getClientEndpointCount()));
         metricsConsumer.accept(PhoneHomeMetrics.JAVA_VERSION_OF_SYSTEM, System.getProperty("java.version"));
         metricsConsumer.accept(PhoneHomeMetrics.BUILD_VERSION, imdgInfo.getVersion());
         metricsConsumer.accept(PhoneHomeMetrics.JET_BUILD_VERSION,
