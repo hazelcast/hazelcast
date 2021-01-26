@@ -24,12 +24,12 @@ To expand an issue number into a full GitHub link, use this template:
 https://github.com/hazelcast/hazelcast-jet/issues/<issue number>
 
 
-ADD YOUR PR ENTRY IN THIS SECTION: >>>
+TEMPLATE FOR THE NEXT VERSION >>>
 
 Hazelcast Jet 4.x is based on IMDG version 4.y. Check out its Release
 Notes here: https://docs.hazelcast.org/docs/rn/index.html#4-y and,
 for the Enterprise Edition,
-here: https://docs.hazelcast.org/docs/ern/index.html#4-0-3
+here: https://docs.hazelcast.org/docs/ern/index.html#4-y
 
 Members of the open source community that appear in these release notes:
 
@@ -47,7 +47,89 @@ Thank you for your valuable contributions!
 
 4. Breaking Changes
 
-<<< END PR SECTION
+<<< END TEMPLATE FOR THE NEXT VERSION
+
+
+** Hazelcast Jet 4.4 **
+
+Hazelcast Jet 4.4 is based on IMDG version 4.1.1. Check out its Release
+Notes here: https://docs.hazelcast.org/docs/rn/index.html#4-1-1 and,
+for the Enterprise Edition,
+here: https://docs.hazelcast.org/docs/ern/index.html#4-1-1
+
+Members of the open source community that appear in these release notes:
+
+@TomaszGaweda
+@hhromic
+
+Thank you for your valuable contributions!
+
+1. New Features
+
+[sql] SQL Beta: submit jobs to Jet from the command-line SQL shell.
+  (#2595, #2636, #2648, #2654, #2665, #2729, #2763, #2788)
+
+[file-api] [017] Unified API to create sources and sinks from file-like
+  resources: local filesystem, Amazon S3, Azure Blob Storage and Data Lake
+  Storage, Google Cloud Storage (#2518)
+
+[kinesis] [018] Amazon Kinesis connector (#2656)
+
+[pipeline-api] [016] Prevent event reordering: by default Jet reorders data
+  for performance, now you can disable this to get strict event order where
+  you need it.
+
+
+2. Enhancements
+
+[connectors] @hhromic improved the naming of source and sink stages
+  across different connectors, bringing them all in line with the same
+  convention `xSource` / `xSink` (#2685)
+
+[pipeline-api] @TomaszGaweda added the `pipeline.isEmpty()` method that
+  tells whether it contains any stage (#2659)
+
+[core] @TomaszGaweda added the `jet.imdg.version.mismatch.check.disabled`
+  config property that disables the enforcement of the exact IMDG dependency
+  version. This allows adding IMDG quick fixes to the existing Jet release.
+  (#2610)
+
+[core] New packaging: download either the full package with all the
+  extensions enabled, or the minimal package and separately download the
+  extensions you want. (#2796)
+
+[cli] Improved the behavior of `jet submit`: now it waits for the job to
+  start and prints a message about it. (#2699)
+
+[python] Improved the error message when using a Python function but Python
+  is not installed. (#2672)
+
+[kafka] Improved the performance of the Kafka source by fine-tuning some
+  timeouts. (#2732)
+
+
+3. Fixes
+
+[core] Fixed a problem where Jet would close `System.out` during JVM
+  shutdown, preventing shutdown hooks from printing to stdout. (#2649)
+
+[file-connector] Fixed the blocking File connector declaring its processors
+  as cooperative, resulting in performance loss. (#2628)
+
+[file-connector] Several bug fixes in the File connector. (#2772)
+
+[core] Fixed a leak caused by Jet's ephemeral loggers created for each job.
+  They didn't get released from internal maps in the logging framework. (#2737)
+
+[core] Fixed two problems with the `peek` transform. (#2740, #2765)
+
+[hadoop] Fixed a problem when using Hadoop for local files, it behaved as
+  if the files were shared. (#2764)
+
+
+4. Breaking Changes
+
+None.
 
 
 ** Hazelcast Jet 4.3 **
