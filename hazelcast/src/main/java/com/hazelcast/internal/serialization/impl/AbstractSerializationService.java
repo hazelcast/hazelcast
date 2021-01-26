@@ -90,6 +90,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private volatile boolean active = true;
     private final byte version;
     private final ILogger logger = Logger.getLogger(InternalSerializationService.class);
+    private final boolean allowOverrideDefaultSerializers;
 
     AbstractSerializationService(Builder<?> builder) {
         this.inputOutputFactory = builder.inputOutputFactory;
@@ -102,6 +103,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, builder.bufferPoolFactory,
                 builder.notActiveExceptionSupplier);
         this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer());
+        this.allowOverrideDefaultSerializers = builder.allowOverrideDefaultSerializers;
     }
 
     // used by jet
@@ -116,6 +118,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, new BufferPoolFactoryImpl(),
                 prototype.notActiveExceptionSupplier);
         this.nullSerializerAdapter = prototype.nullSerializerAdapter;
+        this.allowOverrideDefaultSerializers = prototype.allowOverrideDefaultSerializers;
     }
 
     //region Serialization Service
@@ -425,8 +428,12 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     protected final boolean safeRegister(final Class type, final SerializerAdapter serializer) {
-        if (constantTypesMap.containsKey(type)) {
-            throw new IllegalArgumentException("[" + type + "] serializer cannot be overridden");
+        if (constantTypesMap.containsKey(type) && !allowOverrideDefaultSerializers) {
+            throw new IllegalArgumentException(
+                "[" + type + "] serializer cannot be overridden."
+                + " See documentation of Hazelcast serialization configuration "
+                + " or setAllowOverrideDefaultSerializers method in SerializationConfig."
+              );
         }
         SerializerAdapter current = typeMap.putIfAbsent(type, serializer);
         if (current != null && current.getImpl().getClass() != serializer.getImpl().getClass()) {
@@ -468,30 +475,32 @@ public abstract class AbstractSerializationService implements InternalSerializat
         return idMap.get(typeId);
     }
 
-    public SerializerAdapter serializerFor(Object object) {
-        /*
-            Searches for a serializer for the provided object
-            Serializers will be  searched in this order;
-
-            1-NULL serializer
-            2-Default serializers, like primitives, arrays, String and some Java types
-            3-Custom registered types by user
-            4-JDK serialization ( Serializable and Externalizable ) if a global serializer with Java serialization not registered
-            5-Global serializer if registered by user
-         */
+    public SerializerAdapter serializerFor(final Object object) {
+        // Searches for a serializer for the provided object
+        // Serializers will be  searched in this order;
+        //
+        // 1-NULL serializer
+        // 2-Default serializers, like primitives, arrays, String and some Java types
+        //   (overridden in step 3 if allowOverrideDefaultSerializers=true and custom serializer is registered)
+        // 3-Custom registered types by user
+        // 4-JDK serialization ( Serializable and Externalizable ) if a global serializer with Java serialization not registered
+        // 5-Global serializer if registered by user
 
         //1-NULL serializer
         if (object == null) {
             return nullSerializerAdapter;
         }
-        Class type = object.getClass();
+        final Class type = object.getClass();
 
         //2-Default serializers, Dataserializable, Portable, primitives, arrays, String and some helper Java types(BigInteger etc)
         SerializerAdapter serializer = lookupDefaultSerializer(type);
 
         //3-Custom registered types by user
-        if (serializer == null) {
-            serializer = lookupCustomSerializer(type);
+        if (serializer == null || allowOverrideDefaultSerializers) {
+            final SerializerAdapter customSerializer = lookupCustomSerializer(type);
+            if (customSerializer != null) {
+                serializer = customSerializer;
+            }
         }
 
         //4-JDK serialization ( Serializable and Externalizable )
@@ -595,6 +604,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         private int initialOutputBufferSize;
         private BufferPoolFactory bufferPoolFactory;
         private Supplier<RuntimeException> notActiveExceptionSupplier;
+        private boolean allowOverrideDefaultSerializers;
 
         protected Builder() {
         }
@@ -642,6 +652,11 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
         public final T withNotActiveExceptionSupplier(Supplier<RuntimeException> notActiveExceptionSupplier) {
             this.notActiveExceptionSupplier = notActiveExceptionSupplier;
+            return self();
+        }
+
+        public final T withAllowOverrideDefaultSerializers(final boolean allowOverrideDefaultSerializers) {
+            this.allowOverrideDefaultSerializers = allowOverrideDefaultSerializers;
             return self();
         }
     }

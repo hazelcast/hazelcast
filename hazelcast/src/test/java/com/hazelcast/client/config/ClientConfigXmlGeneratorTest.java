@@ -374,6 +374,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(expected.isEnableCompression(), actual.isEnableCompression());
         assertEquals(expected.isEnableSharedObject(), actual.isEnableSharedObject());
         assertEquals(expected.isAllowUnsafe(), actual.isAllowUnsafe());
+        assertEquals(expected.isAllowOverrideDefaultSerializers(), actual.isAllowOverrideDefaultSerializers());
         assertEquals(expected.isCheckClassDefErrors(), actual.isCheckClassDefErrors());
         assertEquals(expected.getGlobalSerializerConfig(), actual.getGlobalSerializerConfig());
 
@@ -390,6 +391,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
             .setEnableCompression(true)
             .setEnableSharedObject(false)
             .setAllowUnsafe(true)
+            .setAllowOverrideDefaultSerializers(true)
             .setCheckClassDefErrors(false)
             .addDataSerializableFactoryClass(randomInt(), randomString())
             .addPortableFactoryClass(randomInt(), randomString())
