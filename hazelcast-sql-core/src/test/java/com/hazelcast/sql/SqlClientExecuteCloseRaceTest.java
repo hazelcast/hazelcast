@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlServiceImpl;
@@ -80,7 +81,9 @@ public class SqlClientExecuteCloseRaceTest {
         QueryId queryId = QueryId.create(UUID.randomUUID());
 
         // Send "execute"
-        ClientMessage executeResponse = sendExecuteRequest(queryId);
+        Connection connection = clientService.getRandomConnection();
+
+        ClientMessage executeResponse = sendExecuteRequest(connection, queryId);
 
         checkExecuteResponse(executeResponse, true);
 
@@ -89,7 +92,7 @@ public class SqlClientExecuteCloseRaceTest {
         // Send "close"
         ClientMessage closeRequest = SqlCloseCodec.encodeRequest(queryId);
 
-        clientService.invokeOnRandomConnection(closeRequest);
+        clientService.invokeOnConnection(connection, closeRequest);
 
         assertEquals(0, memberService.getInternalService().getClientStateRegistry().getCursorCount());
     }
@@ -99,14 +102,16 @@ public class SqlClientExecuteCloseRaceTest {
         QueryId queryId = QueryId.create(UUID.randomUUID());
 
         // Send "close"
+        Connection connection = clientService.getRandomConnection();
+
         ClientMessage closeRequest = SqlCloseCodec.encodeRequest(queryId);
 
-        clientService.invokeOnRandomConnection(closeRequest);
+        clientService.invokeOnConnection(connection, closeRequest);
 
         assertEquals(1, memberService.getInternalService().getClientStateRegistry().getCursorCount());
 
         // Send "execute"
-        ClientMessage executeResponse = sendExecuteRequest(queryId);
+        ClientMessage executeResponse = sendExecuteRequest(connection, queryId);
 
         assertEquals(0, memberService.getInternalService().getClientStateRegistry().getCursorCount());
 
@@ -125,7 +130,7 @@ public class SqlClientExecuteCloseRaceTest {
         }
     }
 
-    private ClientMessage sendExecuteRequest(QueryId queryId) {
+    private ClientMessage sendExecuteRequest(Connection connection, QueryId queryId) {
         ClientMessage executeRequest = SqlExecuteCodec.encodeRequest(
             SQL,
             Collections.emptyList(),
@@ -136,6 +141,6 @@ public class SqlClientExecuteCloseRaceTest {
             queryId
         );
 
-        return clientService.invokeOnRandomConnection(executeRequest);
+        return clientService.invokeOnConnection(connection, executeRequest);
     }
 }

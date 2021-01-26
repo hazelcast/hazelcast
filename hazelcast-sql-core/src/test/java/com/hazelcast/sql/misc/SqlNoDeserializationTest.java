@@ -18,7 +18,7 @@ package com.hazelcast.sql.misc;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.SqlExecute2Codec;
+import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
@@ -33,6 +33,7 @@ import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlTestInstanceFactory;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.SqlTestSupport;
@@ -51,6 +52,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -126,16 +128,20 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
         Connection connection = clientService.getRandomConnection();
 
         // Get the first page through the "execute" request
-        ClientMessage executeRequest = SqlExecute2Codec.encodeRequest(
+        QueryId queryId = QueryId.create(UUID.randomUUID());
+
+        ClientMessage executeRequest = SqlExecuteCodec.encodeRequest(
             SQL,
             Collections.emptyList(),
             Long.MAX_VALUE,
             pageSize,
             null,
-            SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ROWS)
+            SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ROWS),
+            queryId
+
         );
 
-        SqlExecute2Codec.ResponseParameters executeResponse = SqlExecute2Codec.decodeResponse(
+        SqlExecuteCodec.ResponseParameters executeResponse = SqlExecuteCodec.decodeResponse(
             clientService.invokeOnConnection(connection, executeRequest)
         );
 
@@ -148,7 +154,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
 
         // Get the second page through the "execute" request
         ClientMessage fetchRequest = SqlFetchCodec.encodeRequest(
-            executeResponse.queryId,
+            queryId,
             pageSize
         );
 
