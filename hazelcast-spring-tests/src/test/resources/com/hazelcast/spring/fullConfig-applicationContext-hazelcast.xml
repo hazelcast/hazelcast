@@ -386,6 +386,9 @@
                 <hz:wan-replication-ref name="testWan" />
             </hz:map>
 
+            <hz:map name="fifoEvictionMap">
+                <hz:eviction eviction-policy="FIFO"/>
+            </hz:map>
             <hz:map name="lfuEvictionMap">
                 <hz:eviction eviction-policy="LFU"/>
             </hz:map>
@@ -399,6 +402,11 @@
                 <hz:eviction eviction-policy="RANDOM"/>
             </hz:map>
 
+            <hz:map name="fifoNearCacheEvictionMap">
+                <hz:near-cache>
+                    <hz:eviction eviction-policy="FIFO"/>
+                </hz:near-cache>
+            </hz:map>
             <hz:map name="lfuNearCacheEvictionMap">
                 <hz:near-cache>
                     <hz:eviction eviction-policy="LFU"/>
