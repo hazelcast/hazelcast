@@ -108,6 +108,9 @@
                                             javax.naming.*;resolution:=optional
                                         </Import-Package>
                                     </overrideInstructions>
+                                    <manifestEntries>
+                                        <Bundle-Name>Hazelcast(All)</Bundle-Name>
+                                    </manifestEntries>
                                 </transformer>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
