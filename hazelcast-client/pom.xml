@@ -102,6 +102,7 @@
                                 </Import-Package>
                                 <Fragment-Host>com.hazelcast</Fragment-Host>
                                 <!--<Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>-->
+                                <Bundle-Name>Hazelcast(Client)</Bundle-Name>
                             </instructions>
                         </configuration>
                     </execution>
