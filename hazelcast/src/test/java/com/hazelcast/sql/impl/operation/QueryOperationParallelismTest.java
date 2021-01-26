@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.operation;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.SqlTestSupport;
@@ -126,6 +127,7 @@ public class QueryOperationParallelismTest extends SqlTestSupport {
         );
 
         memberService.execute(
+            QueryId.create(UUID.randomUUID()),
             plan,
             Collections.emptyList(),
             Long.MAX_VALUE,
