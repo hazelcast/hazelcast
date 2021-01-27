@@ -31,9 +31,9 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
     public void dummyCase() {
         put(1);
 
-        String sql = "select case when 1 = 1 then 1 else 2 end from map";
-
-        checkValue0(sql, SqlColumnType.TINYINT, (byte) 1);
+        checkValue0("select case when 1 = 1 then 1 else 2 end from map", SqlColumnType.TINYINT, (byte) 1);
+        checkValue0("select case 1 when 1 then 100 else 2 end from map", SqlColumnType.TINYINT, (byte) 100);
+        checkFailure0("select case 'a' when 1 then 100 else 2 end from map", SqlErrorCode.GENERIC, "'a' cannot be coerced to 1");
     }
 
     @Test
@@ -76,18 +76,31 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
     public void differentReturnTypes() {
         put(1);
 
-        String sql = "select case when 1 = 1 then 1 when 2 = 2 then 1000000000 else 'some string' end from map";
+        checkFailure0(
+                "select case when 1 = 1 then 1 when 2 = 2 then 1000000000 else 'some string' end from map",
+                SqlErrorCode.GENERIC,
+                "Cannot infer return type of case operator among [TINYINT, INTEGER, VARCHAR]");
+        checkFailure0(
+                "select case this when 'a' then 100 end from map",
+                SqlErrorCode.GENERIC,
+                "Cannot compare this[INTEGER] with 'a'[VARCHAR]");
+    }
 
-        checkFailure0(sql, SqlErrorCode.GENERIC, "Cannot infer return type of case operator among [TINYINT, INTEGER, VARCHAR]");
+    @Test
+    public void notEnoughInfoInContext_toInferOperationTypes() {
+        put(1);
+
+        checkFailure0("select case when NULL = NULL then 100 from map", SqlErrorCode.GENERIC, "cannot infer types");
     }
 
     @Test
     public void withParameterAsValue() {
         put(1);
 
-        String sql = "select case ? when this then 100 end from map";
-
-        checkValue0(sql, SqlColumnType.TINYINT, (byte) 100, 1);
+        checkValue0("select case ? when this then 100 end from map", SqlColumnType.TINYINT, (byte) 100, 1);
+        checkValue0("select case when ? = this then 100 end from map", SqlColumnType.TINYINT, (byte) 100, 1);
+        checkFailure0("select case ? when ? then 100 end from map", SqlErrorCode.GENERIC, "Cannot infer parameter types");
+        checkFailure0("select case when ? is NULL then 100 end from map", SqlErrorCode.GENERIC, "Cannot infer parameter types");
     }
 
     @Test
