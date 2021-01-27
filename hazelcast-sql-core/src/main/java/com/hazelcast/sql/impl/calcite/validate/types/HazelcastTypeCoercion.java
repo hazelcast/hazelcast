@@ -86,12 +86,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         // CAST is only required between different types.
         return from.getSqlTypeName() != to.getSqlTypeName();
-
-        // This change is incorrect. We add CAST only when type names are
-        // different. If type names are equal, but types are different (e.g.
-        // BIGINT(63) vs BIGINT(64)), we only update the operand type in the
-        // validator. See usages of HazelcastTypeCoercion.coerceOperandType.
-//        return !from.equals(to);
     }
 
     @Override

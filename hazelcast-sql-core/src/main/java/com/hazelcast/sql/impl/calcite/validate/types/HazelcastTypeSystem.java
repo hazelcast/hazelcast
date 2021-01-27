@@ -115,23 +115,6 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
         return argumentType;
     }
 
-    private static SqlTypeName deriveSumType(SqlTypeName type) {
-        switch (type) {
-            case TINYINT:
-            case SMALLINT:
-            case INTEGER:
-            case BIGINT:
-                return SqlTypeName.BIGINT;
-            case DECIMAL:
-                return SqlTypeName.DECIMAL;
-            case REAL:
-            case DOUBLE:
-                return SqlTypeName.DOUBLE;
-            default:
-                return type;
-        }
-    }
-
     @Override
     public RelDataType deriveAvgAggType(RelDataTypeFactory typeFactory, RelDataType argumentType) {
         switch (argumentType.getSqlTypeName()) {
