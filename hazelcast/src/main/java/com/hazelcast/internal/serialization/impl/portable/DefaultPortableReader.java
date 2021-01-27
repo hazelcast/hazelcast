@@ -226,6 +226,7 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Override
+    @Nullable
     @SuppressWarnings("unchecked")
     public Portable readPortable(@Nonnull String fieldName) throws IOException {
         int currentPos = in.position();

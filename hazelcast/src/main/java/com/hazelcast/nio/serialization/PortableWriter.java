@@ -153,7 +153,7 @@ public interface PortableWriter {
     void writeTime(@Nonnull String fieldName, @Nullable LocalTime value) throws IOException;
 
     /**
-     * Writes a date field consisting of year , month of the year and day of the month
+     * Writes a date field consisting of year, month of the year and day of the month
      *
      * @param fieldName name of the field
      * @param value     LocalDate value to be written
@@ -163,7 +163,7 @@ public interface PortableWriter {
 
     /**
      * Writes a timestamp field consisting of
-     * year , month of the year and day of the month, hour, minute, seconds, nanos parts
+     * year, month of the year, day of the month, hour, minute, seconds, nanos parts
      *
      * @param fieldName name of the field
      * @param value     LocalDateTime value to be written
@@ -173,7 +173,7 @@ public interface PortableWriter {
 
     /**
      * Writes a timestamp with timezone field consisting of
-     * year , month of the year and day of the month, offset seconds , hour, minute, seconds, nanos parts
+     * year, month of the year, day of the month, offset seconds, hour, minute, seconds, nanos parts
      *
      * @param fieldName name of the field
      * @param value     OffsetDateTime value to be written

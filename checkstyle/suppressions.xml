@@ -270,7 +270,8 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]GenericRecordBuilder"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]PortableReader"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]PortableWriter"/>
-    <suppress checks="" files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]GenericRecordQueryReader"/>
+    <suppress checks="CyclomaticComplexity|MethodLength|NPathComplexity|ReturnCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]GenericRecordQueryReader"/>
     <suppress checks="NPathComplexity" files="com[\\/]hazelcast[\\/]nio[\\/]tcp[\\/]nonblocking[\\/]NonBlockingSocketReader"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]AbstractSerializationService"/>

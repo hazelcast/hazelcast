@@ -31,6 +31,7 @@ import com.hazelcast.nio.serialization.Portable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -198,6 +199,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         R read(T t) throws IOException;
     }
 
+    @Nullable
     private <T> T readNullableField(@Nonnull String fieldName, FieldType fieldType, Reader<ObjectDataInput, T> reader) {
         int currentPos = in.position();
         try {
@@ -419,10 +421,8 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
                 int offset = in.position();
                 for (int i = 0; i < len; i++) {
                     int pos = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
-                    if (pos != -1) {
-                        in.position(pos);
-                        values[i] = reader.read(in);
-                    }
+                    in.position(pos);
+                    values[i] = reader.read(in);
                 }
             }
             return values;
@@ -820,11 +820,8 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
             int offset = in.position();
             int pos = in.readInt(offset + index * Bits.INT_SIZE_IN_BYTES);
-            if (pos != -1) {
-                in.position(pos);
-                return reader.read(in);
-            }
-            return null;
+            in.position(pos);
+            return reader.read(in);
         } catch (IOException e) {
             throw illegalStateException(e);
         } finally {
@@ -856,7 +853,6 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     public OffsetDateTime readTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index) {
         return readObjectFromArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, IOUtil::readOffsetDateTime, index);
     }
-
 
     @Override
     public Object[] readObjectArray(@Nonnull String fieldName) {

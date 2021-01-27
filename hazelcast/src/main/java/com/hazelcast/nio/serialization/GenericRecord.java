@@ -227,7 +227,7 @@ public interface GenericRecord {
     LocalTime readTime(@Nonnull String fieldName);
 
     /**
-     * Reads a date field consisting of year , month of the year and day of the month to LocalDate
+     * Reads a date field consisting of year, month of the year and day of the month to LocalDate
      *
      * @param fieldName the name of the field
      * @return the value of the field
@@ -239,7 +239,7 @@ public interface GenericRecord {
 
     /**
      * Reads a timestamp field consisting of
-     * year , month of the year and day of the month, hour, minute, seconds, nanos parts to LocalDateTime
+     * year, month of the year, day of the month, hour, minute, seconds, nanos parts to LocalDateTime
      *
      * @param fieldName the name of the field
      * @return the value of the field
@@ -251,7 +251,7 @@ public interface GenericRecord {
 
     /**
      * Reads a timestamp with timezone field consisting of
-     * year , month of the year and day of the month, offset seconds , hour, minute, seconds, nanos parts
+     * year, month of the year, day of the month, offset seconds, hour, minute, seconds, nanos parts
      * to OffsetDateTime
      *
      * @param fieldName the name of the field
@@ -629,7 +629,7 @@ public interface GenericRecord {
         Builder writeTime(@Nonnull String fieldName, @Nullable LocalTime value);
 
         /**
-         * Writes a date field consisting of year , month of the year and day of the month
+         * Writes a date field consisting of year, month of the year and day of the month
          * It is illegal to write to the same field twice.
          *
          * @param fieldName name of the field as it is defined in its class definition.
@@ -645,7 +645,7 @@ public interface GenericRecord {
 
         /**
          * Writes a timestamp field consisting of
-         * year , month of the year and day of the month, hour, minute, seconds, nanos parts
+         * year, month of the year, day of the month, hour, minute, seconds, nanos parts
          * It is illegal to write to the same field twice.
          *
          * @param fieldName name of the field as it is defined in its class definition.
@@ -661,7 +661,7 @@ public interface GenericRecord {
 
         /**
          * Writes a timestamp with timezone field consisting of
-         * year , month of the year and day of the month, offset seconds , hour, minute, seconds, nanos parts
+         * year, month of the year, day of the month, offset seconds, hour, minute, seconds, nanos parts
          * It is illegal to write to the same field twice.
          *
          * @param fieldName name of the field as it is defined in its class definition.

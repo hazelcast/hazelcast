@@ -171,66 +171,79 @@ public class PortableGenericRecord extends AbstractGenericRecord {
     }
 
     @Override
+    @Nullable
     public byte[] readByteArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.BYTE_ARRAY);
     }
 
     @Override
+    @Nullable
     public char[] readCharArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.CHAR_ARRAY);
     }
 
     @Override
+    @Nullable
     public double[] readDoubleArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.DOUBLE_ARRAY);
     }
 
     @Override
+    @Nullable
     public float[] readFloatArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.FLOAT_ARRAY);
     }
 
     @Override
+    @Nullable
     public int[] readIntArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.INT_ARRAY);
     }
 
     @Override
+    @Nullable
     public long[] readLongArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.LONG_ARRAY);
     }
 
     @Override
+    @Nullable
     public short[] readShortArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.SHORT_ARRAY);
     }
 
     @Override
+    @Nullable
     public String[] readUTFArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.UTF_ARRAY);
     }
 
     @Override
+    @Nullable
     public BigDecimal[] readDecimalArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.DECIMAL_ARRAY);
     }
 
     @Override
+    @Nullable
     public LocalTime[] readTimeArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.TIME_ARRAY);
     }
 
     @Override
+    @Nullable
     public LocalDate[] readDateArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.DATE_ARRAY);
     }
 
     @Override
+    @Nullable
     public LocalDateTime[] readTimestampArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.TIMESTAMP_ARRAY);
     }
 
     @Override
+    @Nullable
     public OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY);
     }

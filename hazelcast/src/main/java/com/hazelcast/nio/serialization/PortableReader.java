@@ -157,7 +157,7 @@ public interface PortableReader {
     LocalTime readTime(@Nonnull String fieldName) throws IOException;
 
     /**
-     * Reads a date field consisting of year , month of the year and day of the month to LocalDate
+     * Reads a date field consisting of year, month of the year and day of the month to LocalDate
      *
      * @param fieldName name of the field
      * @return the LocalDate value read
@@ -168,7 +168,7 @@ public interface PortableReader {
 
     /**
      * Reads a timestamp field consisting of
-     * year , month of the year and day of the month, hour, minute, seconds, nanos parts to LocalDateTime
+     * year, month of the year, day of the month, hour, minute, seconds, nanos parts to LocalDateTime
      *
      * @param fieldName name of the field
      * @return the LocalDateTime value read
@@ -179,7 +179,7 @@ public interface PortableReader {
 
     /**
      * Reads a timestamp with timezone field consisting of
-     * year , month of the year and day of the month, offset seconds , hour, minute, seconds, nanos parts
+     * year, month of the year, day of the month, offset seconds, hour, minute, seconds, nanos parts
      * to OffsetDateTime
      *
      * @param fieldName name of the field

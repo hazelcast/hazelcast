@@ -143,7 +143,7 @@ public class DefaultPortableWriter implements PortableWriter {
         }
     }
 
-    public void writeGenericRecord(@Nonnull String fieldName, GenericRecord portable) throws IOException {
+    public void writeGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord portable) throws IOException {
         FieldDefinition fd = setPosition(fieldName, FieldType.PORTABLE);
         final boolean isNull = portable == null;
         out.writeBoolean(isNull);
@@ -189,54 +189,39 @@ public class DefaultPortableWriter implements PortableWriter {
         out.writeInt(classId);
     }
 
-    @Override
-    public void writeDecimal(@Nonnull String fieldName, @Nullable BigDecimal value) throws IOException {
-        setPosition(fieldName, FieldType.DECIMAL);
+    private <T> void writeNullable(@Nonnull String fieldName, FieldType fieldType, @Nullable T value,
+                                   Writer<ObjectDataOutput, T> writer) throws IOException {
+        setPosition(fieldName, fieldType);
         boolean isNull = value == null;
         out.writeBoolean(isNull);
         if (!isNull) {
-            IOUtil.writeBigDecimal(out, value);
+            writer.write(out, value);
         }
+    }
+
+    @Override
+    public void writeDecimal(@Nonnull String fieldName, @Nullable BigDecimal value) throws IOException {
+        writeNullable(fieldName, FieldType.DECIMAL, value, IOUtil::writeBigDecimal);
     }
 
     @Override
     public void writeTime(@Nonnull String fieldName, @Nullable LocalTime value) throws IOException {
-        setPosition(fieldName, FieldType.TIME);
-        boolean isNull = value == null;
-        out.writeBoolean(isNull);
-        if (!isNull) {
-            IOUtil.writeLocalTime(out, value);
-        }
+        writeNullable(fieldName, FieldType.TIME, value, IOUtil::writeLocalTime);
     }
 
     @Override
     public void writeDate(@Nonnull String fieldName, @Nullable LocalDate value) throws IOException {
-        setPosition(fieldName, FieldType.DATE);
-        boolean isNull = value == null;
-        out.writeBoolean(isNull);
-        if (!isNull) {
-            IOUtil.writeLocalDate(out, value);
-        }
+        writeNullable(fieldName, FieldType.DATE, value, IOUtil::writeLocalDate);
     }
 
     @Override
     public void writeTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value) throws IOException {
-        setPosition(fieldName, FieldType.TIMESTAMP);
-        boolean isNull = value == null;
-        out.writeBoolean(isNull);
-        if (!isNull) {
-            IOUtil.writeLocalDateTime(out, value);
-        }
+        writeNullable(fieldName, FieldType.TIMESTAMP, value, IOUtil::writeLocalDateTime);
     }
 
     @Override
     public void writeTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value) throws IOException {
-        setPosition(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE);
-        boolean isNull = value == null;
-        out.writeBoolean(isNull);
-        if (!isNull) {
-            IOUtil.writeOffsetDateTime(out, value);
-        }
+        writeNullable(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE, value, IOUtil::writeOffsetDateTime);
     }
 
     @Override

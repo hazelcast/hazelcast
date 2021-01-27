@@ -217,106 +217,127 @@ public class MorphingPortableReader extends DefaultPortableReader {
     }
 
     @Override
+    @Nullable
     public BigDecimal readDecimal(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, DECIMAL, super::readDecimal);
     }
 
     @Override
+    @Nullable
     public LocalTime readTime(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, TIME, super::readTime);
     }
 
     @Override
+    @Nullable
     public LocalDate readDate(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, DATE, super::readDate);
     }
 
     @Override
+    @Nullable
     public LocalDateTime readTimestamp(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, TIMESTAMP, super::readTimestamp);
     }
 
     @Override
+    @Nullable
     public OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, TIMESTAMP_WITH_TIMEZONE, super::readTimestampWithTimezone);
     }
 
     @Override
+    @Nullable
     public byte[] readByteArray(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, BYTE_ARRAY, super::readByteArray);
     }
 
     @Override
+    @Nullable
     public boolean[] readBooleanArray(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, BOOLEAN_ARRAY, super::readBooleanArray);
     }
 
     @Override
+    @Nullable
     public char[] readCharArray(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, CHAR_ARRAY, super::readCharArray);
     }
 
     @Override
+    @Nullable
     public int[] readIntArray(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, INT_ARRAY, super::readIntArray);
     }
 
     @Override
+    @Nullable
     public long[] readLongArray(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, LONG_ARRAY, super::readLongArray);
     }
 
     @Override
+    @Nullable
     public double[] readDoubleArray(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, DOUBLE_ARRAY, super::readDoubleArray);
     }
 
     @Override
+    @Nullable
     public float[] readFloatArray(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, FLOAT_ARRAY, super::readFloatArray);
     }
 
     @Override
+    @Nullable
     public short[] readShortArray(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, SHORT_ARRAY, super::readShortArray);
     }
 
     @Override
+    @Nullable
     public String[] readUTFArray(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, UTF_ARRAY, super::readUTFArray);
     }
 
     @Override
+    @Nullable
     public Portable readPortable(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, PORTABLE, super::readPortable);
     }
 
     @Override
+    @Nullable
     public Portable[] readPortableArray(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, PORTABLE_ARRAY, super::readPortableArray);
     }
 
     @Override
+    @Nullable
     public BigDecimal[] readDecimalArray(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, DECIMAL_ARRAY, super::readDecimalArray);
     }
 
     @Override
+    @Nullable
     public LocalTime[] readTimeArray(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, TIME_ARRAY, super::readTimeArray);
     }
 
     @Override
+    @Nullable
     public LocalDate[] readDateArray(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, DATE_ARRAY, super::readDateArray);
     }
 
     @Override
+    @Nullable
     public LocalDateTime[] readTimestampArray(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, TIMESTAMP_ARRAY, super::readTimestampArray);
     }
 
     @Override
+    @Nullable
     public OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, super::readTimestampWithTimezoneArray);
     }

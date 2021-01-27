@@ -19,6 +19,7 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.internal.serialization.impl.portable.ClassDefinitionImpl;
 import com.hazelcast.internal.serialization.impl.portable.FieldDefinitionImpl;
 import com.hazelcast.spi.annotation.PrivateApi;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -77,9 +78,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addIntField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.INT, version));
-        return this;
+        return addField(fieldName, FieldType.INT);
     }
 
     /**
@@ -89,9 +88,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addLongField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LONG, version));
-        return this;
+        return addField(fieldName, FieldType.LONG);
     }
 
     /**
@@ -101,9 +98,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addUTFField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.UTF, version));
-        return this;
+        return addField(fieldName, FieldType.UTF);
     }
 
     /**
@@ -113,9 +108,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addBooleanField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BOOLEAN, version));
-        return this;
+        return addField(fieldName, FieldType.BOOLEAN);
     }
 
     /**
@@ -125,9 +118,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addByteField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BYTE, version));
-        return this;
+        return addField(fieldName, FieldType.BYTE);
     }
 
     /**
@@ -137,9 +128,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addBooleanArrayField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BOOLEAN_ARRAY, version));
-        return this;
+        return addField(fieldName, FieldType.BOOLEAN_ARRAY);
     }
 
     /**
@@ -149,9 +138,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addCharField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.CHAR, version));
-        return this;
+        return addField(fieldName, FieldType.CHAR);
     }
 
     /**
@@ -161,9 +148,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addDoubleField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DOUBLE, version));
-        return this;
+        return addField(fieldName, FieldType.DOUBLE);
     }
 
     /**
@@ -173,9 +158,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addFloatField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.FLOAT, version));
-        return this;
+        return addField(fieldName, FieldType.FLOAT);
     }
 
     /**
@@ -185,9 +168,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addShortField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.SHORT, version));
-        return this;
+        return addField(fieldName, FieldType.SHORT);
     }
 
     /**
@@ -199,9 +180,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addDecimalField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DECIMAL, version));
-        return this;
+        return addField(fieldName, FieldType.DECIMAL);
     }
 
     /**
@@ -213,13 +192,11 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addTimeField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.TIME, version));
-        return this;
+        return addField(fieldName, FieldType.TIME);
     }
 
     /**
-     * Adds a date field consisting of year , month of the year and day of the month to the class definition
+     * Adds a date field consisting of year, month of the year and day of the month to the class definition
      *
      * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
@@ -227,14 +204,12 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addDateField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DATE, version));
-        return this;
+        return addField(fieldName, FieldType.DATE);
     }
 
     /**
      * Adds a timestamp field consisting of
-     * year , month of the year and day of the month, hour, minute, seconds, nanos parts to the class definition
+     * year, month of the year, day of the month, hour, minute, seconds, nanos parts to the class definition
      *
      * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining
@@ -242,14 +217,12 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addTimestampField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.TIMESTAMP, version));
-        return this;
+        return addField(fieldName, FieldType.TIMESTAMP);
     }
 
     /**
      * Adds a timestamp with timezone field consisting of
-     * year , month of the year and day of the month, offset seconds , hour, minute, seconds, nanos parts
+     * year, month of the year, day of the month, offset seconds, hour, minute, seconds, nanos parts
      * to the class definition
      *
      * @param fieldName name of the field that will be added to this class definition
@@ -258,9 +231,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addTimestampWithTimezoneField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE, version));
-        return this;
+        return addField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE);
     }
 
     /**
@@ -270,9 +241,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addByteArrayField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BYTE_ARRAY, version));
-        return this;
+        return addField(fieldName, FieldType.BYTE_ARRAY);
     }
 
     /**
@@ -282,9 +251,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addCharArrayField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.CHAR_ARRAY, version));
-        return this;
+        return addField(fieldName, FieldType.CHAR_ARRAY);
     }
 
     /**
@@ -294,9 +261,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addIntArrayField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.INT_ARRAY, version));
-        return this;
+        return addField(fieldName, FieldType.INT_ARRAY);
     }
 
     /**
@@ -306,9 +271,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addLongArrayField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LONG_ARRAY, version));
-        return this;
+        return addField(fieldName, FieldType.LONG_ARRAY);
     }
 
     /**
@@ -318,9 +281,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addDoubleArrayField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DOUBLE_ARRAY, version));
-        return this;
+        return addField(fieldName, FieldType.DOUBLE_ARRAY);
     }
 
     /**
@@ -330,9 +291,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addFloatArrayField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.FLOAT_ARRAY, version));
-        return this;
+        return addField(fieldName, FieldType.FLOAT_ARRAY);
     }
 
     /**
@@ -342,9 +301,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addShortArrayField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.SHORT_ARRAY, version));
-        return this;
+        return addField(fieldName, FieldType.SHORT_ARRAY);
     }
 
     /**
@@ -354,9 +311,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
     public ClassDefinitionBuilder addUTFArrayField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.UTF_ARRAY, version));
-        return this;
+        return addField(fieldName, FieldType.UTF_ARRAY);
     }
 
     /**
@@ -402,9 +357,7 @@ public final class ClassDefinitionBuilder {
      * @see #addDecimalField(String)
      */
     public ClassDefinitionBuilder addDecimalArrayField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DECIMAL_ARRAY, version));
-        return this;
+        return addField(fieldName, FieldType.DECIMAL_ARRAY);
     }
 
     /**
@@ -417,9 +370,7 @@ public final class ClassDefinitionBuilder {
      * @see #addTimeField(String)
      */
     public ClassDefinitionBuilder addTimeArrayField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.TIME_ARRAY, version));
-        return this;
+        return addField(fieldName, FieldType.TIME_ARRAY);
     }
 
     /**
@@ -432,9 +383,7 @@ public final class ClassDefinitionBuilder {
      * @see #addDateField(String)
      */
     public ClassDefinitionBuilder addDateArrayField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DATE_ARRAY, version));
-        return this;
+        return addField(fieldName, FieldType.DATE_ARRAY);
     }
 
     /**
@@ -447,9 +396,7 @@ public final class ClassDefinitionBuilder {
      * @see #addTimestampField(String)
      */
     public ClassDefinitionBuilder addTimestampArrayField(@Nonnull String fieldName) {
-        check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.TIMESTAMP_ARRAY, version));
-        return this;
+        return addField(fieldName, FieldType.TIMESTAMP_ARRAY);
     }
 
     /**
@@ -462,8 +409,13 @@ public final class ClassDefinitionBuilder {
      * @see #addTimestampWithTimezoneField(String)
      */
     public ClassDefinitionBuilder addTimestampWithTimezoneArrayField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY);
+    }
+
+    @NotNull
+    private ClassDefinitionBuilder addField(@Nonnull String fieldName, FieldType fieldType) {
         check(fieldName);
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY, version));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, fieldType, version));
         return this;
     }
 
