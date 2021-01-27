@@ -25,6 +25,7 @@ import org.apache.calcite.rel.type.RelDataTypeSystemImpl;
 import org.apache.calcite.sql.type.BasicSqlType;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 
@@ -68,7 +69,28 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
     @Override
     public RelDataType deriveSumType(RelDataTypeFactory typeFactory, RelDataType argumentType) {
         if (argumentType instanceof BasicSqlType) {
-            SqlTypeName type = deriveSumType(argumentType.getSqlTypeName());
+            SqlTypeName type = argumentType.getSqlTypeName();
+            switch (type) {
+                case TINYINT:
+                case SMALLINT:
+                case INTEGER:
+                case BIGINT:
+                    type = SqlTypeName.BIGINT;
+                    break;
+                case DECIMAL:
+                    type = SqlTypeName.DECIMAL;
+                    break;
+                case REAL:
+                case DOUBLE:
+                    type = SqlTypeName.DOUBLE;
+                    break;
+            }
+
+            if (type == BIGINT) {
+                // special-case for BIGINT - we use BIGINT(64) instead of the default BIGINT(63) because
+                // BIGINT + BIGINT can overflow.
+                return HazelcastIntegerType.create(64, argumentType.isNullable());
+            }
 
             if (type.allowsPrec() && argumentType.getPrecision() != RelDataType.PRECISION_NOT_SPECIFIED) {
                 int precision = typeFactory.getTypeSystem().getMaxPrecision(type);
