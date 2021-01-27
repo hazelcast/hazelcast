@@ -52,7 +52,7 @@ import static java.lang.Boolean.getBoolean;
  */
 public final class ServiceLoader {
     // kill-switch for URLDefinition#equals fix to take into account classloader
-    private static final boolean URLDEFINITION_COMPAT = getBoolean("hazelcast.compat.urldefinition");
+    private static final boolean URLDEFINITION_COMPAT = getBoolean("hazelcast.compat.classloading.urldefinition");
 
     private static final ILogger LOGGER = Logger.getLogger(ServiceLoader.class);
 
