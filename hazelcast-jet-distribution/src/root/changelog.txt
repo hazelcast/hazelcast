@@ -1,3 +1,32 @@
+** Hazelcast Jet 4.4 **
+
+* @hhromic improved the naming of source and sink stages across different
+ connectors, bringing them all in line with the same convention `xSource`
+ / `xSink`
+* @TomaszGaweda added the `pipeline.isEmpty()` method that tells whether
+  it contains any stage
+* SQL Beta: submit jobs to Jet from the command-line SQL shell.
+* Unified API to create sources and sinks from file-like resources: local
+  filesystem, Amazon S3, Azure Blob Storage and Data Lake Storage, Google
+  Cloud Storage
+* Amazon Kinesis connector
+* Prevent event reordering: by default Jet reorders data for performance,
+  now you can disable this to get strict event order where you need it.
+* @TomaszGaweda added the `jet.imdg.version.mismatch.check.disabled`
+  config property that disables the enforcement of the exact IMDG
+  dependency version. This allows adding IMDG quick fixes to the existing
+  Jet release.
+* New packaging: download either the full package with all the extensions
+  enabled, or the minimal package and separately download the extensions
+  you want.
+* Improved the behavior of `jet submit`: now it waits for the job to
+  start and prints a message about it.
+* Improved the error message when using a Python function but Python
+  is not installed.
+* Improved the performance of the Kafka source by fine-tuning some
+  timeouts.
+
+
 ** Hazelcast Jet 4.3 **
 
 * @MohamedMandouh implemented distributed sorting: `BatchStage.sort()`.
