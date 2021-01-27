@@ -351,6 +351,12 @@ public final class Packet extends HeapData implements OutboundFrame {
          */
         COMPATIBILITY_EXTENDED_BIND(5);
 
+        // COMPATIBILITY_BIND_MESSAGE occupies the same ordinal as SERVER_CONTROL
+        public static final int COMPATIBILITY_BIND_MESSAGE_ORDINAL = 4;
+
+        // COMPATIBILITY_EXTENDED_BIND occupies the same ordinal as SQL
+        public static final int COMPATIBILITY_EXTENDED_BIND_ORDINAL = 5;
+
         final char headerEncoding;
 
         private static final Type[] VALUES = values();
@@ -366,10 +372,10 @@ public final class Packet extends HeapData implements OutboundFrame {
         public static Type fromFlags(int flags, boolean isCompatibility) {
             int ordinal = headerDecode(flags);
             if (isCompatibility) {
-                if (ordinal == SQL.ordinal()) {
+                if (ordinal == COMPATIBILITY_EXTENDED_BIND_ORDINAL) {
                     return COMPATIBILITY_EXTENDED_BIND;
                 }
-                if (ordinal == SERVER_CONTROL.ordinal()) {
+                if (ordinal == COMPATIBILITY_BIND_MESSAGE_ORDINAL) {
                     return COMPATIBILITY_BIND_MESSAGE;
                 }
             }

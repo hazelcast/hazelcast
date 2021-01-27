@@ -58,7 +58,8 @@ public final class CompatibilityTcpServerControl {
         this.logger = logger;
         this.supportedProtocolTypes = supportedProtocolTypes;
         this.unifiedEndpointManager = connectionManager.getEndpointQualifier() == null;
-        this.expectedPlaneCount = serverContext.properties().getInteger(CHANNEL_COUNT);
+        // multiple planes not supported for 3.x compatibility connections
+        this.expectedPlaneCount = 1;
     }
 
     public void process(Packet packet) {
