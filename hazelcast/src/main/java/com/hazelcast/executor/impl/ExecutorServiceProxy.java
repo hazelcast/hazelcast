@@ -29,7 +29,6 @@ import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.executor.impl.operations.ShutdownOperation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.logging.ILogger;
@@ -59,7 +58,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
@@ -94,11 +92,6 @@ public class ExecutorServiceProxy
     private final Random random = new Random(-System.currentTimeMillis());
     private final int partitionCount;
     private final ILogger logger;
-
-    // This field is never accessed directly but by the CONSECUTIVE_SUBMITS above
-    private volatile int consecutiveSubmits;
-
-    private volatile long lastSubmitTime;
 
     public ExecutorServiceProxy(String name, NodeEngine nodeEngine, DistributedExecutorService service) {
         super(nodeEngine, service);
