@@ -136,7 +136,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     public <T> Future<T> submitToMember(@Nonnull Callable<T> task,
                                         @Nonnull Member member) {
         checkNotNull(member, "member must not be null");
-        return submitToTargetInternal(toData(task), member, null, false);
+        return submitToTargetInternal(toData(task), member, (T) null);
     }
 
     @Override
@@ -146,7 +146,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         Map<Member, Future<T>> futureMap = new HashMap<>(members.size());
         Data taskData = toData(task);
         for (Member member : members) {
-            Future<T> f = submitToTargetInternal(taskData, member, null, true);
+            Future<T> f = submitToTargetInternal(taskData, member, (T) null);
             futureMap.put(member, f);
         }
         return futureMap;
@@ -173,7 +173,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         Map<Member, Future<T>> futureMap = new HashMap<>(memberList.size());
         Data taskData = toData(task);
         for (Member m : memberList) {
-            Future<T> f = submitToTargetInternal(taskData, m, null, true);
+            Future<T> f = submitToTargetInternal(taskData, m, (T) null);
             futureMap.put(m, f);
         }
         return futureMap;
@@ -502,14 +502,13 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private <T> Future<T> submitToTargetInternal(@Nonnull Data task,
                                                  Member member,
-                                                 T defaultValue,
-                                                 boolean preventSync) {
+                                                 T defaultValue) {
         checkNotNull(task, "task should not be null");
 
         UUID uuid = getUUID();
         ClientMessage request = ExecutorServiceSubmitToMemberCodec.encodeRequest(name, uuid, task, member.getUuid());
         ClientInvocationFuture f = invokeOnTarget(request, member);
-        return checkSync(f, uuid, member, preventSync, defaultValue);
+        return delegatingFuture(f, uuid, member, defaultValue);
     }
 
     private <T> void submitToTargetInternal(@Nonnull Data task,
@@ -520,7 +519,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         UUID uuid = getUUID();
         ClientMessage request = ExecutorServiceSubmitToMemberCodec.encodeRequest(name, uuid, task, member.getUuid());
         ClientInvocationFuture f = invokeOnTarget(request, member);
-        InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) checkSync(f, uuid, member, false,
+        InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) delegatingFuture(f, uuid, member,
                 (T) null);
         if (callback != null) {
             delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
@@ -537,19 +536,12 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return "IExecutorService{" + "name='" + name + '\'' + '}';
     }
 
-    private <T> Future<T> checkSync(ClientInvocationFuture f,
-                                    UUID uuid,
-                                    Member member,
-                                    boolean preventSync,
-                                    T defaultValue) {
-        boolean sync = isSyncComputation(preventSync);
-        if (sync) {
-            Object response = retrieveResultFromMessage(f);
-            return newCompletedFuture(response, getSerializationService());
-        } else {
+    private <T> Future<T> delegatingFuture(ClientInvocationFuture f,
+                                            UUID uuid,
+                                            Member member,
+                                            T defaultValue) {
             return new IExecutorDelegatingFuture<>(f, getContext(), uuid, defaultValue,
                     ExecutorServiceSubmitToMemberCodec::decodeResponse, name, member);
-        }
     }
 
     private @Nonnull
