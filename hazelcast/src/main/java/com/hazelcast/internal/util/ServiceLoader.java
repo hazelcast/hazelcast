@@ -79,18 +79,18 @@ public final class ServiceLoader {
     public static <T> Iterator<Class<T>> classIterator(Class<T> expectedType, String factoryId, ClassLoader classLoader)
             throws Exception {
         Set<ServiceDefinition> serviceDefinitions = getServiceDefinitions(factoryId, classLoader);
-        return new ClassIterator<T>(serviceDefinitions, expectedType);
+        return new ClassIterator<>(serviceDefinitions, expectedType);
     }
 
     private static Set<ServiceDefinition> getServiceDefinitions(String factoryId, ClassLoader classLoader) {
         List<ClassLoader> classLoaders = selectClassLoaders(classLoader);
 
-        Set<URLDefinition> factoryUrls = new HashSet<URLDefinition>();
+        Set<URLDefinition> factoryUrls = new HashSet<>();
         for (ClassLoader selectedClassLoader : classLoaders) {
             factoryUrls.addAll(collectFactoryUrls(factoryId, selectedClassLoader));
         }
 
-        Set<ServiceDefinition> serviceDefinitions = new HashSet<ServiceDefinition>();
+        Set<ServiceDefinition> serviceDefinitions = new HashSet<>();
         for (URLDefinition urlDefinition : factoryUrls) {
             serviceDefinitions.addAll(parse(urlDefinition));
         }
@@ -106,7 +106,7 @@ public final class ServiceLoader {
         try {
             Enumeration<URL> configs = classLoader.getResources(resourceName);
 
-            Set<URLDefinition> urlDefinitions = new HashSet<URLDefinition>();
+            Set<URLDefinition> urlDefinitions = new HashSet<>();
             while (configs.hasMoreElements()) {
                 URL url = configs.nextElement();
                 if (!classLoader.getClass().getName().equals(IGNORED_GLASSFISH_MAGIC_CLASSLOADER)) {
@@ -123,7 +123,7 @@ public final class ServiceLoader {
 
     private static Set<ServiceDefinition> parse(URLDefinition urlDefinition) {
         try {
-            Set<ServiceDefinition> names = new HashSet<ServiceDefinition>();
+            Set<ServiceDefinition> names = new HashSet<>();
             BufferedReader r = null;
             try {
                 URL url = urlDefinition.url;
@@ -295,13 +295,10 @@ public final class ServiceLoader {
                     constructor.setAccessible(true);
                 }
                 return constructor.newInstance();
-            } catch (InstantiationException e) {
-                throw new HazelcastException(e);
-            } catch (IllegalAccessException e) {
-                throw new HazelcastException(e);
-            } catch (NoSuchMethodException e) {
-                throw new HazelcastException(e);
-            } catch (InvocationTargetException e) {
+            } catch (InstantiationException
+                    | IllegalAccessException
+                    | NoSuchMethodException
+                    | InvocationTargetException e) {
                 throw new HazelcastException(e);
             }
         }
@@ -324,8 +321,8 @@ public final class ServiceLoader {
 
         private final Iterator<ServiceDefinition> iterator;
         private final Class<T> expectedType;
+        private final Set<Class<?>> alreadyProvidedClasses = new HashSet<>();
         private Class<T> nextClass;
-        private Set<Class<?>> alreadyProvidedClasses = new HashSet<Class<?>>();
 
         ClassIterator(Set<ServiceDefinition> serviceDefinitions, Class<T> expectedType) {
             iterator = serviceDefinitions.iterator();
@@ -412,7 +409,6 @@ public final class ServiceLoader {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public Class<T> next() {
             if (nextClass == null) {
                 advance();
