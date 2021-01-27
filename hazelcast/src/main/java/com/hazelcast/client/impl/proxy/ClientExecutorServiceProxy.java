@@ -35,7 +35,6 @@ import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.executor.impl.ExecutionCallbackAdapter;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -66,12 +65,7 @@ import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFutur
  */
 public class ClientExecutorServiceProxy extends ClientProxy implements IExecutorService {
 
-    private static final int MIN_TIME_RESOLUTION_OF_CONSECUTIVE_SUBMITS = 10;
-    private static final int MAX_CONSECUTIVE_SUBMITS = 100;
-
     private final Random random = new Random(-System.currentTimeMillis());
-    private final AtomicInteger consecutiveSubmits = new AtomicInteger();
-    private volatile long lastSubmitTime;
 
     public ClientExecutorServiceProxy(String serviceName, String objectId, ClientContext context) {
         super(serviceName, objectId, context);
@@ -283,7 +277,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         if (partitionKey != null) {
             return submitToKeyOwnerInternal(taskData, partitionKey, null);
         }
-        return submitToRandomInternal(taskData, null, false);
+        return submitToRandomInternal(taskData, null);
     }
 
     @Nonnull
@@ -294,7 +288,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         if (partitionKey != null) {
             return submitToKeyOwnerInternal(taskData, partitionKey, result);
         }
-        return submitToRandomInternal(taskData, result, false);
+        return submitToRandomInternal(taskData, result);
     }
 
     @Nonnull
@@ -304,7 +298,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         if (partitionKey != null) {
             return submitToKeyOwner(task, partitionKey);
         }
-        return submitToRandomInternal(toData(task), null, false);
+        return submitToRandomInternal(toData(task), null);
     }
 
     @Override
@@ -315,7 +309,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         if (partitionKey != null) {
             submitToKeyOwnerInternal(task, partitionKey, callback);
         } else {
-            submitToRandomInternal(task, callback);
+            submitToRandomWithCallbackInternal(task, callback);
         }
     }
 
@@ -326,7 +320,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         if (partitionKey != null) {
             submitToKeyOwnerInternal(taskData, partitionKey, callback);
         } else {
-            submitToRandomInternal(taskData, callback);
+            submitToRandomWithCallbackInternal(taskData, callback);
         }
     }
 
@@ -397,7 +391,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         final List<Future<T>> futures = new ArrayList<>(tasks.size());
         final List<Future<T>> result = new ArrayList<>(tasks.size());
         for (Callable<T> task : tasks) {
-            futures.add(submitToRandomInternal(toData(task), null, true));
+            futures.add(submitToRandomInternal(toData(task), null));
         }
         for (Future<T> future : futures) {
             Object value = retrieveResult(future);
@@ -443,7 +437,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         int partitionId = getPartitionId(key);
         ClientMessage request = ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, task);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
-        return checkSync(f, uuid, partitionId, false, defaultValue);
+        return delegatingFuture(f, uuid, partitionId, defaultValue);
     }
 
     private <T> Future<T> submitToKeyOwnerInternal(@Nonnull Data task,
@@ -456,7 +450,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         ClientMessage request = ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, task);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
 
-        InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) checkSync(f, uuid, partitionId, false,
+        InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) delegatingFuture(f, uuid, partitionId,
                 (T) null);
 
         if (callback != null) {
@@ -471,24 +465,24 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     private @Nonnull
-    <T> Future<T> submitToRandomInternal(Data task, T defaultValue, boolean preventSync) {
+    <T> Future<T> submitToRandomInternal(Data task, T defaultValue) {
         checkNotNull(task, "task should not be null");
 
         UUID uuid = getUUID();
         int partitionId = randomPartitionId();
         ClientMessage request = ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, task);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
-        return checkSync(f, uuid, partitionId, preventSync, defaultValue);
+        return delegatingFuture(f, uuid, partitionId, defaultValue);
     }
 
-    private <T> void submitToRandomInternal(Data task, ExecutionCallback<T> callback) {
+    private <T> void submitToRandomWithCallbackInternal(Data task, ExecutionCallback<T> callback) {
         checkNotNull(task, "task should not be null");
 
         UUID uuid = getUUID();
         int partitionId = randomPartitionId();
         ClientMessage request = ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, task);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
-        InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) checkSync(f, uuid, partitionId, false,
+        InternalCompletableFuture<T> delegatingFuture = (InternalCompletableFuture<T>) delegatingFuture(f, uuid, partitionId,
                 (T) null);
         if (callback != null) {
             delegatingFuture.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
@@ -545,16 +539,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     private @Nonnull
-    <T> Future<T> checkSync(ClientInvocationFuture f, UUID uuid, int partitionId,
-                            boolean preventSync, T defaultValue) {
-        boolean sync = isSyncComputation(preventSync);
-        if (sync) {
-            Object response = retrieveResultFromMessage(f);
-            return newCompletedFuture(response, getSerializationService());
-        } else {
-            return new IExecutorDelegatingFuture<>(f, getContext(), uuid, defaultValue,
-                    ExecutorServiceSubmitToPartitionCodec::decodeResponse, name, partitionId);
-        }
+    <T> Future<T> delegatingFuture(ClientInvocationFuture f, UUID uuid, int partitionId, T defaultValue) {
+        return new IExecutorDelegatingFuture<>(f, getContext(), uuid, defaultValue,
+                ExecutorServiceSubmitToPartitionCodec::decodeResponse, name, partitionId);
     }
 
     private <T> Object retrieveResult(Future<T> f) {
@@ -577,23 +564,6 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             response = e;
         }
         return response;
-    }
-
-    private boolean isSyncComputation(boolean preventSync) {
-        long now = Clock.currentTimeMillis();
-
-        long last = lastSubmitTime;
-        lastSubmitTime = now;
-
-        AtomicInteger consecutiveSubmits = this.consecutiveSubmits;
-
-        if (last + MIN_TIME_RESOLUTION_OF_CONSECUTIVE_SUBMITS < now) {
-            consecutiveSubmits.set(0);
-            return false;
-        }
-
-        return !preventSync
-                && consecutiveSubmits.incrementAndGet() % MAX_CONSECUTIVE_SUBMITS == 0;
     }
 
     private List<Member> selectMembers(MemberSelector memberSelector) {

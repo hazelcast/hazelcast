@@ -73,12 +73,6 @@ public class ExecutorServiceProxy
         extends AbstractDistributedObject<DistributedExecutorService>
         implements IExecutorService {
 
-    public static final int SYNC_FREQUENCY = 100;
-    public static final int SYNC_DELAY_MS = 10;
-
-    private static final AtomicIntegerFieldUpdater<ExecutorServiceProxy> CONSECUTIVE_SUBMITS = AtomicIntegerFieldUpdater
-            .newUpdater(ExecutorServiceProxy.class, "consecutiveSubmits");
-
     private final ExceptionHandler shutdownExceptionHandler = new ExceptionHandler() {
         @Override
         public void handleException(Throwable throwable) {
