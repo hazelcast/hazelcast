@@ -556,6 +556,23 @@ public class SortExecTest extends SqlTestSupport {
     }
 
     @Test
+    public void testFetchExecInvalid() {
+        UpstreamExec upstream = new UpstreamExec(1);
+
+        Expression<?> limit = ConstantExpression.create(null, BIGINT);
+        Expression<?> offset = ConstantExpression.create(5, BIGINT);
+
+        FetchExec exec = new FetchExec(2, upstream, limit, offset);
+        assertThrows(QueryException.class, () -> exec.setup(emptyFragmentContext()));
+
+        limit = ConstantExpression.create(5, BIGINT);
+        offset = ConstantExpression.create(null, BIGINT);
+
+        FetchExec exec2 = new FetchExec(2, upstream, limit, offset);
+        assertThrows(QueryException.class, () -> exec2.setup(emptyFragmentContext()));
+    }
+
+    @Test
     public void testReceiveSortMergeExecWithFetchAndOffset() {
         UUID localMemberId = UUID.randomUUID();
         List<UUID> senderMemberIds = Arrays.asList(localMemberId, UUID.randomUUID(), UUID.randomUUID());

@@ -436,6 +436,26 @@ public class SqlOrderByTest extends SqlTestSupport {
             + " OFFSET 5 ROWS FETCH FIRST -10 ROWS ONLY";
 
         assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql2, 0));
+
+        String sql3 = "SELECT " + intValField + " FROM " + stableMapName()
+            + " OFFSET \"\" ROWS";
+
+        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql3, 0));
+
+        String sql4 = "SELECT " + intValField + " FROM " + stableMapName()
+            + " OFFSET intVal ROWS";
+
+        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql4, 0));
+
+        String sql5 = "SELECT " + intValField + " FROM " + stableMapName()
+            + " FETCH FIRST \"\" ROWS ONLY";
+
+        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql5, 0));
+
+        String sql6 = "SELECT " + intValField + " FROM " + stableMapName()
+            + " FETCH FIRST null ROWS ONLY";
+
+        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql6, 0));
     }
 
     private void addIndex(List<String> fieldNames, IndexType type) {
