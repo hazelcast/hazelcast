@@ -456,6 +456,11 @@ public class SqlOrderByTest extends SqlTestSupport {
             + " FETCH FIRST null ROWS ONLY";
 
         assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql6, 0));
+
+        String sql7 = "SELECT " + intValField + " FROM " + stableMapName()
+            + " FETCH FIRST \"abc\" ROWS ONLY";
+
+        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql7, 0));
     }
 
     private void addIndex(List<String> fieldNames, IndexType type) {

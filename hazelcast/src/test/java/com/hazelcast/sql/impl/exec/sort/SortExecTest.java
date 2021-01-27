@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -570,6 +571,12 @@ public class SortExecTest extends SqlTestSupport {
 
         FetchExec exec2 = new FetchExec(2, upstream, limit, offset);
         assertThrows(QueryException.class, () -> exec2.setup(emptyFragmentContext()));
+
+        limit = ConstantExpression.create(5, BIGINT);
+        offset = ConstantExpression.create("foo", VARCHAR);
+
+        FetchExec exec3 = new FetchExec(2, upstream, limit, offset);
+        assertThrows(QueryException.class, () -> exec3.setup(emptyFragmentContext()));
     }
 
     @Test
