@@ -420,6 +420,21 @@ public class SqlOrderByTest extends SqlTestSupport {
             + " FETCH FIRST 100 ROWS ONLY";
 
         assertSqlResultCount(sql, 100);
+
+        sql = "SELECT " + intValField + " FROM " + stableMapName()
+            + " FETCH FIRST 2.9 ROWS ONLY";
+
+        assertSqlResultCount(sql, 2);
+
+        sql = "SELECT " + intValField + " FROM " + stableMapName()
+            + " FETCH FIRST 1.2E2 ROWS ONLY";
+
+        assertSqlResultCount(sql, 120);
+
+        sql = "SELECT " + intValField + " FROM " + stableMapName()
+            + " FETCH FIRST 1.2E-2 ROWS ONLY";
+
+        assertSqlResultCount(sql, 0);
     }
 
     @Test
