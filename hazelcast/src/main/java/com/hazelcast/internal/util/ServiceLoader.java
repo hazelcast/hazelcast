@@ -51,8 +51,8 @@ import static java.lang.Boolean.getBoolean;
  * environments like application or OSGi servers.
  */
 public final class ServiceLoader {
-    //compatibility flag to re-introduce behaviour from 3.8.0 with classloading fallbacks
-    private static final boolean USE_CLASSLOADING_FALLBACK = getBoolean("hazelcast.compat.classloading.hooks.fallback");
+    // kill-switch for URLDefinition#equals fix to take into account classloader
+    private static final boolean URLDEFINITION_COMPAT = getBoolean("hazelcast.compat.urldefinition");
 
     private static final ILogger LOGGER = Logger.getLogger(ServiceLoader.class);
 
@@ -264,7 +264,7 @@ public final class ServiceLoader {
             if (uri != null ? !uri.equals(that.uri) : that.uri != null) {
                 return false;
             }
-            return Objects.equals(classLoader, that.classLoader);
+            return URLDEFINITION_COMPAT || Objects.equals(classLoader, that.classLoader);
         }
 
         @Override
@@ -365,13 +365,7 @@ public final class ServiceLoader {
         }
 
         private Class<?> loadClass(String className, ClassLoader classLoader) throws ClassNotFoundException {
-            Class<?> candidate;
-            if (USE_CLASSLOADING_FALLBACK) {
-                candidate = ClassLoaderUtil.loadClass(classLoader, className);
-            } else {
-                candidate = classLoader.loadClass(className);
-            }
-            return candidate;
+            return classLoader.loadClass(className);
         }
 
         private void onClassNotFoundException(String className, ClassLoader classLoader, ClassNotFoundException e) {
