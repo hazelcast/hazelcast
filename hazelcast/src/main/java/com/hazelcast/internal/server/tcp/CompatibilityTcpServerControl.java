@@ -36,8 +36,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
-import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
-
 /**
  * Handler responsible for processing bind messages from 3.x members.
  */
