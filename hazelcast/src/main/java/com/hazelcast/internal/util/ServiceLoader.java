@@ -17,9 +17,9 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -36,6 +36,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
@@ -263,7 +264,7 @@ public final class ServiceLoader {
             if (uri != null ? !uri.equals(that.uri) : that.uri != null) {
                 return false;
             }
-            return true;
+            return Objects.equals(classLoader, that.classLoader);
         }
 
         @Override

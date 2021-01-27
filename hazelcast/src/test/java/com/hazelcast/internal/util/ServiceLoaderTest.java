@@ -102,6 +102,42 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMultipleClassloaderLoadsTheSameClass_fromParentClassLoader() throws Exception {
+        // Given: a parent & child class loaders that can load same classes
+        //        and same factoryId from same URL
+        // When:  requesting classes loaded by parent class loader from the child loader
+        // Then:  classes from parent class loader are returned
+
+        // Use case:
+        //  - Hazelcast jars in both tomcat/lib and tomcat/webapps/foo/lib
+        //  - Tomcat configured with hazelcast session manager (also in tomcat/lib)
+        //  - Session manager is being initialized for foo context: service loading
+        //    uses foo webapp classloader to locate all resources by factoryId.
+        //    It locates factoryId's both in foo/lib and tomcat/lib but returned
+        //    classes must be loaded from the parent classloader (from the
+        //    Hazelcast jar in tomcat/lib, same as the HazelcastInstance class that
+        //    is being started by the session manager).
+        ClassLoader parent = this.getClass().getClassLoader();
+        ClassLoader childLoader = new StealingClassloader(parent);
+        // ensure parent and child loader load separate Class objects for same class name
+        assertFalse(parent.loadClass(DataSerializerHook.class.getName())
+                        == childLoader.loadClass(DataSerializerHook.class.getName()));
+
+        // request from childLoader the classes that implement DataSerializerHook, as loaded by parent
+        Iterator<? extends Class<?>> iterator
+                = ServiceLoader.classIterator(DataSerializerHook.class, "com.hazelcast.DataSerializerHook", childLoader);
+
+        //make sure hooks were found.
+        assertTrue(iterator.hasNext());
+
+        // ensure all hooks are loaded from parent classloader
+        while (iterator.hasNext()) {
+            Class<?> hook = iterator.next();
+            assertTrue(hook.getClassLoader() == parent);
+        }
+    }
+
+    @Test
     public void testHookDeduplication() {
         Class<?> hook = newClassImplementingInterface("com.hazelcast.internal.serialization.SomeHook",
                 PortableHook.class, PortableHook.class.getClassLoader());
