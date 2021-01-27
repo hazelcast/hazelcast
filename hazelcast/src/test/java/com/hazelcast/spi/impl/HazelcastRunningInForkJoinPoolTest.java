@@ -64,7 +64,7 @@ public class HazelcastRunningInForkJoinPoolTest extends HazelcastTestSupport {
     }
 
     /**
-     * Java's parallel-stream-api and Hazelcast both use
+     * Both Java's parallel-stream-api and Hazelcast use
      * {@link ForkJoinPool#commonPool()} for their internal
      * mechanisms to run. We are testing whether or not
      * there is a deadlock during proxy initialization. With
