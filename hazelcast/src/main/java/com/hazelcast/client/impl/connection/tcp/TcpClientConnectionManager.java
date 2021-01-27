@@ -25,7 +25,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
-import com.hazelcast.client.config.ConnectionRetryConfigAccessor;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.ClientLoggingService;
 import com.hazelcast.client.impl.clientside.ClusterDiscoveryService;
@@ -99,6 +98,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
+import static com.hazelcast.client.config.ConnectionRetryConfig.DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
+import static com.hazelcast.client.config.ConnectionRetryConfig.FAILOVER_CLIENT_DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.NOT_ALLOWED_IN_CLUSTER;
 import static com.hazelcast.client.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
@@ -122,7 +123,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     private static final int SMALL_MACHINE_PROCESSOR_COUNT = 8;
     private static final EndpointQualifier CLIENT_PUBLIC_ENDPOINT_QUALIFIER =
             EndpointQualifier.resolve(ProtocolType.CLIENT, "public");
-    private static final int FAILOVER_CLIENT_CLUSTER_CONNECT_TIMEOUT_MILLISECONDS = 120000;
     protected final AtomicInteger connectionIdGen = new AtomicInteger();
 
     private final AtomicBoolean isAlive = new AtomicBoolean();
@@ -287,8 +287,16 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                 .getConnectionRetryConfig();
 
         long clusterConnectTimeout = retryConfig.getClusterConnectTimeoutMillis();
-        if (failoverConfigProvided && !ConnectionRetryConfigAccessor.isClusterConnectTimeoutConfigured(retryConfig)) {
-            clusterConnectTimeout = FAILOVER_CLIENT_CLUSTER_CONNECT_TIMEOUT_MILLISECONDS;
+
+        if (clusterConnectTimeout == DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS) {
+            // If no value is provided, or set to -1 explicitly,
+            // use a predefined timeout value for the failover client
+            // and infinite for the normal client.
+            if (failoverConfigProvided) {
+                clusterConnectTimeout = FAILOVER_CLIENT_DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
+            } else {
+                clusterConnectTimeout = Long.MAX_VALUE;
+            }
         }
 
         return new WaitStrategy(retryConfig.getInitialBackoffMillis(),

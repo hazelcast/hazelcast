@@ -25,16 +25,26 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
  */
 public class ConnectionRetryConfig {
 
+    /**
+     * Default value for the cluster connection timeout.
+     */
+    public static final int DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS = -1;
+
+    /**
+     * Timeout used by the failover client to start trying to
+     * connect alternative clusters when the cluster connection
+     * timeout is equal to {@link ConnectionRetryConfig#DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS}.
+     */
+    public static final int FAILOVER_CLIENT_DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS = 120000;
+
     private static final int INITIAL_BACKOFF_MILLIS = 1000;
     private static final int MAX_BACKOFF_MILLIS = 30000;
-    private static final long CLUSTER_CONNECT_TIMEOUT_MILLIS = Long.MAX_VALUE;
     private static final double JITTER = 0;
     private static final double MULTIPLIER = 1.05;
-    boolean isConnectTimeoutConfigured;
     private int initialBackoffMillis = INITIAL_BACKOFF_MILLIS;
     private int maxBackoffMillis = MAX_BACKOFF_MILLIS;
     private double multiplier = MULTIPLIER;
-    private long connectTimeoutMillis = CLUSTER_CONNECT_TIMEOUT_MILLIS;
+    private long connectTimeoutMillis = DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
     private double jitter = JITTER;
 
     public ConnectionRetryConfig() {
@@ -46,7 +56,6 @@ public class ConnectionRetryConfig {
         multiplier = connectionRetryConfig.multiplier;
         connectTimeoutMillis = connectionRetryConfig.connectTimeoutMillis;
         jitter = connectionRetryConfig.jitter;
-        isConnectTimeoutConfigured = connectionRetryConfig.isConnectTimeoutConfigured;
     }
 
     /**
@@ -111,7 +120,12 @@ public class ConnectionRetryConfig {
 
     /**
      * Timeout value in milliseconds for the client to give up to connect to the current cluster
-     * Depending on FailoverConfig, a client can shutdown or start trying on alternative cluster after reaching the timeout.
+     * Depending on FailoverConfig, a client can shutdown or start trying on alternative clusters
+     * after reaching the timeout. If it is equal to {@code -1}, which is the default value,
+     * the client will not stop trying to connect to the cluster. If the failover client is used,
+     * for the default value, the client will start trying to connect alternative clusters after
+     * {@link ConnectionRetryConfig#FAILOVER_CLIENT_DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS}.
+     * For any other value, both the failover and non-failover client will use that as it is.
      *
      * @return clusterConnectTimeoutMillis
      */
@@ -122,13 +136,21 @@ public class ConnectionRetryConfig {
     /**
      * @param clusterConnectTimeoutMillis timeout in milliseconds for the client to give up to connect to the current cluster
      *                                    Depending on FailoverConfig, a client can shutdown or start trying on alternative
-     *                                    cluster after reaching the timeout.
+     *                                    clusters after reaching the timeout. If set to {@code -1}, which is the default
+     *                                    value, the client will not stop trying to connect to the cluster. If the
+     *                                    failover client is used, for the default value, the client will start trying
+     *                                    to connect alternative clusters after
+     *                                    {@link ConnectionRetryConfig#FAILOVER_CLIENT_DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS}.
+     *                                    For any other value, both the failover and non-failover client will use
+     *                                    that as it is.
+     *
      * @return updated ConnectionRetryConfig
      */
     public ConnectionRetryConfig setClusterConnectTimeoutMillis(long clusterConnectTimeoutMillis) {
-        checkNotNegative(clusterConnectTimeoutMillis, "Cluster connect timeout must be non-negative!");
+        if (clusterConnectTimeoutMillis < 0 && clusterConnectTimeoutMillis != DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS) {
+            throw new IllegalArgumentException("Cluster connect timeout must be non-negative or equal to -1!");
+        }
         this.connectTimeoutMillis = clusterConnectTimeoutMillis;
-        isConnectTimeoutConfigured = true;
         return this;
     }
 

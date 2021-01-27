@@ -764,9 +764,10 @@ hazelcast-client:
   #   * "multiplier": Factor to multiply the backoff after a failed retry. Its default value is 1.05.
   #   * "cluster-connect-timeout-millis": Timeout value in milliseconds for the client to give up to connect to the current cluster
   #      Depending on FailoverConfig, a client can shutdown or start trying on alternative cluster after reaching the timeout.
-  #      Its default value is Long.MAX_VALUE. If the FailoverConfig is used and the value for this element is not set,
-  #      client will use 120000 ms as the cluster connection timeout.
-  #   * "jitter": Specifies by how much to randomize backoffs. Its default value is 0.2.
+  #      Its default value is -1. For the default value, the client will not stop trying to connect to the cluster.
+  #      If the failover client is used, the client will start trying to connect alternative clusters after
+  #      120000 ms. For any other value, both the failover and non-failover client will use that as it is.
+  #   * "jitter": Specifies by how much to randomize backoffs. Its default value is 0.
   #
   connection-strategy:
     async-start: true
