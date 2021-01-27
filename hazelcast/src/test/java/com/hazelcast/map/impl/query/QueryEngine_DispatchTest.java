@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
@@ -94,7 +95,8 @@ public class QueryEngine_DispatchTest extends HazelcastTestSupport {
                 .partitionIdSet(queryEngine.getAllPartitionIds())
                 .iterationType(IterationType.ENTRY).build();
         List<Future<Result>> futures = queryEngine
-                .dispatchFullQueryOnQueryThread(query, target);
+                .dispatchFullQueryOnQueryThread(query, target)
+                .stream().map(cf -> (Future<Result>) cf).collect(Collectors.toList());
         Collection<Result> results = returnWithDeadline(futures, 1, TimeUnit.MINUTES);
         QueryResult result = (QueryResult) results.iterator().next();
 

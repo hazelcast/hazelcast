@@ -43,7 +43,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.PrimitiveIterator;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 
@@ -102,6 +102,10 @@ public class QueryEngineImpl implements QueryEngine {
     @SuppressWarnings("unchecked")
     @Override
     public Result execute(Query query, Target target) {
+        return executeAsync(query, target).join();
+    }
+
+    public CompletableFuture<Result> executeAsync(Query query, Target target) {
         Query adjustedQuery = adjustQuery(query);
         switch (target.mode()) {
             case ALL_NODES:
@@ -137,36 +141,48 @@ public class QueryEngineImpl implements QueryEngine {
     }
 
     // query thread first, fallback to partition thread
-    private Result runOnGivenPartitions(Query query, PartitionIdSet partitions, TargetMode targetMode) {
-        Result result = doRunOnQueryThreads(query, partitions, targetMode);
-        if (!disableMigrationFallback) {
-            if (isResultFromAnyPartitionMissing(partitions)) {
-                doRunOnPartitionThreads(query, partitions, result);
-            }
-        }
-        assertAllPartitionsQueried(partitions);
-
-        return result;
+    private CompletableFuture<Result> runOnGivenPartitions(
+            Query query,
+            PartitionIdSet partitions,
+            TargetMode targetMode) {
+        CompletableFuture<Result> future = doRunOnQueryThreads(query, partitions, targetMode);
+        future = future
+                .thenCompose(result -> {
+                    //by now, partitions updated and results accumulated
+                    if (!disableMigrationFallback) {
+                        if (isResultFromAnyPartitionMissing(partitions)) {
+                            return doRunOnPartitionThreads(query, partitions, result);
+                        }
+                    }
+                    return CompletableFuture.supplyAsync(() -> result);
+                })
+                .thenApply(result -> {
+                    //by now, partitions updated once again by partitionThreads
+                    assertAllPartitionsQueried(partitions);
+                    return result;
+                });
+        return future;
     }
 
     // partition thread ONLY (for now)
-    private Result runOnGivenPartition(Query query, int partitionId) {
+    private CompletableFuture<Result> runOnGivenPartition(Query query, int partitionId) {
         try {
             return dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
-                    query, partitionId).get();
+                    query, partitionId);
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    private Result doRunOnQueryThreads(Query query, PartitionIdSet partitionIds, TargetMode targetMode) {
+    private CompletableFuture<Result> doRunOnQueryThreads(
+            Query query, PartitionIdSet partitionIds, TargetMode targetMode) {
         Result result = populateResult(query);
-        List<Future<Result>> futures = dispatchOnQueryThreads(query, targetMode);
-        addResultsOfPredicate(futures, result, partitionIds, false);
-        return result;
+        List<CompletableFuture<Result>> futures = dispatchOnQueryThreads(query, targetMode);
+        CompletableFuture<Result> future = addResultsOfPredicate(futures, result, partitionIds, false);
+        return future;
     }
 
-    private List<Future<Result>> dispatchOnQueryThreads(Query query, TargetMode targetMode) {
+    private List<CompletableFuture<Result>> dispatchOnQueryThreads(Query query, TargetMode targetMode) {
         try {
             return dispatchFullQueryOnQueryThread(query, targetMode);
         } catch (Throwable t) {
@@ -191,11 +207,12 @@ public class QueryEngineImpl implements QueryEngine {
                 queryResultSizeLimiter.getNodeResultLimit(query.getPartitionIdSet().size()));
     }
 
-    private void doRunOnPartitionThreads(Query query, PartitionIdSet partitionIds, Result result) {
+    private CompletableFuture<Result> doRunOnPartitionThreads(Query query, PartitionIdSet partitionIds, Result result) {
         try {
-            List<Future<Result>> futures = dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
+            List<CompletableFuture<Result>> futures = dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
                     query, partitionIds);
-            addResultsOfPredicate(futures, result, partitionIds, true);
+            CompletableFuture<Result> future = addResultsOfPredicate(futures, result, partitionIds, true);
+            return future;
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -203,35 +220,48 @@ public class QueryEngineImpl implements QueryEngine {
 
     @SuppressWarnings("unchecked")
     // modifies partitionIds list! Optimization not to allocate an extra collection with collected partitionIds
-    private void addResultsOfPredicate(List<Future<Result>> futures, Result result,
-                                       PartitionIdSet unfinishedPartitionIds, boolean rethrowAll) {
-        for (Future<Result> future : futures) {
-            Result queryResult = null;
+    private CompletableFuture<Result> addResultsOfPredicate(List<CompletableFuture<Result>> futures, Result result,
+                                                            PartitionIdSet unfinishedPartitionIds, boolean rethrowAll) {
 
-            try {
-                queryResult = future.get();
-            } catch (Throwable t) {
-                if (t.getCause() instanceof QueryResultSizeExceededException || rethrowAll) {
-                    throw rethrow(t);
-                }
-                logger.fine("Could not get query results", t);
-            }
+        List<CompletableFuture<Result>> futuresWithHandle = futures.stream()
+                .map(future -> {
+                            future = future.handle(
+                                    (queryResult, t) -> {
+                                        if (t != null) {
+                                            if (t.getCause() instanceof QueryResultSizeExceededException
+                                                    || rethrowAll) {
+                                                throw rethrow(t);
+                                            }
+                                            logger.fine("Could not get query results", t);
+                                        }
+                                        return queryResult;
+                                    }
+                            );
+                            return future;
+                        }
+                ).collect(Collectors.toList());
 
-            if (queryResult == null) {
-                continue;
-            }
-            PartitionIdSet queriedPartitionIds = queryResult.getPartitionIds();
-            if (queriedPartitionIds != null) {
-                if (!unfinishedPartitionIds.containsAll(queriedPartitionIds)) {
-                    // do not take into account results that contain partition IDs already removed from partitionIds
-                    // collection as this means that we will count results from a single partition twice
-                    // see also https://github.com/hazelcast/hazelcast/issues/6471
-                    continue;
-                }
-                unfinishedPartitionIds.removeAll(queriedPartitionIds);
-                result.combine(queryResult);
-            }
-        }
+        return CompletableFuture.allOf(futuresWithHandle.toArray(new CompletableFuture[futuresWithHandle.size()]))
+                .thenApply(v -> futuresWithHandle.stream().map(future -> future.join()).collect(Collectors.toList()))
+                .thenApply(listOfQueryResults -> {
+                    for (Result queryResult : listOfQueryResults) {
+                        if (queryResult == null) {
+                            continue;
+                        }
+                        PartitionIdSet queriedPartitionIds = queryResult.getPartitionIds();
+                        if (queriedPartitionIds != null) {
+                            if (!unfinishedPartitionIds.containsAll(queriedPartitionIds)) {
+                                // do not take into account results that contain partition IDs already removed from partitionIds
+                                // collection as this means that we will count results from a single partition twice
+                                // see also https://github.com/hazelcast/hazelcast/issues/6471
+                                continue;
+                            }
+                            unfinishedPartitionIds.removeAll(queriedPartitionIds);
+                            result.combine(queryResult);
+                        }
+                    }
+                    return result;
+                });
     }
 
     private void assertAllPartitionsQueried(PartitionIdSet mutablePartitionIds) {
@@ -276,7 +306,7 @@ public class QueryEngineImpl implements QueryEngine {
         return queryResultSizeLimiter;
     }
 
-    protected List<Future<Result>> dispatchFullQueryOnQueryThread(Query query, TargetMode targetMode) {
+    protected List<CompletableFuture<Result>> dispatchFullQueryOnQueryThread(Query query, TargetMode targetMode) {
         switch (targetMode) {
             case ALL_NODES:
                 return dispatchFullQueryOnAllMembersOnQueryThread(query);
@@ -287,14 +317,14 @@ public class QueryEngineImpl implements QueryEngine {
         }
     }
 
-    private List<Future<Result>> dispatchFullQueryOnLocalMemberOnQueryThread(Query query) {
+    private List<CompletableFuture<Result>> dispatchFullQueryOnLocalMemberOnQueryThread(Query query) {
         Operation operation = mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryOperation(query);
-        Future<Result> result = operationService.invokeOnTarget(
+        CompletableFuture<Result> result = operationService.invokeOnTarget(
                 MapService.SERVICE_NAME, operation, nodeEngine.getThisAddress());
         return singletonList(result);
     }
 
-    private List<Future<Result>> dispatchFullQueryOnAllMembersOnQueryThread(Query query) {
+    private List<CompletableFuture<Result>> dispatchFullQueryOnAllMembersOnQueryThread(Query query) {
         Collection<Address> members;
         if (query.getPartitionIdSet().size() == partitionService.getPartitionCount()) {
             members = clusterService.getMembers(DATA_MEMBER_SELECTOR).stream()
@@ -307,10 +337,10 @@ public class QueryEngineImpl implements QueryEngine {
             }
         }
 
-        List<Future<Result>> futures = new ArrayList<>(members.size());
+        List<CompletableFuture<Result>> futures = new ArrayList<>(members.size());
         for (Address address : members) {
             Operation operation = createQueryOperation(query);
-            Future<Result> future = operationService.invokeOnTarget(
+            CompletableFuture<Result> future = operationService.invokeOnTarget(
                     MapService.SERVICE_NAME, operation, address);
             futures.add(future);
         }
@@ -321,22 +351,25 @@ public class QueryEngineImpl implements QueryEngine {
         return mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryOperation(query);
     }
 
-    protected List<Future<Result>> dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
+    protected List<CompletableFuture<Result>> dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
             Query query, PartitionIdSet partitionIds) {
         if (shouldSkipPartitionsQuery(partitionIds)) {
             return Collections.emptyList();
         }
-        List<Future<Result>> futures = new ArrayList<>(partitionIds.size());
+        List<CompletableFuture<Result>> futures = new ArrayList<>(partitionIds.size());
         partitionIds.intIterator().forEachRemaining((IntConsumer) partitionId ->
                 futures.add(dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(query, partitionId)));
         return futures;
     }
 
-    protected Future<Result> dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(Query query, int partitionId) {
+    protected CompletableFuture<Result> dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
+            Query query, int partitionId) {
         Operation op = createQueryPartitionOperation(query);
         op.setPartitionId(partitionId);
         try {
-            return operationService.invokeOnPartition(MapService.SERVICE_NAME, op, partitionId);
+            CompletableFuture<Result> future =
+                    operationService.invokeOnPartition(MapService.SERVICE_NAME, op, partitionId);
+            return future;
         } catch (Throwable t) {
             throw rethrow(t);
         }
