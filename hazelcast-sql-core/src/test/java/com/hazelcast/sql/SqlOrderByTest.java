@@ -508,8 +508,6 @@ public class SqlOrderByTest extends SqlTestSupport {
                 SqlRow row = rowIterator.next();
                 assertOrdered(prevRow, row, orderFields, orderDirections, rowMetadata);
 
-                System.out.println(row);
-
                 prevRow = row;
                 count++;
                 if (count == 1) {
