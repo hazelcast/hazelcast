@@ -278,16 +278,16 @@ hazelcast:
   #             To narrow the members in the cloud down to only Hazelcast members, you can set
   #                         this to the one you specified in the EC2 console. It is optional.
   #     * "discovery-strategies":
-  #         Set its "enabled" attribute to true for discovery in various cloud infrastructures.
-  #         You can define multiple discovery strategies using the "discovery-strategy" sub-element and its properties.
+  #         Add additional strategies for discovery in various cloud infrastructures.
+  #         You can define multiple discovery strategies using the "discovery-strategies" sub-element and its properties.
   #         Please refer to
   #         http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovering-cluster-members
   #         to see the properties you can use.
   #         The following is an example for EC2 cloud.
   #         "discovery-strategies"
-  #            discovery-strategy:
-  #              - enabled: true
-  #                class: com.hazelcast.aws.AwsDiscoveryStrategy
+  #            discovery-strategies:
+  #              - class: com.hazelcast.aws.AwsDiscoveryStrategy
+  #                enabled: true
   #                properties:
   #                  access-key: test-access-key
   #                  secret-key: test-secret-key
@@ -362,12 +362,15 @@ hazelcast:
           #   tag-key: type
           #   tag-value: hz-nodes
           # discovery-strategies:
-          #   - enabled: true
-          #     class: com.hazelcast.jclouds.JCloudsDiscoveryStrategy
-          #     properties:
-          #       - provider: google-compute-engine
-          #       - identity: GCE_IDENTITY
-          #       - credential: GCE_CREDENTIAL
+          #   node-filter:
+          #     class: DummyFilterClass
+          #   discovery-strategies:
+          #     - class: com.hazelcast.jclouds.JCloudsDiscoveryStrategy
+          #       enabled: true
+          #       properties:
+          #         provider: google-compute-engine
+          #         identity: GCE_IDENTITY
+          #         credential: GCE_CREDENTIAL
       custom-publisher:
         customPublisherId:
           class-name: com.companyName.CustomWanPublisher
