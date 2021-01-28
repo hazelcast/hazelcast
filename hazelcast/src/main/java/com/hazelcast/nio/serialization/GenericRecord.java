@@ -468,6 +468,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeBoolean(@Nonnull String fieldName, boolean value);
 
         /**
@@ -483,6 +484,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeByte(@Nonnull String fieldName, byte value);
 
         /**
@@ -497,6 +499,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeChar(@Nonnull String fieldName, char value);
 
         /**
@@ -511,6 +514,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeDouble(@Nonnull String fieldName, double value);
 
         /**
@@ -525,6 +529,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeFloat(@Nonnull String fieldName, float value);
 
         /**
@@ -539,6 +544,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeInt(@Nonnull String fieldName, int value);
 
         /**
@@ -553,6 +559,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeLong(@Nonnull String fieldName, long value);
 
         /**
@@ -567,6 +574,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeShort(@Nonnull String fieldName, short value);
 
         /**
@@ -581,6 +589,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeUTF(@Nonnull String fieldName, @Nullable String value);
 
         /**
@@ -596,6 +605,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value);
 
         /**
@@ -611,6 +621,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeDecimal(@Nonnull String fieldName, @Nullable BigDecimal value);
 
         /**
@@ -626,6 +637,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeTime(@Nonnull String fieldName, @Nullable LocalTime value);
 
         /**
@@ -641,6 +653,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeDate(@Nonnull String fieldName, @Nullable LocalDate value);
 
         /**
@@ -657,6 +670,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value);
 
         /**
@@ -673,6 +687,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value);
 
         /**
@@ -687,6 +702,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeBooleanArray(@Nonnull String fieldName, @Nullable boolean[] value);
 
         /**
@@ -701,6 +717,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeByteArray(@Nonnull String fieldName, @Nullable byte[] value);
 
         /**
@@ -715,6 +732,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeCharArray(@Nonnull String fieldName, @Nullable char[] value);
 
         /**
@@ -729,6 +747,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeFloatArray(@Nonnull String fieldName, @Nullable float[] value);
 
         /**
@@ -743,6 +762,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeIntArray(@Nonnull String fieldName, @Nullable int[] value);
 
         /**
@@ -757,6 +777,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeDoubleArray(@Nonnull String fieldName, @Nullable double[] value);
 
         /**
@@ -771,6 +792,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeLongArray(@Nonnull String fieldName, @Nullable long[] value);
 
         /**
@@ -785,6 +807,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeShortArray(@Nonnull String fieldName, @Nullable short[] value);
 
         /**
@@ -800,6 +823,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeUTFArray(@Nonnull String fieldName, @Nullable String[] value);
 
         /**
@@ -817,6 +841,7 @@ public interface GenericRecord {
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          * @see #writeDecimal(String, BigDecimal)
          */
+        @Nonnull
         Builder writeDecimalArray(@Nonnull String fieldName, @Nullable BigDecimal[] value);
 
         /**
@@ -834,6 +859,7 @@ public interface GenericRecord {
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          * @see #writeTime(String, LocalTime)
          */
+        @Nonnull
         Builder writeTimeArray(@Nonnull String fieldName, @Nullable LocalTime[] value);
 
         /**
@@ -851,6 +877,7 @@ public interface GenericRecord {
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          * @see #writeDate(String, LocalDate)
          */
+        @Nonnull
         Builder writeDateArray(@Nonnull String fieldName, @Nullable LocalDate[] value);
 
         /**
@@ -868,6 +895,7 @@ public interface GenericRecord {
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          * @see #writeTimestamp(String, LocalDateTime)
          */
+        @Nonnull
         Builder writeTimestampArray(@Nonnull String fieldName, @Nullable LocalDateTime[] value);
 
         /**
@@ -885,6 +913,7 @@ public interface GenericRecord {
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          * @see #writeTimestampWithTimezone(String, OffsetDateTime)
          */
+        @Nonnull
         Builder writeTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] value);
 
         /**
@@ -902,6 +931,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
+        @Nonnull
         Builder writeGenericRecordArray(@Nonnull String fieldName, @Nullable GenericRecord[] value);
     }
 }

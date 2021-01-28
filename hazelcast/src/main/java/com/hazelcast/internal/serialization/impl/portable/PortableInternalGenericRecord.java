@@ -114,7 +114,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             return in.readBoolean(readPosition(fieldName, FieldType.BOOLEAN));
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -123,7 +123,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             return in.readByte(readPosition(fieldName, FieldType.BYTE));
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -132,7 +132,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             return in.readChar(readPosition(fieldName, FieldType.CHAR));
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -141,7 +141,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             return in.readDouble(readPosition(fieldName, FieldType.DOUBLE));
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -150,7 +150,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             return in.readFloat(readPosition(fieldName, FieldType.FLOAT));
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -159,7 +159,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             return in.readInt(readPosition(fieldName, FieldType.INT));
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -168,7 +168,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             return in.readLong(readPosition(fieldName, FieldType.LONG));
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -177,7 +177,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             return in.readShort(readPosition(fieldName, FieldType.SHORT));
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -189,13 +189,14 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             in.position(pos);
             return in.readUTF();
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }
     }
 
-    protected interface Reader<T, R> {
+    @FunctionalInterface
+    private interface Reader<T, R> {
         R read(T t) throws IOException;
     }
 
@@ -211,7 +212,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             }
             return reader.read(in);
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }
@@ -257,7 +258,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             in.position(position);
             return in.readBooleanArray();
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }
@@ -274,7 +275,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             in.position(position);
             return in.readByteArray();
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }
@@ -292,7 +293,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             in.position(position);
             return in.readCharArray();
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }
@@ -309,7 +310,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             in.position(position);
             return in.readDoubleArray();
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }
@@ -326,7 +327,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             in.position(position);
             return in.readFloatArray();
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }
@@ -343,7 +344,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             in.position(position);
             return in.readIntArray();
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }
@@ -360,7 +361,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             in.position(position);
             return in.readLongArray();
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }
@@ -377,7 +378,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             in.position(position);
             return in.readShortArray();
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }
@@ -394,7 +395,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             in.position(position);
             return in.readUTFArray();
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }
@@ -427,7 +428,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             }
             return values;
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }
@@ -473,7 +474,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     private int readPosition(@Nonnull String fieldName, FieldType fieldType) {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
-            throw throwUnknownFieldException(fieldName);
+            throw newUnknownFieldException(fieldName);
         }
         if (fd.getType() != fieldType) {
             throw new HazelcastSerializationException("Not a '" + fieldType + "' field: " + fieldName);
@@ -481,11 +482,11 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         return readPosition(fd);
     }
 
-    private IllegalStateException illegalStateException(IOException e) {
-        return new IllegalStateException("IOException is not expected since we read from a well known format and position");
+    private IllegalStateException newIllegalStateException(IOException e) {
+        return new IllegalStateException("IOException is not expected since we read from a well known format and position", e);
     }
 
-    private HazelcastSerializationException throwUnknownFieldException(@Nonnull String fieldName) {
+    private HazelcastSerializationException newUnknownFieldException(@Nonnull String fieldName) {
         return new HazelcastSerializationException("Unknown field name: '" + fieldName
                 + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
     }
@@ -497,7 +498,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             // name + len + type
             return pos + Bits.SHORT_SIZE_IN_BYTES + len + 1;
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -529,7 +530,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             FieldDefinition fd = cd.getField(fieldName);
             if (fd == null) {
-                throw throwUnknownFieldException(fieldName);
+                throw newUnknownFieldException(fieldName);
             }
             if (fd.getType() != FieldType.PORTABLE_ARRAY) {
                 throw new HazelcastSerializationException("Not a Portable array field: " + fieldName);
@@ -565,7 +566,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             }
             return portables;
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }
@@ -581,7 +582,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             FieldDefinition fd = cd.getField(fieldName);
             if (fd == null) {
-                throw throwUnknownFieldException(fieldName);
+                throw newUnknownFieldException(fieldName);
             }
             if (fd.getType() != FieldType.PORTABLE) {
                 throw new HazelcastSerializationException("Not a Portable field: " + fieldName);
@@ -605,7 +606,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             }
             return null;
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }
@@ -616,7 +617,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             int numberOfItems = in.readInt(beginPosition);
             return numberOfItems <= index;
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
 
     }
@@ -630,7 +631,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             return in.readByte(INT_SIZE_IN_BYTES + position + (index * BYTE_SIZE_IN_BYTES));
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -644,7 +645,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             return in.readBoolean(INT_SIZE_IN_BYTES + position + (index * BOOLEAN_SIZE_IN_BYTES));
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -657,7 +658,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             return in.readChar(INT_SIZE_IN_BYTES + position + (index * CHAR_SIZE_IN_BYTES));
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -670,7 +671,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             return in.readDouble(INT_SIZE_IN_BYTES + position + (index * DOUBLE_SIZE_IN_BYTES));
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -683,7 +684,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             return in.readFloat(INT_SIZE_IN_BYTES + position + (index * FLOAT_SIZE_IN_BYTES));
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -696,7 +697,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             return in.readInt(INT_SIZE_IN_BYTES + position + (index * INT_SIZE_IN_BYTES));
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -709,7 +710,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             return in.readLong(INT_SIZE_IN_BYTES + position + (index * LONG_SIZE_IN_BYTES));
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -722,7 +723,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             return in.readShort(INT_SIZE_IN_BYTES + position + (index * SHORT_SIZE_IN_BYTES));
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         }
     }
 
@@ -747,7 +748,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             }
             return in.readUTF();
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }
@@ -768,7 +769,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             FieldDefinition fd = cd.getField(fieldName);
             if (fd == null) {
-                throw throwUnknownFieldException(fieldName);
+                throw newUnknownFieldException(fieldName);
             }
             if (fd.getType() != FieldType.PORTABLE_ARRAY) {
                 throw new HazelcastSerializationException("Not a Portable array field: " + fieldName);
@@ -797,7 +798,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
                 return serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
             }
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }
@@ -823,7 +824,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             in.position(pos);
             return reader.read(in);
         } catch (IOException e) {
-            throw illegalStateException(e);
+            throw newIllegalStateException(e);
         } finally {
             in.position(currentPos);
         }

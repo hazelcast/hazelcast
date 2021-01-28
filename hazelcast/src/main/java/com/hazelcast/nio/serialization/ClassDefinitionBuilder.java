@@ -19,7 +19,6 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.internal.serialization.impl.portable.ClassDefinitionImpl;
 import com.hazelcast.internal.serialization.impl.portable.FieldDefinitionImpl;
 import com.hazelcast.spi.annotation.PrivateApi;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -412,7 +411,6 @@ public final class ClassDefinitionBuilder {
         return addField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY);
     }
 
-    @NotNull
     private ClassDefinitionBuilder addField(@Nonnull String fieldName, FieldType fieldType) {
         check(fieldName);
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, fieldType, version));

@@ -54,7 +54,9 @@ public interface PortableReader {
     /**
      * @param fieldName name of the field
      * @return field type of given fieldName
+     * @throws java.lang.IllegalArgumentException if the field does not exist.
      */
+    @Nonnull
     FieldType getFieldType(@Nonnull String fieldName);
 
     /**

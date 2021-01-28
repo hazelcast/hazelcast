@@ -45,6 +45,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -101,7 +102,7 @@ public class PortableTest {
         InnerPortable inner = new InnerPortable(new byte[]{0, 1, 2}, new char[]{'c', 'h', 'a', 'r'},
                 new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
                 new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, nn,
-                new BigDecimal[]{new BigDecimal("12345"), new BigDecimal("123456")},
+                new BigDecimal[]{new BigDecimal(new BigInteger("12345"), 10), new BigDecimal("123456")},
                 new LocalTime[]{LocalTime.now(), LocalTime.now()},
                 new LocalDate[]{LocalDate.now(), LocalDate.now()},
                 new LocalDateTime[]{LocalDateTime.now()},
@@ -745,8 +746,9 @@ public class PortableTest {
                 .setImplementation(new CustomSerializationTest.FooXmlSerializer())
                 .setTypeClass(CustomSerializationTest.Foo.class);
         config.addSerializerConfig(sc);
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().setPortableVersion(1)
-                                                                                            .addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory()).setConfig(config).build();
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setPortableVersion(1)
+                .addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory()).setConfig(config).build();
 
         CustomSerializationTest.Foo foo = new CustomSerializationTest.Foo("f");
 

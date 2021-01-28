@@ -313,7 +313,7 @@ public class DefaultPortableWriter implements PortableWriter {
 
         if (len > 0) {
             final int offset = out.position();
-            out.writeZeroBytes(len * 4);
+            out.writeZeroBytes(len * INT_SIZE_IN_BYTES);
             for (int i = 0; i < len; i++) {
                 int position = out.position();
                 if (values[i] == null) {

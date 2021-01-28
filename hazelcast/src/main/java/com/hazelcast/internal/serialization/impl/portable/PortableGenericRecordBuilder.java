@@ -72,151 +72,181 @@ public class PortableGenericRecordBuilder implements GenericRecord.Builder {
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeInt(@Nonnull String fieldName, int value) {
         return write(fieldName, value, FieldType.INT);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeLong(@Nonnull String fieldName, long value) {
         return write(fieldName, value, FieldType.LONG);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeUTF(@Nonnull String fieldName, String value) {
         return write(fieldName, value, FieldType.UTF);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeBoolean(@Nonnull String fieldName, boolean value) {
         return write(fieldName, value, FieldType.BOOLEAN);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeByte(@Nonnull String fieldName, byte value) {
         return write(fieldName, value, FieldType.BYTE);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeChar(@Nonnull String fieldName, char value) {
         return write(fieldName, value, FieldType.CHAR);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeDouble(@Nonnull String fieldName, double value) {
         return write(fieldName, value, FieldType.DOUBLE);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeFloat(@Nonnull String fieldName, float value) {
         return write(fieldName, value, FieldType.FLOAT);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeShort(@Nonnull String fieldName, short value) {
         return write(fieldName, value, FieldType.SHORT);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value) {
         return write(fieldName, value, FieldType.PORTABLE);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeDecimal(@Nonnull String fieldName, @Nullable BigDecimal value) {
         return write(fieldName, value, FieldType.DECIMAL);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeTime(@Nonnull String fieldName, @Nullable LocalTime value) {
         return write(fieldName, value, FieldType.TIME);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeDate(@Nonnull String fieldName, @Nullable LocalDate value) {
         return write(fieldName, value, FieldType.DATE);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value) {
         return write(fieldName, value, FieldType.TIMESTAMP);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value) {
         return write(fieldName, value, FieldType.TIMESTAMP_WITH_TIMEZONE);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeGenericRecordArray(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
         return write(fieldName, value, FieldType.PORTABLE_ARRAY);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeByteArray(@Nonnull String fieldName, byte[] value) {
         return write(fieldName, value, FieldType.BYTE_ARRAY);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeBooleanArray(@Nonnull String fieldName, boolean[] value) {
         return write(fieldName, value, FieldType.BOOLEAN_ARRAY);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeCharArray(@Nonnull String fieldName, char[] value) {
         return write(fieldName, value, FieldType.CHAR_ARRAY);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeIntArray(@Nonnull String fieldName, int[] value) {
         return write(fieldName, value, FieldType.INT_ARRAY);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeLongArray(@Nonnull String fieldName, long[] value) {
         return write(fieldName, value, FieldType.LONG_ARRAY);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeDoubleArray(@Nonnull String fieldName, double[] value) {
         return write(fieldName, value, FieldType.DOUBLE_ARRAY);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeFloatArray(@Nonnull String fieldName, float[] value) {
         return write(fieldName, value, FieldType.FLOAT_ARRAY);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeShortArray(@Nonnull String fieldName, short[] value) {
         return write(fieldName, value, FieldType.SHORT_ARRAY);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeUTFArray(@Nonnull String fieldName, String[] value) {
         return write(fieldName, value, FieldType.UTF_ARRAY);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeDecimalArray(@Nonnull String fieldName, BigDecimal[] value) {
         return write(fieldName, value, FieldType.DECIMAL_ARRAY);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeTimeArray(@Nonnull String fieldName, LocalTime[] value) {
         return write(fieldName, value, FieldType.TIME_ARRAY);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeDateArray(@Nonnull String fieldName, LocalDate[] value) {
         return write(fieldName, value, FieldType.DATE_ARRAY);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeTimestampArray(@Nonnull String fieldName, LocalDateTime[] value) {
         return write(fieldName, value, FieldType.TIMESTAMP_ARRAY);
     }
 
     @Override
+    @Nonnull
     public GenericRecord.Builder writeTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] value) {
         return write(fieldName, value, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY);
     }
