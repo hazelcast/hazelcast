@@ -50,7 +50,7 @@ public interface Record<V> {
     int UNSET = -1;
 
     /**
-     * If not a {@link com.hazelcast.map.impl.record.CachedDataRecord}.
+     * If not a {@link com.hazelcast.map.impl.record.CachedSimpleRecord}.
      */
     Object NOT_CACHED = new Object();
 
@@ -161,6 +161,7 @@ public interface Record<V> {
     }
 
     default void onUpdate(long now) {
+        // We allow version overflow, versions can also be negative value.
         setVersion(getVersion() + 1);
         setLastUpdateTime(now);
     }
