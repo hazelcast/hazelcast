@@ -161,12 +161,7 @@ public interface Record<V> {
     }
 
     default void onUpdate(long now) {
-        int version = getVersion();
-        if (version < Integer.MAX_VALUE) {
-            // protect against potential overflow
-            setVersion(version + 1);
-        }
-
+        setVersion(getVersion() + 1);
         setLastUpdateTime(now);
     }
 
