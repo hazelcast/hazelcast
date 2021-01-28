@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.exec.sort;
 
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.UpstreamExec;
