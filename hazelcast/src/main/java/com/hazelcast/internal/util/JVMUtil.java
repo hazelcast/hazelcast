@@ -50,7 +50,7 @@ public final class JVMUtil {
     }
 
     // not private for testing
-    static boolean isCompressedOops() {
+    public static boolean isCompressedOops() {
         // check HotSpot JVM implementation
         Boolean enabled = isHotSpotCompressedOopsOrNull();
         if (enabled != null) {

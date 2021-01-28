@@ -80,7 +80,6 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     public void testOneMemberWriteBehindWithMaxIdle() {
         final EventBasedMapStore testMapStore = new EventBasedMapStore();
         Config config = newConfig(testMapStore, 5, InitialLoadMode.EAGER);
-//        Config config = getConfig();
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
         config.getMapConfig("default").setMaxIdleSeconds(10);
         HazelcastInstance instance = createHazelcastInstance(config);

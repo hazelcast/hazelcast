@@ -130,6 +130,8 @@ class SimpleRecord<V> implements Record<V> {
             return OBJECT_HEADER_SIZE
                     + REFERENCE_COST_IN_BYTES + ((Data) value).getHeapCost();
         } else {
+            // For OBJECT in-memory-format we
+            // don't calculate cost for now.
             return 0;
         }
     }

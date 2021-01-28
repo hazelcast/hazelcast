@@ -50,10 +50,6 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
     @Nonnull
     private Record<Object> newRecord(MapConfig mapConfig, boolean statisticsEnabled,
                                      boolean hasEviction, Object objectValue) {
-        if (!statisticsEnabled && !hasEviction) {
-            return new SimpleRecord<>(objectValue);
-        }
-
         if (statisticsEnabled) {
             return new ObjectRecordWithStats(objectValue);
         }

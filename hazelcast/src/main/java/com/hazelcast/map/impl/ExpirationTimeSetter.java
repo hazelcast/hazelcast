@@ -35,6 +35,8 @@ public final class ExpirationTimeSetter {
             return expiryTime;
         } else {
             long nextExpiryTime = expiryTime + now;
+            // Due to the overflow possibility, we
+            // check nextExpiryTime against zero.
             return nextExpiryTime <= 0 ? Long.MAX_VALUE : nextExpiryTime;
         }
     }

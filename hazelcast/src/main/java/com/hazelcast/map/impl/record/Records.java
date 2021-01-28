@@ -71,12 +71,11 @@ public final class Records {
         RecordReaderWriter readerWriter = record.getMatchingRecordReaderWriter();
         // RU_COMPAT_4_1
         Version version = out.getVersion();
-        if (version.isGreaterOrEqual(Versions.V4_2)) {
-            out.writeByte(readerWriter.getId());
-        } else {
+        if (version.isLessThan(Versions.V4_2)) {
             readerWriter = RU_COMPAT_MAP.get(readerWriter);
-            out.writeByte(readerWriter.getId());
         }
+
+        out.writeByte(readerWriter.getId());
         readerWriter.writeRecord(out, record, dataValue, expiryMetadata);
     }
 

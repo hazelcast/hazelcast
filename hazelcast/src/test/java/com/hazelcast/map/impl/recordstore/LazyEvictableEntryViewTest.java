@@ -16,12 +16,16 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.map.EntryCostEstimatorTest;
+import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.OwnedEntryCostEstimatorFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
@@ -29,12 +33,10 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -45,24 +47,23 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LazyEvictableEntryViewTest {
 
-    private static final int WITH_COMPRESSED_OOPS_ENTRY_VIEW_COST_IN_BYTES = 73;
-    private static final int WITH_OOPS_ENTRY_VIEW_COST_IN_BYTES = 85;
-
-    private final String key = "key";
-    private final String value = "value";
+    private final int key = 1;
+    private final long value = 10L;
 
     private Record<Data> recordInstance;
-    private EntryView view;
+    private LazyEvictableEntryView view;
+    private EntryCostEstimator costEstimator;
 
     @Before
     public void setUp() throws Exception {
-        view = createDefaultEntryView();
+        view = createLazyEvictableEntryView();
+        costEstimator = OwnedEntryCostEstimatorFactory.createMapSizeEstimator(InMemoryFormat.BINARY);
     }
 
     /**
      * Returns an entry-view instance populated with default values of fields.
      */
-    private EntryView createDefaultEntryView() {
+    private LazyEvictableEntryView createLazyEvictableEntryView() {
         MapConfig mapConfig = new MapConfig();
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         MapContainer mapContainer = mock(MapContainer.class);
@@ -84,12 +85,9 @@ public class LazyEvictableEntryViewTest {
     }
 
     @Test
-    @Ignore
-    // TODO fixme
     public void test_getCost() {
-        int expectedHeapCost = REFERENCE_COST_IN_BYTES == 4
-                ? WITH_COMPRESSED_OOPS_ENTRY_VIEW_COST_IN_BYTES : WITH_OOPS_ENTRY_VIEW_COST_IN_BYTES;
-        assertEquals(expectedHeapCost, view.getCost());
+        assertEquals(EntryCostEstimatorTest.ENTRY_COST_IN_BYTES,
+                costEstimator.calculateEntryCost(view.getDataKey(), view.getRecord()));
     }
 
     @Test
@@ -139,7 +137,7 @@ public class LazyEvictableEntryViewTest {
 
     @Test
     public void test_equals() throws Exception {
-        EntryView entryView = createDefaultEntryView();
+        EntryView entryView = createLazyEvictableEntryView();
 
         assertTrue(view.equals(entryView) && entryView.equals(view));
     }
@@ -156,7 +154,7 @@ public class LazyEvictableEntryViewTest {
 
     @Test
     public void test_hashCode() throws Exception {
-        EntryView entryView = createDefaultEntryView();
+        EntryView entryView = createLazyEvictableEntryView();
 
         assertEquals(entryView.hashCode(), view.hashCode());
     }

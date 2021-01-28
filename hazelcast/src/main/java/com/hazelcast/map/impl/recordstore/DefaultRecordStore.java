@@ -90,7 +90,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     protected final MapKeyLoader keyLoader;
     /**
      * A collection of futures representing pending completion of the key and
-     * value loading tasks.ois
+     * value loading tasks.
      * The loadingFutures are modified by partition threads and can be accessed
      * by query threads.
      *
@@ -881,7 +881,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             putIntoMapStore(record, key, newValue, ttl, maxIdle, now, transactionId);
         }
         storage.put(key, record);
-
         expirySystem.addKeyIfExpirable(key, ttl, maxIdle, expiryTime, now);
 
         if (entryEventType == EntryEventType.LOADED) {
@@ -910,7 +909,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         storage.updateRecordValue(key, record, newValue);
         expirySystem.addKeyIfExpirable(key, ttl, maxIdle, expiryTime, now);
-
         mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
     }
 
@@ -921,12 +919,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return record;
         }
 
-        Record loadedRecord = loadRecordOrNull(key, backup, callerAddress);
-        if (loadedRecord != null) {
-            return loadedRecord;
-        }
-
-        return null;
+        return loadRecordOrNull(key, backup, callerAddress);
     }
 
     protected Object putIntoMapStore(Record record, Data key, Object newValue,

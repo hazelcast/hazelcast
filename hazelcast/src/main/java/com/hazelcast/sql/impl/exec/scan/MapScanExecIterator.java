@@ -121,7 +121,7 @@ public class MapScanExecIterator implements KeyValueIterator {
             while (currentRecordStoreIterator.hasNext()) {
                 Map.Entry<Data, Record<Object>> entry = currentRecordStoreIterator.next();
 
-                // TODO why do we have expiry check here
+                // TODO record-store has a forEach method for this, it may be used here.
                 if (!currentRecordStore.isExpired(entry.getKey(), now, false)) {
                     nextKey = entry.getKey();
                     nextValue = entry.getValue().getValue();

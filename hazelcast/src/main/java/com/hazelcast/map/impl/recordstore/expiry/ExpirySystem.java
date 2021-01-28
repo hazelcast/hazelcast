@@ -180,7 +180,6 @@ public class ExpirySystem {
         callRemove(key, expireTimeByKey);
     }
 
-    // TODO add test for this.
     public void extendExpiryTime(Data dataKey, long now) {
         if (isEmpty()) {
             return;

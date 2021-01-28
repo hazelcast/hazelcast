@@ -23,8 +23,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapContainer;
 
-import javax.annotation.Nonnull;
-
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 
 public class DataRecordFactory implements RecordFactory<Data> {
@@ -54,13 +52,8 @@ public class DataRecordFactory implements RecordFactory<Data> {
         }
     }
 
-    @Nonnull
     private Record<Data> newCachedSimpleRecord(Data valueData, MapConfig mapConfig,
                                                boolean statisticsEnabled, boolean hasEviction) {
-        if (!statisticsEnabled && !hasEviction) {
-            return new CachedSimpleRecord(valueData);
-        }
-
         if (statisticsEnabled) {
             return new CachedDataRecordWithStats(valueData);
         }
@@ -78,13 +71,8 @@ public class DataRecordFactory implements RecordFactory<Data> {
         return new CachedSimpleRecord(valueData);
     }
 
-    @Nonnull
     private Record<Data> newSimpleRecord(Data valueData, MapConfig mapConfig,
                                          boolean statisticsEnabled, boolean hasEviction) {
-        if (!statisticsEnabled && !hasEviction) {
-            return new SimpleRecord<>(valueData);
-        }
-
         if (statisticsEnabled) {
             return new DataRecordWithStats(valueData);
         }
