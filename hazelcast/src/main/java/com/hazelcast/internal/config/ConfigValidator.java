@@ -641,7 +641,6 @@ public final class ConfigValidator {
                 if (indexConfig.getType() == IndexType.BITMAP) {
                     throw new InvalidConfigurationException("BITMAP indexes are not supported by NATIVE storage");
                 }
-                ;
             }
         }
     }
