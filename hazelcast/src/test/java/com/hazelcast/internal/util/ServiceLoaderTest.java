@@ -72,7 +72,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -135,8 +137,8 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         ClassLoader parent = this.getClass().getClassLoader();
         ClassLoader childLoader = new StealingClassloader(parent);
         // ensure parent and child loader load separate Class objects for same class name
-        assertFalse(parent.loadClass(DataSerializerHook.class.getName())
-                        == childLoader.loadClass(DataSerializerHook.class.getName()));
+        assertNotSame(parent.loadClass(DataSerializerHook.class.getName()),
+                        childLoader.loadClass(DataSerializerHook.class.getName()));
 
         // request from childLoader the classes that implement DataSerializerHook, as loaded by parent
         Iterator<? extends Class<?>> iterator
@@ -148,7 +150,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         // ensure all hooks are loaded from parent classloader
         while (iterator.hasNext()) {
             Class<?> hook = iterator.next();
-            assertTrue(hook.getClassLoader() == parent);
+            assertSame(parent, hook.getClassLoader());
         }
     }
 
@@ -503,12 +505,12 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         ctx.addServletMappingDecoded("/", "testServlet");
 
         tomcat.start();
-
-        assertTrueEventually(() -> assertTrue(testServlet.isInitDone()));
-        assertNull("No failure is expected from servlet init() method", testServlet.failure());
-
-        webappClassLoader = testServlet.getWebappClassLoader();
         try {
+            assertTrueEventually(() -> assertTrue(testServlet.isInitDone()));
+            assertNull("No failure is expected from servlet init() method", testServlet.failure());
+
+            webappClassLoader = testServlet.getWebappClassLoader();
+
             assertNotEquals(launchClassLoader, webappClassLoader);
             Iterator<? extends Class<?>> iterator
                     = ServiceLoader.classIterator(DataSerializerHook.class, "com.hazelcast.DataSerializerHook",
