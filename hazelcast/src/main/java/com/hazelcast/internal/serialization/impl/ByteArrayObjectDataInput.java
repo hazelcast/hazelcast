@@ -16,12 +16,13 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.ArrayUtils;
 
+import javax.annotation.Nullable;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -495,6 +496,11 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
 
     @Override
     public String[] readUTFArray() throws IOException {
+        return readStringArray();
+    }
+
+    @Override
+    public String[] readStringArray() throws IOException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
             return null;
@@ -552,6 +558,12 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      */
     @Override
     public final String readUTF() throws IOException {
+        return readString();
+    }
+
+    @Nullable
+    @Override
+    public String readString() throws IOException {
         int numberOfBytes = readInt();
         if (numberOfBytes == NULL_ARRAY_LENGTH) {
             return null;
@@ -568,8 +580,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
-    public <T> T readObject(Class aClass)
-            throws IOException {
+    public <T> T readObject(Class aClass) throws IOException {
         return service.readObject(this, aClass);
     }
 

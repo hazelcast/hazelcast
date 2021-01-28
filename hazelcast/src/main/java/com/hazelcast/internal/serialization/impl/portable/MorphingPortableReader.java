@@ -119,7 +119,13 @@ public class MorphingPortableReader extends DefaultPortableReader {
     @Override
     @Nullable
     public String readUTF(@Nonnull String fieldName) throws IOException {
-        return readIncompatibleField(fieldName, UTF, super::readUTF);
+        return readIncompatibleField(fieldName, UTF, super::readString);
+    }
+
+    @Override
+    @Nullable
+    public String readString(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, UTF, super::readString);
     }
 
     @Override
@@ -298,6 +304,12 @@ public class MorphingPortableReader extends DefaultPortableReader {
     @Nullable
     public String[] readUTFArray(@Nonnull String fieldName) throws IOException {
         return readIncompatibleField(fieldName, UTF_ARRAY, super::readUTFArray);
+    }
+
+    @Override
+    @Nullable
+    public String[] readStringArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, UTF_ARRAY, super::readStringArray);
     }
 
     @Override

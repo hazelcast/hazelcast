@@ -129,7 +129,7 @@ public interface InternalGenericRecord extends GenericRecord {
     GenericRecord readGenericRecordFromArray(@Nonnull String fieldName, int index);
 
     /**
-     * Reads same value {@link InternalGenericRecord#readGenericRecord(String)} }, but in deserialized form.
+     * Reads same value {@link InternalGenericRecord#getGenericRecord(String)} }, but in deserialized form.
      * This is used in query system when the object is leaf of the query.
      *
      * @param fieldName the name of the field
@@ -142,7 +142,7 @@ public interface InternalGenericRecord extends GenericRecord {
     Object readObjectFromArray(@Nonnull String fieldName, int index);
 
     /**
-     * Reads same value {@link GenericRecord#readGenericRecordArray(String)}, but in deserialized form.
+     * Reads same value {@link GenericRecord#getGenericRecordArray(String)}, but in deserialized form.
      * This is used in query system when the object is leaf of the query.
      *
      * @param fieldName the name of the field
@@ -154,7 +154,7 @@ public interface InternalGenericRecord extends GenericRecord {
     Object[] readObjectArray(@Nonnull String fieldName);
 
     /**
-     * Reads same value {@link GenericRecord#readGenericRecord(String)} }, but in deserialized form.
+     * Reads same value {@link GenericRecord#getGenericRecord(String)} }, but in deserialized form.
      * This is used in query system when the object is leaf of the query.
      *
      * @param fieldName the name of the field

@@ -59,8 +59,13 @@ final class ClassDefinitionWriter implements PortableWriter {
     }
 
     @Override
-    public void writeUTF(@Nonnull String fieldName, String str) {
-        builder.addUTFField(fieldName);
+    public void writeUTF(@Nonnull String fieldName, @Nullable String str) {
+        builder.addStringField(fieldName);
+    }
+
+    @Override
+    public void writeString(@Nonnull String fieldName, @Nullable String value) throws IOException {
+        builder.addStringField(fieldName);
     }
 
     @Override
@@ -134,8 +139,13 @@ final class ClassDefinitionWriter implements PortableWriter {
     }
 
     @Override
-    public void writeUTFArray(@Nonnull String fieldName, String[] values) throws IOException {
-        builder.addUTFArrayField(fieldName);
+    public void writeUTFArray(@Nonnull String fieldName, @Nullable String[] values) throws IOException {
+        builder.addStringArrayField(fieldName);
+    }
+
+    @Override
+    public void writeStringArray(@Nonnull String fieldName, @Nullable String[] values) throws IOException {
+        builder.addStringArrayField(fieldName);
     }
 
     @Override

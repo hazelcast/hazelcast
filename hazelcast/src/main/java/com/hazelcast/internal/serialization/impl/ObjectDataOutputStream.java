@@ -17,12 +17,13 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.nio.DataWriter;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 
+import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -223,6 +224,11 @@ public class ObjectDataOutputStream extends VersionedObjectDataOutput
 
     @Override
     public void writeUTFArray(String[] strings) throws IOException {
+        writeStringArray(strings);
+    }
+
+    @Override
+    public void writeStringArray(@Nullable String[] strings) throws IOException {
         int len = strings != null ? strings.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
@@ -234,6 +240,11 @@ public class ObjectDataOutputStream extends VersionedObjectDataOutput
 
     @Override
     public void writeUTF(String str) throws IOException {
+        writeString(str);
+    }
+
+    @Override
+    public void writeString(@Nullable String str) throws IOException {
         if (str == null) {
             writeInt(NULL_ARRAY_LENGTH);
             return;

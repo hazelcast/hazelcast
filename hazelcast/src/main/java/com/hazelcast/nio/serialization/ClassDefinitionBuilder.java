@@ -95,8 +95,19 @@ public final class ClassDefinitionBuilder {
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     * @deprecated for the sake of better naming. Use {@link #addStringField(String)} instead.
      */
     public ClassDefinitionBuilder addUTFField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.UTF);
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    public ClassDefinitionBuilder addStringField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.UTF);
     }
 
@@ -308,8 +319,20 @@ public final class ClassDefinitionBuilder {
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     * @deprecated for the sake of better naming. Use {@link #addStringArrayField(String)} instead.
      */
+    @Deprecated
     public ClassDefinitionBuilder addUTFArrayField(@Nonnull String fieldName) {
+        return addField(fieldName, FieldType.UTF_ARRAY);
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    public ClassDefinitionBuilder addStringArrayField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.UTF_ARRAY);
     }
 

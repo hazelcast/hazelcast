@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -110,7 +111,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public boolean readBoolean(@Nonnull String fieldName) {
+    public boolean getBoolean(@Nonnull String fieldName) {
         try {
             return in.readBoolean(readPosition(fieldName, FieldType.BOOLEAN));
         } catch (IOException e) {
@@ -119,7 +120,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public byte readByte(@Nonnull String fieldName) {
+    public byte getByte(@Nonnull String fieldName) {
         try {
             return in.readByte(readPosition(fieldName, FieldType.BYTE));
         } catch (IOException e) {
@@ -128,7 +129,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public char readChar(@Nonnull String fieldName) {
+    public char getChar(@Nonnull String fieldName) {
         try {
             return in.readChar(readPosition(fieldName, FieldType.CHAR));
         } catch (IOException e) {
@@ -137,7 +138,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public double readDouble(@Nonnull String fieldName) {
+    public double getDouble(@Nonnull String fieldName) {
         try {
             return in.readDouble(readPosition(fieldName, FieldType.DOUBLE));
         } catch (IOException e) {
@@ -146,7 +147,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public float readFloat(@Nonnull String fieldName) {
+    public float getFloat(@Nonnull String fieldName) {
         try {
             return in.readFloat(readPosition(fieldName, FieldType.FLOAT));
         } catch (IOException e) {
@@ -155,7 +156,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public int readInt(@Nonnull String fieldName) {
+    public int getInt(@Nonnull String fieldName) {
         try {
             return in.readInt(readPosition(fieldName, FieldType.INT));
         } catch (IOException e) {
@@ -164,7 +165,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public long readLong(@Nonnull String fieldName) {
+    public long getLong(@Nonnull String fieldName) {
         try {
             return in.readLong(readPosition(fieldName, FieldType.LONG));
         } catch (IOException e) {
@@ -173,7 +174,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public short readShort(@Nonnull String fieldName) {
+    public short getShort(@Nonnull String fieldName) {
         try {
             return in.readShort(readPosition(fieldName, FieldType.SHORT));
         } catch (IOException e) {
@@ -182,7 +183,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public String readUTF(@Nonnull String fieldName) {
+    public String getString(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int pos = readPosition(fieldName, FieldType.UTF);
@@ -219,27 +220,27 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public BigDecimal readDecimal(@Nonnull String fieldName) {
+    public BigDecimal getDecimal(@Nonnull String fieldName) {
         return readNullableField(fieldName, FieldType.DECIMAL, IOUtil::readBigDecimal);
     }
 
     @Override
-    public LocalTime readTime(@Nonnull String fieldName) {
+    public LocalTime getTime(@Nonnull String fieldName) {
         return readNullableField(fieldName, FieldType.TIME, IOUtil::readLocalTime);
     }
 
     @Override
-    public LocalDate readDate(@Nonnull String fieldName) {
+    public LocalDate getDate(@Nonnull String fieldName) {
         return readNullableField(fieldName, FieldType.DATE, IOUtil::readLocalDate);
     }
 
     @Override
-    public LocalDateTime readTimestamp(@Nonnull String fieldName) {
+    public LocalDateTime getTimestamp(@Nonnull String fieldName) {
         return readNullableField(fieldName, FieldType.TIMESTAMP, IOUtil::readLocalDateTime);
     }
 
     @Override
-    public OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName) {
+    public OffsetDateTime getTimestampWithTimezone(@Nonnull String fieldName) {
         return readNullableField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE, IOUtil::readOffsetDateTime);
     }
 
@@ -248,7 +249,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public boolean[] readBooleanArray(@Nonnull String fieldName) {
+    public boolean[] getBooleanArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.BOOLEAN_ARRAY);
@@ -265,7 +266,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public byte[] readByteArray(@Nonnull String fieldName) {
+    public byte[] getByteArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.BYTE_ARRAY);
@@ -283,7 +284,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public char[] readCharArray(@Nonnull String fieldName) {
+    public char[] getCharArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.CHAR_ARRAY);
@@ -300,7 +301,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public double[] readDoubleArray(@Nonnull String fieldName) {
+    public double[] getDoubleArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.DOUBLE_ARRAY);
@@ -317,7 +318,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public float[] readFloatArray(@Nonnull String fieldName) {
+    public float[] getFloatArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.FLOAT_ARRAY);
@@ -334,7 +335,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public int[] readIntArray(@Nonnull String fieldName) {
+    public int[] getIntArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.INT_ARRAY);
@@ -351,7 +352,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public long[] readLongArray(@Nonnull String fieldName) {
+    public long[] getLongArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.LONG_ARRAY);
@@ -368,7 +369,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public short[] readShortArray(@Nonnull String fieldName) {
+    public short[] getShortArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.SHORT_ARRAY);
@@ -385,7 +386,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public String[] readUTFArray(@Nonnull String fieldName) {
+    public String[] getStringArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.UTF_ARRAY);
@@ -393,7 +394,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
                 return null;
             }
             in.position(position);
-            return in.readUTFArray();
+            return in.readStringArray();
         } catch (IOException e) {
             throw newIllegalStateException(e);
         } finally {
@@ -435,27 +436,27 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public BigDecimal[] readDecimalArray(@Nonnull String fieldName) {
+    public BigDecimal[] getDecimalArray(@Nonnull String fieldName) {
         return readObjectArrayField(fieldName, DECIMAL_ARRAY, BigDecimal[]::new, IOUtil::readBigDecimal);
     }
 
     @Override
-    public LocalTime[] readTimeArray(@Nonnull String fieldName) {
+    public LocalTime[] getTimeArray(@Nonnull String fieldName) {
         return readObjectArrayField(fieldName, TIME_ARRAY, LocalTime[]::new, IOUtil::readLocalTime);
     }
 
     @Override
-    public LocalDate[] readDateArray(@Nonnull String fieldName) {
+    public LocalDate[] getDateArray(@Nonnull String fieldName) {
         return readObjectArrayField(fieldName, DATE_ARRAY, LocalDate[]::new, IOUtil::readLocalDate);
     }
 
     @Override
-    public LocalDateTime[] readTimestampArray(@Nonnull String fieldName) {
+    public LocalDateTime[] getTimestampArray(@Nonnull String fieldName) {
         return readObjectArrayField(fieldName, TIMESTAMP_ARRAY, LocalDateTime[]::new, IOUtil::readLocalDateTime);
     }
 
     @Override
-    public OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName) {
+    public OffsetDateTime[] getTimestampWithTimezoneArray(@Nonnull String fieldName) {
         return readObjectArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
     }
 
@@ -504,13 +505,13 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Nonnull
     @Override
-    public Builder newBuilder() {
+    public GenericRecordBuilder newBuilder() {
         throw new UnsupportedOperationException();
     }
 
     @Nonnull
     @Override
-    public Builder cloneWithBuilder() {
+    public GenericRecordBuilder cloneWithBuilder() {
         throw new UnsupportedOperationException();
     }
 
@@ -521,7 +522,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public GenericRecord[] readGenericRecordArray(@Nonnull String fieldName) {
+    public GenericRecord[] getGenericRecordArray(@Nonnull String fieldName) {
         return readNestedArray(fieldName, GenericRecord[]::new, false);
     }
 
@@ -573,7 +574,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public GenericRecord readGenericRecord(@Nonnull String fieldName) {
+    public GenericRecord getGenericRecord(@Nonnull String fieldName) {
         return readNested(fieldName, false);
     }
 

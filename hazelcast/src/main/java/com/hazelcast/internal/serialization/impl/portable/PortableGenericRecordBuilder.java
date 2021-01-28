@@ -20,6 +20,7 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
@@ -30,39 +31,39 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
-public class PortableGenericRecordBuilder implements GenericRecord.Builder {
+public class PortableGenericRecordBuilder implements GenericRecordBuilder {
 
     private final ClassDefinition classDefinition;
     private final Object[] objects;
-    private final boolean[] isWritten;
+    private final boolean[] isSet;
     private final boolean isClone;
 
     public PortableGenericRecordBuilder(ClassDefinition classDefinition) {
         this.classDefinition = classDefinition;
         this.objects = new Object[classDefinition.getFieldCount()];
         this.isClone = false;
-        this.isWritten = new boolean[objects.length];
+        this.isSet = new boolean[objects.length];
     }
 
     PortableGenericRecordBuilder(ClassDefinition classDefinition, Object[] objects) {
         this.classDefinition = classDefinition;
         this.objects = objects;
         this.isClone = true;
-        this.isWritten = new boolean[objects.length];
+        this.isSet = new boolean[objects.length];
     }
 
     /**
      * @return newly created GenericRecord
      * @throws HazelcastSerializationException if a field is not written when building with builder from
-     *                                         {@link GenericRecord.Builder#portable(ClassDefinition)} and
+     *                                         {@link GenericRecordBuilder#portable(ClassDefinition)} and
      *                                         {@link GenericRecord#newBuilder()}
      */
     @Nonnull
     @Override
     public GenericRecord build() {
         if (!isClone) {
-            for (int i = 0; i < isWritten.length; i++) {
-                if (!isWritten[i]) {
+            for (int i = 0; i < isSet.length; i++) {
+                if (!isSet[i]) {
                     throw new HazelcastSerializationException("All fields must be written when building"
                             + " a GenericRecord for portable, unwritten field :" + classDefinition.getField(i));
                 }
@@ -71,191 +72,190 @@ public class PortableGenericRecordBuilder implements GenericRecord.Builder {
         return new PortableGenericRecord(classDefinition, objects);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeInt(@Nonnull String fieldName, int value) {
-        return write(fieldName, value, FieldType.INT);
+    @Override
+    public GenericRecordBuilder setInt(@Nonnull String fieldName, int value) {
+        return set(fieldName, value, FieldType.INT);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeLong(@Nonnull String fieldName, long value) {
-        return write(fieldName, value, FieldType.LONG);
+    @Override
+    public GenericRecordBuilder setLong(@Nonnull String fieldName, long value) {
+        return set(fieldName, value, FieldType.LONG);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeUTF(@Nonnull String fieldName, String value) {
-        return write(fieldName, value, FieldType.UTF);
+    @Override
+    public GenericRecordBuilder setString(@Nonnull String fieldName, String value) {
+        return set(fieldName, value, FieldType.UTF);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeBoolean(@Nonnull String fieldName, boolean value) {
-        return write(fieldName, value, FieldType.BOOLEAN);
+    @Override
+    public GenericRecordBuilder setBoolean(@Nonnull String fieldName, boolean value) {
+        return set(fieldName, value, FieldType.BOOLEAN);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeByte(@Nonnull String fieldName, byte value) {
-        return write(fieldName, value, FieldType.BYTE);
+    @Override
+    public GenericRecordBuilder setByte(@Nonnull String fieldName, byte value) {
+        return set(fieldName, value, FieldType.BYTE);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeChar(@Nonnull String fieldName, char value) {
-        return write(fieldName, value, FieldType.CHAR);
+    @Override
+    public GenericRecordBuilder setChar(@Nonnull String fieldName, char value) {
+        return set(fieldName, value, FieldType.CHAR);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeDouble(@Nonnull String fieldName, double value) {
-        return write(fieldName, value, FieldType.DOUBLE);
+    @Override
+    public GenericRecordBuilder setDouble(@Nonnull String fieldName, double value) {
+        return set(fieldName, value, FieldType.DOUBLE);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeFloat(@Nonnull String fieldName, float value) {
-        return write(fieldName, value, FieldType.FLOAT);
+    @Override
+    public GenericRecordBuilder setFloat(@Nonnull String fieldName, float value) {
+        return set(fieldName, value, FieldType.FLOAT);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeShort(@Nonnull String fieldName, short value) {
-        return write(fieldName, value, FieldType.SHORT);
+    @Override
+    public GenericRecordBuilder setShort(@Nonnull String fieldName, short value) {
+        return set(fieldName, value, FieldType.SHORT);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value) {
-        return write(fieldName, value, FieldType.PORTABLE);
+    @Override
+    public GenericRecordBuilder setGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value) {
+        return set(fieldName, value, FieldType.PORTABLE);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeDecimal(@Nonnull String fieldName, @Nullable BigDecimal value) {
-        return write(fieldName, value, FieldType.DECIMAL);
+    @Override
+    public GenericRecordBuilder setDecimal(@Nonnull String fieldName, @Nullable BigDecimal value) {
+        return set(fieldName, value, FieldType.DECIMAL);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeTime(@Nonnull String fieldName, @Nullable LocalTime value) {
-        return write(fieldName, value, FieldType.TIME);
+    @Override
+    public GenericRecordBuilder setTime(@Nonnull String fieldName, @Nullable LocalTime value) {
+        return set(fieldName, value, FieldType.TIME);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeDate(@Nonnull String fieldName, @Nullable LocalDate value) {
-        return write(fieldName, value, FieldType.DATE);
+    @Override
+    public GenericRecordBuilder setDate(@Nonnull String fieldName, @Nullable LocalDate value) {
+        return set(fieldName, value, FieldType.DATE);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value) {
-        return write(fieldName, value, FieldType.TIMESTAMP);
+    @Override
+    public GenericRecordBuilder setTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value) {
+        return set(fieldName, value, FieldType.TIMESTAMP);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value) {
-        return write(fieldName, value, FieldType.TIMESTAMP_WITH_TIMEZONE);
+    @Override
+    public GenericRecordBuilder setTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value) {
+        return set(fieldName, value, FieldType.TIMESTAMP_WITH_TIMEZONE);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeGenericRecordArray(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
-        return write(fieldName, value, FieldType.PORTABLE_ARRAY);
+    @Override
+    public GenericRecordBuilder setGenericRecordArray(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
+        return set(fieldName, value, FieldType.PORTABLE_ARRAY);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeByteArray(@Nonnull String fieldName, byte[] value) {
-        return write(fieldName, value, FieldType.BYTE_ARRAY);
+    @Override
+    public GenericRecordBuilder setByteArray(@Nonnull String fieldName, byte[] value) {
+        return set(fieldName, value, FieldType.BYTE_ARRAY);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeBooleanArray(@Nonnull String fieldName, boolean[] value) {
-        return write(fieldName, value, FieldType.BOOLEAN_ARRAY);
+    @Override
+    public GenericRecordBuilder setBooleanArray(@Nonnull String fieldName, boolean[] value) {
+        return set(fieldName, value, FieldType.BOOLEAN_ARRAY);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeCharArray(@Nonnull String fieldName, char[] value) {
-        return write(fieldName, value, FieldType.CHAR_ARRAY);
+    @Override
+    public GenericRecordBuilder setCharArray(@Nonnull String fieldName, char[] value) {
+        return set(fieldName, value, FieldType.CHAR_ARRAY);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeIntArray(@Nonnull String fieldName, int[] value) {
-        return write(fieldName, value, FieldType.INT_ARRAY);
+    @Override
+    public GenericRecordBuilder setIntArray(@Nonnull String fieldName, int[] value) {
+        return set(fieldName, value, FieldType.INT_ARRAY);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeLongArray(@Nonnull String fieldName, long[] value) {
-        return write(fieldName, value, FieldType.LONG_ARRAY);
+    @Override
+    public GenericRecordBuilder setLongArray(@Nonnull String fieldName, long[] value) {
+        return set(fieldName, value, FieldType.LONG_ARRAY);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeDoubleArray(@Nonnull String fieldName, double[] value) {
-        return write(fieldName, value, FieldType.DOUBLE_ARRAY);
+    @Override
+    public GenericRecordBuilder setDoubleArray(@Nonnull String fieldName, double[] value) {
+        return set(fieldName, value, FieldType.DOUBLE_ARRAY);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeFloatArray(@Nonnull String fieldName, float[] value) {
-        return write(fieldName, value, FieldType.FLOAT_ARRAY);
+    @Override
+    public GenericRecordBuilder setFloatArray(@Nonnull String fieldName, float[] value) {
+        return set(fieldName, value, FieldType.FLOAT_ARRAY);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeShortArray(@Nonnull String fieldName, short[] value) {
-        return write(fieldName, value, FieldType.SHORT_ARRAY);
+    @Override
+    public GenericRecordBuilder setShortArray(@Nonnull String fieldName, short[] value) {
+        return set(fieldName, value, FieldType.SHORT_ARRAY);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeUTFArray(@Nonnull String fieldName, String[] value) {
-        return write(fieldName, value, FieldType.UTF_ARRAY);
+    @Override
+    public GenericRecordBuilder setStringArray(@Nonnull String fieldName, String[] value) {
+        return set(fieldName, value, FieldType.UTF_ARRAY);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeDecimalArray(@Nonnull String fieldName, BigDecimal[] value) {
-        return write(fieldName, value, FieldType.DECIMAL_ARRAY);
+    @Override
+    public GenericRecordBuilder setDecimalArray(@Nonnull String fieldName, BigDecimal[] value) {
+        return set(fieldName, value, FieldType.DECIMAL_ARRAY);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeTimeArray(@Nonnull String fieldName, LocalTime[] value) {
-        return write(fieldName, value, FieldType.TIME_ARRAY);
+    @Override
+    public GenericRecordBuilder setTimeArray(@Nonnull String fieldName, LocalTime[] value) {
+        return set(fieldName, value, FieldType.TIME_ARRAY);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeDateArray(@Nonnull String fieldName, LocalDate[] value) {
-        return write(fieldName, value, FieldType.DATE_ARRAY);
+    @Override
+    public GenericRecordBuilder setDateArray(@Nonnull String fieldName, LocalDate[] value) {
+        return set(fieldName, value, FieldType.DATE_ARRAY);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeTimestampArray(@Nonnull String fieldName, LocalDateTime[] value) {
-        return write(fieldName, value, FieldType.TIMESTAMP_ARRAY);
+    @Override
+    public GenericRecordBuilder setTimestampArray(@Nonnull String fieldName, LocalDateTime[] value) {
+        return set(fieldName, value, FieldType.TIMESTAMP_ARRAY);
     }
 
-    @Override
     @Nonnull
-    public GenericRecord.Builder writeTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] value) {
-        return write(fieldName, value, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY);
+    @Override
+    public GenericRecordBuilder setTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] value) {
+        return set(fieldName, value, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY);
     }
 
-
-    private GenericRecord.Builder write(@Nonnull String fieldName, Object value, FieldType fieldType) {
+    private GenericRecordBuilder set(@Nonnull String fieldName, Object value, FieldType fieldType) {
         FieldDefinition fd = check(fieldName, fieldType);
         int index = fd.getIndex();
-        if (isWritten[index]) {
+        if (isSet[index]) {
             if (!isClone) {
                 throw new HazelcastSerializationException("It is illegal to the overwrite the field");
             } else {
@@ -263,7 +263,7 @@ public class PortableGenericRecordBuilder implements GenericRecord.Builder {
             }
         }
         objects[index] = value;
-        isWritten[index] = true;
+        isSet[index] = true;
         return this;
     }
 

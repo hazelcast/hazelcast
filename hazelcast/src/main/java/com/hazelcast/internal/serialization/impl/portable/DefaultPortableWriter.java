@@ -88,8 +88,13 @@ public class DefaultPortableWriter implements PortableWriter {
 
     @Override
     public void writeUTF(@Nonnull String fieldName, String str) throws IOException {
+        writeString(fieldName, str);
+    }
+
+    @Override
+    public void writeString(@Nonnull String fieldName, @Nullable String value) throws IOException {
         setPosition(fieldName, FieldType.UTF);
-        out.writeUTF(str);
+        out.writeUTF(value);
     }
 
     @Override
@@ -274,6 +279,11 @@ public class DefaultPortableWriter implements PortableWriter {
 
     @Override
     public void writeUTFArray(@Nonnull String fieldName, @Nullable String[] values) throws IOException {
+        writeStringArray(fieldName, values);
+    }
+
+    @Override
+    public void writeStringArray(@Nonnull String fieldName, @Nullable String[] values) throws IOException {
         setPosition(fieldName, FieldType.UTF_ARRAY);
         out.writeUTFArray(values);
     }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import javax.annotation.Nullable;
 import java.io.DataInput;
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -24,6 +25,18 @@ import java.nio.ByteOrder;
  * Provides serialization methods for arrays of primitive types.
  */
 public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVersionAware {
+
+    /**
+     * @deprecated for the sake of better naming. Use {@link #readString()} instead
+     */
+    String readUTF() throws IOException;
+
+    /**
+     * @return the string read
+     * @throws IOException if it reaches end of file before finish reading
+     */
+    @Nullable
+    String readString() throws IOException;
 
     /**
      * @return the byte array read
@@ -76,8 +89,15 @@ public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVer
     /**
      * @return String array read
      * @throws IOException if it reaches end of file before finish reading
+     * @deprecated for the sake of better naming. Use {@link #readStringArray()} instead
      */
     String[] readUTFArray() throws IOException;
+
+    /**
+     * @return String array read
+     * @throws IOException if it reaches end of file before finish reading
+     */
+    String[] readStringArray() throws IOException;
 
     /**
      * @param <T> type of the object to be read

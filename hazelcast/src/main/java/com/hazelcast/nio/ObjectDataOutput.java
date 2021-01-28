@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import javax.annotation.Nullable;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -24,6 +25,17 @@ import java.nio.ByteOrder;
  * Provides serialization methods for arrays by extending DataOutput
  */
 public interface ObjectDataOutput extends DataOutput, VersionAware, WanProtocolVersionAware {
+
+    /**
+     * @deprecated for the sake of better naming. Use {@link #writeString(String)} instead
+     */
+    void writeUTF(String string) throws IOException;
+
+    /**
+     * @param string string to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeString(@Nullable String string) throws IOException;
 
     /**
      * @param bytes byte array to be written
@@ -76,8 +88,15 @@ public interface ObjectDataOutput extends DataOutput, VersionAware, WanProtocolV
     /**
      * @param values String array to be written
      * @throws IOException in case of any exceptional case
+     * @deprecated for the sake of better naming. Use {@link #writeStringArray(String[])} instead
      */
     void writeUTFArray(String[] values) throws IOException;
+
+    /**
+     * @param values String array to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeStringArray(@Nullable String[] values) throws IOException;
 
     /**
      * @param object object to be written

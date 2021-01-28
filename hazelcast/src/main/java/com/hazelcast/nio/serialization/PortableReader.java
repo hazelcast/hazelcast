@@ -83,9 +83,18 @@ public interface PortableReader {
      * @param fieldName name of the field
      * @return the utf string value read
      * @throws IOException in case of any exceptional case
+     * @deprecated for the sake of better naming. Use {@link #readString(String)} instead
      */
     @Nullable
     String readUTF(@Nonnull String fieldName) throws IOException;
+
+    /**
+     * @param fieldName name of the field
+     * @return the string value read
+     * @throws IOException in case of any exceptional case
+     */
+    @Nullable
+    String readString(@Nonnull String fieldName) throws IOException;
 
     /**
      * @param fieldName name of the field
@@ -258,9 +267,18 @@ public interface PortableReader {
      * @param fieldName name of the field
      * @return the String array value read
      * @throws IOException in case of any exceptional case
+     * @deprecated for the sake of better naming. Use {@link #readStringArray(String)} instead
      */
     @Nullable
     String[] readUTFArray(@Nonnull String fieldName) throws IOException;
+
+    /**
+     * @param fieldName name of the field
+     * @return the String array value read
+     * @throws IOException in case of any exceptional case
+     */
+    @Nullable
+    String[] readStringArray(@Nonnull String fieldName) throws IOException;
 
     /**
      * @param fieldName name of the field
