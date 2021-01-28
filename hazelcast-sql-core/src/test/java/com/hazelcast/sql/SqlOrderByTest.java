@@ -16,11 +16,7 @@
 
 package com.hazelcast.sql;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.IndexConfig;
-import com.hazelcast.config.IndexType;
-import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.SqlTestSupport;
@@ -37,34 +33,14 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.config.IndexType.HASH;
 import static com.hazelcast.config.IndexType.SORTED;
-import static com.hazelcast.sql.SqlBasicTest.AbstractPojo;
-import static com.hazelcast.sql.SqlBasicTest.AbstractPojoKey;
-import static com.hazelcast.sql.SqlBasicTest.DataSerializablePojo;
-import static com.hazelcast.sql.SqlBasicTest.DataSerializablePojoKey;
-import static com.hazelcast.sql.SqlBasicTest.IdentifiedDataSerializablePojo;
-import static com.hazelcast.sql.SqlBasicTest.IdentifiedDataSerializablePojoKey;
-import static com.hazelcast.sql.SqlBasicTest.PortablePojo;
-import static com.hazelcast.sql.SqlBasicTest.PortablePojoKey;
-import static com.hazelcast.sql.SqlBasicTest.SerializablePojo;
-import static com.hazelcast.sql.SqlBasicTest.SerializablePojoKey;
-import static com.hazelcast.sql.SqlBasicTest.SerializationMode;
+import static com.hazelcast.sql.SqlBasicTest.*;
 import static com.hazelcast.sql.SqlBasicTest.SerializationMode.IDENTIFIED_DATA_SERIALIZABLE;
 import static com.hazelcast.sql.SqlBasicTest.SerializationMode.SERIALIZABLE;
-import static com.hazelcast.sql.SqlBasicTest.serializationConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -81,6 +57,8 @@ public class SqlOrderByTest extends SqlTestSupport {
     private static final String MAP_BINARY = "map_binary";
 
     private static final int DATA_SET_SIZE = 4096;
+    private static final int DATA_SET_MAX_POSITIVE = DATA_SET_SIZE / 2 ;
+
     private static final SqlTestInstanceFactory FACTORY = SqlTestInstanceFactory.create();
 
     private static List<HazelcastInstance> members;
@@ -132,16 +110,16 @@ public class SqlOrderByTest extends SqlTestSupport {
         Random r = ThreadLocalRandom.current();
         int nextNullValue = Math.max(1, r.nextInt(5));
         int nextSameValues = Math.max(1, r.nextInt(5));
+        long idx = Math.negateExact(DATA_SET_MAX_POSITIVE);
         int skipFirstEntries = 20;
-        long idx = 0;
-        while (idx < DATA_SET_SIZE) {
+        while (idx < DATA_SET_MAX_POSITIVE) {
             if (idx % nextNullValue == 0 && idx >= skipFirstEntries) {
                 data.put(key(idx++), value());
                 nextNullValue = Math.max(1, r.nextInt(5));
             } else if (idx % nextSameValues == 0 && idx >= skipFirstEntries) {
                 int sameValuesCount = r.nextInt(5);
                 long value = idx;
-                while (sameValuesCount > 0 && idx < DATA_SET_SIZE) {
+                while (sameValuesCount > 0 && idx < DATA_SET_MAX_POSITIVE) {
                     data.put(key(idx++), value(value));
                     sameValuesCount--;
                 }
