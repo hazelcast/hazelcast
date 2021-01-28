@@ -360,7 +360,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         return SqlUtil.newContextException(node.getParserPosition(), err);
     }
 
-    private static CalciteContextException error(SqlNode node, String name) {
+    public static CalciteContextException error(SqlNode node, String name) {
         return error(node, RESOURCE.custom(name));
     }
 

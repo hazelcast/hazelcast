@@ -513,9 +513,9 @@ public class SortExecTest extends SqlTestSupport {
 
     @Test
     public void testLimitOfsetInvalid() {
-        assertThrows(QueryException.class, () -> newFetch(-1L, 10L));
-        assertThrows(QueryException.class, () -> newFetch(1L, -10L));
-        assertThrows(QueryException.class, () -> newFetch(-1L, -10L));
+        assertThrows(AssertionError.class, () -> newFetch(-1L, 10L));
+        assertThrows(AssertionError.class, () -> newFetch(1L, -10L));
+        assertThrows(AssertionError.class, () -> newFetch(-1L, -10L));
     }
 
     @Test
@@ -564,19 +564,19 @@ public class SortExecTest extends SqlTestSupport {
         Expression<?> offset = ConstantExpression.create(5, BIGINT);
 
         FetchExec exec = new FetchExec(2, upstream, limit, offset);
-        assertThrows(QueryException.class, () -> exec.setup(emptyFragmentContext()));
+        assertThrows(AssertionError.class, () -> exec.setup(emptyFragmentContext()));
 
         limit = ConstantExpression.create(5, BIGINT);
         offset = ConstantExpression.create(null, BIGINT);
 
         FetchExec exec2 = new FetchExec(2, upstream, limit, offset);
-        assertThrows(QueryException.class, () -> exec2.setup(emptyFragmentContext()));
+        assertThrows(AssertionError.class, () -> exec2.setup(emptyFragmentContext()));
 
         limit = ConstantExpression.create(5, BIGINT);
         offset = ConstantExpression.create("foo", VARCHAR);
 
         FetchExec exec3 = new FetchExec(2, upstream, limit, offset);
-        assertThrows(QueryException.class, () -> exec3.setup(emptyFragmentContext()));
+        assertThrows(AssertionError.class, () -> exec3.setup(emptyFragmentContext()));
     }
 
     @Test

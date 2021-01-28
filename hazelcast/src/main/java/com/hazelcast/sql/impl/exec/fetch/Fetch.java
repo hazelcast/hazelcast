@@ -53,11 +53,11 @@ public class Fetch {
     }
 
     public static long getFetchValue(ExpressionEvalContext context, Expression<?> fetch) {
-        return fetch == null ? Long.MAX_VALUE : eval(fetch, true, context);
+        return fetch == null ? Long.MAX_VALUE : eval(fetch,  context);
     }
 
     public static long getOffsetValue(ExpressionEvalContext context, Expression<?> offset) {
-        return offset == null ? 0 : eval(offset, false, context);
+        return offset == null ? 0 : eval(offset, context);
     }
 
     public RowBatch apply(RowBatch batch) {
@@ -110,33 +110,14 @@ public class Fetch {
         return fetchApplied == fetchValue;
     }
 
-    private static long eval(Expression<?> expression, boolean fetch, ExpressionEvalContext context) {
+    private static long eval(Expression<?> expression, ExpressionEvalContext context) {
         assert expression != null;
 
-        String name = fetch ? "LIMIT" : "OFFSET";
-
         Object val = expression.eval(FetchRow.INSTANCE, context);
+        assert val != null && val instanceof Number;
 
-        if (val == null) {
-            throw QueryException.error("Value of " + name + " cannot be null");
-        }
-
-        long val0;
-
-        if (val instanceof Number) {
-            val0 = ((Number) val).longValue();
-        } else {
-            try {
-                val0 = Converters.getConverter(val.getClass()).asBigint(val);
-            } catch (Exception e) {
-                throw QueryException.error("Cannot convert " + name + " value to number: " + val, e);
-            }
-        }
-
-        if (val0 < 0L) {
-            throw QueryException.error("Value of " + name + " cannot be negative: " + val);
-        }
-
+        long val0 = ((Number) val).longValue();
+        assert val0 >= 0;
         return val0;
     }
 
