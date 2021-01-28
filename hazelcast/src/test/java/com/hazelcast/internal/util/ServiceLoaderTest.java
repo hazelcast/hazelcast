@@ -483,6 +483,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         ClassLoader webappClassLoader;
         // setup embedded tomcat
         Tomcat tomcat = new Tomcat();
+        tomcat.setPort(13256); // 8080 may be used by some other tests
         Context ctx = tomcat.addContext("", null);
         // Map target/classes as WEB-INF/classes, so webapp classloader
         // will locate compiled production classes in the webapp classpath.
