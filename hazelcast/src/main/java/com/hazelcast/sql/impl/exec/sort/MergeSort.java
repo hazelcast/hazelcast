@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.exec.sort;
 
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -26,16 +28,14 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
 
+import static com.hazelcast.sql.impl.exec.fetch.Fetch.getFetchValue;
+import static com.hazelcast.sql.impl.exec.fetch.Fetch.getOffsetValue;
+
 /**
  * An utility class to perform merge sort with min-heap.
  */
 @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "This is an internal class")
 public class MergeSort {
-
-    /**
-     * Constant for unlimited number of rows.
-     */
-    public static final int UNLIMITED = 0;
 
     /**
      * Sources.
@@ -50,7 +50,12 @@ public class MergeSort {
     /**
      * Optional limit on the number of returned results.
      */
-    private final int limit;
+    private long fetchValue;
+
+    /**
+     * Optional offset value for the results.
+     */
+    private long offsetValue;
 
     /**
      * Sources which are not in the heap yet.
@@ -58,28 +63,45 @@ public class MergeSort {
     private final Set<Integer> missingSourceIndexes = new HashSet<>();
 
     /**
+     * Fetch expression.
+     */
+    private final Expression<?> fetch;
+
+    /**
+     * Offset expression
+     */
+    private final Expression<?> offset;
+    /**
      * Number of returned rows.
      */
-    private int returnedCount;
+    private long returnedCount;
+
+    /**
+     * The offset value applied to the result rows.
+     */
+    private int offsetApplied;
 
     /**
      * Whether the sorting is finished.
      */
     private boolean done;
 
-    public MergeSort(MergeSortSource[] sources, SortKeyComparator comparator) {
-        this(sources, comparator, UNLIMITED);
-    }
-
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
-    public MergeSort(MergeSortSource[] sources, SortKeyComparator comparator, int limit) {
+    public MergeSort(MergeSortSource[] sources, SortKeyComparator comparator, Expression<?> fetch,
+                     Expression<?> offset) {
         this.sources = sources;
         this.heap = new PriorityQueue<>(comparator);
-        this.limit = limit > 0 ? limit : UNLIMITED;
+        this.fetch = fetch;
+        this.offset = offset;
 
         for (int i = 0; i < sources.length; i++) {
             missingSourceIndexes.add(i);
         }
+    }
+
+    public void setup(ExpressionEvalContext context) {
+        fetchValue = getFetchValue(context, fetch);
+        offsetValue = getOffsetValue(context, offset);
     }
 
     public List<Row> nextBatch() {
@@ -143,7 +165,7 @@ public class MergeSort {
         List<Row> rows = new ArrayList<>();
 
         while (true) {
-            if (heap.isEmpty() || (limit > 0 && returnedCount == limit)) {
+            if (heap.isEmpty() || returnedCount == fetchValue) {
                 done = true;
 
                 return rows;
@@ -162,7 +184,12 @@ public class MergeSort {
 
             assert row != null;
 
-            rows.add(row);
+            if (offsetApplied >= offsetValue) {
+                rows.add(row);
+                returnedCount++;
+            } else {
+                offsetApplied++;
+            }
 
             // Put the next value to heap or stop if no more data is available.
             if (source.advance()) {
@@ -176,8 +203,6 @@ public class MergeSort {
                     return rows;
                 }
             }
-
-            returnedCount++;
         }
     }
 

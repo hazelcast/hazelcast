@@ -48,8 +48,16 @@ public class Fetch {
     }
 
     public void setup(ExpressionEvalContext context) {
-        fetchValue = fetch == null ? Long.MAX_VALUE : eval(fetch, true, context);
-        offsetValue = offset == null ? 0 : eval(offset, false, context);
+        fetchValue = getFetchValue(context, fetch);
+        offsetValue = getOffsetValue(context, offset);
+    }
+
+    public static long getFetchValue(ExpressionEvalContext context, Expression<?> fetch) {
+        return fetch == null ? Long.MAX_VALUE : eval(fetch, true, context);
+    }
+
+    public static long getOffsetValue(ExpressionEvalContext context, Expression<?> offset) {
+        return offset == null ? 0 : eval(offset, false, context);
     }
 
     public RowBatch apply(RowBatch batch) {
@@ -102,7 +110,7 @@ public class Fetch {
         return fetchApplied == fetchValue;
     }
 
-    private long eval(Expression<?> expression, boolean fetch, ExpressionEvalContext context) {
+    private static long eval(Expression<?> expression, boolean fetch, ExpressionEvalContext context) {
         assert expression != null;
 
         String name = fetch ? "LIMIT" : "OFFSET";

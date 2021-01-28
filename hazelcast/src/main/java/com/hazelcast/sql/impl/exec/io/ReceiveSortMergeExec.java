@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.exec.io;
 
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
-import com.hazelcast.sql.impl.exec.fetch.Fetch;
 import com.hazelcast.sql.impl.exec.sort.MergeSort;
 import com.hazelcast.sql.impl.exec.sort.MergeSortSource;
 import com.hazelcast.sql.impl.exec.sort.SortKey;
@@ -55,11 +54,6 @@ public class ReceiveSortMergeExec extends AbstractExec {
     private final MergeSort sorter;
 
     /**
-     * Fetch processor.
-     */
-    private final Fetch fetch;
-
-    /**
      * Current batch.
      */
     private RowBatch curBatch;
@@ -83,51 +77,33 @@ public class ReceiveSortMergeExec extends AbstractExec {
             sources[i] = new Source(i);
         }
 
-        sorter = new MergeSort(sources, new SortKeyComparator(ascs));
-
-        if (fetch != null || offset != null) {
-            this.fetch = new Fetch(fetch, offset);
-        } else {
-            this.fetch = null;
-        }
+        sorter = new MergeSort(sources, new SortKeyComparator(ascs), fetch, offset);
     }
 
     @Override
     protected void setup0(QueryFragmentContext ctx) {
         inbox.setup();
 
-        if (fetch != null) {
-            fetch.setup(ctx);
-        }
+        sorter.setup(ctx);
     }
 
     @Override
     public IterationResult advance0() {
-        while (true) {
-            List<Row> rows = sorter.nextBatch();
-            boolean done = sorter.isDone();
+        List<Row> rows = sorter.nextBatch();
+        boolean done = sorter.isDone();
 
-            if (rows == null) {
-                curBatch = EmptyRowBatch.INSTANCE;
+        if (rows == null || rows.size() == 0) {
+            curBatch = EmptyRowBatch.INSTANCE;
 
-                return done ? IterationResult.FETCHED_DONE : IterationResult.WAIT;
-            } else {
-                RowBatch batch = new ListRowBatch(rows);
+            return done ? IterationResult.FETCHED_DONE : IterationResult.WAIT;
+        } else {
+            RowBatch batch = new ListRowBatch(rows);
 
-                if (fetch != null) {
-                    batch = fetch.apply(batch);
-                    done |= fetch.isDone();
+            curBatch = batch;
 
-                    if (batch.getRowCount() == 0 && !done) {
-                        continue;
-                    }
-                }
-
-                curBatch = batch;
-
-                return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
-            }
+            return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
         }
+
     }
 
     @Override
