@@ -75,7 +75,7 @@ public class QueryParser {
                 }
             }
         } catch (Exception e) {
-            throw QueryException.error(SqlErrorCode.PARSING, e.getMessage(), e);
+            throw QueryException.error(SqlErrorCode.PARSING, getTrimmedMessage(e), e);
         }
     }
 
@@ -107,5 +107,12 @@ public class QueryParser {
             configBuilder.setParserFactory(parserImplFactory);
         }
         return configBuilder.build();
+    }
+
+    private static String getTrimmedMessage(Exception e) {
+        String eol = System.getProperty("line.separator", "\n");
+        String message = e.getMessage();
+        String[] parts = message.split(eol);
+        return parts[0];
     }
 }
