@@ -28,9 +28,9 @@ import java.util.UUID;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.UUID_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInteger;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeUUID;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInteger;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeUUID;
 
 public final class EntryListIntegerUUIDCodec {
@@ -46,7 +46,7 @@ public final class EntryListIntegerUUIDCodec {
         Iterator<Map.Entry<Integer, UUID>> iterator = collection.iterator();
         for (int i = 0; i < itemCount; i++) {
             Map.Entry<Integer, UUID> entry = iterator.next();
-            encodeInteger(frame.content, i * ENTRY_SIZE_IN_BYTES, entry.getKey());
+            encodeInt(frame.content, i * ENTRY_SIZE_IN_BYTES, entry.getKey());
             encodeUUID(frame.content, i * ENTRY_SIZE_IN_BYTES + INT_SIZE_IN_BYTES, entry.getValue());
         }
         clientMessage.add(frame);
@@ -57,7 +57,7 @@ public final class EntryListIntegerUUIDCodec {
         int itemCount = frame.content.length / ENTRY_SIZE_IN_BYTES;
         List<Map.Entry<Integer, UUID>> result = new ArrayList<>(itemCount);
         for (int i = 0; i < itemCount; i++) {
-            int key = decodeInteger(frame.content, i * ENTRY_SIZE_IN_BYTES);
+            int key = decodeInt(frame.content, i * ENTRY_SIZE_IN_BYTES);
             UUID value = decodeUUID(frame.content, i * ENTRY_SIZE_IN_BYTES + INT_SIZE_IN_BYTES);
             result.add(new AbstractMap.SimpleEntry<>(key, value));
         }

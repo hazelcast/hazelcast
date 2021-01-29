@@ -41,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The second parameter, the clientAttribute is a String that is composed of key=value pairs separated by ','. The
  * following characters ('=' '.' ',' '\') should be escaped.
  * 
- * Please note that if any client implementation can not provide the value for a statistics, the corresponding key, value
+ * Please note that if any client implementation can not provide the value for statistics, the corresponding key, value
  * pair will not be presented in the statistics string. Only the ones, that the client can provide will be added.
  * 
  * The third parameter, metrics is a compressed byte array containing all metrics recorded by the client.
@@ -66,6 +66,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * | Size of dictionary blob         |   4 bytes (int)    |
  * +---------------------------------+--------------------+
  * | ZLIB compressed dictionary blob |   variable size    |
+ * +---------------------------------+--------------------+
+ * | Number of metrics in the blob   |   4 bytes (int)    |
  * +---------------------------------+--------------------+
  * | ZLIB compressed metrics blob    |   variable size    |
  * +---------------------------------+--------------------+
@@ -131,11 +133,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * THE METRIC BLOB
  * ===============
  * 
- * The compressed dictionary blob is followed by the compressed metrics blob
- * with the following layout:
+ * The compressed dictionary blob is followed by the number of metrics
+ * (int) present in the metrics blob.
  * 
- * +------------------------------------------------+--------------------+
- * | Number of metrics                              |   4 bytes (int)    |
+ * The number of metrics is followed by the compressed metrics blob with
+ * the following layout:
+ * 
  * +------------------------------------------------+--------------------+
  * | Metrics mask                                   |   1 byte           |
  * +------------------------------------------------+--------------------+
@@ -192,7 +195,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * 
  * The metrics blob constructed this way is then gets ZLIB compressed.
  */
-@Generated("1655e16df089dbd219a06d8e6af85804")
+@Generated("27b24adfa7ff8da1615586ca0b7de06d")
 public final class ClientStatisticsCodec {
     //hex: 0x000C00
     public static final int REQUEST_MESSAGE_TYPE = 3072;

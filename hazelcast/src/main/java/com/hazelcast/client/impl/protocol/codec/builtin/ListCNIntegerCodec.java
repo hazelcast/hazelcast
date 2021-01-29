@@ -18,28 +18,17 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
 
-public final class ListIntegerCodec {
+public final class ListCNIntegerCodec {
 
-    private ListIntegerCodec() {
+    private ListCNIntegerCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, Collection<Integer> collection) {
-        int itemCount = collection.size();
-        ClientMessage.Frame frame = new ClientMessage.Frame(new byte[itemCount * INT_SIZE_IN_BYTES]);
-        Iterator<Integer> iterator = collection.iterator();
-        for (int i = 0; i < itemCount; i++) {
-            encodeInt(frame.content, i * INT_SIZE_IN_BYTES, iterator.next());
-        }
-        clientMessage.add(frame);
+    public static void encode(ClientMessage clientMessage, Iterable<Integer> items) {
+        ListCNFixedSizeCodec.encode(clientMessage, items, INT_SIZE_IN_BYTES, FixedSizeTypesCodec::encodeInt);
     }
 
     public static List<Integer> decode(ClientMessage.ForwardFrameIterator iterator) {
@@ -47,12 +36,6 @@ public final class ListIntegerCodec {
     }
 
     public static List<Integer> decode(ClientMessage.Frame frame) {
-        int itemCount = frame.content.length / INT_SIZE_IN_BYTES;
-        List<Integer> result = new ArrayList<>(itemCount);
-        for (int i = 0; i < itemCount; i++) {
-            result.add(decodeInt(frame.content, i * INT_SIZE_IN_BYTES));
-        }
-        return result;
+        return ListCNFixedSizeCodec.decode(frame, INT_SIZE_IN_BYTES, FixedSizeTypesCodec::decodeInt);
     }
-
 }

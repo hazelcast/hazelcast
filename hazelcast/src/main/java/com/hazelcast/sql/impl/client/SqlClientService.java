@@ -132,10 +132,11 @@ public class SqlClientService implements SqlService {
             return;
         }
 
+        assert response.rowPage != null;
+
         res.onExecuteResponse(
             response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
             response.rowPage,
-            response.rowPageLast,
             response.updateCount
         );
     }
@@ -165,9 +166,9 @@ public class SqlClientService implements SqlService {
             return;
         }
 
-        SqlPage page = new SqlPage(responseParameters.rowPage, responseParameters.rowPageLast);
+        assert responseParameters.rowPage != null;
 
-        res.onFetchFinished(page, null);
+        res.onFetchFinished(responseParameters.rowPage, null);
     }
 
     /**
@@ -216,9 +217,9 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    Object deserializeRowValue(Data data) {
+    Object deserializeRowValue(Object value) {
         try {
-            return getSerializationService().toObject(data);
+            return getSerializationService().toObject(value);
         } catch (Exception e) {
             throw rethrow(
                 QueryException.error("Failed to deserialize query result value: " + e.getMessage())

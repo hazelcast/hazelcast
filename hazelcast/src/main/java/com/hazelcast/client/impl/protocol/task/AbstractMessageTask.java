@@ -270,7 +270,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         sendClientMessage(message);
     }
 
-    private ClientMessage encodeException(Throwable throwable) {
+    protected ClientMessage encodeException(Throwable throwable) {
         ClientExceptionFactory exceptionFactory = clientEngine.getExceptionFactory();
         return exceptionFactory.createExceptionMessage(peelIfNeeded(throwable));
     }
