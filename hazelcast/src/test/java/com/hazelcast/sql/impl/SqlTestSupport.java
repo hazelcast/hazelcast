@@ -323,7 +323,7 @@ public class SqlTestSupport extends HazelcastTestSupport {
         }
 
         if (res.size() < count) {
-            throw new RuntimeException("Failed to get the necesasry number of key: " + res.size());
+            throw new RuntimeException("Failed to get the necessary number of keys: " + res.size());
         }
 
         return res;
