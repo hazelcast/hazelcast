@@ -39,7 +39,6 @@ import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.fun.SqlTrimFunction;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorException;
@@ -153,6 +152,9 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
     }
 
     private final SqlValidatorCatalogReader catalogReader;
+
+    // The top level select is used to filter out nested selects with FETCH/OFFSET
+    private SqlSelect topLevelSelect;
 
     public UnsupportedOperationVisitor(
             SqlValidatorCatalogReader catalogReader
@@ -312,28 +314,14 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             throw unsupported(select.getGroup(), "GROUP BY");
         }
 
-        // Check for nested fetch offset
-        select.accept(new SelectVisitor(select));
-    }
-
-    private static final class SelectVisitor extends SqlBasicVisitor<Void> {
-
-        private final SqlSelect topLevelSelect;
-
-        SelectVisitor(SqlSelect topLevelSelect) {
-            this.topLevelSelect = topLevelSelect;
-        }
-
-        @Override
-        public Void visit(SqlCall call) {
-
-            if (call != topLevelSelect && call instanceof SqlSelect) {
-                SqlSelect select = (SqlSelect) call;
-                if (select.getFetch() != null || select.getOffset() != null) {
-                    throw error(select, "FETCH/OFFSET is only supported for the top-level SELECT");
-                }
+        if (topLevelSelect == null) {
+            topLevelSelect = select;
+        } else {
+            // Check for nested fetch offset
+            if (select.getFetch() != null || select.getOffset() != null) {
+                throw error(select, "FETCH/OFFSET is only supported for the top-level SELECT");
             }
-            return super.visit(call);
+
         }
     }
 

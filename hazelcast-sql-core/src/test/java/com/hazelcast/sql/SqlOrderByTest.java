@@ -476,6 +476,11 @@ public class SqlOrderByTest extends SqlTestSupport {
             + " FETCH FIRST \"abc\" ROWS ONLY";
 
         assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql7, 0));
+
+        String sql8 = "SELECT " + intValField + " FROM " + stableMapName()
+            + " FETCH FIRST 1 + ? ROWS ONLY";
+
+        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql8, 0));
     }
 
     @Test
