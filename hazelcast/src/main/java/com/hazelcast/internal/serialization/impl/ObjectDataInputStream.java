@@ -276,6 +276,7 @@ public class ObjectDataInputStream extends VersionedObjectDataInput
 
     @Override
     @Nullable
+    @Deprecated
     public String[] readUTFArray() throws IOException {
         return readStringArray();
     }
@@ -303,6 +304,8 @@ public class ObjectDataInputStream extends VersionedObjectDataInput
     }
 
     @Override
+    @Nullable
+    @Deprecated
     public String readUTF() throws IOException {
         return readString();
     }

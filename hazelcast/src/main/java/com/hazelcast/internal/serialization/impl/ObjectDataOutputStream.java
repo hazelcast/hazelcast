@@ -223,6 +223,7 @@ public class ObjectDataOutputStream extends VersionedObjectDataOutput
     }
 
     @Override
+    @Deprecated
     public void writeUTFArray(@Nullable String[] strings) throws IOException {
         writeStringArray(strings);
     }
@@ -239,7 +240,8 @@ public class ObjectDataOutputStream extends VersionedObjectDataOutput
     }
 
     @Override
-    public void writeUTF(String str) throws IOException {
+    @Deprecated
+    public void writeUTF(@Nullable String str) throws IOException {
         writeString(str);
     }
 
