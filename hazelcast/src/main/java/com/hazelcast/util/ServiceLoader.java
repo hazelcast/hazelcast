@@ -48,6 +48,9 @@ import static java.lang.Boolean.getBoolean;
  * environments like application or OSGi servers.
  */
 public final class ServiceLoader {
+    // kill-switch for URLDefinition#equals fix to take into account classloader
+    private static final boolean URLDEFINITION_COMPAT = getBoolean("hazelcast.compat.classloading.urldefinition");
+
     //compatibility flag to re-introduce behaviour from 3.8.0 with classloading fallbacks
     private static final boolean USE_CLASSLOADING_FALLBACK = getBoolean("hazelcast.compat.classloading.hooks.fallback");
 
@@ -258,7 +261,11 @@ public final class ServiceLoader {
             if (uri != null ? !uri.equals(that.uri) : that.uri != null) {
                 return false;
             }
-            return true;
+            if (URLDEFINITION_COMPAT) {
+                return true;
+            } else {
+                return classLoader != null ? classLoader.equals(that.classLoader) : that.classLoader == null;
+            }
         }
 
         @Override
