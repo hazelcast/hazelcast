@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -43,6 +44,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
+
 /**
  * Client-side implementation of SQL service.
  */
@@ -55,9 +58,11 @@ public class SqlClientService implements SqlService {
     private static final int SQL_SERVICE_ID = 33;
 
     private final HazelcastClientInstanceImpl client;
+    private final ILogger logger;
 
     public SqlClientService(HazelcastClientInstanceImpl client) {
         this.client = client;
+        this.logger = client.getLoggingService().getLogger(getClass());
     }
 
     @Nonnull
@@ -102,7 +107,8 @@ public class SqlClientService implements SqlService {
 
             ClientInvocationFuture future = invokeAsync(requestMessage, connection);
 
-            future.whenComplete((message, error) -> handleExecuteResponse(connection, res, message, error));
+            future.whenComplete(withTryCatch(logger,
+                    (message, error) -> handleExecuteResponse(connection, res, message, error)));
 
             return res;
         } catch (Exception e) {
@@ -132,8 +138,6 @@ public class SqlClientService implements SqlService {
             return;
         }
 
-        assert response.rowPage != null;
-
         res.onExecuteResponse(
             response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
             response.rowPage,
@@ -146,7 +150,8 @@ public class SqlClientService implements SqlService {
 
         ClientInvocationFuture future = invokeAsync(requestMessage, connection);
 
-        future.whenComplete((message, error) -> handleFetchResponse(connection, res, message, error));
+        future.whenComplete(withTryCatch(logger,
+                (message, error) -> handleFetchResponse(connection, res, message, error)));
     }
 
     private void handleFetchResponse(Connection connection, SqlClientResult res, ClientMessage message, Throwable error) {
