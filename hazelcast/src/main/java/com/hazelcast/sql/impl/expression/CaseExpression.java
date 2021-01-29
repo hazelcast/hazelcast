@@ -52,11 +52,9 @@ public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializa
         int branchesSize = operands.length / 2;
         Expression<Boolean>[] whenExpressions = new Expression[branchesSize];
         Expression<?>[] thenExpressions = new Expression[branchesSize];
-        int index = 0;
-        for (int i = 0; i < operands.length - 1; i += 2) {
-            whenExpressions[index] = (Expression<Boolean>) operands[i];
-            thenExpressions[index] = operands[i + 1];
-            index += 1;
+        for (int i = 0; i < branchesSize; i++) {
+            whenExpressions[i] = (Expression<Boolean>) operands[2 * i];
+            thenExpressions[i] = operands[2 * i + 1];
         }
         return new CaseExpression<>(whenExpressions, thenExpressions, operands[operands.length - 1], resultType);
     }
@@ -129,7 +127,7 @@ public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializa
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        CaseExpression that = (CaseExpression) o;
+        CaseExpression<?> that = (CaseExpression<?>) o;
         return Arrays.equals(whenExpressions, that.whenExpressions)
                 && Arrays.equals(thenExpressions, that.thenExpressions)
                 && Objects.equals(elseExpression, that.elseExpression)
@@ -143,14 +141,11 @@ public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializa
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder("CaseExpression{");
-        int len = whenExpressions.length;
-        for (int i = 0; i < len; i++) {
-            builder.append("\nwhen ").append(whenExpressions[i])
-                    .append(" then").append(thenExpressions[i]);
-        }
-        builder.append("\nresultedType=").append(resultType);
-        builder.append('}');
-        return builder.toString();
+        return "CaseExpression{"
+                + "whenExpressions=" + Arrays.toString(whenExpressions)
+                + ", thenExpressions=" + Arrays.toString(thenExpressions)
+                + ", elseExpression=" + elseExpression
+                + ", resultType=" + resultType
+                + '}';
     }
 }

@@ -130,17 +130,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 return literalType;
             }
         }
-        if (operand.getKind() == SqlKind.CASE) {
-            SqlCase sqlCase = (SqlCase) operand;
-            SqlNodeList thenOperands = sqlCase.getThenOperands();
-            int size = thenOperands.size();
-            RelDataType[] thenTypes = new RelDataType[size];
-            for (int i = 0; i < size; i++) {
-                thenTypes[i] = deriveTypeImpl(scope, thenOperands.get(i));
-            }
-            return thenTypes[0];
-        }
-
         return super.deriveTypeImpl(scope, operand);
     }
 
