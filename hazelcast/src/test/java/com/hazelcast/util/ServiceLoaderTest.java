@@ -473,7 +473,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         // modeling a Tomcat deployment in which Hazelcast JARs are deployed
         // in both tomcat/lib and webapp/lib
         File webInfClasses = new File("target/classes");
-        TestServiceLoaderServlet testServlet = new TestServiceLoaderServlet();
+        final TestServiceLoaderServlet testServlet = new TestServiceLoaderServlet();
         Wrapper wrapper = tomcat.addServlet("", "testServlet", testServlet);
         wrapper.setLoadOnStartup(1);
         ctx.addServletMapping("/", "testServlet");
