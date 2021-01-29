@@ -201,13 +201,17 @@ public final class CustomTypeFactory {
         return EndpointQualifier.resolve(protocolType, identifier);
     }
 
-    public static SqlColumnMetadata createSqlColumnMetadata(String name, int type) {
+    public static SqlColumnMetadata createSqlColumnMetadata(String name, int type, boolean isNullableExists, boolean nullability) {
         SqlColumnType sqlColumnType = SqlColumnType.getById(type);
 
         if (sqlColumnType == null) {
             throw new HazelcastException("Unexpected SQL column type = [" + type + "]");
         }
 
-        return new SqlColumnMetadata(name, sqlColumnType);
+        if (isNullableExists) {
+            return new SqlColumnMetadata(name, sqlColumnType, nullability);
+        }
+
+        return new SqlColumnMetadata(name, sqlColumnType, true);
     }
 }

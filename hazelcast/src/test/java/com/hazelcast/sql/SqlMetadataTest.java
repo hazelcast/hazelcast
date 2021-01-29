@@ -41,21 +41,21 @@ import static org.junit.Assert.assertEquals;
 public class SqlMetadataTest extends SqlTestSupport {
     @Test
     public void testColumnMetadata() {
-        SqlColumnMetadata column = new SqlColumnMetadata("a", SqlColumnType.INTEGER);
+        SqlColumnMetadata column = new SqlColumnMetadata("a", SqlColumnType.INTEGER, true);
 
         assertEquals("a", column.getName());
         assertEquals(SqlColumnType.INTEGER, column.getType());
         assertEquals("a INTEGER", column.toString());
 
-        checkEquals(column, new SqlColumnMetadata("a", SqlColumnType.INTEGER), true);
-        checkEquals(column, new SqlColumnMetadata("b", SqlColumnType.INTEGER), false);
-        checkEquals(column, new SqlColumnMetadata("a", SqlColumnType.BIGINT), false);
+        checkEquals(column, new SqlColumnMetadata("a", SqlColumnType.INTEGER, true), true);
+        checkEquals(column, new SqlColumnMetadata("b", SqlColumnType.INTEGER, true), false);
+        checkEquals(column, new SqlColumnMetadata("a", SqlColumnType.BIGINT, true), false);
     }
 
     @Test
     public void testRow() {
-        SqlColumnMetadata column0Metadata = new SqlColumnMetadata("a", SqlColumnType.INTEGER);
-        SqlColumnMetadata column1Metadata = new SqlColumnMetadata("b", SqlColumnType.VARCHAR);
+        SqlColumnMetadata column0Metadata = new SqlColumnMetadata("a", SqlColumnType.INTEGER, true);
+        SqlColumnMetadata column1Metadata = new SqlColumnMetadata("b", SqlColumnType.VARCHAR, true);
 
         SqlRow row = new SqlRowImpl(
             new SqlRowMetadata(Arrays.asList(column0Metadata, column1Metadata)),
@@ -67,9 +67,9 @@ public class SqlMetadataTest extends SqlTestSupport {
 
     @Test
     public void testRowMetadata() {
-        SqlColumnMetadata column0 = new SqlColumnMetadata("a", SqlColumnType.INTEGER);
-        SqlColumnMetadata column1 = new SqlColumnMetadata("b", SqlColumnType.BIGINT);
-        SqlColumnMetadata column2 = new SqlColumnMetadata("c", SqlColumnType.VARCHAR);
+        SqlColumnMetadata column0 = new SqlColumnMetadata("a", SqlColumnType.INTEGER, true);
+        SqlColumnMetadata column1 = new SqlColumnMetadata("b", SqlColumnType.BIGINT, true);
+        SqlColumnMetadata column2 = new SqlColumnMetadata("c", SqlColumnType.VARCHAR, true);
 
         SqlRowMetadata row = new SqlRowMetadata(Arrays.asList(column0, column1));
 
@@ -96,50 +96,50 @@ public class SqlMetadataTest extends SqlTestSupport {
     public void testConversions() {
         String name = "a";
 
-        assertEquals(column(name, SqlColumnType.BOOLEAN), getColumnMetadata(name, QueryDataType.BOOLEAN));
-        assertEquals(column(name, SqlColumnType.TINYINT), getColumnMetadata(name, QueryDataType.TINYINT));
-        assertEquals(column(name, SqlColumnType.SMALLINT), getColumnMetadata(name, QueryDataType.SMALLINT));
-        assertEquals(column(name, SqlColumnType.INTEGER), getColumnMetadata(name, QueryDataType.INT));
-        assertEquals(column(name, SqlColumnType.BIGINT), getColumnMetadata(name, QueryDataType.BIGINT));
-        assertEquals(column(name, SqlColumnType.DECIMAL), getColumnMetadata(name, QueryDataType.DECIMAL));
-        assertEquals(column(name, SqlColumnType.DECIMAL), getColumnMetadata(name, QueryDataType.DECIMAL_BIG_INTEGER));
-        assertEquals(column(name, SqlColumnType.REAL), getColumnMetadata(name, QueryDataType.REAL));
-        assertEquals(column(name, SqlColumnType.DOUBLE), getColumnMetadata(name, QueryDataType.DOUBLE));
+        assertEquals(column(name, SqlColumnType.BOOLEAN, true), getColumnMetadata(name, QueryDataType.BOOLEAN, true));
+        assertEquals(column(name, SqlColumnType.TINYINT, true), getColumnMetadata(name, QueryDataType.TINYINT, true));
+        assertEquals(column(name, SqlColumnType.SMALLINT, true), getColumnMetadata(name, QueryDataType.SMALLINT, true));
+        assertEquals(column(name, SqlColumnType.INTEGER, true), getColumnMetadata(name, QueryDataType.INT, true));
+        assertEquals(column(name, SqlColumnType.BIGINT, true), getColumnMetadata(name, QueryDataType.BIGINT, true));
+        assertEquals(column(name, SqlColumnType.DECIMAL, true), getColumnMetadata(name, QueryDataType.DECIMAL, true));
+        assertEquals(column(name, SqlColumnType.DECIMAL, true), getColumnMetadata(name, QueryDataType.DECIMAL_BIG_INTEGER, true));
+        assertEquals(column(name, SqlColumnType.REAL, true), getColumnMetadata(name, QueryDataType.REAL, true));
+        assertEquals(column(name, SqlColumnType.DOUBLE, true), getColumnMetadata(name, QueryDataType.DOUBLE, true));
 
-        assertEquals(column(name, SqlColumnType.VARCHAR), getColumnMetadata(name, QueryDataType.VARCHAR));
-        assertEquals(column(name, SqlColumnType.VARCHAR), getColumnMetadata(name, QueryDataType.VARCHAR_CHARACTER));
+        assertEquals(column(name, SqlColumnType.VARCHAR, true), getColumnMetadata(name, QueryDataType.VARCHAR, true));
+        assertEquals(column(name, SqlColumnType.VARCHAR, true), getColumnMetadata(name, QueryDataType.VARCHAR_CHARACTER, true));
 
-        assertEquals(column(name, SqlColumnType.DATE), getColumnMetadata(name, QueryDataType.DATE));
-        assertEquals(column(name, SqlColumnType.TIME), getColumnMetadata(name, QueryDataType.TIME));
-        assertEquals(column(name, SqlColumnType.TIMESTAMP), getColumnMetadata(name, QueryDataType.TIMESTAMP));
+        assertEquals(column(name, SqlColumnType.DATE, false), getColumnMetadata(name, QueryDataType.DATE, false));
+        assertEquals(column(name, SqlColumnType.TIME, false), getColumnMetadata(name, QueryDataType.TIME, false));
+        assertEquals(column(name, SqlColumnType.TIMESTAMP, false), getColumnMetadata(name, QueryDataType.TIMESTAMP, false));
 
         assertEquals(
-            column(name, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE),
-            getColumnMetadata(name, QueryDataType.TIMESTAMP_WITH_TZ_DATE)
+            column(name, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, true),
+            getColumnMetadata(name, QueryDataType.TIMESTAMP_WITH_TZ_DATE, true)
         );
 
         assertEquals(
-            column(name, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE),
-            getColumnMetadata(name, QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR)
+            column(name, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, true),
+            getColumnMetadata(name, QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR, true)
         );
 
         assertEquals(
-            column(name, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE),
-            getColumnMetadata(name, QueryDataType.TIMESTAMP_WITH_TZ_INSTANT)
+            column(name, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, true),
+            getColumnMetadata(name, QueryDataType.TIMESTAMP_WITH_TZ_INSTANT, true)
         );
 
         assertEquals(
-            column(name, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE),
-            getColumnMetadata(name, QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME)
+            column(name, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, true),
+            getColumnMetadata(name, QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, true)
         );
 
         assertEquals(
-            column(name, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE),
-            getColumnMetadata(name, QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME)
+            column(name, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, true),
+            getColumnMetadata(name, QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME, true)
         );
     }
 
-    private static SqlColumnMetadata column(String name, SqlColumnType type) {
-        return new SqlColumnMetadata(name, type);
+    private static SqlColumnMetadata column(String name, SqlColumnType type, boolean nullable) {
+        return new SqlColumnMetadata(name, type, nullable);
     }
 }

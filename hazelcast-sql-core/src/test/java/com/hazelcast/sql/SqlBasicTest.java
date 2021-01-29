@@ -71,6 +71,7 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test that covers basic column read operations through SQL.
@@ -336,6 +337,7 @@ public class SqlBasicTest extends SqlTestSupport {
             SqlColumnMetadata columnMetadata = rowMetadata.getColumn(fieldIndex);
             assertEquals(adjustedField, columnMetadata.getName());
             assertEquals(fieldType, columnMetadata.getType());
+            assertTrue(columnMetadata.isNullable());
         }
 
         assertThrows(IndexOutOfBoundsException.class, () -> rowMetadata.getColumn(-1));
