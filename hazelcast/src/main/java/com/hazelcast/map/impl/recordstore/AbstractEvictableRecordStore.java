@@ -42,6 +42,7 @@ import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.core.EntryEventType.EXPIRED;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
+import static com.hazelcast.map.impl.recordstore.expiry.ExpiryReason.IDLENESS;
 import static com.hazelcast.map.impl.recordstore.expiry.ExpiryReason.NOT_EXPIRED;
 
 /**
@@ -160,12 +161,12 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                                          ExpiryReason expiryReason) {
 
         if (eventService.hasEventRegistration(SERVICE_NAME, name)) {
-            EntryEventType eventType = NOT_EXPIRED.equals(expiryReason) ? EXPIRED : EVICTED;
+            EntryEventType eventType = expiryReason != NOT_EXPIRED ? EXPIRED : EVICTED;
             mapEventPublisher.publishEvent(thisAddress, name,
                     eventType, dataKey, value, null);
         }
 
-        if (expiryReason == ExpiryReason.IDLENESS) {
+        if (expiryReason == IDLENESS) {
             // only send expired key to backup if
             // it is expired according to idleness.
             expirySystem.accumulateOrSendExpiredKey(dataKey);
