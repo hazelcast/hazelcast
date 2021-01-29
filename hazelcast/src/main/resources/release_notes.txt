@@ -1,5 +1,16 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12.x release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.12.2 - VISA6 ====
+
+1. Fixes
+
+* Fixed an issue that prohibited Hazelcast from being used as Tomcat session manager
+when it is also deployed in a web application context:
+When a client application that uses Hazelcast tries to connect to the Hazelcast cluster and this
+application's web sessions are persisted using Hazelcast's Tomcat session manager,
+the session manager could not connect to the cluster. This has been
+fixed by improving Hazelcast's service loader mechanism. [#18120]
+
 ==== 3.12.2 - VISA5 ====
 
 1. Fixes
