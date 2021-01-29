@@ -154,8 +154,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     @Override
     public boolean rowTypeCoercion(SqlValidatorScope scope, SqlNode query, int columnIndex, RelDataType targetType) {
-//        throw new UnsupportedOperationException("Should not be called");
-        // TODO remove
+        // We use the superclass implementation - it only decides, based on the query type, to call
+        // either coerceColumnType() or coerceOperandType()
          return super.rowTypeCoercion(scope, query, columnIndex, targetType);
     }
 
