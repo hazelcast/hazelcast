@@ -19,12 +19,16 @@ package com.hazelcast.sql.impl.calcite.validate.types;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlFunction;
+import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeFamily;
@@ -100,8 +104,9 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     @Override
     public boolean rowTypeCoercion(SqlValidatorScope scope, SqlNode query, int columnIndex, RelDataType targetType) {
+//        throw new UnsupportedOperationException("Should not be called");
         // TODO remove
-        return super.rowTypeCoercion(scope, query, columnIndex, targetType);
+         return super.rowTypeCoercion(scope, query, columnIndex, targetType);
     }
 
     @Override
@@ -135,7 +140,57 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         RelDataType targetRowType,
         SqlNode query
     ) {
-        return super.querySourceCoercion(scope, sourceRowType, targetRowType, query);
-//        throw new UnsupportedOperationException("Should not be called");
+        if (true) {
+            return super.querySourceCoercion(scope, sourceRowType, targetRowType, query);
+        }
+
+        // the code below copied from superclass implementation, but uses our `canCast` method
+        final List<RelDataTypeField> sourceFields = sourceRowType.getFieldList();
+        final List<RelDataTypeField> targetFields = targetRowType.getFieldList();
+        final int sourceCount = sourceFields.size();
+        for (int i = 0; i < sourceCount; i++) {
+            RelDataType sourceType = sourceFields.get(i).getType();
+            RelDataType targetType = targetFields.get(i).getType();
+            if (!SqlTypeUtil.equalSansNullability(validator.getTypeFactory(), sourceType, targetType)
+                    && !HazelcastTypeUtils.canCast(sourceType, targetType)) {
+                // Return early if types are not equal and can not do type coercion.
+                return false;
+            }
+        }
+        boolean coerced = false;
+        for (int i = 0; i < sourceFields.size(); i++) {
+            RelDataType targetType = targetFields.get(i).getType();
+            coerced = coerceSourceRowType(scope, query, i, targetType) || coerced;
+        }
+        return coerced;
+    }
+
+    // copied from TypeCoercionImpl
+    private boolean coerceSourceRowType(
+            SqlValidatorScope sourceScope,
+            SqlNode query,
+            int columnIndex,
+            RelDataType targetType) {
+        switch (query.getKind()) {
+            case INSERT:
+                SqlInsert insert = (SqlInsert) query;
+                return coerceSourceRowType(sourceScope,
+                        insert.getSource(),
+                        columnIndex,
+                        targetType);
+            case UPDATE:
+                SqlUpdate update = (SqlUpdate) query;
+                if (update.getSourceExpressionList() != null) {
+                    final SqlNodeList sourceExpressionList = update.getSourceExpressionList();
+                    return coerceColumnType(sourceScope, sourceExpressionList, columnIndex, targetType);
+                } else {
+                    return coerceSourceRowType(sourceScope,
+                            update.getSourceSelect(),
+                            columnIndex,
+                            targetType);
+                }
+            default:
+                return rowTypeCoercion(sourceScope, query, columnIndex, targetType);
+        }
     }
 }
