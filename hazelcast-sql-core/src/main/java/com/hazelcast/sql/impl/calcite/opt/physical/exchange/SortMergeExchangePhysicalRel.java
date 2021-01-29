@@ -23,6 +23,7 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
 
@@ -36,26 +37,41 @@ import java.util.List;
  * </ul>
  */
 public class SortMergeExchangePhysicalRel extends AbstractExchangePhysicalRel {
+
     private final RelCollation collation;
+    private final RexNode fetch;
+    private final RexNode offset;
 
     public SortMergeExchangePhysicalRel(
         RelOptCluster cluster,
         RelTraitSet traitSet,
         RelNode input,
-        RelCollation collation
+        RelCollation collation,
+        RexNode fetch,
+        RexNode offset
     ) {
         super(cluster, traitSet, input);
 
         this.collation = collation;
+        this.fetch = fetch;
+        this.offset = offset;
     }
 
     public RelCollation getCollation() {
         return collation;
     }
 
+    public RexNode getFetch() {
+        return fetch;
+    }
+
+    public RexNode getOffset() {
+        return offset;
+    }
+
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new SortMergeExchangePhysicalRel(getCluster(), traitSet, sole(inputs), collation);
+        return new SortMergeExchangePhysicalRel(getCluster(), traitSet, sole(inputs), collation, fetch, offset);
     }
 
     @Override
@@ -69,6 +85,7 @@ public class SortMergeExchangePhysicalRel extends AbstractExchangePhysicalRel {
     public final RelWriter explainTerms(RelWriter pw) {
         super.explainTerms(pw);
 
-        return pw.item("collation", collation.getFieldCollations());
+        return pw.item("collation", collation.getFieldCollations())
+            .item("fetch", fetch).item("offset", offset);
     }
 }

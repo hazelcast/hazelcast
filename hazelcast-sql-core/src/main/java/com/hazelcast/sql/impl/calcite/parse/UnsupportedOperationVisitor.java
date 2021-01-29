@@ -153,6 +153,9 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     private final SqlValidatorCatalogReader catalogReader;
 
+    // The top level select is used to filter out nested selects with FETCH/OFFSET
+    private SqlSelect topLevelSelect;
+
     public UnsupportedOperationVisitor(
             SqlValidatorCatalogReader catalogReader
     ) {
@@ -311,12 +314,14 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             throw unsupported(select.getGroup(), "GROUP BY");
         }
 
-        if (select.getFetch() != null) {
-            throw unsupported(select.getFetch(), "LIMIT");
-        }
+        if (topLevelSelect == null) {
+            topLevelSelect = select;
+        } else {
+            // Check for nested fetch offset
+            if (select.getFetch() != null || select.getOffset() != null) {
+                throw error(select, "FETCH/OFFSET is only supported for the top-level SELECT");
+            }
 
-        if (select.getOffset() != null) {
-            throw unsupported(select.getOffset(), "OFFSET");
         }
     }
 
@@ -335,12 +340,16 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         return unsupported(call, name.replace("$", "").replace('_', ' '));
     }
 
-    private CalciteContextException unsupported(SqlNode node, String name) {
+    private static CalciteContextException unsupported(SqlNode node, String name) {
         return error(node, RESOURCE.notSupported(name));
     }
 
-    private CalciteContextException error(SqlNode node, Resources.ExInst<SqlValidatorException> err) {
+    private static CalciteContextException error(SqlNode node, Resources.ExInst<SqlValidatorException> err) {
         return SqlUtil.newContextException(node.getParserPosition(), err);
+    }
+
+    public static CalciteContextException error(SqlNode node, String name) {
+        return error(node, RESOURCE.custom(name));
     }
 
     public interface Resource {

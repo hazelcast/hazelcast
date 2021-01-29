@@ -87,8 +87,17 @@ public class ParserOperationsTest {
         checkSuccess("SELECT a, b FROM t ORDER BY a ASC");
         checkSuccess("SELECT a, b FROM t ORDER BY a DESC");
         checkSuccess("SELECT a, b FROM t ORDER BY a DESC, b ASC");
+        checkSuccess("SELECT a, b FROM t ORDER BY a DESC OFFSET 10 ROWS FETCH FIRST 20 ROWS ONLY");
+        checkSuccess("SELECT a, b FROM t ORDER BY a DESC FETCH FIRST 20 ROWS ONLY");
+        checkSuccess("SELECT a, b FROM t ORDER BY a DESC OFFSET 10 ROWS");
     }
 
+    @Test
+    public void testOffsetFetchOnly() {
+        checkSuccess("SELECT a, b FROM t OFFSET 10 ROWS FETCH FIRST 20 ROWS ONLY");
+        checkSuccess("SELECT a, b FROM t FETCH FIRST 20 ROWS ONLY");
+        checkSuccess("SELECT a, b FROM t OFFSET 10 ROWS");
+    }
 
     @Test
     public void testUnsupportedSelectScalar() {
@@ -103,22 +112,6 @@ public class ParserOperationsTest {
         checkFailure(
             "SELECT a, b FROM t WHERE (SELECT a FROM t) IS NULL",
             "SCALAR QUERY is not supported"
-        );
-    }
-
-    @Test
-    public void testUnsupporteOrderByLimitOffset() {
-        checkFailure(
-            "SELECT a, b FROM t ORDER BY a LIMIT 5 OFFSET 10",
-            "LIMIT is not supported"
-        );
-        checkFailure(
-            "SELECT a, b FROM t ORDER BY a LIMIT 5",
-            "LIMIT is not supported"
-        );
-        checkFailure(
-            "SELECT a, b FROM t ORDER BY a OFFSET 10",
-            "OFFSET is not supported"
         );
     }
 
@@ -140,22 +133,6 @@ public class ParserOperationsTest {
         checkFailure(
             "SELECT a FROM t GROUP BY a",
             "GROUP BY is not supported"
-        );
-    }
-
-    @Test
-    public void testUnsupportedLimit() {
-        checkFailure(
-              "SELECT a FROM t LIMIT 1",
-              "LIMIT is not supported"
-        );
-    }
-
-    @Test
-    public void testUnsupportedOffset() {
-        checkFailure(
-              "SELECT a FROM t OFFSET 1",
-              "OFFSET is not supported"
         );
     }
 
