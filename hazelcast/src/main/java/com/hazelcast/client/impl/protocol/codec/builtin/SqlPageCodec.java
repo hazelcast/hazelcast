@@ -21,6 +21,10 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.client.SqlPage;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,6 +76,11 @@ public final class SqlPageCodec {
 
                     break;
 
+                case SMALLINT:
+                    ListCNShortCodec.encode(clientMessage, (Iterable<Short>) column);
+
+                    break;
+
                 case INTEGER:
                     ListCNIntegerCodec.encode(clientMessage, (Iterable<Integer>) column);
 
@@ -82,14 +91,37 @@ public final class SqlPageCodec {
 
                     break;
 
-                case SMALLINT:
-                case DECIMAL:
                 case REAL:
+                    ListCNFloatCodec.encode(clientMessage, (Iterable<Float>) column);
+
+                    break;
+
                 case DOUBLE:
+                    ListCNDoubleCodec.encode(clientMessage, (Iterable<Double>) column);
+
+                    break;
+
                 case DATE:
+                    ListCNLocalDateCodec.encode(clientMessage, (Iterable<LocalDate>) column);
+
+                    break;
+
                 case TIME:
+                    ListCNLocalTimeCodec.encode(clientMessage, (Iterable<LocalTime>) column);
+
+                    break;
+
                 case TIMESTAMP:
+                    ListCNLocalDateTimeCodec.encode(clientMessage, (Iterable<LocalDateTime>) column);
+
+                    break;
+
                 case TIMESTAMP_WITH_TIME_ZONE:
+                    ListCNOffsetDateTimeCodec.encode(clientMessage, (Iterable<OffsetDateTime>) column);
+
+                    break;
+
+                case DECIMAL:
                 case NULL:
                 case OBJECT:
                     // TODO: All types except for NULL and OBJECT should be serialized with a custom codecs before 4.2
@@ -144,6 +176,11 @@ public final class SqlPageCodec {
 
                     break;
 
+                case SMALLINT:
+                    columns.add(ListCNShortCodec.decode(iterator));
+
+                    break;
+
                 case INTEGER:
                     columns.add(ListCNIntegerCodec.decode(iterator));
 
@@ -154,14 +191,37 @@ public final class SqlPageCodec {
 
                     break;
 
-                case SMALLINT:
-                case DECIMAL:
                 case REAL:
+                    columns.add(ListCNFloatCodec.decode(iterator));
+
+                    break;
+
                 case DOUBLE:
+                    columns.add(ListCNDoubleCodec.decode(iterator));
+
+                    break;
+
                 case DATE:
+                    columns.add(ListCNLocalDateCodec.decode(iterator));
+
+                    break;
+
                 case TIME:
+                    columns.add(ListCNLocalTimeCodec.decode(iterator));
+
+                    break;
+
                 case TIMESTAMP:
+                    columns.add(ListCNLocalDateTimeCodec.decode(iterator));
+
+                    break;
+
                 case TIMESTAMP_WITH_TIME_ZONE:
+                    columns.add(ListCNOffsetDateTimeCodec.decode(iterator));
+
+                    break;
+
+                case DECIMAL:
                 case NULL:
                 case OBJECT:
                     // TODO: All types except for NULL and OBJECT should be serialized with a custom codecs before 4.2

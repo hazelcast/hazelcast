@@ -25,16 +25,29 @@ import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.sql.SqlColumnType;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public final class FixedSizeTypesCodec {
 
     public static final int BYTE_SIZE_IN_BYTES = Bits.BYTE_SIZE_IN_BYTES;
-    public static final int LONG_SIZE_IN_BYTES = Bits.LONG_SIZE_IN_BYTES;
+    public static final int SHORT_SIZE_IN_BYTES = Bits.SHORT_SIZE_IN_BYTES;
     public static final int INT_SIZE_IN_BYTES = Bits.INT_SIZE_IN_BYTES;
+    public static final int LONG_SIZE_IN_BYTES = Bits.LONG_SIZE_IN_BYTES;
+    public static final int FLOAT_SIZE_IN_BYTES = Bits.FLOAT_SIZE_IN_BYTES;
+    public static final int DOUBLE_SIZE_IN_BYTES = Bits.DOUBLE_SIZE_IN_BYTES;
     public static final int BOOLEAN_SIZE_IN_BYTES = Bits.BOOLEAN_SIZE_IN_BYTES;
-    public static final int UUID_SIZE_IN_BYTES = Bits.BOOLEAN_SIZE_IN_BYTES + Bits.LONG_SIZE_IN_BYTES * 2;
+    public static final int UUID_SIZE_IN_BYTES = BOOLEAN_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES * 2;
+
+    public static final int LOCAL_DATE_SIZE_IN_BYTES = SHORT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES * 2;
+    public static final int LOCAL_TIME_SIZE_IN_BYTES = BYTE_SIZE_IN_BYTES * 3 + INT_SIZE_IN_BYTES;
+    public static final int LOCAL_DATE_TIME_SIZE_IN_BYTES = LOCAL_DATE_SIZE_IN_BYTES + LOCAL_TIME_SIZE_IN_BYTES;
+    public static final int OFFSET_DATE_TIME_SIZE_IN_BYTES = LOCAL_DATE_TIME_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
 
     private FixedSizeTypesCodec() {
     }
@@ -97,12 +110,36 @@ public final class FixedSizeTypesCodec {
         encodeInt(buffer, pos, columnType.getId());
     }
 
+    public static void encodeShort(byte[] buffer, int pos, short value) {
+        Bits.writeShortL(buffer, pos, value);
+    }
+
+    public static short decodeShort(byte[] buffer, int pos) {
+        return Bits.readShortL(buffer, pos);
+    }
+
     public static void encodeLong(byte[] buffer, int pos, long value) {
         Bits.writeLongL(buffer, pos, value);
     }
 
     public static long decodeLong(byte[] buffer, int pos) {
         return Bits.readLongL(buffer, pos);
+    }
+
+    public static void encodeFloat(byte[] buffer, int pos, float value) {
+        encodeInt(buffer, pos, Float.floatToIntBits(value));
+    }
+
+    public static float decodeFloat(byte[] buffer, int pos) {
+        return Float.intBitsToFloat(decodeInt(buffer, pos));
+    }
+
+    public static void encodeDouble(byte[] buffer, int pos, double value) {
+        encodeLong(buffer, pos, Double.doubleToLongBits(value));
+    }
+
+    public static double decodeDouble(byte[] buffer, int pos) {
+        return Double.longBitsToDouble(decodeLong(buffer, pos));
     }
 
     public static void encodeBoolean(byte[] buffer, int pos, boolean value) {
@@ -143,4 +180,57 @@ public final class FixedSizeTypesCodec {
         return new UUID(mostSigBits, leastSigBits);
     }
 
+    public static void encodeLocalDate(byte[] buffer, int pos, LocalDate value) {
+        encodeShort(buffer, pos, (short) value.getYear());
+        encodeByte(buffer, pos + SHORT_SIZE_IN_BYTES, (byte) value.getMonthValue());
+        encodeByte(buffer, pos + SHORT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES, (byte) value.getDayOfMonth());
+    }
+
+    public static LocalDate decodeLocalDate(byte[] buffer, int pos) {
+        int year = decodeShort(buffer, pos);
+        int month = decodeByte(buffer, pos + SHORT_SIZE_IN_BYTES);
+        int dayOfMonth = decodeByte(buffer, pos + SHORT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES);
+
+        return LocalDate.of(year, month, dayOfMonth);
+    }
+
+    public static void encodeLocalTime(byte[] buffer, int pos, LocalTime value) {
+        encodeByte(buffer, pos, (byte) value.getHour());
+        encodeByte(buffer, pos + BYTE_SIZE_IN_BYTES, (byte) value.getMinute());
+        encodeByte(buffer, pos + BYTE_SIZE_IN_BYTES * 2, (byte) value.getSecond());
+        encodeInt(buffer, pos + BYTE_SIZE_IN_BYTES * 3, value.getNano());
+    }
+
+    public static LocalTime decodeLocalTime(byte[] buffer, int pos) {
+        int hour = decodeByte(buffer, pos);
+        int minute = decodeByte(buffer, pos + BYTE_SIZE_IN_BYTES);
+        int second = decodeByte(buffer, pos + BYTE_SIZE_IN_BYTES * 2);
+        int nano = decodeInt(buffer, pos + BYTE_SIZE_IN_BYTES * 3);
+
+        return LocalTime.of(hour, minute, second, nano);
+    }
+
+    public static void encodeLocalDateTime(byte[] buffer, int pos, LocalDateTime value) {
+        encodeLocalDate(buffer, pos, value.toLocalDate());
+        encodeLocalTime(buffer, pos + LOCAL_DATE_SIZE_IN_BYTES, value.toLocalTime());
+    }
+
+    public static LocalDateTime decodeLocalDateTime(byte[] buffer, int pos) {
+        LocalDate date = decodeLocalDate(buffer, pos);
+        LocalTime time = decodeLocalTime(buffer, pos + LOCAL_DATE_SIZE_IN_BYTES);
+
+        return LocalDateTime.of(date, time);
+    }
+
+    public static void encodeOffsetDateTime(byte[] buffer, int pos, OffsetDateTime value) {
+        encodeLocalDateTime(buffer, pos, value.toLocalDateTime());
+        encodeInt(buffer, pos + LOCAL_DATE_TIME_SIZE_IN_BYTES, value.getOffset().getTotalSeconds());
+    }
+
+    public static OffsetDateTime decodeOffsetDateTime(byte[] buffer, int pos) {
+        LocalDateTime dateTime = decodeLocalDateTime(buffer, pos);
+        int offsetSeconds = decodeInt(buffer, pos + LOCAL_DATE_TIME_SIZE_IN_BYTES);
+
+        return OffsetDateTime.of(dateTime, ZoneOffset.ofTotalSeconds(offsetSeconds));
+    }
 }
