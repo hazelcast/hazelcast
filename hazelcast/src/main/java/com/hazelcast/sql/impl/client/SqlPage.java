@@ -312,13 +312,6 @@ public final class SqlPage {
     }
 
     public static boolean convertToData(SqlColumnType type) {
-        switch (type) {
-            case NULL:
-            case OBJECT:
-                return true;
-
-            default:
-                return false;
-        }
+        return type == SqlColumnType.OBJECT;
     }
 }

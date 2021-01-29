@@ -128,6 +128,18 @@ public final class SqlPageCodec {
                     break;
 
                 case NULL:
+                    int size = 0;
+
+                    for (Object ignore : column) {
+                        size++;
+                    }
+
+                    byte[] sizeBuffer = new byte[FixedSizeTypesCodec.INT_SIZE_IN_BYTES];
+                    FixedSizeTypesCodec.encodeInt(sizeBuffer, 0, size);
+                    clientMessage.add(new ClientMessage.Frame(sizeBuffer));
+
+                    break;
+
                 case OBJECT:
                     assert SqlPage.convertToData(columnType);
 
@@ -231,6 +243,20 @@ public final class SqlPageCodec {
                     break;
 
                 case NULL:
+                    ClientMessage.Frame frame = iterator.next();
+
+                    int size = FixedSizeTypesCodec.decodeInt(frame.content, 0);
+
+                    List<Object> column = new ArrayList<>(size);
+
+                    for (int i = 0; i < size; i++) {
+                        column.add(null);
+                    }
+
+                    columns.add(column);
+
+                    break;
+
                 case OBJECT:
                     assert SqlPage.convertToData(columnType);
 
