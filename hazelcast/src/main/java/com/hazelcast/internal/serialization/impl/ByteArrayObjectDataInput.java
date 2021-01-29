@@ -369,6 +369,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public byte[] readByteArray() throws IOException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -383,6 +384,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public boolean[] readBooleanArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -399,6 +401,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public char[] readCharArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -415,6 +418,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public int[] readIntArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -431,6 +435,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public long[] readLongArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -447,6 +452,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public double[] readDoubleArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -463,6 +469,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public float[] readFloatArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -479,6 +486,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public short[] readShortArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -495,11 +503,13 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public String[] readUTFArray() throws IOException {
         return readStringArray();
     }
 
     @Override
+    @Nullable
     public String[] readStringArray() throws IOException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -575,16 +585,19 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public final Object readObject() throws EOFException {
         return service.readObject(this);
     }
 
     @Override
+    @Nullable
     public <T> T readObject(Class aClass) throws IOException {
         return service.readObject(this, aClass);
     }
 
     @Override
+    @Nullable
     public <T> T readDataAsObject() throws IOException {
         // a future optimization would be to skip the construction of the Data object
         Data data = readData();
@@ -592,6 +605,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public final Data readData() throws IOException {
         byte[] bytes = readByteArray();
         return bytes == null ? null : new HeapData(bytes);

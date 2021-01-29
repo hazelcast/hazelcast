@@ -624,7 +624,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public Byte readByteFromArray(@Nonnull String fieldName, int index) {
+    public Byte getByteFromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.BYTE_ARRAY);
         if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
             return null;
@@ -638,7 +638,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @SuppressFBWarnings({"NP_BOOLEAN_RETURN_NULL"})
     @Override
-    public Boolean readBooleanFromArray(@Nonnull String fieldName, int index) {
+    public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.BOOLEAN_ARRAY);
         if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
             return null;
@@ -651,7 +651,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public Character readCharFromArray(@Nonnull String fieldName, int index) {
+    public Character getCharFromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.CHAR_ARRAY);
         if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
             return null;
@@ -664,7 +664,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public Double readDoubleFromArray(@Nonnull String fieldName, int index) {
+    public Double getDoubleFromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.DOUBLE_ARRAY);
         if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
             return null;
@@ -677,7 +677,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public Float readFloatFromArray(@Nonnull String fieldName, int index) {
+    public Float getFloatFromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.FLOAT_ARRAY);
         if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
             return null;
@@ -690,7 +690,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public Integer readIntFromArray(@Nonnull String fieldName, int index) {
+    public Integer getIntFromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.INT_ARRAY);
         if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
             return null;
@@ -703,7 +703,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public Long readLongFromArray(@Nonnull String fieldName, int index) {
+    public Long getLongFromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.LONG_ARRAY);
         if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
             return null;
@@ -716,7 +716,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public Short readShortFromArray(@Nonnull String fieldName, int index) {
+    public Short getShortFromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.SHORT_ARRAY);
         if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
             return null;
@@ -729,7 +729,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public String readUTFFromArray(@Nonnull String fieldName, int index) {
+    public String getStringFromArray(@Nonnull String fieldName, int index) {
         int currentPos = in.position();
         try {
             int pos = readPosition(fieldName, FieldType.UTF_ARRAY);
@@ -756,12 +756,12 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public GenericRecord readGenericRecordFromArray(@Nonnull String fieldName, int index) {
+    public GenericRecord getGenericRecordFromArray(@Nonnull String fieldName, int index) {
         return readNestedFromArray(fieldName, index, false);
     }
 
     @Override
-    public Object readObjectFromArray(@Nonnull String fieldName, int index) {
+    public Object getObjectFromArray(@Nonnull String fieldName, int index) {
         return readNestedFromArray(fieldName, index, true);
     }
 
@@ -832,37 +832,37 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     }
 
     @Override
-    public BigDecimal readDecimalFromArray(@Nonnull String fieldName, int index) {
+    public BigDecimal getDecimalFromArray(@Nonnull String fieldName, int index) {
         return readObjectFromArrayField(fieldName, DECIMAL_ARRAY, IOUtil::readBigDecimal, index);
     }
 
     @Override
-    public LocalTime readTimeFromArray(@Nonnull String fieldName, int index) {
+    public LocalTime getTimeFromArray(@Nonnull String fieldName, int index) {
         return readObjectFromArrayField(fieldName, TIME_ARRAY, IOUtil::readLocalTime, index);
     }
 
     @Override
-    public LocalDate readDateFromArray(@Nonnull String fieldName, int index) {
+    public LocalDate getDateFromArray(@Nonnull String fieldName, int index) {
         return readObjectFromArrayField(fieldName, DATE_ARRAY, IOUtil::readLocalDate, index);
     }
 
     @Override
-    public LocalDateTime readTimestampFromArray(@Nonnull String fieldName, int index) {
+    public LocalDateTime getTimestampFromArray(@Nonnull String fieldName, int index) {
         return readObjectFromArrayField(fieldName, TIMESTAMP_ARRAY, IOUtil::readLocalDateTime, index);
     }
 
     @Override
-    public OffsetDateTime readTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index) {
+    public OffsetDateTime getTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index) {
         return readObjectFromArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, IOUtil::readOffsetDateTime, index);
     }
 
     @Override
-    public Object[] readObjectArray(@Nonnull String fieldName) {
+    public Object[] getObjectArray(@Nonnull String fieldName) {
         return readNestedArray(fieldName, Portable[]::new, true);
     }
 
     @Override
-    public Object readObject(@Nonnull String fieldName) {
+    public Object getObject(@Nonnull String fieldName) {
         return readNested(fieldName, true);
     }
 

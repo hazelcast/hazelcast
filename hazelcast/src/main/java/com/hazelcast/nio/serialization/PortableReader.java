@@ -86,6 +86,7 @@ public interface PortableReader {
      * @deprecated for the sake of better naming. Use {@link #readString(String)} instead
      */
     @Nullable
+    @Deprecated
     String readUTF(@Nonnull String fieldName) throws IOException;
 
     /**
@@ -270,6 +271,7 @@ public interface PortableReader {
      * @deprecated for the sake of better naming. Use {@link #readStringArray(String)} instead
      */
     @Nullable
+    @Deprecated
     String[] readUTFArray(@Nonnull String fieldName) throws IOException;
 
     /**

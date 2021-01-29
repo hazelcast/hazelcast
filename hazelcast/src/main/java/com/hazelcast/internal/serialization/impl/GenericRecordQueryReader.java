@@ -169,7 +169,7 @@ public final class GenericRecordQueryReader implements ValueReader {
                         multiResult.setNullOrEmptyTarget(true);
                         continue;
                     }
-                    GenericRecord genericRecord = record.readGenericRecordFromArray(fieldName, index);
+                    GenericRecord genericRecord = record.getGenericRecordFromArray(fieldName, index);
                     if (genericRecord != null) {
                         iterator.set(genericRecord);
                     } else {
@@ -244,35 +244,35 @@ public final class GenericRecordQueryReader implements ValueReader {
         FieldType type = record.getFieldType(path);
         switch (type) {
             case BYTE_ARRAY:
-                return record.readByteFromArray(path, index);
+                return record.getByteFromArray(path, index);
             case SHORT_ARRAY:
-                return record.readShortFromArray(path, index);
+                return record.getShortFromArray(path, index);
             case INT_ARRAY:
-                return record.readIntFromArray(path, index);
+                return record.getIntFromArray(path, index);
             case LONG_ARRAY:
-                return record.readLongFromArray(path, index);
+                return record.getLongFromArray(path, index);
             case FLOAT_ARRAY:
-                return record.readFloatFromArray(path, index);
+                return record.getFloatFromArray(path, index);
             case DOUBLE_ARRAY:
-                return record.readDoubleFromArray(path, index);
+                return record.getDoubleFromArray(path, index);
             case BOOLEAN_ARRAY:
-                return record.readBooleanFromArray(path, index);
+                return record.getBooleanFromArray(path, index);
             case CHAR_ARRAY:
-                return record.readCharFromArray(path, index);
+                return record.getCharFromArray(path, index);
             case UTF_ARRAY:
-                return record.readUTFFromArray(path, index);
+                return record.getStringFromArray(path, index);
             case PORTABLE_ARRAY:
-                return record.readObjectFromArray(path, index);
+                return record.getObjectFromArray(path, index);
             case DECIMAL_ARRAY:
-                return record.readDecimalFromArray(path, index);
+                return record.getDecimalFromArray(path, index);
             case TIME_ARRAY:
-                return record.readTimeFromArray(path, index);
+                return record.getTimeFromArray(path, index);
             case DATE_ARRAY:
-                return record.readDateFromArray(path, index);
+                return record.getDateFromArray(path, index);
             case TIMESTAMP_ARRAY:
-                return record.readTimestampFromArray(path, index);
+                return record.getTimestampFromArray(path, index);
             case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                return record.readTimestampWithTimezoneFromArray(path, index);
+                return record.getTimestampWithTimezoneFromArray(path, index);
             default:
                 throw new IllegalArgumentException("Unsupported type " + type);
         }
@@ -321,9 +321,9 @@ public final class GenericRecordQueryReader implements ValueReader {
             case UTF_ARRAY:
                 return record.getStringArray(path);
             case PORTABLE:
-                return record.readObject(path);
+                return record.getObject(path);
             case PORTABLE_ARRAY:
-                return record.readObjectArray(path);
+                return record.getObjectArray(path);
             case DECIMAL:
                 return record.getDecimal(path);
             case DECIMAL_ARRAY:

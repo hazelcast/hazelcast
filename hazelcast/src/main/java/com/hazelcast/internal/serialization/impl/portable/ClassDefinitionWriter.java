@@ -60,91 +60,91 @@ final class ClassDefinitionWriter implements PortableWriter {
 
     @Override
     public void writeUTF(@Nonnull String fieldName, @Nullable String str) {
+        writeString(fieldName, str);
+    }
+
+    @Override
+    public void writeString(@Nonnull String fieldName, @Nullable String value) {
         builder.addStringField(fieldName);
     }
 
     @Override
-    public void writeString(@Nonnull String fieldName, @Nullable String value) throws IOException {
-        builder.addStringField(fieldName);
-    }
-
-    @Override
-    public void writeBoolean(@Nonnull String fieldName, boolean value) throws IOException {
+    public void writeBoolean(@Nonnull String fieldName, boolean value) {
         builder.addBooleanField(fieldName);
     }
 
     @Override
-    public void writeByte(@Nonnull String fieldName, byte value) throws IOException {
+    public void writeByte(@Nonnull String fieldName, byte value) {
         builder.addByteField(fieldName);
     }
 
     @Override
-    public void writeChar(@Nonnull String fieldName, int value) throws IOException {
+    public void writeChar(@Nonnull String fieldName, int value) {
         builder.addCharField(fieldName);
     }
 
     @Override
-    public void writeDouble(@Nonnull String fieldName, double value) throws IOException {
+    public void writeDouble(@Nonnull String fieldName, double value) {
         builder.addDoubleField(fieldName);
     }
 
     @Override
-    public void writeFloat(@Nonnull String fieldName, float value) throws IOException {
+    public void writeFloat(@Nonnull String fieldName, float value) {
         builder.addFloatField(fieldName);
     }
 
     @Override
-    public void writeShort(@Nonnull String fieldName, short value) throws IOException {
+    public void writeShort(@Nonnull String fieldName, short value) {
         builder.addShortField(fieldName);
     }
 
     @Override
-    public void writeByteArray(@Nonnull String fieldName, byte[] bytes) throws IOException {
+    public void writeByteArray(@Nonnull String fieldName, byte[] bytes) {
         builder.addByteArrayField(fieldName);
     }
 
     @Override
-    public void writeBooleanArray(@Nonnull String fieldName, boolean[] booleans) throws IOException {
+    public void writeBooleanArray(@Nonnull String fieldName, boolean[] booleans) {
         builder.addBooleanArrayField(fieldName);
     }
 
     @Override
-    public void writeCharArray(@Nonnull String fieldName, char[] chars) throws IOException {
+    public void writeCharArray(@Nonnull String fieldName, char[] chars) {
         builder.addCharArrayField(fieldName);
     }
 
     @Override
-    public void writeIntArray(@Nonnull String fieldName, int[] ints) throws IOException {
+    public void writeIntArray(@Nonnull String fieldName, int[] ints) {
         builder.addIntArrayField(fieldName);
     }
 
     @Override
-    public void writeLongArray(@Nonnull String fieldName, long[] longs) throws IOException {
+    public void writeLongArray(@Nonnull String fieldName, long[] longs) {
         builder.addLongArrayField(fieldName);
     }
 
     @Override
-    public void writeDoubleArray(@Nonnull String fieldName, double[] values) throws IOException {
+    public void writeDoubleArray(@Nonnull String fieldName, double[] values) {
         builder.addDoubleArrayField(fieldName);
     }
 
     @Override
-    public void writeFloatArray(@Nonnull String fieldName, float[] values) throws IOException {
+    public void writeFloatArray(@Nonnull String fieldName, float[] values) {
         builder.addFloatArrayField(fieldName);
     }
 
     @Override
-    public void writeShortArray(@Nonnull String fieldName, short[] values) throws IOException {
+    public void writeShortArray(@Nonnull String fieldName, short[] values) {
         builder.addShortArrayField(fieldName);
     }
 
     @Override
-    public void writeUTFArray(@Nonnull String fieldName, @Nullable String[] values) throws IOException {
-        builder.addStringArrayField(fieldName);
+    public void writeUTFArray(@Nonnull String fieldName, @Nullable String[] values) {
+        writeStringArray(fieldName, values);
     }
 
     @Override
-    public void writeStringArray(@Nonnull String fieldName, @Nullable String[] values) throws IOException {
+    public void writeStringArray(@Nonnull String fieldName, @Nullable String[] values) {
         builder.addStringArrayField(fieldName);
     }
 
@@ -161,7 +161,7 @@ final class ClassDefinitionWriter implements PortableWriter {
     }
 
     @Override
-    public void writeNullPortable(@Nonnull String fieldName, int factoryId, int classId) throws IOException {
+    public void writeNullPortable(@Nonnull String fieldName, int factoryId, int classId) {
         final ClassDefinition nestedClassDef = context.lookupClassDefinition(factoryId, classId, context.getVersion());
         if (nestedClassDef == null) {
             throw new HazelcastSerializationException("Cannot write null portable without explicitly "
@@ -171,27 +171,27 @@ final class ClassDefinitionWriter implements PortableWriter {
     }
 
     @Override
-    public void writeDecimal(@Nonnull String fieldName, @Nullable BigDecimal value) throws IOException {
+    public void writeDecimal(@Nonnull String fieldName, @Nullable BigDecimal value) {
         builder.addDecimalField(fieldName);
     }
 
     @Override
-    public void writeTime(@Nonnull String fieldName, @Nullable LocalTime value) throws IOException {
+    public void writeTime(@Nonnull String fieldName, @Nullable LocalTime value) {
         builder.addTimeField(fieldName);
     }
 
     @Override
-    public void writeDate(@Nonnull String fieldName, @Nullable LocalDate value) throws IOException {
+    public void writeDate(@Nonnull String fieldName, @Nullable LocalDate value) {
         builder.addDateField(fieldName);
     }
 
     @Override
-    public void writeTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value) throws IOException {
+    public void writeTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value) {
         builder.addTimestampField(fieldName);
     }
 
     @Override
-    public void writeTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value) throws IOException {
+    public void writeTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value) {
         builder.addTimestampWithTimezoneField(fieldName);
     }
 
@@ -215,27 +215,27 @@ final class ClassDefinitionWriter implements PortableWriter {
     }
 
     @Override
-    public void writeDecimalArray(@Nonnull String fieldName, @Nullable BigDecimal[] values) throws IOException {
+    public void writeDecimalArray(@Nonnull String fieldName, @Nullable BigDecimal[] values) {
         builder.addDecimalArrayField(fieldName);
     }
 
     @Override
-    public void writeTimeArray(@Nonnull String fieldName, @Nullable LocalTime[] values) throws IOException {
+    public void writeTimeArray(@Nonnull String fieldName, @Nullable LocalTime[] values) {
         builder.addTimeArrayField(fieldName);
     }
 
     @Override
-    public void writeDateArray(@Nonnull String fieldName, @Nullable LocalDate[] values) throws IOException {
+    public void writeDateArray(@Nonnull String fieldName, @Nullable LocalDate[] values) {
         builder.addDateArrayField(fieldName);
     }
 
     @Override
-    public void writeTimestampArray(@Nonnull String fieldName, @Nullable LocalDateTime[] values) throws IOException {
+    public void writeTimestampArray(@Nonnull String fieldName, @Nullable LocalDateTime[] values) {
         builder.addTimestampArrayField(fieldName);
     }
 
     @Override
-    public void writeTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] values) throws IOException {
+    public void writeTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] values) {
         builder.addTimestampWithTimezoneArrayField(fieldName);
     }
 

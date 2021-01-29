@@ -275,11 +275,13 @@ public class ObjectDataInputStream extends VersionedObjectDataInput
     }
 
     @Override
+    @Nullable
     public String[] readUTFArray() throws IOException {
         return readStringArray();
     }
 
     @Override
+    @Nullable
     public String[] readStringArray() throws IOException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {

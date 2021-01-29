@@ -29,6 +29,8 @@ public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVer
     /**
      * @deprecated for the sake of better naming. Use {@link #readString()} instead
      */
+    @Deprecated
+    @Nullable
     String readUTF() throws IOException;
 
     /**
@@ -42,48 +44,56 @@ public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVer
      * @return the byte array read
      * @throws IOException if it reaches end of file before finish reading
      */
+    @Nullable
     byte[] readByteArray() throws IOException;
 
     /**
      * @return the boolean array read
      * @throws IOException if it reaches end of file before finish reading
      */
+    @Nullable
     boolean[] readBooleanArray() throws IOException;
 
     /**
      * @return the char array read
      * @throws IOException if it reaches end of file before finish reading
      */
+    @Nullable
     char[] readCharArray() throws IOException;
 
     /**
      * @return int array read
      * @throws IOException if it reaches end of file before finish reading
      */
+    @Nullable
     int[] readIntArray() throws IOException;
 
     /**
      * @return long array read
      * @throws IOException if it reaches end of file before finish reading
      */
+    @Nullable
     long[] readLongArray() throws IOException;
 
     /**
      * @return double array read
      * @throws IOException if it reaches end of file before finish reading
      */
+    @Nullable
     double[] readDoubleArray() throws IOException;
 
     /**
      * @return float array read
      * @throws IOException if it reaches end of file before finish reading
      */
+    @Nullable
     float[] readFloatArray() throws IOException;
 
     /**
      * @return short array read
      * @throws IOException if it reaches end of file before finish reading
      */
+    @Nullable
     short[] readShortArray() throws IOException;
 
     /**
@@ -91,12 +101,15 @@ public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVer
      * @throws IOException if it reaches end of file before finish reading
      * @deprecated for the sake of better naming. Use {@link #readStringArray()} instead
      */
+    @Nullable
+    @Deprecated
     String[] readUTFArray() throws IOException;
 
     /**
      * @return String array read
      * @throws IOException if it reaches end of file before finish reading
      */
+    @Nullable
     String[] readStringArray() throws IOException;
 
     /**
@@ -104,6 +117,7 @@ public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVer
      * @return object array read
      * @throws IOException if it reaches end of file before finish reading
      */
+    @Nullable
     <T> T readObject() throws IOException;
 
     /**
@@ -112,6 +126,7 @@ public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVer
      * @return object array read
      * @throws IOException if it reaches end of file before finish reading
      */
+    @Nullable
     <T> T readObject(Class aClass) throws IOException;
 
     /**

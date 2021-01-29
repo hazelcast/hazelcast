@@ -223,7 +223,7 @@ public class ObjectDataOutputStream extends VersionedObjectDataOutput
     }
 
     @Override
-    public void writeUTFArray(String[] strings) throws IOException {
+    public void writeUTFArray(@Nullable String[] strings) throws IOException {
         writeStringArray(strings);
     }
 

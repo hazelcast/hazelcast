@@ -45,7 +45,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Boolean readBooleanFromArray(@Nonnull String fieldName, int index);
+    Boolean getBooleanFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -54,7 +54,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Byte readByteFromArray(@Nonnull String fieldName, int index);
+    Byte getByteFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -63,7 +63,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Character readCharFromArray(@Nonnull String fieldName, int index);
+    Character getCharFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -72,7 +72,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Double readDoubleFromArray(@Nonnull String fieldName, int index);
+    Double getDoubleFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -81,7 +81,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Float readFloatFromArray(@Nonnull String fieldName, int index);
+    Float getFloatFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -90,7 +90,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Integer readIntFromArray(@Nonnull String fieldName, int index);
+    Integer getIntFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -99,7 +99,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Long readLongFromArray(@Nonnull String fieldName, int index);
+    Long getLongFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -108,7 +108,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Short readShortFromArray(@Nonnull String fieldName, int index);
+    Short getShortFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -117,7 +117,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    String readUTFFromArray(@Nonnull String fieldName, int index);
+    String getStringFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -126,7 +126,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    GenericRecord readGenericRecordFromArray(@Nonnull String fieldName, int index);
+    GenericRecord getGenericRecordFromArray(@Nonnull String fieldName, int index);
 
     /**
      * Reads same value {@link InternalGenericRecord#getGenericRecord(String)} }, but in deserialized form.
@@ -139,7 +139,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Object readObjectFromArray(@Nonnull String fieldName, int index);
+    Object getObjectFromArray(@Nonnull String fieldName, int index);
 
     /**
      * Reads same value {@link GenericRecord#getGenericRecordArray(String)}, but in deserialized form.
@@ -151,7 +151,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Object[] readObjectArray(@Nonnull String fieldName);
+    Object[] getObjectArray(@Nonnull String fieldName);
 
     /**
      * Reads same value {@link GenericRecord#getGenericRecord(String)} }, but in deserialized form.
@@ -163,7 +163,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    Object readObject(@Nonnull String fieldName);
+    Object getObject(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -172,7 +172,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    BigDecimal readDecimalFromArray(@Nonnull String fieldName, int index);
+    BigDecimal getDecimalFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -181,7 +181,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    LocalTime readTimeFromArray(@Nonnull String fieldName, int index);
+    LocalTime getTimeFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -190,7 +190,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    LocalDate readDateFromArray(@Nonnull String fieldName, int index);
+    LocalDate getDateFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -199,7 +199,7 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    LocalDateTime readTimestampFromArray(@Nonnull String fieldName, int index);
+    LocalDateTime getTimestampFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -208,5 +208,5 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
-    OffsetDateTime readTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index);
+    OffsetDateTime getTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index);
 }

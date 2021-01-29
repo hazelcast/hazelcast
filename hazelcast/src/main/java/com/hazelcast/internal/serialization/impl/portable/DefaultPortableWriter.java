@@ -285,7 +285,7 @@ public class DefaultPortableWriter implements PortableWriter {
     @Override
     public void writeStringArray(@Nonnull String fieldName, @Nullable String[] values) throws IOException {
         setPosition(fieldName, FieldType.UTF_ARRAY);
-        out.writeUTFArray(values);
+        out.writeStringArray(values);
     }
 
     @Override
