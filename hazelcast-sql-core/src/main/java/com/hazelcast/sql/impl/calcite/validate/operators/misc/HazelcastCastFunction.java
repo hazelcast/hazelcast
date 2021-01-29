@@ -17,11 +17,10 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
 import com.hazelcast.sql.impl.calcite.validate.param.NoOpParameterConverter;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -39,6 +38,7 @@ import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.canCast;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.toHazelcastType;
 
 public final class HazelcastCastFunction extends HazelcastFunction {
@@ -85,13 +85,6 @@ public final class HazelcastCastFunction extends HazelcastFunction {
         } else {
             return false;
         }
-    }
-
-    private static boolean canCast(RelDataType sourceType, RelDataType targetType) {
-        QueryDataType queryFrom = toHazelcastType(sourceType.getSqlTypeName());
-        QueryDataType queryTo = toHazelcastType(targetType.getSqlTypeName());
-
-        return queryFrom.getConverter().canConvertTo(queryTo.getTypeFamily());
     }
 
     @Override
