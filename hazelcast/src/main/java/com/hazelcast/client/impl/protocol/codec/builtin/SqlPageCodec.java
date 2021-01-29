@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.client.SqlPage;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -37,7 +38,7 @@ public final class SqlPageCodec {
     private SqlPageCodec() {
     }
 
-    @SuppressWarnings({"unchecked", "checkstyle:CyclomaticComplexity"})
+    @SuppressWarnings({"unchecked", "checkstyle:CyclomaticComplexity", "checkstyle:MethodLength"})
     public static void encode(ClientMessage clientMessage, SqlPage sqlPage) {
         clientMessage.add(BEGIN_FRAME.copy());
 
@@ -122,9 +123,12 @@ public final class SqlPageCodec {
                     break;
 
                 case DECIMAL:
+                    ListMultiFrameCodec.encode(clientMessage, (Iterable<BigDecimal>) column, BigDecimalCodec::encodeNullable);
+
+                    break;
+
                 case NULL:
                 case OBJECT:
-                    // TODO: All types except for NULL and OBJECT should be serialized with a custom codecs before 4.2
                     assert SqlPage.convertToData(columnType);
 
                     ListMultiFrameCodec.encode(clientMessage, (Iterable<Data>) column, DataCodec::encodeNullable);
@@ -139,7 +143,7 @@ public final class SqlPageCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength"})
     public static SqlPage decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
@@ -222,9 +226,12 @@ public final class SqlPageCodec {
                     break;
 
                 case DECIMAL:
+                    columns.add(ListMultiFrameCodec.decode(iterator, BigDecimalCodec::decodeNullable));
+
+                    break;
+
                 case NULL:
                 case OBJECT:
-                    // TODO: All types except for NULL and OBJECT should be serialized with a custom codecs before 4.2
                     assert SqlPage.convertToData(columnType);
 
                     columns.add(ListMultiFrameCodec.decode(iterator, DataCodec::decodeNullable));

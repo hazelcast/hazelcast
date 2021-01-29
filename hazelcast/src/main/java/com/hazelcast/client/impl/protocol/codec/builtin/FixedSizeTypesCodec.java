@@ -33,6 +33,7 @@ import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+@SuppressWarnings("checkstyle:MethodCount")
 public final class FixedSizeTypesCodec {
 
     public static final int BYTE_SIZE_IN_BYTES = Bits.BYTE_SIZE_IN_BYTES;
