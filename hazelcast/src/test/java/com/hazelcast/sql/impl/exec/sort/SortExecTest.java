@@ -592,6 +592,7 @@ public class SortExecTest extends SqlTestSupport {
             operationHandler,
             queryId,
             1,
+            true,
             1000,
             localMemberId,
             senderMemberIds,
@@ -615,24 +616,24 @@ public class SortExecTest extends SqlTestSupport {
         assertEquals(IterationResult.WAIT, exec.advance());
 
         // Consume several batches, still insufficient to produce a result.
-        inbox.onBatch(new InboundBatch(createMonotonicBatch(7, 2), false, senderMemberIds.get(0)), 100L);
-        inbox.onBatch(new InboundBatch(createMonotonicBatch(3, 2), false, senderMemberIds.get(1)), 100L);
-        inbox.onBatch(new InboundBatch(createMonotonicBatch(5, 2), false, senderMemberIds.get(2)), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(7, 2), 0, false, senderMemberIds.get(0)), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(3, 2), 0, false, senderMemberIds.get(1)), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(5, 2), 0, false, senderMemberIds.get(2)), 100L);
 
         assertEquals(IterationResult.WAIT, exec.advance());
 
         // Consume more batches
-        inbox.onBatch(new InboundBatch(createMonotonicBatch(13, 2), false, senderMemberIds.get(0)), 100L);
-        inbox.onBatch(new InboundBatch(createMonotonicBatch(11, 2), false, senderMemberIds.get(1)), 100L);
-        inbox.onBatch(new InboundBatch(createMonotonicBatch(9, 2), false, senderMemberIds.get(2)), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(13, 2), 1, false, senderMemberIds.get(0)), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(11, 2), 1, false, senderMemberIds.get(1)), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(9, 2), 1, false, senderMemberIds.get(2)), 100L);
 
         assertEquals(IterationResult.FETCHED, exec.advance());
         assertBatch(exec.currentBatch(), 6, 5, 10, true);
 
         // Consume more batches
-        inbox.onBatch(new InboundBatch(createMonotonicBatch(15, 2), false, senderMemberIds.get(0)), 100L);
-        inbox.onBatch(new InboundBatch(createMonotonicBatch(19, 2), false, senderMemberIds.get(1)), 100L);
-        inbox.onBatch(new InboundBatch(createMonotonicBatch(17, 2), false, senderMemberIds.get(2)), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(15, 2), 2, false, senderMemberIds.get(0)), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(19, 2), 2, false, senderMemberIds.get(1)), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(17, 2), 2, false, senderMemberIds.get(2)), 100L);
 
         assertEquals(IterationResult.FETCHED_DONE, exec.advance());
         assertBatch(exec.currentBatch(), 4, 11, 14, true);
