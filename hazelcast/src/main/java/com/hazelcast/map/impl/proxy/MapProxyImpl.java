@@ -23,6 +23,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.CollectionUtil;
@@ -41,6 +42,8 @@ import com.hazelcast.map.impl.MapEntryReplacingEntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MergeEntryProcessor;
 import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.map.impl.iterator.MapIterable;
+import com.hazelcast.map.impl.iterator.MapQueryIterable;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
 import com.hazelcast.map.impl.iterator.MapQueryPartitionIterator;
 import com.hazelcast.map.impl.journal.MapEventJournalReadOperation;
@@ -878,7 +881,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     private <R> Collection<R> project(@Nonnull Projection<? super Map.Entry<K, V>, R> projection,
-                                     @Nonnull Predicate<K, V> predicate, Target target) {
+                                      @Nonnull Predicate<K, V> predicate, Target target) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         checkNotPagingPredicate(predicate, "project");
@@ -986,6 +989,29 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         projection = serializationService.toObject(serializationService.toData(projection));
         handleHazelcastInstanceAwareParams(predicate);
         return new MapQueryPartitionIterator<>(this, fetchSize, partitionId, predicate, projection);
+    }
+
+
+    /**
+     * @param predicate the predicate which the entries must match. {@code null} value is not
+     *                  allowed
+     * @param <R>       the return type
+     * @return the iterator for the projected entries
+     * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}
+     * @since 4.2
+     */
+    public <R> Iterable<R> iterable(int fetchSize,
+                                    Projection<? super Map.Entry<K, V>, R> projection,
+                                    Predicate<K, V> predicate) {
+        checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        IPartition[] partitions = partitionService.getPartitions();
+        return new MapQueryIterable<>(this, fetchSize, partitions, projection, predicate);
+    }
+
+    public Iterable<Entry<K, V>> iterable(int fetchSize, boolean prefetchValues) {
+        IPartition[] partitions = partitionService.getPartitions();
+        return new MapIterable<>(this, fetchSize, partitions, prefetchValues);
     }
 
     @Override
@@ -1253,7 +1279,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                     return null;
                 }
             } else {
-                Data result =  putIfAbsentInternal(keyAsData, toData(value), UNSET, TimeUnit.MILLISECONDS, UNSET,
+                Data result = putIfAbsentInternal(keyAsData, toData(value), UNSET, TimeUnit.MILLISECONDS, UNSET,
                         TimeUnit.MILLISECONDS);
                 if (result == null) {
                     return value;
