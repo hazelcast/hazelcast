@@ -29,7 +29,7 @@
     "markdownlint": "^0.11.0",
     "markdownlint-cli": "^0.22.0",
     "markdownlint-rule-emphasis-style": "^1.0.0",
-    "replace-in-file": "^6.1.0",
+    "replace-in-file": "^6.2.0",
     "wait-on": "^4.0.2"
   },
   "dependencies": {

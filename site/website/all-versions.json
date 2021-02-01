@@ -1,5 +1,10 @@
 [
     {
+        "version": "4.4",
+        "releaseNotes": "/blog/2021/02/03/jet-44-is-released",
+        "size" : 547
+    },
+    {
         "version": "4.3",
         "releaseNotes": "/blog/2020/10/23/jet-43-is-released",
         "size" : 102
