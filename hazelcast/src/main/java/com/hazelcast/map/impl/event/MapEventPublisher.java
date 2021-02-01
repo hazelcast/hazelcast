@@ -65,10 +65,27 @@ public interface MapEventPublisher {
      * @param eventType the event type
      * @param dataKey   the key of the event map entry
      * @param oldValue  the old value of the map entry
-     * @param dataValue the new value of the map entry
+     * @param newValue  the new value of the map entry
      */
     void publishEvent(Address caller, String mapName,
-                      EntryEventType eventType, Data dataKey, Object oldValue, Object dataValue);
+                      EntryEventType eventType, Data dataKey, Object oldValue, Object newValue);
+
+    /**
+     * Publish an event to the event subsystem.
+     * Note: Exceptions during publications are caught and logged.
+     *
+     * @param caller    the address of the caller that caused the event
+     * @param mapName   the map name
+     * @param eventType the event type
+     * @param dataKey   the key of the event map entry
+     * @param oldValue  the old value of the map entry
+     * @param newValue  the new value of the map entry
+     * @param newDataValue the new value of the map entry, possibly encoded as
+     *                     {@link Data} to reduce re-serialization costs
+     */
+    void publishEvent(Address caller, String mapName,
+                      EntryEventType eventType, Data dataKey, Object oldValue, Object newValue,
+                      Object newDataValue);
 
     /**
      * Publish an event to the event subsystem. This method
@@ -81,13 +98,16 @@ public interface MapEventPublisher {
      * @param eventType        the event type
      * @param dataKey          the key of the event map entry
      * @param oldValue         the old value of the map entry
-     * @param dataValue        the new value of the map entry
+     * @param newValue         the new value of the map entry
+     * @param newDataValue     the new value of the map entry, possibly encoded as
+     *                         {@link Data} to reduce re-serialization costs
      * @param dataMergingValue the value used when performing a merge
      *                         operation in case of a {@link EntryEventType#MERGED} event.
      *                         This value together with the old value produced the new value.
      */
     void publishEvent(Address caller, String mapName, EntryEventType eventType,
-                      Data dataKey, Object oldValue, Object dataValue, Object dataMergingValue);
+                      Data dataKey, Object oldValue, Object newValue, Object newDataValue,
+                      Object dataMergingValue);
 
     void publishMapPartitionLostEvent(Address caller, String mapName, int partitionId);
 

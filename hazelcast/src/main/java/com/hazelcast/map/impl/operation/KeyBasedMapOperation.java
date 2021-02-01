@@ -17,9 +17,9 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
@@ -61,6 +61,22 @@ public abstract class KeyBasedMapOperation extends MapOperation
 
     public final Data getValue() {
         return dataValue;
+    }
+
+    protected final Object getValueForFiltering() {
+        if (isObjectInMemoryFormat() || isPostProcessing(recordStore)) {
+            return recordStore.getRecord(dataKey).getValue();
+        } else {
+            return dataValue;
+        }
+    }
+
+    protected final Object getDataValueForPublishing() {
+        if (isPostProcessing(recordStore)) {
+            return recordStore.getRecord(dataKey).getValue();
+        } else {
+            return dataValue;
+        }
     }
 
     @Override
