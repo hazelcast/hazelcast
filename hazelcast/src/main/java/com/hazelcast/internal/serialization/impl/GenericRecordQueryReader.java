@@ -263,6 +263,16 @@ public final class GenericRecordQueryReader implements ValueReader {
                 return record.readUTFFromArray(path, index);
             case PORTABLE_ARRAY:
                 return record.readObjectFromArray(path, index);
+            case DECIMAL_ARRAY:
+                return record.readDecimalFromArray(path, index);
+            case TIME_ARRAY:
+                return record.readTimeFromArray(path, index);
+            case DATE_ARRAY:
+                return record.readDateFromArray(path, index);
+            case TIMESTAMP_ARRAY:
+                return record.readTimestampFromArray(path, index);
+            case TIMESTAMP_WITH_TIMEZONE_ARRAY:
+                return record.readTimestampWithTimezoneFromArray(path, index);
             default:
                 throw new IllegalArgumentException("Unsupported type " + type);
         }
@@ -314,6 +324,26 @@ public final class GenericRecordQueryReader implements ValueReader {
                 return record.readObject(path);
             case PORTABLE_ARRAY:
                 return record.readObjectArray(path);
+            case DECIMAL:
+                return record.readDecimal(path);
+            case DECIMAL_ARRAY:
+                return record.readDecimalArray(path);
+            case TIME:
+                return record.readTime(path);
+            case TIME_ARRAY:
+                return record.readTimeArray(path);
+            case DATE:
+                return record.readDate(path);
+            case DATE_ARRAY:
+                return record.readDateArray(path);
+            case TIMESTAMP:
+                return record.readTimestamp(path);
+            case TIMESTAMP_ARRAY:
+                return record.readTimestampArray(path);
+            case TIMESTAMP_WITH_TIMEZONE:
+                return record.readTimestampWithTimezone(path);
+            case TIMESTAMP_WITH_TIMEZONE_ARRAY:
+                return record.readTimestampWithTimezoneArray(path);
             default:
                 throw new IllegalArgumentException("Unsupported type " + type);
         }

@@ -31,36 +31,40 @@ import org.apache.calcite.rex.RexNode;
  */
 public class SortPhysicalRel extends Sort implements PhysicalRel {
 
-    // Whether the input is already pre-sorted
-    private boolean preSortedInput;
+    // Whether the input is actually requires sorting
+    private boolean requiresSort;
 
     public SortPhysicalRel(
-            RelOptCluster cluster,
-            RelTraitSet traits,
-            RelNode child,
-            RelCollation collation,
-            boolean preSortedInput
+        RelOptCluster cluster,
+        RelTraitSet traits,
+        RelNode child,
+        RelCollation collation,
+        boolean preSortedInput,
+        RexNode offset,
+        RexNode fetch
     ) {
-        super(cluster, traits, child, collation, null, null);
-        this.preSortedInput = preSortedInput;
+        super(cluster, traits, child, collation, offset, fetch);
+        this.requiresSort = preSortedInput;
+    }
+
+    public boolean requiresSort() {
+        return requiresSort;
     }
 
     @Override
     public final Sort copy(RelTraitSet traitSet, RelNode input, RelCollation collation, RexNode offset, RexNode fetch) {
-        return new SortPhysicalRel(getCluster(), traitSet, input, collation, preSortedInput);
+        return new SortPhysicalRel(getCluster(), traitSet, input, collation, requiresSort, offset, fetch);
     }
 
     @Override
     public final RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw).item("preSortedInput", preSortedInput);
+        return super.explainTerms(pw).item("requiresSort", requiresSort);
     }
 
     @Override
     public void visit(PhysicalRelVisitor visitor) {
         ((PhysicalRel) input).visit(visitor);
 
-        if (!preSortedInput) {
-            visitor.onSort(this);
-        }
+        visitor.onSort(this);
     }
 }

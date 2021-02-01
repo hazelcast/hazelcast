@@ -30,7 +30,9 @@ import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNumericLiteral;
 import org.apache.calcite.sql.SqlOperatorTable;
+import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.sql.validate.SelectScope;
@@ -47,6 +49,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.sql.impl.calcite.parse.UnsupportedOperationVisitor.error;
 
 /**
  * Hazelcast-specific SQL validator.
@@ -144,6 +148,42 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         deriveType(scope, call);
 
         super.validateCall(call, scope);
+    }
+
+    @Override
+    public void validateQuery(SqlNode node, SqlValidatorScope scope, RelDataType targetRowType) {
+        super.validateQuery(node, scope, targetRowType);
+
+        if (node instanceof SqlSelect) {
+            // Derive the types for offset-fetch expressions, Calcite doesn't do
+            // that automatically.
+
+            SqlSelect select = (SqlSelect) node;
+
+            SqlNode offset = select.getOffset();
+            if (offset != null) {
+                deriveType(scope, offset);
+                validateNonNegativeValue(offset);
+            }
+
+            SqlNode fetch = select.getFetch();
+            if (fetch != null) {
+                deriveType(scope, fetch);
+                validateNonNegativeValue(fetch);
+            }
+        }
+    }
+
+    private void validateNonNegativeValue(SqlNode sqlNode) {
+        if (!(sqlNode instanceof SqlNumericLiteral)) {
+            throw error(sqlNode, "FETCH/OFFSET must be a numeric literal");
+        }
+        Object value = ((SqlNumericLiteral) sqlNode).getValue();
+        long value0 = ((Number) value).longValue();
+
+        if (value0 < 0L) {
+            throw error(sqlNode, "FETCH/OFFSET value cannot be negative: " + value0);
+        }
     }
 
     @Override

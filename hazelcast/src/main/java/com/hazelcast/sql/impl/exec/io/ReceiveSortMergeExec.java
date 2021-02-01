@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.exec.sort.MergeSort;
 import com.hazelcast.sql.impl.exec.sort.MergeSortSource;
 import com.hazelcast.sql.impl.exec.sort.SortKey;
 import com.hazelcast.sql.impl.exec.sort.SortKeyComparator;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
@@ -61,7 +62,9 @@ public class ReceiveSortMergeExec extends AbstractExec {
         int id,
         StripedInbox inbox,
         int[] columnIndexes,
-        boolean[] ascs
+        boolean[] ascs,
+        Expression fetch,
+        Expression offset
     ) {
         super(id);
 
@@ -74,12 +77,14 @@ public class ReceiveSortMergeExec extends AbstractExec {
             sources[i] = new Source(i);
         }
 
-        sorter = new MergeSort(sources, new SortKeyComparator(ascs));
+        sorter = new MergeSort(sources, new SortKeyComparator(ascs), fetch, offset);
     }
 
     @Override
     protected void setup0(QueryFragmentContext ctx) {
         inbox.setup();
+
+        sorter.setup(ctx);
     }
 
     @Override
@@ -87,7 +92,7 @@ public class ReceiveSortMergeExec extends AbstractExec {
         List<Row> rows = sorter.nextBatch();
         boolean done = sorter.isDone();
 
-        if (rows == null) {
+        if (rows == null || rows.size() == 0) {
             curBatch = EmptyRowBatch.INSTANCE;
 
             return done ? IterationResult.FETCHED_DONE : IterationResult.WAIT;
@@ -98,6 +103,7 @@ public class ReceiveSortMergeExec extends AbstractExec {
 
             return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
         }
+
     }
 
     @Override

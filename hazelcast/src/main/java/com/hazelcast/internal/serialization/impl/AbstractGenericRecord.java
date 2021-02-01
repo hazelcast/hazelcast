@@ -106,11 +106,22 @@ public abstract class AbstractGenericRecord implements GenericRecord {
                 return Arrays.hashCode(record.readUTFArray(path));
             case PORTABLE_ARRAY:
                 return Arrays.hashCode(record.readGenericRecordArray(path));
+            case DECIMAL_ARRAY:
+                return Arrays.hashCode(record.readDecimalArray(path));
+            case TIME_ARRAY:
+                return Arrays.hashCode(record.readTimeArray(path));
+            case DATE_ARRAY:
+                return Arrays.hashCode(record.readDateArray(path));
+            case TIMESTAMP_ARRAY:
+                return Arrays.hashCode(record.readTimestampArray(path));
+            case TIMESTAMP_WITH_TIMEZONE_ARRAY:
+                return Arrays.hashCode(record.readTimestampWithTimezoneArray(path));
             default:
                 throw new IllegalArgumentException("Unsupported type " + type);
         }
     }
 
+    @SuppressWarnings("checkstyle:MethodLength")
     private static Object readAny(GenericRecord record, String path, FieldType type) {
         switch (type) {
             case BYTE:
@@ -153,6 +164,26 @@ public abstract class AbstractGenericRecord implements GenericRecord {
                 return record.readGenericRecord(path);
             case PORTABLE_ARRAY:
                 return record.readGenericRecordArray(path);
+            case DECIMAL:
+                return record.readDecimal(path);
+            case DECIMAL_ARRAY:
+                return record.readDecimalArray(path);
+            case TIME:
+                return record.readTime(path);
+            case TIME_ARRAY:
+                return record.readTimeArray(path);
+            case DATE:
+                return record.readDate(path);
+            case DATE_ARRAY:
+                return record.readDateArray(path);
+            case TIMESTAMP:
+                return record.readTimestamp(path);
+            case TIMESTAMP_ARRAY:
+                return record.readTimestampArray(path);
+            case TIMESTAMP_WITH_TIMEZONE:
+                return record.readTimestampWithTimezone(path);
+            case TIMESTAMP_WITH_TIMEZONE_ARRAY:
+                return record.readTimestampWithTimezoneArray(path);
             default:
                 throw new IllegalArgumentException("Unsupported type " + type);
         }
@@ -194,6 +225,11 @@ public abstract class AbstractGenericRecord implements GenericRecord {
                         str.append(Arrays.toString((char[]) field));
                         break;
                     case UTF_ARRAY:
+                    case DECIMAL_ARRAY:
+                    case TIME_ARRAY:
+                    case DATE_ARRAY:
+                    case TIMESTAMP_ARRAY:
+                    case TIMESTAMP_WITH_TIMEZONE_ARRAY:
                     case PORTABLE_ARRAY:
                         str.append(Arrays.toString((Object[]) field));
                         break;
