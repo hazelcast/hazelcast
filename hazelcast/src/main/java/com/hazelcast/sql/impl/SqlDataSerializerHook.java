@@ -297,7 +297,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[INTERVAL_YEAR_MONTH] = arg -> new SqlYearMonthInterval();
         constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
 
-        constructors[EXPRESSION_CASE] = arg -> new CaseExpression();
+        constructors[EXPRESSION_CASE] = arg -> new CaseExpression<>();
 
         return new ArrayDataSerializableFactory(constructors);
     }
