@@ -26,7 +26,6 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.ResultIterator.HasNextResult;
-import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.client.SqlPage;
 
 import java.util.ArrayList;

@@ -150,7 +150,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
         }
 
         assertNotNull(executeResponse.rowPage);
-        assertEquals(pageSize, executeResponse.rowPage.size());
+        assertEquals(pageSize, executeResponse.rowPage.getRowCount());
 
         // Get the second page through the "execute" request
         ClientMessage fetchRequest = SqlFetchCodec.encodeRequest(
@@ -167,7 +167,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
         }
 
         assertNotNull(fetchResponse.rowPage);
-        assertEquals(pageSize, fetchResponse.rowPage.size());
+        assertEquals(pageSize, fetchResponse.rowPage.getRowCount());
     }
 
     private void checkFailure(SqlRow row, boolean key) {

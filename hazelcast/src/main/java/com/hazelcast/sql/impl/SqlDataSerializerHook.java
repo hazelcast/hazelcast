@@ -178,7 +178,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int EXPRESSION_REMAINDER = 64;
 
-    public static final int LAZY_TARGET = 64;
+    public static final int LAZY_TARGET = 65;
 
     public static final int LEN = LAZY_TARGET + 1;
 

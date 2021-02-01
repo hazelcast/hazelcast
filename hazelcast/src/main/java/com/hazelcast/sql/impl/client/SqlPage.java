@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.client;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.SqlRowImpl;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
@@ -298,7 +299,7 @@ public final class SqlPage {
             if (position == count) {
                 throw new NoSuchElementException();
             } else {
-                Object res = rows.get(position).getObject(columnIndex);
+                Object res = ((SqlRowImpl) rows.get(position)).getObjectRaw(columnIndex);
 
                 if (convertToData) {
                     res = serializationService.toData(res);
