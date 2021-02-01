@@ -33,6 +33,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+
 import static com.hazelcast.internal.nio.IOUtil.readData;
 import static com.hazelcast.internal.nio.IOUtil.writeData;
 import static com.hazelcast.internal.serialization.impl.portable.PortableTest.createNamedPortableClassDefinition;
@@ -68,18 +74,18 @@ public class PortableClassVersionTest {
     @Test
     public void testDifferentClassAndServiceVersions() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().setPortableVersion(1)
-                .addPortableFactory(FACTORY_ID, new PortableFactory() {
-                    public Portable create(int classId) {
-                        return new NamedPortable();
-                    }
-                }).build();
+                                                                                            .addPortableFactory(FACTORY_ID, new PortableFactory() {
+                                                                                                public Portable create(int classId) {
+                                                                                                    return new NamedPortable();
+                                                                                                }
+                                                                                            }).build();
 
         SerializationService serializationService2 = new DefaultSerializationServiceBuilder().setPortableVersion(2)
-                .addPortableFactory(FACTORY_ID, new PortableFactory() {
-                    public Portable create(int classId) {
-                        return new NamedPortableV2();
-                    }
-                }).build();
+                                                                                             .addPortableFactory(FACTORY_ID, new PortableFactory() {
+                                                                                                 public Portable create(int classId) {
+                                                                                                     return new NamedPortableV2();
+                                                                                                 }
+                                                                                             }).build();
 
         testDifferentClassVersions(serializationService, serializationService2);
     }
@@ -125,18 +131,18 @@ public class PortableClassVersionTest {
     @Test
     public void testDifferentClassAndServiceVersionsUsingDataWriteAndRead() throws Exception {
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().setPortableVersion(1)
-                .addPortableFactory(FACTORY_ID, new PortableFactory() {
-                    public Portable create(int classId) {
-                        return new NamedPortable();
-                    }
-                }).build();
+                                                                                                    .addPortableFactory(FACTORY_ID, new PortableFactory() {
+                                                                                                        public Portable create(int classId) {
+                                                                                                            return new NamedPortable();
+                                                                                                        }
+                                                                                                    }).build();
 
         InternalSerializationService serializationService2 = new DefaultSerializationServiceBuilder().setPortableVersion(2)
-                .addPortableFactory(FACTORY_ID, new PortableFactory() {
-                    public Portable create(int classId) {
-                        return new NamedPortableV2();
-                    }
-                }).build();
+                                                                                                     .addPortableFactory(FACTORY_ID, new PortableFactory() {
+                                                                                                         public Portable create(int classId) {
+                                                                                                             return new NamedPortableV2();
+                                                                                                         }
+                                                                                                     }).build();
 
         testDifferentClassVersionsUsingDataWriteAndRead(serializationService, serializationService2);
     }
@@ -182,16 +188,22 @@ public class PortableClassVersionTest {
         nn[0] = new NamedPortable("name", 123);
         InnerPortable inner = new InnerPortable(new byte[]{0, 1, 2}, new char[]{'c', 'h', 'a', 'r'},
                 new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
-                new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, nn);
+                new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, nn,
+                new BigDecimal[]{new BigDecimal("12345"), new BigDecimal("123456")},
+                new LocalTime[]{LocalTime.now(), LocalTime.now()},
+                new LocalDate[]{LocalDate.now(), LocalDate.now()},
+                new LocalDateTime[]{LocalDateTime.now()},
+                new OffsetDateTime[]{OffsetDateTime.now(), OffsetDateTime.now()});
 
         MainPortable mainWithInner = new MainPortable((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
-                -897543.3678909d, "this is main portable object created for testing!", inner);
+                -897543.3678909d, "this is main portable object created for testing!", inner,
+                new BigDecimal("12312313"), LocalTime.now(), LocalDate.now(), LocalDateTime.now(), OffsetDateTime.now());
 
         testPreDefinedDifferentVersions(serializationService, serializationService2, mainWithInner);
     }
 
     @Test
-    public void testPreDefinedDifferentVersionsWithNullInnerPortable() {
+    public void testPreDefinedDifferentVersionsWithNullInnerPortable_and_nullObjects() {
         InternalSerializationService serializationService = createSerializationService(1);
         serializationService.getPortableContext().registerClassDefinition(createInnerPortableClassDefinition(1));
 
@@ -199,7 +211,8 @@ public class PortableClassVersionTest {
         serializationService2.getPortableContext().registerClassDefinition(createInnerPortableClassDefinition(2));
 
         MainPortable mainWithNullInner = new MainPortable((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
-                -897543.3678909d, "this is main portable object created for testing!", null);
+                -897543.3678909d, "this is main portable object created for testing!", null, null,
+                null, null, null, null);
 
         testPreDefinedDifferentVersions(serializationService, serializationService2, mainWithNullInner);
     }
@@ -224,6 +237,11 @@ public class PortableClassVersionTest {
         builder.addFloatArrayField("f");
         builder.addDoubleArrayField("d");
         builder.addPortableArrayField("nn", createNamedPortableClassDefinition(portableVersion));
+        builder.addDecimalArrayField("bigDecimals");
+        builder.addTimeArrayField("localTimes");
+        builder.addDateArrayField("localDates");
+        builder.addTimestampArrayField("localDateTimes");
+        builder.addTimestampWithTimezoneArrayField("offsetDateTimes");
         return builder.build();
     }
 }

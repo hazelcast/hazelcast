@@ -246,6 +246,21 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                 case UTF:
                     writer.writeUTF(fieldName, record.readUTF(fieldName));
                     break;
+                case DECIMAL:
+                    writer.writeDecimal(fieldName, record.readDecimal(fieldName));
+                    break;
+                case TIME:
+                    writer.writeTime(fieldName, record.readTime(fieldName));
+                    break;
+                case DATE:
+                    writer.writeDate(fieldName, record.readDate(fieldName));
+                    break;
+                case TIMESTAMP:
+                    writer.writeTimestamp(fieldName, record.readTimestamp(fieldName));
+                    break;
+                case TIMESTAMP_WITH_TIMEZONE:
+                    writer.writeTimestampWithTimezone(fieldName, record.readTimestampWithTimezone(fieldName));
+                    break;
                 case PORTABLE_ARRAY:
                     writer.writeGenericRecordArray(fieldName, record.readGenericRecordArray(fieldName));
                     break;
@@ -275,6 +290,21 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                     break;
                 case UTF_ARRAY:
                     writer.writeUTFArray(fieldName, record.readUTFArray(fieldName));
+                    break;
+                case DECIMAL_ARRAY:
+                    writer.writeDecimalArray(fieldName, record.readDecimalArray(fieldName));
+                    break;
+                case TIME_ARRAY:
+                    writer.writeTimeArray(fieldName, record.readTimeArray(fieldName));
+                    break;
+                case DATE_ARRAY:
+                    writer.writeDateArray(fieldName, record.readDateArray(fieldName));
+                    break;
+                case TIMESTAMP_ARRAY:
+                    writer.writeTimestampArray(fieldName, record.readTimestampArray(fieldName));
+                    break;
+                case TIMESTAMP_WITH_TIMEZONE_ARRAY:
+                    writer.writeTimestampWithTimezoneArray(fieldName, record.readTimestampWithTimezoneArray(fieldName));
                     break;
                 default:
                     throw new IllegalStateException("Unexpected field type: " + cd.getFieldType(fieldName));
@@ -343,6 +373,21 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                 case UTF:
                     genericRecordBuilder.writeUTF(fieldName, reader.readUTF(fieldName));
                     break;
+                case DECIMAL:
+                    genericRecordBuilder.writeDecimal(fieldName, reader.readDecimal(fieldName));
+                    break;
+                case TIME:
+                    genericRecordBuilder.writeTime(fieldName, reader.readTime(fieldName));
+                    break;
+                case DATE:
+                    genericRecordBuilder.writeDate(fieldName, reader.readDate(fieldName));
+                    break;
+                case TIMESTAMP:
+                    genericRecordBuilder.writeTimestamp(fieldName, reader.readTimestamp(fieldName));
+                    break;
+                case TIMESTAMP_WITH_TIMEZONE:
+                    genericRecordBuilder.writeTimestampWithTimezone(fieldName, reader.readTimestampWithTimezone(fieldName));
+                    break;
                 case PORTABLE_ARRAY:
                     genericRecordBuilder.writeGenericRecordArray(fieldName, reader.readGenericRecordArray(fieldName));
                     break;
@@ -372,6 +417,22 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                     break;
                 case UTF_ARRAY:
                     genericRecordBuilder.writeUTFArray(fieldName, reader.readUTFArray(fieldName));
+                    break;
+                case DECIMAL_ARRAY:
+                    genericRecordBuilder.writeDecimalArray(fieldName, reader.readDecimalArray(fieldName));
+                    break;
+                case TIME_ARRAY:
+                    genericRecordBuilder.writeTimeArray(fieldName, reader.readTimeArray(fieldName));
+                    break;
+                case DATE_ARRAY:
+                    genericRecordBuilder.writeDateArray(fieldName, reader.readDateArray(fieldName));
+                    break;
+                case TIMESTAMP_ARRAY:
+                    genericRecordBuilder.writeTimestampArray(fieldName, reader.readTimestampArray(fieldName));
+                    break;
+                case TIMESTAMP_WITH_TIMEZONE_ARRAY:
+                    genericRecordBuilder.writeTimestampWithTimezoneArray(fieldName,
+                            reader.readTimestampWithTimezoneArray(fieldName));
                     break;
                 default:
                     throw new IllegalStateException("Unexpected value: " + cd.getFieldType(fieldName));

@@ -22,7 +22,6 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
@@ -99,6 +98,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
+import static com.hazelcast.client.config.ConnectionRetryConfig.DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
+import static com.hazelcast.client.config.ConnectionRetryConfig.FAILOVER_CLIENT_DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.NOT_ALLOWED_IN_CLUSTER;
 import static com.hazelcast.client.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
@@ -281,13 +282,28 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     private WaitStrategy initializeWaitStrategy(ClientConfig clientConfig) {
-        ClientConnectionStrategyConfig connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
-        ConnectionRetryConfig expoRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
-        return new WaitStrategy(expoRetryConfig.getInitialBackoffMillis(),
-                expoRetryConfig.getMaxBackoffMillis(),
-                expoRetryConfig.getMultiplier(),
-                expoRetryConfig.getClusterConnectTimeoutMillis(),
-                expoRetryConfig.getJitter(), logger);
+        ConnectionRetryConfig retryConfig = clientConfig
+                .getConnectionStrategyConfig()
+                .getConnectionRetryConfig();
+
+        long clusterConnectTimeout = retryConfig.getClusterConnectTimeoutMillis();
+
+        if (clusterConnectTimeout == DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS) {
+            // If no value is provided, or set to -1 explicitly,
+            // use a predefined timeout value for the failover client
+            // and infinite for the normal client.
+            if (failoverConfigProvided) {
+                clusterConnectTimeout = FAILOVER_CLIENT_DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
+            } else {
+                clusterConnectTimeout = Long.MAX_VALUE;
+            }
+        }
+
+        return new WaitStrategy(retryConfig.getInitialBackoffMillis(),
+                retryConfig.getMaxBackoffMillis(),
+                retryConfig.getMultiplier(),
+                clusterConnectTimeout,
+                retryConfig.getJitter(), logger);
     }
 
     public synchronized void start() {

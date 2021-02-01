@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.sql.impl.NodeServiceProvider;
+import com.hazelcast.sql.impl.exec.fetch.FetchExec;
 import com.hazelcast.sql.impl.exec.io.InboundHandler;
 import com.hazelcast.sql.impl.exec.io.Inbox;
 import com.hazelcast.sql.impl.exec.io.OutboundHandler;
@@ -38,6 +39,7 @@ import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
+import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
@@ -225,11 +227,28 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
             node.getId(),
             inbox,
             node.getColumnIndexes(),
-            node.getAscs()
+            node.getAscs(),
+            node.getFetch(),
+            node.getOffset()
         );
 
         push(res);
     }
+
+    @Override
+    public void onFetchNode(FetchPlanNode node) {
+        Exec upstream = pop();
+
+        FetchExec res = new FetchExec(
+            node.getId(),
+            upstream,
+            node.getFetch(),
+            node.getOffset()
+        );
+
+        push(res);
+    }
+
 
     /**
      * Prepare outboxes for the given sender node.

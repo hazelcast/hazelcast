@@ -16,9 +16,10 @@
 
 package com.hazelcast.sql.impl.state;
 
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlColumnMetadata;
+import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.QueryException;
@@ -118,17 +119,24 @@ public class QueryClientStateRegistry {
         InternalSerializationService serializationService,
         boolean respondImmediately
     ) {
+        List<SqlColumnMetadata> columns = clientCursor.getSqlResult().getRowMetadata().getColumns();
+        List<SqlColumnType> columnTypes = new ArrayList<>(columns.size());
+
+        for (SqlColumnMetadata column : columns) {
+            columnTypes.add(column.getType());
+        }
+
         if (respondImmediately) {
-            return new SqlPage(Collections.emptyList(), false);
+            return SqlPage.fromRows(columnTypes, Collections.emptyList(), false, serializationService);
         }
 
         ResultIterator<SqlRow> iterator = clientCursor.getIterator();
 
         try {
-            List<List<Data>> page = new ArrayList<>(cursorBufferSize);
-            boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService);
+            List<SqlRow> rows = new ArrayList<>(cursorBufferSize);
+            boolean last = fetchPage(iterator, rows, cursorBufferSize);
 
-            return new SqlPage(page, last);
+            return SqlPage.fromRows(columnTypes, rows, last, serializationService);
         } catch (HazelcastSqlException e) {
             // We use public API to extract results from the cursor. The cursor may throw HazelcastSqlException only. When
             // it happens, the cursor is already closed with the error, so we just re-throw.
@@ -148,9 +156,8 @@ public class QueryClientStateRegistry {
 
     private static boolean fetchPage(
         ResultIterator<SqlRow> iterator,
-        List<List<Data>> page,
-        int cursorBufferSize,
-        InternalSerializationService serializationService
+        List<SqlRow> rows,
+        int cursorBufferSize
     ) {
         assert cursorBufferSize > 0;
 
@@ -160,26 +167,12 @@ public class QueryClientStateRegistry {
 
         HasNextResult hasNextResult;
         do {
-            SqlRow row = iterator.next();
-            List<Data> convertedRow = convertRow(row, serializationService);
+            rows.add(iterator.next());
 
-            page.add(convertedRow);
             hasNextResult = iterator.hasNext(0, SECONDS);
-        } while (hasNextResult == YES && page.size() < cursorBufferSize);
+        } while (hasNextResult == YES && rows.size() < cursorBufferSize);
 
         return hasNextResult == DONE;
-    }
-
-    private static List<Data> convertRow(SqlRow row, InternalSerializationService serializationService) {
-        int columnCount = row.getMetadata().getColumnCount();
-
-        List<Data> values = new ArrayList<>(columnCount);
-
-        for (int i = 0; i < columnCount; i++) {
-            values.add(serializationService.toData(row.getObject(i)));
-        }
-
-        return values;
     }
 
     public void close(UUID clientId, QueryId queryId) {
@@ -192,6 +185,18 @@ public class QueryClientStateRegistry {
         }
 
         // Received the "close" request after the "execute" request, close.
+        close0(clientCursor);
+    }
+
+    public void closeOnError(QueryId queryId) {
+        QueryClientState clientCursor = clientCursors.get(queryId);
+
+        if (clientCursor != null) {
+            close0(clientCursor);
+        }
+    }
+
+    private void close0(QueryClientState clientCursor) {
         clientCursor.getSqlResult().close();
 
         deleteClientCursor(clientCursor);

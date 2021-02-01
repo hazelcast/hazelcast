@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -28,11 +27,10 @@ import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
@@ -72,8 +70,7 @@ public class SqlClientResult implements SqlResult {
      */
     public void onExecuteResponse(
         SqlRowMetadata rowMetadata,
-        List<List<Data>> rowPage,
-        boolean rowPageLast,
+        SqlPage rowPage,
         long updateCount
     ) {
         synchronized (mux) {
@@ -84,7 +81,7 @@ public class SqlClientResult implements SqlResult {
 
             if (rowMetadata != null) {
                 ClientIterator iterator = new ClientIterator(rowMetadata);
-                iterator.onNextPage(rowPage, rowPageLast);
+                iterator.onNextPage(rowPage);
 
                 state = new State(iterator, -1, null);
             } else {
@@ -112,6 +109,7 @@ public class SqlClientResult implements SqlResult {
         }
     }
 
+    @SuppressFBWarnings("NP_NONNULL_RETURN_VIOLATION")
     @NotNull
     @Override
     public SqlRowMetadata getRowMetadata() {
@@ -121,11 +119,12 @@ public class SqlClientResult implements SqlResult {
 
         if (iterator == null) {
             throw new IllegalStateException("This result contains only update count");
+        } else {
+            return iterator.rowMetadata;
         }
-
-        return iterator.rowMetadata;
     }
 
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     @NotNull
     @Override
     public Iterator<SqlRow> iterator() {
@@ -283,22 +282,6 @@ public class SqlClientResult implements SqlResult {
         }
     }
 
-    private List<Row> convertPageRows(List<List<Data>> serializedRows) {
-        List<Row> rows = new ArrayList<>(serializedRows.size());
-
-        for (List<Data> serializedRow : serializedRows) {
-            Object[] values = new Object[serializedRow.size()];
-
-            for (int i = 0; i < serializedRow.size(); i++) {
-                values[i] = service.deserializeRowValue(serializedRow.get(i));
-            }
-
-            rows.add(new HeapRow(values));
-        }
-
-        return rows;
-    }
-
     private HazelcastSqlException wrap(Throwable error) {
         throw QueryUtils.toPublicException(error, service.getClientId());
     }
@@ -319,22 +302,25 @@ public class SqlClientResult implements SqlResult {
     private final class ClientIterator implements Iterator<SqlRow> {
 
         private final SqlRowMetadata rowMetadata;
-        private List<Row> currentRows;
+        private SqlPage currentPage;
+        private int currentRowCount;
         private int currentPosition;
         private boolean last;
 
         private ClientIterator(SqlRowMetadata rowMetadata) {
+            assert rowMetadata != null;
+
             this.rowMetadata = rowMetadata;
         }
 
         @Override
         public boolean hasNext() {
-            while (currentPosition == currentRows.size()) {
+            while (currentPosition == currentRowCount) {
                 // Reached end of the page. Try fetching the next one if possible.
                 if (!last) {
                     SqlPage page = fetch();
 
-                    onNextPage(page.getRows(), page.isLast());
+                    onNextPage(page);
                 } else {
                     // No more pages expected, so return false.
                     return false;
@@ -350,20 +336,33 @@ public class SqlClientResult implements SqlResult {
                 throw new NoSuchElementException();
             }
 
-            Row row = currentRows.get(currentPosition++);
-
+            Row row = getCurrentRow();
+            currentPosition++;
             return new SqlRowImpl(rowMetadata, row);
         }
 
-        private void onNextPage(List<List<Data>> rowPage, boolean rowPageLast) {
-            currentRows = convertPageRows(rowPage);
+        private void onNextPage(SqlPage page) {
+            currentPage = page;
+            currentRowCount = page.getRowCount();
             currentPosition = 0;
 
-            this.last = rowPageLast;
+            if (page.isLast()) {
+                this.last = true;
 
-            if (rowPageLast) {
                 markClosed();
             }
+        }
+
+        private Row getCurrentRow() {
+            Object[] values = new Object[rowMetadata.getColumnCount()];
+
+            for (int i = 0; i < currentPage.getColumnCount(); i++) {
+                Object value = currentPage.getColumnValueForClient(i, currentPosition);
+
+                values[i] = service.deserializeRowValue(value);
+            }
+
+            return new HeapRow(values);
         }
     }
 }
