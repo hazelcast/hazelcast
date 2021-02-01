@@ -65,8 +65,6 @@ public final class HazelcastCaseOperator extends SqlOperator {
 
     @Override
     public void validateCall(SqlCall call, SqlValidator validator, SqlValidatorScope scope, SqlValidatorScope operandScope) {
-        System.out.println("HazelcastCaseOperator#validateCall");
-
         final HazelcastSqlCase sqlCase = (HazelcastSqlCase) call;
 
         final SqlNodeList whenOperands = sqlCase.getWhenOperands();
@@ -88,7 +86,6 @@ public final class HazelcastCaseOperator extends SqlOperator {
     @Override
     public RelDataType deriveType(SqlValidator validator, SqlValidatorScope scope, SqlCall call) {
         // SqlCaseOperator is doing the same
-        System.out.println("HazelcastCaseOperator#deriveType");
         return validateOperands(validator, scope, call);
     }
 
@@ -100,8 +97,6 @@ public final class HazelcastCaseOperator extends SqlOperator {
 
     @Override
     public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
-        System.out.println("HazelcastCaseOperator#checkOperandTypes");
-
         SqlNodeList whenList = (SqlNodeList) callBinding.getCall().getOperandList().get(1);
         SqlNodeList thenList = (SqlNodeList) callBinding.getCall().getOperandList().get(2);
         SqlNode elseOperand = callBinding.getCall().getOperandList().get(3);
@@ -109,6 +104,7 @@ public final class HazelcastCaseOperator extends SqlOperator {
 
         for (SqlNode node : whenList) {
             RelDataType type = callBinding.getValidator().deriveType(callBinding.getScope(), node);
+            // TODO: add test
             if (type.getSqlTypeName() != SqlTypeName.BOOLEAN) {
                 if (throwOnFailure) {
                     throw callBinding.newError(RESOURCE.expectedBoolean());
@@ -130,6 +126,7 @@ public final class HazelcastCaseOperator extends SqlOperator {
             foundNotNull = true;
         }
 
+        // TODO: add test
         if (!foundNotNull) {
             // according to the sql standard we can not have all of the THEN
             // statements and the ELSE returning null
@@ -177,8 +174,6 @@ public final class HazelcastCaseOperator extends SqlOperator {
         @Override
         @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:nestedifdepth"})
         public RelDataType inferReturnType(SqlOperatorBinding binding) {
-            System.out.println("CaseReturnTypeInference#inferReturnType");
-
             // Copied from CalCite with small changes
             SqlCallBinding callBinding = (SqlCallBinding) binding;
             SqlCall sqlCall = callBinding.getCall();
