@@ -183,7 +183,8 @@ public class DataSerializableConventionsTest {
         Set<Class<? extends IdentifiedDataSerializable>> identifiedDataSerializables = getIDSConcreteClasses();
         for (Class<? extends IdentifiedDataSerializable> klass : identifiedDataSerializables) {
             // exclude classes which are known to be meant for local use only
-            if (!AbstractLocalOperation.class.isAssignableFrom(klass) && !isReadOnlyConfig(klass)) {
+            if (!AbstractLocalOperation.class.isAssignableFrom(klass) && !isReadOnlyConfig(klass)
+                    && !klass.getName().contains("Compatibility")) {
                 // wrap all of this in try-catch, as it is legitimate for some classes to throw UnsupportedOperationException
                 try {
                     Constructor<? extends IdentifiedDataSerializable> ctor = klass.getDeclaredConstructor();
@@ -239,6 +240,9 @@ public class DataSerializableConventionsTest {
         Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
 
         for (Class<? extends DataSerializerHook> hookClass : dsHooks) {
+            if (hookClass.getName().contains("Compatibility")) {
+                continue;
+            }
             DataSerializerHook dsHook = hookClass.newInstance();
             DataSerializableFactory factory = dsHook.createFactory();
             factories.put(dsHook.getFactoryId(), factory);
@@ -250,6 +254,9 @@ public class DataSerializableConventionsTest {
                 continue;
             }
             if (isReadOnlyConfig(klass)) {
+                continue;
+            }
+            if (klass.getName().contains("Compatibility")) {
                 continue;
             }
             // wrap all of this in try-catch, as it is legitimate for some classes to throw UnsupportedOperationException
