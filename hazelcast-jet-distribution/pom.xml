@@ -31,6 +31,7 @@
 
     <properties>
         <configs.from.jar>${project.build.directory}/config</configs.from.jar>
+        <openhft.affinity.version>3.2.3</openhft.affinity.version>
     </properties>
 
     <build>
@@ -125,7 +126,7 @@
                         <dependencySourceInclude>com.hazelcast.jet:*</dependencySourceInclude>
                     </dependencySourceIncludes>
                     <excludePackageNames>
-                        *.impl:*.impl.*:*.internal:*.internal.*:*.picocli:*.picocli.*:*.com.fasterxml:*.com.fasterxml.*:*.org.snakeyaml:*.org.snakeyaml.*:*.io.github.*
+                        *.impl:*.impl.*:*.internal:*.internal.*:*.picocli:*.picocli.*:*.com.fasterxml:*.com.fasterxml.*:*.org.snakeyaml:*.org.snakeyaml.*:*.io.github.*:org.apache.calcite.*
                     </excludePackageNames>
                     <additionalDependencies>
                         <!-- provided deps are required for javadoc generation -->
@@ -224,6 +225,11 @@
                             <groupId>org.slf4j</groupId>
                             <artifactId>slf4j-api</artifactId>
                             <version>${slf4j.api.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>net.openhft</groupId>
+                            <artifactId>affinity</artifactId>
+                            <version>${openhft.affinity.version}</version>
                         </dependency>
                     </additionalDependencies>
                 </configuration>
