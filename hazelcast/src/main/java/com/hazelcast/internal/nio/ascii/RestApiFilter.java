@@ -96,14 +96,16 @@ public class RestApiFilter implements TextProtocolFilter {
                 || requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER_NODES_URL)
                 || ("GET".equals(operation) && requestUri.startsWith(HttpCommandProcessor.URI_LICENSE_INFO))
                 || ("GET".equals(operation) && requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER_VERSION_URL))
-                || requestUri.startsWith(HttpCommandProcessor.URI_INSTANCE)) {
+                || requestUri.startsWith(HttpCommandProcessor.URI_INSTANCE)
+                || ("GET".equals(operation) && requestUri.startsWith(HttpCommandProcessor.URI_LOG_LEVEL))) {
             return RestEndpointGroup.CLUSTER_READ;
         }
         if (requestUri.startsWith(HttpCommandProcessor.URI_SHUTDOWN_CLUSTER_URL)
                 || requestUri.startsWith(HttpCommandProcessor.URI_SHUTDOWN_NODE_CLUSTER_URL)
                 || requestUri.startsWith(HttpCommandProcessor.URI_CHANGE_CLUSTER_STATE_URL)
                 || requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER_VERSION_URL)
-                || requestUri.startsWith(HttpCommandProcessor.URI_LICENSE_INFO)) {
+                || requestUri.startsWith(HttpCommandProcessor.URI_LICENSE_INFO)
+                || requestUri.startsWith(HttpCommandProcessor.URI_LOG_LEVEL)) {
             return RestEndpointGroup.CLUSTER_WRITE;
         }
         if (requestUri.startsWith(HttpCommandProcessor.URI_CP_SUBSYSTEM_BASE_URL)) {

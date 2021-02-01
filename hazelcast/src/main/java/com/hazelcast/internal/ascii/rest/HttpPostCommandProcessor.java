@@ -26,6 +26,7 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.impl.AddWanConfigResult;
@@ -33,6 +34,7 @@ import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.io.UnsupportedEncodingException;
 import java.util.UUID;
+import java.util.logging.Level;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_400;
@@ -111,6 +113,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 sendResponse = false;
             } else if (uri.startsWith(URI_LICENSE_INFO)) {
                 handleSetLicense(command);
+            } else if (uri.startsWith(URI_LOG_LEVEL)) {
+                handleLogLevel(command);
             } else {
                 command.send404();
             }
@@ -567,4 +571,15 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         // NO-OP in OS
         prepareResponse(cmd, response(SUCCESS));
     }
+
+    private void handleLogLevel(HttpPostCommand command) throws UnsupportedEncodingException {
+        String[] params = decodeParamsAndAuthenticate(command, 3);
+        String rawLevel = params[2];
+        Level level = Level.parse(rawLevel);
+
+        LoggingServiceImpl loggingService = (LoggingServiceImpl) getNode().getLoggingService();
+        loggingService.setLevel(level);
+        prepareResponse(command, response(SUCCESS, "message", "log level is changed"));
+    }
+
 }

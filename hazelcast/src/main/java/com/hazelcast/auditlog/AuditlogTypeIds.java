@@ -87,6 +87,17 @@ public final class AuditlogTypeIds {
      */
     public static final String CLUSTER_MERGE = "HZ-0606";
 
+    // Member events
+    /**
+     * Event type ID: Member logging level set.
+     */
+    public static final String MEMBER_LOGGING_LEVEL_SET = "HZ-0701";
+    /**
+     * Event type ID: Member logging level reset.
+     */
+    public static final String MEMBER_LOGGING_LEVEL_RESET = "HZ-0702";
+
+
     private AuditlogTypeIds() {
     }
 }

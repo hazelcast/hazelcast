@@ -24,6 +24,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.LocalWanPublisherStats;
 import com.hazelcast.internal.monitor.LocalWanStats;
+import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.wan.impl.WanReplicationService;
 
@@ -61,6 +62,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     private ManagedExecutorServiceMBean ioExecutorMBean;
     private ManagedExecutorServiceMBean offloadableExecutorMBean;
     private PartitionServiceMBean partitionServiceMBean;
+    private LoggingServiceMBean loggingServiceMBean;
 
     protected InstanceMBean(HazelcastInstanceImpl hazelcastInstance, ManagementService managementService) {
         super(hazelcastInstance, managementService);
@@ -118,6 +120,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
                 hazelcastInstance, executionService.getExecutor(ExecutionService.IO_EXECUTOR), service);
         this.offloadableExecutorMBean = new ManagedExecutorServiceMBean(
                 hazelcastInstance, executionService.getExecutor(ExecutionService.OFFLOADABLE_EXECUTOR), service);
+        this.loggingServiceMBean = new LoggingServiceMBean(hazelcastInstance, service);
     }
 
     private void registerMBeans() {
@@ -132,6 +135,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         register(queryExecutorMBean);
         register(ioExecutorMBean);
         register(offloadableExecutorMBean);
+        register(loggingServiceMBean);
     }
 
     private void createProperties(HazelcastInstanceImpl hazelcastInstance) {

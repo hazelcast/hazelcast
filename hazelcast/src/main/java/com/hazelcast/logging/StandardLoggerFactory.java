@@ -16,6 +16,8 @@
 
 package com.hazelcast.logging;
 
+import com.hazelcast.logging.impl.InternalLogger;
+
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -28,11 +30,16 @@ public class StandardLoggerFactory extends LoggerFactorySupport implements Logge
         return new StandardLogger(l);
     }
 
-    static class StandardLogger extends AbstractLogger {
+    static class StandardLogger extends AbstractLogger implements InternalLogger {
         private final Logger logger;
 
         StandardLogger(Logger logger) {
             this.logger = logger;
+        }
+
+        @Override
+        public void setLevel(Level level) {
+            logger.setLevel(level);
         }
 
         @Override

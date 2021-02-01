@@ -211,7 +211,7 @@ public class Node {
 
         String loggingType = properties.getString(LOGGING_TYPE);
         boolean detailsEnabled = properties.getBoolean(LOGGING_ENABLE_DETAILS);
-        loggingService = new LoggingServiceImpl(config.getClusterName(), loggingType, buildInfo, detailsEnabled);
+        loggingService = new LoggingServiceImpl(config.getClusterName(), loggingType, buildInfo, detailsEnabled, this);
         MetricsConfigHelper.overrideMemberMetricsConfig(staticConfig, getLogger(MetricsConfigHelper.class));
 
         checkAdvancedNetworkConfig(config);

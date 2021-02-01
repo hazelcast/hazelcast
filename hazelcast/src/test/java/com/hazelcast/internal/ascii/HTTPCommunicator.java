@@ -57,6 +57,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
@@ -107,6 +108,9 @@ public class HTTPCommunicator {
     public static final String URI_REMOVE_SUFFIX = "/remove";
     public static final String URI_CP_MEMBERS_URL = "cp-subsystem/members";
     public static final String URI_LOCAL_CP_MEMBER_URL = URI_CP_MEMBERS_URL + "/local";
+
+    // Log Level: GET to get, POST to set, DELETE to reset
+    public static final String URI_LOG_LEVEL = "log-level";
 
     private final String address;
     private final boolean sslEnabled;
@@ -613,4 +617,20 @@ public class HTTPCommunicator {
     public void enableChunkedStreaming() {
         this.enableChunkedStreaming = true;
     }
+
+    public String getLogLevel() throws IOException {
+        String url = getUrl(URI_LOG_LEVEL);
+        return doGet(url).response;
+    }
+
+    public String setLogLevel(String clusterName, String clusterPassword, Level level) throws IOException {
+        String url = getUrl(URI_LOG_LEVEL);
+        return doPost(url, clusterName, clusterPassword, level.getName()).response;
+    }
+
+    public String resetLogLevel() throws IOException {
+        String url = getUrl(URI_LOG_LEVEL);
+        return doDelete(url).response;
+    }
+
 }

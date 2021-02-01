@@ -18,6 +18,9 @@ package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.logging.impl.LoggingServiceImpl;
+
+import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.SUCCESS;
 
 public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteCommand> {
 
@@ -33,6 +36,8 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
                 handleMap(command, uri);
             } else if (uri.startsWith(URI_QUEUES)) {
                 handleQueue(command, uri);
+            } else if (uri.startsWith(URI_LOG_LEVEL)) {
+                handleLogLevel(command);
             } else {
                 command.send404();
             }
@@ -85,4 +90,11 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
     public void handleRejection(HttpDeleteCommand command) {
         handle(command);
     }
+
+    private void handleLogLevel(HttpDeleteCommand command) {
+        LoggingServiceImpl loggingService = (LoggingServiceImpl) getNode().getLoggingService();
+        loggingService.resetLevel();
+        prepareResponse(command, response(SUCCESS, "message", "log level is reset"));
+    }
+
 }

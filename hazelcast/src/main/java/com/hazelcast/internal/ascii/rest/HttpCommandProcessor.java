@@ -94,6 +94,9 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String URI_CP_MEMBERS_URL = URI_CP_SUBSYSTEM_BASE_URL + "/members";
     public static final String URI_LOCAL_CP_MEMBER_URL = URI_CP_MEMBERS_URL + "/local";
 
+    // Log Level: GET to get, POST to set, DELETE to reset
+    public static final String URI_LOG_LEVEL = "/hazelcast/rest/log-level";
+
     protected final ILogger logger;
 
     protected HttpCommandProcessor(TextCommandService textCommandService, ILogger logger) {
