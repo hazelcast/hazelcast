@@ -41,7 +41,7 @@
 
     <hazelcast.version>4.1.1</hazelcast.version>
 
-    <maven.checkstyle.plugin.version>3.1.1</maven.checkstyle.plugin.version>
+    <maven.checkstyle.plugin.version>3.1.2</maven.checkstyle.plugin.version>
     <maven.findbugs.plugin.version>3.0.5</maven.findbugs.plugin.version>
     <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
     <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
