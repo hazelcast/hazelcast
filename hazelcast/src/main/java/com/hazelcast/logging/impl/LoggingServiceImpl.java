@@ -60,7 +60,7 @@ public class LoggingServiceImpl implements LoggingService {
     private volatile String thisAddressString = "[LOCAL] ";
     private volatile Level minLevel = Level.OFF;
 
-    private volatile Level levelSet = null;
+    private volatile Level levelSet;
 
     public LoggingServiceImpl(String clusterName, String loggingType, BuildInfo buildInfo, boolean detailsEnabled, Node node) {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
