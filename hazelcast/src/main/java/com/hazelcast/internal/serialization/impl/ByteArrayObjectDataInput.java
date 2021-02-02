@@ -16,12 +16,13 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.ArrayUtils;
 
+import javax.annotation.Nullable;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -368,6 +369,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public byte[] readByteArray() throws IOException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -382,6 +384,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public boolean[] readBooleanArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -398,6 +401,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public char[] readCharArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -414,6 +418,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public int[] readIntArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -430,6 +435,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public long[] readLongArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -446,6 +452,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public double[] readDoubleArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -462,6 +469,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public float[] readFloatArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -478,6 +486,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public short[] readShortArray() throws EOFException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
@@ -494,7 +503,15 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
+    @Deprecated
     public String[] readUTFArray() throws IOException {
+        return readStringArray();
+    }
+
+    @Override
+    @Nullable
+    public String[] readStringArray() throws IOException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
             return null;
@@ -551,7 +568,14 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
     @Override
+    @Deprecated
     public final String readUTF() throws IOException {
+        return readString();
+    }
+
+    @Nullable
+    @Override
+    public String readString() throws IOException {
         int numberOfBytes = readInt();
         if (numberOfBytes == NULL_ARRAY_LENGTH) {
             return null;
@@ -563,17 +587,19 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public final Object readObject() throws EOFException {
         return service.readObject(this);
     }
 
     @Override
-    public <T> T readObject(Class aClass)
-            throws IOException {
+    @Nullable
+    public <T> T readObject(Class aClass) throws IOException {
         return service.readObject(this, aClass);
     }
 
     @Override
+    @Nullable
     public <T> T readDataAsObject() throws IOException {
         // a future optimization would be to skip the construction of the Data object
         Data data = readData();
@@ -581,6 +607,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    @Nullable
     public final Data readData() throws IOException {
         byte[] bytes = readByteArray();
         return bytes == null ? null : new HeapData(bytes);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.worker;
 
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
@@ -64,7 +65,8 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
             Collections.emptyList(),
             exec,
             Collections.emptyMap(),
-            Collections.emptyMap()
+            Collections.emptyMap(),
+            new DefaultSerializationServiceBuilder().build()
         );
 
         fragmentExecutable.run();
@@ -84,7 +86,8 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
             Collections.emptyList(),
             exec,
             Collections.emptyMap(),
-            Collections.emptyMap()
+            Collections.emptyMap(),
+            new DefaultSerializationServiceBuilder().build()
         );
 
         exec.setPayload(new ResultExecPayload(IterationResult.WAIT));
@@ -115,7 +118,8 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
             Collections.emptyList(),
             exec,
             Collections.emptyMap(),
-            Collections.emptyMap()
+            Collections.emptyMap(),
+            new DefaultSerializationServiceBuilder().build()
         );
 
         // Throw an exception.
@@ -154,7 +158,8 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
             Collections.emptyList(),
             exec,
             Collections.singletonMap(1, inboundHandler),
-            Collections.emptyMap()
+            Collections.emptyMap(),
+            new DefaultSerializationServiceBuilder().build()
         );
 
         CountDownLatch startLatch = new CountDownLatch(1);
@@ -232,7 +237,8 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
                 Collections.emptyList(),
                 exec,
                 Collections.singletonMap(edgeId, inboundHandler),
-                Collections.singletonMap(edgeId, Collections.singletonMap(callerId, outboundHandler))
+                Collections.singletonMap(edgeId, Collections.singletonMap(callerId, outboundHandler)),
+                new DefaultSerializationServiceBuilder().build()
             );
 
             assertEquals(1, fragmentExecutable.getInboxEdgeIds().size());

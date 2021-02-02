@@ -76,6 +76,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addIntField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.INT);
     }
@@ -86,6 +87,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addLongField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.LONG);
     }
@@ -95,8 +97,22 @@ public final class ClassDefinitionBuilder {
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     * @deprecated for the sake of better naming. Use {@link #addStringField(String)} instead.
      */
+    @Nonnull
+    @Deprecated
     public ClassDefinitionBuilder addUTFField(@Nonnull String fieldName) {
+        return addStringField(fieldName);
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addStringField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.UTF);
     }
 
@@ -106,6 +122,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addBooleanField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.BOOLEAN);
     }
@@ -116,6 +133,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addByteField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.BYTE);
     }
@@ -126,6 +144,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addBooleanArrayField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.BOOLEAN_ARRAY);
     }
@@ -136,6 +155,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addCharField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.CHAR);
     }
@@ -146,6 +166,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addDoubleField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.DOUBLE);
     }
@@ -156,6 +177,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addFloatField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.FLOAT);
     }
@@ -166,6 +188,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addShortField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.SHORT);
     }
@@ -178,6 +201,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addDecimalField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.DECIMAL);
     }
@@ -190,6 +214,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addTimeField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.TIME);
     }
@@ -202,6 +227,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addDateField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.DATE);
     }
@@ -215,6 +241,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addTimestampField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.TIMESTAMP);
     }
@@ -229,6 +256,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addTimestampWithTimezoneField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE);
     }
@@ -239,6 +267,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addByteArrayField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.BYTE_ARRAY);
     }
@@ -249,6 +278,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addCharArrayField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.CHAR_ARRAY);
     }
@@ -259,6 +289,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addIntArrayField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.INT_ARRAY);
     }
@@ -269,6 +300,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addLongArrayField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.LONG_ARRAY);
     }
@@ -279,6 +311,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addDoubleArrayField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.DOUBLE_ARRAY);
     }
@@ -289,6 +322,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addFloatArrayField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.FLOAT_ARRAY);
     }
@@ -299,6 +333,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addShortArrayField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.SHORT_ARRAY);
     }
@@ -308,8 +343,22 @@ public final class ClassDefinitionBuilder {
      * @return itself for chaining
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     * @deprecated for the sake of better naming. Use {@link #addStringArrayField(String)} instead.
      */
+    @Nonnull
+    @Deprecated
     public ClassDefinitionBuilder addUTFArrayField(@Nonnull String fieldName) {
+        return addStringArrayField(fieldName);
+    }
+
+    /**
+     * @param fieldName name of the field that will be added to this class definition
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if a field with same name already exists or
+     *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
+     */
+    @Nonnull
+    public ClassDefinitionBuilder addStringArrayField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.UTF_ARRAY);
     }
 
@@ -319,6 +368,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addPortableField(@Nonnull String fieldName, ClassDefinition def) {
         if (def.getClassId() == 0) {
             throw new IllegalArgumentException("Portable class ID cannot be zero!");
@@ -336,6 +386,7 @@ public final class ClassDefinitionBuilder {
      * @throws HazelcastSerializationException if a field with same name already exists or
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      */
+    @Nonnull
     public ClassDefinitionBuilder addPortableArrayField(@Nonnull String fieldName, ClassDefinition classDefinition) {
         if (classDefinition.getClassId() == 0) {
             throw new IllegalArgumentException("Portable class ID cannot be zero!");
@@ -355,6 +406,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      * @see #addDecimalField(String)
      */
+    @Nonnull
     public ClassDefinitionBuilder addDecimalArrayField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.DECIMAL_ARRAY);
     }
@@ -368,6 +420,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      * @see #addTimeField(String)
      */
+    @Nonnull
     public ClassDefinitionBuilder addTimeArrayField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.TIME_ARRAY);
     }
@@ -381,6 +434,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      * @see #addDateField(String)
      */
+    @Nonnull
     public ClassDefinitionBuilder addDateArrayField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.DATE_ARRAY);
     }
@@ -394,6 +448,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      * @see #addTimestampField(String)
      */
+    @Nonnull
     public ClassDefinitionBuilder addTimestampArrayField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.TIMESTAMP_ARRAY);
     }
@@ -407,6 +462,7 @@ public final class ClassDefinitionBuilder {
      *                                         if this method is called after {@link ClassDefinitionBuilder#build()}
      * @see #addTimestampWithTimezoneField(String)
      */
+    @Nonnull
     public ClassDefinitionBuilder addTimestampWithTimezoneArrayField(@Nonnull String fieldName) {
         return addField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY);
     }
@@ -430,6 +486,7 @@ public final class ClassDefinitionBuilder {
     /**
      * @return creates and returns a new ClassDefinition
      */
+    @Nonnull
     public ClassDefinition build() {
         done = true;
         final ClassDefinitionImpl cd = new ClassDefinitionImpl(factoryId, classId, version);

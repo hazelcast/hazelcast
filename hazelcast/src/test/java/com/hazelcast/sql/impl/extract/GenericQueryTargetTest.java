@@ -23,9 +23,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -68,7 +69,8 @@ public class GenericQueryTargetTest extends SqlTestSupport {
 
         // Good top-level extractor.
         QueryExtractor targetExtractor = target.createExtractor(null, QueryDataType.OBJECT);
-        TestObject extractedObject = (TestObject) targetExtractor.get();
+        LazyTarget lazyTarget = (LazyTarget) targetExtractor.get();
+        TestObject extractedObject = (TestObject) (lazyTarget.deserialize(new DefaultSerializationServiceBuilder().build()));
         assertEquals(originalObject.getField(), extractedObject.getField());
         assertEquals(originalObject.getField2(), extractedObject.getField2());
 

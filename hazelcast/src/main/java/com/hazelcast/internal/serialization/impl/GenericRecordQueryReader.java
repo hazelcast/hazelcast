@@ -129,7 +129,7 @@ public final class GenericRecordQueryReader implements ValueReader {
                         multiResult.setNullOrEmptyTarget(true);
                         continue;
                     }
-                    InternalGenericRecord subGenericRecord = (InternalGenericRecord) record.readGenericRecord(fieldName);
+                    InternalGenericRecord subGenericRecord = (InternalGenericRecord) record.getGenericRecord(fieldName);
                     if (subGenericRecord == null) {
                         iterator.remove();
                         multiResult.setNullOrEmptyTarget(true);
@@ -146,7 +146,7 @@ public final class GenericRecordQueryReader implements ValueReader {
                         multiResult.setNullOrEmptyTarget(true);
                         continue;
                     }
-                    GenericRecord[] genericRecords = record.readGenericRecordArray(fieldName);
+                    GenericRecord[] genericRecords = record.getGenericRecordArray(fieldName);
                     if (genericRecords == null || genericRecords.length == 0) {
                         multiResult.setNullOrEmptyTarget(true);
                         continue;
@@ -169,7 +169,7 @@ public final class GenericRecordQueryReader implements ValueReader {
                         multiResult.setNullOrEmptyTarget(true);
                         continue;
                     }
-                    GenericRecord genericRecord = record.readGenericRecordFromArray(fieldName, index);
+                    GenericRecord genericRecord = record.getGenericRecordFromArray(fieldName, index);
                     if (genericRecord != null) {
                         iterator.set(genericRecord);
                     } else {
@@ -244,35 +244,35 @@ public final class GenericRecordQueryReader implements ValueReader {
         FieldType type = record.getFieldType(path);
         switch (type) {
             case BYTE_ARRAY:
-                return record.readByteFromArray(path, index);
+                return record.getByteFromArray(path, index);
             case SHORT_ARRAY:
-                return record.readShortFromArray(path, index);
+                return record.getShortFromArray(path, index);
             case INT_ARRAY:
-                return record.readIntFromArray(path, index);
+                return record.getIntFromArray(path, index);
             case LONG_ARRAY:
-                return record.readLongFromArray(path, index);
+                return record.getLongFromArray(path, index);
             case FLOAT_ARRAY:
-                return record.readFloatFromArray(path, index);
+                return record.getFloatFromArray(path, index);
             case DOUBLE_ARRAY:
-                return record.readDoubleFromArray(path, index);
+                return record.getDoubleFromArray(path, index);
             case BOOLEAN_ARRAY:
-                return record.readBooleanFromArray(path, index);
+                return record.getBooleanFromArray(path, index);
             case CHAR_ARRAY:
-                return record.readCharFromArray(path, index);
+                return record.getCharFromArray(path, index);
             case UTF_ARRAY:
-                return record.readUTFFromArray(path, index);
+                return record.getStringFromArray(path, index);
             case PORTABLE_ARRAY:
-                return record.readObjectFromArray(path, index);
+                return record.getObjectFromArray(path, index);
             case DECIMAL_ARRAY:
-                return record.readDecimalFromArray(path, index);
+                return record.getDecimalFromArray(path, index);
             case TIME_ARRAY:
-                return record.readTimeFromArray(path, index);
+                return record.getTimeFromArray(path, index);
             case DATE_ARRAY:
-                return record.readDateFromArray(path, index);
+                return record.getDateFromArray(path, index);
             case TIMESTAMP_ARRAY:
-                return record.readTimestampFromArray(path, index);
+                return record.getTimestampFromArray(path, index);
             case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                return record.readTimestampWithTimezoneFromArray(path, index);
+                return record.getTimestampWithTimezoneFromArray(path, index);
             default:
                 throw new IllegalArgumentException("Unsupported type " + type);
         }
@@ -285,65 +285,65 @@ public final class GenericRecordQueryReader implements ValueReader {
         FieldType type = record.getFieldType(path);
         switch (type) {
             case BYTE:
-                return record.readByte(path);
+                return record.getByte(path);
             case BYTE_ARRAY:
-                return record.readByteArray(path);
+                return record.getByteArray(path);
             case SHORT:
-                return record.readShort(path);
+                return record.getShort(path);
             case SHORT_ARRAY:
-                return record.readShortArray(path);
+                return record.getShortArray(path);
             case INT:
-                return record.readInt(path);
+                return record.getInt(path);
             case INT_ARRAY:
-                return record.readIntArray(path);
+                return record.getIntArray(path);
             case LONG:
-                return record.readLong(path);
+                return record.getLong(path);
             case LONG_ARRAY:
-                return record.readLongArray(path);
+                return record.getLongArray(path);
             case FLOAT:
-                return record.readFloat(path);
+                return record.getFloat(path);
             case FLOAT_ARRAY:
-                return record.readFloatArray(path);
+                return record.getFloatArray(path);
             case DOUBLE:
-                return record.readDouble(path);
+                return record.getDouble(path);
             case DOUBLE_ARRAY:
-                return record.readDoubleArray(path);
+                return record.getDoubleArray(path);
             case BOOLEAN:
-                return record.readBoolean(path);
+                return record.getBoolean(path);
             case BOOLEAN_ARRAY:
-                return record.readBooleanArray(path);
+                return record.getBooleanArray(path);
             case CHAR:
-                return record.readChar(path);
+                return record.getChar(path);
             case CHAR_ARRAY:
-                return record.readCharArray(path);
+                return record.getCharArray(path);
             case UTF:
-                return record.readUTF(path);
+                return record.getString(path);
             case UTF_ARRAY:
-                return record.readUTFArray(path);
+                return record.getStringArray(path);
             case PORTABLE:
-                return record.readObject(path);
+                return record.getObject(path);
             case PORTABLE_ARRAY:
-                return record.readObjectArray(path);
+                return record.getObjectArray(path);
             case DECIMAL:
-                return record.readDecimal(path);
+                return record.getDecimal(path);
             case DECIMAL_ARRAY:
-                return record.readDecimalArray(path);
+                return record.getDecimalArray(path);
             case TIME:
-                return record.readTime(path);
+                return record.getTime(path);
             case TIME_ARRAY:
-                return record.readTimeArray(path);
+                return record.getTimeArray(path);
             case DATE:
-                return record.readDate(path);
+                return record.getDate(path);
             case DATE_ARRAY:
-                return record.readDateArray(path);
+                return record.getDateArray(path);
             case TIMESTAMP:
-                return record.readTimestamp(path);
+                return record.getTimestamp(path);
             case TIMESTAMP_ARRAY:
-                return record.readTimestampArray(path);
+                return record.getTimestampArray(path);
             case TIMESTAMP_WITH_TIMEZONE:
-                return record.readTimestampWithTimezone(path);
+                return record.getTimestampWithTimezone(path);
             case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                return record.readTimestampWithTimezoneArray(path);
+                return record.getTimestampWithTimezoneArray(path);
             default:
                 throw new IllegalArgumentException("Unsupported type " + type);
         }

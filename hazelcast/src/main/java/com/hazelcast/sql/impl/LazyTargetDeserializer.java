@@ -14,25 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.expression;
-
-import com.hazelcast.internal.serialization.InternalSerializationService;
+package com.hazelcast.sql.impl;
 
 /**
- * Defines expression evaluation context contract for SQL {@link Expression
- * expressions}.
- *
- * @see Expression#eval
+ * Helper interface to deserialize the laze target. Reduces coupling between the row and the SQL service.
  */
-public interface ExpressionEvalContext {
+public interface LazyTargetDeserializer {
     /**
-     * @param index argument index
-     * @return the query argument
+     * @param value target to deserialize
+     * @return deserialized object
      */
-    Object getArgument(int index);
-
-    /**
-     * @return serialization service
-     */
-    InternalSerializationService getSerializationService();
+    Object deserialize(LazyTarget value);
 }

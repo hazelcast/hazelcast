@@ -223,7 +223,8 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
                 operation.getArguments(),
                 exec,
                 inboxes,
-                outboxes
+                outboxes,
+                serializationService
             );
 
             fragmentExecutables.add(fragmentExecutable);

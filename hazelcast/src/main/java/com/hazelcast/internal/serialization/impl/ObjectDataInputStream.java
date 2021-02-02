@@ -17,10 +17,11 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.nio.DataReader;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 
+import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -274,7 +275,15 @@ public class ObjectDataInputStream extends VersionedObjectDataInput
     }
 
     @Override
+    @Nullable
+    @Deprecated
     public String[] readUTFArray() throws IOException {
+        return readStringArray();
+    }
+
+    @Override
+    @Nullable
+    public String[] readStringArray() throws IOException {
         int len = readInt();
         if (len == NULL_ARRAY_LENGTH) {
             return null;
@@ -295,7 +304,15 @@ public class ObjectDataInputStream extends VersionedObjectDataInput
     }
 
     @Override
+    @Nullable
+    @Deprecated
     public String readUTF() throws IOException {
+        return readString();
+    }
+
+    @Nullable
+    @Override
+    public String readString() throws IOException {
         int numberOfBytes = readInt();
         if (numberOfBytes == NULL_ARRAY_LENGTH) {
             return null;

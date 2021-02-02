@@ -97,7 +97,7 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
         int colIdx = 0;
 
         for (Expression<?> projection : projects) {
-            Object projectionRes = projection.eval(upstreamRow, ctx);
+            Object projectionRes = projection.evalTop(upstreamRow, ctx);
 
             row.set(colIdx++, projectionRes);
         }

@@ -17,6 +17,8 @@
 package com.hazelcast.sql.misc;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
@@ -60,6 +62,8 @@ public class SqlClientCursorCleanupTest extends SqlTestSupport {
     public void before() {
         member = factory.newHazelcastInstance(smallInstanceConfig());
         client = factory.newHazelcastClient(new ClientConfig());
+
+        member.getConfig().addMapConfig(new MapConfig().setName(MAP_NAME).setInMemoryFormat(InMemoryFormat.OBJECT));
     }
 
     @After

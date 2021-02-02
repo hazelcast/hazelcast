@@ -20,7 +20,9 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
 
@@ -28,8 +30,11 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
     private final Extractors extractors;
     private final boolean key;
 
-    private Object rawTarget;
-    private Object target;
+    private Object deserialized;
+    private Data serialized;
+
+    private LazyTarget targetWithObjectTypeForDirectAccess;
+    private Object targetForFieldAccess;
 
     public GenericQueryTarget(InternalSerializationService serializationService, Extractors extractors, boolean key) {
         this.serializationService = serializationService;
@@ -38,9 +43,17 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
     }
 
     @Override
-    public void setTarget(Object target) {
-        this.rawTarget = target;
-        this.target = null;
+    public void setTarget(Object object) {
+        if (object instanceof Data) {
+            serialized = (Data) object;
+            deserialized = null;
+        } else {
+            serialized = null;
+            deserialized = object;
+        }
+
+        targetWithObjectTypeForDirectAccess = null;
+        targetForFieldAccess = null;
     }
 
     @Override
@@ -54,56 +67,80 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
 
     @Override
     public Object getTargetForFieldAccess() {
-        if (target == null) {
-            // General rule: Portable must be Data, other objects must be deserialized.
-            if (rawTarget instanceof Data) {
-                Data rawTarget0 = (Data) rawTarget;
-
-                if (rawTarget0.isPortable()) {
-                    target = rawTarget;
-                } else {
-                    // Deserialize non-Portable.
-                    target = serializationService.toObject(rawTarget);
-                }
-            } else {
-                if (rawTarget instanceof Portable) {
-                    // Serialize Portable to Data.
-                    target = serializationService.toData(rawTarget);
-                } else {
-                    target = rawTarget;
-                }
-            }
+        if (targetForFieldAccess == null) {
+            targetForFieldAccess = prepareTargetForFieldAccess();
         }
 
-        return target;
+        return targetForFieldAccess;
+    }
+
+    /**
+     * Get target that should be used for field access.
+     *
+     * @return serialized form for {@link Portable}, deserialized form otherwise
+     */
+    @SuppressWarnings("checkstyle:NestedIfDepth")
+    private Object prepareTargetForFieldAccess() {
+        if (targetWithObjectTypeForDirectAccess != null) {
+            // If a target for direct access is already initialized, get data from it.
+            deserialized = targetWithObjectTypeForDirectAccess.getDeserialized();
+            serialized = targetWithObjectTypeForDirectAccess.getSerialized();
+        }
+
+        if (deserialized != null) {
+            if (deserialized instanceof Portable) {
+                // Serialize Portable to Data.
+                if (serialized == null) {
+                    serialized = serializationService.toData(deserialized);
+
+                    if (targetWithObjectTypeForDirectAccess != null) {
+                        targetWithObjectTypeForDirectAccess.setSerialized(serialized);
+                    }
+                }
+
+                return serialized;
+            } else {
+                // Return deserialized object.
+                return deserialized;
+            }
+        } else {
+            assert serialized != null;
+
+            if (serialized.isPortable()) {
+                // Return Portable as Data.
+                return serialized;
+            } else {
+                // Deserialize otherwise.
+                if (deserialized == null) {
+                    deserialized = serializationService.toObject(serialized);
+
+                    if (targetWithObjectTypeForDirectAccess != null) {
+                        targetWithObjectTypeForDirectAccess.setDeserialized(deserialized);
+                    }
+                }
+
+                return deserialized;
+            }
+        }
     }
 
     @Override
-    public Object getTargetDeserialized() {
-        if (!(rawTarget instanceof Data)) {
-            // Raw target is already deserialized, use it
-            return rawTarget;
+    public Object getTargetForDirectAccess(QueryDataType type) {
+        if (type.getTypeFamily() != QueryDataTypeFamily.OBJECT) {
+            // For the built-in types, we always work with the deserialized representation.
+            if (deserialized == null) {
+                deserialized = serializationService.toObject(this.serialized);
+            }
+
+            return type.normalize(deserialized);
+        } else {
+            // For the OBJECT type, we try to delay the deserialization for as long as possible.
+            if (targetWithObjectTypeForDirectAccess == null) {
+                targetWithObjectTypeForDirectAccess = new LazyTarget(serialized, deserialized);
+            }
+
+            return targetWithObjectTypeForDirectAccess;
         }
-
-        // Try using field target if possible
-        if (target != null && !(target instanceof Data)) {
-            return target;
-        }
-
-        // Raw target is Data, field target is not initialized, deserialize
-        Data rawTarget0 = (Data) rawTarget;
-
-        Object result = serializationService.toObject(rawTarget0);
-
-        // Check if the deserialized result could be useful for subsequent field access
-        boolean cacheDeserialized = target == null && !rawTarget0.isPortable() && !rawTarget0.isJson();
-
-        if (cacheDeserialized) {
-            target = result;
-        }
-
-        // Done
-        return result;
     }
 
     public boolean isKey() {
