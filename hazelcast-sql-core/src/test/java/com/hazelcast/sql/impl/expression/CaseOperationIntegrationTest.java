@@ -339,7 +339,7 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
                         ComparisonPredicate.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT), ComparisonMode.EQUALS),
                         ConstantExpression.create("someText", VARCHAR),
                         ConstantExpression.create("anotherText", VARCHAR),
-                }, VARCHAR);
+                });
     }
 
     private CaseExpression<?> when1eq1_then1_else10() {
@@ -348,7 +348,7 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
                         ComparisonPredicate.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT), ComparisonMode.EQUALS),
                         ConstantExpression.create(10, INT),
                         ConstantExpression.create(20, INT),
-                }, INT);
+                });
     }
 
     private CaseExpression<?> when1eq10_then1_else10() {
@@ -357,6 +357,6 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
                         ComparisonPredicate.create(ConstantExpression.create(1, INT), ConstantExpression.create(10, INT), ComparisonMode.EQUALS),
                         ConstantExpression.create(10, INT),
                         ConstantExpression.create(20, INT),
-                }, INT);
+                });
     }
 }

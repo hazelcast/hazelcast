@@ -32,23 +32,20 @@ public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializa
     private Expression<Boolean>[] whenExpressions;
     private Expression<?>[] thenExpressions;
     private Expression<?> elseExpression;
-    private QueryDataType resultType;
 
     public CaseExpression() {
     }
 
     private CaseExpression(Expression<Boolean>[] whenExpressions,
                            Expression<?>[] thenExpressions,
-                           Expression<?> elseExpression,
-                           QueryDataType resultType) {
+                           Expression<?> elseExpression) {
         this.whenExpressions = whenExpressions;
         this.thenExpressions = thenExpressions;
         this.elseExpression = elseExpression;
-        this.resultType = resultType;
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> CaseExpression<T> create(Expression<?>[] operands, QueryDataType resultType) {
+    public static <T> CaseExpression<T> create(Expression<?>[] operands) {
         assert operands.length % 2 == 1 : "CASE expression should have odd number of operands";
 
         int branchesSize = operands.length / 2;
@@ -58,7 +55,7 @@ public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializa
             whenExpressions[i] = (Expression<Boolean>) operands[2 * i];
             thenExpressions[i] = operands[2 * i + 1];
         }
-        return new CaseExpression<>(whenExpressions, thenExpressions, operands[operands.length - 1], resultType);
+        return new CaseExpression<>(whenExpressions, thenExpressions, operands[operands.length - 1]);
     }
 
     @Override
@@ -81,7 +78,6 @@ public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializa
         }
 
         out.writeObject(elseExpression);
-        out.writeObject(resultType);
     }
 
     @SuppressWarnings("unchecked")
@@ -98,7 +94,6 @@ public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializa
         }
 
         elseExpression = in.readObject();
-        resultType = in.readObject();
     }
 
     @SuppressWarnings("unchecked")
@@ -118,7 +113,7 @@ public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializa
 
     @Override
     public QueryDataType getType() {
-        return resultType;
+        return elseExpression.getType();
     }
 
     @Override
@@ -132,13 +127,12 @@ public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializa
         CaseExpression<?> that = (CaseExpression<?>) o;
         return Arrays.equals(whenExpressions, that.whenExpressions)
                 && Arrays.equals(thenExpressions, that.thenExpressions)
-                && Objects.equals(elseExpression, that.elseExpression)
-                && Objects.equals(resultType, that.resultType);
+                && Objects.equals(elseExpression, that.elseExpression);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(Arrays.hashCode(whenExpressions), Arrays.hashCode(thenExpressions), elseExpression, resultType);
+        return Objects.hash(Arrays.hashCode(whenExpressions), Arrays.hashCode(thenExpressions), elseExpression);
     }
 
     @Override
@@ -147,7 +141,6 @@ public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializa
                 + "whenExpressions=" + Arrays.toString(whenExpressions)
                 + ", thenExpressions=" + Arrays.toString(thenExpressions)
                 + ", elseExpression=" + elseExpression
-                + ", resultType=" + resultType
                 + '}';
     }
 }
