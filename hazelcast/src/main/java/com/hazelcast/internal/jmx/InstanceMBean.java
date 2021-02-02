@@ -24,7 +24,6 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.LocalWanPublisherStats;
 import com.hazelcast.internal.monitor.LocalWanStats;
-import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.wan.impl.WanReplicationService;
 
