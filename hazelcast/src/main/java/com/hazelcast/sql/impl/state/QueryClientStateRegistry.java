@@ -66,7 +66,11 @@ public class QueryClientStateRegistry {
 
                 delete = true;
 
-                throw QueryException.cancelledByUser();
+                QueryException error = QueryException.cancelledByUser();
+
+                result.close(error);
+
+                throw error;
             }
 
             // Fetch the next page.
@@ -81,7 +85,7 @@ public class QueryClientStateRegistry {
             throw e;
         } finally {
             if (delete) {
-                deleteClientCursor(clientCursor);
+                deleteClientCursor(clientCursor.getQueryId());
             }
         }
     }
@@ -101,13 +105,13 @@ public class QueryClientStateRegistry {
             SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, false);
 
             if (page.isLast()) {
-                deleteClientCursor(clientCursor);
+                deleteClientCursor(clientCursor.getQueryId());
             }
 
             return page;
         } catch (Exception e) {
             // Clear the cursor in the case of exception.
-            deleteClientCursor(clientCursor);
+            deleteClientCursor(clientCursor.getQueryId());
 
             throw e;
         }
@@ -199,7 +203,7 @@ public class QueryClientStateRegistry {
     private void close0(QueryClientState clientCursor) {
         clientCursor.getSqlResult().close();
 
-        deleteClientCursor(clientCursor);
+        deleteClientCursor(clientCursor.getQueryId());
     }
 
     public void shutdown() {
@@ -220,12 +224,12 @@ public class QueryClientStateRegistry {
 
             victim.getSqlResult().close(error);
 
-            deleteClientCursor(victim);
+            deleteClientCursor(victim.getQueryId());
         }
     }
 
-    private void deleteClientCursor(QueryClientState cursor) {
-        clientCursors.remove(cursor.getQueryId());
+    private void deleteClientCursor(QueryId queryId) {
+        clientCursors.remove(queryId);
     }
 
     public int getCursorCount() {
