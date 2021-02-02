@@ -19,6 +19,11 @@ package com.hazelcast.sql_slow;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.sql.SqlBasicTest.SerializationMode;
 import com.hazelcast.sql.SqlOrderByTest;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.SlowTest;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
@@ -30,6 +35,9 @@ import java.util.List;
 import static com.hazelcast.sql.SqlBasicTest.SerializationMode.IDENTIFIED_DATA_SERIALIZABLE;
 import static com.hazelcast.sql.SqlBasicTest.SerializationMode.SERIALIZABLE;
 
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class SqlOrderBySlowTest extends SqlOrderByTest {
     @Parameterized.Parameters(name = "serializationMode:{0}, inMemoryFormat:{1}, membersCount:{2}")
     public static Collection<Object[]> parameters() {
