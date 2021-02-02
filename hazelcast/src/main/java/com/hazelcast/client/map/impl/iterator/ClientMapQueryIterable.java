@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.iterator;
+package com.hazelcast.client.map.impl.iterator;
 
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.client.impl.proxy.ClientMapProxy;
+import com.hazelcast.map.impl.iterator.MapQueryIterator;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import org.jetbrains.annotations.NotNull;
@@ -27,16 +28,16 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class MapQueryIterable<K, V, R> implements Iterable<R> {
-    private final MapProxyImpl<K, V> mapProxy;
+public class ClientMapQueryIterable<K, V, R> implements Iterable<R> {
+    private final ClientMapProxy<K, V> mapProxy;
     private final Predicate<K, V> predicate;
     private final Projection<? super Map.Entry<K, V>, R> projection;
     private final int fetchSize;
     private final int partitionCount;
 
-    public MapQueryIterable(MapProxyImpl<K, V> mapProxy,
-                            int fetchSize, int partitionCount,
-                            Projection<? super Map.Entry<K, V>, R> projection, Predicate<K, V> predicate) {
+    public ClientMapQueryIterable(ClientMapProxy<K, V> mapProxy,
+                                  int fetchSize, int partitionCount,
+                                  Projection<? super Map.Entry<K, V>, R> projection, Predicate<K, V> predicate) {
         this.mapProxy = mapProxy;
         this.partitionCount = partitionCount;
         this.fetchSize = fetchSize;

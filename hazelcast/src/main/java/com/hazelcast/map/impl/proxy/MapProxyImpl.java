@@ -23,7 +23,6 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
-import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.CollectionUtil;
@@ -993,25 +992,31 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
 
     /**
-     * @param predicate the predicate which the entries must match. {@code null} value is not
-     *                  allowed
-     * @param <R>       the return type
-     * @return the iterator for the projected entries
-     * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}
-     * @since 4.2
+     * TODO: Javadoc
+     * @param fetchSize
+     * @param projection
+     * @param predicate
+     * @param <R>
+     * @return
      */
     public <R> Iterable<R> iterable(int fetchSize,
                                     Projection<? super Map.Entry<K, V>, R> projection,
                                     Predicate<K, V> predicate) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        IPartition[] partitions = partitionService.getPartitions();
-        return new MapQueryIterable<>(this, fetchSize, partitions, projection, predicate);
+        int partitionCount = partitionService.getPartitionCount();
+        return new MapQueryIterable<>(this, fetchSize, partitionCount, projection, predicate);
     }
 
+    /**
+     * TODO: Javadoc
+     * @param fetchSize
+     * @param prefetchValues
+     * @return
+     */
     public Iterable<Entry<K, V>> iterable(int fetchSize, boolean prefetchValues) {
-        IPartition[] partitions = partitionService.getPartitions();
-        return new MapIterable<>(this, fetchSize, partitions, prefetchValues);
+        int partitionCount = partitionService.getPartitionCount();
+        return new MapIterable<>(this, fetchSize, partitionCount, prefetchValues);
     }
 
     @Override

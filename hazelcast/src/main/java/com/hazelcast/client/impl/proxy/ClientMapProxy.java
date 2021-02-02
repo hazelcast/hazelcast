@@ -95,7 +95,9 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
+import com.hazelcast.client.map.impl.iterator.ClientMapIterable;
 import com.hazelcast.client.map.impl.iterator.ClientMapPartitionIterator;
+import com.hazelcast.client.map.impl.iterator.ClientMapQueryIterable;
 import com.hazelcast.client.map.impl.iterator.ClientMapQueryPartitionIterator;
 import com.hazelcast.client.map.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.cluster.Member;
@@ -1731,6 +1733,34 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotPagingPredicate(predicate, "iterator");
         return new ClientMapQueryPartitionIterator<>(this, getContext(), fetchSize, partitionId,
                 predicate, projection);
+    }
+
+    /**
+     * TODO: Javadoc
+     * @param fetchSize
+     * @param projection
+     * @param predicate
+     * @param <R>
+     * @return
+     */
+    public <R> Iterable<R> iterable(int fetchSize,
+                                    Projection<? super Map.Entry<K, V>, R> projection,
+                                    Predicate<K, V> predicate) {
+        checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        int partitionCount = getContext().getPartitionService().getPartitionCount();
+        return new ClientMapQueryIterable<>(this, fetchSize, partitionCount, projection, predicate);
+    }
+
+    /**
+     * TODO: Javadoc
+     * @param fetchSize
+     * @param prefetchValues
+     * @return
+     */
+    public Iterable<Entry<K, V>> iterable(int fetchSize, boolean prefetchValues) {
+        int partitionCount = getContext().getPartitionService().getPartitionCount();
+        return new ClientMapIterable<>(this, fetchSize, partitionCount, prefetchValues);
     }
 
     @Override
