@@ -44,15 +44,19 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class QueryClientStateRegistry {
 
+    private static final long DEFAULT_CLOSED_CURSOR_CLEANUP_TIMEOUT = 30_000;
+
     private final ConcurrentHashMap<QueryId, QueryClientState> clientCursors = new ConcurrentHashMap<>();
+    private volatile long closedCursorCleanupTimeout = DEFAULT_CLOSED_CURSOR_CLEANUP_TIMEOUT;
 
     public SqlPage registerAndFetch(
         UUID clientId,
+        QueryId queryId,
         AbstractSqlResult result,
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
-        QueryClientState clientCursor = new QueryClientState(clientId, result, false);
+        QueryClientState clientCursor = new QueryClientState(clientId, queryId, result, false);
 
         boolean delete = false;
 
@@ -181,7 +185,7 @@ public class QueryClientStateRegistry {
 
     public void close(UUID clientId, QueryId queryId) {
         QueryClientState clientCursor =
-            clientCursors.computeIfAbsent(queryId, (ignore) -> new QueryClientState(clientId, null, true));
+            clientCursors.computeIfAbsent(queryId, (ignore) -> new QueryClientState(clientId, queryId, null, true));
 
         if (clientCursor.isClosed()) {
             // Received the "close" request before the "execute" request, do nothing.
@@ -211,10 +215,19 @@ public class QueryClientStateRegistry {
     }
 
     public void update(Set<UUID> activeClientIds) {
+        long currentTime = System.currentTimeMillis();
+
         List<QueryClientState> victims = new ArrayList<>();
 
         for (QueryClientState clientCursor : clientCursors.values()) {
+            // Close cursors that were opened by disconnected clients.
             if (!activeClientIds.contains(clientCursor.getClientId())) {
+                victims.add(clientCursor);
+            }
+
+            // Close cursors created for the "cancel" operation, that are too old. This is needed to avoid a race
+            // condition between the query cancellation on a client and the query completion on a server.
+            if (clientCursor.isClosed() && clientCursor.getCreatedAt() + closedCursorCleanupTimeout < currentTime) {
                 victims.add(clientCursor);
             }
         }
@@ -222,7 +235,11 @@ public class QueryClientStateRegistry {
         for (QueryClientState victim : victims) {
             QueryException error = QueryException.clientMemberConnection(victim.getClientId());
 
-            victim.getSqlResult().close(error);
+            AbstractSqlResult result = victim.getSqlResult();
+
+            if (result != null) {
+                result.close(error);
+            }
 
             deleteClientCursor(victim.getQueryId());
         }
@@ -234,5 +251,12 @@ public class QueryClientStateRegistry {
 
     public int getCursorCount() {
         return clientCursors.size();
+    }
+
+    /**
+     * For testing only.
+     */
+    public void setClosedCursorCleanupTimeout(long closedCursorCleanupTimeout) {
+        this.closedCursorCleanupTimeout = closedCursorCleanupTimeout;
     }
 }
