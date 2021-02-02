@@ -252,6 +252,7 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
     }
 
     @Override
+    @Deprecated
     public void writeUTF(final String str) throws IOException {
         writeString(str);
     }
