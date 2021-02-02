@@ -30,13 +30,23 @@ import java.io.Serializable;
  * @param <T> the return type of this expression.
  */
 public interface Expression<T> extends DataSerializable, Serializable {
+    /**
+     * Evaluates this expression, guaranteeing that this is a top-level call.
+     *
+     * @param row the row to evaluate this expression on
+     *      * @param context the expression evaluation context
+     *      * @return the result produced by the evaluation
+     */
+    default T evalTop(Row row, ExpressionEvalContext context) {
+        return eval(row, context);
+    }
 
     /**
      * Evaluates this expression.
      *
-     * @param row     the row to evaluate this expression on.
-     * @param context the expression evaluation context.
-     * @return the result produced by the evaluation.
+     * @param row the row to evaluate this expression on
+     * @param context the expression evaluation context
+     * @return the result produced by the evaluation
      */
     T eval(Row row, ExpressionEvalContext context);
 

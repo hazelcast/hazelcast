@@ -195,7 +195,7 @@ public class SqlClientService implements SqlService {
     /**
      * For testing only.
      */
-    public ClientMessage invokeOnRandomConnection(ClientMessage message) {
+    public Connection getRandomConnection() {
         Connection connection = client.getConnectionManager().getRandomConnection(false);
 
         if (connection == null) {
@@ -205,8 +205,15 @@ public class SqlClientService implements SqlService {
             ));
         }
 
+        return connection;
+    }
+
+    /**
+     * For testing only.
+     */
+    public ClientMessage invokeOnConnection(Connection connection, ClientMessage request) {
         try {
-            return invoke(message, connection);
+            return invoke(request, connection);
         } catch (Exception e) {
             throw rethrow(e);
         }

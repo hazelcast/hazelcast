@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.worker;
 
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.AbstractExec;
@@ -81,7 +82,8 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
             exec,
             Collections.emptyMap(),
             Collections.emptyMap(),
-            pool
+            pool,
+            new DefaultSerializationServiceBuilder().build()
         );
 
         fragmentExecutable.run();
@@ -104,7 +106,8 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
             exec,
             Collections.emptyMap(),
             Collections.emptyMap(),
-            pool
+            pool,
+            new DefaultSerializationServiceBuilder().build()
         );
 
         exec.setPayload(new ResultExecPayload(IterationResult.WAIT));
@@ -138,7 +141,8 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
             exec,
             Collections.emptyMap(),
             Collections.emptyMap(),
-            pool
+            pool,
+            new DefaultSerializationServiceBuilder().build()
         );
 
         // Throw an exception.
@@ -180,7 +184,8 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
             exec,
             Collections.singletonMap(1, inboundHandler),
             Collections.emptyMap(),
-            pool
+            pool,
+            new DefaultSerializationServiceBuilder().build()
         );
 
         CountDownLatch startLatch = new CountDownLatch(1);
@@ -258,7 +263,8 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
                 exec,
                 Collections.singletonMap(edgeId, inboundHandler),
                 Collections.singletonMap(edgeId, Collections.singletonMap(callerId, outboundHandler)),
-                pool
+                pool,
+                new DefaultSerializationServiceBuilder().build()
             );
 
             assertEquals(1, fragmentExecutable.getInboxEdgeIds().size());
@@ -338,7 +344,8 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
             exec,
             Collections.emptyMap(),
             Collections.emptyMap(),
-            pool
+            pool,
+            new DefaultSerializationServiceBuilder().build()
         );
 
         CountDownLatch startLatch = new CountDownLatch(1);

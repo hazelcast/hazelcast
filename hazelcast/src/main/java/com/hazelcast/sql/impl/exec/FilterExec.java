@@ -34,7 +34,7 @@ public class FilterExec extends AbstractFilterExec {
 
     @Override
     protected boolean eval(Row row) {
-        Boolean res = filter.eval(row, ctx);
+        Boolean res = filter.evalTop(row, ctx);
 
         return res != null && res;
     }

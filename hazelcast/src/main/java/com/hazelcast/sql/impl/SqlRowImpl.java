@@ -17,6 +17,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -34,10 +35,16 @@ public class SqlRowImpl implements SqlRow {
 
     private final SqlRowMetadata rowMetadata;
     private final Row row;
+    private final LazyTargetDeserializer lazyTargetDeserializer;
 
     public SqlRowImpl(SqlRowMetadata rowMetadata, Row row) {
+        this(rowMetadata, row, null);
+    }
+
+    public SqlRowImpl(SqlRowMetadata rowMetadata, Row row, LazyTargetDeserializer lazyTargetDeserializer) {
         this.rowMetadata = rowMetadata;
         this.row = row;
+        this.lazyTargetDeserializer = lazyTargetDeserializer;
     }
 
     @Nullable
@@ -45,7 +52,7 @@ public class SqlRowImpl implements SqlRow {
     public <T> T getObject(int columnIndex) {
         checkIndex(columnIndex);
 
-        return getObject0(columnIndex);
+        return getObject0(columnIndex, true);
     }
 
     @Nullable
@@ -53,11 +60,39 @@ public class SqlRowImpl implements SqlRow {
     public <T> T getObject(@Nonnull String columnName) {
         int columnIndex = resolveIndex(columnName);
 
-        return getObject0(columnIndex);
+        return getObject0(columnIndex, true);
     }
 
-    private <T> T getObject0(int columnIndex) {
-        return row.get(columnIndex);
+    /**
+     * Get column's value without forcing of the deserialization {@link Data}.
+     */
+    public <T> T getObjectRaw(int columnIndex) {
+        checkIndex(columnIndex);
+
+        return getObject0(columnIndex, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T getObject0(int columnIndex, boolean deserialize) {
+        Object res = row.get(columnIndex);
+
+        if (res instanceof LazyTarget) {
+            LazyTarget res0 = (LazyTarget) res;
+
+            if (deserialize) {
+                assert lazyTargetDeserializer != null;
+
+                res = lazyTargetDeserializer.deserialize((LazyTarget) res);
+            } else {
+                res = res0.getSerialized();
+
+                if (res == null) {
+                    res = res0.getDeserialized();
+                }
+            }
+        }
+
+        return (T) res;
     }
 
     private int resolveIndex(String columnName) {

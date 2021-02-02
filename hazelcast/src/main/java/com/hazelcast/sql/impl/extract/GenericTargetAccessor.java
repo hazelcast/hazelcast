@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.extract;
 
+import com.hazelcast.sql.impl.type.QueryDataType;
+
 /**
  * An interface that provides an indirection between {@link AbstractGenericExtractor} implementations and the parent
  * {@link QueryTarget}. It allows us to have different target implementations that produce same generic extractors.
@@ -31,9 +33,10 @@ public interface GenericTargetAccessor {
     Object getTargetForFieldAccess();
 
     /**
-     * Gets the target in the deserialized form.
+     * Gets the target for the direct access.
      *
-     * @return target in the deserialized form
+     * @param type the expected target type
+     * @return target for the direct access
      */
-    Object getTargetDeserialized();
+    Object getTargetForDirectAccess(QueryDataType type);
 }

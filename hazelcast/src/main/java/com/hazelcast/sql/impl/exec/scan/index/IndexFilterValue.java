@@ -90,7 +90,7 @@ public class IndexFilterValue implements IdentifiedDataSerializable {
      *     never return any entry
      */
     private Comparable getComponentValue(int index, ExpressionEvalContext evalContext) {
-        Object value = components.get(index).eval(NoColumnAccessRow.INSTANCE, evalContext);
+        Object value = components.get(index).evalTop(NoColumnAccessRow.INSTANCE, evalContext);
 
         if (value == null && allowNulls.get(index)) {
             // The evaluated value is NULL, but NULLs are allowed here (e.g. for "WHERE a IS NULL"). Return the special
