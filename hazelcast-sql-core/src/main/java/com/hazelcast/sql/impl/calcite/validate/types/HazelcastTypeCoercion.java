@@ -18,18 +18,20 @@ package com.hazelcast.sql.impl.calcite.validate.types;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import org.apache.calcite.rel.type.DynamicRecordType;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlFunction;
-import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -37,7 +39,6 @@ import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
-import org.apache.calcite.util.Util;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -56,18 +57,10 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     @Override
     public boolean coerceOperandType(SqlValidatorScope scope, SqlCall call, int index, RelDataType targetType) {
         SqlNode operand = call.getOperandList().get(index);
-        return coerceNode(scope, operand, targetType, cast -> call.setOperand(index, cast));
-    }
 
-    private boolean coerceNode(
-            SqlValidatorScope scope,
-            SqlNode node,
-            RelDataType targetType,
-            Consumer<SqlNode> replaceFn
-    ) {
         // Just update the inferred type if casting is not needed
-        if (!requiresCast(scope, node, targetType)) {
-            updateInferredType(node, targetType);
+        if (!requiresCast(scope, operand, targetType)) {
+            updateInferredType(operand, targetType);
 
             return false;
         }
@@ -76,16 +69,16 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         if (targetType instanceof HazelcastIntegerType) {
             targetTypeSpec = new SqlDataTypeSpec(
-                    new HazelcastIntegerTypeNameSpec((HazelcastIntegerType) targetType),
-                    SqlParserPos.ZERO
+                new HazelcastIntegerTypeNameSpec((HazelcastIntegerType) targetType),
+                SqlParserPos.ZERO
             );
         } else {
             targetTypeSpec = SqlTypeUtil.convertTypeToSpec(targetType);
         }
 
-        SqlNode cast = HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, node, targetTypeSpec);
+        SqlNode cast = HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, operand, targetTypeSpec);
 
-        replaceFn.accept(cast);
+        call.setOperand(index, cast);
 
         validator.deriveType(scope, cast);
 
@@ -94,40 +87,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     @Override
     protected boolean coerceColumnType(SqlValidatorScope scope, SqlNodeList nodeList, int index, RelDataType targetType) {
-        // This will happen when there is a star/dynamic-star column in the select list,
-        // and the source is values expression, i.e. `select * from (values(1, 2, 3))`.
-        // There is no need to coerce the column type, only remark
-        // the inferred row type has changed, we will then add in type coercion
-        // when expanding star/dynamic-star.
-
-        // See SqlToRelConverter#convertSelectList for details.
-        if (index >= nodeList.getList().size()) {
-            // Can only happen when there is a star(*) in the column,
-            // just return true.
-            return true;
-        }
-
-        final SqlNode node = nodeList.get(index);
-        if (node instanceof SqlIdentifier) {
-            // Do not expand a star/dynamic table col.
-            SqlIdentifier node1 = (SqlIdentifier) node;
-            if (node1.isStar()) {
-                return true;
-            } else if (DynamicRecordType.isDynamicStarColName(Util.last(node1.names))) {
-                // Should support implicit cast for dynamic table.
-                return false;
-            }
-        }
-
-        if (node instanceof SqlCall) {
-            SqlCall node2 = (SqlCall) node;
-            if (node2.getOperator().kind == SqlKind.AS) {
-                final SqlNode operand = node2.operand(0);
-                return coerceNode(scope, operand, targetType, cast -> node2.setOperand(0, cast));
-            }
-        }
-
-        return coerceNode(scope, node, targetType, cast -> nodeList.set(index, cast));
+        throw new UnsupportedOperationException("Should not be called");
     }
 
     private boolean requiresCast(SqlValidatorScope scope, SqlNode node, RelDataType to) {
@@ -154,9 +114,85 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     @Override
     public boolean rowTypeCoercion(SqlValidatorScope scope, SqlNode query, int columnIndex, RelDataType targetType) {
-        // We use the superclass implementation - it only decides, based on the query type, to call
-        // either coerceColumnType() or coerceOperandType()
-         return super.rowTypeCoercion(scope, query, columnIndex, targetType);
+        switch (query.getKind()) {
+            case SELECT:
+                SqlSelect selectNode = (SqlSelect) query;
+                SqlValidatorScope scope1 = validator.getSelectScope(selectNode);
+                if (!rowTypeElementCoercion(scope1, selectNode.getSelectList().get(columnIndex), targetType,
+                        newNode -> selectNode.getSelectList().set(columnIndex, newNode))) {
+                    return false;
+                }
+                updateInferredColumnType(scope1, query, columnIndex, targetType);
+                return true;
+            case VALUES:
+                for (SqlNode rowConstructor : ((SqlCall) query).getOperandList()) {
+                    if (!rowTypeElementCoercion(scope, ((SqlCall) rowConstructor).operand(columnIndex), targetType,
+                            newNode -> ((SqlCall) rowConstructor).setOperand(columnIndex, newNode))) {
+                        return false;
+                    }
+                }
+                updateInferredColumnType(scope, query, columnIndex, targetType);
+                return true;
+            default:
+                throw new UnsupportedOperationException("unexpected: " + query.getKind());
+        }
+    }
+
+    private boolean rowTypeElementCoercion(
+            SqlValidatorScope scope,
+            SqlNode rowElement,
+            RelDataType targetType,
+            Consumer<SqlNode> replaceFn
+    ) {
+        RelDataType sourceType = validator.deriveType(scope, rowElement);
+
+        QueryDataType sourceHzType = HazelcastTypeUtils.toHazelcastType(sourceType.getSqlTypeName());
+        QueryDataType targetHzType = HazelcastTypeUtils.toHazelcastType(targetType.getSqlTypeName());
+
+        if (sourceHzType.getTypeFamily() == targetHzType.getTypeFamily()) {
+            // Types are in the same family, do nothing.
+            return true;
+        }
+
+        move this to jet
+
+        boolean valid = bothOperandsAreNumeric(sourceHzType, targetHzType)
+                || bothOperandsAreTemporalAndLowOperandCanBeConvertedToHighOperand(highHZType, lowHZType)
+                || highOperandIsTemporalAndLowOperandIsLiteralOfVarcharType(highHZType, lowHZType, low);
+
+        if (!valid) {
+            // Types cannot be converted to each other, throw.
+            if (throwOnFailure) {
+                throw callBinding.newValidationSignatureError();
+            } else {
+                return false;
+            }
+        }
+
+        // Types are in the same group, cast lower to higher.
+        RelDataType newLowType = validator.getTypeFactory().createTypeWithNullability(highType, lowType.isNullable());
+
+        validator.getTypeCoercion().coerceOperandType(callBinding.getScope(), callBinding.getCall(), lowIndex, newLowType);
+
+        return true;
+    }
+
+    private static boolean bothOperandsAreNumeric(QueryDataType highHZType, QueryDataType lowHZType) {
+        return (highHZType.getTypeFamily().isNumeric() && lowHZType.getTypeFamily().isNumeric());
+    }
+
+    private static boolean bothOperandsAreTemporalAndLowOperandCanBeConvertedToHighOperand(QueryDataType highHZType,
+                                                                                           QueryDataType lowHZType) {
+        return highHZType.getTypeFamily().isTemporal()
+                && lowHZType.getTypeFamily().isTemporal()
+                && lowHZType.getConverter().canConvertTo(highHZType.getTypeFamily());
+    }
+
+    private static boolean highOperandIsTemporalAndLowOperandIsLiteralOfVarcharType(QueryDataType highHZType,
+                                                                                    QueryDataType lowHZType, SqlNode low) {
+        return highHZType.getTypeFamily().isTemporal()
+                && lowHZType.getTypeFamily() == QueryDataTypeFamily.VARCHAR
+                && low instanceof SqlLiteral;
     }
 
     @Override

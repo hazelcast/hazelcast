@@ -30,7 +30,7 @@ import java.time.ZonedDateTime;
  */
 public abstract class AbstractTemporalConverter extends Converter {
 
-    protected static final ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
+    public static final ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
 
     protected AbstractTemporalConverter(int id, QueryDataTypeFamily typeFamily) {
         super(id, typeFamily);
