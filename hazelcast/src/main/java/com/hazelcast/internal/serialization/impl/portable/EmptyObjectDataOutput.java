@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
@@ -95,6 +96,10 @@ final class EmptyObjectDataOutput extends VersionedObjectDataOutput
     }
 
     @Override
+    public void writeString(@Nullable String string) throws IOException {
+    }
+
+    @Override
     public void writeByteArray(byte[] value) throws IOException {
     }
 
@@ -128,6 +133,10 @@ final class EmptyObjectDataOutput extends VersionedObjectDataOutput
 
     @Override
     public void writeUTFArray(String[] values) throws IOException {
+    }
+
+    @Override
+    public void writeStringArray(@Nullable String[] values) throws IOException {
     }
 
     @Override

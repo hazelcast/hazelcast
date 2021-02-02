@@ -216,6 +216,12 @@ public class DefaultPortableReader implements PortableReader {
     @Override
     @Nullable
     public String readUTF(@Nonnull String fieldName) throws IOException {
+        return readString(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public String readString(@Nonnull String fieldName) throws IOException {
         int currentPos = in.position();
         try {
             int pos = readPosition(fieldName, FieldType.UTF);
@@ -329,7 +335,13 @@ public class DefaultPortableReader implements PortableReader {
     @Override
     @Nullable
     public String[] readUTFArray(@Nonnull String fieldName) throws IOException {
-        return readPrimitiveArrayField(fieldName, FieldType.UTF_ARRAY, ObjectDataInput::readUTFArray);
+        return readStringArray(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public String[] readStringArray(@Nonnull String fieldName) throws IOException {
+        return readPrimitiveArrayField(fieldName, FieldType.UTF_ARRAY, ObjectDataInput::readStringArray);
     }
 
     @Override
