@@ -36,7 +36,6 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 
@@ -50,8 +49,8 @@ public class ClientHazelcastRunningInForkJoinPoolTest extends HazelcastTestSuppo
     private HazelcastInstance server;
     private IMap serverMap;
     private IMap clientMap;
-    private String mapName = "loading-takes-ages";
-    private String innocentMap = "innocent";
+    private String slowLoadingMapName = "slowLoadingMap";
+    private String defaultMapName = "default";
 
     @After
     public void tearDown() {
@@ -70,8 +69,7 @@ public class ClientHazelcastRunningInForkJoinPoolTest extends HazelcastTestSuppo
             }
         });
 
-        MapConfig mapConfig = new MapConfig(
-                mapName);
+        MapConfig mapConfig = new MapConfig(slowLoadingMapName);
         mapConfig.setMapStoreConfig(mapStoreConfig);
 
         Config config = getConfig().addMapConfig(mapConfig);
@@ -79,8 +77,8 @@ public class ClientHazelcastRunningInForkJoinPoolTest extends HazelcastTestSuppo
         server = hazelcastFactory.newHazelcastInstance(config);
         client = hazelcastFactory.newHazelcastClient();
 
-        serverMap = server.getMap(innocentMap);
-        clientMap = client.getMap(mapName);
+        serverMap = server.getMap(defaultMapName);
+        clientMap = client.getMap(slowLoadingMapName);
     }
 
     @Test
@@ -89,21 +87,11 @@ public class ClientHazelcastRunningInForkJoinPoolTest extends HazelcastTestSuppo
         // contend on loading 1 item from a database.
         Collection<Future> tasks = new ArrayList<>();
         for (int i = 0; i < 1000; i++) {
-            tasks.add(ForkJoinPool.commonPool().submit(new ACallable()));
+            tasks.add(ForkJoinPool.commonPool().submit(() -> clientMap.get(1)));
         }
 
         // 2. In parallel, adding a listener to a different
         // map must not affected by loading phase at step 1.
         serverMap.addEntryListener(new EntryAdapter<>(), true);
-    }
-
-    class ACallable implements Callable<Object> {
-
-        @Override
-        public Object call() throws Exception {
-            clientMap.get(1);
-            return null;
-        }
-
     }
 }

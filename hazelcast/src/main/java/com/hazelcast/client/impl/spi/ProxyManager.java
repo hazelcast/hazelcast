@@ -464,20 +464,12 @@ public final class ProxyManager {
                 return true;
             }
 
-            boolean interrupted = false;
             synchronized (this) {
                 while (proxy == null) {
-                    try {
-                        wait();
-                    } catch (InterruptedException e) {
-                        interrupted = true;
-                    }
+                    wait();
                 }
             }
-            if (interrupted) {
-                Thread.currentThread().interrupt();
-                return true;
-            }
+
             return true;
         }
 
