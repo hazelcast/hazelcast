@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Add a new hash in the estimation set. This is the method you want to
  * use to feed hash values into the estimator.
  */
-@Generated("8d57b25ede9387d865ecbbf3286bc3dd")
+@Generated("bfdee9b800a242f4d7196a64558b31a3")
 public final class CardinalityEstimatorAddCodec {
     //hex: 0x190100
     public static final int REQUEST_MESSAGE_TYPE = 1638656;
