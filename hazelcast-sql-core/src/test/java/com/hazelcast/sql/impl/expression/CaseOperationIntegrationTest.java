@@ -42,10 +42,13 @@ import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 
 public class CaseOperationIntegrationTest extends ExpressionTestSupport {
     @Test
-    public void dummyCase() {
+    public void caseWithConstants() {
         put(1);
 
-        checkValue0("select case when 1 = 1 then 1 else 2 end from map", SqlColumnType.TINYINT, (byte) 1);
+        checkValue0("select case when true then null else null end from map", SqlColumnType.NULL, null);
+        checkFailure0("select case when 1 then 1 else 2 end from map", SqlErrorCode.PARSING, "Expected a boolean type");
+        checkValue0("select case when 1 = 1 then 1 else null end from map", SqlColumnType.TINYINT, (byte) 1);
+        checkValue0("select case when 1 = 1 then null else 1 end from map", SqlColumnType.TINYINT, null);
         checkValue0("select case 1 when 1 then 100 else 2 end from map", SqlColumnType.TINYINT, (byte) 100);
         checkFailure0("select case 'a' when 1 then 100 else 2 end from map", SqlErrorCode.PARSING, "Cannot apply '=' operator to [VARCHAR, TINYINT]");
     }
@@ -63,9 +66,7 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
     public void useMapValue() {
         put(1);
 
-        String sql = "select case when this = 1 then 10 end from map";
-
-        checkValue0(sql, SqlColumnType.TINYINT, (byte) 10);
+        checkValue0("select case when this = 1 then 10 end from map", SqlColumnType.TINYINT, (byte) 10);
     }
 
     @Test
@@ -108,6 +109,7 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
 
         checkFailure0("select case when ? = ? then 1 end from map", SqlErrorCode.PARSING, "Cannot apply '=' operator to [UNKNOWN, UNKNOWN]");
         checkFailure0("select case ? when ? then 100 end from map", SqlErrorCode.PARSING, "Cannot apply '=' operator to [UNKNOWN, UNKNOWN]");
+        checkValue0("select case when ? then 1 end from map", SqlColumnType.TINYINT, (byte) 1, true);
         checkValue0("select case when ? IS NOT NULL then 100 end from map", SqlColumnType.TINYINT, (byte) 100, 1);
         checkValue0("select case ? when this then 100 end from map", SqlColumnType.TINYINT, (byte) 100, 1);
         checkValue0("select case when ? = this then 100 end from map", SqlColumnType.TINYINT, (byte) 100, 1);

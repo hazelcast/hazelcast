@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
-import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
@@ -41,18 +40,15 @@ import org.apache.calcite.sql.fun.SqlCaseOperator;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
-import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
-import org.apache.calcite.util.Litmus;
 import org.apache.calcite.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
-import static org.apache.calcite.util.Static.RESOURCE;
 
 public final class HazelcastCaseOperator extends SqlOperator {
 
@@ -65,22 +61,7 @@ public final class HazelcastCaseOperator extends SqlOperator {
 
     @Override
     public void validateCall(SqlCall call, SqlValidator validator, SqlValidatorScope scope, SqlValidatorScope operandScope) {
-        final HazelcastSqlCase sqlCase = (HazelcastSqlCase) call;
-
-        final SqlNodeList whenOperands = sqlCase.getWhenOperands();
-        for (SqlNode operand : whenOperands) {
-            operand.validateExpr(validator, operandScope);
-        }
-
-        final SqlNodeList thenOperands = sqlCase.getThenOperands();
-        for (SqlNode operand : thenOperands) {
-            operand.validateExpr(validator, operandScope);
-        }
-
-        final SqlNode elseOperand = sqlCase.getElseOperand();
-        if (elseOperand != null) {
-            elseOperand.validateExpr(validator, operandScope);
-        }
+        SqlCaseOperator.INSTANCE.validateCall(call, validator, scope, operandScope);
     }
 
     @Override
@@ -97,45 +78,7 @@ public final class HazelcastCaseOperator extends SqlOperator {
 
     @Override
     public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
-        SqlNodeList whenList = (SqlNodeList) callBinding.getCall().getOperandList().get(1);
-        SqlNodeList thenList = (SqlNodeList) callBinding.getCall().getOperandList().get(2);
-        SqlNode elseOperand = callBinding.getCall().getOperandList().get(3);
-        assert whenList.size() == thenList.size();
-
-        for (SqlNode node : whenList) {
-            RelDataType type = callBinding.getValidator().deriveType(callBinding.getScope(), node);
-            // TODO: add test
-            if (type.getSqlTypeName() != SqlTypeName.BOOLEAN) {
-                if (throwOnFailure) {
-                    throw callBinding.newError(RESOURCE.expectedBoolean());
-                }
-                return false;
-            }
-        }
-
-        boolean foundNotNull = false;
-        for (SqlNode node : thenList) {
-            RelDataType type = callBinding.getValidator().deriveType(callBinding.getScope(), node);
-            if (type.getSqlTypeName() != SqlTypeName.NULL) {
-                foundNotNull = true;
-            }
-        }
-
-        RelDataType elseType = callBinding.getValidator().deriveType(callBinding.getScope(), elseOperand);
-        if (elseType.getSqlTypeName() != SqlTypeName.NULL) {
-            foundNotNull = true;
-        }
-
-        // TODO: add test
-        if (!foundNotNull) {
-            // according to the sql standard we can not have all of the THEN
-            // statements and the ELSE returning null
-            if (throwOnFailure && !callBinding.isTypeCoercionEnabled()) {
-                throw callBinding.newError(RESOURCE.mustNotNullInElse());
-            }
-            return false;
-        }
-        return true;
+        return SqlCaseOperator.INSTANCE.checkOperandTypes(callBinding, throwOnFailure);
     }
 
     @Override
@@ -174,7 +117,7 @@ public final class HazelcastCaseOperator extends SqlOperator {
         @Override
         @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:nestedifdepth"})
         public RelDataType inferReturnType(SqlOperatorBinding binding) {
-            // Copied from CalCite with small changes
+            // Copied from SqlCaseOperator#inferTypeFromValidator with small changes
             SqlCallBinding callBinding = (SqlCallBinding) binding;
             SqlCall sqlCall = callBinding.getCall();
             SqlValidator validator = callBinding.getValidator();
@@ -183,34 +126,26 @@ public final class HazelcastCaseOperator extends SqlOperator {
             List<SqlNode> nullList = new ArrayList<>();
             List<RelDataType> argTypes = new ArrayList<>();
 
-            final SqlNodeList whenOperands = (SqlNodeList) sqlCall.getOperandList().get(1);
             final RelDataTypeFactory typeFactory = callBinding.getTypeFactory();
 
             final int size = thenList.getList().size();
             for (int i = 0; i < size; i++) {
                 SqlNode node = thenList.get(i);
                 RelDataType type = validator.deriveType(callBinding.getScope(), node);
-                SqlNode operand = whenOperands.get(i);
-                if (operand.getKind() == SqlKind.IS_NOT_NULL && type.isNullable()) {
-                    SqlBasicCall call = (SqlBasicCall) operand;
-                    if (call.getOperandList().get(1).equalsDeep(node, Litmus.IGNORE)) {
-                        // We're sure that the type is not nullable if the kind is IS NOT NULL.
-                        type = typeFactory.createTypeWithNullability(type, false);
-                    }
-                }
                 argTypes.add(type);
                 if (SqlUtil.isNullLiteral(node, false)) {
                     nullList.add(node);
                 }
             }
 
-            List<SqlNode> allReturnNodes = new ArrayList<>(thenList.getList());
             SqlNode elseOp = sqlCall.getOperandList().get(3);
-            allReturnNodes.add(elseOp);
             argTypes.add(validator.deriveType(callBinding.getScope(), elseOp));
             if (SqlUtil.isNullLiteral(elseOp, false)) {
                 nullList.add(elseOp);
             }
+
+            List<SqlNode> allReturnNodes = new ArrayList<>(thenList.getList());
+            allReturnNodes.add(elseOp);
 
             RelDataType caseReturnType = typeFactory.leastRestrictive(argTypes);
             if (null == caseReturnType) {
