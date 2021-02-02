@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.DONE;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -45,7 +46,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class QueryClientStateRegistry {
 
-    private static final long DEFAULT_CLOSED_CURSOR_CLEANUP_TIMEOUT_NS = 30_000_000;
+    private static final long DEFAULT_CLOSED_CURSOR_CLEANUP_TIMEOUT_NS = NANOSECONDS.convert(30, SECONDS);
 
     private final ConcurrentHashMap<QueryId, QueryClientState> clientCursors = new ConcurrentHashMap<>();
     private volatile long closedCursorCleanupTimeoutNs = DEFAULT_CLOSED_CURSOR_CLEANUP_TIMEOUT_NS;
@@ -262,7 +263,7 @@ public class QueryClientStateRegistry {
     /**
      * For testing only.
      */
-    public void setClosedCursorCleanupTimeoutNs(long closedCursorCleanupTimeoutNs) {
-        this.closedCursorCleanupTimeoutNs = closedCursorCleanupTimeoutNs;
+    public void setClosedCursorCleanupTimeoutSeconds(long closedCursorCleanupTimeout) {
+        closedCursorCleanupTimeoutNs = NANOSECONDS.convert(closedCursorCleanupTimeout, SECONDS);
     }
 }
