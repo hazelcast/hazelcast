@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("957ae5fdc274ec0b2fc8eb7bb58bd758")
+@Generated("e2bf434871259c9ab31282b9fcb2f187")
 public final class PredicateConfigHolderCodec {
 
     private PredicateConfigHolderCodec() {

@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("0a95b511c2a1035e3454693f5e263968")
+@Generated("fd05a79cc520bd4a71d8c6f6ba920e75")
 public final class ScheduledTaskHandlerCodec {
     private static final int UUID_FIELD_OFFSET = 0;
     private static final int PARTITION_ID_FIELD_OFFSET = UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;

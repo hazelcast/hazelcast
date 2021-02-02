@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Replaces the entry for a key only if currently mapped to a given value. The object to be replaced will be
  * accessible only in the current transaction context until the transaction is committed.
  */
-@Generated("2fd62686c9159a5284775a3668a29835")
+@Generated("6709180dc628d9c174101a124e30f301")
 public final class TransactionalMapReplaceIfSameCodec {
     //hex: 0x0E0A00
     public static final int REQUEST_MESSAGE_TYPE = 920064;

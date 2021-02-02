@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches the next row page.
  */
-@Generated("a37dd4cc0785c907ea4002adbde22ac7")
+@Generated("0f14f163ec60d295d176e49ce84f97e6")
 public final class SqlFetchCodec {
     //hex: 0x210500
     public static final int REQUEST_MESSAGE_TYPE = 2163968;

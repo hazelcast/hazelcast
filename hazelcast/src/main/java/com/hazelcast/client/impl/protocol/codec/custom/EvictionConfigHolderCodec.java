@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("da3e5e9e4be9e523308d1927fd42c8fc")
+@Generated("ec01f4fe00537b32172bef8d2915b105")
 public final class EvictionConfigHolderCodec {
     private static final int SIZE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

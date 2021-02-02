@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("ee7dddbadb4eec657941881ff96cd2ae")
+@Generated("436161c2b26c258f4dcb3f85acbeb4c6")
 public final class QueryCacheConfigHolderCodec {
     private static final int BATCH_SIZE_FIELD_OFFSET = 0;
     private static final int BUFFER_SIZE_FIELD_OFFSET = BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

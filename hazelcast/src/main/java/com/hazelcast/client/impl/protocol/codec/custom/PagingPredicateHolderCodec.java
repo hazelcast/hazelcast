@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("d94fc05e6b4bd1271d1acec8a946ad25")
+@Generated("33df5cc775905e6b9d032f797e896c01")
 public final class PagingPredicateHolderCodec {
     private static final int PAGE_SIZE_FIELD_OFFSET = 0;
     private static final int PAGE_FIELD_OFFSET = PAGE_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

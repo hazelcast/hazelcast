@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("93a37155ee2cf1523073013ba19d8272")
+@Generated("c959783a86207b461fd3c6ac46ff5eb1")
 public final class NearCacheConfigHolderCodec {
     private static final int SERIALIZE_KEYS_FIELD_OFFSET = 0;
     private static final int INVALIDATE_ON_CHANGE_FIELD_OFFSET = SERIALIZE_KEYS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

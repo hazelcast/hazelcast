@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a ringbuffer configuration with the given {@code name} already exists, then
  * the new ringbuffer config is ignored and the existing one is preserved.
  */
-@Generated("8a87826afd511e40368969da4482181f")
+@Generated("fc48a3a5a678b647381554638832fad1")
 public final class DynamicConfigAddRingbufferConfigCodec {
     //hex: 0x1B0200
     public static final int REQUEST_MESSAGE_TYPE = 1769984;

@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("d41d8edfbfcb4ed6754adb0010f300bf")
+@Generated("9700375b9b9fd343f807743b6ec3c440")
 public final class BitmapIndexOptionsCodec {
     private static final int UNIQUE_KEY_TRANSFORMATION_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = UNIQUE_KEY_TRANSFORMATION_FIELD_OFFSET + INT_SIZE_IN_BYTES;

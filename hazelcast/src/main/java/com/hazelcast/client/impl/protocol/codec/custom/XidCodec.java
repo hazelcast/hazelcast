@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("faa4ba45216aab5c3fa36eb72b46c004")
+@Generated("23eca2f2035f12d76bb4a1eeb842e0bb")
 public final class XidCodec {
     private static final int FORMAT_ID_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = FORMAT_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;

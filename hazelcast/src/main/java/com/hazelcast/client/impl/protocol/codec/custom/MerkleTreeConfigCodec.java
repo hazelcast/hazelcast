@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("e5bef5d60945fd9360b9176dd99e8572")
+@Generated("42bd443e765b2a62bf51a957c7a5bbd6")
 public final class MerkleTreeConfigCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int DEPTH_FIELD_OFFSET = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

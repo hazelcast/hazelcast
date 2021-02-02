@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("81ada5402a317de1c4d63c185f96d54f")
+@Generated("2eb24a6c1378d04a053816e0a87a5aa8")
 public final class TimedExpiryPolicyFactoryConfigCodec {
     private static final int EXPIRY_POLICY_TYPE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = EXPIRY_POLICY_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

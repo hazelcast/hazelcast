@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("b31de8317626cb6fe96f8542a003301c")
+@Generated("ab00d6791c0bbfe10705fa640f4b2443")
 public final class SimpleEntryViewCodec {
     private static final int COST_FIELD_OFFSET = 0;
     private static final int CREATION_TIME_FIELD_OFFSET = COST_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

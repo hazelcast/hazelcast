@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * v in the specified MultiMap. The behavior of this operation is undefined if the specified map is modified while the
  * operation is in progress.
  */
-@Generated("8865addaa68a26e2c3896b7b9ccf68be")
+@Generated("90a78f8f4cbb0ba1ef1c68323071b018")
 public final class MultiMapPutAllCodec {
     //hex: 0x021700
     public static final int REQUEST_MESSAGE_TYPE = 136960;

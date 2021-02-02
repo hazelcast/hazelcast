@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a migration listener to the cluster.
  */
-@Generated("c27c878d20c773b7020245d4576c5f2b")
+@Generated("80b81dadb307fb9aed0f33182e0d3d84")
 public final class ClientAddMigrationListenerCodec {
     //hex: 0x001100
     public static final int REQUEST_MESSAGE_TYPE = 4352;

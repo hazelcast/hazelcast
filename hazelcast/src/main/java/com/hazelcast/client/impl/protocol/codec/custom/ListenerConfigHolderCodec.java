@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("b81bcbdd6a26944926ed5170c1b05cb6")
+@Generated("4c2843e432b18de46ee7e8ec5aa716ee")
 public final class ListenerConfigHolderCodec {
     private static final int LISTENER_TYPE_FIELD_OFFSET = 0;
     private static final int INCLUDE_VALUE_FIELD_OFFSET = LISTENER_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

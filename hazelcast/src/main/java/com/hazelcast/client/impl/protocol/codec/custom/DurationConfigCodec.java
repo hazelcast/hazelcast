@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("1e81e25643b65eec749a06f2eb0b247c")
+@Generated("87455d67333cb7bae9891c860592698e")
 public final class DurationConfigCodec {
     private static final int DURATION_AMOUNT_FIELD_OFFSET = 0;
     private static final int TIME_UNIT_FIELD_OFFSET = DURATION_AMOUNT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

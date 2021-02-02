@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a cardinality estimator configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("723aa3a21436067841b7809a57e7c23b")
+@Generated("44f6321537c7852da448202da7a9c270")
 public final class DynamicConfigAddCardinalityEstimatorConfigCodec {
     //hex: 0x1B0300
     public static final int REQUEST_MESSAGE_TYPE = 1770240;

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * THIS MESSAGE IS NO LONGER USED BUT KEPT FOR BACKWARD COMPATIBILITY TESTS
  * Starts execution of an SQL query.
  */
-@Generated("44d9992dd31c9c2cb4c59406424ff259")
+@Generated("4111b75509471e761adbb7e65fb3b458")
 public final class SqlExecute_reservedCodec {
     //hex: 0x210100
     public static final int REQUEST_MESSAGE_TYPE = 2162944;

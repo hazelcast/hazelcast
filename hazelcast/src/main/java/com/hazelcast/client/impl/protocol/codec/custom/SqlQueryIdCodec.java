@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("c55060bed9a8bb7546a594a48e075a0d")
+@Generated("b5e0f2d9aa6d6e1b6bc18d360894c5e7")
 public final class SqlQueryIdCodec {
     private static final int MEMBER_ID_HIGH_FIELD_OFFSET = 0;
     private static final int MEMBER_ID_LOW_FIELD_OFFSET = MEMBER_ID_HIGH_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

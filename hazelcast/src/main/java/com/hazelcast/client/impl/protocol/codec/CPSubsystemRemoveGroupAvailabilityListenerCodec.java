@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Deregisters CP availability listener.
  */
-@Generated("1d11f935b102b79b298c0df3a6279f09")
+@Generated("58f471defff8520ed63dc073a3788d93")
 public final class CPSubsystemRemoveGroupAvailabilityListenerCodec {
     //hex: 0x220400
     public static final int REQUEST_MESSAGE_TYPE = 2229248;

@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("dbe74aedf3d6c26d4cea580dee8ff1e9")
+@Generated("792c050cfe06cbd40f7e9c7d4acbd076")
 public final class ErrorHolderCodec {
     private static final int ERROR_CODE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = ERROR_CODE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

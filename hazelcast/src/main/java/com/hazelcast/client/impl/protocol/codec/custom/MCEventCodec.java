@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("a16b18a4465d67399abbee8ee7410e30")
+@Generated("f25db4c1c89e82e1031fbe3eb1509068")
 public final class MCEventCodec {
     private static final int TIMESTAMP_FIELD_OFFSET = 0;
     private static final int TYPE_FIELD_OFFSET = TIMESTAMP_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("d03e227568834d4727dd732535d9c41a")
+@Generated("37eabc7affcf8949cf2a7b9252101f1b")
 public final class QueryCacheEventDataCodec {
     private static final int SEQUENCE_FIELD_OFFSET = 0;
     private static final int EVENT_TYPE_FIELD_OFFSET = SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

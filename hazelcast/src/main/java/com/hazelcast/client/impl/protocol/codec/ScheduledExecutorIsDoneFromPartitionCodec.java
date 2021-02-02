@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Checks whether a task is done.
  * @see {@link java.util.concurrent.Future#cancel(boolean)}
  */
-@Generated("2df73bbd480a9e3300279fccd0c24067")
+@Generated("950d5888f2f39d09a3b1e768a3c60b54")
 public final class ScheduledExecutorIsDoneFromPartitionCodec {
     //hex: 0x1A0D00
     public static final int REQUEST_MESSAGE_TYPE = 1707264;
