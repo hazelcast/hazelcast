@@ -39,7 +39,7 @@ public class QueryClientState {
         this.sqlResult = sqlResult;
         this.closed = closed;
 
-        createdAt = System.currentTimeMillis();
+        createdAt = System.nanoTime();
     }
 
     public UUID getClientId() {
@@ -58,7 +58,7 @@ public class QueryClientState {
         return closed;
     }
 
-    public long getCreatedAt() {
+    public long getCreatedAtNano() {
         return createdAt;
     }
 

@@ -76,7 +76,6 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
 
             SqlPage page = sqlService.getInternalService().getClientStateRegistry().registerAndFetch(
                 endpoint.getUuid(),
-                parameters.queryId,
                 result,
                 parameters.cursorBufferSize,
                 serializationService

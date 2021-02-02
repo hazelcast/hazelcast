@@ -134,7 +134,7 @@ public class SqlClientExecuteCloseRaceTest {
         assertEquals(1, memberService.getInternalService().getClientStateRegistry().getCursorCount());
 
         // Wait for it to disappear.
-        memberService.getInternalService().getClientStateRegistry().setClosedCursorCleanupTimeout(1_000L);
+        memberService.getInternalService().getClientStateRegistry().setClosedCursorCleanupTimeoutNs(1_000L);
 
         assertTrueEventually(() -> assertEquals(0, memberService.getInternalService().getClientStateRegistry().getCursorCount()));
     }
