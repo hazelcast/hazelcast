@@ -357,6 +357,7 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
     }
 
     @Override
+    @Deprecated
     public void writeUTFArray(String[] strings) throws IOException {
        writeStringArray(strings);
     }
