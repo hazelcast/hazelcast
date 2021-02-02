@@ -110,7 +110,7 @@ public final class QueryState implements QueryStateCallback {
         this.cancelled = cancelled;
 
         if (cancelled) {
-            completionGuard.compareAndSet(false, true);
+            completionGuard.set(true);
         }
 
         lastActivityTime = clockProvider.currentTimeMillis();

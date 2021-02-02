@@ -44,7 +44,11 @@ public class QueryStateRegistryUpdater {
     private final QueryClientStateRegistry clientStateRegistry;
     private final QueryOperationHandler operationHandler;
     private final PlanCacheChecker planCacheChecker;
+
+    /** "volatile" instead of "final" only to allow for value change from unit tests. */
     private volatile long stateCheckFrequency;
+
+    /** "volatile" instead of "final" only to allow for value change from unit tests. */
     private volatile long orphanedQueryStateCheckFrequency = DEFAULT_ORPHANED_QUERY_STATE_CHECK_FREQUENCY;
 
     /** Worker performing periodic state check. */
