@@ -35,7 +35,7 @@ public class MapIterator<R> implements Iterator<R> {
 
     @Override
     public R next() {
-        if (it.hasNext()) {
+        if (this.hasNext()) {
             return it.next();
         }
         throw new NoSuchElementException();
