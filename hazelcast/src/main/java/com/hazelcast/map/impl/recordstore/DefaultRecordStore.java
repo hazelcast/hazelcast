@@ -536,9 +536,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             oldValue = loadValueOf(key);
             if (oldValue != null && persistenceEnabledFor(provenance)) {
                 mapDataStore.remove(key, now, transactionId);
+                updateStatsOnRemove(now);
             }
         } else {
             oldValue = removeRecord(key, record, now, provenance, transactionId);
+            updateStatsOnRemove(now);
         }
         return oldValue;
     }
@@ -567,6 +569,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 onStore(record);
                 mutationObserver.onRemoveRecord(key, record);
                 storage.removeRecord(key, record);
+                updateStatsOnRemove(now);
             }
             removed = true;
         }
@@ -1279,7 +1282,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         // This conversion is required by mapDataStore#removeAll call.
         mapDataStore.removeAll(keys);
         mapDataStore.reset();
-        return removeBulk(keys, records);
+        int removedKeyCount = removeBulk(keys, records);
+        if (removedKeyCount > 0) {
+            updateStatsOnRemove(Clock.currentTimeMillis());
+        }
+        return removedKeyCount;
     }
 
     private boolean isBackup(RecordStore recordStore) {
