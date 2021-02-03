@@ -98,9 +98,11 @@ public class ExpirySystem {
 
     // this method is overridden
     protected Map<Data, ExpiryMetadata> createExpiryTimeByKeyMap() {
-        // Only one thread can access this class but we
-        // used CHM here, because its iterator doesn't
-        // throw ConcurrentModificationException.
+        // Operation and partition threads can have concurrent access
+        // to this class that's why we used CHM here. Also its
+        // iterator doesn't throw ConcurrentModificationException
+        // and this makes incremental scanning of expirable
+        // entries easy(see method `scanAndEvictExpiredKeys`).
         return new ConcurrentHashMap<>();
     }
 

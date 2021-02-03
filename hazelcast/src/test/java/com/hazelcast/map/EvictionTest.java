@@ -987,7 +987,8 @@ public class EvictionTest extends HazelcastTestSupport {
         Set<Integer> keys = Collections.singleton(1);
         Map<Integer, Integer> all = map.getAll(keys);
 
-        assertEquals(0, all.size());
+
+        assertTrueEventually(() -> assertEquals(0, all.size()));
     }
 
     @Test
@@ -1333,7 +1334,8 @@ public class EvictionTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         Config config = smallInstanceConfig();
-        config.getMapConfig("default").setStatisticsEnabled(statisticsEnabled);
+        config.getMapConfig("default")
+                .setStatisticsEnabled(statisticsEnabled);
         return config;
     }
 }
