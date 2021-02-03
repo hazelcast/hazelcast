@@ -35,7 +35,7 @@ public class MapIterator<R> implements Iterator<R> {
 
     @Override
     public R next() {
-        if (this.hasNext()) {
+        if (hasNext()) {
             return it.next();
         }
         throw new NoSuchElementException();
@@ -54,6 +54,25 @@ public class MapIterator<R> implements Iterator<R> {
 
     @Override
     public void remove() {
-        throw new UnsupportedOperationException("Removing when iterating map is not supported");
+        while (idx >= 0) {
+            try {
+                it.remove();
+                break;
+            } catch (IllegalStateException e) {
+                if (idx == 0) {
+                    throw new IllegalStateException("Iterator.next() must be called before remove()!");
+                }
+                it = partitionIterators.get(--idx);
+            }
+        }
+//        try {
+//            it.remove();
+//        } catch (IllegalStateException e) {
+//            if (idx == 0) {
+//                throw new IllegalStateException("Iterator.next() must be called before remove()!");
+//            }
+//            it = partitionIterators.get(--idx);
+//            remove();
+//        }
     }
 }

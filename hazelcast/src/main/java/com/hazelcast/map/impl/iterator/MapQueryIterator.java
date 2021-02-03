@@ -35,7 +35,7 @@ public class MapQueryIterator<R> implements Iterator<R> {
 
     @Override
     public R next() {
-        if (this.hasNext()) {
+        if (hasNext()) {
             return it.next();
         }
         throw new NoSuchElementException();
