@@ -13,4 +13,3 @@ Checklist:
 - [ ] Added a line in `hazelcast-jet-distribution/src/root/release_notes.txt` (for any non-trivial fix/enhancement/feature)
 - [ ] New public APIs have `@Nonnull/@Nullable` annotations
 - [ ] New public APIs have `@since` tags in Javadoc
-- [ ] Updated `examples/README.md` (when adding a new code sample)
