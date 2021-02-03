@@ -52,9 +52,14 @@ public class DataRecordFactory implements RecordFactory<Data> {
         }
     }
 
+    @Override
+    public MapContainer geMapContainer() {
+        return mapContainer;
+    }
+
     private Record<Data> newCachedSimpleRecord(Data valueData, MapConfig mapConfig,
                                                boolean statisticsEnabled, boolean hasEviction) {
-        if (statisticsEnabled) {
+        if (statisticsEnabled || isClusterV41()) {
             return new CachedDataRecordWithStats(valueData);
         }
 
@@ -73,7 +78,7 @@ public class DataRecordFactory implements RecordFactory<Data> {
 
     private Record<Data> newSimpleRecord(Data valueData, MapConfig mapConfig,
                                          boolean statisticsEnabled, boolean hasEviction) {
-        if (statisticsEnabled) {
+        if (statisticsEnabled || isClusterV41()) {
             return new DataRecordWithStats(valueData);
         }
 

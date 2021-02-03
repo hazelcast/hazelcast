@@ -16,8 +16,26 @@
 
 package com.hazelcast.map.impl.recordstore.expiry;
 
+/**
+ * Represents expiry status of a key.
+ *
+ * There are 3 possible status:
+ * <ul>
+ *      <li>
+ *          {@link ExpiryReason#TTL}: Time-to-live
+ *          seconds has passed and key is not reachable.
+ *      </li>
+ *      <li>
+ *          {@link ExpiryReason#MAX_IDLE_SECONDS}: Max-idle
+ *          seconds has passed and key is not reachable.
+ *      </li>
+ *      <li>
+ *          {@link ExpiryReason#NOT_EXPIRED}: Key is reachable.
+ *      </li>
+ * </ul>
+ */
 public enum ExpiryReason {
     TTL,
-    IDLENESS,
+    MAX_IDLE_SECONDS,
     NOT_EXPIRED
 }

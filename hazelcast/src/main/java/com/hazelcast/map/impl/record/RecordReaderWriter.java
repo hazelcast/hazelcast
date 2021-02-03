@@ -25,7 +25,6 @@ import java.io.IOException;
 
 import static com.hazelcast.internal.nio.IOUtil.readData;
 import static com.hazelcast.internal.nio.IOUtil.writeData;
-import static com.hazelcast.map.impl.record.Record.UNSET;
 
 /**
  * Used when reading and writing records
@@ -41,9 +40,9 @@ public enum RecordReaderWriter {
             writeData(out, dataValue);
             out.writeInt(expiryMetadata.getRawTtl());
             out.writeInt(expiryMetadata.getRawMaxIdle());
-            out.writeInt(UNSET);
-            out.writeInt(UNSET);
-            out.writeInt(UNSET);
+            out.writeInt(record.getRawCreationTime());
+            out.writeInt(record.getRawLastAccessTime());
+            out.writeInt(record.getRawLastUpdateTime());
             out.writeInt(record.getHits());
             out.writeLong(record.getVersion());
         }

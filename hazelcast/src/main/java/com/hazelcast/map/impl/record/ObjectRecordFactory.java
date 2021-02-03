@@ -47,10 +47,15 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
         return newRecord(mapConfig, statisticsEnabled, hasEviction, objectValue);
     }
 
+    @Override
+    public MapContainer geMapContainer() {
+        return mapContainer;
+    }
+
     @Nonnull
     private Record<Object> newRecord(MapConfig mapConfig, boolean statisticsEnabled,
                                      boolean hasEviction, Object objectValue) {
-        if (statisticsEnabled) {
+        if (statisticsEnabled || isClusterV41()) {
             return new ObjectRecordWithStats(objectValue);
         }
 

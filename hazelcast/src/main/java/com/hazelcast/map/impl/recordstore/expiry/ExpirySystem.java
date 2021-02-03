@@ -223,10 +223,11 @@ public class ExpirySystem {
             return ExpiryReason.NOT_EXPIRED;
         }
 
-        ExpiryReason expiryReason = expiryMetadata.getTtl() > expiryMetadata.getMaxIdle()
-                ? ExpiryReason.IDLENESS : ExpiryReason.TTL;
+        ExpiryReason expiryReason = expiryMetadata.getMaxIdle() <= expiryMetadata.getTtl()
+                ? ExpiryReason.MAX_IDLE_SECONDS : ExpiryReason.TTL;
+
         if (backup && canPrimaryDriveExpiration
-                && expiryReason == ExpiryReason.IDLENESS) {
+                && expiryReason == ExpiryReason.MAX_IDLE_SECONDS) {
             return ExpiryReason.NOT_EXPIRED;
         }
         return expiryReason;

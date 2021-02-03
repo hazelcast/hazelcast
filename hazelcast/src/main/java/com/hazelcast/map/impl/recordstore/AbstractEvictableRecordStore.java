@@ -42,7 +42,7 @@ import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.core.EntryEventType.EXPIRED;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
-import static com.hazelcast.map.impl.recordstore.expiry.ExpiryReason.IDLENESS;
+import static com.hazelcast.map.impl.recordstore.expiry.ExpiryReason.MAX_IDLE_SECONDS;
 import static com.hazelcast.map.impl.recordstore.expiry.ExpiryReason.NOT_EXPIRED;
 
 /**
@@ -166,7 +166,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                     eventType, dataKey, value, null);
         }
 
-        if (expiryReason == IDLENESS) {
+        if (expiryReason == MAX_IDLE_SECONDS) {
             // only send expired key to backup if
             // it is expired according to idleness.
             expirySystem.accumulateOrSendExpiredKey(dataKey);
