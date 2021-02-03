@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,7 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test that covers basic column read operations through SQL.
@@ -336,6 +337,7 @@ public class SqlBasicTest extends SqlTestSupport {
             SqlColumnMetadata columnMetadata = rowMetadata.getColumn(fieldIndex);
             assertEquals(adjustedField, columnMetadata.getName());
             assertEquals(fieldType, columnMetadata.getType());
+            assertTrue(columnMetadata.isNullable());
         }
 
         assertThrows(IndexOutOfBoundsException.class, () -> rowMetadata.getColumn(-1));

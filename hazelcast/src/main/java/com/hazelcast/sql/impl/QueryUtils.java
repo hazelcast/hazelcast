@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,8 +85,8 @@ public final class QueryUtils {
      * @param columnType Internal type.
      * @return Public type.
      */
-    public static SqlColumnMetadata getColumnMetadata(String columnName, QueryDataType columnType) {
-        return new SqlColumnMetadata(columnName, columnType.getTypeFamily().getPublicType());
+    public static SqlColumnMetadata getColumnMetadata(String columnName, QueryDataType columnType, boolean columnIsNullable) {
+        return new SqlColumnMetadata(columnName, columnType.getTypeFamily().getPublicType(), columnIsNullable);
     }
 
     /**
