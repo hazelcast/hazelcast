@@ -25,6 +25,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -42,6 +43,7 @@ import com.hazelcast.sql.impl.client.SqlClientUtils;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -99,7 +101,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
     private static Config config() {
         Config config = smallInstanceConfig();
 
-        config.addMapConfig(new MapConfig(MAP_NAME).setInMemoryFormat(InMemoryFormat.BINARY));
+        config.addMapConfig(new MapConfig(MAP_NAME).setInMemoryFormat(InMemoryFormat.BINARY).setBackupCount(0));
 
         return config;
     }
@@ -207,8 +209,17 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
             localMap.put(new PersonKey(i, fail), new Person(fail));
         }
 
-        member1.getMap(MAP_NAME).clear();
-        member1.getMap(MAP_NAME).putAll(localMap);
+        IMap<PersonKey, Person> map = member1.getMap(MAP_NAME);
+
+        map.putAll(localMap);
+
+        if (fail) {
+            for (int i = 0; i < KEY_COUNT; i++) {
+                map.remove(new PersonKey(i, false));
+            }
+        }
+
+        assertEquals(KEY_COUNT, map.size());
     }
 
     public static class PersonKey implements DataSerializable {
