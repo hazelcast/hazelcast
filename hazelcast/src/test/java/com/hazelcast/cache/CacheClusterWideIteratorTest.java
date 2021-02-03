@@ -48,7 +48,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class CachePartitionsIteratorTest extends HazelcastTestSupport {
+public class CacheClusterWideIteratorTest extends HazelcastTestSupport {
 
     private CachingProvider cachingProvider;
 

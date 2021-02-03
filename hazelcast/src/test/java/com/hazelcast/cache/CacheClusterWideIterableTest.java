@@ -32,7 +32,7 @@ import java.util.Iterator;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class CachePartitionsIterableTest extends CachePartitionsIteratorTest {
+public class CacheClusterWideIterableTest extends CacheClusterWideIteratorTest {
     protected Iterator getIterator(Cache cache) {
         return new CachePartitionsIterable((CacheProxy) cache, prefetchValues).iterator();
     }
