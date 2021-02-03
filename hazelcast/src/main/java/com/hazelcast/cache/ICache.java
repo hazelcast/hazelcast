@@ -977,4 +977,17 @@ public interface ICache<K, V>
      */
     Iterator<Cache.Entry<K, V>> iterator(int fetchSize);
 
+
+    /**
+     * TODO
+     * @param fetchSize
+     * @return
+     */
+    Iterable<Cache.Entry<K, V>> iterable(int fetchSize);
+
+    /**
+     * TODO
+     * @return
+     */
+    Iterable<Cache.Entry<K, V>> iterable();
 }

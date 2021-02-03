@@ -60,6 +60,15 @@ public interface ICacheInternal<K, V> extends ICache<K, V> {
     Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues);
 
     /**
+     * TODO
+     * @param fetchSize
+     * @param partitionId
+     * @param prefetchValues
+     * @return
+     */
+    Iterable<Entry<K, V>> iterable(int fetchSize, int partitionId, boolean prefetchValues);
+
+    /**
      * Sets relevant {@link HazelcastCacheManager} to client/server.
      *
      * @param cacheManager client or server {@link HazelcastCacheManager}

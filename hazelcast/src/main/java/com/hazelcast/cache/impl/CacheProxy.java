@@ -331,6 +331,24 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
     }
 
     @Override
+    public Iterable<Entry<K, V>> iterable() {
+        ensureOpen();
+        return new CachePartitionsIterable<>(this, false);
+    }
+
+    @Override
+    public Iterable<Entry<K, V>> iterable(int fetchSize) {
+        ensureOpen();
+        return new CachePartitionsIterable<>(this, fetchSize, false);
+    }
+
+    @Override
+    public Iterable<Entry<K, V>> iterable(int fetchSize, int partitionId, boolean prefetchValues) {
+        ensureOpen();
+        return new CachePartitionIterable<>(this, fetchSize, partitionId, prefetchValues);
+    }
+
+    @Override
     public UUID addPartitionLostListener(CachePartitionLostListener listener) {
         checkNotNull(listener, "CachePartitionLostListener can't be null");
 

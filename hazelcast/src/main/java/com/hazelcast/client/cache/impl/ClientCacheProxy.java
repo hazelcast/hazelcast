@@ -364,6 +364,21 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     }
 
     @Override
+    public Iterable<Entry<K, V>> iterable() {
+        return new ClientCachePartitionsIterable<>(this, getContext(), false);
+    }
+
+    @Override
+    public Iterable<Entry<K, V>> iterable(int fetchSize) {
+        return new ClientCachePartitionsIterable<>(this, getContext(), fetchSize, false);
+    }
+
+    @Override
+    public Iterable<Entry<K, V>> iterable(int fetchSize, int partitionId, boolean prefetchValues) {
+        return new ClientCachePartitionIterable<>(this, getContext(), fetchSize, partitionId, prefetchValues);
+    }
+
+    @Override
     public UUID addPartitionLostListener(CachePartitionLostListener listener) {
         EventHandler<ClientMessage> handler = new ClientCacheProxySupportUtil.ClientCachePartitionLostEventHandler(name,
                 getContext(), injectDependencies(listener));
