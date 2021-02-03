@@ -472,7 +472,6 @@ public final class ProxyManager {
                     } catch (InterruptedException e) {
                         interrupted = true;
                     }
-                    wait();
                 }
             }
             if (interrupted) {
