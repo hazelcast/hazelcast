@@ -1271,5 +1271,11 @@
             <version>1.7.8</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-core</artifactId>
+            <version>9.0.41</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
