@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
 
 public abstract class CacheIteratorAbstractTest extends HazelcastTestSupport {
 
-    private static final int CONFIGURED_FETCH_SIZE = 25;
+    protected static final int CONFIGURED_FETCH_SIZE = 25;
 
     private CachingProvider cachingProvider;
 
