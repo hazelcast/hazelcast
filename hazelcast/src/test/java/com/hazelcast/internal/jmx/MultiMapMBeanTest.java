@@ -28,6 +28,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -41,7 +43,6 @@ public class MultiMapMBeanTest extends HazelcastTestSupport {
     private MBeanDataHolder holder;
     private MultiMap<String, String> multiMap;
     private String mapName = randomString();
-    private long startTime = System.currentTimeMillis();
 
     @Before
     public void setup() {
@@ -72,7 +73,7 @@ public class MultiMapMBeanTest extends HazelcastTestSupport {
 
     @Test
     public void testStats() throws Exception {
-
+        long started = System.currentTimeMillis();
         int iterations = 100;
         for (int i = 0; i < iterations; i++) {
             multiMap.put("Ubuntu", "Artful Aardvark");
@@ -123,9 +124,18 @@ public class MultiMapMBeanTest extends HazelcastTestSupport {
         assertEquals(0, localLockedEntryCount);
         assertEquals(0, localDirtyEntryCount);
 
-        assertTrue("Creation time should be > start time", localCreationTime > startTime);
-        assertTrue("Last access time should be > start time", localLastAccessTime > startTime);
-        assertTrue("Last update time should be > start time", localLastUpdateTime > startTime);
+        long lowerBound = started - TimeUnit.SECONDS.toMillis(10);
+        long upperBound = started + TimeUnit.SECONDS.toMillis(10);
+        assertTrue(
+                "localCreationTime <" + localCreationTime + "> has to be between [" + lowerBound + " and " + upperBound + "]",
+                lowerBound < localCreationTime && localCreationTime < upperBound);
+        assertTrue(
+                "localLastAccessTime <" + localLastAccessTime + "> has to be between [" + lowerBound + " and " + upperBound + "]",
+                lowerBound < localLastAccessTime && localLastAccessTime < upperBound);
+        assertTrue(
+                "localLastUpdateTime <" + localLastUpdateTime + "> has to be between [" + lowerBound + " and " + upperBound + "]",
+                lowerBound < localLastUpdateTime && localLastUpdateTime < upperBound);
+
         assertTrue("Total put latency should be >= 0", localTotalPutLatency >= 0);
         assertTrue("Total get latency should be >= 0", localTotalGetLatency >= 0);
         assertTrue("Total remove latency should be >= 0", localTotalRemoveLatency >= 0);
