@@ -100,13 +100,12 @@ stay tuned!
 
 ## File Connector
 
-The [Unified File Connector
-API](https://jet-start.sh/docs/api/sources-sinks) gives you a simple way
-to read files, unified across different storage systems. Using the same
-API you can read files from the local filesystem, Hadoop FS, Amazon S3,
-Google Cloud Storage, and Azure Blob Storage. At the same time, the
-connector supports a variety of encoding formats: text files, CSV, JSON,
-Avro, etc., equally for all storage systems.
+The [Unified File Connector API](/docs/api/sources-sinks) gives you a
+simple way to read files, unified across different storage systems.
+Using the same API you can read files from the local filesystem, Hadoop
+FS, Amazon S3, Google Cloud Storage, and Azure Blob Storage. At the same
+time, the connector supports a variety of encoding formats: text files,
+CSV, JSON, Avro, etc., equally for all storage systems.
 
 Here's how the Java syntax looks:
 
@@ -134,8 +133,7 @@ BatchSource<User> source = FileSources
     .build();
 ```
 
-Read more in the [Programming
-Guide](https://jet-start.sh/docs/api/sources-sinks).
+Read more in the [Programming Guide](/docs/api/sources-sinks).
 
 ## Enforce Strict Event Order
 
@@ -183,7 +181,7 @@ ADD $REPO_URL/hazelcast-jet-kafka/4.4/hazelcast-jet-kafka-4.4-jar-with-dependenc
 ```
 
 See the
-[instructions](http://localhost:3000/docs/operations/docker#build-a-custom-image-from-the-slim-image)
+[instructions](/docs/operations/docker#build-a-custom-image-from-the-slim-image)
 in our docs for more details.
 
 
