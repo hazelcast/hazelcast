@@ -27,16 +27,16 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class ClientMapIterable<K, V> implements Iterable<Map.Entry<K, V>> {
-    private final ClientMapProxy<K, V> mapProxy;
+    private final ClientMapProxy<K, V> clientMapProxy;
     private final int fetchSize;
     private final int partitionCount;
     private final boolean prefetchValues;
 
-    public ClientMapIterable(ClientMapProxy<K, V> mapProxy,
+    public ClientMapIterable(ClientMapProxy<K, V> clientMapProxy,
                              int fetchSize, int partitionCount,
                              boolean prefetchValues
     ) {
-        this.mapProxy = mapProxy;
+        this.clientMapProxy = clientMapProxy;
         this.partitionCount = partitionCount;
         this.fetchSize = fetchSize;
         this.prefetchValues = prefetchValues;
@@ -46,9 +46,9 @@ public class ClientMapIterable<K, V> implements Iterable<Map.Entry<K, V>> {
     @Override
     public Iterator<Map.Entry<K, V>> iterator() {
         // create the partition iterators
-        List<Iterator<Map.Entry<K, V>>> partitionIterators = IntStream.range(0, partitionCount).boxed()
-                .map(partitionId -> mapProxy.iterator(fetchSize, partitionId, prefetchValues))
+        List<Iterator<Map.Entry<K, V>>> clientPartitionIterators = IntStream.range(0, partitionCount).boxed()
+                .map(partitionId -> clientMapProxy.iterator(fetchSize, partitionId, prefetchValues))
                 .collect(Collectors.toList());
-        return new MapIterator<>(partitionIterators);
+        return new MapIterator<>(clientPartitionIterators);
     }
 }
