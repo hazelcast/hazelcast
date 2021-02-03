@@ -30,6 +30,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -110,9 +112,17 @@ public class ReplicatedMapMBeanTest extends HazelcastTestSupport {
         assertEquals("firstValue", value);
 
         assertEquals(1, localEntryCount);
-        assertTrue(localCreationTime >= started);
-        assertTrue(localLastAccessTime >= started);
-        assertTrue(localLastUpdateTime >= started);
+        long lowerBound = started - TimeUnit.SECONDS.toMillis(10);
+        long upperBound = started + TimeUnit.SECONDS.toMillis(10);
+        assertTrue(
+                "localCreationTime <" + localCreationTime + "> has to be between [" + lowerBound + " and " + upperBound + "]",
+                lowerBound < localCreationTime && localCreationTime < upperBound);
+        assertTrue(
+                "localLastAccessTime <" + localLastAccessTime + "> has to be between [" + lowerBound + " and " + upperBound + "]",
+                lowerBound < localLastAccessTime && localLastAccessTime < upperBound);
+        assertTrue(
+                "localLastUpdateTime <" + localLastUpdateTime + "> has to be between [" + lowerBound + " and " + upperBound + "]",
+                lowerBound < localLastUpdateTime && localLastUpdateTime < upperBound);
         assertEquals(1, localHits);
 
         assertEquals(2, localPutOperationCount);
