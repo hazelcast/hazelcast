@@ -65,14 +65,5 @@ public class MapIterator<R> implements Iterator<R> {
                 it = partitionIterators.get(--idx);
             }
         }
-//        try {
-//            it.remove();
-//        } catch (IllegalStateException e) {
-//            if (idx == 0) {
-//                throw new IllegalStateException("Iterator.next() must be called before remove()!");
-//            }
-//            it = partitionIterators.get(--idx);
-//            remove();
-//        }
     }
 }

@@ -52,7 +52,7 @@ public class MapIterableTest extends HazelcastTestSupport {
 
     @Parameters(name = "prefetchValues:{0}")
     public static Iterable<Object[]> parameters() {
-        return Arrays.asList(new Object[]{Boolean.TRUE}, new Object[]{Boolean.FALSE});
+        return Arrays.asList(new Object[] {Boolean.TRUE}, new Object[] {Boolean.FALSE});
     }
 
     @Test(expected = NoSuchElementException.class)
@@ -73,20 +73,20 @@ public class MapIterableTest extends HazelcastTestSupport {
         iterator.remove();
     }
 
-     @Test
-     public void test_Remove() {
-         HazelcastInstance instance = createHazelcastInstance();
-         MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
+    @Test
+    public void test_Remove() {
+        HazelcastInstance instance = createHazelcastInstance();
+        MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
 
-         String key = generateKeyForPartition(instance, 1);
-         String value = randomString();
-         proxy.put(key, value);
+        String key = generateKeyForPartition(instance, 1);
+        String value = randomString();
+        proxy.put(key, value);
 
-         Iterator<Map.Entry<Object, Object>> iterator = proxy.iterable(10, prefetchValues).iterator();
-         iterator.next();
-         iterator.remove();
-         assertEquals(0, proxy.size());
-     }
+        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterable(10, prefetchValues).iterator();
+        iterator.next();
+        iterator.remove();
+        assertEquals(0, proxy.size());
+    }
 
     @Test
     public void test_remove_withMultiplePartitions() {
