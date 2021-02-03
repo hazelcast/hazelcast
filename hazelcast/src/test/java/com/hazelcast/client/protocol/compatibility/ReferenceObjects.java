@@ -811,7 +811,7 @@ public class ReferenceObjects {
             anInt, anInt, aByte, aData);
 
     public static QueryId anSqlQueryId = new QueryId(aLong, aLong, aLong, aLong);
-    public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId());
+    public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId(), aBoolean, aBoolean);
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID);
     public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);

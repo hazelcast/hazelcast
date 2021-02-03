@@ -85,8 +85,8 @@ public final class QueryUtils {
      * @param columnType Internal type.
      * @return Public type.
      */
-    public static SqlColumnMetadata getColumnMetadata(String columnName, QueryDataType columnType) {
-        return new SqlColumnMetadata(columnName, columnType.getTypeFamily().getPublicType());
+    public static SqlColumnMetadata getColumnMetadata(String columnName, QueryDataType columnType, boolean columnIsNullable) {
+        return new SqlColumnMetadata(columnName, columnType.getTypeFamily().getPublicType(), columnIsNullable);
     }
 
     /**

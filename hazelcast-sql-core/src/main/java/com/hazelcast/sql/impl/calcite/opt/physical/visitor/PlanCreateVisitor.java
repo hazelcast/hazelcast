@@ -179,6 +179,11 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     @Override
     public void onRoot(RootPhysicalRel rel) {
         rootPhysicalRel = rel;
+        List<Boolean> columnsNullable = new ArrayList<>();
+        for (RelDataTypeField field : rel.getRowType().getFieldList()) {
+            Boolean nullable = field.getType().isNullable();
+            columnsNullable.add(nullable);
+        }
 
         PlanNode upstreamNode = pollSingleUpstream();
 
@@ -187,19 +192,26 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             upstreamNode
         );
 
-        rowMetadata = createRowMetadata(rootColumnNames, rootNode.getSchema().getTypes());
+        rowMetadata = createRowMetadata(rootColumnNames, rootNode.getSchema().getTypes(), columnsNullable);
 
         addFragment(rootNode, new PlanFragmentMapping(Collections.singleton(localMemberId), false));
     }
 
-    private static SqlRowMetadata createRowMetadata(List<String> columnNames, List<QueryDataType> columnTypes) {
+    private static SqlRowMetadata createRowMetadata(
+            List<String> columnNames,
+            List<QueryDataType> columnTypes,
+            List<Boolean> columnNullables) {
         assert columnNames.size() == columnTypes.size();
+        assert columnNames.size() == columnNullables.size();
 
         List<SqlColumnMetadata> columns = new ArrayList<>(columnNames.size());
 
         for (int i = 0; i < columnNames.size(); i++) {
-            SqlColumnMetadata column = QueryUtils.getColumnMetadata(columnNames.get(i), columnTypes.get(i));
-
+            SqlColumnMetadata column = QueryUtils.getColumnMetadata(
+                    columnNames.get(i),
+                    columnTypes.get(i),
+                    columnNullables.get(i)
+            );
             columns.add(column);
         }
 

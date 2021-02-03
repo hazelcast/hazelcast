@@ -27,15 +27,17 @@ public final class SqlColumnMetadata {
 
     private final String name;
     private final SqlColumnType type;
+    private final boolean nullable;
 
     @PrivateApi
     @SuppressWarnings("ConstantConditions")
-    public SqlColumnMetadata(@Nonnull String name, @Nonnull SqlColumnType type) {
+    public SqlColumnMetadata(@Nonnull String name, @Nonnull SqlColumnType type, boolean nullable) {
         assert name != null;
         assert type != null;
 
         this.name = name;
         this.type = type;
+        this.nullable = nullable;
     }
 
     /**
@@ -58,23 +60,30 @@ public final class SqlColumnMetadata {
         return type;
     }
 
+    /**
+     * Gets column nullability.
+     *
+     * @return column type
+     */
+    public boolean isNullable() {
+        return nullable;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         SqlColumnMetadata that = (SqlColumnMetadata) o;
 
         if (!name.equals(that.name)) {
             return false;
         }
 
-        return type == that.type;
+        return nullable == that.nullable && type == that.type;
     }
 
     @Override
@@ -82,6 +91,7 @@ public final class SqlColumnMetadata {
         int result = name.hashCode();
 
         result = 31 * result + type.hashCode();
+        result = 31 * result + Boolean.hashCode(nullable);
 
         return result;
     }

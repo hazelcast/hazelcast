@@ -47,7 +47,6 @@ public class RootPhysicalRel extends AbstractRootRel implements PhysicalRel {
     @Override
     public void visit(PhysicalRelVisitor visitor) {
         ((PhysicalRel) input).visit(visitor);
-
         visitor.onRoot(this);
     }
 }
