@@ -32,7 +32,7 @@ if NOT "%MAX_HEAP_SIZE%" == "" (
 	set JAVA_OPTS=%JAVA_OPTS% -Xmx%MAX_HEAP_SIZE%
 )
 
-set "CLASSPATH=%~dp0..\lib\hazelcast-all-${project.version}.jar;%~dp0..\user-lib;%~dp0..\user-lib\*"
+set "CLASSPATH=%~dp0..\lib\hazelcast-all-${project.version}.jar;%~dp0..\bin\user-lib;%~dp0..\bin\user-lib\*"
 
 ECHO ########################################
 ECHO # RUN_JAVA=%RUN_JAVA%
