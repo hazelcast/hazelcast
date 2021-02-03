@@ -63,7 +63,7 @@ import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBas
  * Main configuration to setup a Hazelcast Client
  */
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public class ClientConfig {
+public class ClientConfigX {
 
     /**
      * To pass properties
