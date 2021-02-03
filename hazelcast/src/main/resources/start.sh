@@ -43,7 +43,7 @@ if [ "$JAVA_VERSION" -gt "8" ]; then
 	JAVA_OPTS="$JAVA_OPTS --add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED"
 fi
 
-export CLASSPATH="$HAZELCAST_HOME/lib/hazelcast-all-${project.version}.jar:$HAZELCAST_HOME/user-lib:$HAZELCAST_HOME/user-lib/*"
+export CLASSPATH="$HAZELCAST_HOME/lib/hazelcast-all-${project.version}.jar:$HAZELCAST_HOME/bin/user-lib:$HAZELCAST_HOME/bin/user-lib/*"
 
 echo "########################################"
 echo "# RUN_JAVA=$RUN_JAVA"
