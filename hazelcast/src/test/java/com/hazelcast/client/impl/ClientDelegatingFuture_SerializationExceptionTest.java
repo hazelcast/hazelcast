@@ -66,7 +66,7 @@ public class ClientDelegatingFuture_SerializationExceptionTest
                 callIdSequence);
         invocationFuture.complete(response);
         delegatingFuture = new ClientDelegatingFuture<>(invocationFuture, serializationService,
-                MapGetCodec::decodeResponse, true);
+                clientMessage -> MapGetCodec.decodeResponse(clientMessage).response, true);
     }
 
     @Override
