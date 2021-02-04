@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.exec.io;
 
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
 /**
  * Sender that communicates with a single outbox.
@@ -32,11 +31,6 @@ public class SendExec extends AbstractSendExec {
         super(id, upstream);
 
         this.outbox = outbox;
-    }
-
-    @Override
-    protected void setup1(QueryFragmentContext ctx) {
-        outbox.setup();
     }
 
     @Override

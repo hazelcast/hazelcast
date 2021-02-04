@@ -34,6 +34,11 @@ public class QueryCheckResponseOperation extends QueryAbstractCheckOperation {
     }
 
     @Override
+    public boolean isSystem() {
+        return true;
+    }
+
+    @Override
     public int getClassId() {
         return SqlDataSerializerHook.OPERATION_CHECK_RESPONSE;
     }

@@ -41,6 +41,6 @@ public class SqlIndexTest extends SqlIndexAbstractTest {
 
     @Override
     protected int getMemberCount() {
-        return 1;
+        return 2;
     }
 }

@@ -1022,7 +1022,7 @@ public class SqlBasicTest extends SqlTestSupport {
         }
     }
 
-    protected enum SerializationMode {
+    public enum SerializationMode {
         SERIALIZABLE,
         DATA_SERIALIZABLE,
         IDENTIFIED_DATA_SERIALIZABLE,

@@ -22,6 +22,8 @@ import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootExchangePhysical
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitDef;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 
 import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.ANY;
@@ -134,7 +136,8 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
         // ANY already handled before, ROOT and REPLICATED do not require further conversions.
         assert currentTrait.getType() == PARTITIONED;
 
-        RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), getTraitRoot());
+        RelCollation collation = rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+        RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), getTraitRoot(), collation);
 
         return new RootExchangePhysicalRel(
             rel.getCluster(),

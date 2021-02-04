@@ -55,6 +55,7 @@ public class InboxTest {
             operationHandler,
             queryId,
             edgeId,
+            false,
             rowWidth,
             localMemberId,
             2,
@@ -128,6 +129,6 @@ public class InboxTest {
 
         ListRowBatch batch = new ListRowBatch(rows);
 
-        return new InboundBatch(batch, last, UUID.randomUUID());
+        return new InboundBatch(batch, 0L, last, UUID.randomUUID());
     }
 }

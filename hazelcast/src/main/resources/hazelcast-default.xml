@@ -320,7 +320,6 @@
 
     <sql>
         <executor-pool-size>-1</executor-pool-size>
-        <operation-pool-size>-1</operation-pool-size>
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 </hazelcast>
