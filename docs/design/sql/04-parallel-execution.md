@@ -95,9 +95,8 @@ fragments have been assigned to a single execution thread, it should be possible
 Neither partition pool nor Hazelcast Jet pool designs are applicable to Hazelcast Mustang because they lack balancing
 capabilities.
 
-Third, it should be possible to execute some messages in order. That is, if message `A` is received before message `B`, then it
-should be executed before `B`. For example, for the ordered stream, the N-th batch should be processed before the (N+1)-th 
-batch, as described in [[1]] (p. 1.3)
+Third, it should be possible to execute some messages in order. For example, for the ordered stream, the N-th batch should be 
+processed before the (N+1)-th batch, as described in [[1]] (p. 1.3)
 
 ### 2.1 General Design
 
