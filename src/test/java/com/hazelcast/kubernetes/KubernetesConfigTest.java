@@ -46,6 +46,7 @@ import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_PORT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 
 @RunWith(PowerMockRunner.class)
@@ -75,6 +76,30 @@ public class KubernetesConfigTest {
         assertEquals(serviceDns, config.getServiceDns());
         assertEquals(serviceDnsTimeout, config.getServiceDnsTimeout());
         assertEquals(servicePort, config.getServicePort());
+    }
+
+    @Test
+    public void dnsLookupModeWithoutServiceAccountToken() {
+        // given
+        String serviceDns = "hazelcast.default.svc.cluster.local";
+        int serviceDnsTimeout = 10;
+        int servicePort = 5703;
+
+        Map<String, Comparable> properties = new HashMap<>();
+        properties.put(SERVICE_DNS.key(), serviceDns);
+        properties.put(SERVICE_DNS_TIMEOUT.key(), serviceDnsTimeout);
+        properties.put(SERVICE_PORT.key(), servicePort);
+
+        // when
+        KubernetesConfig config = new KubernetesConfig(properties);
+
+        // then
+        assertEquals(DiscoveryMode.DNS_LOOKUP, config.getMode());
+        assertEquals(serviceDns, config.getServiceDns());
+        assertEquals(serviceDnsTimeout, config.getServiceDnsTimeout());
+        assertEquals(servicePort, config.getServicePort());
+        assertNull(config.getKubernetesApiToken());
+        assertNull(config.getKubernetesCaCertificate());
     }
 
     @Test
