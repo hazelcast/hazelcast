@@ -19,12 +19,15 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
@@ -40,6 +43,7 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -94,7 +98,15 @@ public class IndexTest {
     MapContainer mapContainer = mock(MapContainer.class);
 
     {
+        NodeEngine nodeEngine = mock(NodeEngine.class);
+        ClusterService clusterService = mock(ClusterService.class);
+        MapServiceContext mapServiceContext = mock(MapServiceContext.class);
+
+        when(mapServiceContext.getNodeEngine()).thenReturn(nodeEngine);
+        when(nodeEngine.getClusterService()).thenReturn(clusterService);
+        when(clusterService.getClusterVersion()).thenReturn(Versions.CURRENT_CLUSTER_VERSION);
         when(mapContainer.getMapConfig()).thenReturn(new MapConfig());
+        when(mapContainer.getMapServiceContext()).thenReturn(mapServiceContext);
     }
 
     final DataRecordFactory recordFactory = new DataRecordFactory(mapContainer, ss);
