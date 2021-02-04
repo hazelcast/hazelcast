@@ -111,22 +111,6 @@ public class QueryStateRegistry {
         return state;
     }
 
-    /**
-     * Registers a distributed query in response to query start message or query batch message.
-     * <p>
-     * The method is guaranteed to be invoked after initiator state is created on the initiator member.
-     * <p>
-     * It is possible that the method will be invoked after the query is declared completed. For example. a batch
-     * may arrive from the remote concurrently after query cancellation, because there is no distributed coordination
-     * of these events. This is not a problem, because {@link QueryStateRegistryUpdater} will eventually detect that
-     * the query is not longer active on the initiator member.
-     *
-     * @param localMemberId cached local member ID
-     * @param queryId query ID
-     * @param completionCallback callback that will be invoked when the query is completed
-     * @param cancelled if the query should be created in the cancelled state
-     * @return query state or {@code null} if the query with the given ID is guaranteed to be already completed
-     */
     private QueryState onDistributedQueryStarted0(
         UUID localMemberId,
         QueryId queryId,
