@@ -120,6 +120,13 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         throw new UnsupportedOperationException("Should not be called");
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * We change the contract of the superclass' return type: TODO explain
+     *
+     * @return True, if the source column can now be assigned to {@code targetType}
+     */
     @Override
     public boolean rowTypeCoercion(SqlValidatorScope scope, SqlNode query, int columnIndex, RelDataType targetType) {
         switch (query.getKind()) {
@@ -164,10 +171,10 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         boolean valid = sourceAndTargetAreNumeric(targetHzType, sourceHzType)
                 || sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(targetHzType, sourceHzType)
-                || targetIsTemporalAndSourceIsLiteralOfVarcharType(targetHzType, sourceHzType, rowElement);
+                || targetIsTemporalAndSourceIsVarcharLiteral(targetHzType, sourceHzType, rowElement);
 
         if (!valid) {
-            // Types cannot be converted to each other, throw.
+            // Types cannot be converted to each other, fail to coerce
             return false;
         }
 
@@ -180,18 +187,18 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         return (highHZType.getTypeFamily().isNumeric() && lowHZType.getTypeFamily().isNumeric());
     }
 
-    private static boolean sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(QueryDataType highHZType,
-                                                                                     QueryDataType lowHZType) {
-        return highHZType.getTypeFamily().isTemporal()
-                && lowHZType.getTypeFamily().isTemporal()
-                && lowHZType.getConverter().canConvertTo(highHZType.getTypeFamily());
+    private static boolean sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(QueryDataType targetHzType,
+                                                                                     QueryDataType sourceHzType) {
+        return targetHzType.getTypeFamily().isTemporal()
+                && sourceHzType.getTypeFamily().isTemporal()
+                && sourceHzType.getConverter().canConvertTo(targetHzType.getTypeFamily());
     }
 
-    private static boolean targetIsTemporalAndSourceIsLiteralOfVarcharType(QueryDataType highHZType,
-                                                                           QueryDataType lowHZType, SqlNode low) {
-        return highHZType.getTypeFamily().isTemporal()
-                && lowHZType.getTypeFamily() == QueryDataTypeFamily.VARCHAR
-                && low instanceof SqlLiteral;
+    private static boolean targetIsTemporalAndSourceIsVarcharLiteral(QueryDataType targetHzType,
+                                                                     QueryDataType sourceHzType, SqlNode sourceNode) {
+        return targetHzType.getTypeFamily().isTemporal()
+                && sourceHzType.getTypeFamily() == QueryDataTypeFamily.VARCHAR
+                && sourceNode instanceof SqlLiteral;
     }
 
     @Override
@@ -238,12 +245,12 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
                 return false;
             }
         }
-        boolean coerced = false;
-        for (int i = 0; i < sourceFields.size(); i++) {
+        boolean canAssign = true;
+        for (int i = 0; i < sourceFields.size() && canAssign; i++) {
             RelDataType targetType = targetFields.get(i).getType();
-            coerced = coerceSourceRowType(scope, query, i, targetType) || coerced;
+            canAssign = coerceSourceRowType(scope, query, i, targetType);
         }
-        return coerced;
+        return canAssign;
     }
 
     // copied from TypeCoercionImpl
