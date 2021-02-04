@@ -495,7 +495,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                 triedAddresses.addAll(triedAddressesPerAttempt);
                 // If the address provider loads no addresses, then the above loop is not entered
                 // and the lifecycle check is missing, hence we need to repeat the same check at this point.
-                if (addresses.isEmpty()) {
+                if (triedAddressesPerAttempt.isEmpty()) {
                     checkClientActive();
                 }
             } while (waitStrategy.sleep());
