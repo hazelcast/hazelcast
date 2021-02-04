@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.validate.types;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
+import org.apache.calcite.rel.type.DynamicRecordType;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
@@ -27,11 +28,15 @@ import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlInsert;
+import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlSelect;
+import org.apache.calcite.sql.SqlUpdate;
+import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -39,6 +44,7 @@ import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
+import org.apache.calcite.util.Util;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -57,10 +63,18 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     @Override
     public boolean coerceOperandType(SqlValidatorScope scope, SqlCall call, int index, RelDataType targetType) {
         SqlNode operand = call.getOperandList().get(index);
+        return coerceNode(scope, operand, targetType, cast -> call.setOperand(index, cast));
+    }
 
+    private boolean coerceNode(
+            SqlValidatorScope scope,
+            SqlNode node,
+            RelDataType targetType,
+            Consumer<SqlNode> replaceFn
+    ) {
         // Just update the inferred type if casting is not needed
-        if (!requiresCast(scope, operand, targetType)) {
-            updateInferredType(operand, targetType);
+        if (!requiresCast(scope, node, targetType)) {
+            updateInferredType(node, targetType);
 
             return false;
         }
@@ -69,16 +83,16 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         if (targetType instanceof HazelcastIntegerType) {
             targetTypeSpec = new SqlDataTypeSpec(
-                new HazelcastIntegerTypeNameSpec((HazelcastIntegerType) targetType),
-                SqlParserPos.ZERO
+                    new HazelcastIntegerTypeNameSpec((HazelcastIntegerType) targetType),
+                    SqlParserPos.ZERO
             );
         } else {
             targetTypeSpec = SqlTypeUtil.convertTypeToSpec(targetType);
         }
 
-        SqlNode cast = HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, operand, targetTypeSpec);
+        SqlNode cast = HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, node, targetTypeSpec);
 
-        call.setOperand(index, cast);
+        replaceFn.accept(cast);
 
         validator.deriveType(scope, cast);
 

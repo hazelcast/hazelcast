@@ -108,7 +108,7 @@ public class SqlClientService implements SqlService {
             ClientInvocationFuture future = invokeAsync(requestMessage, connection);
 
             future.whenComplete(withTryCatch(logger,
-                    (message, error) -> handleExecuteResponse(connection, res, message, error))).get();
+                    (message, error) -> handleExecuteResponse(connection, res, message, error)));
 
             return res;
         } catch (Exception e) {
