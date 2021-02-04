@@ -19,7 +19,7 @@ If you have Docker at hand, here's something you can try out right now!
 (For examples that don't require Docker, go to the
 [docs](/docs/sql/intro).)
 
-```text
+```bash
 docker pull hazelcast/hazelcast-jet
 docker network create jet-network
 docker run --name jet --network jet-network -v "$(pwd)":/csv-dir --rm hazelcast/hazelcast-jet
@@ -134,6 +134,32 @@ BatchSource<User> source = FileSources
 ```
 
 Read more in the [Programming Guide](/docs/api/sources-sinks).
+
+## Kinesis Connector
+
+[Amazon Kinesis Data
+Streams](https://aws.amazon.com/kinesis/data-streams/) (KDS) is a
+durable, scalable real-time data streaming service native to the AWS
+environment, and fully managed by it. You can use it as both a source
+and a sink in a Hazelcast Jet pipeline:
+
+```java
+StreamSource<Map.Entry<String, byte[]>> source = KinesisSources
+        .kinesis("Tweets")
+        .withInitialShardIteratorRule(".*", "LATEST", null)
+        .build();
+Sink<Entry<String, byte[]>> sink = KinesisSinks
+        .kinesis("Tweets")
+        .build();
+Pipeline p = Pipeline.create();
+p.readFrom(source)
+ .withoutTimestamps()
+ .map(e -> entry(e.getKey(), (new String(e.getValue()) + "-processed")
+         .getBytes(UTF_8)))
+ .writeTo(sink);
+```
+
+Check out our [tutorial](/docs/tutorials/kinesis) for a full example.
 
 ## Enforce Strict Event Order
 
