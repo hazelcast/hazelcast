@@ -96,8 +96,10 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.map.impl.iterator.ClientMapIterable;
+import com.hazelcast.client.map.impl.iterator.ClientMapPartitionIterable;
 import com.hazelcast.client.map.impl.iterator.ClientMapPartitionIterator;
 import com.hazelcast.client.map.impl.iterator.ClientMapQueryIterable;
+import com.hazelcast.client.map.impl.iterator.ClientMapQueryPartitionIterable;
 import com.hazelcast.client.map.impl.iterator.ClientMapQueryPartitionIterator;
 import com.hazelcast.client.map.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.cluster.Member;
@@ -1733,6 +1735,39 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotPagingPredicate(predicate, "iterator");
         return new ClientMapQueryPartitionIterator<>(this, getContext(), fetchSize, partitionId,
                 predicate, projection);
+    }
+
+    /**
+     * TODO: Javadoc
+     *
+     * @param fetchSize   the size of the batches which will be sent when iterating the data
+     * @param partitionId the partition ID which is being iterated
+     * @param projection  the projection to apply before returning the value. null value is not allowed
+     * @param predicate   the predicate which the entries must match. null value is not allowed
+     * @param <R>
+     * @return
+     */
+    public <R> Iterable<R> iterable(
+            int fetchSize,
+            int partitionId,
+            Projection<? super Map.Entry<K, V>, R> projection,
+            Predicate<K, V> predicate
+    ) {
+        checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        return new ClientMapQueryPartitionIterable<>(this, fetchSize, partitionId, projection, predicate);
+    }
+
+    /**
+     * TODO: Javadoc
+     *
+     * @param fetchSize      the size of the batches which will be sent when iterating the data
+     * @param partitionId    the partition ID which is being iterated
+     * @param prefetchValues whether to send values along with keys (if true) or to fetch them lazily when iterating (if false)
+     * @return
+     */
+    public Iterable<Entry<K, V>> iterable(int fetchSize, int partitionId, boolean prefetchValues) {
+        return new ClientMapPartitionIterable<>(this, fetchSize, partitionId, prefetchValues);
     }
 
     /**
