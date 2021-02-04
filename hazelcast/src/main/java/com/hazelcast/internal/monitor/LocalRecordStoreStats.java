@@ -59,12 +59,12 @@ public interface LocalRecordStoreStats {
     void decreaseHits(long hits);
 
     /**
-     * Increases the number of hits of the locally owned entries of this partition.
+     * Sets the last access (read) time of the locally owned entries of this partition.
      */
     void setLastAccessTime(long time);
 
     /**
-     * Increases the number of hits of the locally owned entries of this partition.
+     * Sets the last update time of the locally owned entries of this partition.
      */
     void setLastUpdateTime(long time);
 }
