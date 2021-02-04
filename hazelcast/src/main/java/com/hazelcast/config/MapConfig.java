@@ -428,9 +428,10 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
      * This setting is only for map level stats such as last
      * access time to map, total number of hits etc. For
      * entry level stats see {@link #perEntryStatsEnabled}
-     * @param statisticsEnabled {@code true} to enable map statistics, {@code false} to disable
+     *
+     * @param statisticsEnabled {@code true} to
+     *                          enable map statistics, {@code false} to disable
      * @return the current map config instance
-     * 
      * @see #setPerEntryStatsEnabled
      */
     public MapConfig setStatisticsEnabled(boolean statisticsEnabled) {
@@ -458,7 +459,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
      * time, last update time, last stored time for an entry.
      *
      * @param perEntryStatsEnabled {@code true} to enable
-     *                          entry level statistics, {@code false} to disable
+     *                             entry level statistics, {@code false} to disable
      * @return the current map config instance
      * @since 4.2
      */
