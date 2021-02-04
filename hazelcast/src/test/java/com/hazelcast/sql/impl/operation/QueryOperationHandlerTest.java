@@ -93,9 +93,9 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     private QueryId queryId;
 
     @Parameterized.Parameter
-    public boolean targetIsParticipant;
+    public boolean targetIsNotInitiator;
 
-    @Parameterized.Parameters(name = "targetIsParticipant:{0}")
+    @Parameterized.Parameters(name = "targetIsNotInitiator:{0}")
     public static Object[] parameters() {
         return new Object[]{true, false};
     }
@@ -135,7 +135,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         sendExecute(false);
         assertQueryRegisteredEventually(queryId);
 
-        if (targetIsParticipant) {
+        if (targetIsNotInitiator) {
             setOrphanedQueryStateCheckFrequency(100L);
             setStateCheckFrequency(100L);
             assertQueryNotRegisteredEventually(queryId);
@@ -244,7 +244,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
 
         sendBatch(VALUE_0);
 
-        if (targetIsParticipant) {
+        if (targetIsNotInitiator) {
             assertQueryRegisteredEventually(queryId);
 
             setStateCheckFrequency(100L);
@@ -257,7 +257,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     public void test_B() {
         sendBatch(VALUE_0);
 
-        if (targetIsParticipant) {
+        if (targetIsNotInitiator) {
             QueryState state = assertQueryRegisteredEventually(queryId);
             assertExecNotCreatedWithDelay(state);
 
@@ -271,7 +271,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     public void test_B_C() {
         sendBatch(VALUE_0);
 
-        if (targetIsParticipant) {
+        if (targetIsNotInitiator) {
             QueryState state = assertQueryRegisteredEventually(queryId);
             assertExecNotCreatedWithDelay(state);
 
@@ -292,7 +292,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     }
 
     private void check_B1_E_B2(boolean ordered) {
-        if (targetIsParticipant) {
+        if (targetIsNotInitiator) {
             sendBatch(VALUE_0);
             QueryState state = assertQueryRegisteredEventually(queryId);
             assertExecNotCreatedWithDelay(state);
@@ -319,7 +319,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     }
 
     private void check_B2_E_B1(boolean ordered) {
-        if (targetIsParticipant) {
+        if (targetIsNotInitiator) {
             sendBatch(VALUE_1);
             QueryState state = assertQueryRegisteredEventually(queryId);
             assertExecNotCreatedWithDelay(state);
@@ -358,7 +358,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     }
 
     private void check_B1_B2_E(boolean ordered) {
-        if (targetIsParticipant) {
+        if (targetIsNotInitiator) {
             sendBatch(VALUE_0);
             QueryState state = assertQueryRegisteredEventually(queryId);
             assertExecNotCreatedWithDelay(state);
@@ -387,7 +387,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     }
 
     private void check_B2_B1_E(boolean ordered) {
-        if (targetIsParticipant) {
+        if (targetIsNotInitiator) {
             sendBatch(VALUE_1);
             QueryState state = assertQueryRegisteredEventually(queryId);
             assertExecNotCreatedWithDelay(state);
@@ -414,7 +414,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     public void test_C() {
         sendCancel();
 
-        if (targetIsParticipant) {
+        if (targetIsNotInitiator) {
             QueryState state = assertQueryRegisteredEventually(queryId);
             assertTrue(state.isCancelled());
 
@@ -428,7 +428,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     public void test_C_E() {
         sendCancel();
 
-        if (targetIsParticipant) {
+        if (targetIsNotInitiator) {
             QueryState state = assertQueryRegisteredEventually(queryId);
             assertTrue(state.isCancelled());
 
@@ -443,7 +443,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     public void test_C_B_E() {
         sendCancel();
 
-        if (targetIsParticipant) {
+        if (targetIsNotInitiator) {
             QueryState state = assertQueryRegisteredEventually(queryId);
             assertTrue(state.isCancelled());
 
@@ -457,7 +457,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     }
 
     private void sendExecute(boolean ordered) {
-        if (!targetIsParticipant) {
+        if (!targetIsNotInitiator) {
             // Initiator must register the state in advance.
             Plan plan = new Plan(
                 Collections.emptyMap(),
@@ -558,11 +558,11 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     }
 
     private UUID targetId() {
-        return targetIsParticipant ? participantId : initiatorId;
+        return targetIsNotInitiator ? participantId : initiatorId;
     }
 
     private SqlInternalService targetService() {
-        return targetIsParticipant ? participantService : initiatorService;
+        return targetIsNotInitiator ? participantService : initiatorService;
     }
 
     private void setOrphanedQueryStateCheckFrequency(long frequency) {
