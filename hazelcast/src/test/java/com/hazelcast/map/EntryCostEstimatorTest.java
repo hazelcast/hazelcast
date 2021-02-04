@@ -42,14 +42,18 @@ public class EntryCostEstimatorTest
 
     public static final int ENTRY_COST_IN_BYTES = getExpectedCostInBytes();
 
+    // values represent the cost when
+    // perEntryStatsEnabled is false(default value).
     private static int getExpectedCostInBytes() {
         if (JVMUtil.is32bitJVM() && JVMUtil.isCompressedOops()) {
-            return 140;
+            return 116 ;
         }
+
         if (JVMUtil.isCompressedOops()) {
-            return 152;
+            return 128;
         }
-        return 196;
+
+        return 172;
     }
 
     @Test
@@ -251,7 +255,9 @@ public class EntryCostEstimatorTest
             if (backupCount > nodeCount - 1) {
                 throw new IllegalArgumentException("backupCount > nodeCount - 1");
             }
-            config.getMapConfig(mapName).setBackupCount(backupCount).setStatisticsEnabled(true);
+            config.getMapConfig(mapName).setBackupCount(backupCount)
+                    //default false
+                    .setPerEntryStatsEnabled(false);
             nodes = instanceFactory.newInstances(config, nodeCount);
             return nodes[0].getMap(mapName);
         }
