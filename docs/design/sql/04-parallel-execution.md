@@ -68,8 +68,10 @@ optimal throughput when a lot of small tasks are submitted due to contention on 
 
 ### 1.4 Hazelcast Jet Pool
 
-Hazelcast Jet uses its own cooperative pool to execute Jet jobs. Every thread has its own queue of jobs that are executed
-cooperatively. There is no balancing: once the job is submitted to a specific thread, it is always executed in that thread.
+Hazelcast Jet uses its own cooperative thread pool to execute Jet jobs. A job is split into "tasklets", each vertex in the DAG is
+backed by one or more tasklets on each cluster member. Every tasklet is assigned to one cooperative thread, the thread then
+executes the tasklets in a loop. There is no balancing: once a tasklet is submitted to a specific thread, it is always executed in
+that thread. Non-cooperative tasklets (those handling a blocking API such as JDBC) run on dedicated threads.
 
 IO pool doesn't notify the Jet pool about new data batch ("push"). Instead, the message is just enqueued, and the Jet thread
 checks the queue periodically ("poll").
