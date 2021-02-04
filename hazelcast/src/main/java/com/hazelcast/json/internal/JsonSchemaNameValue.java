@@ -16,13 +16,15 @@
 
 package com.hazelcast.json.internal;
 
+import java.io.Serializable;
+
 /**
  * A node that describes either a name-value pair in a Json object or
  * an item in a Json array. For arrays items, {@link #getNameStart()}
  * always return -1 whereas for name-value pairs, it represents the
  * location of name of the attribute for object attributes.
  */
-public class JsonSchemaNameValue {
+public class JsonSchemaNameValue implements Serializable {
 
     private final int nameStart;
     private final JsonSchemaNode value;

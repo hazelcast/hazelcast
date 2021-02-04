@@ -16,28 +16,39 @@
 
 package com.hazelcast.query.impl;
 
+import java.io.Serializable;
+
 /**
  * Keeps generic metadata for a key value pair. The type of kept metadata
  * is object. It is up to the user of this class to determine the type of
  * metadata and act accordingly.
  */
-public class Metadata {
+public class Metadata implements AbstractMetadata {
 
     private Object keyMeta;
     private Object valueMeta;
 
+    public Metadata(Object keyMeta, Object valueMeta) {
+        this.keyMeta = keyMeta;
+        this.valueMeta = valueMeta;
+    }
+
     public void setKeyMetadata(Object metadata) {
+        assert metadata instanceof Serializable;
         this.keyMeta = metadata;
     }
 
     public void setValueMetadata(Object metadata) {
+        assert metadata instanceof Serializable;
         this.valueMeta = metadata;
     }
 
+    @Override
     public Object getKeyMetadata() {
         return this.keyMeta;
     }
 
+    @Override
     public Object getValueMetadata() {
         return this.valueMeta;
     }

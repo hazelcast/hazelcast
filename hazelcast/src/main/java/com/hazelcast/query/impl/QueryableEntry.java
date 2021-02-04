@@ -47,7 +47,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     protected Extractors extractors;
 
     protected Record record;
-    private transient Metadata metadata;
+    private transient AbstractMetadata metadata;
 
     public Record getRecord() {
         return record;
@@ -197,11 +197,11 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         return isKey ? metadata.getKeyMetadata() : metadata.getValueMetadata();
     }
 
-    public Metadata getMetadata() {
+    public AbstractMetadata getMetadata() {
         return metadata;
     }
 
-    public void setMetadata(Metadata metadata) {
+    public void setMetadata(AbstractMetadata metadata) {
         this.metadata = metadata;
     }
 
