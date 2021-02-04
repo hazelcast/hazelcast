@@ -112,7 +112,7 @@ final class KubernetesConfig {
             namespace = System.getenv("OPENSHIFT_BUILD_NAMESPACE");
         }
 
-        if (namespace == null) {
+        if (namespace == null && getMode() == DiscoveryMode.KUBERNETES_API) {
             namespace = readNamespace();
         }
 
@@ -121,7 +121,7 @@ final class KubernetesConfig {
 
     private String getApiToken(Map<String, Comparable> properties) {
         String apiToken = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_TOKEN);
-        if (apiToken == null) {
+        if (apiToken == null && getMode() == DiscoveryMode.KUBERNETES_API) {
             apiToken = readAccountToken();
         }
         return apiToken;
@@ -129,7 +129,7 @@ final class KubernetesConfig {
 
     private String caCertificate(Map<String, Comparable> properties) {
         String caCertificate = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_CA_CERTIFICATE);
-        if (caCertificate == null) {
+        if (caCertificate == null && getMode() == DiscoveryMode.KUBERNETES_API) {
             caCertificate = readCaCertificate();
         }
         return caCertificate;
