@@ -60,7 +60,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final MapDataStore<Data, Object> mapDataStore;
     protected final SerializationService serializationService;
     protected final CompositeMutationObserver<Record> mutationObserver;
-    protected final MetadataStore metadataStore = new MetadataStore();
     protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
 
     protected Storage<Data, Record> storage;
@@ -88,11 +87,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         addMutationObservers();
     }
 
-    @Override
-    public MetadataStore getMetadataStore() {
-        return metadataStore;
-    }
-
     // Overridden in EE.
     protected void addMutationObservers() {
         // Add observer for event journal
@@ -105,7 +99,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         // Add observer for json metadata
         if (mapContainer.getMapConfig().getMetadataPolicy() == MetadataPolicy.CREATE_ON_UPDATE) {
             mutationObserver.add(new JsonMetadataMutationObserver(serializationService,
-                    JsonMetadataInitializer.INSTANCE, metadataStore));
+                    JsonMetadataInitializer.INSTANCE, getMetadataStore()));
         }
 
         // Add observer for indexing

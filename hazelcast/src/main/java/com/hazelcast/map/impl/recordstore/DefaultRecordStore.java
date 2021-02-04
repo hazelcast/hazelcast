@@ -112,6 +112,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      */
     private boolean loadedOnPreMigration;
 
+    protected final AbstractMetadataStore metadataStore;
+
     private final IPartitionService partitionService;
     private final InterceptorRegistry interceptorRegistry;
 
@@ -124,11 +126,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
         this.partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         this.interceptorRegistry = mapContainer.getInterceptorRegistry();
+        this.metadataStore = createMetadataStore();
     }
 
     @Override
     public MapDataStore<Data, Object> getMapDataStore() {
         return mapDataStore;
+    }
+
+    protected AbstractMetadataStore createMetadataStore() {
+        return new MetadataStore();
     }
 
     @Override
@@ -149,6 +156,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         for (int i = 0; i < dataKeys.size(); i++) {
             mapDataStore.flush(dataKeys.get(i), records.get(i).getValue(), backup);
         }
+    }
+
+    @Override
+    public AbstractMetadataStore getMetadataStore() {
+        return metadataStore;
     }
 
     @Override

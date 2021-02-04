@@ -16,10 +16,12 @@
 
 package com.hazelcast.json.internal;
 
+import java.io.Serializable;
+
 /**
  * A node that describes either a JsonValue
  */
-public abstract class JsonSchemaNode {
+public abstract class JsonSchemaNode implements Serializable {
 
     private JsonSchemaStructNode parent;
 
