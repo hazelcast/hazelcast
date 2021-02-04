@@ -110,8 +110,8 @@ BatchSource<String> source = FileSources.files("/path/to/my/directory")
 
 Avro format allows to read data from _Avro Object Container File_
 format. To use the Avro format you additionally need the
-`hazelcast-jet-avro` module, located in the distribution in the `opt`
-folder, or available as a dependency:
+`hazelcast-jet-avro` module, located in the fat distribution in the
+`lib` folder, or available as a dependency:
 
 <!--DOCUSAURUS_CODE_TABS-->
 
@@ -362,11 +362,11 @@ For additional ways to authenticate see
 
 Alternatively to using one of the modules with all the dependencies
 included, you may use `hazelcast-jet-hadoop` module and configure the
-classpath manually.
+classpath manually. The module is enabled by default (the
+`hazelcast-jet-hadoop-{jet-version}.jar` is in the `lib/` directory
+).
 
-Enable the module by moving the jar
-`opt/hazelcast-jet-hadoop-4.4.jar` to `lib/` directory and
-configure the classpath in the following way, using the
+Configure the classpath in the following way, using the
 `hadoop classpath` command:
 
 ```bash

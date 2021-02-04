@@ -52,22 +52,19 @@ wget https://github.com/hazelcast/hazelcast-jet/releases/download/v{jet-version}
 tar zxvf hazelcast-jet-{jet-version}.tar.gz && cd hazelcast-jet-{jet-version}
 ```
 
-If you already have Jet and you skipped the above steps, make sure to
-follow from here on.
+If you already have Jet, and you skipped the above steps, make sure to
+follow from here on (just check that
+`hazelcast-jet-python-{jet-version}.jar` is in the `lib/` folder of
+ your
+distribution, because you might have the slim distribution).
 
-2. Activate the Python plugin:
-
-```bash
-mv opt/hazelcast-jet-python-{jet-version}.jar lib/
-```
-
-3. Start Jet:
+2. Start Jet:
 
 ```bash
 bin/jet-start
 ```
 
-4. When you see output like this, Hazelcast Jet is up:
+3. When you see output like this, Hazelcast Jet is up:
 
 ```text
 Members {size:1, ver:1} [

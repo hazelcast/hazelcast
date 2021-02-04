@@ -286,13 +286,10 @@ distribution. The `cdc-mysql` and `cdc-postgres` jars are also in the
 `lib` folder of the distribution, but they don't contain dependencies,
 so have to be put on the classpath together with the `cdc-debezium` jar.
 
-For example to make members of a cluster able to work with MySQL CDC
-sources, what one needs to do is to move both the
-`hazelcast-jet-cdc-mysql-VERSION.jar` and the
-`hazelcast-jet-cdc-debezium-VERSION.jar` from the member's `opt` folder
-to the `lib` folder. That will take care of all external dependencies
+The above mentioned jars will take care of all external dependencies
 too, no need to explicitly deal with Debezium connector jars or anything
-else.
+else. Just take care that these jars aren't included in the slim
+distribution of Jet, only the fat one.
 
 ## Serialization
 

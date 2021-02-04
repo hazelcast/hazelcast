@@ -228,6 +228,6 @@ compile 'com.hazelcast.jet:hazelcast-jet-kafka:4.4'
 
 <!--END_DOCUSAURUS_CODE_TABS-->
 
-If you're using the distribution package, make sure to move the
-`hazelcast-jet-kafka-4.4.jar` file from the `opt/` to the
-`lib/` directory.
+If you're using the distribution package make sure use the fat one,
+because the `hazelcast-jet-kafka-4.4.jar` you need is not
+contained in the slim one.

@@ -184,7 +184,6 @@ See the
 [instructions](/docs/operations/docker#build-a-custom-image-from-the-slim-image)
 in our docs for more details.
 
-
 ## Full Release Notes
 
 Hazelcast Jet 4.4 is based on IMDG version 4.1.1. Check out its Release
@@ -214,7 +213,6 @@ Thank you for your valuable contributions!
   data for performance, now you can disable this to get strict event
   order where you need it.
 
-
 ### Enhancements
 
 - [connectors] @hhromic improved the naming of source and sink stages
@@ -242,7 +240,6 @@ Thank you for your valuable contributions!
 - [kafka] Improved the performance of the Kafka source by fine-tuning
   some timeouts. (#2732)
 
-
 ### Fixes
 
 - [core] Fixed a problem where Jet would close `System.out` during JVM
@@ -261,7 +258,6 @@ Thank you for your valuable contributions!
 
 - [hadoop] Fixed a problem when using Hadoop for local files, it behaved
   as if the files were shared. (#2764)
-
 
 ### Breaking Changes
 
