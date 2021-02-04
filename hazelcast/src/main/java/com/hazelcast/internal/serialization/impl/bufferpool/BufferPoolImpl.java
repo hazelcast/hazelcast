@@ -29,7 +29,7 @@ import java.util.Queue;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 
 /**
- * Default {BufferPool} implementation.
+ * Default {@link BufferPool} implementation.
  *
  * This class is designed to that a subclass can be made. This is done for the Enterprise version.
  */
@@ -39,8 +39,8 @@ public class BufferPoolImpl implements BufferPool {
     protected final InternalSerializationService serializationService;
 
     // accessible for testing.
-    final Queue<BufferObjectDataOutput> outputQueue = new ArrayDeque<BufferObjectDataOutput>(MAX_POOLED_ITEMS);
-    final Queue<BufferObjectDataInput> inputQueue = new ArrayDeque<BufferObjectDataInput>(MAX_POOLED_ITEMS);
+    final Queue<BufferObjectDataOutput> outputQueue = new ArrayDeque<>(MAX_POOLED_ITEMS);
+    final Queue<BufferObjectDataInput> inputQueue = new ArrayDeque<>(MAX_POOLED_ITEMS);
 
     public BufferPoolImpl(InternalSerializationService serializationService) {
         this.serializationService = serializationService;

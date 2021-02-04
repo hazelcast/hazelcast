@@ -322,7 +322,7 @@ abstract class CacheProxySupport<K, V>
         return invoke(operation, keyData, withCompletionEvent);
     }
 
-   protected  <T> InvocationFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
+    protected  <T> InvocationFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
                                                           boolean hasOldValue, boolean isGet, boolean withCompletionEvent) {
         ensureOpen();
         if (hasOldValue) {
@@ -345,7 +345,7 @@ abstract class CacheProxySupport<K, V>
         return invoke(operation, keyData, withCompletionEvent);
     }
 
-   protected <T> InvocationFuture<T> putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,
+    protected <T> InvocationFuture<T> putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,
                                                       boolean isGet, boolean withCompletionEvent) {
         ensureOpen();
         validateNotNull(key, value);
