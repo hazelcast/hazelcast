@@ -16,17 +16,17 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.util.concurrent.ConcurrentMap;
@@ -62,9 +62,10 @@ public class MapClearExpiredOperation extends AbstractLocalOperation
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(getPartitionId());
         ConcurrentMap<String, RecordStore> recordStores = partitionContainer.getMaps();
         boolean backup = !isOwner();
+        long now = Clock.currentTimeMillis();
         for (RecordStore recordStore : recordStores.values()) {
-            if (recordStore.size() > 0 && recordStore.isExpirable()) {
-                recordStore.evictExpiredEntries(expirationPercentage, backup);
+            if (recordStore.isExpirable()) {
+                recordStore.evictExpiredEntries(expirationPercentage, now, backup);
                 recordStore.disposeDeferredBlocks();
             }
         }

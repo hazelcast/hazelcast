@@ -60,7 +60,7 @@ public class ReplaceIfSameOperation extends BasePutOperation implements Mutating
 
     @Override
     public boolean shouldBackup() {
-        return successful && recordStore.getRecord(dataKey) != null;
+        return successful && super.shouldBackup();
     }
 
     @Override

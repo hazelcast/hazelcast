@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -40,7 +39,6 @@ public class ObjectRecordWithStatsTest {
     private ObjectRecordWithStats record;
     private ObjectRecordWithStats recordSameAttributes;
     private ObjectRecordWithStats recordOtherLastStoredTime;
-    private ObjectRecordWithStats recordOtherExpirationTime;
     private ObjectRecordWithStats recordOtherKeyAndValue;
     private DataRecordWithStats dataRecord;
 
@@ -56,9 +54,6 @@ public class ObjectRecordWithStatsTest {
 
         recordOtherLastStoredTime = new ObjectRecordWithStats(VALUE);
         recordOtherLastStoredTime.onStore();
-
-        recordOtherExpirationTime = new ObjectRecordWithStats(VALUE);
-        recordOtherExpirationTime.setExpirationTime(Clock.currentTimeMillis());
 
         recordOtherKeyAndValue = new ObjectRecordWithStats();
         recordOtherKeyAndValue.setValue(otherValue);
@@ -90,7 +85,6 @@ public class ObjectRecordWithStatsTest {
 
         assertNotEquals(record, dataRecord);
         assertNotEquals(record, recordOtherLastStoredTime);
-        assertNotEquals(record, recordOtherExpirationTime);
         assertNotEquals(record, recordOtherKeyAndValue);
     }
 
@@ -102,7 +96,6 @@ public class ObjectRecordWithStatsTest {
         assumeDifferentHashCodes();
         assertNotEquals(record.hashCode(), dataRecord.hashCode());
         assertNotEquals(record.hashCode(), recordOtherLastStoredTime.hashCode());
-        assertNotEquals(record.hashCode(), recordOtherExpirationTime.hashCode());
         assertNotEquals(record.hashCode(), recordOtherKeyAndValue.hashCode());
     }
 }
