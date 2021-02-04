@@ -11,6 +11,7 @@ const Container = CompLibrary.Container;
 
 const CWD = process.cwd();
 const modules = require(`${CWD}/modules.json`);
+const incubatingModules = require(`${CWD}/incubating-modules.json`);
 const versions = require(`${CWD}/all-versions.json`);
 const MarkdownBlock = CompLibrary.MarkdownBlock;
 
@@ -27,10 +28,13 @@ function Downloads(props) {
             <h1>{siteConfig.title} Downloads</h1>
           </header>
           <MarkdownBlock>
-            The Hazelcast Jet download package includes Hazelcast Jet server and
-            several additional modules. It requires a JDK to run, which can be obtained from
-            [AdoptOpenJDK](https://adoptopenjdk.net) (minimum version is 8 - recommended is 11 or later). For details about
-            what's included, and minimim requirements please see the
+            There are two different Hazelcast Jet download packages - regular and slim.
+            The regular Hazelcast Jet download package includes Hazelcast Jet server and
+            all production ready modules. The slim package includes only Hazelcast Jet server
+            and all modules need to be downloaded separately (see [Modules](#modules) section below).
+            Both require a JDK to run, which can be obtained from
+            [AdoptOpenJDK](https://adoptopenjdk.net) (minimum version is 8 - recommended is 11 or later).
+            For details about what's included, and minimum requirements please see the
             [installation page](/docs/operations/installation).
           </MarkdownBlock>
           <h3 id="latest">Current version (Stable)</h3>
@@ -43,7 +47,28 @@ function Downloads(props) {
                     hazelcast-jet-{latest.version}.tar.gz
                 </a>
                 </td>
-                <td>{latest.size}MB</td>
+                <td>{latest.size} MB</td>
+                <td>
+                  <a href={latest.releaseNotes ? `${latest.releaseNotes}`
+                    : `${repoUrl}/releases/tag/v${latest.version}`}>
+                    Release Notes
+                  </a>
+                </td>
+                <td>
+                  <a
+                    href={`/javadoc/${latest.version}`} target="_blank" rel="noreferrer noopener">
+                    Javadoc
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <th>{latest.version}-slim</th>
+                <td>
+                  <a href={`${repoUrl}/releases/download/v${latest.version}/hazelcast-jet-${latest.version}-slim.tar.gz`}>
+                    hazelcast-jet-{latest.version}-slim.tar.gz
+                </a>
+                </td>
+                <td>{latest.slimSize} MB</td>
                 <td>
                   <a href={latest.releaseNotes ? `${latest.releaseNotes}`
                     : `${repoUrl}/releases/tag/v${latest.version}`}>
@@ -67,7 +92,41 @@ function Downloads(props) {
               version: <span className="hljs-string">{latest.version}</span>
           </code></pre>
 
-          <h3 id="modules">Additional Modules</h3>
+          <h3 id="incubating-modules">Additional Modules</h3>
+          <p>The following modules are part of the regular Jet distribution. You can download each module separately
+          to use it with the slim distribution.</p>
+
+          <table className="modules">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>File</th>
+                <th>Size</th>
+              </tr>
+            </thead>
+            <tbody>
+              {modules.map(
+                  module =>
+                      <tr key={module.name}>
+                        <td>
+                          <a href={module.docs}>
+                            {module.name}
+                          </a>
+                        </td>
+                        <td>
+                          <a href={module.download}>
+                            {module.filename}
+                          </a>
+                        </td>
+                        <td>
+                          {module.size} MB
+                        </td>
+                      </tr>
+              )}
+            </tbody>
+          </table>
+
+          <h3 id="incubating-modules">Incubating Modules</h3>
           <p>In addition to the ones included in the main distribution, Jet also has
           the following modules:
              </p>
@@ -80,7 +139,7 @@ function Downloads(props) {
               </tr>
             </thead>
             <tbody>
-              {modules.map(
+              {incubatingModules.map(
                 module =>
                   <tr key={module.name}>
                     <td>

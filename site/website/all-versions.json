@@ -2,7 +2,8 @@
     {
         "version": "4.4",
         "releaseNotes": "/blog/2021/02/03/jet-44-is-released",
-        "size" : 547
+        "size" : 547,
+        "slimSize" : 29
     },
     {
         "version": "4.3",
