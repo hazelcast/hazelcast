@@ -52,11 +52,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -99,13 +96,8 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     public boolean targetIsParticipant;
 
     @Parameterized.Parameters(name = "targetIsParticipant:{0}")
-    public static Collection<Object[]> parameters() {
-        List<Object[]> res = new ArrayList<>();
-
-        res.add(new Object[] { true });
-        res.add(new Object[] { false });
-
-        return res;
+    public static Object[] parameters() {
+        return new Object[]{true, false};
     }
 
     @Override
