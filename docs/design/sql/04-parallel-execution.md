@@ -85,7 +85,7 @@ The requirements are thread safety, load balancing, and ordered processing.
 
 First, the infrastructure must guarantee that operator execution is thread-safe. That is, the stateful operator should not be
 executed by multiple threads simultaneously. This simplifies operator implementations and makes them more performant.
-Hazelcast Jet follows this principle, as only one thread may execute a particular job. However, Hazelcast Jet pool doesn't
+Hazelcast Jet follows this principle, as only one thread may execute a particular tasklet. However, Hazelcast Jet pool doesn't
 satisfy the load balancing requirement discussed below.
 
 Second, the execution environment must support load balancing. Query execution may take a long time to complete. If several query
