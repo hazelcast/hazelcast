@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlServiceImpl;
@@ -38,6 +39,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -80,7 +82,9 @@ public class SqlClientExecuteCloseRaceTest {
         QueryId queryId = QueryId.create(UUID.randomUUID());
 
         // Send "execute"
-        ClientMessage executeResponse = sendExecuteRequest(queryId);
+        Connection connection = clientService.getRandomConnection();
+
+        ClientMessage executeResponse = sendExecuteRequest(connection, queryId);
 
         checkExecuteResponse(executeResponse, true);
 
@@ -89,7 +93,7 @@ public class SqlClientExecuteCloseRaceTest {
         // Send "close"
         ClientMessage closeRequest = SqlCloseCodec.encodeRequest(queryId);
 
-        clientService.invokeOnRandomConnection(closeRequest);
+        clientService.invokeOnConnection(connection, closeRequest);
 
         assertEquals(0, memberService.getInternalService().getClientStateRegistry().getCursorCount());
     }
@@ -99,18 +103,40 @@ public class SqlClientExecuteCloseRaceTest {
         QueryId queryId = QueryId.create(UUID.randomUUID());
 
         // Send "close"
+        Connection connection = clientService.getRandomConnection();
+
         ClientMessage closeRequest = SqlCloseCodec.encodeRequest(queryId);
 
-        clientService.invokeOnRandomConnection(closeRequest);
+        clientService.invokeOnConnection(connection, closeRequest);
 
         assertEquals(1, memberService.getInternalService().getClientStateRegistry().getCursorCount());
 
         // Send "execute"
-        ClientMessage executeResponse = sendExecuteRequest(queryId);
+        ClientMessage executeResponse = sendExecuteRequest(connection, queryId);
 
         assertEquals(0, memberService.getInternalService().getClientStateRegistry().getCursorCount());
 
         checkExecuteResponse(executeResponse, false);
+    }
+
+    @Test
+    public void testClose() {
+        QueryId queryId = QueryId.create(UUID.randomUUID());
+
+        // Send "close"
+        Connection connection = clientService.getRandomConnection();
+
+        ClientMessage closeRequest = SqlCloseCodec.encodeRequest(queryId);
+
+        clientService.invokeOnConnection(connection, closeRequest);
+
+        // Make sure that we observed the cancel request.
+        assertEquals(1, memberService.getInternalService().getClientStateRegistry().getCursorCount());
+
+        // Wait for it to disappear.
+        memberService.getInternalService().getClientStateRegistry().setClosedCursorCleanupTimeoutSeconds(1L);
+
+        assertTrueEventually(() -> assertEquals(0, memberService.getInternalService().getClientStateRegistry().getCursorCount()));
     }
 
     private void checkExecuteResponse(ClientMessage executeResponse, boolean success) {
@@ -125,7 +151,7 @@ public class SqlClientExecuteCloseRaceTest {
         }
     }
 
-    private ClientMessage sendExecuteRequest(QueryId queryId) {
+    private ClientMessage sendExecuteRequest(Connection connection, QueryId queryId) {
         ClientMessage executeRequest = SqlExecuteCodec.encodeRequest(
             SQL,
             Collections.emptyList(),
@@ -136,6 +162,6 @@ public class SqlClientExecuteCloseRaceTest {
             queryId
         );
 
-        return clientService.invokeOnRandomConnection(executeRequest);
+        return clientService.invokeOnConnection(connection, executeRequest);
     }
 }

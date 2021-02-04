@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 
+import static com.hazelcast.internal.util.JVMUtil.OBJECT_HEADER_SIZE;
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
 /**
@@ -99,7 +100,9 @@ public class HeapData implements Data {
 
     @Override
     public int getHeapCost() {
-        return REFERENCE_COST_IN_BYTES + (payload != null ? ARRAY_HEADER_SIZE_IN_BYTES + payload.length : 0);
+        return OBJECT_HEADER_SIZE
+                + REFERENCE_COST_IN_BYTES
+                + (payload != null ? ARRAY_HEADER_SIZE_IN_BYTES + payload.length : 0);
     }
 
     @Override

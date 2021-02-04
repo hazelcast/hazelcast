@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.internal.serialization.impl.TestSerializationConstants;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -50,10 +51,10 @@ public class GenericRecordBuilderTest {
                         .addUTFField("name").addIntField("myint").build();
 
 
-        GenericRecord.Builder builder = GenericRecord.Builder.portable(namedPortableClassDefinition);
-        builder.writeUTF("name", "foo");
-        builder.writeInt("myint", 123);
-        assertThrows(HazelcastSerializationException.class, () -> builder.writeUTF("name", "foo2"));
+        GenericRecordBuilder builder = GenericRecordBuilder.portable(namedPortableClassDefinition);
+        builder.setString("name", "foo");
+        builder.setInt("myint", 123);
+        assertThrows(HazelcastSerializationException.class, () -> builder.setString("name", "foo2"));
     }
 
     @Test
@@ -63,12 +64,12 @@ public class GenericRecordBuilderTest {
                         .addUTFField("name").addIntField("myint").build();
 
 
-        GenericRecord record = GenericRecord.Builder.portable(namedPortableClassDefinition)
-                .writeUTF("name", "foo")
-                .writeInt("myint", 123).build();
+        GenericRecord record = GenericRecordBuilder.portable(namedPortableClassDefinition)
+                                                   .setString("name", "foo")
+                                                   .setInt("myint", 123).build();
 
-        GenericRecord.Builder builder = record.cloneWithBuilder().writeUTF("name", "foo2");
-        assertThrows(HazelcastSerializationException.class, () -> builder.writeUTF("name", "foo3"));
+        GenericRecordBuilder builder = record.cloneWithBuilder().setString("name", "foo2");
+        assertThrows(HazelcastSerializationException.class, () -> builder.setString("name", "foo3"));
     }
 
     @Test
@@ -77,8 +78,8 @@ public class GenericRecordBuilderTest {
                 new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
                         .addUTFField("name").addIntField("myint").build();
 
-        GenericRecord.Builder builder = GenericRecord.Builder.portable(classDefinition);
-        assertThrows(HazelcastSerializationException.class, () -> builder.writeUTF("nonExistingField", "foo3"));
+        GenericRecordBuilder builder = GenericRecordBuilder.portable(classDefinition);
+        assertThrows(HazelcastSerializationException.class, () -> builder.setString("nonExistingField", "foo3"));
     }
 
     @Test
@@ -87,8 +88,8 @@ public class GenericRecordBuilderTest {
                 new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
                         .addUTFField("name").addIntField("myint").build();
 
-        GenericRecord.Builder builder = GenericRecord.Builder.portable(classDefinition);
-        assertThrows(HazelcastSerializationException.class, () -> builder.writeInt("name", 1));
+        GenericRecordBuilder builder = GenericRecordBuilder.portable(classDefinition);
+        assertThrows(HazelcastSerializationException.class, () -> builder.setInt("name", 1));
     }
 
     @Test
@@ -97,8 +98,8 @@ public class GenericRecordBuilderTest {
                 new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
                         .addUTFField("name").addIntField("myint").build();
 
-        GenericRecord.Builder builder = GenericRecord.Builder.portable(classDefinition);
-        builder.writeInt("myint", 1);
+        GenericRecordBuilder builder = GenericRecordBuilder.portable(classDefinition);
+        builder.setInt("myint", 1);
         assertThrows(HazelcastSerializationException.class, builder::build);
     }
 
@@ -114,9 +115,9 @@ public class GenericRecordBuilderTest {
 
         List<GenericRecord> list = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            GenericRecord record = GenericRecord.Builder.portable(classDefinition)
-                    .writeInt("age", i)
-                    .writeUTF("name", " " + i).build();
+            GenericRecord record = GenericRecordBuilder.portable(classDefinition)
+                                                       .setInt("age", i)
+                                                       .setString("name", " " + i).build();
             objectDataOutput.writeObject(record);
             list.add(record);
         }

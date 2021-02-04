@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
@@ -48,6 +49,15 @@ import static java.util.Objects.requireNonNull;
  * threads.
  * </li>
  * </ol>
+ *
+ * Even though the wrapped future may be completed normally, it is possible that
+ * a {@link HazelcastSerializationException} thrown when deserializing the value
+ * will result in this future being completed exceptionally. A deserialization
+ * failure makes this future being considered to complete exceptionally,
+ * therefore futures from dependent stages will be completed with a
+ * HazelcastSerializationException (unless the dependent stage transforms
+ * the outcome).
+ *
  * @param <V>
  */
 @SuppressWarnings("checkstyle:methodcount")
@@ -89,20 +99,26 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         this.serializationService = (InternalSerializationService) serializationService;
         this.result = result;
         if (listenFutureCompletion) {
-            this.future.whenComplete((v, t) -> {
-                completeSuper(v, (Throwable) t);
-            });
+            this.future.whenComplete((v, t) -> completeSuper(v, (Throwable) t));
         }
     }
 
     @Override
     public V get() throws InterruptedException, ExecutionException {
-        return resolve(future.get());
+        try {
+            return resolve(future.get());
+        } catch (HazelcastSerializationException e) {
+            throw new ExecutionException(e);
+        }
     }
 
     @Override
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return resolve(future.get(timeout, unit));
+        try {
+            return resolve(future.get(timeout, unit));
+        } catch (HazelcastSerializationException e) {
+            throw new ExecutionException(e);
+        }
     }
 
     @Override
@@ -120,13 +136,21 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         // otherwise, do not cache the value returned from future.getNow
         // because it might be the default valueIfAbsent
         Object value = future.getNow(valueIfAbsent);
-        return (value instanceof Data) ? serializationService.toObject(value)
-                : (V) value;
+        try {
+            return (value instanceof Data)
+                    ? serializationService.toObject(value) : (V) value;
+        } catch (HazelcastSerializationException e) {
+            throw new CompletionException(e);
+        }
     }
 
     @Override
     public V join() {
-        return resolve(future.join());
+        try {
+            return resolve(future.join());
+        } catch (HazelcastSerializationException e) {
+            throw new CompletionException(e);
+        }
     }
 
     @Override
@@ -164,8 +188,6 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
             // we need to deserialize.
             Data data = (Data) object;
             object = serializationService.toObject(data);
-
-            //todo do we need to call dispose data here
             serializationService.disposeData(data);
 
             object = cacheDeserializedValue(object);
@@ -242,17 +264,17 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
 
     @Override
     public CompletableFuture<Void> thenRun(Runnable action) {
-        return future.thenRun(action);
+        return future.thenRun(new DeserializingRunnable(serializationService, action));
     }
 
     @Override
     public CompletableFuture<Void> thenRunAsync(Runnable action) {
-        return future.thenRunAsync(action);
+        return future.thenRunAsync(new DeserializingRunnable(serializationService, action));
     }
 
     @Override
     public CompletableFuture<Void> thenRunAsync(Runnable action, Executor executor) {
-        return future.thenRunAsync(action, executor);
+        return future.thenRunAsync(new DeserializingRunnable(serializationService, action), executor);
     }
 
     @Override
@@ -293,17 +315,17 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
 
     @Override
     public CompletableFuture<Void> runAfterBoth(CompletionStage<?> other, Runnable action) {
-        return future.runAfterBoth(other, action);
+        return future.runAfterBoth(other, new DeserializingRunnable(serializationService, action));
     }
 
     @Override
     public CompletableFuture<Void> runAfterBothAsync(CompletionStage<?> other, Runnable action) {
-        return future.runAfterBothAsync(other, action);
+        return future.runAfterBothAsync(other, new DeserializingRunnable(serializationService, action));
     }
 
     @Override
     public CompletableFuture<Void> runAfterBothAsync(CompletionStage<?> other, Runnable action, Executor executor) {
-        return future.runAfterBothAsync(other, action, executor);
+        return future.runAfterBothAsync(other, new DeserializingRunnable(serializationService, action), executor);
     }
 
     @Override
@@ -340,17 +362,17 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
 
     @Override
     public CompletableFuture<Void> runAfterEither(CompletionStage<?> other, Runnable action) {
-        return future.runAfterEither(other, action);
+        return future.runAfterEither(other, new DeserializingRunnable(serializationService, action));
     }
 
     @Override
     public CompletableFuture<Void> runAfterEitherAsync(CompletionStage<?> other, Runnable action) {
-        return future.runAfterEitherAsync(other, action);
+        return future.runAfterEitherAsync(other, new DeserializingRunnable(serializationService, action));
     }
 
     @Override
     public CompletableFuture<Void> runAfterEitherAsync(CompletionStage<?> other, Runnable action, Executor executor) {
-        return future.runAfterEitherAsync(other, action, executor);
+        return future.runAfterEitherAsync(other, new DeserializingRunnable(serializationService, action), executor);
     }
 
     @Override
@@ -371,34 +393,34 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
     @Override
     public CompletableFuture<V> whenComplete(BiConsumer<? super V, ? super Throwable> action) {
         return new DelegatingCompletableFuture<>(serializationService,
-                future.whenComplete(new DeserializingBiConsumer<>(serializationService, action)));
+                future.whenComplete(new WhenCompleteBiConsumer(serializationService, action)));
     }
 
     @Override
     public CompletableFuture<V> whenCompleteAsync(BiConsumer<? super V, ? super Throwable> action) {
         return new DelegatingCompletableFuture<>(serializationService,
-                future.whenCompleteAsync(new DeserializingBiConsumer<>(serializationService, action)));
+                future.whenCompleteAsync(new WhenCompleteBiConsumer(serializationService, action)));
     }
 
     @Override
     public CompletableFuture<V> whenCompleteAsync(BiConsumer<? super V, ? super Throwable> action, Executor executor) {
         return new DelegatingCompletableFuture<>(serializationService,
-                future.whenCompleteAsync(new DeserializingBiConsumer<>(serializationService, action), executor));
+                future.whenCompleteAsync(new WhenCompleteBiConsumer(serializationService, action), executor));
     }
 
     @Override
     public <U> CompletableFuture<U> handle(BiFunction<? super V, Throwable, ? extends U> fn) {
-        return future.handle(new DeserializingBiFunction<>(serializationService, fn));
+        return future.handle(new HandleBiFunction(serializationService, fn));
     }
 
     @Override
     public <U> CompletableFuture<U> handleAsync(BiFunction<? super V, Throwable, ? extends U> fn) {
-        return future.handleAsync(new DeserializingBiFunction<>(serializationService, fn));
+        return future.handleAsync(new HandleBiFunction<>(serializationService, fn));
     }
 
     @Override
     public <U> CompletableFuture<U> handleAsync(BiFunction<? super V, Throwable, ? extends U> fn, Executor executor) {
-        return future.handleAsync(new DeserializingBiFunction<>(serializationService, fn), executor);
+        return future.handleAsync(new HandleBiFunction<>(serializationService, fn), executor);
     }
 
     @Override
@@ -408,8 +430,7 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
 
     @Override
     public CompletableFuture<V> exceptionally(Function<Throwable, ? extends V> fn) {
-        return new DelegatingCompletableFuture<>(serializationService,
-                future.exceptionally(fn));
+        return future.handle(new ExceptionallyBiFunction(serializationService, fn));
     }
 
     @Override
@@ -424,7 +445,23 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
 
     @Override
     public boolean isCompletedExceptionally() {
-        return future.isCompletedExceptionally();
+        // if super is completed, then value deserialization has already happened,
+        // so we know if this future is completed exceptionally
+        if (super.isDone()) {
+            return super.isCompletedExceptionally();
+        }
+        // otherwise, check the delegate future: if that one is done, try
+        // resolve the completion value
+        if (future.isDone()) {
+            try {
+                resolve(future.join());
+                return false;
+            } catch (Throwable t) {
+                return true;
+            }
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -456,8 +493,12 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         if (t != null) {
             super.completeExceptionally(t);
         } else {
-            V resolved = resolve(value);
-            super.complete(resolved);
+            try {
+                V resolved = resolve(value);
+                super.complete(resolved);
+            } catch (HazelcastSerializationException e) {
+                super.completeExceptionally(e);
+            }
         }
     }
 
@@ -475,6 +516,25 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         @Override
         public R apply(E e) {
             return delegate.apply(serializationService.toObject(e));
+        }
+    }
+
+    class DeserializingRunnable implements Runnable {
+        private final SerializationService serializationService;
+        private final Runnable delegate;
+
+        DeserializingRunnable(SerializationService serializationService, Runnable delegate) {
+            requireNonNull(delegate);
+
+            this.serializationService = serializationService;
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void run() {
+            // deserialize to ensure no HazelcastSerializationException occurs
+            serializationService.toObject(future.join());
+            delegate.run();
         }
     }
 
@@ -508,8 +568,32 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
 
         @Override
         public R apply(T t, U u) {
-            return delegate.apply(serializationService.toObject(t),
-                    serializationService.toObject(u));
+            T v1 = serializationService.toObject(t);
+            U v2 = serializationService.toObject(u);
+            return delegate.apply(v1, v2);
+        }
+    }
+
+    static class HandleBiFunction<T, U extends Throwable, R> implements BiFunction<T, U, R> {
+        private final SerializationService serializationService;
+        private final BiFunction<T, U, R> delegate;
+
+        HandleBiFunction(SerializationService serializationService, BiFunction<T, U, R> delegate) {
+            requireNonNull(delegate);
+
+            this.serializationService = serializationService;
+            this.delegate = delegate;
+        }
+
+        @Override
+        public R apply(T t, U u) {
+            T deserialized = null;
+            try {
+                deserialized = serializationService.toObject(t);
+            } catch (HazelcastSerializationException exc) {
+                u = (U) exc;
+            }
+            return delegate.apply(deserialized, u);
         }
     }
 
@@ -526,8 +610,60 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
 
         @Override
         public void accept(T t, U u) {
-            delegate.accept(serializationService.toObject(t),
-                    serializationService.toObject(u));
+            T v1 = serializationService.toObject(t);
+            U v2 = serializationService.toObject(u);
+            delegate.accept(v1, v2);
+        }
+    }
+
+    static class WhenCompleteBiConsumer<E, T extends Throwable> implements BiConsumer<E, T> {
+        private final SerializationService serializationService;
+        private final BiConsumer<E, T> delegate;
+
+        WhenCompleteBiConsumer(SerializationService serializationService, BiConsumer<E, T> delegate) {
+            requireNonNull(delegate);
+
+            this.serializationService = serializationService;
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void accept(E v, T t) {
+            E deserialized = null;
+            try {
+                deserialized = serializationService.toObject(v);
+            } catch (HazelcastSerializationException exc) {
+                t = (T) exc;
+            }
+            delegate.accept(deserialized, t);
+        }
+    }
+
+    static class ExceptionallyBiFunction<T, U extends Throwable, R> implements BiFunction<T, U, R> {
+        private final SerializationService serializationService;
+        private final Function<U, R> delegate;
+
+        ExceptionallyBiFunction(SerializationService serializationService, Function<U, R> delegate) {
+            requireNonNull(delegate);
+
+            this.serializationService = serializationService;
+            this.delegate = delegate;
+        }
+
+        @Override
+        public R apply(T t, U u) {
+            if (u != null) {
+                return delegate.apply(u);
+            } else {
+                R deserialized;
+                try {
+                    deserialized = serializationService.toObject(t);
+                    return deserialized;
+                } catch (HazelcastSerializationException exc) {
+                    u = (U) exc;
+                    return delegate.apply(u);
+                }
+            }
         }
     }
 }

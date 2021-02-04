@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("96a57da5dfe573cfd504a06ee2f81707")
+@Generated("95469a1f3758f8023f892f20720cb18e")
 public final class CPMemberCodec {
     private static final int UUID_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;

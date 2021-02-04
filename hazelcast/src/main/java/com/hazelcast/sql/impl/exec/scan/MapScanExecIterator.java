@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -92,8 +92,8 @@ public class MapScanExecIterator implements KeyValueIterator {
 
                     if (!isOwned) {
                         throw QueryException.error(
-                            SqlErrorCode.PARTITION_DISTRIBUTION,
-                            "Partition is not owned by member: " + nextPart
+                                SqlErrorCode.PARTITION_DISTRIBUTION,
+                                "Partition is not owned by member: " + nextPart
                         ).markInvalidate();
                     }
 
@@ -108,7 +108,7 @@ public class MapScanExecIterator implements KeyValueIterator {
                         currentRecordStore.checkIfLoaded();
                     } catch (RetryableHazelcastException e) {
                         throw QueryException.error(SqlErrorCode.MAP_LOADING_IN_PROGRESS, "Map loading is in progress: "
-                            + map.getName(), e);
+                                + map.getName(), e);
                     }
 
                     currentRecordStoreIterator = currentRecordStore.getStorage().mutationTolerantIterator();
@@ -121,7 +121,8 @@ public class MapScanExecIterator implements KeyValueIterator {
             while (currentRecordStoreIterator.hasNext()) {
                 Map.Entry<Data, Record<Object>> entry = currentRecordStoreIterator.next();
 
-                if (!currentRecordStore.isExpired(entry.getValue(), now, false)) {
+                // TODO record-store has a forEach method for this, it may be used here.
+                if (!currentRecordStore.isExpired(entry.getKey(), now, false)) {
                     nextKey = entry.getKey();
                     nextValue = entry.getValue().getValue();
 

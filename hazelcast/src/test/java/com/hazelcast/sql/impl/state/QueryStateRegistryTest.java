@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ public class QueryStateRegistryTest extends SqlTestSupport {
         assertSame(state, registry.getState(state.getQueryId()));
 
         // Add distributed state on top of existing initiator state.
-        QueryState state2 = registry.onDistributedQueryStarted(localMemberId, state.getQueryId(), completionCallback);
+        QueryState state2 = registry.onDistributedQueryStarted(localMemberId, state.getQueryId(), completionCallback, false);
 
         assertSame(state2, state);
     }
@@ -86,13 +86,13 @@ public class QueryStateRegistryTest extends SqlTestSupport {
         QueryId queryId = QueryId.create(localMemberId);
 
         // Test missing initiator state.
-        QueryState state = registry.onDistributedQueryStarted(localMemberId, queryId, completionCallback);
+        QueryState state = registry.onDistributedQueryStarted(localMemberId, queryId, completionCallback, false);
 
         assertNull(state);
         assertTrue(registry.getStates().isEmpty());
 
         // Test normal remote invocation.
-        state = registry.onDistributedQueryStarted(remoteMemberId, queryId, completionCallback);
+        state = registry.onDistributedQueryStarted(remoteMemberId, queryId, completionCallback, false);
 
         assertEquals(1, registry.getStates().size());
         assertSame(state, registry.getStates().iterator().next());

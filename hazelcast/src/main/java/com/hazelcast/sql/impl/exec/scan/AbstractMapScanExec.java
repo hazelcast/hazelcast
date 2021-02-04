@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,7 +173,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         row.setKeyValue(rawKey, rawValue);
 
         // Filter.
-        if (filter != null && TernaryLogic.isNotTrue(filter.eval(row, ctx))) {
+        if (filter != null && TernaryLogic.isNotTrue(filter.evalTop(row, ctx))) {
             return null;
         }
 

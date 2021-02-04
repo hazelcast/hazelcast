@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
@@ -56,9 +57,26 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
         return new ColumnExpression<>(index, canonicalType);
     }
 
+    @Override
+    public T evalTop(Row row, ExpressionEvalContext context) {
+        return row.get(index);
+    }
+
     @SuppressWarnings("unchecked")
     @Override public T eval(Row row, ExpressionEvalContext context) {
-        return (T) row.get(index);
+        Object res = row.get(index);
+
+        if (res instanceof LazyTarget) {
+            res = unwrapLazyValue((LazyTarget) res, context);
+        }
+
+        return (T) res;
+    }
+
+    private Object unwrapLazyValue(LazyTarget lazyValue, ExpressionEvalContext context) {
+        assert type == QueryDataType.OBJECT;
+
+        return lazyValue.deserialize(context.getSerializationService());
     }
 
     @Override

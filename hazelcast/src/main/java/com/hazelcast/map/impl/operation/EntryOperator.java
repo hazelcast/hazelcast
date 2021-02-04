@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -263,7 +263,7 @@ public final class EntryOperator {
         Object newValue = inMemoryFormat == OBJECT
                 ? entry.getValue() : entry.getByPrioritizingDataValue();
         if (backup) {
-            recordStore.putBackup(dataKey, newValue, entry.getNewTtl(), UNSET, NOT_WAN);
+            recordStore.putBackup(dataKey, newValue, entry.getNewTtl(), UNSET, UNSET, NOT_WAN);
         } else {
             recordStore.setWithUncountedAccess(dataKey, newValue, entry.getNewTtl(), UNSET);
             if (mapOperation.isPostProcessing(recordStore)) {
@@ -325,7 +325,7 @@ public final class EntryOperator {
         // updates access time if record exists
         Record record = recordStore.getRecord(dataKey);
         if (record != null) {
-            recordStore.accessRecord(record, Clock.currentTimeMillis());
+            recordStore.accessRecord(dataKey, record, Clock.currentTimeMillis());
         }
     }
 

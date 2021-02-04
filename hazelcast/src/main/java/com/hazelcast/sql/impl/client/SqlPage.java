@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.client;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.SqlRowImpl;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
@@ -298,7 +299,7 @@ public final class SqlPage {
             if (position == count) {
                 throw new NoSuchElementException();
             } else {
-                Object res = rows.get(position).getObject(columnIndex);
+                Object res = ((SqlRowImpl) rows.get(position)).getObjectRaw(columnIndex);
 
                 if (convertToData) {
                     res = serializationService.toData(res);
@@ -312,22 +313,6 @@ public final class SqlPage {
     }
 
     public static boolean convertToData(SqlColumnType type) {
-        // TODO: All types except for NULL and OBJECT should be serialized with a custom codecs before 4.2
-        switch (type) {
-            case SMALLINT:
-            case DECIMAL:
-            case REAL:
-            case DOUBLE:
-            case DATE:
-            case TIME:
-            case TIMESTAMP:
-            case TIMESTAMP_WITH_TIME_ZONE:
-            case NULL:
-            case OBJECT:
-                return true;
-
-            default:
-                return false;
-        }
+        return type == SqlColumnType.OBJECT;
     }
 }

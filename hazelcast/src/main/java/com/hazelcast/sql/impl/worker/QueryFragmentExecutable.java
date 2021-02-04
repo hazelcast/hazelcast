@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.worker;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.exec.io.InboundBatch;
@@ -46,7 +47,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
     private final Exec exec;
     private final Map<Integer, InboundHandler> inboxes;
     private final Map<Integer, Map<UUID, OutboundHandler>> outboxes;
-    private final QueryFragmentWorkerPool fragmentPool;
+    private final InternalSerializationService serializationService;
 
     /** Operations to be processed. */
     private final ConcurrentLinkedDeque<Object> operations = new ConcurrentLinkedDeque<>();
@@ -69,14 +70,14 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
         Exec exec,
         Map<Integer, InboundHandler> inboxes,
         Map<Integer, Map<UUID, OutboundHandler>> outboxes,
-        QueryFragmentWorkerPool fragmentPool
+        InternalSerializationService serializationService
     ) {
         this.stateCallback = stateCallback;
         this.arguments = arguments;
         this.exec = exec;
         this.inboxes = inboxes;
         this.outboxes = outboxes;
-        this.fragmentPool = fragmentPool;
+        this.serializationService = serializationService;
     }
 
     public Collection<Integer> getInboxEdgeIds() {
@@ -85,6 +86,13 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
 
     public Collection<Integer> getOutboxEdgeIds() {
         return outboxes.keySet();
+    }
+
+    /**
+     * For testing only.
+     */
+    public Exec getExec() {
+        return exec;
     }
 
     /**
@@ -120,6 +128,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
 
                     InboundBatch batch = new InboundBatch(
                         operation0.getBatch(),
+                        operation0.getOrdinal(),
                         operation0.isLast(),
                         operation0.getCallerId()
                     );
@@ -134,7 +143,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
                     OutboundHandler outbox = edgeOutboxes.get(operation0.getCallerId());
                     assert outbox != null;
 
-                    outbox.onFlowControl(operation0.getRemainingMemory());
+                    outbox.onFlowControl(operation0.getOrdinal(), operation0.getRemainingMemory());
                 } else {
                     assert operation == RESCHEDULE_OPERATION;
                 }
@@ -183,7 +192,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
         boolean res = !scheduled.get() && scheduled.compareAndSet(false, true);
 
         if (res) {
-            submit();
+            run();
         }
 
         return res;
@@ -198,7 +207,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
         // Check for new operations. If there are some, re-submit the fragment for execution immediately.
         if (!completed0 && !operations.isEmpty()) {
             // New operations arrived. Submit the fragment for execution again without resetting the "scheduled" flag.
-            submit();
+            run();
 
             return;
         }
@@ -215,17 +224,13 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
         }
     }
 
-    private void submit() {
-        fragmentPool.submit(this);
-    }
-
     private void setupExecutor() {
         if (initialized) {
             return;
         }
 
         try {
-            exec.setup(new QueryFragmentContext(arguments, this, stateCallback));
+            exec.setup(new QueryFragmentContext(arguments, this, stateCallback, serializationService));
         } finally {
             initialized = true;
         }

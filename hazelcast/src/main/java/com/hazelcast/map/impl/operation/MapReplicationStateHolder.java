@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,13 +32,17 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadataImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.MapIndexInfo;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -55,7 +59,7 @@ import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
  * Holder for raw IMap key-value pairs and their metadata.
  */
 // keep this `protected`, extended in another context.
-public class MapReplicationStateHolder implements IdentifiedDataSerializable {
+public class MapReplicationStateHolder implements IdentifiedDataSerializable, Versioned {
 
     // holds recordStore-references of this partitions' maps
     protected transient Map<String, RecordStore<Record>> storesByMapName;
@@ -89,7 +93,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
 
     void prepare(PartitionContainer container, Collection<ServiceNamespace> namespaces, int replicaIndex) {
         storesByMapName = createHashMap(namespaces.size());
-
         loaded = createHashMap(namespaces.size());
         mapIndexInfos = new ArrayList<>(namespaces.size());
         for (ServiceNamespace namespace : namespaces) {
@@ -142,7 +145,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         if (!isNullOrEmpty(data)) {
             for (Map.Entry<String, List> dataEntry : data.entrySet()) {
                 String mapName = dataEntry.getKey();
-                List keyRecord = dataEntry.getValue();
+                List keyRecordExpiry = dataEntry.getValue();
                 RecordStore recordStore = operation.getRecordStore(mapName);
                 recordStore.reset();
                 recordStore.setPreMigrationLoadedStatus(loaded.get(mapName));
@@ -169,13 +172,14 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                     indexes.clearAll();
                 }
 
+                NodeEngine nodeEngine = mapContainer.getMapServiceContext().getNodeEngine();
                 long nowInMillis = Clock.currentTimeMillis();
+                for (int i = 0; i < keyRecordExpiry.size(); i += 3) {
+                    Data dataKey = (Data) keyRecordExpiry.get(i);
+                    Record record = (Record) keyRecordExpiry.get(i + 1);
+                    ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiry.get(i + 2);
 
-                for (int i = 0; i < keyRecord.size(); i += 2) {
-                    Data dataKey = (Data) keyRecord.get(i);
-                    Record record = (Record) keyRecord.get(i + 1);
-
-                    recordStore.putReplicatedRecord(dataKey, record, nowInMillis, populateIndexes);
+                    recordStore.putReplicatedRecord(dataKey, record, expiryMetadata, populateIndexes, nowInMillis);
 
                     if (recordStore.shouldEvict()) {
                         // No need to continue replicating records anymore.
@@ -241,7 +245,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
             recordStore.forEach((dataKey, record) -> {
                 try {
                     IOUtil.writeData(out, dataKey);
-                    Records.writeRecord(out, record, ss.toData(record.getValue()));
+                    Records.writeRecord(out, record, ss.toData(record.getValue()),
+                            recordStore.getExpirySystem().getExpiredMetadata(dataKey));
                 } catch (IOException e) {
                     throw ExceptionUtil.rethrow(e);
                 }
@@ -273,15 +278,17 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
             int numOfRecords = in.readInt();
-            List keyRecord = new ArrayList<>(numOfRecords * 2);
+            List keyRecordExpiry = new ArrayList<>(numOfRecords * 3);
             for (int j = 0; j < numOfRecords; j++) {
                 Data dataKey = IOUtil.readData(in);
-                Record record = Records.readRecord(in);
+                ExpiryMetadata expiryMetadata = new ExpiryMetadataImpl();
+                Record record = Records.readRecord(in, expiryMetadata);
 
-                keyRecord.add(dataKey);
-                keyRecord.add(record);
+                keyRecordExpiry.add(dataKey);
+                keyRecordExpiry.add(record);
+                keyRecordExpiry.add(expiryMetadata);
             }
-            data.put(name, keyRecord);
+            data.put(name, keyRecordExpiry);
         }
 
         int loadedSize = in.readInt();

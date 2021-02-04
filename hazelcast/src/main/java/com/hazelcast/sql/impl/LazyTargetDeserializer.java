@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.operation;
+package com.hazelcast.sql.impl;
 
 /**
- * A channel for ordered execution of multiple operations.
+ * Helper interface to deserialize the laze target. Reduces coupling between the row and the SQL service.
  */
-public interface QueryOperationChannel {
+public interface LazyTargetDeserializer {
     /**
-     * Submit operation for execution. Order of execution is preserved across invocations.
-     *
-     * @param operation Operation.
-     * @return {@code true} if operation was submitted for execution successfully, {@code false} if the channel is broken.
+     * @param value target to deserialize
+     * @return deserialized object
      */
-    boolean submit(QueryOperation operation);
+    Object deserialize(LazyTarget value);
 }

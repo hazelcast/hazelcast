@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,8 +81,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private final NodeServiceProviderImpl nodeServiceProvider;
     private final PlanCache planCache = new PlanCache(PLAN_CACHE_SIZE);
 
-    private final int executorPoolSize;
-    private final int operationPoolSize;
+    private final int poolSize;
     private final long queryTimeout;
 
     private JetSqlCoreBackend jetSqlCoreBackend;
@@ -97,24 +96,17 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
         SqlConfig config = nodeEngine.getConfig().getSqlConfig();
 
-        int executorPoolSize = config.getExecutorPoolSize();
-        int operationPoolSize = config.getOperationPoolSize();
+        int poolSize = config.getExecutorPoolSize();
         long queryTimeout = config.getStatementTimeoutMillis();
 
-        if (executorPoolSize == SqlConfig.DEFAULT_EXECUTOR_POOL_SIZE) {
-            executorPoolSize = Runtime.getRuntime().availableProcessors();
+        if (poolSize == SqlConfig.DEFAULT_EXECUTOR_POOL_SIZE) {
+            poolSize = Runtime.getRuntime().availableProcessors();
         }
 
-        if (operationPoolSize == SqlConfig.DEFAULT_OPERATION_POOL_SIZE) {
-            operationPoolSize = Runtime.getRuntime().availableProcessors();
-        }
-
-        assert executorPoolSize > 0;
-        assert operationPoolSize > 0;
+        assert poolSize > 0;
         assert queryTimeout >= 0L;
 
-        this.executorPoolSize = executorPoolSize;
-        this.operationPoolSize = operationPoolSize;
+        this.poolSize = poolSize;
         this.queryTimeout = queryTimeout;
     }
 
@@ -142,8 +134,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             instanceName,
             nodeServiceProvider,
             serializationService,
-            operationPoolSize,
-            executorPoolSize,
+            poolSize,
             OUTBOX_BATCH_SIZE,
             STATE_CHECK_FREQUENCY,
             planCacheChecker
@@ -345,7 +336,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private SqlResult executeImdg(QueryId queryId, Plan plan, List<Object> params, long timeout, int pageSize) {
         QueryState state = internalService.execute(queryId, plan, params, timeout, pageSize, planCache);
 
-        return SqlResultImpl.createRowsResult(state);
+        return SqlResultImpl.createRowsResult(state, (InternalSerializationService) nodeEngine.getSerializationService());
     }
 
     private SqlResult executeJet(QueryId queryId, SqlPlan plan, List<Object> params, long timeout, int pageSize) {

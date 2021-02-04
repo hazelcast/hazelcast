@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.exec.io;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
-import com.hazelcast.sql.impl.operation.QueryOperationChannel;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
@@ -46,11 +45,14 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
     /** Pending rows. */
     private List<Row> rows;
 
-    /** Channel to send operations through. */
-    private QueryOperationChannel operationChannel;
+    /** Ordinal of the next batch */
+    private long ordinal;
 
     /** Amount of remote memory which is available at the moment. */
     private long remainingMemory;
+
+    /** Ordinal of the last received flow control message to filter out stale flow control messages. */
+    private long lastFlowControlOrdinal = -1;
 
     public Outbox(
         QueryOperationHandler operationHandler,
@@ -68,10 +70,6 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
         this.targetMemberId = targetMemberId;
         this.batchSize = batchSize;
         this.remainingMemory = remainingMemory;
-    }
-
-    public void setup() {
-        operationChannel = operationHandler.createChannel(localMemberId, targetMemberId);
     }
 
     public UUID getTargetMemberId() {
@@ -150,8 +148,17 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
     }
 
     @Override
-    public void onFlowControl(long remainingMemory) {
-        this.remainingMemory = remainingMemory;
+    public void onFlowControl(long ordinal, long remainingMemory) {
+        // The flow control implementation may inform the receiver about the remaining memory at arbitrary times.
+        // It may happen that two flow control messages are reordered, e.g. [2, 100b], then [1, 500b].
+        // We need to ensure that we save only the most relevant information about the remaining memory.
+        // E.g., 100b as in the example above. Therefore, we ignore messages with ordinals less than
+        // the lask known.
+        if (lastFlowControlOrdinal < ordinal) {
+            this.remainingMemory = remainingMemory;
+
+            lastFlowControlOrdinal = ordinal;
+        }
     }
 
     /**
@@ -169,11 +176,12 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
             edgeId,
             targetMemberId,
             batch,
+            ordinal++,
             last,
             remainingMemory
         );
 
-        boolean success = operationChannel.submit(op);
+        boolean success = operationHandler.submit(localMemberId, targetMemberId, op);
 
         if (!success) {
             throw QueryException.memberConnection(targetMemberId);

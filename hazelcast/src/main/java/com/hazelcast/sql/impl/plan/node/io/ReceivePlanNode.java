@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,26 +34,30 @@ import java.util.Objects;
  * Physical node which receives from remote stripes. The node carries the schema (field types).
  */
 public class ReceivePlanNode extends ZeroInputPlanNode implements EdgeAwarePlanNode, IdentifiedDataSerializable {
-    /** Edge ID. */
-    private int edgeId;
 
-    /** Field types. */
+    private int edgeId;
+    private boolean ordered;
     private List<QueryDataType> fieldTypes;
 
     public ReceivePlanNode() {
         // No-op.
     }
 
-    public ReceivePlanNode(int id, int edgeId, List<QueryDataType> fieldTypes) {
+    public ReceivePlanNode(int id, int edgeId, boolean ordered, List<QueryDataType> fieldTypes) {
         super(id);
 
         this.edgeId = edgeId;
+        this.ordered = ordered;
         this.fieldTypes = fieldTypes;
     }
 
     @Override
     public int getEdgeId() {
         return edgeId;
+    }
+
+    public boolean isOrdered() {
+        return ordered;
     }
 
     @Override
@@ -84,18 +88,20 @@ public class ReceivePlanNode extends ZeroInputPlanNode implements EdgeAwarePlanN
     @Override
     public void writeData0(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);
+        out.writeBoolean(ordered);
         SerializationUtil.writeList(fieldTypes, out);
     }
 
     @Override
     public void readData0(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
+        ordered = in.readBoolean();
         fieldTypes = SerializationUtil.readList(in);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, edgeId, fieldTypes);
+        return Objects.hash(id, edgeId, ordered, fieldTypes);
     }
 
     @Override
@@ -110,11 +116,12 @@ public class ReceivePlanNode extends ZeroInputPlanNode implements EdgeAwarePlanN
 
         ReceivePlanNode that = (ReceivePlanNode) o;
 
-        return id == that.id && edgeId == that.edgeId && fieldTypes.equals(that.fieldTypes);
+        return id == that.id && edgeId == that.edgeId && ordered == that.ordered && fieldTypes.equals(that.fieldTypes);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{id=" + id + ", edgeId=" + edgeId + ", fieldTypes=" + fieldTypes + '}';
+        return getClass().getSimpleName() + "{id=" + id + ", edgeId=" + edgeId + ", ordered=" + ordered
+            + ", fieldTypes=" + fieldTypes + '}';
     }
 }

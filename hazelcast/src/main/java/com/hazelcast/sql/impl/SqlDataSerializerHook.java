@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -178,7 +178,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int EXPRESSION_REMAINDER = 64;
 
-    public static final int LEN = EXPRESSION_REMAINDER + 1;
+    public static final int LAZY_TARGET = 65;
+
+    public static final int LEN = LAZY_TARGET + 1;
 
     @Override
     public int getFactoryId() {
@@ -270,6 +272,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[NODE_FETCH] = arg -> new FetchPlanNode();
 
         constructors[EXPRESSION_REMAINDER] = arg -> new RemainderFunction<>();
+
+        constructors[LAZY_TARGET] = arg -> new LazyTarget();
 
         return new ArrayDataSerializableFactory(constructors);
     }

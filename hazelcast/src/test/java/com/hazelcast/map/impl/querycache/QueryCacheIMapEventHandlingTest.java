@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.query.Predicate;
@@ -110,7 +111,8 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
         Data keyData = serializationService.toData(key);
         Data valueData = serializationService.toData(mergedValue);
         SplitBrainMergeTypes.MapMergeTypes mergingEntry
-                = createMergingEntry(serializationService, keyData, valueData, Mockito.mock(Record.class));
+                = createMergingEntry(serializationService, keyData, valueData,
+                Mockito.mock(Record.class), ExpiryMetadata.NULL);
 
         Operation mergeOperation = new MergeOperation(mapName, singletonList(mergingEntry),
                 new PassThroughMergePolicy<>(), false);

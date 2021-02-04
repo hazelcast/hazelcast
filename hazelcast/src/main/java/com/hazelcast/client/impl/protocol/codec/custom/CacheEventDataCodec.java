@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("9406ff10290f056c7dfe44404bf17486")
+@Generated("38df879c63b1c62565d44f45bdcf48af")
 public final class CacheEventDataCodec {
     private static final int CACHE_EVENT_TYPE_FIELD_OFFSET = 0;
     private static final int OLD_VALUE_AVAILABLE_FIELD_OFFSET = CACHE_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

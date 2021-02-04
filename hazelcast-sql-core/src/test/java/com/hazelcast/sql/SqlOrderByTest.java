@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ public class SqlOrderByTest extends SqlTestSupport {
     public static Collection<Object[]> parameters() {
         List<Object[]> res = new ArrayList<>();
 
-        for (int membersCount : Arrays.asList(1, 3)) {
+        for (int membersCount : Collections.singletonList(1)) {
             for (SerializationMode serializationMode : Arrays.asList(SERIALIZABLE, IDENTIFIED_DATA_SERIALIZABLE)) {
                 for (InMemoryFormat format : new InMemoryFormat[]{InMemoryFormat.OBJECT, InMemoryFormat.BINARY}) {
                     res.add(new Object[]{

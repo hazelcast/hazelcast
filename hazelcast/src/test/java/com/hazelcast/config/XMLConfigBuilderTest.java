@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3740,14 +3740,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
             + "<sql>\n"
             + "  <executor-pool-size>10</executor-pool-size>\n"
-            + "  <operation-pool-size>20</operation-pool-size>\n"
             + "  <statement-timeout-millis>30</statement-timeout-millis>\n"
             + "</sql>"
             + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(10, sqlConfig.getExecutorPoolSize());
-        assertEquals(20, sqlConfig.getOperationPoolSize());
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
     }
 }
