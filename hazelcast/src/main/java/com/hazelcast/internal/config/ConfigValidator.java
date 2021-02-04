@@ -24,7 +24,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
@@ -79,7 +78,6 @@ import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePo
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergeTypeProviderHasRequiredTypes;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.spi.properties.ClusterProperty.HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE;
 import static java.lang.String.format;
 
 /**
@@ -129,7 +127,6 @@ public final class ConfigValidator {
 
         if (getBuildInfo().isEnterprise()) {
             checkMapNativeConfig(mapConfig, nativeMemoryConfig);
-            checkHotRestartSpecificConfig(mapConfig, properties);
         }
 
         checkMapEvictionConfig(mapConfig.getEvictionConfig());
@@ -217,36 +214,6 @@ public final class ConfigValidator {
             throw new InvalidConfigurationException("Maximum size policy " + maxSizePolicy
                     + " cannot be used with NATIVE in memory format backed Map."
                     + " Supported maximum size policies are: " + MAP_SUPPORTED_NATIVE_MAX_SIZE_POLICIES);
-        }
-    }
-
-    /**
-     * When Hot Restart is enabled, we want at least {@code
-     * hazelcast.hotrestart.free.native.memory.percentage}
-     * percent free HD memory space.
-     * <p>
-     * If configured max-size-policy is {@link
-     * MaxSizePolicy#FREE_NATIVE_MEMORY_PERCENTAGE},
-     * this method asserts that max-size is not below {@code
-     * hazelcast.hotrestart.free.native.memory.percentage}.
-     */
-    private static void checkHotRestartSpecificConfig(MapConfig mapConfig, HazelcastProperties properties) {
-        HotRestartConfig hotRestartConfig = mapConfig.getHotRestartConfig();
-        if (hotRestartConfig == null || !hotRestartConfig.isEnabled()) {
-            return;
-        }
-        int hotRestartMinFreeNativeMemoryPercentage = properties.getInteger(HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE);
-        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
-        MaxSizePolicy maximumSizePolicy = evictionConfig.getMaxSizePolicy();
-        int localSizeConfig = evictionConfig.getSize();
-        if (FREE_NATIVE_MEMORY_PERCENTAGE == maximumSizePolicy && localSizeConfig < hotRestartMinFreeNativeMemoryPercentage) {
-            throw new InvalidConfigurationException(format(
-                    "There is a global limit on the minimum free native memory, configurable by the system property %s,"
-                            + " whose value is currently %d percent. The map %s has Hot Restart enabled,"
-                            + " but is configured with %d percent, which is lower than the allowed minimum.",
-                    HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE.getName(), hotRestartMinFreeNativeMemoryPercentage,
-                    mapConfig.getName(), localSizeConfig)
-            );
         }
     }
 

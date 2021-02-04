@@ -1503,13 +1503,6 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.shutdownhook.policy", "TERMINATE");
 
     /**
-     * XML and system property for setting the hot restart required free space.
-     * By default, hot restart requires at least 15% free HD space.
-     */
-    public static final HazelcastProperty HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE
-            = new HazelcastProperty("hazelcast.hotrestart.free.native.memory.percentage", 15);
-
-    /**
      * Name of logging framework type to send logging events.
      */
     public static final HazelcastProperty LOGGING_TYPE
