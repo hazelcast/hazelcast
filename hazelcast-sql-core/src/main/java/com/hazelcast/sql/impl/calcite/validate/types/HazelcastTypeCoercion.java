@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.calcite.validate.types;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import org.apache.calcite.rel.type.DynamicRecordType;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
@@ -28,15 +27,11 @@ import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlInsert;
-import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlSelect;
-import org.apache.calcite.sql.SqlUpdate;
-import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -44,7 +39,6 @@ import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
-import org.apache.calcite.util.Util;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -168,42 +162,33 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             return true;
         }
 
-        move this to jet
-
-        boolean valid = bothOperandsAreNumeric(sourceHzType, targetHzType)
-                || bothOperandsAreTemporalAndLowOperandCanBeConvertedToHighOperand(highHZType, lowHZType)
-                || highOperandIsTemporalAndLowOperandIsLiteralOfVarcharType(highHZType, lowHZType, low);
+        boolean valid = sourceAndTargetAreNumeric(targetHzType, sourceHzType)
+                || sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(targetHzType, sourceHzType)
+                || targetIsTemporalAndSourceIsLiteralOfVarcharType(targetHzType, sourceHzType, rowElement);
 
         if (!valid) {
             // Types cannot be converted to each other, throw.
-            if (throwOnFailure) {
-                throw callBinding.newValidationSignatureError();
-            } else {
-                return false;
-            }
+            return false;
         }
 
-        // Types are in the same group, cast lower to higher.
-        RelDataType newLowType = validator.getTypeFactory().createTypeWithNullability(highType, lowType.isNullable());
-
-        validator.getTypeCoercion().coerceOperandType(callBinding.getScope(), callBinding.getCall(), lowIndex, newLowType);
-
+        // Types are in the same group, cast source to target.
+        coerceNode(scope, rowElement, targetType, replaceFn);
         return true;
     }
 
-    private static boolean bothOperandsAreNumeric(QueryDataType highHZType, QueryDataType lowHZType) {
+    private static boolean sourceAndTargetAreNumeric(QueryDataType highHZType, QueryDataType lowHZType) {
         return (highHZType.getTypeFamily().isNumeric() && lowHZType.getTypeFamily().isNumeric());
     }
 
-    private static boolean bothOperandsAreTemporalAndLowOperandCanBeConvertedToHighOperand(QueryDataType highHZType,
-                                                                                           QueryDataType lowHZType) {
+    private static boolean sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(QueryDataType highHZType,
+                                                                                     QueryDataType lowHZType) {
         return highHZType.getTypeFamily().isTemporal()
                 && lowHZType.getTypeFamily().isTemporal()
                 && lowHZType.getConverter().canConvertTo(highHZType.getTypeFamily());
     }
 
-    private static boolean highOperandIsTemporalAndLowOperandIsLiteralOfVarcharType(QueryDataType highHZType,
-                                                                                    QueryDataType lowHZType, SqlNode low) {
+    private static boolean targetIsTemporalAndSourceIsLiteralOfVarcharType(QueryDataType highHZType,
+                                                                           QueryDataType lowHZType, SqlNode low) {
         return highHZType.getTypeFamily().isTemporal()
                 && lowHZType.getTypeFamily() == QueryDataTypeFamily.VARCHAR
                 && low instanceof SqlLiteral;
