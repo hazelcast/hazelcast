@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl.iterator;
 
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +41,7 @@ public class MapIterable<K, V> implements Iterable<Map.Entry<K, V>> {
         this.prefetchValues = prefetchValues;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterator<Map.Entry<K, V>> iterator() {
         // create the partition iterators

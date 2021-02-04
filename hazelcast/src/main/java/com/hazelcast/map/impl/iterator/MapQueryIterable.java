@@ -19,8 +19,8 @@ package com.hazelcast.map.impl.iterator;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +44,7 @@ public class MapQueryIterable<K, V, R> implements Iterable<R> {
         this.projection = projection;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterator<R> iterator() {
         // create the partition iterators

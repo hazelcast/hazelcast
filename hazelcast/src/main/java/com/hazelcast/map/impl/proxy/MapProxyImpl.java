@@ -42,8 +42,10 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MergeEntryProcessor;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.iterator.MapIterable;
+import com.hazelcast.map.impl.iterator.MapPartitionIterable;
 import com.hazelcast.map.impl.iterator.MapQueryIterable;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
+import com.hazelcast.map.impl.iterator.MapQueryPartitionIterable;
 import com.hazelcast.map.impl.iterator.MapQueryPartitionIterator;
 import com.hazelcast.map.impl.journal.MapEventJournalReadOperation;
 import com.hazelcast.map.impl.journal.MapEventJournalSubscribeOperation;
@@ -976,9 +978,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}
      * @since 3.9
      */
-    public <R> Iterator<R> iterator(int fetchSize, int partitionId,
-                                    Projection<? super Map.Entry<K, V>, R> projection,
-                                    Predicate<K, V> predicate) {
+    public <R> Iterator<R> iterator(
+            int fetchSize,
+            int partitionId,
+            Projection<? super Map.Entry<K, V>, R> projection,
+            Predicate<K, V> predicate
+    ) {
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("Paging predicate is not allowed when iterating map by query");
         }
@@ -990,18 +995,53 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         return new MapQueryPartitionIterator<>(this, fetchSize, partitionId, predicate, projection);
     }
 
+    /**
+     * TODO: Javadoc
+     *
+     * @param fetchSize   the size of the batches which will be sent when iterating the data
+     * @param partitionId the partition ID which is being iterated
+     * @param projection  the projection to apply before returning the value. null value is not allowed
+     * @param predicate   the predicate which the entries must match. null value is not allowed
+     * @param <R>
+     * @return
+     */
+    public <R> Iterable<R> iterable(
+            int fetchSize,
+            int partitionId,
+            Projection<? super Map.Entry<K, V>, R> projection,
+            Predicate<K, V> predicate
+    ) {
+        checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        return new MapQueryPartitionIterable<>(this, fetchSize, partitionId, projection, predicate);
+    }
 
     /**
      * TODO: Javadoc
+     *
+     * @param fetchSize      the size of the batches which will be sent when iterating the data
+     * @param partitionId    the partition ID which is being iterated
+     * @param prefetchValues whether to send values along with keys (if true) or to fetch them lazily when iterating (if false)
+     * @return
+     */
+    public Iterable<Entry<K, V>> iterable(int fetchSize, int partitionId, boolean prefetchValues) {
+        return new MapPartitionIterable<>(this, fetchSize, partitionId, prefetchValues);
+    }
+
+    /**
+     * TODO: Javadoc
+     *
      * @param fetchSize
      * @param projection
      * @param predicate
      * @param <R>
      * @return
      */
-    public <R> Iterable<R> iterable(int fetchSize,
-                                    Projection<? super Map.Entry<K, V>, R> projection,
-                                    Predicate<K, V> predicate) {
+    public <R> Iterable<R> iterable(
+            int fetchSize,
+            Projection<? super Map.Entry<K, V>, R> projection,
+            Predicate<K, V> predicate
+    ) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         int partitionCount = partitionService.getPartitionCount();
@@ -1010,6 +1050,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     /**
      * TODO: Javadoc
+     *
      * @param fetchSize
      * @param prefetchValues
      * @return
