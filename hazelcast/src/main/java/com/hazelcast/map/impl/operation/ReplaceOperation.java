@@ -40,7 +40,7 @@ public class ReplaceOperation extends BasePutOperation implements MutatingOperat
 
     @Override
     public boolean shouldBackup() {
-        return successful && recordStore.getRecord(dataKey) != null;
+        return successful && super.shouldBackup();
     }
 
     @Override

@@ -16,15 +16,26 @@
 
 package com.hazelcast.sql.impl.operation;
 
-/**
- * A channel for ordered execution of multiple operations.
- */
-public interface QueryOperationChannel {
-    /**
-     * Submit operation for execution. Order of execution is preserved across invocations.
-     *
-     * @param operation Operation.
-     * @return {@code true} if operation was submitted for execution successfully, {@code false} if the channel is broken.
-     */
-    boolean submit(QueryOperation operation);
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.QueryResultProducer;
+import com.hazelcast.sql.impl.ResultIterator;
+import com.hazelcast.sql.impl.row.Row;
+
+public class TestQueryResultProducer implements QueryResultProducer {
+
+    public static final TestQueryResultProducer INSTANCE = new TestQueryResultProducer();
+
+    private TestQueryResultProducer() {
+        // No-op
+    }
+
+    @Override
+    public ResultIterator<Row> iterator() {
+        return null;
+    }
+
+    @Override
+    public void onError(QueryException error) {
+        // No-op
+    }
 }

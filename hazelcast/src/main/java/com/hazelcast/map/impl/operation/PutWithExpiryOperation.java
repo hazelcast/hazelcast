@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 
@@ -31,7 +31,8 @@ public class PutWithExpiryOperation extends PutOperation {
     public PutWithExpiryOperation() {
     }
 
-    public PutWithExpiryOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
+    public PutWithExpiryOperation(String name, Data dataKey,
+                                  Data value, long ttl, long maxIdle) {
         super(name, dataKey, value);
         this.ttl = ttl;
         this.maxIdle = maxIdle;

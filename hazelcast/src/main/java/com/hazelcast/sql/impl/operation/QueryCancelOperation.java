@@ -69,6 +69,11 @@ public class QueryCancelOperation extends QueryAbstractIdAwareOperation {
     }
 
     @Override
+    public boolean isSystem() {
+        return true;
+    }
+
+    @Override
     public int getClassId() {
         return SqlDataSerializerHook.OPERATION_CANCEL;
     }

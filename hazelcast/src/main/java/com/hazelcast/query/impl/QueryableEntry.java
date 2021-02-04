@@ -47,15 +47,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     protected Extractors extractors;
 
     private Record record;
-
-    // overridden in some subclasses
-    public Metadata getMetadata() {
-        // record is not set in plenty of internal unit tests
-        if (record != null) {
-            return record.getMetadata();
-        }
-        return null;
-    }
+    private transient Metadata metadata;
 
     public Record getRecord() {
         return record;
@@ -112,7 +104,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
             boolean isKey = startsWithKeyConstant(attributeName);
             attributeName = getAttributeName(isKey, attributeName);
             Object target = getTargetObject(isKey);
-            Object metadata = getMetadataOrNull(this.getMetadata(), isKey);
+            Object metadata = getMetadataOrNull(isKey);
             result = extractAttributeValueFromTargetObject(extractors, attributeName, target, metadata);
         }
         if (result instanceof HazelcastJsonValue) {
@@ -196,11 +188,19 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         return ReflectionHelper.getAttributeType(attributeValue.getClass());
     }
 
-    private static Object getMetadataOrNull(Metadata metadata, boolean isKey) {
+    private Object getMetadataOrNull(boolean isKey) {
         if (metadata == null) {
             return null;
         }
         return isKey ? metadata.getKeyMetadata() : metadata.getValueMetadata();
+    }
+
+    public Metadata getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Metadata metadata) {
+        this.metadata = metadata;
     }
 
 }

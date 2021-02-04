@@ -3470,13 +3470,9 @@ hazelcast:
   #     * "executor-pool-size":
   #         Defines the number of threads responsible for query execution.
   #
-  #     * "operation-pool-size":
-  #         Defines the number of threads responsible for network operations processing.
-  #
   #     * "statement-timeout-millis":
   #         Defines the timeout in milliseconds that is applied to queries without an explicit timeout.
   #
   sql:
     executor-pool-size: 8
-    operation-pool-size: 8
     statement-timeout-millis: 0

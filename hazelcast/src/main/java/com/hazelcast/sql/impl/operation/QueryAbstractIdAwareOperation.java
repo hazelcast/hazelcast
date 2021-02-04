@@ -44,11 +44,6 @@ public abstract class QueryAbstractIdAwareOperation extends QueryOperation {
     }
 
     @Override
-    public int getPartition() {
-        return getPartitionForHash(queryId.hashCode());
-    }
-
-    @Override
     protected final void writeInternal0(ObjectDataOutput out) throws IOException {
         queryId.writeData(out);
 

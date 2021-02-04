@@ -58,12 +58,19 @@ public final class QueryState implements QueryStateCallback {
     /** Local member ID. */
     private final UUID localMemberId;
 
+    /** Whether the state is created in the cancelled state right away. */
+    private final boolean cancelled;
+
     /** Error which caused query completion. */
     private volatile QueryException completionError;
 
     /** Time when the a check was performed for the last time. */
     private volatile long checkTime;
 
+    /** Time when the query was know to be active for the last time. */
+    private volatile long lastActivityTime;
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private QueryState(
         QueryId queryId,
         UUID localMemberId,
@@ -74,7 +81,8 @@ public final class QueryState implements QueryStateCallback {
         CachedPlanInvalidationCallback initiatorPlanInvalidationCallback,
         SqlRowMetadata initiatorRowMetadata,
         QueryResultProducer initiatorRowSource,
-        ClockProvider clockProvider
+        ClockProvider clockProvider,
+        boolean cancelled
     ) {
         // Set common state.
         this.queryId = queryId;
@@ -98,6 +106,14 @@ public final class QueryState implements QueryStateCallback {
 
         startTime = clockProvider.currentTimeMillis();
         checkTime = startTime;
+
+        this.cancelled = cancelled;
+
+        if (cancelled) {
+            completionGuard.set(true);
+        }
+
+        lastActivityTime = clockProvider.currentTimeMillis();
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -122,7 +138,8 @@ public final class QueryState implements QueryStateCallback {
             initiatorPlanInvalidationCallback,
             initiatorRowMetadata,
             initiatorResultProducer,
-            clockProvider
+            clockProvider,
+            false
         );
     }
 
@@ -136,6 +153,7 @@ public final class QueryState implements QueryStateCallback {
         QueryId queryId,
         UUID localMemberId,
         QueryStateCompletionCallback completionCallback,
+        boolean cancelled,
         ClockProvider clockProvider
     ) {
         return new QueryState(
@@ -148,7 +166,8 @@ public final class QueryState implements QueryStateCallback {
             null,
             null,
             null,
-            clockProvider
+            clockProvider,
+            cancelled
         );
     }
 
@@ -174,6 +193,10 @@ public final class QueryState implements QueryStateCallback {
 
     public QueryDistributedState getDistributedState() {
         return distributedState;
+    }
+
+    public boolean isCancelled() {
+        return cancelled;
     }
 
     @Override
@@ -327,28 +350,30 @@ public final class QueryState implements QueryStateCallback {
     /**
      * Check if the query check is required for the given query.
      *
-     * @param checkFrequency Frequency of state checks in milliseconds.
-     * @return {@code true} if query check should be initiated, {@code false} otherwise.
+     * @param checkFrequency frequency of state checks in milliseconds
+     * @param orphanedQueryStateCheckFrequency frequency of checks for initialized queries with no network activity
+     * @return {@code true} if query check should be initiated, {@code false} otherwise
      */
-    public boolean requestQueryCheck(long checkFrequency) {
+    public boolean requestQueryCheck(long checkFrequency, long orphanedQueryStateCheckFrequency) {
         // No need to check the initiator because creation of its state happens-before sending of any messages,
         // so it is never stale.
         if (isInitiator()) {
             return false;
         }
 
-        // If the state received an EXECUTE request, then no need to check it because EXECUTE happens-before any CANCEL
-        // request.
-        if (distributedState.isStarted()) {
-            return false;
-        }
-
         long currentTime = clockProvider.currentTimeMillis();
 
-        if (currentTime - checkTime < checkFrequency) {
+        if (distributedState.isStarted() && currentTime - lastActivityTime < orphanedQueryStateCheckFrequency) {
+            // If the query is initiated and there is recent activity, do not initiate the check.
             return false;
         }
 
+        if (currentTime - checkTime < checkFrequency) {
+            // The query is suspicious, but the previous check was performed recently.
+            return false;
+        }
+
+        // Initiate the check.
         checkTime = currentTime;
 
         return true;
@@ -361,6 +386,13 @@ public final class QueryState implements QueryStateCallback {
         if (completionError0 != null) {
             throw completionError0;
         }
+    }
+
+    /**
+     * Update the time when the query was known to be active for the last time.
+     */
+    public void updateLastActivityTime() {
+        lastActivityTime = clockProvider.currentTimeMillis();
     }
 
     private Collection<UUID> getParticipants() {

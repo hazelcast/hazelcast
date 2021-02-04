@@ -60,6 +60,7 @@ import com.hazelcast.sql.impl.plan.node.io.SendPlanNode;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -303,9 +304,11 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         // Get upstream node.
         PlanNode upstreamNode = pollSingleUpstream();
 
+        // The receiver should process messages in order if the exchange is ordered.
+        boolean ordered = !rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE).getFieldCollations().isEmpty();
+
         // Create sender and push it as a fragment.
         int edge = nextEdge();
-
         int id = pollId(rel);
 
         SendPlanNode sendNode = new SendPlanNode(
@@ -320,6 +323,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         ReceivePlanNode receiveNode = new ReceivePlanNode(
             id,
             edge,
+            ordered,
             sendNode.getSchema().getTypes()
         );
 
@@ -521,18 +525,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     private PlanFragmentMapping dataMemberMapping() {
         return new PlanFragmentMapping(memberIds, true);
-    }
-
-    private List<Permission> createPermissions() {
-        ArrayList<Permission> permissions = new ArrayList<>();
-
-        for (String mapName : mapNames) {
-            permissions.add(new MapPermission(mapName, ActionConstants.ACTION_READ));
-        }
-
-        permissions.trimToSize();
-
-        return permissions;
     }
 
     private static QueryDataType[] mapRowTypeToHazelcastTypes(RelDataType rowType) {

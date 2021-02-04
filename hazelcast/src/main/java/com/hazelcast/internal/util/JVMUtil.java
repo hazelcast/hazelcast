@@ -31,13 +31,14 @@ import static java.lang.Math.abs;
 /**
  * Helper class for retrieving JVM specific information.
  */
+@SuppressWarnings("checkstyle:magicnumber")
 public final class JVMUtil {
 
     /**
      * Defines the costs for a reference in Bytes.
      */
-    @SuppressWarnings("checkstyle:magicnumber")
     public static final int REFERENCE_COST_IN_BYTES = is32bitJVM() || isCompressedOops() ? 4 : 8;
+    public static final int OBJECT_HEADER_SIZE = is32bitJVM() ? 8 : (isCompressedOops() ? 12 : 16);
 
     private JVMUtil() {
     }
@@ -49,7 +50,7 @@ public final class JVMUtil {
     }
 
     // not private for testing
-    static boolean isCompressedOops() {
+    public static boolean isCompressedOops() {
         // check HotSpot JVM implementation
         Boolean enabled = isHotSpotCompressedOopsOrNull();
         if (enabled != null) {
@@ -96,7 +97,7 @@ public final class JVMUtil {
      *
      * @param runtime
      * @return an approximation to the total amount of memory currently
- *             used, measured in bytes.
+     * used, measured in bytes.
      */
     public static long usedMemory(final Runtime runtime) {
         long totalBegin;

@@ -959,5 +959,4 @@ hazelcast:
 
   sql:
     executor-pool-size: 16
-    operation-pool-size: 8
     statement-timeout-millis: 0

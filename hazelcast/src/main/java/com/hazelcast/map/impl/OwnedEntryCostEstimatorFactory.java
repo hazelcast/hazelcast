@@ -28,7 +28,7 @@ public final class OwnedEntryCostEstimatorFactory {
     /**
      * Returns zero for all estimations.
      */
-    private static final EntryCostEstimator ZERO_SIZE_ESTIMATOR = new ZeroEntryCostEstimator();
+    public static final EntryCostEstimator ZERO_SIZE_ESTIMATOR = new ZeroEntryCostEstimator();
 
     private OwnedEntryCostEstimatorFactory() {
     }

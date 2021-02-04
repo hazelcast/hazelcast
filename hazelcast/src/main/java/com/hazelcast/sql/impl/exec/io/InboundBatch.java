@@ -26,17 +26,23 @@ import java.util.UUID;
 public final class InboundBatch {
 
     private final RowBatch batch;
+    private final long ordinal;
     private final boolean last;
     private final UUID senderId;
 
-    public InboundBatch(RowBatch batch, boolean last, UUID senderId) {
+    public InboundBatch(RowBatch batch, long ordinal, boolean last, UUID senderId) {
         this.batch = batch;
+        this.ordinal = ordinal;
         this.last = last;
         this.senderId = senderId;
     }
 
     public RowBatch getBatch() {
         return batch;
+    }
+
+    public long getOrdinal() {
+        return ordinal;
     }
 
     public boolean isLast() {

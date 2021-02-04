@@ -193,7 +193,6 @@ public abstract class HazelcastTestSupport {
                 .setProperty(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
 
         config.getSqlConfig().setExecutorPoolSize(2);
-        config.getSqlConfig().setOperationPoolSize(2);
 
         return config;
     }

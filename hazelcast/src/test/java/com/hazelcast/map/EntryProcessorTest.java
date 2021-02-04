@@ -1011,7 +1011,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 Record record = rs.getRecordOrNull(key);
 
                 if (record != null) {
-                    assertEquals(expectedTtl, record.getTtl());
+                    assertEquals(expectedTtl, rs.getExpirySystem().getExpiredMetadata(key).getTtl());
                     return;
                 }
             }

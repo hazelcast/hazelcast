@@ -39,7 +39,7 @@ public class InboundBatchTest {
         boolean last = true;
         UUID senderId = UUID.randomUUID();
 
-        InboundBatch batch = new InboundBatch(rowBatch, last, senderId);
+        InboundBatch batch = new InboundBatch(rowBatch, 0L, last, senderId);
 
         assertSame(rowBatch, batch.getBatch());
         assertEquals(last, batch.isLast());

@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.operation;
 
-import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryId;
@@ -31,8 +30,8 @@ import java.util.UUID;
  */
 public class QueryBatchExchangeOperation extends QueryAbstractExchangeOperation {
 
-    private UUID targetMemberId;
     private RowBatch batch;
+    private long ordinal;
     private boolean last;
     private long remainingMemory;
 
@@ -45,26 +44,27 @@ public class QueryBatchExchangeOperation extends QueryAbstractExchangeOperation 
         int edgeId,
         UUID targetMemberId,
         RowBatch batch,
+        long ordinal,
         boolean last,
         long remainingMemory
     ) {
-        super(queryId, edgeId);
+        super(queryId, edgeId, targetMemberId);
 
         assert batch != null;
         assert remainingMemory >= 0L;
 
-        this.targetMemberId = targetMemberId;
         this.batch = batch;
+        this.ordinal = ordinal;
         this.last = last;
         this.remainingMemory = remainingMemory;
     }
 
-    public UUID getTargetMemberId() {
-        return targetMemberId;
-    }
-
     public RowBatch getBatch() {
         return batch;
+    }
+
+    public long getOrdinal() {
+        return ordinal;
     }
 
     public boolean isLast() {
@@ -87,16 +87,16 @@ public class QueryBatchExchangeOperation extends QueryAbstractExchangeOperation 
 
     @Override
     protected void writeInternal2(ObjectDataOutput out) throws IOException {
-        UUIDSerializationUtil.writeUUID(out, targetMemberId);
         out.writeObject(batch);
+        out.writeLong(ordinal);
         out.writeBoolean(last);
         out.writeLong(remainingMemory);
     }
 
     @Override
     protected void readInternal2(ObjectDataInput in) throws IOException {
-        targetMemberId = UUIDSerializationUtil.readUUID(in);
         batch = in.readObject();
+        ordinal = in.readLong();
         last = in.readBoolean();
         remainingMemory = in.readLong();
     }

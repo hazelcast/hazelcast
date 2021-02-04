@@ -17,14 +17,15 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.BasePutOperation;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -126,15 +127,16 @@ public class TxnSetOperation extends BasePutOperation
 
     @Override
     public boolean shouldBackup() {
-        return shouldBackup && recordStore.getRecord(dataKey) != null;
+        return shouldBackup && super.shouldBackup();
     }
 
     @Override
     public Operation getBackupOperation() {
         Record record = recordStore.getRecord(dataKey);
         dataValue = getValueOrPostProcessedValue(record, dataValue);
+        ExpiryMetadata expiredMetadata = recordStore.getExpirySystem().getExpiredMetadata(dataKey);
         return new TxnSetBackupOperation(name, dataKey,
-                record, dataValue, transactionId);
+                record, dataValue, expiredMetadata, transactionId);
     }
 
     @Override
