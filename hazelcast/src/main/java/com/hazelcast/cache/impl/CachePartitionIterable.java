@@ -16,19 +16,24 @@
 
 package com.hazelcast.cache.impl;
 
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import javax.cache.Cache;
 import java.util.Iterator;
 
-public class CachePartitionIterable<K, V> extends CachePartitionsIterable<K, V> {
+public class CachePartitionIterable<K, V> extends AbstractCachePartitionIterable<K, V> {
+    protected final CacheProxy<K, V> cacheProxy;
+    private final int partitionId;
+
     public CachePartitionIterable(CacheProxy<K, V> cacheProxy, int fetchSize, int partitionId, boolean prefetchValues) {
-        super(cacheProxy, fetchSize, prefetchValues);
+        super(fetchSize, prefetchValues);
+        this.cacheProxy = cacheProxy;
         this.partitionId = partitionId;
     }
 
     @Override
-    public @NotNull Iterator<Cache.Entry<K, V>> iterator() {
+    @Nonnull
+    public Iterator<Cache.Entry<K, V>> iterator() {
         return new CachePartitionIterator<>(cacheProxy, fetchSize, partitionId, prefetchValues);
     }
 }

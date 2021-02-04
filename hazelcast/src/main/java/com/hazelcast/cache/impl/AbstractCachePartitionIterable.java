@@ -16,26 +16,22 @@
 
 package com.hazelcast.cache.impl;
 
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import javax.cache.Cache;
 import java.util.Iterator;
 
-public class CachePartitionsIterable<K, V> extends AbstractCachePartitionsIterable<K, V> {
-    protected final CacheProxy<K, V> cacheProxy;
+public abstract class AbstractCachePartitionIterable<K, V> implements Iterable<Cache.Entry<K, V>> {
 
-    public CachePartitionsIterable(CacheProxy<K, V> cacheProxy, int fetchSize, boolean prefetchValues) {
-        super(fetchSize, prefetchValues);
-        this.cacheProxy = cacheProxy;
+    protected final int fetchSize;
+    protected final boolean prefetchValues;
+
+    public AbstractCachePartitionIterable(int fetchSize, boolean prefetchValues) {
+        this.fetchSize = fetchSize;
+        this.prefetchValues = prefetchValues;
     }
 
-    public CachePartitionsIterable(CacheProxy<K, V> cacheProxy, boolean prefetchValues) {
-        this(cacheProxy, DEFAULT_FETCH_SIZE, prefetchValues);
-    }
-
-    @NotNull
     @Override
-    public Iterator<Cache.Entry<K, V>> iterator() {
-        return new CachePartitionsIterator<>(cacheProxy, fetchSize, prefetchValues);
-    }
+    @Nonnull
+    public abstract Iterator<Cache.Entry<K, V>> iterator();
 }

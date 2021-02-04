@@ -16,25 +16,33 @@
 
 package com.hazelcast.client.cache.impl;
 
+import com.hazelcast.cache.impl.AbstractCachePartitionIterable;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.client.impl.spi.ClientContext;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import javax.cache.Cache;
 import java.util.Iterator;
 
-public class ClientCachePartitionIterable<K, V> extends ClientCachePartitionsIterable<K, V> {
+public class ClientCachePartitionIterable<K, V> extends AbstractCachePartitionIterable<K, V> {
+    private final int partitionId;
+    private final ICacheInternal<K, V> cacheProxy;
+    private final ClientContext context;
+
     public ClientCachePartitionIterable(ICacheInternal<K, V> cacheProxy,
                                         ClientContext context,
                                         int fetchSize,
                                         int partitionId,
                                         boolean prefetchValues) {
-        super(cacheProxy, context, fetchSize, prefetchValues);
+        super(fetchSize, prefetchValues);
+        this.cacheProxy = cacheProxy;
+        this.context = context;
         this.partitionId = partitionId;
     }
 
     @Override
-    public @NotNull Iterator<Cache.Entry<K, V>> iterator() {
+    @Nonnull
+    public Iterator<Cache.Entry<K, V>> iterator() {
         return new ClientCachePartitionIterator<>(cacheProxy, context, fetchSize, partitionId, prefetchValues);
     }
 }
