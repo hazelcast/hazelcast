@@ -14,13 +14,20 @@ record metadata to reduce memory usage of a record.
 
 ## Design
 
-We categorize stats in two types: map-level and entry-level.
+We categorize stats in two types: **map-level** and **entry-level**.
 Map level is enabled by default but entry-level is not.
 
-Map-level stats are represented with class `LocalRecordStoreStatsImpl`
-It has 3 fields: `hits-lastAccess-lastUpdate`
+Map-level stats are:
+- **hits:** total hits of map
+- **lastAccessTime:** last access time to map
+- l**astUpdateTime:** last update time of map
 
-Entry-level stats are: `hits-lastAccessTime-lastUpdateTime-creationTime-lastStoredTime`
+Entry-level stats are: 
+- **hits:** total hits to entry
+- **lastAccessTime:** last access time to entry
+- **lastUpdateTime:** last update time of entry
+- **creationTime:** creation time of entry
+- **lastStoredTime:** last store time of entry
  
 ### Replication of Map Level Stats
 Map-level stats are created per map's partition. They are
