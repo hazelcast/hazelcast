@@ -30,6 +30,7 @@ public class MapQueryIterator<R> implements Iterator<R> {
     public MapQueryIterator(List<Iterator<R>> partitionIterators) {
         this.partitionIterators = partitionIterators;
         this.size = partitionIterators.size();
+        idx = 0;
         it = partitionIterators.get(idx);
     }
 
