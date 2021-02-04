@@ -21,7 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.JVMUtil;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -29,31 +29,52 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Collection;
+
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class EntryCostEstimatorTest
-        extends HazelcastTestSupport {
+public class EntryCostEstimatorTest extends HazelcastTestSupport {
+
+    @Parameterized.Parameter
+    public boolean perEntryStatsEnabled;
+
+    @Parameterized.Parameters(name = "perEntryStatsEnabled:{0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {true},
+                {false},
+        });
+    }
 
     protected TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
-    public static final int ENTRY_COST_IN_BYTES = getExpectedCostInBytes();
+    public static final int ENTRY_COST_IN_BYTES_WHEN_STATS_OFF = getExpectedCostInBytes(false);
+    public static final int ENTRY_COST_IN_BYTES_WHEN_STATS_ON = getExpectedCostInBytes(true);
 
     // values represent the cost when
     // perEntryStatsEnabled is false(default value).
-    private static int getExpectedCostInBytes() {
+    private static int getExpectedCostInBytes(boolean perEntryStatsEnabled) {
         if (JVMUtil.is32bitJVM() && JVMUtil.isCompressedOops()) {
-            return 116 ;
+            return perEntryStatsEnabled ? 140 : 116;
         }
 
         if (JVMUtil.isCompressedOops()) {
-            return 128;
+            return perEntryStatsEnabled ? 152 : 128;
         }
 
-        return 172;
+        return perEntryStatsEnabled ? 196 : 172;
+    }
+
+    private long getExpectedCost() {
+        return perEntryStatsEnabled
+                ? ENTRY_COST_IN_BYTES_WHEN_STATS_ON : ENTRY_COST_IN_BYTES_WHEN_STATS_OFF;
     }
 
     @Test
@@ -68,7 +89,7 @@ public class EntryCostEstimatorTest
         SizeEstimatorTestMapBuilder<Integer, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<>(factory);
         IMap<Integer, Long> map = testMapBuilder.withNodeCount(1).withBackupCount(0).build(getConfig());
         map.put(0, 10L);
-        assertEquals(ENTRY_COST_IN_BYTES, testMapBuilder.totalHeapCost());
+        assertEquals(getExpectedCost(), testMapBuilder.totalHeapCost());
     }
 
     @Test
@@ -81,7 +102,7 @@ public class EntryCostEstimatorTest
             map.put(i, System.currentTimeMillis());
         }
         long heapCost = testMapBuilder.totalHeapCost();
-        assertEquals("Heap cost calculation is wrong!", ENTRY_COST_IN_BYTES * putCount * nodeCount, heapCost);
+        assertEquals("Heap cost calculation is wrong!", getExpectedCost() * putCount * nodeCount, heapCost);
     }
 
     @Test
@@ -214,7 +235,7 @@ public class EntryCostEstimatorTest
         }
     }
 
-    private static class SizeEstimatorTestMapBuilder<K, V> {
+    private class SizeEstimatorTestMapBuilder<K, V> {
 
         private String mapName = randomMapName("default");
         private HazelcastInstance[] nodes;
@@ -256,8 +277,7 @@ public class EntryCostEstimatorTest
                 throw new IllegalArgumentException("backupCount > nodeCount - 1");
             }
             config.getMapConfig(mapName).setBackupCount(backupCount)
-                    //default false
-                    .setPerEntryStatsEnabled(false);
+                    .setPerEntryStatsEnabled(perEntryStatsEnabled);
             nodes = instanceFactory.newInstances(config, nodeCount);
             return nodes[0].getMap(mapName);
         }
