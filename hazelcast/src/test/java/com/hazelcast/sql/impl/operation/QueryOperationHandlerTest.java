@@ -433,7 +433,6 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             assertTrue(state.isCancelled());
 
             sendExecute(false);
-            assertQueryNotRegisteredEventually(queryId);
         }
 
         assertQueryNotRegisteredEventually(queryId);
