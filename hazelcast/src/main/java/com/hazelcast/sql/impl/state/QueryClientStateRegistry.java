@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.QueryException;
@@ -37,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.DONE;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -44,7 +46,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class QueryClientStateRegistry {
 
+    private static final long DEFAULT_CLOSED_CURSOR_CLEANUP_TIMEOUT_NS = NANOSECONDS.convert(30, SECONDS);
+
     private final ConcurrentHashMap<QueryId, QueryClientState> clientCursors = new ConcurrentHashMap<>();
+    private volatile long closedCursorCleanupTimeoutNs = DEFAULT_CLOSED_CURSOR_CLEANUP_TIMEOUT_NS;
 
     public SqlPage registerAndFetch(
         UUID clientId,
@@ -52,13 +57,15 @@ public class QueryClientStateRegistry {
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
-        QueryClientState clientCursor = new QueryClientState(clientId, result, false);
+        QueryId queryId = result.getQueryId();
+
+        QueryClientState clientCursor = new QueryClientState(clientId, queryId, result, false);
 
         boolean delete = false;
 
         try {
             // Register the cursor.
-            QueryClientState previousClientCursor = clientCursors.putIfAbsent(result.getQueryId(), clientCursor);
+            QueryClientState previousClientCursor = clientCursors.putIfAbsent(queryId, clientCursor);
 
             // Check if the cursor is already closed.
             if (previousClientCursor != null) {
@@ -66,7 +73,11 @@ public class QueryClientStateRegistry {
 
                 delete = true;
 
-                throw QueryException.cancelledByUser();
+                QueryException error = QueryException.cancelledByUser();
+
+                result.close(error);
+
+                throw error;
             }
 
             // Fetch the next page.
@@ -81,7 +92,7 @@ public class QueryClientStateRegistry {
             throw e;
         } finally {
             if (delete) {
-                deleteClientCursor(clientCursor);
+                deleteClientCursor(queryId);
             }
         }
     }
@@ -101,13 +112,13 @@ public class QueryClientStateRegistry {
             SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, false);
 
             if (page.isLast()) {
-                deleteClientCursor(clientCursor);
+                deleteClientCursor(clientCursor.getQueryId());
             }
 
             return page;
         } catch (Exception e) {
             // Clear the cursor in the case of exception.
-            deleteClientCursor(clientCursor);
+            deleteClientCursor(clientCursor.getQueryId());
 
             throw e;
         }
@@ -177,7 +188,7 @@ public class QueryClientStateRegistry {
 
     public void close(UUID clientId, QueryId queryId) {
         QueryClientState clientCursor =
-            clientCursors.computeIfAbsent(queryId, (ignore) -> new QueryClientState(clientId, null, true));
+            clientCursors.computeIfAbsent(queryId, (ignore) -> new QueryClientState(clientId, queryId, null, true));
 
         if (clientCursor.isClosed()) {
             // Received the "close" request before the "execute" request, do nothing.
@@ -197,9 +208,13 @@ public class QueryClientStateRegistry {
     }
 
     private void close0(QueryClientState clientCursor) {
-        clientCursor.getSqlResult().close();
+        SqlResult result = clientCursor.getSqlResult();
 
-        deleteClientCursor(clientCursor);
+        if (result != null) {
+            result.close();
+        }
+
+        deleteClientCursor(clientCursor.getQueryId());
     }
 
     public void shutdown() {
@@ -207,10 +222,19 @@ public class QueryClientStateRegistry {
     }
 
     public void update(Set<UUID> activeClientIds) {
+        long currentTimeNano = System.nanoTime();
+
         List<QueryClientState> victims = new ArrayList<>();
 
         for (QueryClientState clientCursor : clientCursors.values()) {
+            // Close cursors that were opened by disconnected clients.
             if (!activeClientIds.contains(clientCursor.getClientId())) {
+                victims.add(clientCursor);
+            }
+
+            // Close cursors created for the "cancel" operation, that are too old. This is needed to avoid a race
+            // condition between the query cancellation on a client and the query completion on a server.
+            if (clientCursor.isClosed() && clientCursor.getCreatedAtNano() + closedCursorCleanupTimeoutNs < currentTimeNano) {
                 victims.add(clientCursor);
             }
         }
@@ -218,17 +242,28 @@ public class QueryClientStateRegistry {
         for (QueryClientState victim : victims) {
             QueryException error = QueryException.clientMemberConnection(victim.getClientId());
 
-            victim.getSqlResult().close(error);
+            AbstractSqlResult result = victim.getSqlResult();
 
-            deleteClientCursor(victim);
+            if (result != null) {
+                result.close(error);
+            }
+
+            deleteClientCursor(victim.getQueryId());
         }
     }
 
-    private void deleteClientCursor(QueryClientState cursor) {
-        clientCursors.remove(cursor.getQueryId());
+    private void deleteClientCursor(QueryId queryId) {
+        clientCursors.remove(queryId);
     }
 
     public int getCursorCount() {
         return clientCursors.size();
+    }
+
+    /**
+     * For testing only.
+     */
+    public void setClosedCursorCleanupTimeoutSeconds(long closedCursorCleanupTimeout) {
+        closedCursorCleanupTimeoutNs = NANOSECONDS.convert(closedCursorCleanupTimeout, SECONDS);
     }
 }
