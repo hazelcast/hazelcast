@@ -26,7 +26,7 @@ import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECORD_READER_WRITER;
 
 /**
- * Used when {@link MapConfig#isStatisticsEnabled()} is {@code false}
+ * Used when {@link MapConfig#isPerEntryStatsEnabled()} is {@code false}
  */
 @SuppressWarnings({"checkstyle:methodcount", "VolatileLongOrDoubleField"})
 class SimpleRecord<V> implements Record<V> {

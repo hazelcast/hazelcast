@@ -39,12 +39,12 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
     @Override
     public Record<Object> newRecord(Object value) {
         MapConfig mapConfig = mapContainer.getMapConfig();
-        boolean statisticsEnabled = mapConfig.isStatisticsEnabled();
+        boolean perEntryStatsEnabled = mapConfig.isPerEntryStatsEnabled();
         boolean hasEviction = mapContainer.getEvictor() != NULL_EVICTOR;
 
         Object objectValue = serializationService.toObject(value);
 
-        return newRecord(mapConfig, statisticsEnabled, hasEviction, objectValue);
+        return newRecord(mapConfig, perEntryStatsEnabled, hasEviction, objectValue);
     }
 
     @Override
@@ -53,9 +53,9 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
     }
 
     @Nonnull
-    private Record<Object> newRecord(MapConfig mapConfig, boolean statisticsEnabled,
+    private Record<Object> newRecord(MapConfig mapConfig, boolean perEntryStatsEnabled,
                                      boolean hasEviction, Object objectValue) {
-        if (statisticsEnabled || isClusterV41()) {
+        if (perEntryStatsEnabled || isClusterV41()) {
             return new ObjectRecordWithStats(objectValue);
         }
 

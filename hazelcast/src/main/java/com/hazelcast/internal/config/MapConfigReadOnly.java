@@ -285,6 +285,11 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
+    public MapConfig setPerEntryStatsEnabled(boolean entryStatsEnabled) {
+        throw throwReadOnly();
+    }
+
+    @Override
     public MapConfig setReadBackupData(boolean readBackupData) {
         throw throwReadOnly();
     }

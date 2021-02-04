@@ -253,4 +253,14 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         stats.setLastAccessTime(now);
         stats.increaseHits();
     }
+
+    @Override
+    public LocalRecordStoreStatsImpl getStats() {
+        return stats;
+    }
+
+    @Override
+    public void setStats(LocalRecordStoreStats stats) {
+        this.stats.copyFrom(stats);
+    }
 }

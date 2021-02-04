@@ -119,10 +119,10 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
     }
 
     @Nonnull
-    protected MapContainer createMapContainer(boolean isStatisticsEnabled,
+    protected MapContainer createMapContainer(boolean perEntryStatsEnabled,
                                             CacheDeserializedValues cacheDeserializedValues) {
         MapConfig mapConfig = new MapConfig()
-                .setStatisticsEnabled(isStatisticsEnabled)
+                .setPerEntryStatsEnabled(perEntryStatsEnabled)
                 .setCacheDeserializedValues(cacheDeserializedValues);
 
         NodeEngine nodeEngine = mock(NodeEngine.class);

@@ -1150,7 +1150,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     private void updateStoreStats() {
         if (!(mapDataStore instanceof WriteBehindStore)
-                || !mapContainer.getMapConfig().isStatisticsEnabled()) {
+                || !mapContainer.getMapConfig().isPerEntryStatsEnabled()) {
             return;
         }
 

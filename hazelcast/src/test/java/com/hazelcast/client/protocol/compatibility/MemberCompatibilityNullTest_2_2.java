@@ -6625,6 +6625,7 @@ public class MemberCompatibilityNullTest_2_2 {
         assertTrue(isEqual(null, parameters.eventJournalConfig));
         assertTrue(isEqual(null, parameters.merkleTreeConfig));
         assertTrue(isEqual(anInt, parameters.metadataPolicy));
+        assertTrue(isEqual(aBoolean, parameters.perEntryStatsEnabled));
     }
 
     @Test

@@ -6579,6 +6579,7 @@ public class MemberCompatibilityTest_2_1 {
         assertTrue(isEqual(anEventJournalConfig, parameters.eventJournalConfig));
         assertTrue(isEqual(aMerkleTreeConfig, parameters.merkleTreeConfig));
         assertTrue(isEqual(anInt, parameters.metadataPolicy));
+        assertTrue(isEqual(aBoolean, parameters.perEntryStatsEnabled));
     }
 
     @Test

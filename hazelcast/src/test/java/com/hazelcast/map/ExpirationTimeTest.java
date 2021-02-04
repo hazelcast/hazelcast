@@ -429,6 +429,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         mapConfig.setBackupCount(0);
         mapConfig.setAsyncBackupCount(0);
         mapConfig.setReadBackupData(true);
+        mapConfig.setPerEntryStatsEnabled(true);
         mapConfig.setMaxIdleSeconds(20);
         mapConfig.setInMemoryFormat(inMemoryFormat());
 
@@ -458,8 +459,10 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         String mapName = randomMapName();
         Config config = getConfig();
         config.getMetricsConfig().setEnabled(false);
-        config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat());
-        return createHazelcastInstance(getConfig()).getMap(mapName);
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setInMemoryFormat(inMemoryFormat());
+        mapConfig.setPerEntryStatsEnabled(true);
+        return createHazelcastInstance(config).getMap(mapName);
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -470,7 +473,8 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         config.getMetricsConfig().setEnabled(false);
         config.getMapConfig(mapName)
                 .setMaxIdleSeconds(maxIdleSeconds)
-                .setInMemoryFormat(inMemoryFormat());
+                .setInMemoryFormat(inMemoryFormat())
+                .setPerEntryStatsEnabled(true);
 
         HazelcastInstance node = createHazelcastInstance(config);
         return node.getMap(mapName);
@@ -488,9 +492,9 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         String mapName = randomMapName();
 
         Config config = getConfig();
-        config.getMapConfig(mapName)
-                .setTimeToLiveSeconds(ttlSeconds)
-                .setInMemoryFormat(inMemoryFormat());
+        config.getMapConfig(mapName).setTimeToLiveSeconds(ttlSeconds)
+                .setInMemoryFormat(inMemoryFormat())
+                .setPerEntryStatsEnabled(true);
 
         HazelcastInstance node = createHazelcastInstance(config);
         return node.getMap(mapName);

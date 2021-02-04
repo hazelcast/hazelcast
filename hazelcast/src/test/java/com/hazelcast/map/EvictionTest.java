@@ -224,6 +224,7 @@ public class EvictionTest extends HazelcastTestSupport {
         String mapName = randomMapName();
 
         Config config = getConfig();
+        config.getMapConfig("default").setPerEntryStatsEnabled(true);
         // "disable" the cleaner task
         config.setProperty(PROP_TASK_PERIOD_SECONDS, Integer.toString(MAX_VALUE));
 
@@ -816,7 +817,7 @@ public class EvictionTest extends HazelcastTestSupport {
         int waitSeconds = 2;
 
         MapConfig mapConfig = newMapConfig(mapName)
-                .setMaxIdleSeconds(30);
+                .setMaxIdleSeconds(30).setPerEntryStatsEnabled(true);
         Config config = getConfig()
                 .addMapConfig(mapConfig);
 

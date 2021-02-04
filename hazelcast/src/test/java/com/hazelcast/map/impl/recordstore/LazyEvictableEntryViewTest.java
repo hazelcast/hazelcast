@@ -65,6 +65,7 @@ public class LazyEvictableEntryViewTest {
      */
     private LazyEvictableEntryView createLazyEvictableEntryView() {
         MapConfig mapConfig = new MapConfig();
+        mapConfig.setPerEntryStatsEnabled(true);
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         MapContainer mapContainer = mock(MapContainer.class);
         when(mapContainer.getMapConfig()).thenReturn(mapConfig);

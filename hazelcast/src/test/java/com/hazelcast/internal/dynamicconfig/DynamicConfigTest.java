@@ -861,7 +861,9 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .addIndexConfig(new IndexConfig(IndexType.SORTED, "attr"))
                 .setMetadataPolicy(MetadataPolicy.OFF)
                 .setReadBackupData(true)
-                .setStatisticsEnabled(false);
+                .setStatisticsEnabled(false)
+                .setPerEntryStatsEnabled(true);
+
         mapConfig.getEvictionConfig()
                 .setEvictionPolicy(EvictionPolicy.RANDOM)
                 .setSize(4096)
