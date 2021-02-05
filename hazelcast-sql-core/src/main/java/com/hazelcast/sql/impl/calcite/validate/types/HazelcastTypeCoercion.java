@@ -123,9 +123,15 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     /**
      * {@inheritDoc}
      *
-     * We change the contract of the superclass' return type: TODO explain
+     * We change the contract of the superclass' return type. According to the
+     * superclass contract we're supposed to return true iff we successfully
+     * added a CAST. This method returns true if the expression can now be
+     * assigned to {@code targetType}, either because a CAST was added, or
+     * because it already was assignable (e.g. the type was same). This is
+     * needed for {@link #querySourceCoercion} method, which calls this method.
      *
-     * @return True, if the source column can now be assigned to {@code targetType}
+     * @return True, if the source column can now be assigned to {@code
+     *      targetType}
      */
     @Override
     public boolean rowTypeCoercion(SqlValidatorScope scope, SqlNode query, int columnIndex, RelDataType targetType) {
@@ -225,6 +231,20 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         throw new UnsupportedOperationException("Should not be called");
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * We change the contract of the superclass' return type. According to the
+     * superclass contract we're supposed to return true iff any coercion
+     * happened. This method returns true if the {@code sourceRowType} was
+     * changed so that it can now be assigned to the {@code targetRowType},
+     * either because a CAST was added, or because it already was assignable
+     * (e.g. the type was same), and this must hold for all record fields. The
+     * Calcite code that calls this method assumes this.
+     *
+     * @return True, if the {@code sourceRowType} can now be assigned to {@code
+     *      targetRowType}
+     */
     @Override
     public boolean querySourceCoercion(
         SqlValidatorScope scope,
