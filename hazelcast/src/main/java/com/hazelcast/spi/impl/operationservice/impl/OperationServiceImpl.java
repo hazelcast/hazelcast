@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -176,7 +176,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
                 nodeEngine, thisAddress, properties, invocationRegistry,
                 node.getLogger(InvocationMonitor.class), serializationService, nodeEngine.getServiceManager());
 
-        this.outboundOperationHandler = new OutboundOperationHandler(node, thisAddress, serializationService);
+        this.outboundOperationHandler = new OutboundOperationHandler(node, serializationService);
 
         this.backupHandler = new OperationBackupHandler(this, outboundOperationHandler);
 

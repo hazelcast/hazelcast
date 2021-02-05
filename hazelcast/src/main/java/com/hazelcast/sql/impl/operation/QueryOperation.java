@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,6 @@ import java.util.UUID;
  */
 public abstract class QueryOperation implements IdentifiedDataSerializable {
 
-    public static final int PARTITION_ANY = -1;
-
     private UUID callerId;
 
     protected QueryOperation() {
@@ -46,22 +44,11 @@ public abstract class QueryOperation implements IdentifiedDataSerializable {
         this.callerId = callerId;
     }
 
-    public int getPartition() {
-        return PARTITION_ANY;
-    }
-
     /**
-     * Map an arbitrary integer value to a positive integer, which is later used as a logical partition.
-     *
-     * @param hash Hash.
-     * @return Logical partition.
+     * @return {@code true} if the operation should be executed in the system pool
      */
-    protected static int getPartitionForHash(int hash) {
-        if (hash == Integer.MIN_VALUE) {
-            hash = Integer.MAX_VALUE;
-        }
-
-        return Math.abs(hash);
+    public boolean isSystem() {
+        return false;
     }
 
     @Override

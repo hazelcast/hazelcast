@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,10 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlResult;
@@ -64,6 +65,10 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlNoDeserializationTest extends SqlTestSupport {
 
+    private static final int PORTABLE_FACTORY_ID = 1;
+    private static final int PORTABLE_KEY_ID = 1;
+    private static final int PORTABLE_VALUE_ID = 2;
+
     private static final String MAP_NAME = "map";
     private static final int KEY_COUNT = 100;
 
@@ -74,15 +79,15 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
 
     private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
 
-    private HazelcastInstance member1;
-    private HazelcastInstance member2;
+    private HazelcastInstance member;
     private HazelcastInstance client;
 
     @Before
     public void before() {
-        member1 = factory.newHazelcastInstance(config());
-        member2 = factory.newHazelcastInstance(config());
-        client = factory.newHazelcastClient(new ClientConfig());
+        member = factory.newHazelcastInstance(config());
+        factory.newHazelcastInstance(config());
+
+        client = factory.newHazelcastClient(clientConfig());
 
         prepare();
     }
@@ -91,8 +96,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
     public void after() {
         factory.shutdownAll();
 
-        member1 = null;
-        member2 = null;
+        member = null;
         client = null;
     }
 
@@ -100,13 +104,34 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
         Config config = smallInstanceConfig();
 
         config.addMapConfig(new MapConfig(MAP_NAME).setInMemoryFormat(InMemoryFormat.BINARY));
+        config.getSerializationConfig().addPortableFactory(PORTABLE_FACTORY_ID, portableFactory());
 
         return config;
     }
 
+    private static ClientConfig clientConfig() {
+        ClientConfig config = new ClientConfig();
+
+        config.getSerializationConfig().addPortableFactory(PORTABLE_FACTORY_ID, portableFactory());
+
+        return config;
+    }
+
+    private static PortableFactory portableFactory() {
+        return classId -> {
+            if (classId == PORTABLE_KEY_ID) {
+                return new PersonKey();
+            } else {
+                assertEquals(classId, PORTABLE_VALUE_ID);
+
+                return new Person();
+            }
+        };
+    }
+
     @Test
     public void testMember() {
-        try (SqlResult res = member1.getSql().execute(SQL)) {
+        try (SqlResult res = member.getSql().execute(SQL)) {
             for (SqlRow row : res) {
                 SqlRowImpl row0 = (SqlRowImpl) row;
 
@@ -184,61 +209,48 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
         }
     }
 
-    @SuppressWarnings("EmptyTryBlock")
     private void prepare() {
-        populate(false);
-
-        // Make sure that we cached the plan to avoid failures on automatic schema inference.
-        try (SqlResult ignore = member1.getSql().execute(SQL)) {
-            // No-op
-        }
-
-        try (SqlResult ignore = member2.getSql().execute(SQL)) {
-            // No-op
-        }
-
-        populate(true);
-    }
-
-    private void populate(boolean fail) {
         Map<PersonKey, Person> localMap = new HashMap<>();
 
         for (int i = 0; i < KEY_COUNT; i++) {
-            localMap.put(new PersonKey(i, fail), new Person(fail));
+            localMap.put(new PersonKey(i), new Person());
         }
 
-        member1.getMap(MAP_NAME).clear();
-        member1.getMap(MAP_NAME).putAll(localMap);
+        member.getMap(MAP_NAME).putAll(localMap);
     }
 
-    public static class PersonKey implements DataSerializable {
+    public static class PersonKey implements Portable {
 
         private int id;
-        private boolean fail;
 
         public PersonKey() {
             // No-op
         }
 
-        public PersonKey(int id, boolean fail) {
+        public PersonKey(int id) {
             this.id = id;
-            this.fail = fail;
         }
 
         @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(id);
-            out.writeBoolean(fail);
+        public int getFactoryId() {
+            return PORTABLE_FACTORY_ID;
         }
 
         @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            id = in.readInt();
-            fail = in.readBoolean();
+        public int getClassId() {
+            return PORTABLE_KEY_ID;
+        }
 
-            if (fail) {
-                throw new IOException(ERROR_KEY);
-            }
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeInt("id", id);
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            id = reader.readInt("id");
+
+            throw new IOException(ERROR_KEY);
         }
 
         @Override
@@ -253,45 +265,38 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
 
             PersonKey personKey = (PersonKey) o;
 
-            if (id != personKey.id) {
-                return false;
-            }
-
-            return fail == personKey.fail;
+            return id == personKey.id;
         }
 
         @Override
         public int hashCode() {
-            int result = id;
-            result = 31 * result + (fail ? 1 : 0);
-            return result;
+            return id;
         }
     }
 
-    public static class Person implements DataSerializable {
-
-        private boolean fail;
-
+    public static class Person implements Portable {
         public Person() {
             // No-op
         }
 
-        public Person(boolean fail) {
-            this.fail = fail;
+        @Override
+        public int getFactoryId() {
+            return PORTABLE_FACTORY_ID;
         }
 
         @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeBoolean(fail);
+        public int getClassId() {
+            return PORTABLE_VALUE_ID;
         }
 
         @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            fail = in.readBoolean();
+        public void writePortable(PortableWriter writer) throws IOException {
+            // No-op
+        }
 
-            if (fail) {
-                throw new IOException(ERROR_VALUE);
-            }
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            throw new IOException(ERROR_VALUE);
         }
     }
 }

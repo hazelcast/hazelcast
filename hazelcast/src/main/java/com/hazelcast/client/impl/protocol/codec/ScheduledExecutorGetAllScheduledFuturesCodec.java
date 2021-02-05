@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns all scheduled tasks in for a given scheduler in the given member.
  */
-@Generated("0e48e3b0be77c380427c250849dce2ce")
+@Generated("ae848fe7f3dd0879e6372c4cdcdd93c7")
 public final class ScheduledExecutorGetAllScheduledFuturesCodec {
     //hex: 0x1A0400
     public static final int REQUEST_MESSAGE_TYPE = 1704960;

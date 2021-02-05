@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1928,13 +1928,11 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config confiig = new Config();
 
         confiig.getSqlConfig().setExecutorPoolSize(10);
-        confiig.getSqlConfig().setOperationPoolSize(20);
         confiig.getSqlConfig().setStatementTimeoutMillis(30L);
 
         SqlConfig generatedConfig = getNewConfigViaXMLGenerator(confiig).getSqlConfig();
 
         assertEquals(confiig.getSqlConfig().getExecutorPoolSize(), generatedConfig.getExecutorPoolSize());
-        assertEquals(confiig.getSqlConfig().getOperationPoolSize(), generatedConfig.getOperationPoolSize());
         assertEquals(confiig.getSqlConfig().getStatementTimeoutMillis(), generatedConfig.getStatementTimeoutMillis());
     }
 

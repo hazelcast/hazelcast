@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,8 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
@@ -30,8 +28,6 @@ import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
-
-import static com.hazelcast.internal.util.TimeUtil.zeroOutMs;
 
 /**
  * Used to transfer expired keys from owner replica to backup replicas.
@@ -45,7 +41,9 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
     public EvictBatchBackupOperation() {
     }
 
-    public EvictBatchBackupOperation(String name, Collection<ExpiredKey> expiredKeys, int primaryEntryCount) {
+    public EvictBatchBackupOperation(String name,
+                                     Collection<ExpiredKey> expiredKeys,
+                                     int primaryEntryCount) {
         super(name);
 
         assert name != null;
@@ -63,11 +61,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         }
 
         for (ExpiredKey expiredKey : expiredKeys) {
-            Data key = expiredKey.getKey();
-            Record existingRecord = recordStore.getRecord(key);
-            if (canEvictRecord(existingRecord, expiredKey)) {
-                recordStore.evict(key, true);
-            }
+            recordStore.evict(expiredKey.getKey(), true);
         }
 
         equalizeEntryCountWithPrimary();
@@ -106,21 +100,6 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         }
 
         return super.onInvocationException(throwable);
-    }
-
-    private boolean canEvictRecord(Record existingRecord, ExpiredKey expiredKey) {
-        if (existingRecord == null) {
-            return false;
-        }
-
-        // creation time of a record is always same between all replicas.
-        // by doing creation time check we can prevent un-wanted record deletion on replicas.
-        // un-wanted record deletion example: on primary record was expired and queued but before
-        // we send it to backups a new record is added with same key, when we send queued item
-        // to backups, backups should not remove it. Comparing creation times to be sure that
-        // we are deleting correct record.
-        // since 3.11, creationTime is maintained at second accuracy
-        return existingRecord.getCreationTime() == zeroOutMs(expiredKey.getCreationTime());
     }
 
     @Override

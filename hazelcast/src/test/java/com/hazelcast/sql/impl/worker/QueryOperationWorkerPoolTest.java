@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,11 @@ import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.LocalMemberIdProvider;
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.TestLocalMemberIdProvider;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryCancelOperation;
@@ -53,7 +54,6 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -88,29 +88,11 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
             QueryExecuteOperation operation = new QueryExecuteOperation();
 
             operations.add(operation);
-
-            pool.submit(500, QueryOperationExecutable.local(operation));
         }
-
-        assertTrueEventually(() -> {
-            List<LoggingQueryOperationHandler.ExecuteInfo> infos = operationHandler.tryPollExecuteInfos(repeatCount);
-
-            assertNotNull(infos);
-
-            Set<String> threadNames = new HashSet<>();
-
-            for (int i = 1; i < infos.size(); i++) {
-                assertSame(operations.get(i), infos.get(i).getOperation());
-
-                threadNames.add(infos.get(i).getThreadName());
-            }
-
-            assertEquals(1, threadNames.size());
-        });
 
         // Test random partitions.
         for (int i = 0; i < repeatCount; i++) {
-            pool.submit(QueryOperation.PARTITION_ANY, QueryOperationExecutable.local(operations.get(i)));
+            pool.submit(QueryOperationExecutable.local(operations.get(i)));
         }
 
         assertTrueEventually(() -> {
@@ -143,7 +125,7 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
 
         Packet packet = toPacket(cancelOperation);
 
-        pool.submit(cancelOperation.getPartition(), QueryOperationExecutable.remote(packet));
+        pool.submit(QueryOperationExecutable.remote(packet));
 
         assertTrueEventually(() -> {
             LoggingQueryOperationHandler.ExecuteInfo info = operationHandler.tryPollExecuteInfo();
@@ -175,11 +157,12 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
             1,
             UUID.randomUUID(),
             new ListRowBatch(Collections.singletonList(new HeapRow(new Object[]{new BadValue()}))),
+            0L,
             false,
             100
         );
 
-        pool.submit(badOperation.getPartition(), QueryOperationExecutable.remote(toPacket(badOperation)));
+        pool.submit(QueryOperationExecutable.remote(toPacket(badOperation)));
 
         assertTrueEventually(() -> {
             LoggingQueryOperationHandler.SubmitInfo info = operationHandler.tryPollSubmitInfo();
@@ -197,19 +180,6 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
         });
     }
 
-    @Test
-    public void testShutdown() {
-        pool = createPool(new LoggingQueryOperationHandler());
-
-        pool.stop();
-
-        for (int i = 0; i < THREAD_COUNT; i++) {
-            QueryOperationWorker worker = pool.getWorker(i);
-
-            assertTrueEventually(() -> assertTrue(worker.isThreadTerminated()));
-        }
-    }
-
     private QueryOperationWorkerPool createPool(QueryOperationHandler operationHandler) {
         return createPool(operationHandler, new TestLocalMemberIdProvider(UUID.randomUUID()));
     }
@@ -220,16 +190,18 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
     ) {
         return new QueryOperationWorkerPool(
             "instance",
+            QueryUtils.WORKER_TYPE_FRAGMENT,
             THREAD_COUNT,
             localMemberIdProvider,
             operationHandler,
             new DefaultSerializationServiceBuilder().build(),
-            new NoLogFactory().getLogger("logger")
+            new NoLogFactory().getLogger("logger"),
+            false
         );
     }
 
     private static Packet toPacket(QueryOperation operation) {
-        return new Packet(new DefaultSerializationServiceBuilder().build().toBytes(operation), operation.getPartition());
+        return new Packet(new DefaultSerializationServiceBuilder().build().toBytes(operation));
     }
 
     private static class BadValue implements DataSerializable {

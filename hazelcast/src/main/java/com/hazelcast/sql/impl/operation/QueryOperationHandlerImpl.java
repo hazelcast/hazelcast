@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,11 @@ package com.hazelcast.sql.impl.operation;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.NodeServiceProvider;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitor;
 import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitorHook;
 import com.hazelcast.sql.impl.exec.Exec;
@@ -33,7 +34,6 @@ import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateCompletionCallback;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
 import com.hazelcast.sql.impl.worker.QueryFragmentExecutable;
-import com.hazelcast.sql.impl.worker.QueryFragmentWorkerPool;
 import com.hazelcast.sql.impl.worker.QueryOperationExecutable;
 import com.hazelcast.sql.impl.worker.QueryOperationWorkerPool;
 
@@ -51,8 +51,12 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     private final NodeServiceProvider nodeServiceProvider;
     private final InternalSerializationService serializationService;
     private final QueryStateRegistry stateRegistry;
-    private final QueryFragmentWorkerPool fragmentPool;
-    private final QueryOperationWorkerPool operationPool;
+
+    /** Pool to execute query fragments. */
+    private final QueryOperationWorkerPool fragmentPool;
+
+    /** Pool to execute system messages (see {@link QueryOperation#isSystem()}). */
+    private final QueryOperationWorkerPool systemPool;
     private final int outboxBatchSize;
     private final FlowControlFactory flowControlFactory;
     private volatile CreateExecPlanNodeVisitorHook execHook;
@@ -64,8 +68,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         QueryStateRegistry stateRegistry,
         int outboxBatchSize,
         FlowControlFactory flowControlFactory,
-        int threadCount,
-        int operationThreadCount
+        int threadCount
     ) {
         this.nodeServiceProvider = nodeServiceProvider;
         this.serializationService = serializationService;
@@ -73,25 +76,32 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         this.outboxBatchSize = outboxBatchSize;
         this.flowControlFactory = flowControlFactory;
 
-        fragmentPool = new QueryFragmentWorkerPool(
+        fragmentPool = new QueryOperationWorkerPool(
             instanceName,
+            QueryUtils.WORKER_TYPE_FRAGMENT,
             threadCount,
-            nodeServiceProvider.getLogger(QueryFragmentWorkerPool.class)
-        );
-
-        operationPool = new QueryOperationWorkerPool(
-            instanceName,
-            operationThreadCount,
             nodeServiceProvider,
             this,
             serializationService,
-            nodeServiceProvider.getLogger(QueryOperationWorkerPool.class)
+            nodeServiceProvider.getLogger(QueryOperationWorkerPool.class),
+            false
+        );
+
+        systemPool = new QueryOperationWorkerPool(
+            instanceName,
+            QueryUtils.WORKER_TYPE_SYSTEM,
+            1,
+            nodeServiceProvider,
+            this,
+            serializationService,
+            nodeServiceProvider.getLogger(QueryOperationWorkerPool.class),
+            true
         );
     }
 
     public void shutdown() {
         fragmentPool.stop();
-        operationPool.stop();
+        systemPool.stop();
     }
 
     @Override
@@ -114,7 +124,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     public void submitLocal(UUID callerId, QueryOperation operation) {
         operation.setCallerId(callerId);
 
-        operationPool.submit(operation.getPartition(), QueryOperationExecutable.local(operation));
+        submitToPool(QueryOperationExecutable.local(operation), operation.isSystem());
     }
 
     public boolean submitRemote(UUID callerId, Connection connection, QueryOperation operation, boolean ordered) {
@@ -122,7 +132,11 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
 
         byte[] bytes = serializeOperation(operation);
 
-        Packet packet = new Packet(bytes, operation.getPartition()).setPacketType(Packet.Type.SQL);
+        Packet packet = new Packet(bytes).setPacketType(Packet.Type.SQL);
+
+        if (operation.isSystem()) {
+            packet.raiseFlags(Packet.FLAG_SQL_SYSTEM_OPERATION);
+        }
 
         if (ordered) {
             return connection.writeOrdered(packet);
@@ -132,30 +146,17 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     }
 
     @Override
-    public QueryOperationChannel createChannel(UUID sourceMemberId, UUID targetMemberId) {
-        if (targetMemberId.equals(getLocalMemberId())) {
-            return new QueryOperationChannelImpl(this, sourceMemberId, null);
-        } else {
-            Connection connection = getConnection(targetMemberId);
-
-            if (connection == null) {
-                throw QueryException.memberConnection(targetMemberId);
-            }
-
-            return new QueryOperationChannelImpl(this, sourceMemberId, connection);
-        }
-    }
-
-    @Override
     public void execute(QueryOperation operation) {
+        assert operation.isSystem() == QueryOperationWorkerPool.isSystemThread();
+
         if (operation instanceof QueryExecuteOperation) {
             handleExecute((QueryExecuteOperation) operation);
-        } else if (operation instanceof QueryBatchExchangeOperation) {
-            handleBatch((QueryBatchExchangeOperation) operation);
+        } else if (operation instanceof QueryExecuteFragmentOperation) {
+            handleExecuteFragment((QueryExecuteFragmentOperation) operation);
+        } else if (operation instanceof QueryAbstractExchangeOperation) {
+            handleExchange((QueryAbstractExchangeOperation) operation);
         } else if (operation instanceof QueryCancelOperation) {
             handleCancel((QueryCancelOperation) operation);
-        } else if (operation instanceof QueryFlowControlExchangeOperation) {
-            handleFlowControl((QueryFlowControlExchangeOperation) operation);
         } else if (operation instanceof QueryCheckOperation) {
             handleCheck((QueryCheckOperation) operation);
         } else if (operation instanceof QueryCheckResponseOperation) {
@@ -173,10 +174,18 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         }
 
         // Get or create query state.
-        QueryState state = stateRegistry.onDistributedQueryStarted(localMemberId, operation.getQueryId(), this);
+        QueryState state = stateRegistry.onDistributedQueryStarted(localMemberId, operation.getQueryId(), this, false);
 
         if (state == null) {
-            // Race condition when query start request arrived after query cancel.
+            // The query is already cancelled. This may happen on the local member when a user cancelled the query
+            // before the execute request is processed. Ignore.
+            return;
+        }
+
+        if (state.isCancelled()) {
+            // Race condition when query start request arrived after query cancel. Clean the state and return.
+            stateRegistry.onQueryCompleted(state.getQueryId());
+
             return;
         }
 
@@ -215,23 +224,36 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
                 exec,
                 inboxes,
                 outboxes,
-                fragmentPool,
                 serializationService
             );
 
             fragmentExecutables.add(fragmentExecutable);
         }
 
+        // At least one fragment should be produced, otherwise this member should have not received the "execute" message.
+        assert !fragmentExecutables.isEmpty();
+
         // Initialize the distributed state.
         state.getDistributedState().onStart(fragmentExecutables);
 
-        // Schedule initial processing of fragments.
-        for (QueryFragmentExecutable fragmentExecutable : fragmentExecutables) {
-            fragmentExecutable.schedule();
+        // Schedule initial processing of fragments. One fragment is executed in the current thread, others are
+        // distributed between other thread.
+        if (fragmentExecutables.size() > 1) {
+            for (int i = 1; i < fragmentExecutables.size(); i++) {
+                QueryExecuteFragmentOperation fragmentOperation = new QueryExecuteFragmentOperation(fragmentExecutables.get(i));
+
+                submitToPool(QueryOperationExecutable.local(fragmentOperation), false);
+            }
         }
+
+        fragmentExecutables.get(0).schedule();
     }
 
-    private void handleBatch(QueryBatchExchangeOperation operation) {
+    private void handleExecuteFragment(QueryExecuteFragmentOperation operation) {
+        operation.getFragment().schedule();
+    }
+
+    private void handleExchange(QueryAbstractExchangeOperation operation) {
         UUID localMemberId = getLocalMemberId();
 
         if (!localMemberId.equals(operation.getTargetMemberId())) {
@@ -240,9 +262,17 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             return;
         }
 
-        QueryState state = stateRegistry.onDistributedQueryStarted(localMemberId, operation.getQueryId(), this);
+        QueryState state = stateRegistry.onDistributedQueryStarted(localMemberId, operation.getQueryId(), this, false);
 
         if (state == null) {
+            // Batch arrived to the initiator member, but there is no associated state.
+            // It means that the query is already completed, ignore.
+            return;
+        }
+
+        if (state.isCancelled()) {
+            // Received a batch for a cancelled query, ignore. The state will be cleared
+            // by either "execute" or "check" message.
             return;
         }
 
@@ -260,34 +290,21 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         QueryState state = stateRegistry.getState(queryId);
 
         if (state == null) {
-            // Query already completed.
-            return;
-        }
+            // State is not found. The query is either not started yet, or already completed.
+            // Create a surrogate state that will be cleared by either subsequent processing of the "execute" request,
+            // or via periodic check.
+            stateRegistry.onDistributedQueryStarted(getLocalMemberId(), operation.getQueryId(), this, true);
+        } else {
+            // We pass originating member ID here instead of caller ID to preserve the causality:
+            // in the "participant1 -> coordinator -> participant2" flow, the participant2
+            // get the ID of participant1.
+            QueryException error = QueryException.error(
+                operation.getErrorCode(),
+                operation.getErrorMessage(),
+                operation.getOriginatingMemberId()
+            );
 
-        // We pass originating member ID here instead if caller ID to preserve the causality:
-        // in the "participant1 -> coordinator -> participant2" flow, the participant2
-        // get the ID of participant1.
-        QueryException error = QueryException.error(
-            operation.getErrorCode(),
-            operation.getErrorMessage(),
-            operation.getOriginatingMemberId()
-        );
-
-        state.cancel(error, false);
-    }
-
-    private void handleFlowControl(QueryFlowControlExchangeOperation operation) {
-        QueryState state = stateRegistry.getState(operation.getQueryId());
-
-        if (state == null) {
-            return;
-        }
-
-        QueryFragmentExecutable fragmentExecutable = state.getDistributedState().onOperation(operation);
-
-        if (fragmentExecutable != null) {
-            // Fragment is scheduled if the query is already initialized.
-            fragmentExecutable.schedule();
+            state.cancel(error, false);
         }
     }
 
@@ -322,7 +339,12 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             QueryState state = stateRegistry.getState(queryId);
 
             if (state != null) {
+                // Initiate the cancel if the query is not cancelled yet.
                 state.cancel(error, false);
+
+                // If the query is already cancelled, then we need to clear it from the state registry forcefully, because
+                // the cleanup callback is not invoked.
+                stateRegistry.onQueryCompleted(queryId);
             }
         }
     }
@@ -350,9 +372,15 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     }
 
     public void onPacket(Packet packet) {
-        int partition = packet.hasPartitionHash() ? packet.getPartitionId() : QueryOperation.PARTITION_ANY;
+        boolean system = packet.isFlagRaised(Packet.FLAG_SQL_SYSTEM_OPERATION);
 
-        operationPool.submit(partition, QueryOperationExecutable.remote(packet));
+        submitToPool(QueryOperationExecutable.remote(packet), system);
+    }
+
+    private void submitToPool(QueryOperationExecutable task, boolean system) {
+        QueryOperationWorkerPool pool = system ? systemPool : fragmentPool;
+
+        pool.submit(task);
     }
 
     private Connection getConnection(UUID memberId) {

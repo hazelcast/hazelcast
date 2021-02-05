@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,7 +160,7 @@ public class MapContainer {
                 .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
                 .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
                 .partitionCount(partitionCount)
-                .resultFilter(queryableEntry -> hasNotExpired(queryableEntry)).build();
+                .resultFilter(this::hasNotExpired).build();
     }
 
     /**
@@ -230,9 +230,9 @@ public class MapContainer {
         return anyArg -> {
             switch (mapConfig.getInMemoryFormat()) {
                 case BINARY:
-                    return new DataRecordFactory(mapConfig, serializationService);
+                    return new DataRecordFactory(this, serializationService);
                 case OBJECT:
-                    return new ObjectRecordFactory(mapConfig, serializationService);
+                    return new ObjectRecordFactory(this, serializationService);
                 default:
                     throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ public class SqlOrderByTest extends SqlTestSupport {
     public static Collection<Object[]> parameters() {
         List<Object[]> res = new ArrayList<>();
 
-        for (int membersCount : Arrays.asList(1, 3)) {
+        for (int membersCount : Collections.singletonList(1)) {
             for (SerializationMode serializationMode : Arrays.asList(SERIALIZABLE, IDENTIFIED_DATA_SERIALIZABLE)) {
                 for (InMemoryFormat format : new InMemoryFormat[]{InMemoryFormat.OBJECT, InMemoryFormat.BINARY}) {
                     res.add(new Object[]{
@@ -362,6 +362,11 @@ public class SqlOrderByTest extends SqlTestSupport {
             + " ORDER BY " + intValField + " OFFSET 5 ROWS FETCH FIRST 10 ROWS ONLY";
 
         assertSqlResultOrdered(sql, Arrays.asList(intValField), Arrays.asList(false), 10, 5, 14);
+
+        String sqlLimit = "SELECT " + intValField + " FROM " + stableMapName()
+                + " ORDER BY " + intValField + " LIMIT 10 OFFSET 5 ROWS";
+
+        assertSqlResultOrdered(sqlLimit, Arrays.asList(intValField), Arrays.asList(false), 10, 5, 14);
     }
 
     @Test
@@ -373,6 +378,11 @@ public class SqlOrderByTest extends SqlTestSupport {
             + " ORDER BY " + intValField + " OFFSET 4096 ROWS FETCH FIRST 10 ROWS ONLY";
 
         assertSqlResultOrdered(sql, Arrays.asList(intValField), Arrays.asList(false), 0, 0, 0);
+
+        String sqlLimit = "SELECT " + intValField + " FROM " + stableMapName()
+                + " ORDER BY " + intValField + " LIMIT 10 OFFSET 4096 ROWS";
+
+        assertSqlResultOrdered(sqlLimit, Arrays.asList(intValField), Arrays.asList(false), 0, 0, 0);
     }
 
     @Test
@@ -383,7 +393,11 @@ public class SqlOrderByTest extends SqlTestSupport {
         String sql = "SELECT " + intValField + " FROM " + stableMapName()
             + " ORDER BY " + intValField + " OFFSET 4090 ROWS FETCH FIRST 10 ROWS ONLY";
 
+        String sqlLimit = "SELECT " + intValField + " FROM " + stableMapName()
+                + " ORDER BY " + intValField + " LIMIT 10 OFFSET 4090 ROWS";
+
         assertSqlResultOrdered(sql, Arrays.asList(intValField), Arrays.asList(false), 6, 4090, 4095);
+        assertSqlResultOrdered(sqlLimit, Arrays.asList(intValField), Arrays.asList(false), 6, 4090, 4095);
     }
 
     @Test
@@ -397,7 +411,17 @@ public class SqlOrderByTest extends SqlTestSupport {
         assertSqlResultCount(sql, 6);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
+                + " LIMIT 10 OFFSET 4090 ROWS";
+
+        assertSqlResultCount(sql, 6);
+
+        sql = "SELECT " + intValField + " FROM " + stableMapName()
             + " OFFSET 10 ROWS FETCH FIRST 10 ROWS ONLY";
+
+        assertSqlResultCount(sql, 10);
+
+        sql = "SELECT " + intValField + " FROM " + stableMapName()
+                + " LIMIT 10 OFFSET 10 ROWS";
 
         assertSqlResultCount(sql, 10);
 
@@ -417,7 +441,17 @@ public class SqlOrderByTest extends SqlTestSupport {
         assertSqlResultCount(sql, 0);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
+                + " LIMIT 0";
+
+        assertSqlResultCount(sql, 0);
+
+        sql = "SELECT " + intValField + " FROM " + stableMapName()
             + " FETCH FIRST 100 ROWS ONLY";
+
+        assertSqlResultCount(sql, 100);
+
+        sql = "SELECT " + intValField + " FROM " + stableMapName()
+                + " LIMIT 100";
 
         assertSqlResultCount(sql, 100);
 
@@ -427,12 +461,27 @@ public class SqlOrderByTest extends SqlTestSupport {
         assertSqlResultCount(sql, 2);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
+                + " LIMIT 2.9";
+
+        assertSqlResultCount(sql, 2);
+
+        sql = "SELECT " + intValField + " FROM " + stableMapName()
             + " FETCH FIRST 1.2E2 ROWS ONLY";
 
         assertSqlResultCount(sql, 120);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
+                + " LIMIT 1.2E2";
+
+        assertSqlResultCount(sql, 120);
+
+        sql = "SELECT " + intValField + " FROM " + stableMapName()
             + " FETCH FIRST 1.2E-2 ROWS ONLY";
+
+        assertSqlResultCount(sql, 0);
+
+        sql = "SELECT " + intValField + " FROM " + stableMapName()
+                + " LIMIT 1.2E-2";
 
         assertSqlResultCount(sql, 0);
     }
@@ -447,10 +496,20 @@ public class SqlOrderByTest extends SqlTestSupport {
 
         assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql1, 0));
 
+        String sqlLimit1 = "SELECT " + intValField + " FROM " + stableMapName()
+                + " LIMIT 10 OFFSET -5 ROWS";
+
+        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sqlLimit1, 0));
+
         String sql2 = "SELECT " + intValField + " FROM " + stableMapName()
             + " OFFSET 5 ROWS FETCH FIRST -10 ROWS ONLY";
 
         assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql2, 0));
+
+        String sqlLimit2 = "SELECT " + intValField + " FROM " + stableMapName()
+                + " LIMIT -10 OFFSET 5 ROWS";
+
+        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sqlLimit2, 0));
 
         String sql3 = "SELECT " + intValField + " FROM " + stableMapName()
             + " OFFSET \"\" ROWS";
@@ -467,20 +526,40 @@ public class SqlOrderByTest extends SqlTestSupport {
 
         assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql5, 0));
 
+        String sqlLimit5 = "SELECT " + intValField + " FROM " + stableMapName()
+                + " LIMIT \"\"";
+
+        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sqlLimit5, 0));
+
         String sql6 = "SELECT " + intValField + " FROM " + stableMapName()
             + " FETCH FIRST null ROWS ONLY";
 
         assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql6, 0));
+
+        String sqlLimit6 = "SELECT " + intValField + " FROM " + stableMapName()
+                + " LIMIT null";
+
+        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sqlLimit6, 0));
 
         String sql7 = "SELECT " + intValField + " FROM " + stableMapName()
             + " FETCH FIRST \"abc\" ROWS ONLY";
 
         assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql7, 0));
 
+        String sqlLimit7 = "SELECT " + intValField + " FROM " + stableMapName()
+                + " LIMIT \"abc\"";
+
+        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sqlLimit7, 0));
+
         String sql8 = "SELECT " + intValField + " FROM " + stableMapName()
             + " FETCH FIRST 1 + ? ROWS ONLY";
 
         assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql8, 0));
+
+        String sqlLimit8 = "SELECT " + intValField + " FROM " + stableMapName()
+                + " LIMIT 1 + ?";
+
+        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sqlLimit8, 0));
     }
 
     @Test
@@ -489,6 +568,11 @@ public class SqlOrderByTest extends SqlTestSupport {
             + " FETCH FIRST 5 ROWS ONLY)";
 
         assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql, 0));
+
+        String sqlLimit = "SELECT intVal FROM ( SELECT intVal FROM " +  stableMapName()
+                + " LIMIT 5)";
+
+        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sqlLimit, 0));
     }
 
     private void addIndex(List<String> fieldNames, IndexType type) {

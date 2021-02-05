@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.JVMUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -29,7 +30,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -39,22 +39,29 @@ public class EntryCostEstimatorTest
         extends HazelcastTestSupport {
 
     protected TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-    // the JVM-independent portion of the cost of Integer key + Long value record is 104 bytes
-    // (without taking into account 8 references to key, record and value objects)
-    private static final int JVM_INDEPENDENT_ENTRY_COST_IN_BYTES = 100;
-    // JVM-dependent total cost of entry
-    private static final int ENTRY_COST_IN_BYTES = JVM_INDEPENDENT_ENTRY_COST_IN_BYTES + 8 * REFERENCE_COST_IN_BYTES;
+
+    public static final int ENTRY_COST_IN_BYTES = getExpectedCostInBytes();
+
+    private static int getExpectedCostInBytes() {
+        if (JVMUtil.is32bitJVM() && JVMUtil.isCompressedOops()) {
+            return 140;
+        }
+        if (JVMUtil.isCompressedOops()) {
+            return 152;
+        }
+        return 196;
+    }
 
     @Test
     public void smoke() {
-        SizeEstimatorTestMapBuilder<Long, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Long, Long>(factory);
+        SizeEstimatorTestMapBuilder<Long, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<>(factory);
         testMapBuilder.withNodeCount(1).withBackupCount(0).build(getConfig());
         assertEquals(0, testMapBuilder.totalHeapCost());
     }
 
     @Test
     public void testSinglePut() {
-        SizeEstimatorTestMapBuilder<Integer, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Integer, Long>(factory);
+        SizeEstimatorTestMapBuilder<Integer, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<>(factory);
         IMap<Integer, Long> map = testMapBuilder.withNodeCount(1).withBackupCount(0).build(getConfig());
         map.put(0, 10L);
         assertEquals(ENTRY_COST_IN_BYTES, testMapBuilder.totalHeapCost());
@@ -64,7 +71,7 @@ public class EntryCostEstimatorTest
     public void testExactHeapCostAfterUpdateWithMultipleBackupNodes() {
         int putCount = 1;
         int nodeCount = 1;
-        SizeEstimatorTestMapBuilder<Integer, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Integer, Long>(factory);
+        SizeEstimatorTestMapBuilder<Integer, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<>(factory);
         IMap<Integer, Long> map = testMapBuilder.withNodeCount(nodeCount).withBackupCount(nodeCount - 1).build(getConfig());
         for (int i = 0; i < putCount; i++) {
             map.put(i, System.currentTimeMillis());
@@ -244,7 +251,7 @@ public class EntryCostEstimatorTest
             if (backupCount > nodeCount - 1) {
                 throw new IllegalArgumentException("backupCount > nodeCount - 1");
             }
-            config.getMapConfig(mapName).setBackupCount(backupCount);
+            config.getMapConfig(mapName).setBackupCount(backupCount).setStatisticsEnabled(true);
             nodes = instanceFactory.newInstances(config, nodeCount);
             return nodes[0].getMap(mapName);
         }

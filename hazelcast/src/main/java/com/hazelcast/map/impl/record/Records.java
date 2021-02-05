@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,73 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
+import java.util.EnumMap;
+import java.util.Map;
 
 import static com.hazelcast.map.impl.record.Record.NOT_CACHED;
+import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_READER_WRITER;
+import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_STATS_READER_WRITER;
+import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECORD_READER_WRITER;
+import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER;
+import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.getById;
 
 /**
- * Contains various factory &amp; helper methods for a {@link com.hazelcast.map.impl.record.Record} object.
+ * Contains various factory &amp; helper methods for a {@link
+ * com.hazelcast.map.impl.record.Record} object.
  */
 public final class Records {
+
+    // RU_COMPAT_4_1
+    /**
+     * Maps RecordReaderWriter objects to their 4.1 equivalents. This is used to
+     * support compatibility between 4.1 and 4.2 during rolling upgrades.
+     */
+    private static final Map<RecordReaderWriter, RecordReaderWriter> RU_COMPAT_MAP = createAndInitRuCompatMap();
 
     private Records() {
     }
 
-    public static void writeRecord(ObjectDataOutput out, Record record, Data dataValue) throws IOException {
-        out.writeByte(record.getMatchingRecordReaderWriter().getId());
-        record.getMatchingRecordReaderWriter().writeRecord(out, record, dataValue);
+    private static EnumMap<RecordReaderWriter, RecordReaderWriter> createAndInitRuCompatMap() {
+        EnumMap<RecordReaderWriter, RecordReaderWriter> ruCompatMap = new EnumMap<>(RecordReaderWriter.class);
+        ruCompatMap.put(SIMPLE_DATA_RECORD_READER_WRITER, DATA_RECORD_READER_WRITER);
+        ruCompatMap.put(SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER, DATA_RECORD_READER_WRITER);
+        ruCompatMap.put(SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER, DATA_RECORD_READER_WRITER);
+        ruCompatMap.put(DATA_RECORD_READER_WRITER, DATA_RECORD_READER_WRITER);
+        ruCompatMap.put(DATA_RECORD_WITH_STATS_READER_WRITER, DATA_RECORD_WITH_STATS_READER_WRITER);
+
+        assert ruCompatMap.size() == RecordReaderWriter.values().length
+                : "Missing enum mapping for RU compatibility";
+
+        return ruCompatMap;
     }
 
-    public static Record readRecord(ObjectDataInput in) throws IOException {
+    public static void writeRecord(ObjectDataOutput out, Record record,
+                                   Data dataValue, ExpiryMetadata expiryMetadata) throws IOException {
+        RecordReaderWriter readerWriter = record.getMatchingRecordReaderWriter();
+        // RU_COMPAT_4_1
+        Version version = out.getVersion();
+        if (version.isLessThan(Versions.V4_2)) {
+            readerWriter = RU_COMPAT_MAP.get(readerWriter);
+        }
+
+        out.writeByte(readerWriter.getId());
+        readerWriter.writeRecord(out, record, dataValue, expiryMetadata);
+    }
+
+    public static Record readRecord(ObjectDataInput in,
+                                    ExpiryMetadata expiryMetadata) throws IOException {
         byte matchingDataRecordId = in.readByte();
-        return getById(matchingDataRecordId).readRecord(in);
+        return getById(matchingDataRecordId).readRecord(in, expiryMetadata);
     }
 
     /**
@@ -52,11 +93,8 @@ public final class Records {
      */
     public static Record copyMetadataFrom(Record fromRecord, Record toRecord) {
         toRecord.setHits(fromRecord.getHits());
-        toRecord.setTtl(fromRecord.getTtl());
-        toRecord.setMaxIdle(fromRecord.getMaxIdle());
         toRecord.setVersion(fromRecord.getVersion());
         toRecord.setCreationTime(fromRecord.getCreationTime());
-        toRecord.setExpirationTime(fromRecord.getExpirationTime());
         toRecord.setLastAccessTime(fromRecord.getLastAccessTime());
         toRecord.setLastStoredTime(fromRecord.getLastStoredTime());
         toRecord.setLastUpdateTime(fromRecord.getLastUpdateTime());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class DelegatingCompletableFutureTest {
     @Test
     public void test_get_Object() throws Exception {
         Object value = "value";
-        Future future = new DelegatingCompletableFuture(null, newCompletedFuture(value));
+        Future future = new DelegatingCompletableFuture(serializationService, newCompletedFuture(value));
         assertEquals(value, future.get());
     }
 
@@ -87,7 +87,7 @@ public class DelegatingCompletableFutureTest {
     @Test
     public void test_get_Object_withTimeout() throws Exception {
         Object value = "value";
-        Future future = new DelegatingCompletableFuture(null, newCompletedFuture(value));
+        Future future = new DelegatingCompletableFuture(serializationService, newCompletedFuture(value));
         assertEquals(value, future.get(1, TimeUnit.MILLISECONDS));
     }
 
@@ -102,20 +102,20 @@ public class DelegatingCompletableFutureTest {
     @Test(expected = ExecutionException.class)
     public void test_get_Exception() throws Exception {
         Throwable error = new Throwable();
-        Future future = new DelegatingCompletableFuture(null, completedExceptionally(error));
+        Future future = new DelegatingCompletableFuture(serializationService, completedExceptionally(error));
         future.get();
     }
 
     @Test
     public void test_cancel() {
-        Future future = new DelegatingCompletableFuture(null, newCompletedFuture(null));
+        Future future = new DelegatingCompletableFuture(serializationService, newCompletedFuture(null));
         assertFalse(future.cancel(true));
         assertFalse(future.isCancelled());
     }
 
     @Test
     public void test_isDone() {
-        Future future = new DelegatingCompletableFuture(null, newCompletedFuture("value"));
+        Future future = new DelegatingCompletableFuture(serializationService, newCompletedFuture("value"));
         assertTrue(future.isDone());
     }
 
@@ -123,7 +123,7 @@ public class DelegatingCompletableFutureTest {
     public void test_actionsTrigger_whenAlreadyCompletedFuture() {
         CountDownLatch latch = new CountDownLatch(1);
         CompletableFuture<String> future =
-                new DelegatingCompletableFuture(null, newCompletedFuture("value"));
+                new DelegatingCompletableFuture(serializationService, newCompletedFuture("value"));
         future.thenRun(latch::countDown);
         assertOpenEventually(latch);
     }

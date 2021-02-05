@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -27,6 +28,7 @@ public abstract class BasePutOperation
 
     protected transient Object oldValue;
     protected transient EntryEventType eventType;
+    protected transient Record recordToBackup;
 
     public BasePutOperation(String name, Data dataKey, Data value) {
         super(name, dataKey, value);
@@ -57,19 +59,19 @@ public abstract class BasePutOperation
 
     @Override
     public boolean shouldBackup() {
-        Record record = recordStore.getRecord(dataKey);
-        return record != null;
+        recordToBackup = recordStore.getRecord(dataKey);
+        return recordToBackup != null;
     }
 
     @Override
     public Operation getBackupOperation() {
-        Record record = recordStore.getRecord(dataKey);
-        dataValue = getValueOrPostProcessedValue(record, dataValue);
-        return newBackupOperation(dataKey, record, dataValue);
+        dataValue = getValueOrPostProcessedValue(recordToBackup, dataValue);
+        return newBackupOperation(dataKey, recordToBackup, dataValue);
     }
 
     protected PutBackupOperation newBackupOperation(Data dataKey, Record record, Data dataValue) {
-        return new PutBackupOperation(name, dataKey, record, dataValue);
+        ExpiryMetadata metadata = recordStore.getExpirySystem().getExpiredMetadata(dataKey);
+        return new PutBackupOperation(name, dataKey, record, dataValue, metadata);
     }
 
     @Override

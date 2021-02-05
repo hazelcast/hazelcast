@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -116,6 +117,26 @@ public class SqlClientExecuteCloseRaceTest {
         assertEquals(0, memberService.getInternalService().getClientStateRegistry().getCursorCount());
 
         checkExecuteResponse(executeResponse, false);
+    }
+
+    @Test
+    public void testClose() {
+        QueryId queryId = QueryId.create(UUID.randomUUID());
+
+        // Send "close"
+        Connection connection = clientService.getRandomConnection();
+
+        ClientMessage closeRequest = SqlCloseCodec.encodeRequest(queryId);
+
+        clientService.invokeOnConnection(connection, closeRequest);
+
+        // Make sure that we observed the cancel request.
+        assertEquals(1, memberService.getInternalService().getClientStateRegistry().getCursorCount());
+
+        // Wait for it to disappear.
+        memberService.getInternalService().getClientStateRegistry().setClosedCursorCleanupTimeoutSeconds(1L);
+
+        assertTrueEventually(() -> assertEquals(0, memberService.getInternalService().getClientStateRegistry().getCursorCount()));
     }
 
     private void checkExecuteResponse(ClientMessage executeResponse, boolean success) {

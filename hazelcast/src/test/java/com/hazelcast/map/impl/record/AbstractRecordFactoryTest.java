@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,27 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.CacheDeserializedValues;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
+
+import javax.annotation.Nonnull;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport {
@@ -104,5 +116,27 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
 
     Record<T> newRecord(RecordFactory<T> factory, Object value) {
         return factory.newRecord(value);
+    }
+
+    @Nonnull
+    protected MapContainer createMapContainer(boolean isStatisticsEnabled,
+                                            CacheDeserializedValues cacheDeserializedValues) {
+        MapConfig mapConfig = new MapConfig()
+                .setStatisticsEnabled(isStatisticsEnabled)
+                .setCacheDeserializedValues(cacheDeserializedValues);
+
+        NodeEngine nodeEngine = mock(NodeEngine.class);
+        ClusterService clusterService = mock(ClusterService.class);
+        MapServiceContext mapServiceContext = mock(MapServiceContext.class);
+
+        when(mapServiceContext.getNodeEngine()).thenReturn(nodeEngine);
+        when(nodeEngine.getClusterService()).thenReturn(clusterService);
+        when(clusterService.getClusterVersion()).thenReturn(Versions.CURRENT_CLUSTER_VERSION);
+
+        MapContainer mapContainer = mock(MapContainer.class);
+        when(mapContainer.getMapConfig()).thenReturn(mapConfig);
+        when(mapContainer.getEvictor()).thenReturn(Evictor.NULL_EVICTOR);
+        when(mapContainer.getMapServiceContext()).thenReturn(mapServiceContext);
+        return mapContainer;
     }
 }

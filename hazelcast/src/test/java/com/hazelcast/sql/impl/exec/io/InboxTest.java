@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ public class InboxTest {
             operationHandler,
             queryId,
             edgeId,
+            false,
             rowWidth,
             localMemberId,
             2,
@@ -128,6 +129,6 @@ public class InboxTest {
 
         ListRowBatch batch = new ListRowBatch(rows);
 
-        return new InboundBatch(batch, last, UUID.randomUUID());
+        return new InboundBatch(batch, 0L, last, UUID.randomUUID());
     }
 }

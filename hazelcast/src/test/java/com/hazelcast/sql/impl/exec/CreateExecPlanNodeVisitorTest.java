@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,7 @@ import static com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapp
 import static com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping.EXPLICIT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -211,6 +212,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
         ReceivePlanNode receiveNode = new ReceivePlanNode(
             nextNodeId(),
             EDGE_1_ID,
+            true,
             Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR)
         );
 
@@ -253,6 +255,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
         assertEquals(memberId1, inbox.getLocalMemberId());
         assertEquals(partitionMapping.size(), inbox.getRemainingStreams());
         assertEquals(EDGE_1_INITIAL_MEMORY, ((SimpleFlowControl) inbox.getFlowControl()).getMaxMemory());
+        assertTrue(inbox.isOrdered());
 
         assertEquals(1, visitor.getInboxes().size());
         assertSame(inbox, visitor.getInboxes().get(EDGE_1_ID));

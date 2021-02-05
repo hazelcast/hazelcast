@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -48,7 +48,7 @@ public class RecordsTest extends HazelcastTestSupport {
     public void getValueOrCachedValue_whenRecordIsNotCachable_thenDoNotCache() {
         String objectPayload = "foo";
         Data dataPayload = serializationService.toData(objectPayload);
-        Record record = new DataRecord(dataPayload);
+        Record record = new DataRecordWithStats(dataPayload);
         Object value = Records.getValueOrCachedValue(record, null);
         assertSame(dataPayload, value);
     }
@@ -70,7 +70,7 @@ public class RecordsTest extends HazelcastTestSupport {
     public void getValueOrCachedValue_whenRecordIsCachedDataRecord_thenCache() {
         String objectPayload = "foo";
         Data dataPayload = serializationService.toData(objectPayload);
-        Record record = new CachedDataRecord(dataPayload);
+        Record record = new CachedDataRecordWithStats(dataPayload);
         Object firstDeserializedValue = Records.getValueOrCachedValue(record, serializationService);
         assertEquals(objectPayload, firstDeserializedValue);
 
@@ -82,7 +82,7 @@ public class RecordsTest extends HazelcastTestSupport {
     @Test
     public void givenCachedDataRecord_whenThreadIsInside_thenGetValueOrCachedValueReturnsTheThread() {
         // given
-        CachedDataRecord record = new CachedDataRecord();
+        Record record = new CachedDataRecordWithStats();
 
         // when
         SerializableThread objectPayload = new SerializableThread();
@@ -99,7 +99,7 @@ public class RecordsTest extends HazelcastTestSupport {
         // given
         SerializableThread objectPayload = new SerializableThread();
         Data dataPayload = serializationService.toData(objectPayload);
-        CachedDataRecord record = new CachedDataRecord(dataPayload);
+        Record record = new CachedDataRecordWithStats(dataPayload);
 
         // when
         Records.getValueOrCachedValue(record, serializationService);
