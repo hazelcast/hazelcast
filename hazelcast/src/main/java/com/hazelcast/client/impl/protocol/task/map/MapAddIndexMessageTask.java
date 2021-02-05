@@ -84,8 +84,8 @@ public class MapAddIndexMessageTask
 
     @Override
     protected void beforeProcess() {
-        if (nodeEngine.getConfig().getMapConfig(parameters.name).getInMemoryFormat() == InMemoryFormat.NATIVE &&
-                parameters.indexConfig.getType() == IndexType.BITMAP) {
+        if (nodeEngine.getConfig().getMapConfig(parameters.name).getInMemoryFormat() == InMemoryFormat.NATIVE
+                && parameters.indexConfig.getType() == IndexType.BITMAP) {
             throw new IllegalArgumentException("BITMAP indexes are not supported by NATIVE storage");
         }
     }
