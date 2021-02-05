@@ -67,6 +67,12 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
             if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LFU) {
                 return new SimpleRecordWithLFUEviction<>(objectValue);
             }
+
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.RANDOM) {
+                return new SimpleRecord<>(objectValue);
+            }
+
+            return new ObjectRecordWithStats(objectValue);
         }
 
         return new SimpleRecord<>(objectValue);
