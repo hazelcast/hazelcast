@@ -315,13 +315,13 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
     @Override
     public Iterator<Entry<K, V>> iterator() {
         ensureOpen();
-        return new CachePartitionsIterator<>(this, false);
+        return new CacheIterator<>(this, false);
     }
 
     @Override
     public Iterator<Entry<K, V>> iterator(int fetchSize) {
         ensureOpen();
-        return new CachePartitionsIterator<>(this, fetchSize, false);
+        return new CacheIterator<>(this, fetchSize, false);
     }
 
     @Override

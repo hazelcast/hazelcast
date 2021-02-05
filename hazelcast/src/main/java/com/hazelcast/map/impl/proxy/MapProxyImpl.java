@@ -936,7 +936,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * @param partitionId    the partition ID which is being iterated
      * @param prefetchValues whether to send values along with keys (if {@code true}) or
      *                       to fetch them lazily when iterating (if {@code false})
-     * @return the iterator for the projected entries
+     * @return an iterator for the entries in the partition
      */
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
         return new MapPartitionIterator<>(this, fetchSize, partitionId, prefetchValues);
@@ -974,7 +974,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * @param predicate   the predicate which the entries must match. {@code null} value is not
      *                    allowed
      * @param <R>         the return type
-     * @return the iterator for the projected entries
+     * @return an iterator for the projected entries
      * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}
      * @since 3.9
      */
@@ -996,14 +996,17 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     /**
-     * TODO: Javadoc
+     * Returns an iterable for iterating the result of the projection on entries
+     * in the {@code partitionId} which satisfy the {@code predicate}.
+     * <p>
+     * Uses {@link MapProxyImpl#iterator(int, int, Projection, Predicate)}.
      *
      * @param fetchSize   the size of the batches which will be sent when iterating the data
      * @param partitionId the partition ID which is being iterated
      * @param projection  the projection to apply before returning the value. null value is not allowed
      * @param predicate   the predicate which the entries must match. null value is not allowed
-     * @param <R>
-     * @return
+     * @param <R>         the return type
+     * @return an iterable for the projected entries
      */
     public <R> Iterable<R> iterable(
             int fetchSize,
@@ -1017,25 +1020,34 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     /**
-     * TODO: Javadoc
+     * Returns an iterable for iterating entries in the {@code partitionId}. If
+     * {@code prefetchValues} is {@code true}, values will be sent along with
+     * the keys and no additional data will be fetched when iterating. If
+     * {@code false}, only keys will be sent and values will be fetched when
+     * calling {@code Map.Entry.getValue()} lazily.
+     * <p>
+     * Uses {@link MapProxyImpl#iterator(int, int, boolean)}.
      *
      * @param fetchSize      the size of the batches which will be sent when iterating the data
      * @param partitionId    the partition ID which is being iterated
      * @param prefetchValues whether to send values along with keys (if true) or to fetch them lazily when iterating (if false)
-     * @return
+     * @return an iterable for the entries in the partition
      */
     public Iterable<Entry<K, V>> iterable(int fetchSize, int partitionId, boolean prefetchValues) {
         return new MapPartitionIterable<>(this, fetchSize, partitionId, prefetchValues);
     }
 
     /**
-     * TODO: Javadoc
+     * Returns an iterable for iterating the result of the projection on entries
+     * in all of the partitions which satisfy the {@code predicate}.
+     * <p>
+     * Uses {@link MapProxyImpl#iterator(int, int, Projection, Predicate)}.
      *
-     * @param fetchSize
-     * @param projection
-     * @param predicate
-     * @param <R>
-     * @return
+     * @param fetchSize  the size of the batches which will be sent when iterating the data
+     * @param projection the projection to apply before returning the value. null value is not allowed
+     * @param predicate  the predicate which the entries must match. null value is not allowed
+     * @param <R>        the return type
+     * @return an iterable for the projected entries
      */
     public <R> Iterable<R> iterable(
             int fetchSize,
@@ -1049,11 +1061,17 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     /**
-     * TODO: Javadoc
+     * Returns an iterable for iterating entries in the all of the partitions. If
+     * {@code prefetchValues} is {@code true}, values will be sent along with
+     * the keys and no additional data will be fetched when iterating. If
+     * {@code false}, only keys will be sent and values will be fetched when
+     * calling {@code Map.Entry.getValue()} lazily.
+     * <p>
+     * Uses {@link MapProxyImpl#iterator(int, int, boolean)}.
      *
-     * @param fetchSize
-     * @param prefetchValues
-     * @return
+     * @param fetchSize      the size of the batches which will be sent when iterating the data
+     * @param prefetchValues whether to send values along with keys (if true) or to fetch them lazily when iterating (if false)
+     * @return an iterable for the entries in the partition
      */
     public Iterable<Entry<K, V>> iterable(int fetchSize, boolean prefetchValues) {
         int partitionCount = partitionService.getPartitionCount();

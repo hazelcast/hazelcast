@@ -348,13 +348,13 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     @Override
     public Iterator<Entry<K, V>> iterator() {
         ensureOpen();
-        return new ClientCachePartitionsIterator<>(this, getContext(), false);
+        return new ClientCacheIterator<>(this, getContext(), false);
     }
 
     @Override
     public Iterator<Entry<K, V>> iterator(int fetchSize) {
         ensureOpen();
-        return new ClientCachePartitionsIterator<>(this, getContext(), fetchSize, false);
+        return new ClientCacheIterator<>(this, getContext(), fetchSize, false);
     }
 
     @Override

@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.cache.impl;
 
-import com.hazelcast.cache.impl.AbstractCachePartitionsIterator;
+import com.hazelcast.cache.impl.AbstractCacheIterator;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -41,31 +41,31 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
  * <p>
  * This implementation is used by client implementation of JCache.
  * <p>
- * Note: For more information on the iterator details, see {@link AbstractCachePartitionsIterator}.
+ * Note: For more information on the iterator details, see {@link AbstractCacheIterator}.
  *
  * @param <K> the type of key.
  * @param <V> the type of value.
  */
-public class ClientCachePartitionsIterator<K, V> extends AbstractCachePartitionsIterator<K, V>
+public class ClientCacheIterator<K, V> extends AbstractCacheIterator<K, V>
         implements Iterator<Cache.Entry<K, V>> {
 
     private ICacheInternal<K, V> cacheProxy;
     private ClientContext context;
 
-    public ClientCachePartitionsIterator(ICacheInternal<K, V> cacheProxy, ClientContext context, boolean prefetchValues) {
+    public ClientCacheIterator(ICacheInternal<K, V> cacheProxy, ClientContext context, boolean prefetchValues) {
         this(cacheProxy, context, DEFAULT_FETCH_SIZE, prefetchValues);
     }
 
-    public ClientCachePartitionsIterator(ICacheInternal<K, V> cacheProxy, ClientContext context,
-                                         int fetchSize, boolean prefetchValues) {
+    public ClientCacheIterator(ICacheInternal<K, V> cacheProxy, ClientContext context,
+                               int fetchSize, boolean prefetchValues) {
         super(cacheProxy, context.getPartitionService().getPartitionCount(), fetchSize, prefetchValues);
         this.cacheProxy = cacheProxy;
         this.context = context;
         advance();
     }
 
-    public ClientCachePartitionsIterator(ICacheInternal<K, V> cacheProxy, ClientContext context, int fetchSize,
-                                         int partitionId, boolean prefetchValues) {
+    public ClientCacheIterator(ICacheInternal<K, V> cacheProxy, ClientContext context, int fetchSize,
+                               int partitionId, boolean prefetchValues) {
         super(cacheProxy, context.getPartitionService().getPartitionCount(), fetchSize, prefetchValues);
         this.cacheProxy = cacheProxy;
         this.context = context;
