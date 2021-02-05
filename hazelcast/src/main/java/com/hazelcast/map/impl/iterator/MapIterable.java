@@ -25,7 +25,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * Iterable that provides an iterator for iterating map entries in the
+ * specified partition. It returns {@link MapIterator} and the
+ * provided guarantees are the same with it.
+ * @see MapQueryIterator
+ */
 public class MapIterable<K, V> implements Iterable<Map.Entry<K, V>> {
+
     private final MapProxyImpl<K, V> mapProxy;
     private final int fetchSize;
     private final int partitionCount;

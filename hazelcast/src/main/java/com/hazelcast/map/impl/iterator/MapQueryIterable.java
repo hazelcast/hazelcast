@@ -27,6 +27,13 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * Iterable that provides an iterator for iterating the result of the
+ * projection on map entries in the whole cluster which satisfies the
+ * predicate. It returns {@link MapQueryIterator}.
+ *
+ * @see MapQueryIterator
+ */
 public class MapQueryIterable<K, V, R> implements Iterable<R> {
     private final MapProxyImpl<K, V> mapProxy;
     private final Predicate<K, V> predicate;

@@ -20,6 +20,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+/**
+ * Iterator for iterating the result of the projection on entries
+ * in the whole cluster which satisfy the {@code predicate}. The values
+ * are fetched in batches. The {@link Iterator#remove()} method is not
+ * supported and will throw a {@link UnsupportedOperationException}.
+ * It uses {@link MapQueryPartitionIterator} and the provided guarantees
+ * are the same with it.
+ *
+ * @see MapQueryPartitionIterator
+ */
 public class MapQueryIterator<R> implements Iterator<R> {
 
     private final int size;

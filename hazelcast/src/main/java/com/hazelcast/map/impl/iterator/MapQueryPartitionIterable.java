@@ -24,6 +24,11 @@ import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * Iterable that provides an iterator for iterating the result of the projection
+ * on map entries in the specified partition which satisfies the predicate.
+ * @see MapQueryPartitionIterator
+ */
 public class MapQueryPartitionIterable<K, V, R> implements Iterable<R> {
     private final MapProxyImpl<K, V> mapProxy;
     private final Predicate<K, V> predicate;
