@@ -75,7 +75,7 @@ public class QueryParser {
                 }
             }
         } catch (Exception e) {
-            throw QueryException.error(SqlErrorCode.PARSING, getTrimmedMessage(e), e);
+            throw QueryException.error(SqlErrorCode.PARSING, e.getMessage(), e);
         }
     }
 
@@ -86,7 +86,8 @@ public class QueryParser {
         SqlParser parser = SqlParser.create(sql, config);
 
         HazelcastSqlValidator validator = (HazelcastSqlValidator) sqlBackend.validator(catalogReader, typeFactory, conformance);
-        SqlNode node = validator.validate(parser.parseStmt());
+
+        SqlNode node = validator.validate(parseStatementWrapped(parser));
 
         SqlVisitor<Void> visitor = sqlBackend.unsupportedOperationVisitor(catalogReader);
         node.accept(visitor);
@@ -109,10 +110,11 @@ public class QueryParser {
         return configBuilder.build();
     }
 
-    private static String getTrimmedMessage(Exception e) {
-        String eol = System.getProperty("line.separator", "\n");
-        String message = e.getMessage();
-        String[] parts = message.split(eol);
-        return parts[0];
+    private static SqlNode parseStatementWrapped(SqlParser parser) throws SqlParseException {
+        try {
+            return parser.parseStmt();
+        } catch (SqlParseException e) {
+            throw new WrappedSqlParseException(e);
+        }
     }
 }
