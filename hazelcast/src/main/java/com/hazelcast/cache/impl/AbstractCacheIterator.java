@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
- * {@link AbstractCachePartitionsIterator} provides the core iterator functionality
+ * {@link AbstractCacheIterator} provides the core iterator functionality
  * shared by its descendants.
  * <p>
  * <p>The Hazelcast cluster is made out of partitions which holds a slice of
@@ -78,10 +78,10 @@ import java.util.NoSuchElementException;
  * @param <K> the type of key.
  * @param <V> the type of value.
  * @see com.hazelcast.cache.impl.CacheRecordStore#fetchKeys(IterationPointer[], int)
- * @see CachePartitionsIterator
+ * @see CacheIterator
  * @see CacheKeysWithCursor
  */
-public abstract class AbstractCachePartitionsIterator<K, V> implements Iterator<Cache.Entry<K, V>> {
+public abstract class AbstractCacheIterator<K, V> implements Iterator<Cache.Entry<K, V>> {
 
     protected static final int DEFAULT_FETCH_SIZE = 100;
 
@@ -106,10 +106,10 @@ public abstract class AbstractCachePartitionsIterator<K, V> implements Iterator<
     protected int index;
     protected int currentIndex = -1;
 
-    public AbstractCachePartitionsIterator(ICacheInternal<K, V> cache,
-                                           int partitionCount,
-                                           int fetchSize,
-                                           boolean prefetchValues) {
+    public AbstractCacheIterator(ICacheInternal<K, V> cache,
+                                 int partitionCount,
+                                 int fetchSize,
+                                 boolean prefetchValues) {
         this.cache = cache;
         this.partitionCount = partitionCount;
         this.fetchSize = fetchSize;
