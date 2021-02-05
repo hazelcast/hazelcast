@@ -575,7 +575,15 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleLogLevel(HttpPostCommand command) throws UnsupportedEncodingException {
         String[] params = decodeParamsAndAuthenticate(command, 3);
         String rawLevel = params[2];
-        Level level = Level.parse(rawLevel);
+        Level level;
+        try {
+            level = Level.parse(rawLevel.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    "Invalid level '" + rawLevel + "', known levels are: " + String.join(", ", Level.OFF.getName(),
+                            Level.SEVERE.getName(), Level.WARNING.getName(), Level.INFO.getName(), Level.CONFIG.getName(),
+                            Level.FINE.getName(), Level.FINER.getName(), Level.FINEST.getName()), e);
+        }
 
         LoggingServiceImpl loggingService = (LoggingServiceImpl) getNode().getLoggingService();
         loggingService.setLevel(level);
