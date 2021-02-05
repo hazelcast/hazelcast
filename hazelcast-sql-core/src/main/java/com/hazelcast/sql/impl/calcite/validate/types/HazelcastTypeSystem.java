@@ -69,27 +69,12 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
     @Override
     public RelDataType deriveSumType(RelDataTypeFactory typeFactory, RelDataType argumentType) {
         if (argumentType instanceof BasicSqlType) {
-            SqlTypeName type = argumentType.getSqlTypeName();
-            switch (type) {
-                case TINYINT:
-                case SMALLINT:
-                case INTEGER:
-                case BIGINT:
-                    type = SqlTypeName.BIGINT;
-                    break;
-                case DECIMAL:
-                    type = SqlTypeName.DECIMAL;
-                    break;
-                case REAL:
-                case DOUBLE:
-                    type = SqlTypeName.DOUBLE;
-                    break;
-            }
+            SqlTypeName type = deriveSumType(argumentType.getSqlTypeName());
 
             if (type == BIGINT) {
                 // special-case for BIGINT - we use BIGINT(64) instead of the default BIGINT(63) because
                 // BIGINT + BIGINT can overflow.
-                return HazelcastIntegerType.create(64, argumentType.isNullable());
+                return HazelcastIntegerType.create(Long.SIZE, argumentType.isNullable());
             }
 
             if (type.allowsPrec() && argumentType.getPrecision() != RelDataType.PRECISION_NOT_SPECIFIED) {
@@ -113,6 +98,23 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
             }
         }
         return argumentType;
+    }
+
+    private static SqlTypeName deriveSumType(SqlTypeName type) {
+        switch (type) {
+            case TINYINT:
+            case SMALLINT:
+            case INTEGER:
+            case BIGINT:
+                return SqlTypeName.BIGINT;
+            case DECIMAL:
+                return SqlTypeName.DECIMAL;
+            case REAL:
+            case DOUBLE:
+                return SqlTypeName.DOUBLE;
+            default:
+                return type;
+        }
     }
 
     @Override
