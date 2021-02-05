@@ -18,20 +18,22 @@ package com.hazelcast.jet.cdc.mysql;
 
 import com.hazelcast.jet.annotation.EvolvingApi;
 import com.hazelcast.jet.cdc.ChangeRecord;
-import com.hazelcast.jet.cdc.impl.CdcSource;
-import com.hazelcast.jet.cdc.impl.ChangeRecordCdcSource;
+import com.hazelcast.jet.cdc.impl.CdcSourceP;
+import com.hazelcast.jet.cdc.impl.ChangeRecordCdcSourceP;
 import com.hazelcast.jet.cdc.impl.DebeziumConfig;
 import com.hazelcast.jet.cdc.impl.PropertyRules;
 import com.hazelcast.jet.cdc.mysql.impl.MySqlSequenceExtractor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
 import java.util.Properties;
 
-import static com.hazelcast.jet.cdc.impl.CdcSource.RECONNECT_BEHAVIOR_PROPERTY;
+import static com.hazelcast.jet.cdc.impl.CdcSourceP.RECONNECT_BEHAVIOR_PROPERTY;
 
 /**
  * Contains factory methods for creating change data capture sources
@@ -67,7 +69,7 @@ public final class MySqlCdcSources {
      * database snapshotting should not be repeated and streaming the binlog
      * should resume at the position where it left off. If the state is reset,
      * then the source will behave as on its initial start, so will do a
-     * database snapshot and will start trailing the binlog where it syncs with
+     * database snapshot and will start tailing the binlog where it syncs with
      * the database snapshot's end.
      *
      * @param name name of this source, needs to be unique, will be passed to
@@ -105,7 +107,7 @@ public final class MySqlCdcSources {
             Objects.requireNonNull(name, "name");
 
             config = new DebeziumConfig(name, "io.debezium.connector.mysql.MySqlConnector");
-            config.setProperty(CdcSource.SEQUENCE_EXTRACTOR_CLASS_PROPERTY, MySqlSequenceExtractor.class.getName());
+            config.setProperty(CdcSourceP.SEQUENCE_EXTRACTOR_CLASS_PROPERTY, MySqlSequenceExtractor.class.getName());
             config.setProperty("include.schema.changes", "false");
         }
 
@@ -324,10 +326,10 @@ public final class MySqlCdcSources {
          * backing database has been shut down (read class javadoc for details
          * and special cases).
          * <p>
-         * Defaults to {@link RetryStrategies#never()}.
+         * Defaults to {@link CdcSourceP#DEFAULT_RECONNECT_BEHAVIOR}.
          */
         @Nonnull
-        public Builder setReconnectBehavior(RetryStrategy retryStrategy) {
+        public Builder setReconnectBehavior(@Nonnull RetryStrategy retryStrategy) {
             config.setProperty(RECONNECT_BEHAVIOR_PROPERTY, retryStrategy);
             return this;
         }
@@ -338,18 +340,18 @@ public final class MySqlCdcSources {
          * database snapshotting should not be repeated and streaming the binlog
          * should resume at the position where it left off. If the state is
          * reset, then the source will behave as if it were its initial start,
-         * so will do a database snapshot and will start trailing the binlog
+         * so will do a database snapshot and will start tailing the binlog
          * where it syncs with the database snapshot's end.
          */
         @Nonnull
         public Builder setShouldStateBeResetOnReconnect(boolean reset) {
-            config.setProperty(CdcSource.RECONNECT_RESET_STATE_PROPERTY, reset);
+            config.setProperty(CdcSourceP.RECONNECT_RESET_STATE_PROPERTY, reset);
             return this;
         }
 
         /**
          * Can be used to set any property not explicitly covered by other
-         * methods or to override properties we have hidden.
+         * methods or to override internal properties.
          */
         @Nonnull
         public Builder setCustomProperty(@Nonnull String key, @Nonnull String value) {
@@ -370,12 +372,16 @@ public final class MySqlCdcSources {
             properties.setProperty("connect.keep.alive.interval.ms", intervalMs);
             properties.setProperty("connect.timeout.ms", intervalMs);
 
-            return ChangeRecordCdcSource.fromProperties(properties);
+            return Sources.streamFromProcessorWithWatermarks(
+                    properties.getProperty(CdcSourceP.NAME_PROPERTY),
+                    true,
+                    eventTimePolicy -> ProcessorMetaSupplier.forceTotalParallelismOne(
+                            ProcessorSupplier.of(() -> new ChangeRecordCdcSourceP(properties, eventTimePolicy))));
         }
 
         private static String getKeepAliveIntervalMs(Properties properties) {
             RetryStrategy reconnectBehavior = (RetryStrategy) properties.get(RECONNECT_BEHAVIOR_PROPERTY);
-            reconnectBehavior = reconnectBehavior == null ? CdcSource.DEFAULT_RECONNECT_BEHAVIOR : reconnectBehavior;
+            reconnectBehavior = reconnectBehavior == null ? CdcSourceP.DEFAULT_RECONNECT_BEHAVIOR : reconnectBehavior;
             long waitMs = reconnectBehavior.getIntervalFunction().waitAfterAttempt(1);
             return Long.toString(waitMs / 2);
         }

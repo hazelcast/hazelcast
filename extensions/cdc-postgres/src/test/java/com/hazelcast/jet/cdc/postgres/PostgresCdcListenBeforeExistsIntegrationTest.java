@@ -66,7 +66,8 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
         JetInstance jet = createJetMembers(2)[0];
         Job job = jet.newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
-        assertReplicationSlotActive("debezium");
+
+        assertReplicationSlotActive();
 
         try {
             //then
@@ -101,7 +102,7 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
         JetInstance jet = createJetMembers(2)[0];
         Job job = jet.newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
-        assertReplicationSlotActive("debezium");
+        assertReplicationSlotActive();
 
         try {
             //then
@@ -138,7 +139,7 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
         JetInstance jet = createJetMembers(2)[0];
         Job job = jet.newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
-        assertReplicationSlotActive("debezium");
+        assertReplicationSlotActive();
 
         try {
             assertTrueEventually(() -> assertMatch(Collections.singletonList(
@@ -230,13 +231,14 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
         return pipeline;
     }
 
-    private void assertReplicationSlotActive(String slotName) {
+    private void assertReplicationSlotActive() {
         assertTrueEventually(() -> {
             try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
                     postgres.getPassword())) {
                 PreparedStatement preparedStatement = connection.prepareStatement(
-                        "SELECT * FROM pg_replication_slots WHERE slot_name=?;");
-                preparedStatement.setString(1, slotName);
+                        "select * from pg_replication_slots where slot_name = ? and database = ?");
+                preparedStatement.setString(1, REPLICATION_SLOT_NAME);
+                preparedStatement.setString(2, DATABASE_NAME);
                 ResultSet resultSet = preparedStatement.executeQuery();
                 assertTrue(resultSet.next() && resultSet.getBoolean("active"));
             }

@@ -16,13 +16,17 @@
 
 package com.hazelcast.jet.cdc;
 
-import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.annotation.EvolvingApi;
-import com.hazelcast.jet.cdc.impl.CdcSource;
-import com.hazelcast.jet.cdc.impl.ChangeRecordCdcSource;
+import com.hazelcast.jet.cdc.impl.CdcSourceP;
+import com.hazelcast.jet.cdc.impl.ChangeRecordCdcSourceP;
 import com.hazelcast.jet.cdc.impl.ConstantSequenceExtractor;
 import com.hazelcast.jet.cdc.impl.DebeziumConfig;
-import com.hazelcast.jet.cdc.impl.JsonCdcSource;
+import com.hazelcast.jet.cdc.impl.JsonCdcSourceP;
+import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 
 import javax.annotation.Nonnull;
@@ -56,7 +60,8 @@ public final class DebeziumCdcSources {
      */
     @Nonnull
     public static Builder<ChangeRecord> debezium(@Nonnull String name, @Nonnull String connectorClass) {
-        return new Builder<>(name, connectorClass, ChangeRecordCdcSource::fromProperties);
+        return new Builder<>(name, connectorClass,
+                (properties, eventTimePolicy) -> new ChangeRecordCdcSourceP(properties, eventTimePolicy));
     }
 
     /**
@@ -72,7 +77,8 @@ public final class DebeziumCdcSources {
      */
     @Nonnull
     public static Builder<Entry<String, String>> debeziumJson(@Nonnull String name, @Nonnull String connectorClass) {
-        return new Builder<>(name, connectorClass, JsonCdcSource::fromProperties);
+        return new Builder<>(name, connectorClass,
+                (properties, eventTimePolicy) -> new JsonCdcSourceP(properties, eventTimePolicy));
     }
 
     /**
@@ -83,22 +89,18 @@ public final class DebeziumCdcSources {
      */
     public static final class Builder<T> {
 
-        private final FunctionEx<Properties, StreamSource<T>> buildFn;
+        private final BiFunctionEx<Properties, EventTimePolicy<? super T>, CdcSourceP<T>> processorFn;
         private final DebeziumConfig config;
 
-        /**
-         * @param name           name of the source, needs to be unique, will be passed to the underlying
-         *                       Kafka Connect source
-         * @param connectorClass name of the Java class for the connector, hardcoded for each type of DB
-         */
-        private Builder(@Nonnull String name,
-                        @Nonnull String connectorClass,
-                        @Nonnull FunctionEx<Properties, StreamSource<T>> buildFn
+        private Builder(
+                @Nonnull String name,
+                @Nonnull String connectorClass,
+                @Nonnull BiFunctionEx<Properties, EventTimePolicy<? super T>, CdcSourceP<T>> processorFn
         ) {
             config = new DebeziumConfig(name, connectorClass);
-            config.setProperty(CdcSource.SEQUENCE_EXTRACTOR_CLASS_PROPERTY, ConstantSequenceExtractor.class.getName());
+            config.setProperty(CdcSourceP.SEQUENCE_EXTRACTOR_CLASS_PROPERTY, ConstantSequenceExtractor.class.getName());
 
-            this.buildFn = buildFn;
+            this.processorFn = processorFn;
         }
 
         /**
@@ -115,7 +117,18 @@ public final class DebeziumCdcSources {
          */
         @Nonnull
         public StreamSource<T> build() {
-            return buildFn.apply(config.toProperties());
+            Properties properties = config.toProperties();
+            BiFunctionEx<Properties, EventTimePolicy<? super T>, CdcSourceP<T>> processorFn =
+                    this.processorFn;
+
+            return Sources.streamFromProcessorWithWatermarks(
+                    properties.getProperty(CdcSourceP.NAME_PROPERTY),
+                    true,
+                    eventTimePolicy -> {
+                        ProcessorSupplier supplier = ProcessorSupplier.of(
+                                () -> processorFn.apply(properties, eventTimePolicy));
+                        return ProcessorMetaSupplier.forceTotalParallelismOne(supplier);
+                    });
         }
     }
 

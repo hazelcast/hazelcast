@@ -24,6 +24,8 @@ import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -106,31 +108,48 @@ public class CdcSerializerHooks {
         }
     }
 
-    public static final class CdcSourceStateHook implements SerializerHook<CdcSource.State> {
+    public static final class CdcSourceStateHook implements SerializerHook<CdcSourceP.State> {
         @Override
-        public Class<CdcSource.State> getSerializationType() {
-            return CdcSource.State.class;
+        public Class<CdcSourceP.State> getSerializationType() {
+            return CdcSourceP.State.class;
         }
 
         @Override
         public Serializer createSerializer() {
-            return new StreamSerializer<CdcSource.State>() {
+            return new StreamSerializer<CdcSourceP.State>() {
                 @Override
                 public int getTypeId() {
                     return SerializerHookConstants.CDC_SOURCE_STATE;
                 }
 
                 @Override
-                public void write(ObjectDataOutput out, CdcSource.State state) throws IOException {
+                public void write(ObjectDataOutput out, CdcSourceP.State state) throws IOException {
                     out.writeObject(state.getPartitionsToOffset());
-                    out.writeObject(state.getHistoryRecords());
+
+                    // workaround for https://github.com/hazelcast/hazelcast/issues/18129
+                    // write the size hint, the list is concurrently modified, the actual number of items can be different
+                    out.writeInt(state.getHistoryRecords().size());
+                    for (byte[] r : state.getHistoryRecords()) {
+                        assert r != null;
+                        out.writeObject(r);
+                    }
+                    // terminator element
+                    out.writeObject(null);
                 }
 
                 @Override
-                public CdcSource.State read(ObjectDataInput in) throws IOException {
+                public CdcSourceP.State read(ObjectDataInput in) throws IOException {
                     Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = in.readObject();
-                    CopyOnWriteArrayList<byte[]> historyRecords = in.readObject();
-                    return new CdcSource.State(partitionsToOffset, historyRecords);
+
+                    // workaround for https://github.com/hazelcast/hazelcast/issues/18129
+                    int sizeHint = in.readInt();
+                    List<byte[]> historyRecords = new ArrayList<>(sizeHint);
+                    // read the elements until a terminator is found
+                    for (byte[] r; (r = in.readObject()) != null; ) {
+                        historyRecords.add(r);
+                    }
+
+                    return new CdcSourceP.State(partitionsToOffset, new CopyOnWriteArrayList<>(historyRecords));
                 }
             };
         }

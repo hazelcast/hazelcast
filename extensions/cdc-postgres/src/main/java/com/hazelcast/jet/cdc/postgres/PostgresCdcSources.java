@@ -19,14 +19,17 @@ package com.hazelcast.jet.cdc.postgres;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.annotation.EvolvingApi;
 import com.hazelcast.jet.cdc.ChangeRecord;
-import com.hazelcast.jet.cdc.impl.CdcSource;
-import com.hazelcast.jet.cdc.impl.ChangeRecordCdcSource;
+import com.hazelcast.jet.cdc.impl.CdcSourceP;
+import com.hazelcast.jet.cdc.impl.ChangeRecordCdcSourceP;
 import com.hazelcast.jet.cdc.impl.DebeziumConfig;
 import com.hazelcast.jet.cdc.impl.PropertyRules;
-import com.hazelcast.jet.retry.RetryStrategies;
-import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.cdc.postgres.impl.PostgresSequenceExtractor;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.jet.retry.RetryStrategy;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -60,14 +63,27 @@ public final class PostgresCdcSources {
      * made, will result in the source initiating reconnects to the database.
      * <p>
      * There is a further setting influencing reconnect behavior, specified via
-     * the {@code setShouldStateBeResetOnReconnect()}. The boolean flag passed
-     * in specifies what should happen to the connector's state on reconnect,
+     * {@code setShouldStateBeResetOnReconnect()}. The boolean flag passed in
+     * specifies what should happen to the connector's state on reconnect,
      * whether it should be kept or reset. If the state is kept, then
      * database snapshotting should not be repeated and streaming the WAL should
      * resume at the position where it left off. If the state is reset, then the
      * source will behave as on its initial start, so will do a database
-     * snapshot and will start trailing the WAL where it syncs with the database
+     * snapshot and will start tailing the WAL where it syncs with the database
      * snapshot's end.
+     * <p>
+     * You can also configure how often the source will send feedback about
+     * processed change record offsets to the backing database via
+     * {@code setCommitPeriod()}. The replication slots of the database will
+     * clean up their internal data structures based on this feedback. A commit
+     * period of {@code 0} means that the source will commit offsets after every
+     * batch of change records. Also, important to note that periodic commits
+     * happen only in the case of jobs without processing guarantees. For jobs
+     * offering processing guarantees, the source will ignore this setting and
+     * commit offsets as part of the state snapshotting process. So the setting
+     * governing them will be
+     * {@linkplain JobConfig#setSnapshotIntervalMillis(long)
+     * JobConfig.setSnapshotIntervalMillis}.
      *
      * @param name name of this source, needs to be unique, will be passed to
      *             the underlying Kafka Connect source
@@ -104,8 +120,8 @@ public final class PostgresCdcSources {
             Objects.requireNonNull(name, "name");
 
             config = new DebeziumConfig(name, "io.debezium.connector.postgresql.PostgresConnector");
-            config.setProperty(CdcSource.SEQUENCE_EXTRACTOR_CLASS_PROPERTY, PostgresSequenceExtractor.class.getName());
-            config.setProperty(ChangeRecordCdcSource.DB_SPECIFIC_EXTRA_FIELDS_PROPERTY, "schema");
+            config.setProperty(CdcSourceP.SEQUENCE_EXTRACTOR_CLASS_PROPERTY, PostgresSequenceExtractor.class.getName());
+            config.setProperty(ChangeRecordCdcSourceP.DB_SPECIFIC_EXTRA_FIELDS_PROPERTY, "schema");
             config.setProperty("database.server.name", UuidUtil.newUnsecureUuidString());
             config.setProperty("snapshot.mode", "exported");
         }
@@ -379,12 +395,11 @@ public final class PostgresCdcSources {
          * Specifies how the connector should behave when it detects that the
          * backing database has been shut dow.
          * <p>
-         * Defaults to {@link RetryStrategies#never()}.
-         *
+         * Defaults to {@link CdcSourceP#DEFAULT_RECONNECT_BEHAVIOR}.
          */
         @Nonnull
-        public Builder setReconnectBehavior(RetryStrategy retryStrategy) {
-            config.setProperty(CdcSource.RECONNECT_BEHAVIOR_PROPERTY, retryStrategy);
+        public Builder setReconnectBehavior(@Nonnull RetryStrategy retryStrategy) {
+            config.setProperty(CdcSourceP.RECONNECT_BEHAVIOR_PROPERTY, retryStrategy);
             return this;
         }
 
@@ -394,18 +409,45 @@ public final class PostgresCdcSources {
          * database snapshotting should not be repeated and streaming the binlog
          * should resume at the position where it left off. If the state is
          * reset, then the source will behave as if it were its initial start,
-         * so will do a database snapshot and will start trailing the binlog
+         * so will do a database snapshot and will start tailing the binlog
          * where it syncs with the database snapshot's end.
          */
         @Nonnull
         public Builder setShouldStateBeResetOnReconnect(boolean reset) {
-            config.setProperty(CdcSource.RECONNECT_RESET_STATE_PROPERTY, reset);
+            config.setProperty(CdcSourceP.RECONNECT_RESET_STATE_PROPERTY, reset);
+            return this;
+        }
+
+        /**
+         * Specifies how often the connector should confirm processed offsets to
+         * the Postgres database's replication slot. For jobs with a processing
+         * guarantee this option is ignored, the source confirms the offsets after
+         * each state snapshot.
+         * <p>
+         * If set to <em>zero</em>, the connector will commit the offsets after
+         * each batch of change records.
+         * <p>
+         * If set to a <em>positive</em> value, the commits will be done in the
+         * given period.
+         * <p>
+         * <em>Negative</em> values are not allowed.
+         * <p>
+         * Defaults to {@link CdcSourceP#DEFAULT_COMMIT_PERIOD_MS}.
+         *
+         * @since 4.4.1
+         */
+        @Nonnull
+        public Builder setCommitPeriod(long milliseconds) {
+            if (milliseconds < 0) {
+                throw new IllegalArgumentException("Negative commit period not allowed");
+            }
+            config.setProperty(CdcSourceP.COMMIT_PERIOD_MILLIS_PROPERTY, milliseconds);
             return this;
         }
 
         /**
          * Can be used to set any property not explicitly covered by other
-         * methods or to override properties we have hidden.
+         * methods or to override internal properties.
          */
         @Nonnull
         public Builder setCustomProperty(@Nonnull String key, @Nonnull String value) {
@@ -420,7 +462,11 @@ public final class PostgresCdcSources {
         public StreamSource<ChangeRecord> build() {
             Properties properties = config.toProperties();
             RULES.check(properties);
-            return ChangeRecordCdcSource.fromProperties(properties);
+            return Sources.streamFromProcessorWithWatermarks(
+                    properties.getProperty(CdcSourceP.NAME_PROPERTY),
+                    true,
+                    eventTimePolicy -> ProcessorMetaSupplier.forceTotalParallelismOne(
+                            ProcessorSupplier.of(() -> new ChangeRecordCdcSourceP(properties, eventTimePolicy))));
         }
 
     }

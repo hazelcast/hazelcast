@@ -17,13 +17,13 @@
 package com.hazelcast.jet.cdc.impl;
 
 import com.hazelcast.jet.cdc.ChangeRecord;
-import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.pipeline.SourceBuilder;
-import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.jet.core.EventTimePolicy;
 import io.debezium.transforms.ExtractNewRecordState;
 import org.apache.kafka.connect.data.Values;
 import org.apache.kafka.connect.source.SourceRecord;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -34,15 +34,19 @@ import java.util.Set;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
-public class ChangeRecordCdcSource extends CdcSource<ChangeRecord> {
+public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
 
     public static final String DB_SPECIFIC_EXTRA_FIELDS_PROPERTY = "db.specific.extra.fields";
 
     private final SequenceExtractor sequenceExtractor;
     private final ExtractNewRecordState<SourceRecord> transform;
 
-    public ChangeRecordCdcSource(Processor.Context context, Properties properties) {
-        super(context, properties);
+    public ChangeRecordCdcSourceP(
+            @Nonnull Properties properties,
+            @Nonnull EventTimePolicy<? super ChangeRecord> eventTimePolicy
+    ) {
+        super(properties, eventTimePolicy);
+
         try {
             sequenceExtractor = newInstance(properties.getProperty(SEQUENCE_EXTRACTOR_CLASS_PROPERTY),
                     "sequence extractor ");
@@ -52,8 +56,9 @@ public class ChangeRecordCdcSource extends CdcSource<ChangeRecord> {
         }
     }
 
+    @Nullable
     @Override
-    protected ChangeRecord mapToOutput(SourceRecord record) {
+    protected ChangeRecord map(SourceRecord record) {
         record = transform.apply(record);
         if (record == null) {
             return null;
@@ -64,16 +69,6 @@ public class ChangeRecordCdcSource extends CdcSource<ChangeRecord> {
         String keyJson = Values.convertToString(record.keySchema(), record.key());
         String valueJson = Values.convertToString(record.valueSchema(), record.value());
         return new ChangeRecordImpl(sequenceSource, sequenceValue, keyJson, valueJson);
-    }
-
-    public static StreamSource<ChangeRecord> fromProperties(Properties properties) {
-        String name = properties.getProperty("name");
-        return SourceBuilder.timestampedStream(name, ctx -> new ChangeRecordCdcSource(ctx, properties))
-                .fillBufferFn(ChangeRecordCdcSource::fillBuffer)
-                .createSnapshotFn(CdcSource::createSnapshot)
-                .restoreSnapshotFn(CdcSource::restoreSnapshot)
-                .destroyFn(CdcSource::destroy)
-                .build();
     }
 
     private static ExtractNewRecordState<SourceRecord> initTransform(String dbSpecificExtraFields) {

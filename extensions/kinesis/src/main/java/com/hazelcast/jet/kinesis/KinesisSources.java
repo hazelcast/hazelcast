@@ -279,7 +279,7 @@ public final class KinesisSources {
                                                     @Nullable String parameter) {
             initialShardIterators.add(shardIdRegExp, shardIteratorType, parameter);
             return this;
-        } //todo: test and use in tutorial
+        }
 
         /**
          * Constructs the source based on the options provided so far.

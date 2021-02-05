@@ -28,6 +28,7 @@ import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Date;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -37,12 +38,19 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 @Category({IgnoreInJenkinsOnWindows.class})
 public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
+    protected static final String DATABASE_NAME = "postgres";
+    protected static final String REPLICATION_SLOT_NAME = "debezium";
+
+    private static final String SCHEMA = "inventory";
+
     @Rule
     public PostgreSQLContainer<?> postgres = namedTestContainer(
             new PostgreSQLContainer<>("debezium/example-postgres:1.3")
                     .withDatabaseName("postgres")
                     .withUsername("postgres")
                     .withPassword("postgres")
+                    .withConnectTimeoutSeconds(300)
+                    .withStartupTimeoutSeconds(300)
     );
 
     protected PostgresCdcSources.Builder sourceBuilder(String name) {
@@ -51,14 +59,26 @@ public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcInte
                 .setDatabasePort(postgres.getMappedPort(POSTGRESQL_PORT))
                 .setDatabaseUser("postgres")
                 .setDatabasePassword("postgres")
-                .setDatabaseName("postgres")
+                .setDatabaseName(DATABASE_NAME)
                 .setReconnectBehavior(RetryStrategies.indefinitely(1000));
     }
 
-    protected void createSchema(String schema) throws SQLException {
+    protected final void createSchema(String schema) throws SQLException {
         try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
                 postgres.getPassword())) {
             connection.createStatement().execute("CREATE SCHEMA " + schema);
+        }
+    }
+
+    protected final void executeBatch(String... sqlCommands) throws SQLException {
+        try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
+                postgres.getPassword())) {
+            connection.setSchema(SCHEMA);
+            Statement statement = connection.createStatement();
+            for (String sql : sqlCommands) {
+                statement.addBatch(sql);
+            }
+            statement.executeBatch();
         }
     }
 

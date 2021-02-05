@@ -32,12 +32,11 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -97,23 +96,20 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
         assertEqualsEventually(() -> getIMapContent(jet, CACHE), expected);
 
         //when
-        try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
-                postgres.getPassword())) {
-            connection.setSchema("inventory");
-            Statement statement = connection.createStatement();
-            for (int i = 1; i <= REPEATS; i++) {
-                statement.addBatch("UPDATE customers SET first_name='Anne" + i + "' WHERE id=1004");
+        List<String> batch = new ArrayList<>();
+        for (int i = 1; i <= REPEATS; i++) {
+            batch.add("UPDATE customers SET first_name='Anne" + i + "' WHERE id=1004");
 
-                statement.addBatch("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')");
-                statement.addBatch("DELETE FROM customers WHERE id=1005");
+            batch.add("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')");
+            batch.add("DELETE FROM customers WHERE id=1005");
 
-                statement.addBatch("UPDATE orders SET quantity='" + i + "' WHERE id=10004");
+            batch.add("UPDATE orders SET quantity='" + i + "' WHERE id=10004");
 
-                statement.addBatch("DELETE FROM orders WHERE id=10003");
-                statement.addBatch("INSERT INTO orders VALUES (10003, '2016-02-19', 1002, 2, 106)");
-            }
-            statement.executeBatch();
+            batch.add("DELETE FROM orders WHERE id=10003");
+            batch.add("INSERT INTO orders VALUES (10003, '2016-02-19', 1002, 2, 106)");
         }
+        executeBatch(batch.toArray(new String[0]));
+
         //then
         expected = toMap(
                 new OrdersOfCustomer(

@@ -370,8 +370,7 @@ public interface Processor {
      * <p>
      * The default implementation takes no action and returns {@code true}.
      *
-     * @param success true, if all members were successful in {@link
-     *      #saveToSnapshot()} and we're not doing {@link Job#exportSnapshot}
+     * @param success true, if the first snapshot phase completed successfully
      * @return {@code true} if this step is done, {@code false} to call this
      *      method again
      * @since 4.0

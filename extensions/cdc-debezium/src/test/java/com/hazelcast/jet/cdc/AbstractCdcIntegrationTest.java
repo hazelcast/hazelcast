@@ -31,6 +31,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
@@ -144,7 +145,14 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
     }
 
     protected <T> T namedTestContainer(GenericContainer<?> container) {
-        return (T) container.withCreateContainerCmdModifier(createContainerCmd -> {
+        if (container instanceof JdbcDatabaseContainer) {
+            container = ((JdbcDatabaseContainer) container)
+                    .withConnectTimeoutSeconds(300)
+                    .withStartupTimeoutSeconds(300);
+        }
+        return (T) container
+                .withStartupAttempts(5)
+                .withCreateContainerCmdModifier(createContainerCmd -> {
             String source = AbstractCdcIntegrationTest.this.getClass().getSimpleName() + "." + testName.getMethodName()
                 .replaceAll("\\[|\\]|\\/| ", "_");
             createContainerCmd.withName(source + "___" + randomName());

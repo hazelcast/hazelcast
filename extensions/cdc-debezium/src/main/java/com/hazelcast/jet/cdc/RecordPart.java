@@ -50,8 +50,8 @@ public interface RecordPart {
      *  {@code
      *  public LocalDate birthDate;
      *
-     *  public void setBirthDate(long daysSinceBirth) {
-     *      this.birthDate = daysSinceBirth == 0 ? null : LocalDate.ofEpochDay(daysSinceBirth);
+     *  public void setBirthDate(long dateInEpochDays) {
+     *      this.birthDate = dateInEpochDays == 0 ? null : LocalDate.ofEpochDay(dateInEpochDays);
      *  }
      *  }
      * </pre>

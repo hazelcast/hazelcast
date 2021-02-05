@@ -16,37 +16,31 @@
 
 package com.hazelcast.jet.cdc.impl;
 
-import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.pipeline.SourceBuilder;
-import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.jet.core.EventTimePolicy;
 import org.apache.kafka.connect.data.Values;
 import org.apache.kafka.connect.source.SourceRecord;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Map.Entry;
 import java.util.Properties;
 
 import static com.hazelcast.jet.Util.entry;
 
-public class JsonCdcSource extends CdcSource<Entry<String, String>> {
+public class JsonCdcSourceP extends CdcSourceP<Entry<String, String>> {
 
-    public JsonCdcSource(Processor.Context context, Properties properties) {
-        super(context, properties);
+    public JsonCdcSourceP(
+            @Nonnull Properties properties,
+            @Nonnull EventTimePolicy<? super Entry<String, String>> eventTimePolicy
+    ) {
+        super(properties, eventTimePolicy);
     }
 
+    @Nullable
     @Override
-    protected Entry<String, String> mapToOutput(SourceRecord record) {
+    protected Entry<String, String> map(SourceRecord record) {
         String keyJson = Values.convertToString(record.keySchema(), record.key());
         String valueJson = Values.convertToString(record.valueSchema(), record.value());
         return entry(keyJson, valueJson);
-    }
-
-    public static StreamSource<Entry<String, String>> fromProperties(Properties properties) {
-        String name = properties.getProperty("name");
-        return SourceBuilder.timestampedStream(name, ctx -> new JsonCdcSource(ctx, properties))
-                .fillBufferFn(JsonCdcSource::fillBuffer)
-                .createSnapshotFn(CdcSource::createSnapshot)
-                .restoreSnapshotFn(CdcSource::restoreSnapshot)
-                .destroyFn(CdcSource::destroy)
-                .build();
     }
 }
