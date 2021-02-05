@@ -20,7 +20,7 @@ Map level is enabled by default but entry-level is not.
 Map-level stats are:
 - **hits:** total hits of map
 - **lastAccessTime:** last access time to map
-- l**astUpdateTime:** last update time of map
+- **lastUpdateTime:** last update time of map
 
 Entry-level stats are: 
 - **hits:** total hits to entry
