@@ -74,8 +74,8 @@ public class MulticastDeserializationTest {
 
     @AfterClass
     public static void cleanup() {
-        TestDeserialized.isDeserialized = false;
         HazelcastInstanceFactory.terminateAll();
+        TestDeserialized.isDeserialized = false;
     }
 
     /**
