@@ -50,7 +50,7 @@ public interface ICacheInternal<K, V> extends ICache<K, V> {
             throws IllegalArgumentException;
 
     /**
-     * Cluster-wide iterator for {@link ICache}
+     * Iterator for the single specified partition {@link ICache}
      *
      * @param fetchSize      batch fetching size
      * @param partitionId    partition ID of the entries to iterate on
@@ -60,11 +60,12 @@ public interface ICacheInternal<K, V> extends ICache<K, V> {
     Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues);
 
     /**
-     * TODO
-     * @param fetchSize
-     * @param partitionId
-     * @param prefetchValues
-     * @return
+     * Iterable for the single specified partition {@link ICache}
+     *
+     * @param fetchSize      batch fetching size
+     * @param partitionId    partition ID of the entries to iterate on
+     * @param prefetchValues prefetch values
+     * @return iterator for the entries of the partition
      */
     Iterable<Entry<K, V>> iterable(int fetchSize, int partitionId, boolean prefetchValues);
 
