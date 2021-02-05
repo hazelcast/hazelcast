@@ -36,8 +36,8 @@ import java.io.IOException;
 import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -95,26 +95,14 @@ public class RestLogLevelTest {
         // REST should be disabled by default
         HazelcastInstance instance = factory.newHazelcastInstance(createConfig());
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
-
-        try {
-            communicator.getLogLevel();
-            fail("Rest is disabled. Not expected to reach here!");
-        } catch (IOException ignored) {
-            // ignored
-        }
+        assertThrows(IOException.class, communicator::getLogLevel);
     }
 
     @Test
     public void testEnabledRestButDisabledGroupClusterRead() {
         HazelcastInstance instance = factory.newHazelcastInstance(createWriteOnlyConfig());
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
-
-        try {
-            communicator.getLogLevel();
-            fail("Read is disabled. Not expected to reach here!");
-        } catch (IOException ignored) {
-            // ignored
-        }
+        assertThrows(IOException.class, communicator::getLogLevel);
     }
 
     @Test
@@ -122,13 +110,7 @@ public class RestLogLevelTest {
         Config config = createReadOnlyConfig();
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
-
-        try {
-            communicator.setLogLevel(config.getClusterName(), getPassword(), Level.FINE);
-            fail("Write is disabled. Not expected to reach here!");
-        } catch (IOException ignored) {
-            // ignored
-        }
+        assertThrows(IOException.class, () -> communicator.setLogLevel(config.getClusterName(), getPassword(), Level.FINE));
     }
 
     @Test
